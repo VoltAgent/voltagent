@@ -1,0 +1,501 @@
+# VoltAgent: The Comprehensive Developer & LLM Guide (v0.1.x)
+
+This document provides an exhaustive, self-contained guide to the VoltAgent framework (version ~0.1.x based on provided structure). It is intended for both human developers seeking deep understanding and Large Language Models (LLMs) requiring rich context for analysis, code generation, or answering questions about VoltAgent. It details the architecture, core components, features, design rationale, key workflows, and provides illustrative code examples directly within the text. While links to source code and further documentation are provided, the core concepts and mechanisms are explained herein.
+
+**Framework Overview:**
+
+> VoltAgent is an open-source TypeScript framework designed for building, orchestrating, and observing sophisticated AI agents. It bridges the gap between the flexibility of pure code and the clarity of visual/no-code tools, providing structure without sacrificing control. Built specifically for the JavaScript/TypeScript ecosystem, VoltAgent empowers developers with modular components (Agents, Tools, Memory, RAG, Voice, Sub-agents) and integrates first-class observability through the dedicated VoltAgent Developer Console.
+
+**Core Philosophy (Manifesto TL;DR):**
+
+VoltAgent exists because building robust AI agents in JS/TS was harder than it needed to be. Existing solutions were often either too basic (requiring extensive boilerplate and lacking observability) or too restrictive (no-code platforms limiting customization and provider choice). VoltAgent aims to provide:
+
+1.  **Developer Experience:** A code-first approach familiar to JS/TS developers, leveraging TypeScript for type safety.
+2.  **Structure & Modularity:** Pre-built components and patterns for common agent tasks (tools, memory, multi-agent coordination).
+3.  **Observability:** Deep, visual insight into agent execution via the Developer Console to combat the "black box" problem.
+4.  **Flexibility:** Easy integration with various LLM providers and external services, avoiding vendor lock-in.
+
+*   `[Project Manifesto](/website/pages/manifesto.tsx)`: Full philosophy.
+*   `[Root README](/README.md)`: High-level project overview.
+
+---
+
+## 1. Project Setup & Quick Start
+
+### 1.1. `create-voltagent-app` (Recommended)
+
+The quickest way to initialize a VoltAgent project is via the dedicated CLI tool.
+
+**Command:**
+
+```bash
+# Installs necessary dependencies and sets up the basic structure
+npm create voltagent-app@latest my-voltagent-app
+# Follow prompts for package manager selection (npm/yarn/pnpm)
+
+cd my-voltagent-app
+
+# Add API keys to the generated .env file
+echo "OPENAI_API_KEY=sk-..." > .env # Example for OpenAI
+
+# Start the development server
+npm run dev
+```
+
+**Rationale:** This tool ensures all necessary core packages (`@voltagent/core`, a provider like `@voltagent/vercel-ai`), TypeScript configuration (`tsconfig.json`), basic scripts (`package.json`), and initial file structure (`src/index.ts`) are correctly set up, including the `.voltagent` directory for default local memory.
+
+**Default Project Structure Generated:**
+
+```
+my-voltagent-app/
+├── src/
+│   └── index.ts       # Main agent definition and framework initialization
+├── .voltagent/        # Default directory for LibSQLStorage (SQLite)
+├── .env               # Environment variables (API keys)
+├── .gitignore
+├── package.json       # Project metadata, dependencies, scripts
+├── tsconfig.json      # TypeScript configuration
+└── README.md          # Basic project README
+```
+
+The `npm run dev` command utilizes `tsx watch` for hot-reloading during development, automatically restarting the server on code changes. The server typically runs on `http://localhost:3141`.
+
+**More Info:**
+
+*   `[Quick Start Guide](/docs/getting-started/quick-start.md)`
+*   `[create-voltagent-app README](/packages/create-voltagent-app/README.md)`
+*   `[Project Creator Source](/packages/create-voltagent-app/src/project-creator.ts)`
+*   `[Base Template Source](/packages/create-voltagent-app/templates/base/)`
+
+### 1.2. Manual Setup
+
+While not recommended for beginners, manual setup involves:
+
+1.  Initializing a Node.js/TypeScript project (`npm init`, `tsc --init`).
+2.  Installing core dependencies: `@voltagent/core`, an LLM provider package (e.g., `@voltagent/vercel-ai` or `@voltagent/xsai`), and necessary peer dependencies (like `@ai-sdk/openai` if using Vercel AI with OpenAI).
+3.  Installing dev dependencies: `typescript`, `tsx`, `@types/node`, `@voltagent/cli` (optional).
+4.  Configuring `tsconfig.json` (target ES2020+, module NodeNext).
+5.  Configuring `package.json` (set `"type": "module"`, add `dev`/`start` scripts).
+6.  Creating `src/index.ts` with Agent definition and `new VoltAgent({...})` initialization.
+7.  Creating a `.env` file for API keys.
+
+*Refer to the Quick Start Guide documentation for detailed manual steps.*
+
+---
+
+## 2. Core Architecture: The Agent and its Managers (`@voltagent/core`)
+
+### 2.1. The `Agent` Class (`/packages/core/src/agent/index.ts`)
+
+This is the central orchestrator in VoltAgent. **It is NOT merely a wrapper for an LLM API call.** Its responsibilities include:
+
+*   **Configuration:** Holding the agent's identity (`name`, `description`), LLM connection (`llm`, `model`), and capabilities (`tools`, `memory`, `retriever`, `subAgents`, `hooks`, `voice`).
+*   **Lifecycle Management:** Handling the start and end of interactions.
+*   **Context Assembly:** Gathering system prompts, memory, and RAG results before calling the LLM.
+*   **LLM Interaction:** Delegating the actual API call (text, object, streaming) to the configured `LLMProvider`.
+*   **Tool Orchestration:** Interpreting LLM requests for tool use, managing the tool execution lifecycle via `ToolManager`, and feeding results back to the LLM.
+*   **State Coordination:** Interacting with internal managers (`MemoryManager`, `SubAgentManager`, `HistoryManager`) to manage state and history.
+*   **Event Emission:** Triggering events for observability (via `AgentEventEmitter`).
+
+**Constructor Signature (Simplified):**
+
+```typescript
+import { AgentHooks } from './hooks';
+import { LLMProvider } from './providers';
+import { Memory, MemoryOptions } from '../memory';
+import { AgentTool } from '../tool';
+import { BaseRetriever } from '../retriever';
+import { Voice } from '../voice';
+
+class Agent<TProvider extends { llm: LLMProvider<any> }> {
+  constructor(options: {
+    id?: string;
+    name: string;
+    description?: string;
+    llm: ProviderInstance<TProvider>; // e.g., new VercelAIProvider()
+    model: ModelType<TProvider>;     // e.g., openai("gpt-4o-mini")
+    memory?: Memory | false;
+    memoryOptions?: MemoryOptions;
+    tools?: AgentTool[];
+    subAgents?: Agent<any>[];
+    hooks?: AgentHooks;
+    retriever?: BaseRetriever;
+    voice?: Voice;
+    maxHistoryEntries?: number;
+  });
+  // ... methods like generateText, streamText, etc.
+}
+```
+
+**Minimal Example (Reiteration for Context):**
+
+```typescript
+import { Agent, VoltAgent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const simpleAgent = new Agent({
+  name: "simple-assistant",
+  description: "You answer questions directly.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+new VoltAgent({ agents: { main: simpleAgent } });
+```
+
+### 2.2. Internal Managers (Composition over Inheritance)
+
+The `Agent` class utilizes several specialized manager classes to handle specific functionalities. This promotes modularity and separation of concerns.
+
+*   **`ToolManager` (`/packages/core/src/tool/manager/index.ts`)**:
+    *   **Responsibility:** Stores and manages the collection of `AgentTool` instances configured for an agent. Provides methods to add, remove, retrieve, and format tools for the LLM.
+    *   **Interaction:** Called by the `Agent` when preparing the list of available tools for an LLM call and when the LLM requests a specific tool execution.
+
+*   **`MemoryManager` (`/packages/core/src/memory/manager/index.ts`)**:
+    *   **Responsibility:** Acts as the interface between the `Agent` and the configured `Memory` storage provider (e.g., `LibSQLStorage`). Handles saving (`addMessage`) and retrieving (`getMessages`) conversation history based on `userId` and `conversationId`. Manages conversation creation/updates. Creates event tracking for memory operations.
+    *   **Interaction:** Called by the `Agent` before an LLM call to fetch context (`prepareConversationContext`) and during/after an interaction to save messages (`saveMessage`, via `createStepFinishHandler`).
+
+*   **`SubAgentManager` (`/packages/core/src/agent/subagent/index.ts`)**:
+    *   **Responsibility:** Manages the list of sub-agents configured for a supervisor agent. Automatically creates and manages the `delegate_task` tool used by the supervisor's LLM. Implements the `handoffTask` logic, which initiates interaction with a sub-agent and crucially propagates parent context (`parentAgentId`, `parentHistoryEntryId`) for observability tracing. Enhances the supervisor's system prompt.
+    *   **Interaction:** Initialized by the `Agent` if `subAgents` are provided. The `delegate_task` tool's `execute` function calls `handoffTask` within this manager.
+
+*   **`HistoryManager` (`/packages/core/src/agent/history/index.ts`)**:
+    *   **Responsibility:** Formats and structures the detailed record of an agent interaction (`AgentHistoryEntry`). This includes the initial input, final output, status, intermediate steps (like tool calls/results), and a timeline of fine-grained events emitted via `AgentEventEmitter`. It uses the `MemoryManager` to persist these entries.
+    *   **Interaction:** Called by the `Agent` at the start (`initializeHistory`, `addEntry`) and end (`updateEntry`) of an interaction, and during streaming/tool use (`addStepsToEntry`, `addEventToEntry`, `updateTrackedEvent`) to record the interaction details.
+
+### 2.3. Event System (`AgentEventEmitter`) (`/packages/core/src/events/index.ts`)
+
+**Rationale:** Provides a decoupled way to observe agent activities without tightly coupling observability logic into the core `Agent` class.
+
+**Mechanism:**
+
+*   A singleton `AgentEventEmitter` instance manages event listeners.
+*   Core components (`Agent`, `MemoryManager`, etc.) emit events at key points (e.g., `agentRegistered`, `historyUpdate`, `historyEntryCreated`, tool start/end, memory get/save).
+*   The `HistoryManager` listens for these events and appends them to the relevant `AgentHistoryEntry`'s `events` array.
+*   The internal API server (`/packages/core/src/server/api.ts`) listens for `historyUpdate` and `historyEntryCreated` events and pushes updates via WebSockets to the connected Developer Console for real-time visualization.
+*   The `createTrackedEvent` method provides a way to create events that can be updated later (e.g., marking a tool call as 'working' initially, then updating to 'completed' or 'error' when finished), returning an `EventUpdater` function.
+
+**More Info:**
+
+*   `[Observability Overview](/docs/observability/overview.md)`
+*   `[Developer Console Guide](/docs/observability/developer-console.md)`
+*   `[Event System Source Code](/packages/core/src/events/index.ts)`
+*   `[History Manager Source Code](/packages/core/src/agent/history/index.ts)`
+
+---
+
+## 4. Key Capabilities In-Depth
+
+### 4.1. Tools: Extending Agent Actions
+
+Tools are defined using `createTool` from `@voltagent/core`.
+
+**Core Components:**
+
+*   `name`: Unique string identifier.
+*   `description`: **Crucial for LLM.** Explains *what* the tool does and *when* it should be used.
+*   `parameters`: A `zod` schema defining the expected input arguments. Zod's `.describe()` method on fields is vital for providing context to the LLM about each parameter.
+*   `execute`: An `async` function containing the tool's logic. It receives the parsed and validated arguments (type-safe based on the `parameters` schema) and optional `ToolExecuteOptions` (like `AbortSignal`). It should return a result object or throw an error.
+
+**Example: Weather Tool with Type Safety & Logging**
+
+```typescript filename="src/tools/detailed-weather.ts"
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+// 1. Define clear parameters with descriptions for the LLM
+const weatherParams = z.object({
+  city: z.string().describe("The name of the city."),
+  state: z.string().optional().describe("The state or region (e.g., CA, TX). Optional."),
+  unit: z.enum(["celsius", "fahrenheit"]).default("celsius").describe("Temperature unit."),
+});
+
+// 2. Create the tool instance
+export const detailedWeatherTool = createTool({
+  name: "get_detailed_weather",
+  description: "Provides the current temperature and weather conditions for a specific city, optionally including the state.",
+  parameters: weatherParams,
+
+  // 3. Implement the execute function (args are type-safe)
+  execute: async (args, options) => {
+    // Type of args: { city: string; state?: string; unit: "celsius" | "fahrenheit" }
+    const { city, state, unit } = args;
+    const location = state ? `${city}, ${state}` : city;
+    const signal = options?.signal; // Access AbortSignal if provided
+
+    console.log(`[Tool: Weather] Executing for ${location}, Unit: ${unit}`);
+
+    // Simulate API call with potential cancellation
+    try {
+      // Check if aborted before starting
+      if (signal?.aborted) throw new Error("Operation cancelled by signal.");
+
+      // --- Placeholder for API call ---
+      const apiCallPromise = new Promise<{ temp: number; conditions: string }>(resolve =>
+        setTimeout(() => {
+          // Simulate different weather based on location
+          const temp = location.toLowerCase().includes("london") ? 15 : 28;
+          const conditions = location.toLowerCase().includes("london") ? "Rainy" : "Sunny";
+          resolve({ temp, conditions });
+        }, 1000) // Simulate 1 second delay
+      );
+
+      // Handle potential abort during the simulated delay
+      const result = await Promise.race([
+        apiCallPromise,
+        new Promise((_, reject) => {
+          if (signal) {
+            signal.addEventListener('abort', () => reject(new Error("Weather API call aborted.")));
+          }
+        })
+      ]);
+      // --- End Placeholder ---
+
+      console.log(`[Tool: Weather] Success for ${location}`);
+      // Return structured result
+      return {
+        location: location,
+        temperature: (result as any).temp,
+        unit: unit,
+        conditions: (result as any).conditions,
+      };
+
+    } catch (error) {
+      console.error(`[Tool: Weather] Failed for ${location}:`, error.message);
+      // Provide a structured error for the LLM
+      return { error: `Failed to get weather for ${location}. Reason: ${error.message}` };
+    }
+  },
+});
+```
+
+**Best Practices:**
+
+*   **Descriptive Naming:** Use clear, verb-based names (e.g., `search_web`, `send_email`).
+*   **Detailed Descriptions:** Explain the tool's purpose, when to use it, and any limitations. Describe parameters accurately using `.describe()`.
+*   **Robust `execute`:** Handle potential errors gracefully. Return informative error messages or objects. Implement `AbortSignal` for long-running tasks.
+*   **Structured Return:** Return results as objects for easier parsing by the LLM.
+
+**More Info:**
+
+*   `[Tools Documentation](/docs/agents/tools.md)`
+
+### 4.2. Memory: Persistence and Context
+
+**Rationale:** Enables stateful conversations by storing and retrieving interaction history. The default `LibSQLStorage` provides easy local persistence, while Turso integration offers scalability.
+
+**Mechanism:**
+
+*   The `MemoryManager` orchestrates interactions.
+*   `userId` and `conversationId` are crucial keys for segmenting and retrieving history. If `conversationId` is omitted, a new one is generated per request, resulting in a stateless interaction for that call.
+*   `prepareConversationContext` fetches messages based on IDs and `contextLimit`.
+*   `saveMessage` (called internally via `createStepFinishHandler` or directly) persists user input, agent responses, and tool steps using the configured `Memory` provider.
+*   `LibSQLStorage` uses SQL statements to interact with SQLite or Turso. `[Schema](/packages/core/src/memory/libsql/index.ts)` (See `initializeDatabase`)
+*   `InMemoryStorage` uses simple JavaScript objects/arrays.
+
+**Example: Using `LibSQLStorage` with Turso (Production Setup)**
+
+```typescript filename="src/config/memory.ts"
+import { LibSQLStorage } from "@voltagent/core";
+
+if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+  throw new Error("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN environment variables are required.");
+}
+
+export const productionMemory = new LibSQLStorage({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+  tablePrefix: "prod_chats", // Optional: Namespace tables
+  storageLimit: 500,       // Optional: Keep last 500 messages per conversation
+  debug: process.env.NODE_ENV === 'development', // Enable debug logs in dev
+});
+```
+
+```typescript filename="src/index.ts"
+import { Agent } from "@voltagent/core";
+import { productionMemory } from "./config/memory";
+// ... other imports
+
+const productionAgent = new Agent({
+  name: "prod-assistant",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  memory: productionMemory, // Use the configured Turso instance
+});
+
+// ... Initialize VoltAgent ...
+
+// Interactions now persist in the Turso database
+// await productionAgent.generateText("Remember this code: XYZ", { userId: "dev1", conversationId: "projectA" });
+```
+
+**More Info:**
+
+*   `[Memory Documentation](/docs/agents/memory.md)`
+*   `[MemoryManager Source](/packages/core/src/memory/manager/index.ts)`
+*   `[LibSQLStorage Source](/packages/core/src/memory/libsql/index.ts)`
+
+### 4.3. Sub-agents: Orchestrating Agent Teams
+
+**Rationale:** Enables complex problem-solving by breaking tasks down for specialized agents, coordinated by a supervisor.
+
+**Mechanism:**
+
+*   Supervisor agent configured with `subAgents: [agentA, agentB]`.
+*   `SubAgentManager` automatically adds the `delegate_task` tool to the supervisor.
+*   Supervisor LLM identifies a sub-task and calls `delegate_task(task: string, targetAgents: string[], context?: object)`.
+*   `SubAgentManager.handoffTask` is invoked internally.
+    *   It creates a **new, separate conversation context** for the sub-agent interaction (using a potentially new `conversationId` derived from the parent or randomly generated).
+    *   It prepares a system message for the sub-agent including the delegated `task` and `context`.
+    *   It calls the sub-agent's primary interaction method (e.g., `generateText`).
+    *   **Crucially, it passes `parentAgentId` (supervisor's ID) and `parentHistoryEntryId` (supervisor's current history ID) in the options to the sub-agent's call.** This allows the sub-agent's events (logged via `AgentEventEmitter`) to be linked back to the supervisor's trace in the Developer Console.
+*   Sub-agent processes the task, potentially using its own tools/memory within its isolated conversation context.
+*   Sub-agent returns the result.
+*   `handoffTask` returns the result to the `delegate_task` tool execution.
+*   Supervisor LLM receives the tool result and continues its process.
+
+**Example: Supervisor Delegating Research**
+
+```typescript filename="src/index.ts"
+import { Agent, VoltAgent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+// Assume 'webSearchTool' is defined elsewhere
+
+// 1. Define Researcher Sub-agent
+const researcher = new Agent({
+  name: "WebResearcher",
+  description: "Efficiently searches the web for information on a given topic and provides a concise summary.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  // tools: [webSearchTool], // This agent needs a web search tool
+});
+
+// 2. Define Supervisor Agent
+const supervisor = new Agent({
+  name: "ResearchCoordinator",
+  description: `You are a coordinator. When asked to research a topic, delegate the task to the WebResearcher agent using the delegate_task tool. Present the summary provided by the researcher. Available agents: WebResearcher.`,
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"), // Needs good reasoning
+  subAgents: [researcher],  // List the sub-agent
+});
+
+// 3. Initialize Framework
+new VoltAgent({ agents: { coordinator: supervisor } });
+
+// Interaction Flow:
+// User -> coordinator: "Research the impact of AI on climate change."
+// Coordinator LLM -> delegate_task({ task: "Research AI impact on climate change", targetAgents: ["WebResearcher"] })
+// -> SubAgentManager.handoffTask(target=researcher, task=..., parentId='coordinator', parentHistoryId='...')
+// -> researcher Agent receives task, uses its 'webSearchTool'
+// -> researcher Agent returns summary
+// -> SubAgentManager.handoffTask returns result to delegate_task
+// Coordinator LLM -> Receives summary from tool result, formats final answer
+// Coordinator -> User: "Here is a summary of AI's impact on climate change: [summary]"
+```
+
+**More Info:**
+
+*   `[Sub-agents Documentation](/docs/agents/sub-agents.md)`
+*   `[SubAgentManager Source Code](/packages/core/src/agent/subagent/index.ts)`
+*   `[Agent Handoff Types](/packages/core/src/agent/types.ts)`
+
+---
+
+## 5. LLM Providers (`@voltagent/vercel-ai`, `@voltagent/xsai`)
+
+**Rationale:** The `LLMProvider` interface abstracts communication with different AI model backends, ensuring VoltAgent remains model-agnostic and flexible.
+
+**Mechanism:**
+
+*   Each provider implements the `LLMProvider` interface (`generateText`, `streamText`, `generateObject`, `streamObject`, `toMessage`, `getModelIdentifier`).
+*   The `Agent` class holds an instance of a chosen provider (`this.llm`).
+*   When an agent method like `generateText` is called, it delegates the actual LLM API interaction to `this.llm.generateText(...)`, passing standardized options.
+*   The provider implementation translates these standard options and messages (`BaseMessage`) into the format required by its specific backend API (e.g., Vercel AI SDK calls, OpenAI API format).
+*   It receives the raw response from the backend and maps it back to VoltAgent's standardized response format (e.g., `ProviderTextResponse`).
+
+### 5.1. `@voltagent/vercel-ai`
+
+*   **Purpose:** Integrates with the comprehensive Vercel AI SDK, providing access to a wide range of models (OpenAI, Anthropic, Google, etc.) with a unified interface.
+*   **Usage:**
+    ```typescript
+    import { VercelAIProvider } from "@voltagent/vercel-ai";
+    import { openai } from "@ai-sdk/openai"; // Import specific model functions
+
+    const provider = new VercelAIProvider(); // Config often handled by env vars
+    const agent = new Agent({
+      // ... name, description ...
+      llm: provider,
+      model: openai("gpt-4o-mini"), // Pass the AI SDK model object
+    });
+    ```
+*   **Key Files:** `[Source](/packages/vercel-ai/src/index.ts)`, `[Utils](/packages/vercel-ai/src/utils/index.ts)` (tool conversion), `[Docs](/docs/providers/vercel-ai.md)`
+
+### 5.2. `@voltagent/xsai`
+
+*   **Purpose:** Lightweight provider for OpenAI and compatible APIs (e.g., local models via Ollama). Minimal bundle size, suitable for edge environments.
+*   **Usage:**
+    ```typescript
+    import { XsAIProvider } from "@voltagent/xsai";
+
+    const provider = new XsAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!, // Or other compatible key
+      // baseURL: "http://localhost:11434/v1" // Optional: for local models
+    });
+
+    const agent = new Agent({
+      // ... name, description ...
+      llm: provider,
+      model: "gpt-4o-mini", // Pass model name as string
+    });
+    ```
+*   **Key Files:** `[Source](/packages/xsai/src/index.ts)`, `[Docs](/docs/providers/xsai.md)`
+
+**More Info:**
+
+*   `[Providers Overview](/docs/providers/overview.md)`
+*   `[Base LLMProvider Interface](/packages/core/src/agent/providers/base/types.ts)`
+
+---
+
+## 6. Utilities
+
+VoltAgent includes helper functions for common tasks.
+
+*   **`createPrompt`:** A simple utility for creating dynamic prompt strings from templates and variables. Helps manage complex prompt structures.
+    ```typescript
+    import { createPrompt } from "@voltagent/core";
+
+    const myPrompt = createPrompt({
+      template: "Analyze sentiment for: {{text}}. Focus on {{aspect}}.",
+      variables: { aspect: "overall tone" } // Default variable
+    });
+
+    const specificPrompt = myPrompt({ text: "This product is amazing!" });
+    // -> "Analyze sentiment for: This product is amazing!. Focus on overall tone."
+
+    const specificPrompt2 = myPrompt({ text: "Service was slow.", aspect: "service speed" });
+    // -> "Analyze sentiment for: Service was slow.. Focus on service speed."
+    ```
+    *   `[Docs](/docs/utils/create-prompt.md)`
+    *   `[Source](/packages/core/src/utils/createPrompt/index.ts)`
+
+*   **Tool Parsing (`zodSchemaToJsonUI`):** Converts Zod schemas (used in `createTool`) into a JSON format. Used internally for observability, potentially useful for UIs.
+    *   `[Source](/packages/core/src/utils/toolParser/index.ts)`
+
+*   **Node Utils (`createNodeId`, etc.):** Internal helpers for creating consistent IDs used in the Developer Console's visualization graph.
+    *   `[Source](/packages/core/src/utils/node-utils.ts)`
+
+*   **Update Checkers:** Functions used by the core and CLI to check for package updates using `npm-check-updates`.
+    *   `[Source](/packages/core/src/utils/update/index.ts)`
+
+---
+
+## 7. Project Governance & Important Files
+
+*   **License:** VoltAgent is licensed under the MIT License, allowing permissive use, modification, and distribution. `[View License](/LICENCE)`
+*   **Code of Conduct:** Follows the Contributor Covenant v2.0. `[View Code of Conduct](/CODE_OF_CONDUCT.md)`
+*   **Monorepo Management:** Uses `pnpm workspaces` (defined in `/pnpm-workspace.yaml`) and potentially `lerna`/`nx` (check `lerna.json`, `nx.json`) for managing packages.
+*   **Dependency Patching:** Contains a critical post-install script `patch-mcp-sdk.js` (`[View](/patch-mcp-sdk.js)`) that modifies the `@modelcontextprotocol/sdk` dependency to resolve an ES Module compatibility issue with its `pkce-challenge` sub-dependency. This ensures MCP functionality works correctly in Node.js environments.
+*   **`.gitignore`:** Specifies files and directories excluded from version control (build outputs, dependencies, environment files, logs, etc.). `[View /.gitignore]`
