@@ -497,5 +497,4 @@ VoltAgent includes helper functions for common tasks.
 *   **License:** VoltAgent is licensed under the MIT License, allowing permissive use, modification, and distribution. `[View License](/LICENCE)`
 *   **Code of Conduct:** Follows the Contributor Covenant v2.0. `[View Code of Conduct](/CODE_OF_CONDUCT.md)`
 *   **Monorepo Management:** Uses `pnpm workspaces` (defined in `/pnpm-workspace.yaml`) and potentially `lerna`/`nx` (check `lerna.json`, `nx.json`) for managing packages.
-*   **Dependency Patching:** Contains a critical post-install script `patch-mcp-sdk.js` (`[View](/patch-mcp-sdk.js)`) that modifies the `@modelcontextprotocol/sdk` dependency to resolve an ES Module compatibility issue with its `pkce-challenge` sub-dependency. This ensures MCP functionality works correctly in Node.js environments.
 *   **`.gitignore`:** Specifies files and directories excluded from version control (build outputs, dependencies, environment files, logs, etc.). `[View /.gitignore]`
