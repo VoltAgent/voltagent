@@ -114,7 +114,7 @@ export default function Navbar() {
 
             {/* Stargazer Avatars Container - Only show on non-mobile */}
             {!isMobile && (
-              <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 flex items-center opacity-0 group-hover:opacity-100 group-hover:hover:translate-x-[-80%] transition-all duration-300 pointer-events-none">
+              <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 flex items-center opacity-0 group-hover:opacity-100 group-hover:translate-x-[-80%] transition-all duration-300 pointer-events-none">
                 {/* Display only if not loading, no error, and stargazers exist */}
                 {!isLoadingStars &&
                   !starsError &&
