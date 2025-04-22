@@ -122,7 +122,7 @@ The `dev` script uses `tsx watch`, so it will automatically restart if you make 
 ## Next Steps
 
 - Explore [Agent](../agents/overview.md) options
-- Learn about [Memory](../agents/memory.md)
+- Learn about [Memory](../agents/memory/overview.md)
 - Check out [Tool Creation](../agents/tools.md) for more advanced use cases
 
 ### Manual Setup
@@ -315,5 +315,5 @@ The `dev` script uses `tsx watch`, so it will automatically restart if you make 
 ## Next Steps
 
 - Explore [Agent](../agents/overview.md) options
-- Learn about [Memory](../agents/memory.md)
+- Learn about [Memory](../agents/memory/overview.md)
 - Check out [Tool Creation](../agents/tools.md) for more advanced use cases

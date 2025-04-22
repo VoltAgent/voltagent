@@ -260,7 +260,7 @@ This example showcases how you can break down complex tasks into smaller, manage
   npm create voltagent-app@latest -- --example github-repo-analyzer
   ```
 - Explore different LLM providers and models.
-- Learn more about [Agent Memory](/docs/agents/memory) to give your agents context.
+- Learn more about [Agent Memory](/docs/agents/memory/overview) to give your agents context.
 - Dive deeper into [Tool Creation](/docs/agents/tools).
 
 Happy building!
