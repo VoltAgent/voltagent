@@ -1,12 +1,16 @@
 {
   "name": "@voltagent/supabase",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "VoltAgent Supabase - Supabase Memory provider integration for VoltAgent",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "dist/*.map"],
+  "files": [
+    "dist",
+    "src",
+    "dist/*.map"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
