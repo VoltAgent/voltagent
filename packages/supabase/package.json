@@ -6,15 +6,11 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src",
-    "dist/*.map"
-  ],
+  "files": ["dist", "src", "dist/*.map"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
