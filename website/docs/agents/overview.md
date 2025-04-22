@@ -176,7 +176,7 @@ const agent = new Agent({
 
 When memory is configured, the agent automatically retrieves relevant context before calling the LLM and saves new interactions afterwards.
 
-**[Learn more about Memory Management & Providers](../memory/overview.md)**
+**[Learn more about Memory Management & Providers](./memory/overview.md)**
 
 ### Tools
 
