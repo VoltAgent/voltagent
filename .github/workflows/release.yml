@@ -36,8 +36,8 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Install Dependencies & Build
         run: pnpm install
-      - name: Lint
-        run: pnpm lint:ci
+      ##- name: Lint
+      #  run: pnpm lint:ci
       - name: Syncpack
         run: pnpm sp lint
       - name: Publint

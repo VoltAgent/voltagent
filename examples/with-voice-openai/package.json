@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-voice-openai",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "voice",
-    "openai"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "voice", "openai"],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -24,7 +18,7 @@
     "@voltagent/vercel-ai": "^0.1.2",
     "@voltagent/voice": "^0.1.2",
     "dotenv": "^16.4.5",
-    "openai": "^4.36.0",
+    "openai": "^4.91.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

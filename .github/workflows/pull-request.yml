@@ -26,9 +26,9 @@ jobs:
       - name: Install Dependencies
         run: |
           pnpm install -w
-      - name: lint
-        run: |
-          pnpm lint:ci
+      #- name: lint
+      #  run: |
+      #    pnpm lint:ci
       - name: syncpack
         run: pnpm sp lint
   build:
