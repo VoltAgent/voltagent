@@ -32,6 +32,10 @@ class MockAgent {
     };
   }
 
+  getToolsForApi() {
+    return [];
+  }
+
   async generateText(_messages: any[], _options: any) {
     return {
       text: `Response from ${this.name}`,
