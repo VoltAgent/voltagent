@@ -13,3 +13,5 @@ This new package provides a persistent memory solution for VoltAgent using Supab
 - Easy integration by initializing `SupabaseMemory` with your Supabase URL and key and passing it to your `Agent` configuration.
 
 See the `@voltagent/supabase` [README](https://github.com/voltagent/voltagent/blob/main/packages/supabase/README.md) and [Documentation](https://voltagent.dev/docs/agents/memory/supabase/) for detailed setup and usage instructions.
+
+closes #8
