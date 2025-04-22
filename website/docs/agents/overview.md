@@ -156,37 +156,27 @@ Enhance your agents with these powerful capabilities, which are integrated into 
 
 **Why?** To give your agent context of past interactions, enabling more natural, coherent, and personalized conversations.
 
-The memory manager automatically fetches relevant history and injects it into the prompt before calling the LLM when using `generateText`, `streamText`, etc.
+VoltAgent's memory management system allows agents to store and retrieve conversation history or state using configurable Memory Providers.
 
-```ts
+```typescript
+// Example: Configuring memory (Provider details omitted for brevity)
 import { Agent, LibSQLStorage } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
+// ... other imports
 
-// LibSQLStorage is one option; others can be implemented.
 const memoryStorage = new LibSQLStorage({
-  // Connection details for your LibSQL/SQLite database
-  url: process.env.DATABASE_URL || "file:./memory.sqlite",
-  // Optional: authToken if using Turso
-  authToken: process.env.DATABASE_AUTH_TOKEN,
+  /* ... provider config ... */
 });
 
 const agent = new Agent({
   name: "Assistant with Memory",
-  description: "A helpful assistant that remembers past conversations.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  // Assign the memory storage implementation
+  // ... other config ...
   memory: memoryStorage,
 });
-
-// Interactions with this agent will now use and update the memory automatically
-// Example:
-// await agent.streamText("My favorite color is blue.");
-// const response = await agent.streamText("What is my favorite color?"); // Agent should remember "blue"
 ```
 
-[Learn more about Memory](./memory.md)
+When memory is configured, the agent automatically retrieves relevant context before calling the LLM and saves new interactions afterwards.
+
+**[Learn more about Memory Management & Providers](../memory/overview.md)**
 
 ### Tools
 
