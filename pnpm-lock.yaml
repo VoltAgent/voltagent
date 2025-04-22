@@ -88,7 +88,7 @@ importers:
   examples/github-repo-analyzer:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.0.0
+        specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@octokit/rest':
         specifier: ^21.0.0
@@ -100,7 +100,7 @@ importers:
         specifier: ^0.1.2
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -314,7 +314,7 @@ importers:
         specifier: ^16.4.5
         version: 16.4.7
       openai:
-        specifier: ^4.36.0
+        specifier: ^4.91.0
         version: 4.91.0(zod@3.24.2)
       zod:
         specifier: ^3.24.2
@@ -602,8 +602,8 @@ importers:
   packages/vercel-ai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.6
-        version: 1.3.6(zod@3.24.2)
+        specifier: ^1.3.10
+        version: 1.3.10(zod@3.24.2)
       '@voltagent/core':
         specifier: ^0.1.3
         version: link:../core
@@ -611,7 +611,7 @@ importers:
         specifier: ^4.2.11
         version: 4.2.11(react@19.1.0)(zod@3.24.2)
       zod:
-        specifier: ^3.22.4
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/jest':
@@ -646,7 +646,7 @@ importers:
         version: 1.55.0
       openai:
         specifier: ^4.91.0
-        version: 4.91.0(zod@3.24.2)
+        version: 4.91.0
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -676,7 +676,7 @@ importers:
         specifier: 0.2.0-beta.3
         version: 0.2.0-beta.3(effect@3.12.7)
       zod:
-        specifier: ^3.22.4
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/jest':
@@ -711,17 +711,6 @@ packages:
     dependencies:
       '@ai-sdk/provider': 1.1.2
       '@ai-sdk/provider-utils': 2.2.6(zod@3.24.2)
-      zod: 3.24.2
-    dev: false
-
-  /@ai-sdk/openai@1.3.6(zod@3.24.2):
-    resolution: {integrity: sha512-Lyp6W6dg+ERMJru3DI8/pWAjXLB0GbMMlXh4jxA3mVny8CJHlCAjlEJRuAdLg1/CFz4J1UDN2/4qBnIWtLFIqw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.0.0
-    dependencies:
-      '@ai-sdk/provider': 1.1.0
-      '@ai-sdk/provider-utils': 2.2.3(zod@3.24.2)
       zod: 3.24.2
     dev: false
 
@@ -8745,7 +8734,7 @@ packages:
       is-wsl: 2.2.0
     dev: true
 
-  /openai@4.91.0(zod@3.24.2):
+  /openai@4.91.0:
     resolution: {integrity: sha512-zdDg6eyvUmCP58QAW7/aPb+XdeavJ51pK6AcwZOWG5QNSLIovVz0XonRL9vARGJRmw8iImmvf2A31Q7hoh544w==}
     hasBin: true
     peerDependencies:
@@ -8764,6 +8753,29 @@ packages:
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
       node-fetch: 2.6.7
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /openai@4.91.0(zod@3.24.2):
+    resolution: {integrity: sha512-zdDg6eyvUmCP58QAW7/aPb+XdeavJ51pK6AcwZOWG5QNSLIovVz0XonRL9vARGJRmw8iImmvf2A31Q7hoh544w==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.23.8
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      '@types/node': 18.19.79
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
       zod: 3.24.2
     transitivePeerDependencies:
       - encoding
