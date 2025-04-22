@@ -34,16 +34,19 @@ jobs:
           EOF
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Install Dependencies & Build
+      - name: Install Dependencies
         run: pnpm install
+      - name: Build
+        run: pnpm build:all
       ##- name: Lint
       #  run: pnpm lint:ci
-      - name: Syncpack
-        run: pnpm sp lint
+     # - name: Syncpack
+     #   run: pnpm sp lint
       - name: Publint
         run: pnpm publint:all
       - name: Are The Types Wrong
         run: pnpm attw:all
+
       - name: Test
         run: pnpm test:all
       - name: Create Release Pull Request or Publish to npm

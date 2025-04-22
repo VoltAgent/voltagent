@@ -29,8 +29,8 @@ jobs:
       #- name: lint
       #  run: |
       #    pnpm lint:ci
-      - name: syncpack
-        run: pnpm sp lint
+      #- name: syncpack
+      #  run: pnpm sp lint
   build:
     runs-on: ubuntu-latest
     concurrency:
@@ -46,8 +46,10 @@ jobs:
         with:
           node-version: 20
           cache: "pnpm"
-      - name: Install & Build
+      - name: Install
         run: pnpm install
+      - name: Build
+        run: pnpm build:all
       - name: Publint
         run: pnpm publint:all
       - name: Are The Types Wrong

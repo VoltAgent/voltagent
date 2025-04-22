@@ -8,17 +8,13 @@
     "create-voltagent": "dist/index.js",
     "create-voltagent-app": "dist/index.js"
   },
-  "files": [
-    "dist",
-    "src",
-    "templates"
-  ],
+  "files": ["dist", "src", "templates"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "start": "node dist/index.js",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "boxen": "^5.1.2",

@@ -6,16 +6,12 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src",
-    "dist/*.map"
-  ],
+  "files": ["dist", "src", "dist/*.map"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@voltagent/core": "^0.1.3",

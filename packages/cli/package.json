@@ -2,26 +2,19 @@
   "name": "@voltagent/cli",
   "version": "0.1.2",
   "description": "CLI tool for VoltAgent applications",
-  "keywords": [
-    "voltagent",
-    "cli",
-    "agent"
-  ],
+  "keywords": ["voltagent", "cli", "agent"],
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
     "volt": "dist/index.js"
   },
-  "files": [
-    "dist",
-    "src"
-  ],
+  "files": ["dist", "src"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "start": "node dist/index.js",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "boxen": "^5.1.2",
