@@ -84,8 +84,9 @@ export class SubAgentManager {
   /**
    * Generate enhanced system message for supervisor role
    * @param baseDescription - The base description of the agent
+   * @param agentsMemory - Optional string containing formatted memory from previous agent interactions
    */
-  public generateSupervisorSystemMessage(baseDescription: string): string {
+  public generateSupervisorSystemMessage(baseDescription: string, agentsMemory = ""): string {
     if (this.subAgents.length === 0) {
       return baseDescription;
     }
@@ -121,7 +122,7 @@ When communicating with other agents, including the User, please follow these gu
 </guidelines>
 
 <agents_memory>
-{{AGENTS_MEMORY}}
+${agentsMemory || "No previous agent interactions available."}
 </agents_memory>
 `;
   }
@@ -151,35 +152,57 @@ When communicating with other agents, including the User, please follow these gu
     // Use the provided conversationId or generate a new one
     const handoffConversationId = conversationId || crypto.randomUUID();
 
-    // Call onHandoff hook if source agent is provided
-    if (sourceAgent && targetAgent.hooks) {
-      await targetAgent.hooks.onHandoff?.(targetAgent, sourceAgent);
-    }
+    try {
+      // Call onHandoff hook if source agent is provided
+      if (sourceAgent && targetAgent.hooks) {
+        await targetAgent.hooks.onHandoff?.(targetAgent, sourceAgent);
+      }
 
-    // Get relevant context from memory (to be passed from Agent class)
-    const sharedContext: BaseMessage[] = options.sharedContext || [];
+      // Get relevant context from memory (to be passed from Agent class)
+      const sharedContext: BaseMessage[] = options.sharedContext || [];
 
-    // Prepare the handoff message with task context
-    const handoffMessage: BaseMessage = {
-      role: "system",
-      content: `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
+      // Prepare the handoff message with task context
+      const handoffMessage: BaseMessage = {
+        role: "system",
+        content: `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
 ${task}
 Context: ${JSON.stringify(context)}`,
-    };
+      };
 
-    // Send the handoff to the target agent, INCLUDING PARENT CONTEXT
-    const response = await targetAgent.generateText([handoffMessage, ...sharedContext], {
-      conversationId: handoffConversationId,
-      userId,
-      parentAgentId: sourceAgent?.id || parentAgentId,
-      parentHistoryEntryId,
-    });
+      // Send the handoff to the target agent, INCLUDING PARENT CONTEXT
+      const response = await targetAgent.generateText([handoffMessage, ...sharedContext], {
+        conversationId: handoffConversationId,
+        userId,
+        parentAgentId: sourceAgent?.id || parentAgentId,
+        parentHistoryEntryId,
+      });
 
-    return {
-      result: response.text,
-      conversationId: handoffConversationId,
-      messages: [handoffMessage, { role: "assistant", content: response.text }],
-    };
+      return {
+        result: response.text,
+        conversationId: handoffConversationId,
+        messages: [handoffMessage, { role: "assistant", content: response.text }],
+        status: "success",
+      };
+    } catch (error) {
+      console.error(`Error in handoffTask to ${targetAgent.name}:`, error);
+
+      // Get error message safely whether error is Error object or string
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Return a structured error result
+      return {
+        result: `Error in delegating task to ${targetAgent.name}: ${errorMessage}`,
+        conversationId: handoffConversationId,
+        messages: [
+          {
+            role: "system" as const,
+            content: `Error occurred during task handoff: ${errorMessage}`,
+          },
+        ],
+        status: "error",
+        error: error instanceof Error ? error : String(error),
+      };
+    }
   }
 
   /**
@@ -194,17 +217,43 @@ Context: ${JSON.stringify(context)}`,
       options;
 
     // Use the same conversationId for all handoffs to maintain context
-    return Promise.all(
-      targetAgents.map((agent) =>
-        this.handoffTask({
-          ...restOptions,
-          targetAgent: agent,
-          conversationId,
-          parentAgentId,
-          parentHistoryEntryId,
-        }),
-      ),
+    const handoffConversationId = conversationId || crypto.randomUUID();
+
+    // Execute handoffs in parallel and handle errors individually
+    const results = await Promise.all(
+      targetAgents.map(async (agent) => {
+        try {
+          return await this.handoffTask({
+            ...restOptions,
+            targetAgent: agent,
+            conversationId: handoffConversationId,
+            parentAgentId,
+            parentHistoryEntryId,
+          });
+        } catch (error) {
+          console.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
+
+          // Get error message safely whether error is Error object or string
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          // Return structured error result with properly typed role
+          return {
+            result: `Error in delegating task to ${agent.name}: ${errorMessage}`,
+            conversationId: handoffConversationId,
+            messages: [
+              {
+                role: "system" as const,
+                content: `Error occurred during task handoff: ${errorMessage}`,
+              },
+            ],
+            status: "error",
+            error: error instanceof Error ? error : String(error),
+          } as AgentHandoffResult;
+        }
+      }),
     );
+
+    return results;
   }
 
   /**
@@ -220,39 +269,82 @@ Context: ${JSON.stringify(context)}`,
         context: z.record(z.unknown()).optional().describe("Additional context for the task"),
       }),
       execute: async ({ task, targetAgents, context = {} }) => {
-        const agents = targetAgents
-          .map((name: string) => this.subAgents.find((a: Agent<any>) => a.name === name))
-          .filter((agent: Agent<any> | undefined): agent is Agent<any> => agent !== undefined);
+        try {
+          // Validate input parameters
+          if (!task || task.trim() === "") {
+            throw new Error("Task cannot be empty");
+          }
 
-        if (agents.length === 0) {
-          throw new Error("No valid target agents found");
+          if (!targetAgents || !Array.isArray(targetAgents) || targetAgents.length === 0) {
+            throw new Error("At least one target agent must be specified");
+          }
+
+          // Find matching agents by name
+          const agents = targetAgents
+            .map((name: string) => {
+              const agent = this.subAgents.find((a: Agent<any>) => a.name === name);
+              if (!agent) {
+                console.warn(
+                  `Agent "${name}" not found. Available agents: ${this.subAgents.map((a) => a.name).join(", ")}`,
+                );
+              }
+              return agent;
+            })
+            .filter((agent: Agent<any> | undefined): agent is Agent<any> => agent !== undefined);
+
+          if (agents.length === 0) {
+            throw new Error(
+              `No valid target agents found. Available agents: ${this.subAgents.map((a) => a.name).join(", ")}`,
+            );
+          }
+
+          // Get the source agent from options if available
+          const sourceAgent = options.sourceAgent;
+
+          // Get current history entry ID for parent context
+          // This is passed from the Agent class via options when the tool is called
+          const currentHistoryEntryId = options.currentHistoryEntryId;
+
+          // Wait for all agent tasks to complete using Promise.all
+          const results = await this.handoffToMultiple({
+            task,
+            targetAgents: agents,
+            context,
+            sourceAgent,
+            // Pass parent context for event propagation
+            parentAgentId: sourceAgent?.id,
+            parentHistoryEntryId: currentHistoryEntryId,
+            ...options,
+          });
+
+          // Return structured results with agent names, their responses, and status
+          return results.map((result, index) => {
+            // Get status and error in a type-safe way
+            const status = result.status || "success";
+            const errorInfo =
+              status === "error" && result.error
+                ? typeof result.error === "string"
+                  ? result.error
+                  : result.error.message
+                : undefined;
+
+            return {
+              agentName: agents[index].name,
+              response: result.result,
+              conversationId: result.conversationId,
+              status,
+              error: errorInfo,
+            };
+          });
+        } catch (error) {
+          console.error("Error in delegate_task tool execution:", error);
+
+          // Return structured error to the LLM
+          return {
+            error: `Failed to delegate task: ${error instanceof Error ? error.message : String(error)}`,
+            status: "error",
+          };
         }
-
-        // Get the source agent from options if available
-        const sourceAgent = options.sourceAgent;
-
-        // Get current history entry ID for parent context
-        // This is passed from the Agent class via options when the tool is called
-        const currentHistoryEntryId = options.currentHistoryEntryId;
-
-        // Wait for all agent tasks to complete using Promise.all
-        const results = await this.handoffToMultiple({
-          task,
-          targetAgents: agents,
-          context,
-          sourceAgent,
-          // Pass parent context for event propagation
-          parentAgentId: sourceAgent?.id,
-          parentHistoryEntryId: currentHistoryEntryId,
-          ...options,
-        });
-
-        // Return structured results with agent names and their responses
-        return results.map((result, index) => ({
-          agentName: agents[index].name,
-          response: result.result,
-          conversationId: result.conversationId,
-        }));
       },
     };
   }

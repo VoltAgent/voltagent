@@ -143,9 +143,11 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
   protected async getSystemMessage({
     input,
     historyEntryId,
+    contextMessages,
   }: {
     input?: string | BaseMessage[];
     historyEntryId: string;
+    contextMessages: BaseMessage[];
   }): Promise<BaseMessage> {
     let description = this.description;
 
@@ -172,7 +174,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
 
       try {
         const context = await this.retriever.retrieve(input);
-        if (context && context.trim()) {
+        if (context?.trim()) {
           description = `${description}\n\nRelevant Context:\n${context}`;
 
           // Update the event
@@ -199,13 +201,37 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
 
     // If the agent has sub-agents, generate supervisor system message
     if (this.subAgentManager.hasSubAgents()) {
-      description = this.subAgentManager.generateSupervisorSystemMessage(description);
+      // Fetch recent agent history for the sub-agents
+      const agentsMemory = await this.prepareAgentsMemory(contextMessages);
+
+      // Generate the supervisor message with the agents memory inserted
+      description = this.subAgentManager.generateSupervisorSystemMessage(description, agentsMemory);
     }
 
     return {
       role: "system",
       content: `You are ${this.name}. ${description}`,
     };
+  }
+
+  /**
+   * Prepare agents memory for the supervisor system message
+   * This fetches and formats recent interactions with sub-agents
+   */
+  private async prepareAgentsMemory(contextMessages: BaseMessage[]): Promise<string> {
+    try {
+      // Get all sub-agents
+      const subAgents = this.subAgentManager.getSubAgents();
+      if (subAgents.length === 0) return "";
+
+      // Format the agent histories into a readable format
+      const formattedMemory = contextMessages.join("\n\n");
+
+      return formattedMemory || "No previous agent interactions found.";
+    } catch (error) {
+      console.warn("Error preparing agents memory:", error);
+      return "Error retrieving agent history.";
+    }
   }
 
   /**
@@ -449,7 +475,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
   };
 
   /**
-   * Tool event creator
+   * Fix delete operator usage for better performance
    */
   private addToolEvent = async (
     context: OperationContext,
@@ -466,19 +492,21 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       ...(data.metadata || {}),
     };
 
-    if (data.toolId) {
-      metadata.toolId = data.toolId;
-      delete data.toolId;
+    // Extract data fields to use while avoiding parameter reassignment
+    const { toolId, input, output, error, errorMessage } = data;
+
+    if (toolId) {
+      metadata.toolId = toolId;
     }
 
     const eventData: Partial<StandardEventData> = {
       affectedNodeId: toolNodeId,
       status: status as any,
       timestamp: new Date().toISOString(),
-      input: data.input,
-      output: data.output,
-      error: data.error,
-      errorMessage: data.errorMessage,
+      input,
+      output,
+      error,
+      errorMessage,
       metadata,
     };
 
@@ -543,14 +571,16 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       ...(data.metadata || {}),
     };
 
-    if (data.usage) {
-      metadata.usage = data.usage;
-      delete data.usage;
+    // Extract data fields to use while avoiding parameter reassignment
+    const { usage, ...standardData } = data;
+
+    if (usage) {
+      metadata.usage = usage;
     }
 
-    // Create new data
-    const standardData: Partial<StandardEventData> = {
-      ...data,
+    // Create new data with metadata
+    const eventData: Partial<StandardEventData> = {
+      ...standardData,
       metadata,
     };
 
@@ -560,7 +590,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       status,
       NodeType.AGENT,
       this.id,
-      standardData,
+      eventData,
       "agent",
       context,
     );
@@ -603,6 +633,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages
@@ -783,6 +814,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages
@@ -988,6 +1020,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages
@@ -1107,6 +1140,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages

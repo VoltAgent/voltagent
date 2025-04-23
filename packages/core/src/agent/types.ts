@@ -277,24 +277,34 @@ export type AgentHandoffOptions = {
 };
 
 /**
- * Agent handoff result
+ * Result of a handoff to another agent
  */
-export type AgentHandoffResult = {
+export interface AgentHandoffResult {
   /**
-   * The result of the handoff operation
+   * Result text from the agent
    */
   result: string;
 
   /**
-   * The conversation ID of the handoff
+   * Conversation ID used for the interaction
    */
   conversationId: string;
 
   /**
-   * The messages exchanged during the handoff
+   * Messages exchanged during the handoff
    */
   messages: BaseMessage[];
-};
+
+  /**
+   * Status of the handoff operation
+   */
+  status?: "success" | "error";
+
+  /**
+   * Error information if the handoff failed
+   */
+  error?: Error | string;
+}
 
 /**
  * Operation context to isolate state for concurrent operations
