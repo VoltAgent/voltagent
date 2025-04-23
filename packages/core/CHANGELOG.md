@@ -1,5 +1,20 @@
 # @voltagent/core
 
+## 0.1.4
+
+### Patch Changes
+
+- [#27](https://github.com/VoltAgent/voltagent/pull/27) [`3c0829d`](https://github.com/VoltAgent/voltagent/commit/3c0829dcec4db9596147b583a9cf2d4448bc30f1) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve sub-agent context sharing for sequential task execution - #30
+
+  Enhanced the Agent system to properly handle context sharing between sub-agents, enabling reliable sequential task execution. The changes include:
+
+  - Adding `contextMessages` parameter to `getSystemMessage` method
+  - Refactoring `prepareAgentsMemory` to properly format conversation history
+  - Ensuring conversation context is correctly passed between delegated tasks
+  - Enhancing system prompts to better handle sequential workflows
+
+  This fixes issues where the second agent in a sequence would not have access to the first agent's output, causing failures in multi-step workflows.
+
 ## 0.1.1
 
 - 🚀 **Introducing VoltAgent: TypeScript AI Agent Framework!**
