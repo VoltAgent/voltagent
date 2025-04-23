@@ -206,6 +206,11 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
 
       // Generate the supervisor message with the agents memory inserted
       description = this.subAgentManager.generateSupervisorSystemMessage(description, agentsMemory);
+
+      return {
+        role: "system",
+        content: description,
+      };
     }
 
     return {
@@ -225,7 +230,13 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       if (subAgents.length === 0) return "";
 
       // Format the agent histories into a readable format
-      const formattedMemory = contextMessages.join("\n\n");
+      const formattedMemory = contextMessages
+        .filter((p) => p.role !== "system")
+        .filter((p) => p.role === "assistant" && !p.content.toString().includes("toolCallId"))
+        .map((message) => {
+          return `${message.role}: ${message.content}`;
+        })
+        .join("\n\n");
 
       return formattedMemory || "No previous agent interactions found.";
     } catch (error) {

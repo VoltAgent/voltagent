@@ -95,11 +95,17 @@ export class SubAgentManager {
       .map((agent) => `- ${agent.name}: ${agent.description}`)
       .join("\n");
 
-    return `You are a supervisor agent that coordinates between specialized agents:
+    return `
+    You are a supervisor agent that coordinates between specialized agents:
 
+<specialized_agents>
 ${subAgentList}
+</specialized_agents>
 
-When communicating with other agents, including the User, please follow these guidelines:
+<instructions>
+${baseDescription}
+</instructions>
+
 <guidelines>
 - Provide a final answer to the User when you have a response from all agents.
 - Do not mention the name of any agent in your response.
