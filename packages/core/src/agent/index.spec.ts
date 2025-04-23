@@ -27,12 +27,14 @@ type MockModelType = { modelId: string; [key: string]: any };
 function getStringContent(content: any): string {
   if (typeof content === "string") {
     return content;
-  } else if (Array.isArray(content)) {
+  }
+  if (Array.isArray(content)) {
     return content
       .map((part) => {
         if (typeof part === "string") {
           return part;
-        } else if (part && typeof part === "object" && "type" in part) {
+        }
+        if (part && typeof part === "object" && "type" in part) {
           if (part.type === "text" && "text" in part) {
             return part.text;
           }

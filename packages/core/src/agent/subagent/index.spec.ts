@@ -212,7 +212,10 @@ describe("SubAgentManager", () => {
           targetAgents: ["non-existent-agent"],
           context: {},
         }),
-      ).resolves.toThrow("No valid target agents found");
+      ).resolves.toMatchObject({
+        error: "Failed to delegate task: No valid target agents found. Available agents: ",
+        status: "error",
+      });
     });
 
     it("should execute and return results when valid agents exist", async () => {
