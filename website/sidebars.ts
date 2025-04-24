@@ -53,6 +53,11 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Integrations",
+      items: ["integrations/overview", "integrations/nextjs"],
+    },
+    {
+      type: "category",
       label: "Community",
       items: [
         "community/overview",
