@@ -1,5 +1,5 @@
 {
-  "name": "with-rag-chatbot",
+  "name": "voltagent-example-with-rag-chatbot",
   "version": "0.0.1",
   "private": true,
   "description": "VoltAgent RAG Chatbot Example",
