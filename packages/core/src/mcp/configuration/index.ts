@@ -7,7 +7,7 @@ import type { AnyToolConfig, MCPServerConfig, ToolsetWithTools } from "../types"
 const mcpConfigurationInstances = new Map<string, MCPConfiguration>();
 
 /**
- * Configuration manager for Model Control Protocol (MCP).
+ * Configuration manager for Model Context Protocol (MCP).
  * Handles multiple MCP server connections and tool management.
  * Ensures unique configuration instances based on server settings or provided ID.
  */

@@ -486,7 +486,7 @@ Use these standardized options to:
 
 The options are applied consistently whether you're using `generateText`, `streamText`, `generateObject`, or `streamObject` methods.
 
-### MCP (Model Control Protocol)
+### MCP (Model Context Protocol)
 
 **Why?** To enable standardized communication between your agent and external, potentially independent, model/tool servers, promoting interoperability and modular deployment.
 

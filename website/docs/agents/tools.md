@@ -426,9 +426,9 @@ const response = await agent.generateText("Calculate 123 * 456", {
 });
 ```
 
-## MCP (Model Control Protocol) Support
+## MCP (Model Context Protocol) Support
 
-VoltAgent supports the [Model Control Protocol (MCP)](https://github.com/modelcontextprotocol/mcp), allowing your agents to seamlessly connect with external model servers, AI systems, and other tools that implement this protocol. This enables you to expand your agent's capabilities without having to write complex integration code.
+VoltAgent supports the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/mcp), allowing your agents to seamlessly connect with external model servers, AI systems, and other tools that implement this protocol. This enables you to expand your agent's capabilities without having to write complex integration code.
 
 ### Using MCP Tools
 
@@ -497,4 +497,4 @@ MCP enables your agents to:
 - Use API gateways that implement the MCP protocol
 - Tap into ecosystems of MCP-compatible tools
 
-For in-depth details on setting up and using the Model Control Protocol with your agents, see the [MCP documentation](./mcp.md).
+For in-depth details on setting up and using the Model Context Protocol with your agents, see the [MCP documentation](./mcp.md).

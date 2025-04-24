@@ -53,7 +53,7 @@ Instead of building everything from scratch, VoltAgent provides ready-made, modu
 - **Core Engine (`@voltagent/core`)**: The heart of VoltAgent, providing fundamental capabilities for your AI agents Define individual agents with specific roles, tools, and memory.
 - **Multi-Agent Systems**: Architect complex applications by coordinating multiple specialized agents using Supervisors.
 - **Extensible Packages**: Enhance functionality with packages like `@voltagent/voice` for voice interactions.
-- **Tooling & Integrations**: Equip agents with tools to connect to external APIs, databases, and services, enabling them to perform real-world tasks. **Supports the [Model Control Protocol (MCP)](https://modelcontextprotocol.io/) for standardized tool interactions.**
+- **Tooling & Integrations**: Equip agents with tools to connect to external APIs, databases, and services, enabling them to perform real-world tasks. **Supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for standardized tool interactions.**
 - **Data Retrieval & RAG**: Implement specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)**.
 - **Memory**: Enable agents to remember past interactions for more natural and context-aware conversations.
 - **LLM Compatibility**: Works with popular AI models from OpenAI, Google, Anthropic, and more, allowing easy switching.
@@ -152,7 +152,7 @@ Your agent is now running! To interact with it:
 - **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltAgent Console](https://console.voltagent.dev).
 - **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package.
 - **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources.
-- **Model Control Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities.
+- **Model Context Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities.
 - **Prompt Engineering Tools:** Leverage utilities like `createPrompt` for crafting and managing effective prompts for your agents.
 - **Framework Compatibility:** Designed for easy integration into existing Node.js applications and popular frameworks.
 

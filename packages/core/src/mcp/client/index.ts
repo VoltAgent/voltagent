@@ -24,7 +24,7 @@ import type {
 } from "../types";
 
 /**
- * Client for interacting with Model Control Protocol (MCP) servers
+ * Client for interacting with Model Context Protocol (MCP) servers
  * Implements MCP specification using the official SDK
  */
 export class MCPClient extends EventEmitter {

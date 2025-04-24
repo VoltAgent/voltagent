@@ -37,7 +37,7 @@ export interface TransportError extends Error {
 }
 
 /**
- * Model Control Protocol (MCP) configuration options
+ * Model Context Protocol (MCP) configuration options
  */
 export type MCPOptions = {
   /**
