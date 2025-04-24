@@ -10,7 +10,6 @@
   },
   "files": [
     "dist",
-    "src",
     "templates"
   ],
   "scripts": {
