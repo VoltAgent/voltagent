@@ -140,7 +140,7 @@ export class LibSQLStorage implements Memory {
    * @param data Additional data to log
    */
   private debug(message: string, data?: unknown): void {
-    if (this.options.debug) {
+    if (this.options?.debug) {
       console.log(`[LibSQLStorage] ${message}`, data || "");
     }
   }

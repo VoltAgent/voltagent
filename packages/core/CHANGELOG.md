@@ -1,5 +1,16 @@
 # @voltagent/core
 
+## 0.1.5
+
+### Patch Changes
+
+- [#35](https://github.com/VoltAgent/voltagent/pull/35) [`9acbbb8`](https://github.com/VoltAgent/voltagent/commit/9acbbb898a517902cbdcb7ae7a8460e9d35f3dbe) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Prevent potential error when accessing debug option in LibSQLStorage - #34
+
+  - Modified the `debug` method within the `LibSQLStorage` class.
+  - Changed the access to `this.options.debug` to use optional chaining (`this.options?.debug`).
+
+  This change prevents runtime errors that could occur in specific environments, such as Next.js, if the `debug` method is invoked before the `options` object is fully initialized or if `options` becomes unexpectedly `null` or `undefined`. It ensures the debug logging mechanism is more robust.
+
 ## 0.1.4
 
 ### Patch Changes
