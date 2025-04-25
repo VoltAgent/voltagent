@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.7
+
+### Patch Changes
+
+- [`e328613`](https://github.com/VoltAgent/voltagent/commit/e32861366852f4bb7ad8854527b2bb6525703a25) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent `ReferenceError: module is not defined` in ES module environments by adding guards around the CommonJS-specific `require.main === module` check in the main entry point.
+
 ## 0.1.6
 
 ### Patch Changes
