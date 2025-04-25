@@ -219,6 +219,8 @@ export function CommunitySection({ className }: CommunitySectionProps) {
               <a
                 key={link.id}
                 href={link.url}
+                target="_blank"
+                rel="noreferrer"
                 className={`group relative landing-xs:p-6 landing-md:p-12  landing-md:border-solid border-white/10 no-underline transition-all flex flex-col items-center animate-fade-in landing-xs:unset landing-md:bg-black/20 rounded-lg hover:border-main-emerald hover:bg-black/40
                   ${link.id === "discord" ? "col-span-2 md:col-span-1" : ""}`}
                 style={{
