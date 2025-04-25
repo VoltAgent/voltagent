@@ -18,7 +18,7 @@ import type {
 
 // @ts-ignore - To simplify test types
 import type { AgentHistoryEntry } from "../agent/history";
-import { AgentStatus } from "./types";
+import type { AgentStatus } from "./types";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: any };
@@ -523,7 +523,7 @@ describe("Agent", () => {
         execute: async () => "tool result",
       };
 
-      agent.addTools([mockTool]);
+      agent.addItems([mockTool]);
 
       await agent.generateText(message, { userId });
 
@@ -589,10 +589,6 @@ describe("Agent", () => {
         "emitAgentUnregistered",
       );
 
-      // Spy on historyManager's completeEntry method
-      // @ts-ignore - This method exists in HistoryManager but the TypeScript definition might be missing
-      const historyManager = agent.getHistoryManager();
-
       // Add active history entry to prepare for unregister
       await agent.generateText("Hello before unregister!");
 
@@ -626,7 +622,7 @@ describe("Agent", () => {
         execute: async () => "tool result",
       };
 
-      agent.addTools([mockTool]);
+      agent.addItems([mockTool]);
 
       // Get full state
       const state = agent.getFullState();
@@ -698,7 +694,7 @@ describe("Agent", () => {
         execute: async () => "tool result",
       };
 
-      agent.addTools([mockTool]);
+      agent.addItems([mockTool]);
       await agent.generateText("Use the test tool");
 
       // Test skipped because registry integration is required

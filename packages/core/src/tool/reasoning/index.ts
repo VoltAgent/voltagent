@@ -5,7 +5,7 @@ import { createToolkit } from "../toolkit";
 
 export * from "./types";
 
-const DEFAULT_INSTRUCTIONS = `
+export const DEFAULT_INSTRUCTIONS = `
 You have access to the 'think' and 'analyze' tools to work through problems step-by-step and structure your thought process. You should ALWAYS 'think' before making tool calls or generating a response.
 
 1.  **Think** (scratchpad):
@@ -25,7 +25,7 @@ You have access to the 'think' and 'analyze' tools to work through problems step
 *   **Conclude Clearly:** When your analysis determines the 'next_action' is 'final_answer', provide a concise and accurate final answer to the user based on your reasoning steps.
 `;
 
-const FEW_SHOT_EXAMPLES = `
+export const FEW_SHOT_EXAMPLES = `
 ## Examples
 
 **Example 1: Simple Fact Retrieval**

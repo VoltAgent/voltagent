@@ -253,7 +253,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
 
     return {
       role: "system",
-      content: `${description}`,
+      content: `You are ${this.name}. ${description}`,
     };
   }
 

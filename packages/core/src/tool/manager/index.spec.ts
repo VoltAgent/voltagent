@@ -85,9 +85,9 @@ describe("ToolManager", () => {
     });
   });
 
-  describe("addTools", () => {
+  describe("addItems", () => {
     it("should add multiple tools", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const tools = toolManager.getTools();
       expect(tools.length).toBe(2);
@@ -98,7 +98,7 @@ describe("ToolManager", () => {
 
   describe("removeTool", () => {
     it("should remove a tool by name", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const result = toolManager.removeTool("tool1");
       expect(result).toBe(true);
@@ -116,7 +116,7 @@ describe("ToolManager", () => {
 
   describe("prepareToolsForGeneration", () => {
     it("should return a copy of all tools", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const preparedTools = toolManager.prepareToolsForGeneration();
       expect(preparedTools.length).toBe(2);
@@ -141,7 +141,7 @@ describe("ToolManager", () => {
 
   describe("getToolsForApi", () => {
     it("should return simplified tool information for API", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const apiTools = toolManager.getToolsForApi();
       expect(apiTools).toEqual([

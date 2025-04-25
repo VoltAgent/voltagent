@@ -115,5 +115,5 @@ When an agent is initialized, its `getSystemMessage` method checks all the `Tool
 
 ## Next Steps
 
-- See the [Reasoning Tools](./reasoning-tool.md) documentation for a practical example of a pre-built toolkit.
+- See the [Reasoning Tools](/docs/tools/reasoning-tool/) documentation for a practical example of a pre-built toolkit.
 - Explore creating your own tools to connect agents to your specific data sources and APIs.

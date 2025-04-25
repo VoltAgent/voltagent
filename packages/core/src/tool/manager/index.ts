@@ -83,9 +83,9 @@ export class ToolManager {
 
   /**
    * Add an individual tool to the manager.
-   * If a tool with the same name already exists (either standalone or in a toolkit),
-   * it will trigger a warning and not be added/replaced.
-   * @returns true if the tool was successfully added.
+   * If a standalone tool with the same name already exists, it will be replaced.
+   * A warning is issued if the name conflicts with a tool inside a toolkit, but the standalone tool is still added/replaced.
+   * @returns true if the tool was successfully added or replaced.
    */
   addTool(tool: AgentTool): boolean {
     if (!tool || !tool.name) {
@@ -95,25 +95,36 @@ export class ToolManager {
       throw new Error(`Tool ${tool.name} must have an execute function`);
     }
 
-    // Check for name conflict with any existing tool (standalone or in toolkit)
-    if (this.hasTool(tool.name)) {
+    // Check for conflict with tools *inside* toolkits and issue a warning
+    const conflictsWithToolkitTool = this.toolkits.some((toolkit) =>
+      toolkit.tools.some((t) => t.name === tool.name),
+    );
+    if (conflictsWithToolkitTool) {
       console.warn(
-        `[ToolManager] Warning: Tool name '${tool.name}' conflicts with an existing tool (standalone or in a toolkit). Standalone tool not added.`,
+        `[ToolManager] Warning: Standalone tool name '${tool.name}' conflicts with a tool inside an existing toolkit.`,
       );
-      return false;
     }
 
-    // Convert AgentTool to BaseTool before adding
+    // Convert AgentTool to BaseTool
     const baseTool: BaseTool = {
       name: tool.name,
-      description: tool.description || tool.name, // Provide default description
-      parameters: tool.parameters, // Assume parameters exist
+      description: tool.description || tool.name,
+      parameters: tool.parameters,
       execute: tool.execute,
     };
 
-    this.tools.push(baseTool);
-    console.log(`[ToolManager] Added standalone tool: ${tool.name}`);
-    return true;
+    // Check if tool exists in the standalone list and replace or add
+    const existingIndex = this.tools.findIndex((t) => t.name === tool.name);
+    if (existingIndex !== -1) {
+      // Replace the existing tool
+      this.tools[existingIndex] = baseTool;
+      console.log(`[ToolManager] Replaced standalone tool: ${tool.name}`);
+    } else {
+      // Add the new tool
+      this.tools.push(baseTool);
+      console.log(`[ToolManager] Added standalone tool: ${tool.name}`);
+    }
+    return true; // Always returns true on success (add or replace)
   }
 
   /**
