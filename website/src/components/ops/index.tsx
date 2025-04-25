@@ -29,7 +29,7 @@ export default function Ops() {
                 Observability
               </span>
               <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
-                Stay in Control at Every Stage
+                Stay in control at every stage
               </p>
               <p className="max-w-3xl landing-md:text-xl landing-xs:text-md text-gray-400">
                 From tracking deployments to debugging and live interaction,

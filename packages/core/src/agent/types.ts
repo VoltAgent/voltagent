@@ -1,6 +1,6 @@
 import type { BaseMessage } from "../agent/providers/base/types";
 import type { Memory, MemoryOptions } from "../memory/types";
-import type { AgentTool } from "../tool";
+import type { Tool, Toolkit } from "../tool";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
@@ -70,9 +70,9 @@ export type AgentOptions = {
   memoryOptions?: MemoryOptions;
 
   /**
-   * Tools that the agent can use
+   * Tools and/or Toolkits that the agent can use
    */
-  tools?: AgentTool[];
+  tools?: (Tool<any> | Toolkit)[];
 
   /**
    * Sub-agents that this agent can delegate tasks to
@@ -277,24 +277,34 @@ export type AgentHandoffOptions = {
 };
 
 /**
- * Agent handoff result
+ * Result of a handoff to another agent
  */
-export type AgentHandoffResult = {
+export interface AgentHandoffResult {
   /**
-   * The result of the handoff operation
+   * Result text from the agent
    */
   result: string;
 
   /**
-   * The conversation ID of the handoff
+   * Conversation ID used for the interaction
    */
   conversationId: string;
 
   /**
-   * The messages exchanged during the handoff
+   * Messages exchanged during the handoff
    */
   messages: BaseMessage[];
-};
+
+  /**
+   * Status of the handoff operation
+   */
+  status?: "success" | "error";
+
+  /**
+   * Error information if the handoff failed
+   */
+  error?: Error | string;
+}
 
 /**
  * Operation context to isolate state for concurrent operations

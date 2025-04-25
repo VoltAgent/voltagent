@@ -272,20 +272,24 @@ describe("MCPClient", () => {
       expect(mockListTools).toHaveBeenCalled();
       expect(jsonSchemaToZod).toHaveBeenCalledTimes(2);
 
-      expect(agentTools).toEqual({
-        TestClient_tool1: {
-          name: "TestClient_tool1",
-          description: "Tool 1 description",
-          parameters: {},
-          execute: expect.any(Function),
-        },
-        TestClient_tool2: {
-          name: "TestClient_tool2",
-          description: "Tool 2 description",
-          parameters: {},
-          execute: expect.any(Function),
-        },
-      });
+      expect(agentTools).toEqual(
+        expect.objectContaining({
+          TestClient_tool1: {
+            name: "TestClient_tool1",
+            id: expect.any(String),
+            description: "Tool 1 description",
+            parameters: {},
+            execute: expect.any(Function),
+          },
+          TestClient_tool2: {
+            id: expect.any(String),
+            name: "TestClient_tool2",
+            description: "Tool 2 description",
+            parameters: {},
+            execute: expect.any(Function),
+          },
+        }),
+      );
     });
 
     it("should handle errors when getting agent tools", async () => {
@@ -308,6 +312,7 @@ describe("MCPClient", () => {
 
       expect(agentTools).toEqual({
         TestClient_tool2: {
+          id: expect.any(String),
           name: "TestClient_tool2",
           description: "Tool 2 description",
           parameters: {},

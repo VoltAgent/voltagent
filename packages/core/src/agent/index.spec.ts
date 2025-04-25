@@ -3,7 +3,7 @@ import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
-import type { AgentTool } from "../tool";
+import { createTool } from "../tool";
 import { Agent } from "./index";
 import type {
   BaseMessage,
@@ -18,7 +18,7 @@ import type {
 
 // @ts-ignore - To simplify test types
 import type { AgentHistoryEntry } from "../agent/history";
-import { AgentStatus } from "./types";
+import type { AgentStatus } from "./types";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: any };
@@ -27,12 +27,14 @@ type MockModelType = { modelId: string; [key: string]: any };
 function getStringContent(content: any): string {
   if (typeof content === "string") {
     return content;
-  } else if (Array.isArray(content)) {
+  }
+  if (Array.isArray(content)) {
     return content
       .map((part) => {
         if (typeof part === "string") {
           return part;
-        } else if (part && typeof part === "object" && "type" in part) {
+        }
+        if (part && typeof part === "object" && "type" in part) {
           if (part.type === "text" && "text" in part) {
             return part.text;
           }
@@ -514,14 +516,15 @@ describe("Agent", () => {
     it("should store tool-related messages in memory when tools are used", async () => {
       const userId = "test-user";
       const message = "Use the test tool";
-      const mockTool: AgentTool = {
+      const mockTool = createTool({
+        id: "test-tool",
         name: "test-tool",
         description: "A test tool",
         parameters: z.object({}),
         execute: async () => "tool result",
-      };
+      });
 
-      agent.addTools([mockTool]);
+      agent.addItems([mockTool]);
 
       await agent.generateText(message, { userId });
 
@@ -587,10 +590,6 @@ describe("Agent", () => {
         "emitAgentUnregistered",
       );
 
-      // Spy on historyManager's completeEntry method
-      // @ts-ignore - This method exists in HistoryManager but the TypeScript definition might be missing
-      const historyManager = agent.getHistoryManager();
-
       // Add active history entry to prepare for unregister
       await agent.generateText("Hello before unregister!");
 
@@ -617,14 +616,14 @@ describe("Agent", () => {
 
     it("should return full state with correct structure", () => {
       // Add a tool for better state testing
-      const mockTool: AgentTool = {
+      const mockTool = createTool({
         name: "state-test-tool",
         description: "A test tool for state",
         parameters: z.object({}),
         execute: async () => "tool result",
-      };
+      });
 
-      agent.addTools([mockTool]);
+      agent.addItems([mockTool]);
 
       // Get full state
       const state = agent.getFullState();
@@ -689,14 +688,14 @@ describe("Agent", () => {
       // registering the agent with the registry first
       const spy = jest.spyOn(AgentEventEmitter.getInstance(), "createTrackedEvent");
 
-      const mockTool: AgentTool = {
+      const mockTool = createTool({
         name: "test-tool",
         description: "A test tool",
         parameters: z.object({}),
         execute: async () => "tool result",
-      };
+      });
 
-      agent.addTools([mockTool]);
+      agent.addItems([mockTool]);
       await agent.generateText("Use the test tool");
 
       // Test skipped because registry integration is required

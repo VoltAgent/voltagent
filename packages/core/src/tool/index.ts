@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
-import { z } from "zod";
+import type { z } from "zod";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
+// Also export Toolkit
+export type { Toolkit } from "./toolkit";
 
 /**
  * Tool definition compatible with Vercel AI SDK
@@ -37,13 +39,13 @@ export type ToolOptions<T extends ToolSchema = ToolSchema> = {
   /**
    * Function to execute when the tool is called
    */
-  execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<any>;
+  execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
 };
 
 /**
  * Tool class for defining tools that agents can use
  */
-export class Tool<T extends ToolSchema = ToolSchema> implements BaseTool<z.infer<T>> {
+export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.infer<T>> */ {
   /**
    * Unique identifier for the tool
    */
@@ -67,7 +69,7 @@ export class Tool<T extends ToolSchema = ToolSchema> implements BaseTool<z.infer
   /**
    * Function to execute when the tool is called
    */
-  readonly execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<any>;
+  readonly execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
 
   /**
    * Create a new tool
@@ -76,16 +78,19 @@ export class Tool<T extends ToolSchema = ToolSchema> implements BaseTool<z.infer
     if (!options.name) {
       throw new Error("Tool name is required");
     }
+    if (!options.description) {
+      console.warn(`Tool '${options.name}' created without a description.`);
+    }
     if (!options.parameters) {
-      throw new Error("Tool parameters schema is required");
+      throw new Error(`Tool '${options.name}' parameters schema is required`);
     }
     if (!options.execute) {
-      throw new Error("Tool execute function is required");
+      throw new Error(`Tool '${options.name}' execute function is required`);
     }
 
     this.id = options.id || uuidv4();
     this.name = options.name;
-    this.description = options.description;
+    this.description = options.description || "";
     this.parameters = options.parameters;
     this.execute = options.execute;
   }

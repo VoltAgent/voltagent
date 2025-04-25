@@ -1,5 +1,5 @@
 import type { ClientCapabilities } from "@modelcontextprotocol/sdk/types.js";
-import type { BaseTool } from "../agent/providers/base/types";
+import type { Tool } from "../tool";
 
 /**
  * Client information for MCP
@@ -37,7 +37,7 @@ export interface TransportError extends Error {
 }
 
 /**
- * Model Control Protocol (MCP) configuration options
+ * Model Context Protocol (MCP) configuration options
  */
 export type MCPOptions = {
   /**
@@ -220,10 +220,10 @@ export type ToolsetWithTools = Record<string, AnyToolConfig> & {
   /**
    * Converts the toolset to an array of BaseTool objects.
    */
-  getTools: () => BaseTool[];
+  getTools: () => Tool<any>[];
 };
 
 /**
  * Any tool configuration
  */
-export type AnyToolConfig = Record<string, unknown>;
+export type AnyToolConfig = Tool<any>;

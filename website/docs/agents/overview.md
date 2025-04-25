@@ -69,36 +69,45 @@ async function chat(input: string) {
   // Use streamText for interactive responses
   const response = await agent.streamText(input);
 
-  process.stdout.write("Assistant: ");
-  // Process the stream containing text deltas, tool calls, etc.
-  for await (const delta of response.stream) {
-    switch (delta.type) {
-      case "text-delta":
-        process.stdout.write(delta.textDelta);
-        break;
-      case "tool-call":
-        // Log when the agent decides to call a tool
-        console.log(`\n[Tool Call: ${delta.toolName} Args: ${JSON.stringify(delta.args)}]`);
-        break;
-      case "tool-result":
-        // Log the result after the tool executes
-        console.log(`\n[Tool Result: ${delta.toolName} Result: ${JSON.stringify(delta.result)}]`);
-        // The agent continues generating text after processing the tool result
-        process.stdout.write("Assistant (continuing): ");
-        break;
-      // Handle other delta types (error, finish, etc.) as needed
-    }
+  for await (const chunk of stream.textStream) {
+    console.log(chunk);
   }
-  console.log("\n--- Interaction Finished ---");
 }
 
 // Example usage that might trigger the weather tool
-// await chat("What's the weather like in London?");
+await chat("What's the weather like in London?");
 
 // Example using generateText for a complete response
-// const completeResponse = await agent.generateText("Explain machine learning briefly.");
-// console.log("\nComplete Response:", completeResponse.text);
+const completeResponse = await agent.generateText("Explain machine learning briefly.");
+console.log("Complete Response:", completeResponse.text);
 ```
+
+#### Markdown Formatting
+
+**Why?** To have the agent automatically format its text responses using Markdown for better readability and presentation.
+
+By setting the `markdown` property to `true` in the agent's configuration, you instruct the LLM to use Markdown syntax (like headings, lists, bold text, etc.) when generating text responses. VoltAgent adds a corresponding instruction to the system prompt automatically.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "Markdown Assistant",
+  description: "A helpful assistant that formats answers clearly.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  markdown: true, // Enable automatic Markdown formatting
+});
+
+// Now, when you call generateText or streamText,
+// the agent will attempt to format its response using Markdown.
+const response = await agent.generateText("Explain the steps to make a cup of tea.");
+console.log(response.text);
+```
+
+This is particularly useful when displaying agent responses in UIs that support Markdown rendering.
 
 ### Structured Data Generation (`generateObject`/`streamObject`)
 
@@ -129,23 +138,24 @@ const personSchema = z.object({
 });
 
 // Example using generateObject
-// const objectResponse = await agent.generateObject(
-//   "Create a profile for a talented software developer named Alex.",
-//   personSchema
-// );
-// console.log("Complete object:", objectResponse.object);
+const objectResponse = await agent.generateObject(
+  "Create a profile for a talented software developer named Alex.",
+  personSchema
+);
+console.log("Complete object:", objectResponse.object);
 
 // Example using streamObject
-// console.log("\nStreaming object generation:");
-// const streamObjectResponse = await agent.streamObject(
-//   "Generate details for a data scientist named Jamie.",
-//   personSchema
-// );
-// for await (const partial of streamObjectResponse.objectStream) {
-//   console.log("Received update:", partial); // Shows the object being built incrementally
-// }
-// const finalObject = await streamObjectResponse.object;
-// console.log("Final streamed object:", finalObject);
+const streamObjectResponse = await agent.streamObject(
+  "Generate details for a data scientist named Jamie.",
+  personSchema
+);
+
+for await (const partial of streamObjectResponse.objectStream) {
+  console.log("Received update:", partial); // Shows the object being built incrementally
+}
+
+const finalObject = await streamObjectResponse.object;
+console.log("Final streamed object:", finalObject);
 ```
 
 ## Advanced Features
@@ -218,8 +228,9 @@ const agent = new Agent({
 });
 
 // Example: Call streamText and the agent might use the tool
-// await agent.streamText("What's the weather in London?");
-// The agent should call the 'get_weather' tool during the stream.
+const response = await agent.generateText("What's the weather in London?");
+console.log(response.text);
+// The agent should call the 'get_weather' tool during the generation.
 ```
 
 [Learn more about Tools](./tools.md)
@@ -250,7 +261,8 @@ const mainAgent = new Agent({
 });
 
 // Example: Call streamText on the main agent
-// await mainAgent.streamText("Write a blog post about quantum computing.");
+const response = await mainAgent.generateText("Write a blog post about quantum computing.");
+console.log(response.text);
 // The Coordinator might decide to use the delegate_task tool to involve researchAgent and writingAgent.
 ```
 
@@ -358,7 +370,8 @@ const agent = new Agent({
 });
 
 // Example: Ask a question using streamText
-// const response = await agent.streamText("What are Retrievers in VoltAgent?");
+const response = await agent.generateText("What are Retrievers in VoltAgent?");
+console.log(response.text);
 // The agent will use SimpleRetriever *before* calling the LLM,
 // then generate an answer based on the retrieved context.
 ```
@@ -413,8 +426,11 @@ const xsaiAgent = new Agent({
 });
 
 // Use the agents (example)
-// const response = await vercelOpenAIAgent.streamText("Hello OpenAI via Vercel!");
-// const response2 = await xsaiAgent.generateText("Hello XsAI!");
+const response = await vercelOpenAIAgent.generateText("Hello OpenAI via Vercel!");
+console.log(response.text);
+
+const response2 = await xsaiAgent.generateText("Hello XsAI!");
+console.log(response2.text);
 ```
 
 [Learn more about Providers](../providers/overview.md)
@@ -486,7 +502,7 @@ Use these standardized options to:
 
 The options are applied consistently whether you're using `generateText`, `streamText`, `generateObject`, or `streamObject` methods.
 
-### MCP (Model Control Protocol)
+### MCP (Model Context Protocol)
 
 **Why?** To enable standardized communication between your agent and external, potentially independent, model/tool servers, promoting interoperability and modular deployment.
 
@@ -522,7 +538,8 @@ const agent = new Agent({
 });
 
 // Example: Call streamText
-// await agent.streamText("Use the external analysis tool on this data...");
+const response = await agent.generateText("Use the external analysis tool on this data...");
+console.log(response.text);
 // The agent can now potentially call tools hosted on 'myModelServer'.
 ```
 
@@ -553,14 +570,14 @@ const openaiVoice = new OpenAIVoiceProvider({
 });
 
 // Text to Speech (TTS) -> Returns a Readable stream of audio data
-// const audioStream = await openaiVoice.speak("Hello from OpenAI voice!");
+const audioStream = await openaiVoice.speak("Hello from OpenAI voice!");
 // Example: Pipe the audio stream to a file
-// await pipeline(audioStream, createWriteStream("openai_output.mp3"));
+await pipeline(audioStream, createWriteStream("openai_output.mp3"));
 
 // Speech to Text (STT) -> Takes an audio source (e.g., Readable stream)
-// const audioFileStream = createReadStream("input.mp3");
-// const transcript = await openaiVoice.listen(audioFileStream);
-// console.log("OpenAI Transcript:", transcript);
+const audioFileStream = createReadStream("input.mp3");
+const transcript = await openaiVoice.listen(audioFileStream);
+console.log("OpenAI Transcript:", transcript);
 
 // Option 2: ElevenLabs Voice
 const elevenLabsVoice = new ElevenLabsVoiceProvider({
@@ -569,8 +586,8 @@ const elevenLabsVoice = new ElevenLabsVoiceProvider({
 });
 
 // TTS with ElevenLabs
-// const elAudioStream = await elevenLabsVoice.speak("Hello from ElevenLabs!");
-// await pipeline(elAudioStream, createWriteStream("elevenlabs_output.mp3"));
+const elAudioStream = await elevenLabsVoice.speak("Hello from ElevenLabs!");
+await pipeline(elAudioStream, createWriteStream("elevenlabs_output.mp3"));
 
 // --- Integrating Voice with an Agent ---
 
@@ -592,8 +609,9 @@ if (agent.voice && textResponse.text) {
   // 3. Call the 'speak' method on the agent's voice provider instance.
   console.log("Generating voice output...");
   const agentAudioStream = await agent.voice.speak(textResponse.text);
+
   // Example: Save the agent's spoken response to a file
-  // await pipeline(agentAudioStream, createWriteStream("agent_story.mp3"));
+  await pipeline(agentAudioStream, createWriteStream("agent_story.mp3"));
   console.log("Generated voice output stream.");
 } else {
   console.log("Agent response:", textResponse.text);
@@ -630,7 +648,7 @@ try {
   }
   // Note: If an error occurs *during* the stream, the loop might finish,
   // but the final history entry status will indicate an error.
-  console.log("\nInteraction finished processing stream.");
+  console.log("Interaction finished processing stream.");
 } catch (error) {
   // Catches errors from the initial await agent.streamText() call
   console.error("Agent interaction failed during setup:", error);
@@ -654,14 +672,14 @@ To observe or react to these asynchronous errors, you can:
 
   ```ts
   // Example with streamText
-  // await agent.streamText("Another request", {
-  //   provider: {
-  //     onError: async (error) => {
-  //       console.error("onError callback: Stream encountered an error:", error);
-  //       // Implement specific error handling for this call
-  //     }
-  //   }
-  // });
+  const response = await agent.streamText("Another request", {
+    provider: {
+      onError: async (error) => {
+        console.error("onError callback: Stream encountered an error:", error);
+        // Implement specific error handling for this call
+      },
+    },
+  });
   ```
 
 By combining `try...catch` for initial errors and using the per-call `onError` callback or checking history for stream errors, you can effectively manage issues during agent interactions.

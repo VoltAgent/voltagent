@@ -1,4 +1,5 @@
-import { SubAgentManager } from ".";
+import { SubAgentManager } from "./index";
+import type { Agent } from "../index";
 import type { AgentHandoffOptions } from "../types";
 
 // Creating a Mock Agent class
@@ -109,24 +110,36 @@ describe("SubAgentManager", () => {
   });
 
   describe("generateSupervisorSystemMessage", () => {
-    it("should return original description when no sub-agents", () => {
+    it("should return the original description if no sub-agents", () => {
+      const subAgentManager = new SubAgentManager("TestAgent");
       const description = "Original description";
+
+      // Call with empty agentsMemory string (default parameter)
       expect(subAgentManager.generateSupervisorSystemMessage(description)).toBe(description);
     });
 
-    it("should return supervisor message when has sub-agents", () => {
-      subAgentManager.addSubAgent(mockAgent1);
-      subAgentManager.addSubAgent(mockAgent2);
+    it("should generate a supervisor message when sub-agents exist", () => {
+      const subAgentAgent1 = {
+        id: "agent1",
+        name: "Agent 1",
+        description: "First agent",
+      } as Agent<any>;
+      const subAgentAgent2 = {
+        id: "agent2",
+        name: "Agent 2",
+        description: "Second agent",
+      } as Agent<any>;
 
+      const subAgentManager = new SubAgentManager("TestAgent", [subAgentAgent1, subAgentAgent2]);
       const description = "Original description";
+
+      // Call with empty agentsMemory string (default parameter)
       const result = subAgentManager.generateSupervisorSystemMessage(description);
 
-      expect(result).toContain("supervisor agent");
-      expect(result).toContain("Math Agent");
-      expect(result).toContain("Writing Agent");
-      expect(result).toContain(
-        "Provide a final answer to the User when you have a response from all agents.",
-      );
+      expect(result).toContain("You are a supervisor agent");
+      expect(result).toContain("Agent 1: First agent");
+      expect(result).toContain("Agent 2: Second agent");
+      expect(result).toContain("<agents_memory>");
     });
   });
 
@@ -199,7 +212,10 @@ describe("SubAgentManager", () => {
           targetAgents: ["non-existent-agent"],
           context: {},
         }),
-      ).rejects.toThrow("No valid target agents found");
+      ).resolves.toMatchObject({
+        error: "Failed to delegate task: No valid target agents found. Available agents: ",
+        status: "error",
+      });
     });
 
     it("should execute and return results when valid agents exist", async () => {
@@ -209,8 +225,20 @@ describe("SubAgentManager", () => {
       const handoffToMultipleSpy = jest
         .spyOn(subAgentManager, "handoffToMultiple")
         .mockResolvedValue([
-          { result: "Result 1", conversationId: "conv1", messages: [] },
-          { result: "Result 2", conversationId: "conv2", messages: [] },
+          {
+            result: "Result 1",
+            conversationId: "conv1",
+            messages: [],
+            error: undefined,
+            status: "success",
+          },
+          {
+            result: "Result 2",
+            conversationId: "conv2",
+            messages: [],
+            error: undefined,
+            status: "success",
+          },
         ]);
 
       const tool = subAgentManager.createDelegateTool();
@@ -223,8 +251,20 @@ describe("SubAgentManager", () => {
 
       expect(handoffToMultipleSpy).toHaveBeenCalled();
       expect(result).toEqual([
-        { agentName: "Math Agent", response: "Result 1", conversationId: "conv1" },
-        { agentName: "Writing Agent", response: "Result 2", conversationId: "conv2" },
+        {
+          agentName: "Math Agent",
+          response: "Result 1",
+          conversationId: "conv1",
+          error: undefined,
+          status: "success",
+        },
+        {
+          agentName: "Writing Agent",
+          response: "Result 2",
+          conversationId: "conv2",
+          error: undefined,
+          status: "success",
+        },
       ]);
     });
   });

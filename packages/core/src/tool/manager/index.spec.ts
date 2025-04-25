@@ -1,26 +1,26 @@
 import { z } from "zod";
-import { type AgentTool, ToolManager } from "../index";
+import { type AgentTool, createTool, ToolManager } from "../index";
 
 describe("ToolManager", () => {
   let toolManager: ToolManager;
   // Create sample tools for testing
-  const mockTool1: AgentTool = {
+  const mockTool1 = createTool({
     name: "tool1",
     description: "Test tool 1",
     parameters: z.object({
       param1: z.string().describe("Parameter 1"),
     }),
     execute: jest.fn().mockResolvedValue("Tool 1 result"),
-  };
+  });
 
-  const mockTool2: AgentTool = {
+  const mockTool2 = createTool({
     name: "tool2",
     description: "Test tool 2",
     parameters: z.object({
       param2: z.number().describe("Parameter 2"),
     }),
     execute: jest.fn().mockResolvedValue("Tool 2 result"),
-  };
+  });
 
   beforeEach(() => {
     toolManager = new ToolManager();
@@ -56,14 +56,14 @@ describe("ToolManager", () => {
     it("should replace an existing tool with the same name", () => {
       toolManager.addTool(mockTool1);
 
-      const updatedTool: AgentTool = {
+      const updatedTool = createTool({
         name: "tool1",
         description: "Updated test tool 1",
         parameters: z.object({
           newParam: z.string().describe("New parameter"),
         }),
         execute: jest.fn().mockResolvedValue("Updated tool 1 result"),
-      };
+      });
 
       const result = toolManager.addTool(updatedTool);
       expect(result).toBe(true); // should return true when replacing
@@ -85,9 +85,9 @@ describe("ToolManager", () => {
     });
   });
 
-  describe("addTools", () => {
+  describe("addItems", () => {
     it("should add multiple tools", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const tools = toolManager.getTools();
       expect(tools.length).toBe(2);
@@ -98,7 +98,7 @@ describe("ToolManager", () => {
 
   describe("removeTool", () => {
     it("should remove a tool by name", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const result = toolManager.removeTool("tool1");
       expect(result).toBe(true);
@@ -116,7 +116,7 @@ describe("ToolManager", () => {
 
   describe("prepareToolsForGeneration", () => {
     it("should return a copy of all tools", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const preparedTools = toolManager.prepareToolsForGeneration();
       expect(preparedTools.length).toBe(2);
@@ -141,7 +141,7 @@ describe("ToolManager", () => {
 
   describe("getToolsForApi", () => {
     it("should return simplified tool information for API", () => {
-      toolManager.addTools([mockTool1, mockTool2]);
+      toolManager.addItems([mockTool1, mockTool2]);
 
       const apiTools = toolManager.getToolsForApi();
       expect(apiTools).toEqual([

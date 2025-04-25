@@ -1,11 +1,11 @@
 ---
-title: Model Control Protocol (MCP)
+title: Model Context Protocol (MCP)
 slug: /agents/mcp
 ---
 
-# Model Control Protocol (MCP)
+# Model Context Protocol (MCP)
 
-The [Model Control Protocol](https://modelcontextprotocol.io/introduction) (MCP) provides a **standardized way** for large language models (LLMs) and AI agents to interact with external tools and services. VoltAgent implements MCP client capabilities, enabling your agents to seamlessly access diverse functionalities like filesystem operations, browser automation, database interactions, specific AI models hosted externally, and more, provided they adhere to the MCP specification.
+The [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) provides a **standardized way** for large language models (LLMs) and AI agents to interact with external tools and services. VoltAgent implements MCP client capabilities, enabling your agents to seamlessly access diverse functionalities like filesystem operations, browser automation, database interactions, specific AI models hosted externally, and more, provided they adhere to the MCP specification.
 
 ## Getting Started with MCPConfiguration
 

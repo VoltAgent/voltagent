@@ -2,11 +2,18 @@ import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus, EventUpdater } from "../events";
 import { MemoryManager } from "../memory";
-import type { AgentTool } from "../tool";
+import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
+import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
-import type { BaseMessage, BaseTool, LLMProvider, StepWithContent } from "./providers";
+import type {
+  BaseMessage,
+  BaseTool,
+  LLMProvider,
+  StepWithContent,
+  ToolExecuteOptions,
+} from "./providers";
 import { SubAgentManager } from "./subagent";
 import type {
   AgentOptions,
@@ -67,6 +74,11 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
   readonly voice?: Voice;
 
   /**
+   * Indicates if the agent should format responses using Markdown.
+   */
+  readonly markdown: boolean;
+
+  /**
    * Memory manager for the agent
    */
   protected memoryManager: MemoryManager;
@@ -103,6 +115,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
         hooks?: AgentHooks;
         retriever?: BaseRetriever;
         voice?: Voice;
+        markdown?: boolean;
       },
   ) {
     this.id = options.id || options.name;
@@ -112,8 +125,9 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
     this.model = options.model;
     this.retriever = options.retriever;
     this.voice = options.voice;
+    this.markdown = options.markdown ?? false;
 
-    // Initialize hooks - support both AgentHooks instance and plain object
+    // Initialize hooks
     if (options.hooks) {
       this.hooks = options.hooks;
     } else {
@@ -123,13 +137,13 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
     // Initialize memory manager
     this.memoryManager = new MemoryManager(this.id, options.memory, options.memoryOptions || {});
 
-    // Initialize tool manager
+    // Initialize tool manager (tools are now passed directly)
     this.toolManager = new ToolManager(options.tools || []);
 
     // Initialize sub-agent manager
     this.subAgentManager = new SubAgentManager(this.name, options.subAgents || []);
 
-    // Initialize history manager with agent ID
+    // Initialize history manager
     this.historyManager = new HistoryManager(
       options.maxHistoryEntries || 0,
       this.id,
@@ -143,11 +157,37 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
   protected async getSystemMessage({
     input,
     historyEntryId,
+    contextMessages,
   }: {
     input?: string | BaseMessage[];
     historyEntryId: string;
+    contextMessages: BaseMessage[];
   }): Promise<BaseMessage> {
-    let description = this.description;
+    let baseDescription = this.description || ""; // Ensure baseDescription is a string
+
+    // --- Add Instructions from Toolkits --- (Simplified Logic)
+    let toolInstructions = "";
+    // Get only the toolkits
+    const toolkits = this.toolManager.getToolkits();
+    for (const toolkit of toolkits) {
+      // Check if the toolkit wants its instructions added
+      if (toolkit.addInstructions && toolkit.instructions) {
+        // Append toolkit instructions
+        // Using a simple newline separation for now.
+        toolInstructions += `\n\n${toolkit.instructions}`;
+      }
+    }
+    if (toolInstructions) {
+      baseDescription = `${baseDescription}${toolInstructions}`;
+    }
+    // --- End Add Instructions from Toolkits ---
+
+    // Add Markdown Instruction if Enabled
+    if (this.markdown) {
+      baseDescription = `${baseDescription}\n\nUse markdown to format your answers.`;
+    }
+
+    let description = baseDescription;
 
     // If retriever exists and we have input, get context
     if (this.retriever && input && historyEntryId) {
@@ -172,7 +212,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
 
       try {
         const context = await this.retriever.retrieve(input);
-        if (context && context.trim()) {
+        if (context?.trim()) {
           description = `${description}\n\nRelevant Context:\n${context}`;
 
           // Update the event
@@ -199,13 +239,48 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
 
     // If the agent has sub-agents, generate supervisor system message
     if (this.subAgentManager.hasSubAgents()) {
-      description = this.subAgentManager.generateSupervisorSystemMessage(description);
+      // Fetch recent agent history for the sub-agents
+      const agentsMemory = await this.prepareAgentsMemory(contextMessages);
+
+      // Generate the supervisor message with the agents memory inserted
+      description = this.subAgentManager.generateSupervisorSystemMessage(description, agentsMemory);
+
+      return {
+        role: "system",
+        content: description,
+      };
     }
 
     return {
       role: "system",
       content: `You are ${this.name}. ${description}`,
     };
+  }
+
+  /**
+   * Prepare agents memory for the supervisor system message
+   * This fetches and formats recent interactions with sub-agents
+   */
+  private async prepareAgentsMemory(contextMessages: BaseMessage[]): Promise<string> {
+    try {
+      // Get all sub-agents
+      const subAgents = this.subAgentManager.getSubAgents();
+      if (subAgents.length === 0) return "";
+
+      // Format the agent histories into a readable format
+      const formattedMemory = contextMessages
+        .filter((p) => p.role !== "system")
+        .filter((p) => p.role === "assistant" && !p.content.toString().includes("toolCallId"))
+        .map((message) => {
+          return `${message.role}: ${message.content}`;
+        })
+        .join("\n\n");
+
+      return formattedMemory || "No previous agent interactions found.";
+    } catch (error) {
+      console.warn("Error preparing agents memory:", error);
+      return "Error retrieving agent history.";
+    }
   }
 
   /**
@@ -243,17 +318,38 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
     tools: BaseTool[];
     maxSteps: number;
   } {
-    const { tools: dynamicTools } = options;
+    const { tools: dynamicTools, historyEntryId } = options;
+    const baseTools = this.toolManager.prepareToolsForGeneration(dynamicTools);
 
-    // Get tools from tool manager
-    const toolsToUse = this.toolManager.prepareToolsForGeneration(dynamicTools);
+    // Wrap Reasoning Tools Execution (Remove enableReasoning check)
+    const toolsToUse = baseTools.map((tool) => {
+      // Wrap 'think' and 'analyze' tools unconditionally if found by name
+      if (tool.name === "think" || tool.name === "analyze") {
+        const originalExecute = tool.execute;
+        return {
+          ...tool,
+          execute: async (args: any, execOptions?: ToolExecuteOptions): Promise<any> => {
+            const reasoningOptions: ReasoningToolExecuteOptions = {
+              ...execOptions,
+              agentId: this.id,
+              historyEntryId: historyEntryId || "unknown",
+            };
+            if (!historyEntryId) {
+              console.warn(`Executing reasoning tool '${tool.name}' without a historyEntryId.`);
+            }
+            return originalExecute(args, reasoningOptions);
+          },
+        };
+      }
+      return tool; // Return other tools unchanged
+    });
 
     // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
     if (this.subAgentManager.hasSubAgents()) {
       // Always create a delegate tool with the current historyEntryId
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this,
-        currentHistoryEntryId: options.historyEntryId,
+        currentHistoryEntryId: historyEntryId,
         ...options,
       });
 
@@ -265,7 +361,9 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
         toolsToUse.push(delegateTool);
 
         // Add the delegate tool to the tool manager only if it doesn't exist yet
-        this.toolManager.addTools([delegateTool]);
+        // This logic might need refinement if delegate tool should always be added/replaced
+        // For now, assume adding if not present is correct.
+        // this.toolManager.addTools([delegateTool]); // Re-consider if this is needed or handled by prepareToolsForGeneration
       }
     }
 
@@ -449,7 +547,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
   };
 
   /**
-   * Tool event creator
+   * Fix delete operator usage for better performance
    */
   private addToolEvent = async (
     context: OperationContext,
@@ -466,19 +564,21 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       ...(data.metadata || {}),
     };
 
-    if (data.toolId) {
-      metadata.toolId = data.toolId;
-      delete data.toolId;
+    // Extract data fields to use while avoiding parameter reassignment
+    const { toolId, input, output, error, errorMessage } = data;
+
+    if (toolId) {
+      metadata.toolId = toolId;
     }
 
     const eventData: Partial<StandardEventData> = {
       affectedNodeId: toolNodeId,
       status: status as any,
       timestamp: new Date().toISOString(),
-      input: data.input,
-      output: data.output,
-      error: data.error,
-      errorMessage: data.errorMessage,
+      input,
+      output,
+      error,
+      errorMessage,
       metadata,
     };
 
@@ -543,14 +643,16 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       ...(data.metadata || {}),
     };
 
-    if (data.usage) {
-      metadata.usage = data.usage;
-      delete data.usage;
+    // Extract data fields to use while avoiding parameter reassignment
+    const { usage, ...standardData } = data;
+
+    if (usage) {
+      metadata.usage = usage;
     }
 
-    // Create new data
-    const standardData: Partial<StandardEventData> = {
-      ...data,
+    // Create new data with metadata
+    const eventData: Partial<StandardEventData> = {
+      ...standardData,
       metadata,
     };
 
@@ -560,7 +662,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       status,
       NodeType.AGENT,
       this.id,
-      standardData,
+      eventData,
       "agent",
       context,
     );
@@ -603,6 +705,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages
@@ -783,6 +886,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages
@@ -988,6 +1092,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages
@@ -1107,6 +1212,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: context.historyEntry.id,
+        contextMessages,
       });
 
       // Combine messages
@@ -1229,7 +1335,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this,
       });
-      this.toolManager.addTools([delegateTool]);
+      this.toolManager.addTool(delegateTool);
     }
   }
 
@@ -1294,22 +1400,19 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
   }
 
   /**
-   * Add one or more tools to the agent
-   * If a tool with the same name already exists, it will be replaced
-   * @returns Object containing added tools
+   * Add one or more tools or toolkits to the agent.
+   * Delegates to ToolManager's addItems method.
+   * @returns Object containing added items (difficult to track precisely here, maybe simplify return)
    */
-  addTools(tools: AgentTool[]): { added: AgentTool[] } {
-    const result = {
-      added: [] as AgentTool[],
+  addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] } {
+    // ToolManager handles the logic of adding tools vs toolkits and checking conflicts
+    this.toolManager.addItems(items);
+
+    // Returning the original list as 'added' might be misleading if conflicts occurred.
+    // A simpler approach might be to return void or let ToolManager handle logging.
+    // For now, returning the input list for basic feedback.
+    return {
+      added: items,
     };
-
-    for (const tool of tools) {
-      try {
-        this.toolManager.addTool(tool);
-        result.added.push(tool);
-      } catch (error) {}
-    }
-
-    return result;
   }
 }

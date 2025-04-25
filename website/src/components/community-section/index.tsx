@@ -206,7 +206,7 @@ export function CommunitySection({ className }: CommunitySectionProps) {
               Community
             </h2>
             <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
-              Join the movement.
+              Join the movement
             </p>
             <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
               Our growing <span className="text-main-emerald">open source</span>{" "}
@@ -219,6 +219,8 @@ export function CommunitySection({ className }: CommunitySectionProps) {
               <a
                 key={link.id}
                 href={link.url}
+                target="_blank"
+                rel="noreferrer"
                 className={`group relative landing-xs:p-6 landing-md:p-12  landing-md:border-solid border-white/10 no-underline transition-all flex flex-col items-center animate-fade-in landing-xs:unset landing-md:bg-black/20 rounded-lg hover:border-main-emerald hover:bg-black/40
                   ${link.id === "discord" ? "col-span-2 md:col-span-1" : ""}`}
                 style={{
