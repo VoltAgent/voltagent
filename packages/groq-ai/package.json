@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/groq-ai",
-  "version": "0.1.2",
+  "version": "0.1.0",
   "description": "VoltAgent Groq AI - Groq provider integration for VoltAgent",
   "license": "MIT",
   "main": "dist/index.js",
