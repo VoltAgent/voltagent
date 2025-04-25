@@ -104,11 +104,11 @@ describe("Agent Hooks Functionality", () => {
       });
 
       // Add a test tool to the agent
-      agent.addTools([tool]);
+      agent.addItems([tool]);
 
       // Directly execute the hooks to test their functionality
-      await agent.hooks.onToolStart!(agent, tool);
-      await agent.hooks.onToolEnd!(agent, tool, "Tool result");
+      await agent.hooks.onToolStart?.(agent, tool);
+      await agent.hooks.onToolEnd?.(agent, tool, "Tool result");
 
       // Verify hooks were called with correct arguments
       expect(onToolStartSpy).toHaveBeenCalledWith(agent, tool);
