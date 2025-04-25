@@ -1,8 +1,15 @@
 {
   "name": "@voltagent/xsai",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "VoltAgent XsAI - XsAI provider integration for VoltAgent",
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -15,15 +22,8 @@
     "lint": "eslint src --ext .ts,.tsx",
     "test": "jest --passWithNoTests"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
-  },
   "dependencies": {
-    "@voltagent/core": "^0.1.3",
+    "@voltagent/core": "^0.2.0",
     "xsai": "0.2.0-beta.3",
     "zod": "^3.24.2"
   },
@@ -37,6 +37,6 @@
     "typescript": "^5.0.4"
   },
   "peerDependencies": {
-    "@voltagent/core": "^0.1.0"
+    "@voltagent/core": "^0.2.0"
   }
 }
