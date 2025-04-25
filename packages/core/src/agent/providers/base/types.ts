@@ -198,7 +198,7 @@ export type ToolExecuteOptions = {
   [key: string]: any;
 };
 
-export type BaseTool<TParams = any> = {
+export type BaseTool<TParams extends Record<string, any> = Record<string, any>> = {
   name: string;
   description: string;
   parameters: ToolSchema;

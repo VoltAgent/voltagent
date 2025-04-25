@@ -6,6 +6,7 @@ import { checkForUpdates } from "./utils/update";
 export * from "./agent";
 export * from "./agent/hooks";
 export * from "./tool";
+export * from "./tool/reasoning/index";
 export * from "./memory";
 export * from "./agent/providers";
 export type { AgentOptions, AgentResponse, ModelToolCall } from "./agent/types";

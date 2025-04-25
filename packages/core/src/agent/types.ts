@@ -1,6 +1,6 @@
 import type { BaseMessage } from "../agent/providers/base/types";
 import type { Memory, MemoryOptions } from "../memory/types";
-import type { AgentTool } from "../tool";
+import type { AgentTool, Toolkit } from "../tool";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
@@ -70,9 +70,9 @@ export type AgentOptions = {
   memoryOptions?: MemoryOptions;
 
   /**
-   * Tools that the agent can use
+   * Tools and/or Toolkits that the agent can use
    */
-  tools?: AgentTool[];
+  tools?: (AgentTool | Toolkit)[];
 
   /**
    * Sub-agents that this agent can delegate tasks to
