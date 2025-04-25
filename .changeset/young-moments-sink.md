@@ -4,7 +4,7 @@
 
 ## Introducing Reasoning Tools Helper
 
-This update introduces a new helper function, `createReasoningTools`, to easily add step-by-step reasoning capabilities to your agents.
+This update introduces a new helper function, `createReasoningTools`, to easily add step-by-step reasoning capabilities to your agents. #24
 
 ### New `createReasoningTools` Helper
 
