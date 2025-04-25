@@ -47,7 +47,7 @@ export type Toolkit = {
 **Key Changes to Core:**
 
 1.  **`ToolManager` Upgrade:** Now manages both `Tool` and `Toolkit` objects.
-2.  **`AgentOptions` Update:** The `tools` option accepts `(AgentTool | Toolkit)[]`.
+2.  **`AgentOptions` Update:** The `tools` option accepts `(Tool<any> | Toolkit)[]`.
 3.  **Simplified Instruction Handling:** `Agent` now only adds instructions from `Toolkit`s where `addInstructions` is true.
 
 This change leads to a clearer separation of concerns, simplifies the agent's internal logic, and makes managing tool instructions more predictable and powerful.

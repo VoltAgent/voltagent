@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
-import type { AgentTool } from "../../tool";
+import { createTool, type AgentTool } from "../../tool";
 import { Agent } from "../index";
 
 // Mock LLM provider
@@ -34,12 +34,12 @@ describe("Agent Hooks Functionality", () => {
     hooks = createHooks();
     agent = createTestAgent("TestAgent");
     sourceAgent = createTestAgent("SourceAgent");
-    tool = {
+    tool = createTool({
       name: "test-tool",
       description: "A test tool",
       parameters: z.object({}),
       execute: jest.fn().mockResolvedValue("Tool result"),
-    };
+    });
 
     // Set hooks on the agent
     agent.hooks = hooks;

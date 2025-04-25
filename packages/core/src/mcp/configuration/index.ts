@@ -1,7 +1,7 @@
 import { v5 as uuidv5 } from "uuid";
-import type { BaseTool } from "../../agent/providers/base/types";
 import { MCPClient } from "../client/index";
 import type { AnyToolConfig, MCPServerConfig, ToolsetWithTools } from "../types";
+import type { Tool } from "../../tool";
 
 // Store MCP configuration instances to prevent duplicates
 const mcpConfigurationInstances = new Map<string, MCPConfiguration>();
@@ -111,11 +111,11 @@ This can lead to memory leaks. To fix this:
    * Agent-ready tools include executable functions.
    * @returns A flat array of all agent-ready tools.
    */
-  public async getTools(): Promise<BaseTool[]> {
+  public async getTools(): Promise<Tool<any>[]> {
     this.addToInstanceCache(); // Ensure instance is cached even if only getting tools
 
     // Create an array to hold all tools
-    const allTools: BaseTool[] = [];
+    const allTools: Tool<any>[] = [];
 
     for (const [serverName, serverConfig] of Object.entries(this.serverConfigs) as [
       TServerKeys,
@@ -123,11 +123,12 @@ This can lead to memory leaks. To fix this:
     ][]) {
       try {
         const client = await this.getConnectedClient(serverName, serverConfig);
-        const agentTools = (await client.getAgentTools()) as Record<string, AnyToolConfig>;
+        const agentTools = await client.getAgentTools();
 
         // Convert tools to BaseTool and add to array
+        // biome-ignore lint/complexity/noForEach: <explanation>
         Object.values(agentTools).forEach((tool) => {
-          allTools.push(tool as BaseTool);
+          allTools.push(tool);
         });
       } catch (error) {
         console.error(`Error fetching agent tools from server ${serverName}:`, error);
@@ -172,7 +173,7 @@ This can lead to memory leaks. To fix this:
       try {
         const client = await this.getConnectedClient(serverName, serverConfig);
         // Get tools from client
-        const agentTools = (await client.getAgentTools()) as Record<string, AnyToolConfig>;
+        const agentTools = await client.getAgentTools();
 
         // Add toolset if it contains any tools
         if (Object.keys(agentTools).length > 0) {
@@ -180,7 +181,7 @@ This can lead to memory leaks. To fix this:
           const toolsetWithTools = { ...agentTools } as ToolsetWithTools;
 
           // Add the toTools method
-          toolsetWithTools.getTools = () => Object.values(agentTools) as BaseTool[];
+          toolsetWithTools.getTools = () => Object.values(agentTools) as Tool<any>[];
 
           // Store in toolsets
           agentToolsets[serverName] = toolsetWithTools;

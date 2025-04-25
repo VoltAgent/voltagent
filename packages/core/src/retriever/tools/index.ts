@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AgentTool } from "../../tool";
+import { createTool, type AgentTool } from "../../tool";
 import type { Retriever } from "../types";
 
 /**
@@ -33,7 +33,7 @@ export const createRetrieverTool = (
     options.description ||
     "Searches for relevant information in the knowledge base based on the query.";
 
-  return {
+  return createTool({
     name: toolName,
     description: toolDescription,
     parameters: z.object({
@@ -44,5 +44,5 @@ export const createRetrieverTool = (
 
       return result;
     },
-  };
+  });
 };

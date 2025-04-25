@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type { ProviderOptions } from "../../types";
+import { Tool } from "../../../tool";
 
 /**
  * Token usage information
@@ -198,12 +199,7 @@ export type ToolExecuteOptions = {
   [key: string]: any;
 };
 
-export type BaseTool<TParams extends Record<string, any> = Record<string, any>> = {
-  name: string;
-  description: string;
-  parameters: ToolSchema;
-  execute: (params: TParams, options?: ToolExecuteOptions) => Promise<any>;
-};
+export type BaseTool = Tool<any>;
 
 export type BaseToolCall = {
   name: string;

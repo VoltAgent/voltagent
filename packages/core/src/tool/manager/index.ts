@@ -1,6 +1,6 @@
 import type { BaseTool, ToolExecuteOptions } from "../../agent/providers/base/types";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
-import type { AgentTool } from "../index";
+import { createTool, type AgentTool } from "../index";
 import type { Toolkit } from "../toolkit";
 
 /**
@@ -106,12 +106,12 @@ export class ToolManager {
     }
 
     // Convert AgentTool to BaseTool
-    const baseTool: BaseTool = {
+    const baseTool = createTool({
       name: tool.name,
       description: tool.description || tool.name,
       parameters: tool.parameters,
       execute: tool.execute,
-    };
+    });
 
     // Check if tool exists in the standalone list and replace or add
     const existingIndex = this.tools.findIndex((t) => t.name === tool.name);

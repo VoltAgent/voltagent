@@ -2,7 +2,7 @@ import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus, EventUpdater } from "../events";
 import { MemoryManager } from "../memory";
-import type { AgentTool, Toolkit } from "../tool";
+import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
@@ -1404,7 +1404,7 @@ export class Agent<TProvider extends { llm: LLMProvider<any> }> {
    * Delegates to ToolManager's addItems method.
    * @returns Object containing added items (difficult to track precisely here, maybe simplify return)
    */
-  addItems(items: (AgentTool | Toolkit)[]): { added: (AgentTool | Toolkit)[] } {
+  addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] } {
     // ToolManager handles the logic of adding tools vs toolkits and checking conflicts
     this.toolManager.addItems(items);
 

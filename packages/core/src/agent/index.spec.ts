@@ -3,7 +3,7 @@ import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
-import type { AgentTool } from "../tool";
+import { createTool } from "../tool";
 import { Agent } from "./index";
 import type {
   BaseMessage,
@@ -516,12 +516,13 @@ describe("Agent", () => {
     it("should store tool-related messages in memory when tools are used", async () => {
       const userId = "test-user";
       const message = "Use the test tool";
-      const mockTool: AgentTool = {
+      const mockTool = createTool({
+        id: "test-tool",
         name: "test-tool",
         description: "A test tool",
         parameters: z.object({}),
         execute: async () => "tool result",
-      };
+      });
 
       agent.addItems([mockTool]);
 
@@ -615,12 +616,12 @@ describe("Agent", () => {
 
     it("should return full state with correct structure", () => {
       // Add a tool for better state testing
-      const mockTool: AgentTool = {
+      const mockTool = createTool({
         name: "state-test-tool",
         description: "A test tool for state",
         parameters: z.object({}),
         execute: async () => "tool result",
-      };
+      });
 
       agent.addItems([mockTool]);
 
@@ -687,12 +688,12 @@ describe("Agent", () => {
       // registering the agent with the registry first
       const spy = jest.spyOn(AgentEventEmitter.getInstance(), "createTrackedEvent");
 
-      const mockTool: AgentTool = {
+      const mockTool = createTool({
         name: "test-tool",
         description: "A test tool",
         parameters: z.object({}),
         execute: async () => "tool result",
-      };
+      });
 
       agent.addItems([mockTool]);
       await agent.generateText("Use the test tool");

@@ -22,7 +22,7 @@ import type {
   MCPToolResult,
   StdioServerConfig,
 } from "../types";
-
+import { createTool, type Tool } from "../../tool";
 /**
  * Client for interacting with Model Context Protocol (MCP) servers
  * Implements MCP specification using the official SDK
@@ -169,14 +169,14 @@ export class MCPClient extends EventEmitter {
    * Get tools converted to AgentTools with execute functions
    * This method transforms MCP tool definitions into AgentTools that can be used directly by an Agent
    */
-  async getAgentTools(): Promise<Record<string, unknown>> {
+  async getAgentTools(): Promise<Record<string, Tool<any>>> {
     await this.ensureConnected();
 
     try {
       const { tools } = await this.client.listTools();
 
       // Convert tools to AgentTools with execute functions
-      const agentToolsRecord: Record<string, unknown> = {};
+      const agentToolsRecord: Record<string, Tool<any>> = {};
 
       for (const tool of tools) {
         try {
@@ -188,7 +188,7 @@ export class MCPClient extends EventEmitter {
 
           // Create AgentTool with both parameters and inputSchema
           // parameters is used by Vercel AI, inputSchema is used internally
-          const agentTool = {
+          const agentTool = createTool({
             name: namespacedToolName,
             description: tool.description || "",
             parameters: zodSchema,
@@ -205,7 +205,7 @@ export class MCPClient extends EventEmitter {
                 throw e;
               }
             },
-          };
+          });
 
           // Store the tool using the namespaced name as key
           agentToolsRecord[namespacedToolName] = agentTool;
