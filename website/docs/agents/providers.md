@@ -77,6 +77,94 @@ const agent = new Agent({
 
 **Choose `@voltagent/xsai` when:** You need to connect specifically to OpenAI or compatible APIs and prioritize minimal bundle size.
 
+### `@voltagent/google-ai` (Google AI Provider)
+
+Connects to Google's Generative AI models (like Gemini) using the official [`@google/genai`](https://github.com/google/generative-ai-js) SDK.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { GoogleGenAIProvider } from "@voltagent/google-ai";
+
+// Ensure your API key is stored securely, e.g., in environment variables
+const googleApiKey = process.env.GOOGLE_API_KEY;
+
+// Instantiate the provider
+const googleProvider = new GoogleGenAIProvider({
+  apiKey: googleApiKey,
+});
+
+// Create an agent using a Google model
+const agent = new Agent({
+  name: "Google Assistant",
+  description: "A helpful assistant powered by Google Gemini",
+  llm: googleProvider,
+  model: "gemini-1.5-pro-latest", // Specify the desired Google model name
+});
+```
+
+Using the Google AI provider with Vertex AI has specific requirements:
+
+1.  **Authentication:** Authentication must be handled using the [`google-auth-library`](https://www.npmjs.com/package/google-auth-library). You'll need to configure it with your service account credentials.
+2.  **SDK Limitations:** Be aware of potential ongoing issues with Vertex AI authentication in the official Google AI SDK ([link](https://github.com/googleapis/js-genai/issues/426), [link-2](https://github.com/googleapis/js-genai/issues/417)).
+
+```typescript
+import { Agent } from "@voltagent/core";
+import { GoogleGenAIProvider } from "@voltagent/google-ai";
+// Required for Vertex AI auth
+import { GoogleAuth } from "google-auth-library";
+
+// Ensure your service account credentials are secure and accessible
+const credentials = {
+  client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+  private_key: process.env.GOOGLE_PRIVATE_KEY,
+};
+
+const googleVertexProvider = new GoogleGenAIProvider({
+  vertexai: true,
+  project: process.env.GOOGLE_CLOUD_PROJECT_ID, // Your project ID
+  location: process.env.GOOGLE_CLOUD_LOCATION, // Your project location (e.g., "us-central1")
+  googleAuthOptions: {
+    credentials,
+  },
+});
+
+const agentVertex = new Agent({
+  name: "Google Vertex Assistant",
+  description: "A helpful assistant powered by Google Gemini via Vertex AI",
+  llm: googleVertexProvider,
+  model: "gemini-1.5-pro-latest", // Specify the desired Google model
+});
+```
+
+<br/>
+
+**Choose `@voltagent/google-ai` when:** You specifically want to use Google's Gemini models via their dedicated SDK. It also supports Vertex AI configurations but only for server-side usage.
+
+### `@voltagent/groq-ai` (Groq Provider)
+
+Implements the [groq-sdk](https://github.com/groq/groq-typescript) as a provider to allow inferencing [supported models](https://console.groq.com/docs/models).
+
+```ts
+import { Agent } from "@voltagent/core";
+import { GroqProvider } from "@voltagent/groq-ai";
+
+// Instantiate the provider, optionally passing the API key to overwrite the default process.env.GROQ_API_KEY
+const groqProvider = new GroqProvider({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+const agent = new Agent({
+  name: "Groq Assistant",
+  description: "A helpful assistant using the groq-ai provider",
+  llm: groqProvider,
+  // Pass the model name as a string recognized by the target API
+  model: "meta-llama/llama-4-scout-17b-16e-instruct", //Example for Ollama
+  //See groq documentation for others
+});
+```
+
+**Choose `@voltagent/groq-ai` when:** You need to connect specifically to Groq API used for fast inferencing of supported models.
+
 ## The `model` Parameter
 
 When creating an `Agent`, the `model` parameter's value is interpreted _by the selected `llm` provider_. Each provider uses its `getModelIdentifier` method to process this value.

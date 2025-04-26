@@ -109,7 +109,7 @@ describe("MCPClient", () => {
           clientInfo: mockClientInfo,
           server: { type: "unknown" } as any,
         });
-      }).toThrow("Unsupported MCP server configuration type");
+      }).toThrow("Unsupported server configuration type: unknown");
     });
   });
 
@@ -151,28 +151,41 @@ describe("MCPClient", () => {
 
   describe("disconnect", () => {
     let client: MCPClient;
+    let mockClientInstance: any;
 
     beforeEach(async () => {
+      (Client as any).mockImplementation(() => {
+        mockClientInstance = mockClient;
+        return mockClientInstance;
+      });
       client = new MCPClient({
         clientInfo: mockClientInfo,
         server: mockHttpServerConfig,
       });
       await client.connect();
+      // Verify that the constructor set the onclose handler
+      expect(mockClientInstance.onclose).toBeInstanceOf(Function);
     });
 
-    it("should disconnect from the server", async () => {
-      const disconnectSpy = jest.spyOn(client, "emit");
-      await client.disconnect();
-
-      expect(mockClose).toHaveBeenCalled();
-      expect(disconnectSpy).toHaveBeenCalledWith("disconnect");
+    it("should disconnect from the server and emit event", async () => {
+      const disconnectEmitSpy = jest.spyOn(client, "emit");
+      const closePromise = client.disconnect();
+      expect(mockClose).toHaveBeenCalledTimes(1);
+      if (mockClientInstance.onclose) {
+        mockClientInstance.onclose();
+      }
+      await closePromise;
+      expect(disconnectEmitSpy).toHaveBeenCalledWith("disconnect");
     });
 
-    it("should not disconnect if not connected", async () => {
-      await client.disconnect();
+    it("should not call close if not connected", async () => {
+      const firstDisconnectPromise = client.disconnect();
+      if (mockClientInstance.onclose) {
+        mockClientInstance.onclose();
+      }
+      await firstDisconnectPromise;
       mockClose.mockClear();
       await client.disconnect();
-
       expect(mockClose).not.toHaveBeenCalled();
     });
 
@@ -180,7 +193,6 @@ describe("MCPClient", () => {
       const error = new Error("Disconnection failed");
       mockClose.mockRejectedValueOnce(error);
       const errorSpy = jest.spyOn(client, "emit");
-
       await expect(client.disconnect()).rejects.toThrow("Disconnection failed");
       expect(errorSpy).toHaveBeenCalledWith("error", error);
     });
@@ -272,20 +284,24 @@ describe("MCPClient", () => {
       expect(mockListTools).toHaveBeenCalled();
       expect(jsonSchemaToZod).toHaveBeenCalledTimes(2);
 
-      expect(agentTools).toEqual({
-        TestClient_tool1: {
-          name: "TestClient_tool1",
-          description: "Tool 1 description",
-          parameters: {},
-          execute: expect.any(Function),
-        },
-        TestClient_tool2: {
-          name: "TestClient_tool2",
-          description: "Tool 2 description",
-          parameters: {},
-          execute: expect.any(Function),
-        },
-      });
+      expect(agentTools).toEqual(
+        expect.objectContaining({
+          TestClient_tool1: {
+            name: "TestClient_tool1",
+            id: expect.any(String),
+            description: "Tool 1 description",
+            parameters: {},
+            execute: expect.any(Function),
+          },
+          TestClient_tool2: {
+            id: expect.any(String),
+            name: "TestClient_tool2",
+            description: "Tool 2 description",
+            parameters: {},
+            execute: expect.any(Function),
+          },
+        }),
+      );
     });
 
     it("should handle errors when getting agent tools", async () => {
@@ -308,6 +324,7 @@ describe("MCPClient", () => {
 
       expect(agentTools).toEqual({
         TestClient_tool2: {
+          id: expect.any(String),
           name: "TestClient_tool2",
           description: "Tool 2 description",
           parameters: {},
@@ -323,7 +340,7 @@ describe("MCPClient", () => {
       mockCallTool.mockResolvedValue({ content: "result" });
 
       const agentTools = (await client.getAgentTools()) as Record<string, any>;
-      const result = await agentTools["TestClient_tool1"].execute({
+      const result = await agentTools.TestClient_tool1.execute({
         param: "value",
       });
 
@@ -341,19 +358,16 @@ describe("MCPClient", () => {
     it("should handle errors in execute functions", async () => {
       const error = new Error("Tool execution failed");
       mockCallTool.mockRejectedValueOnce(error);
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
       const agentTools = (await client.getAgentTools()) as Record<string, any>;
 
-      await expect(agentTools["TestClient_tool1"].execute({ param: "value" })).rejects.toThrow(
+      await expect(agentTools.TestClient_tool1.execute({ param: "value" })).rejects.toThrow(
         "Tool execution failed",
       );
 
-      expect(consoleLogSpy).toHaveBeenCalled();
       expect(consoleErrorSpy).toHaveBeenCalled();
 
-      consoleLogSpy.mockRestore();
       consoleErrorSpy.mockRestore();
     });
   });

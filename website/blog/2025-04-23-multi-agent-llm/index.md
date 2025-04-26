@@ -8,7 +8,6 @@ authors: omeraplak
 ---
 
 import LlmChoiceHelper from '@site/src/components/blog-widgets/LlmChoiceHelper';
-import GitHubExampleLink from '@site/src/components/blog-widgets/GitHubExampleLink';
 
 Large language models like ChatGPT have become commonplace tools, helping me write emails as well as code. Other times, though, I found that one LLM wasn't sufficient to manage complex, multistep tasks. That's where I started exploring "multi-agent systems."
 
@@ -21,11 +20,6 @@ Steps we'll cover:
 - [How I Use VoltAgent for Multi-Agent Systems](#how-i-use-voltagent-for-multi-agent-systems)
   - [Let Me Show You a Practical Example with VoltAgent](#let-me-show-you-a-practical-example-with-voltagent)
 - [My Final Thoughts](#my-final-thoughts)
-
-<GitHubExampleLink 
-  repoUrl="https://github.com/VoltAgent/voltagent/tree/main/examples/with-rag-chatbot" 
-  npmCommand="npm create voltagent-app@latest -- --example with-rag-chatbot" 
-/>
 
 ## What Are Multi-Agent LLM Systems?
 

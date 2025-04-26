@@ -1,11 +1,10 @@
-import { VoltAgent, Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
-import { openai } from "@ai-sdk/openai";
-
 const agent = new Agent({
-  name: "Asistant",
-  description: "A helpful assistant that answers questions without using tools",
+  name: "Base Agent",
+  description: "You are a helpful assistant",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });

@@ -75,116 +75,38 @@ describe("MCPConfiguration", () => {
       const testId = "test1";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
 
       expect(config).toBeInstanceOf(MCPConfiguration);
-    });
-
-    it("should use provided ID if given", () => {
-      const testId = "test2";
-      const testServers = createTestServers(testId);
-      const customId = `custom-id-${testId}`;
-
-      const config = new MCPConfiguration({
-        id: customId,
-        servers: testServers,
-      });
-      configInstances.push(config);
-
-      // We can't directly test the private id property, but we can test that
-      // creating another instance with the same ID returns the same instance
-      const config2 = new MCPConfiguration({
-        id: customId,
-        servers: testServers,
-      });
-      // Don't add config2 to configInstances as it's the same as config
-
-      // Here we use toEqual instead of toBe because we should get the same instance with the same ID
-      expect(config).toEqual(config2);
-    });
-
-    it("should throw error when creating duplicate instance without explicit ID", async () => {
-      const testId = "test3";
-      const testServers = createTestServers(testId);
-
-      // Create the first instance
-      const firstConfig = new MCPConfiguration({
-        id: `custom-id-${testId}`,
-        servers: testServers,
-      });
-      configInstances.push(firstConfig);
-
-      // We'll test this in a different way
-      // We need to test the control mechanism in the MCPConfiguration class
-      // Let's try to create a second instance with the same server configuration
-
-      // First let's remove the existing instance and create a new one with the same configuration
-      // And before doing that, let's mock the generateId method so it doesn't generate independent IDs
-
-      // Since we can't know the ID created from our first instance,
-      // we'll use a different approach
-
-      // First, get the original generateId method
-      const originalGenerateId = (MCPConfiguration.prototype as any).generateId;
-
-      try {
-        // Mock the generateId method to return a fixed ID
-        // This way we'll try to create a new instance with the same ID
-        (MCPConfiguration.prototype as any).generateId = () => {
-          return "fixed-test-id";
-        };
-
-        // Remove the first instance and create a new one with the same ID
-        await firstConfig.disconnect();
-        configInstances.pop();
-
-        // Create a new instance with the same ID
-        const config1 = new MCPConfiguration({
-          servers: testServers,
-        });
-        configInstances.push(config1);
-
-        // Now try to create a second instance with the same generated ID
-        // this should throw an error
-        expect(() => {
-          new MCPConfiguration({
-            servers: testServers,
-          });
-        }).toThrow(/MCPConfiguration was initialized multiple times/);
-      } finally {
-        // Restore the original generateId method
-        (MCPConfiguration.prototype as any).generateId = originalGenerateId;
-      }
+      // Cannot check private serverConfigs directly easily
     });
   });
 
   describe("disconnect", () => {
-    it("should disconnect all clients and remove from instance cache", async () => {
+    it("should disconnect all clients and clear local cache", async () => {
       const testId = "test4";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
 
-      // Force client creation
+      // Force client creation for testing disconnect
       await config.getClients();
 
-      // Spy on internal methods
-      const deleteMapSpy = jest.spyOn(Map.prototype, "delete");
+      // Spy only on the clear method, as delete is no longer relevant for the global map
       const clearMapSpy = jest.spyOn(Map.prototype, "clear");
 
       await config.disconnect();
 
-      // Check if client disconnect method was called directly
+      // Check if client disconnect method was called
+      // Need to ensure MCPClient mock setup allows spying on prototype
       expect(MCPClient.prototype.disconnect).toHaveBeenCalled();
 
-      // Verify instance was removed from cache and clients were cleared
-      expect(deleteMapSpy).toHaveBeenCalled();
+      // Verify the local client map (mcpClientsById) was cleared
+      // The spy on Map.prototype.clear should catch this call
       expect(clearMapSpy).toHaveBeenCalled();
     });
   });
@@ -194,7 +116,6 @@ describe("MCPConfiguration", () => {
       const testId = "test5";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -231,7 +152,6 @@ describe("MCPConfiguration", () => {
       const testId = "test6";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -275,7 +195,6 @@ describe("MCPConfiguration", () => {
       const testId = "test7";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -333,7 +252,6 @@ describe("MCPConfiguration", () => {
       const testId = "test8";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -372,7 +290,6 @@ describe("MCPConfiguration", () => {
       const testId = "test9";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -415,7 +332,6 @@ describe("MCPConfiguration", () => {
       const testId = "test10";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -472,7 +388,6 @@ describe("MCPConfiguration", () => {
       const testId = "test11";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -494,7 +409,6 @@ describe("MCPConfiguration", () => {
       const testId = "test12";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -508,7 +422,6 @@ describe("MCPConfiguration", () => {
       const testId = "test13";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);
@@ -531,7 +444,6 @@ describe("MCPConfiguration", () => {
       const testId = "test14";
       const testServers = createTestServers(testId);
       const config = new MCPConfiguration({
-        id: `unique-id-${testId}`,
         servers: testServers,
       });
       configInstances.push(config);

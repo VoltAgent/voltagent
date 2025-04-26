@@ -6,6 +6,7 @@ import { checkForUpdates } from "./utils/update";
 export * from "./agent";
 export * from "./agent/hooks";
 export * from "./tool";
+export * from "./tool/reasoning/index";
 export * from "./memory";
 export * from "./agent/providers";
 export type { AgentOptions, AgentResponse, ModelToolCall } from "./agent/types";
@@ -132,7 +133,7 @@ export class VoltAgent {
 // Default export for easy usage
 export default VoltAgent;
 
-// Automatically start the server if this module is run directly
-if (require.main === module) {
+// Automatically start the server if this module is run directly (CommonJS check)
+if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
   new VoltAgent({ agents: {}, autoStart: true, checkDependencies: true });
 }

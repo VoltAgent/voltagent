@@ -1,3 +1,3 @@
 export * from "./types";
 export * from "./client";
-export * from "./configuration";
+export * from "./registry";

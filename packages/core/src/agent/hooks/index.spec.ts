@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
-import type { AgentTool } from "../../tool";
+import { createTool, type AgentTool } from "../../tool";
 import { Agent } from "../index";
 
 // Mock LLM provider
@@ -34,12 +34,12 @@ describe("Agent Hooks Functionality", () => {
     hooks = createHooks();
     agent = createTestAgent("TestAgent");
     sourceAgent = createTestAgent("SourceAgent");
-    tool = {
+    tool = createTool({
       name: "test-tool",
       description: "A test tool",
       parameters: z.object({}),
       execute: jest.fn().mockResolvedValue("Tool result"),
-    };
+    });
 
     // Set hooks on the agent
     agent.hooks = hooks;
@@ -104,11 +104,11 @@ describe("Agent Hooks Functionality", () => {
       });
 
       // Add a test tool to the agent
-      agent.addTools([tool]);
+      agent.addItems([tool]);
 
       // Directly execute the hooks to test their functionality
-      await agent.hooks.onToolStart!(agent, tool);
-      await agent.hooks.onToolEnd!(agent, tool, "Tool result");
+      await agent.hooks.onToolStart?.(agent, tool);
+      await agent.hooks.onToolEnd?.(agent, tool, "Tool result");
 
       // Verify hooks were called with correct arguments
       expect(onToolStartSpy).toHaveBeenCalledWith(agent, tool);

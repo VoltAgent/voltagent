@@ -37,7 +37,7 @@ Escape the limitations of no-code builders and the complexity of starting from s
 
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="896" alt="Screenshot 2025-04-20 at 22 44 38" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+<img width="896" alt="VoltAgent Schema" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
 </a>
 
 </div>

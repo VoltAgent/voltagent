@@ -75,7 +75,7 @@ describe("Tool", () => {
         execute: jest.fn(),
       } as any;
 
-      expect(() => new Tool(options)).toThrow("Tool parameters schema is required");
+      expect(() => new Tool(options)).toThrow("Tool 'testTool' parameters schema is required");
     });
 
     it("should throw error if execute is missing", () => {
@@ -85,7 +85,7 @@ describe("Tool", () => {
         description: "A test tool",
       } as any;
 
-      expect(() => new Tool(options)).toThrow("Tool execute function is required");
+      expect(() => new Tool(options)).toThrow("Tool 'testTool' execute function is required");
     });
   });
 });

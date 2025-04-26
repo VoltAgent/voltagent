@@ -170,7 +170,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
       {/* Animated filling bolt path */}
       <path
         d="M45 15L20 40H35L30 65L55 40H40L45 15Z"
-        fill="#22c55e"
+        fill="#00d992"
         style={{
           animation: "fillBolt 3s ease-in-out infinite",
         }}

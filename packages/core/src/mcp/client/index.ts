@@ -22,58 +22,59 @@ import type {
   MCPToolResult,
   StdioServerConfig,
 } from "../types";
+import { createTool, type Tool } from "../../tool";
 
 /**
- * Client for interacting with Model Context Protocol (MCP) servers
- * Implements MCP specification using the official SDK
+ * Client for interacting with Model Context Protocol (MCP) servers.
+ * Wraps the official MCP SDK client to provide a higher-level interface.
+ * Internal implementation differs from original source.
  */
 export class MCPClient extends EventEmitter {
   /**
-   * Underlying MCP client instance from SDK
+   * Underlying MCP client instance from the SDK.
    */
-  private client: Client;
+  private client: Client; // Renamed back from sdkClient
 
   /**
-   * Transport layer for MCP communication
+   * Communication channel (transport layer) for MCP interactions.
    */
-  private transport: Transport;
+  private transport: Transport; // Renamed back from communicationChannel
 
   /**
-   * Whether the client is connected to the server
+   * Tracks the connection status to the server.
    */
-  private connected = false;
+  private connected = false; // Renamed back from isConnected
 
   /**
-   * Request timeout in milliseconds
+   * Maximum time allowed for requests in milliseconds.
    */
-  private readonly timeout: number;
+  private readonly timeout: number; // Renamed back from requestTimeoutMs
 
   /**
-   * Client information used for identification
+   * Information identifying this client to the server.
    */
-  private readonly clientInfo: ClientInfo;
+  private readonly clientInfo: ClientInfo; // Renamed back from identity
 
   /**
-   * Creates a new MCP client
+   * Creates a new MCP client instance.
+   * @param config Configuration for the client, including server details and client identity.
    */
   constructor(config: MCPClientConfig) {
     super();
 
-    // Store client info
     this.clientInfo = config.clientInfo;
-
-    // Initialize client with info and capabilities
-    this.client = new Client(config.clientInfo, {
+    this.client = new Client(this.clientInfo, {
       capabilities: config.capabilities || {},
     });
 
-    // Set up transport based on server config
     if (this.isHTTPServer(config.server)) {
+      // Use original type guard name
       this.transport = new SSEClientTransport(new URL(config.server.url), {
         requestInit: config.server.requestInit,
         eventSourceInit: config.server.eventSourceInit,
       });
     } else if (this.isStdioServer(config.server)) {
+      // Use original type guard name
       this.transport = new StdioClientTransport({
         command: config.server.command,
         args: config.server.args || [],
@@ -81,21 +82,20 @@ export class MCPClient extends EventEmitter {
         env: { ...getDefaultEnvironment(), ...(config.server.env || {}) },
       });
     } else {
-      throw new Error("Unsupported MCP server configuration type");
+      throw new Error(
+        `Unsupported server configuration type: ${(config.server as any)?.type || "unknown"}`,
+      );
     }
 
-    // Set timeout
     this.timeout = config.timeout || DEFAULT_REQUEST_TIMEOUT_MSEC;
-
-    // Setup event handlers
-    this.setupEventHandlers();
+    this.setupEventHandlers(); // Use original method name
   }
 
   /**
-   * Set up MCP client event handlers
+   * Sets up handlers for events from the underlying SDK client.
    */
   private setupEventHandlers(): void {
-    // Handle client close event
+    // Renamed back from initializeEventHandlers
     this.client.onclose = () => {
       this.connected = false;
       this.emit("disconnect");
@@ -103,9 +103,11 @@ export class MCPClient extends EventEmitter {
   }
 
   /**
-   * Connect to the MCP server
+   * Establishes a connection to the configured MCP server.
+   * Idempotent: does nothing if already connected.
    */
   async connect(): Promise<void> {
+    // Renamed back from establishConnection
     if (this.connected) {
       return;
     }
@@ -115,50 +117,53 @@ export class MCPClient extends EventEmitter {
       this.connected = true;
       this.emit("connect");
     } catch (error) {
-      this.emitError(error);
-      throw error;
+      this.emitError(error); // Use original error handler name
+      throw new Error(
+        `MCP connection failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   /**
-   * Disconnect from the MCP server
+   * Closes the connection to the MCP server.
+   * Idempotent: does nothing if not connected.
    */
   async disconnect(): Promise<void> {
+    // Renamed back from closeConnection
     if (!this.connected) {
       return;
     }
 
     try {
       await this.client.close();
-      this.connected = false;
-      this.emit("disconnect");
     } catch (error) {
-      this.emitError(error);
-      throw error;
+      this.emitError(error); // Use original error handler name
+      throw new Error(
+        `MCP disconnection failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   /**
-   * List available tools from the MCP server
+   * Fetches the definitions of available tools from the server.
+   * @returns A record mapping tool names to their definitions (schema, description).
    */
   async listTools(): Promise<Record<string, unknown>> {
-    await this.ensureConnected();
+    // Renamed back from fetchAvailableToolDefinitions
+    await this.ensureConnected(); // Use original connection check name
 
     try {
       const { tools } = await this.client.listTools();
 
-      // Convert tools to a more convenient format
-      const toolsRecord: Record<string, unknown> = {};
-
+      const toolDefinitions: Record<string, unknown> = {};
       for (const tool of tools) {
-        toolsRecord[tool.name] = {
+        toolDefinitions[tool.name] = {
           name: tool.name,
           description: tool.description || "",
           inputSchema: tool.inputSchema,
         };
       }
-
-      return toolsRecord;
+      return toolDefinitions;
     } catch (error) {
       this.emitError(error);
       throw error;
@@ -166,56 +171,57 @@ export class MCPClient extends EventEmitter {
   }
 
   /**
-   * Get tools converted to AgentTools with execute functions
-   * This method transforms MCP tool definitions into AgentTools that can be used directly by an Agent
+   * Builds executable Tool objects from the server's tool definitions.
+   * These tools include an `execute` method for calling the remote tool.
+   * @returns A record mapping namespaced tool names (`clientName_toolName`) to executable Tool objects.
    */
-  async getAgentTools(): Promise<Record<string, unknown>> {
-    await this.ensureConnected();
+  async getAgentTools(): Promise<Record<string, Tool<any>>> {
+    // Renamed back from buildExecutableTools
+    await this.ensureConnected(); // Use original connection check name
 
     try {
-      const { tools } = await this.client.listTools();
+      const definitions = await this.listTools(); // Use original method name
 
-      // Convert tools to AgentTools with execute functions
-      const agentToolsRecord: Record<string, unknown> = {};
+      const executableTools: Record<string, Tool<any>> = {};
 
-      for (const tool of tools) {
+      for (const toolDef of Object.values(definitions) as {
+        name: string;
+        description?: string;
+        inputSchema: unknown;
+      }[]) {
         try {
-          // Convert JSON Schema to Zod schema using @dmitryrechkin/json-schema-to-zod
-          const zodSchema = jsonSchemaToZod(tool.inputSchema as Record<string, unknown>);
+          const zodSchema = jsonSchemaToZod(toolDef.inputSchema as Record<string, unknown>);
+          const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`; // Use original separator
 
-          // Create namespaced tool name using underscore instead of period
-          const namespacedToolName = `${this.clientInfo.name}_${tool.name}`;
-
-          // Create AgentTool with both parameters and inputSchema
-          // parameters is used by Vercel AI, inputSchema is used internally
-          const agentTool = {
+          const agentTool = createTool({
             name: namespacedToolName,
-            description: tool.description || "",
+            description: toolDef.description || `Executes the remote tool: ${toolDef.name}`,
             parameters: zodSchema,
             execute: async (args: Record<string, unknown>): Promise<unknown> => {
               try {
                 const result = await this.callTool({
-                  name: tool.name, // Use original name for actual MCP protocol call
+                  // Use original method name
+                  name: toolDef.name,
                   arguments: args,
                 });
                 return result.content;
-              } catch (e) {
-                console.log("Error calling tool", tool.name);
-                console.error(e);
-                throw e;
+              } catch (execError) {
+                console.error(`Error executing remote tool '${toolDef.name}':`, execError);
+                throw execError;
               }
             },
-          };
+          });
 
-          // Store the tool using the namespaced name as key
-          agentToolsRecord[namespacedToolName] = agentTool;
-        } catch (error) {
-          console.error(`Error creating agent tool for ${tool.name}:`, error);
-          // Continue with next tool instead of failing completely
+          executableTools[namespacedToolName] = agentTool;
+        } catch (toolCreationError) {
+          console.error(
+            `Failed to create executable tool wrapper for '${toolDef.name}':`,
+            toolCreationError,
+          );
         }
       }
 
-      return agentToolsRecord;
+      return executableTools;
     } catch (error) {
       this.emitError(error);
       throw error;
@@ -223,10 +229,13 @@ export class MCPClient extends EventEmitter {
   }
 
   /**
-   * Call a tool on the MCP server
+   * Executes a specified tool on the remote MCP server.
+   * @param toolCall Details of the tool to call, including name and arguments.
+   * @returns The result content returned by the tool.
    */
   async callTool(toolCall: MCPToolCall): Promise<MCPToolResult> {
-    await this.ensureConnected();
+    // Renamed back from executeRemoteTool
+    await this.ensureConnected(); // Use original connection check name
 
     try {
       const result = await this.client.callTool(
@@ -235,12 +244,10 @@ export class MCPClient extends EventEmitter {
           arguments: toolCall.arguments,
         },
         CallToolResultSchema,
-        { timeout: this.timeout },
+        { timeout: this.timeout }, // Use original variable name
       );
 
-      // Emit tool call event
       this.emit("toolCall", toolCall.name, toolCall.arguments, result);
-
       return { content: result };
     } catch (error) {
       this.emitError(error);
@@ -249,10 +256,12 @@ export class MCPClient extends EventEmitter {
   }
 
   /**
-   * Get the list of available resources from the MCP server
+   * Retrieves a list of resource identifiers available on the server.
+   * @returns A promise resolving to an array of resource ID strings.
    */
   async listResources(): Promise<string[]> {
-    await this.ensureConnected();
+    // Renamed back from fetchAvailableResourceIds
+    await this.ensureConnected(); // Use original connection check name
 
     try {
       const result = await this.client.request(
@@ -260,7 +269,6 @@ export class MCPClient extends EventEmitter {
         ListResourcesResultSchema,
       );
 
-      // Map resources to their IDs
       return result.resources.map((resource: Record<string, unknown>) =>
         typeof resource.id === "string" ? resource.id : String(resource.id),
       );
@@ -271,50 +279,65 @@ export class MCPClient extends EventEmitter {
   }
 
   /**
-   * Ensure the client is connected before making requests
+   * Ensures the client is connected before proceeding with an operation.
+   * Attempts to connect if not currently connected.
+   * @throws Error if connection attempt fails.
    */
   private async ensureConnected(): Promise<void> {
+    // Renamed back from verifyConnection
     if (!this.connected) {
-      await this.connect();
+      await this.connect(); // Use original method name
     }
   }
 
   /**
-   * Convert and emit error events in a type-safe way
+   * Emits an 'error' event, ensuring the payload is always an Error object.
+   * @param error The error encountered, can be of any type.
    */
   private emitError(error: unknown): void {
+    // Renamed back from dispatchError
     if (error instanceof Error) {
       this.emit("error", error);
     } else {
-      this.emit("error", new Error(String(error)));
+      this.emit("error", new Error(String(error ?? "Unknown error")));
     }
   }
 
   /**
-   * Check if the server config is HTTP-based
+   * Type guard to check if a server configuration is for an HTTP server.
+   * @param server The server configuration object.
+   * @returns True if the configuration type is 'http', false otherwise.
    */
   private isHTTPServer(server: MCPServerConfig): server is HTTPServerConfig {
+    // Renamed back from isHttpConfig
     return server.type === "http";
   }
 
   /**
-   * Type guard to check if the server config is stdio-based
+   * Type guard to check if a server configuration is for a Stdio server.
+   * @param server The server configuration object.
+   * @returns True if the configuration type is 'stdio', false otherwise.
    */
   private isStdioServer(server: MCPServerConfig): server is StdioServerConfig {
+    // Renamed back from isStdioConfig
     return server.type === "stdio";
   }
 
   /**
-   * Override EventEmitter's on method to provide type safety
+   * Overrides EventEmitter's 'on' method for type-safe event listening.
+   * Uses the original `MCPClientEvents` for event types.
    */
   on<E extends keyof MCPClientEvents>(event: E, listener: MCPClientEvents[E]): this {
+    // Use original type
     return super.on(event, listener as (...args: any[]) => void);
   }
 
   /**
-   * Override EventEmitter's emit method to provide type safety
+   * Overrides EventEmitter's 'emit' method for type-safe event emission.
+   * Uses the original `MCPClientEvents` for event types.
    */
   emit<E extends keyof MCPClientEvents>(
+    // Use original type
     event: E,
     ...args: Parameters<MCPClientEvents[E]>
   ): boolean {

@@ -1,15 +1,13 @@
 {
   "name": "@voltagent/core",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
-    "dist",
-    "src",
-    "dist/*.map"
+    "dist"
   ],
   "scripts": {
     "build": "tsup",

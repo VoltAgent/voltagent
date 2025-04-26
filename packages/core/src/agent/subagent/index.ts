@@ -4,7 +4,7 @@ import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
 import type { AgentHandoffOptions, AgentHandoffResult } from "../types";
-
+import { createTool } from "../../tool";
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -266,7 +266,8 @@ Context: ${JSON.stringify(context)}`,
    * Create a delegate tool for sub-agents
    */
   public createDelegateTool(options: Record<string, any> = {}): BaseTool {
-    return {
+    return createTool({
+      id: "delegate_task",
       name: "delegate_task",
       description: "Delegate a task to one or more specialized agents",
       parameters: z.object({
@@ -352,7 +353,7 @@ Context: ${JSON.stringify(context)}`,
           };
         }
       },
-    };
+    });
   }
 
   /**

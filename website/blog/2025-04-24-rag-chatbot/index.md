@@ -10,6 +10,7 @@ image: https://cdn.voltagent.dev/2025-04-24-rag-chatbot/social.png
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import RetrieverMethodHelper from '@site/src/components/blog-widgets/RetrieverMethodHelper';
+import GitHubExampleLink from '@site/src/components/blog-widgets/GitHubExampleLink';
 
 ## Introduction
 
@@ -29,6 +30,11 @@ Steps we'll cover:
 - [Implementing a custom `BaseRetriever` with a simple knowledge base.](#implementing-the-retriever-and-agent)
 - [Creating a VoltAgent `Agent` that uses the retriever directly.](#implementing-the-retriever-and-agent)
 - [Running and testing the RAG chatbot using the VoltAgent Console.](#running-the-agent)
+
+<GitHubExampleLink 
+  repoUrl="https://github.com/VoltAgent/voltagent/tree/main/examples/with-rag-chatbot" 
+  npmCommand="npm create voltagent-app@latest -- --example with-rag-chatbot" 
+/>
 
 ## What is RAG, and Why Use It?
 

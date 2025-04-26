@@ -48,6 +48,11 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Tools",
+      items: ["tools/overview", "tools/reasoning-tool"],
+    },
+    {
+      type: "category",
       label: "Utils",
       items: ["utils/create-prompt"],
     },
