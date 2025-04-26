@@ -24,7 +24,7 @@
     "@modelcontextprotocol/sdk": "^1.10.1",
     "@n8n/json-schema-to-zod": "^1.1.0",
     "@types/ws": "^8.18.1",
-    "hono": "^3.12.6",
+    "hono": "^4.7.7",
     "npm-check-updates": "^17.1.18",
     "uuid": "^9.0.1",
     "ws": "^8.18.1",
