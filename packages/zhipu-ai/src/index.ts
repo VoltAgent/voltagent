@@ -337,17 +337,8 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
 
       const zhipuResponse = await this.processZhipuResponse(response);
 
-      console.log('=========', zhipuResponse);
-
-
-
       const choice = zhipuResponse.choices[0];
-
-
       const messageContent = choice.message.content || '';
-
-      console.log('messageContent', messageContent);
-
 
       // 处理 onStepFinish 回调
       if (options.onStepFinish) {
@@ -363,10 +354,6 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
         // 处理工具调用
         const toolCalls = choice.message.tool_calls;
         if (toolCalls && toolCalls.length > 0) {
-          // conversationHistory.add({
-          //   'role': 'assistant',
-          //   'tool_calls': response['tool_calls'],
-          // });
           zhipuMessages.push({
             role: 'assistant',
             tool_calls: toolCalls,
@@ -378,7 +365,6 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
             try {
               args = JSON.parse(toolCall.function.arguments);
             } catch (e) {
-              console.error('解析工具调用参数失败:', e);
               args = { expression: toolCall.function.arguments.trim() };
             }
 
@@ -401,15 +387,11 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
         try {
           parsedArgs = JSON.parse(tool.function.arguments);
         } catch (e) {
-          console.error('解析工具调用参数失败:', e);
           parsedArgs = { expression: tool.function.arguments.trim() };
         }
 
-        console.log('工具调用参数:', parsedArgs);
-        console.log(tool.function.name);
         const toolResult = await zhipuTools![tool.function.name].execute(parsedArgs)
         if (toolResult) {
-          console.log('toolResult', toolResult);
           // 添加工具执行结果到消息历史
           zhipuMessages.push({
             role: 'tool',
@@ -592,7 +574,6 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
                             try {
                               args = JSON.parse(toolCall.function.arguments);
                             } catch (e) {
-                              console.error('解析工具调用参数失败:', e);
                               args = { expression: toolCall.function.arguments.trim() };
                             }
 
@@ -608,7 +589,6 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
                             // 收集完整的工具调用
                             if (choice.finish_reason === 'tool_calls' && zhipuTools && zhipuTools[toolCall.function.name]) {
                               // 执行工具调用
-                              console.log('执行工具调用', toolCall.function.name, args);
                               const toolResult = await zhipuTools[toolCall.function.name].execute(args);
 
                               if (toolResult) {
@@ -633,8 +613,6 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
 
                                 // 递归调用 streamText 以继续对话
                                 if (options.onFinish && choice.finish_reason != 'tool_calls') {
-                                  console.log('通知客户端当前流已完成');
-
                                   // 通知客户端当前流已完成
                                   const result = {
                                     text: accumulated,
@@ -649,8 +627,6 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
                                 }
 
                                 // 启动新的流处理工具调用结果
-                                console.log('启动新的流处理工具调用结果');
-
                                 try {
                                   // 创建新的流实例而不是复用原有的流
                                   const newStreamResponse = await self.streamText({
@@ -662,14 +638,12 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
 
                                   // 将新流的内容连接到原有的输出流
                                   if (newStreamResponse.textStream) {
-                                    console.log('新流创建成功，准备读取数据');
                                     const newReader = newStreamResponse.textStream.getReader();
 
                                     try {
                                       while (true) {
                                         const { done, value } = await newReader.read();
                                         if (done) {
-                                          console.log('新流数据读取完成');
                                           break;
                                         }
 
@@ -678,27 +652,21 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
                                           ArrayBuffer.isView(value) ? decoder.decode(value as Uint8Array) :
                                             JSON.stringify(value);
 
-                                        console.log('将新流数据写入当前流:', contentValue);
-
                                         // 输出到当前流
                                         controller.enqueue(encoder.encode(contentValue));
 
                                         // 更新累积内容
                                         accumulated += contentValue;
                                       }
-                                    } catch (error) {
-                                      console.error('读取新流数据出错:', error);
+                                    } catch (e) {
                                       if (options.onError) {
-                                        options.onError(error instanceof Error ? error : new Error(String(error)));
+                                        options.onError(e instanceof Error ? e : new Error(String(e)));
                                       }
                                     }
-                                  } else {
-                                    console.warn('新流的textStream为空');
                                   }
-                                } catch (error) {
-                                  console.error('创建工具调用后续流处理错误:', error);
+                                } catch (e) {
                                   if (options.onError) {
-                                    options.onError(error instanceof Error ? error : new Error(String(error)));
+                                    options.onError(e instanceof Error ? e : new Error(String(e)));
                                   }
                                 }
                               }
@@ -726,7 +694,9 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
                       }
                     }
                   } catch (e) {
-                    console.error('解析智谱API流数据失败:', e);
+                    if (options.onError) {
+                      options.onError(e instanceof Error ? e : new Error(String(e)));
+                    }
                   }
                 }
               }
@@ -735,13 +705,9 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
             // 触发 onError 回调
             if (options.onError) {
               options.onError(error instanceof Error ? error : new Error(String(error)));
-            } else {
-              console.error('智谱API流处理错误:', error);
             }
             controller.error(error);
           } finally {
-
-
             controller.close();
           }
         }
@@ -932,22 +898,23 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
 
                             // 触发 onFinish 回调
                             if (options.onFinish) {
-
                               await options.onFinish({
                                 object: parseResult.data,
                               });
                             }
-                          } else {
-                            console.warn('响应不符合指定的 schema:', parseResult.error.message);
                           }
                         } catch (e) {
-                          console.warn('智谱API返回的不是有效的JSON:', accumulated);
+                          if (options.onError) {
+                            options.onError(e instanceof Error ? e : new Error(String(e)));
+                          }
                         }
                       }
                     }
                   }
                 } catch (e) {
-                  console.error('解析智谱API流数据失败:', e);
+                  if (options.onError) {
+                    options.onError(e instanceof Error ? e : new Error(String(e)));
+                  }
                 }
               }
             }
@@ -956,8 +923,6 @@ export class ZhipuProvider implements LLMProvider<LanguageModelV1> {
           // 触发 onError 回调
           if (options.onError) {
             options.onError(error instanceof Error ? error : new Error(String(error)));
-          } else {
-            console.error('智谱API流处理错误:', error);
           }
           transformStream.writable.getWriter().abort(error);
         } finally {

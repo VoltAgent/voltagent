@@ -64,13 +64,13 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -95,10 +95,10 @@ importers:
         version: 21.1.1
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -108,7 +108,7 @@ importers:
         version: 20.17.30
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       tsx:
         specifier: ^4.6.2
         version: 4.19.3
@@ -235,13 +235,13 @@ importers:
         version: 4.1.4
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       next:
         specifier: 15.3.1
         version: 15.3.1(react-dom@19.1.0)(react@19.1.0)
@@ -284,13 +284,13 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -312,13 +312,13 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -340,13 +340,13 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -371,13 +371,13 @@ importers:
         version: 2.49.4
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/supabase':
         specifier: ^0.1.2
-        version: link:../../packages/supabase
+        version: 0.1.2(@voltagent/core@0.1.7)
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
         version: link:../../packages/vercel-ai
@@ -408,7 +408,7 @@ importers:
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -430,13 +430,13 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -458,13 +458,13 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -486,16 +486,16 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       '@voltagent/voice':
         specifier: ^0.1.3
-        version: link:../../packages/voice
+        version: 0.1.3(zod@3.24.2)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -517,16 +517,16 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
-        version: link:../../packages/vercel-ai
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
       '@voltagent/voice':
         specifier: ^0.1.3
-        version: link:../../packages/voice
+        version: 0.1.3(zod@3.24.2)
       dotenv:
         specifier: ^16.4.5
         version: 16.4.7
@@ -551,13 +551,44 @@ importers:
     dependencies:
       '@voltagent/cli':
         specifier: ^0.1.3
-        version: link:../../packages/cli
+        version: 0.1.3
       '@voltagent/core':
         specifier: ^0.1.7
-        version: link:../../packages/core
+        version: 0.1.7
       '@voltagent/xsai':
         specifier: ^0.1.3
-        version: link:../../packages/xsai
+        version: 0.1.3(@voltagent/core@0.1.7)(effect@3.12.7)
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.14.0
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+
+  examples/with-zhipu-ai:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^1.3.10
+        version: 1.3.10(zod@3.24.2)
+      '@voltagent/cli':
+        specifier: ^0.1.2
+        version: 0.1.3
+      '@voltagent/core':
+        specifier: ^0.1.5
+        version: 0.1.7
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.2
+        version: 0.1.3(@voltagent/core@0.1.7)(react@19.1.0)
+      '@voltagent/zhipu-ai':
+        specifier: workspace:^
+        version: link:../../packages/zhipu-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -863,7 +894,7 @@ importers:
         version: 2.49.4
       '@voltagent/core':
         specifier: ^0.1.6
-        version: link:../core
+        version: 0.1.7
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -891,7 +922,7 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/core':
         specifier: ^0.1.6
-        version: link:../core
+        version: 0.1.7
       ai:
         specifier: ^4.2.11
         version: 4.2.11(react@19.1.0)(zod@3.24.2)
@@ -925,7 +956,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^0.1.6
-        version: link:../core
+        version: 0.1.7
       elevenlabs:
         specifier: ^1.55.0
         version: 1.55.0
@@ -956,10 +987,47 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^0.1.6
-        version: link:../core
+        version: 0.1.7
       xsai:
         specifier: 0.2.0-beta.3
         version: 0.2.0-beta.3(effect@3.12.7)(zod@3.24.2)
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.0
+        version: 29.5.14
+      '@types/node':
+        specifier: ^18.15.11
+        version: 18.19.79
+      eslint:
+        specifier: ^8.0.0
+        version: 8.57.1
+      jest:
+        specifier: ^29.5.0
+        version: 29.7.0(@types/node@18.19.79)
+      ts-jest:
+        specifier: ^29.1.0
+        version: 29.2.6(@babel/core@7.26.9)(esbuild@0.17.19)(jest@29.7.0)(typescript@5.8.2)
+      tsup:
+        specifier: ^6.7.0
+        version: 6.7.0(typescript@5.8.2)
+      typescript:
+        specifier: ^5.0.4
+        version: 5.8.2
+
+  packages/zhipu-ai:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^1.3.10
+        version: 1.3.10(zod@3.24.2)
+      '@voltagent/core':
+        specifier: ^0.1.3
+        version: 0.1.7
+      ai:
+        specifier: ^4.2.11
+        version: 4.2.11(react@19.1.0)(zod@3.24.2)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -3875,7 +3943,6 @@ packages:
   /@sindresorhus/is@0.14.0:
     resolution: {integrity: sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==}
     engines: {node: '>=6'}
-    dev: false
 
   /@sindresorhus/is@4.6.0:
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
@@ -3971,7 +4038,6 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       defer-to-connect: 1.1.3
-    dev: false
 
   /@tailwindcss/node@4.1.4:
     resolution: {integrity: sha512-MT5118zaiO6x6hNA04OWInuAiP1YISXql8Z+/Y8iisV5nuhM8VXlyhRuqc2PEviPszcXI66W44bCIk500Oolhw==}
@@ -4255,7 +4321,6 @@ packages:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
     dependencies:
       '@types/node': 20.17.30
-    dev: false
 
   /@types/minimatch@3.0.5:
     resolution: {integrity: sha512-Klz949h02Gz2uZCMGwDUSDS1YBlTdDDgbWHi+81l29tQALUtvz4rAYi5uoVhE5Lagoq6DeqAUlbrHvW/mXDgdQ==}
@@ -4318,7 +4383,6 @@ packages:
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
     dependencies:
       '@types/node': 20.17.30
-    dev: false
 
   /@types/semver@7.7.0:
     resolution: {integrity: sha512-k107IF4+Xr7UHjwDc7Cfd6PRQfbdkiRabXGRjo07b4WyPahFBZCZ1sE+BNxYIJPPg73UkfOsVOLwqVc/6ETrIA==}
@@ -4374,6 +4438,103 @@ packages:
   /@ungap/structured-clone@1.3.0:
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
     dev: true
+
+  /@voltagent/cli@0.1.3:
+    resolution: {integrity: sha512-J1CqNYkFy/9DunQpTdADPnvarbTRfQpHdg8QwReZDDIsC5l8kG6FEuEBt91mG4b0tT5v1jVIPoiJ7uptvJhB5g==}
+    engines: {node: '>=14.0.0'}
+    hasBin: true
+    dependencies:
+      boxen: 5.1.2
+      chalk: 4.1.2
+      commander: 11.1.0
+      conf: 10.2.0
+      figlet: 1.8.0
+      inquirer: 8.2.6
+      npm-check-updates: 17.1.18
+      ora: 5.4.1
+      posthog-node: 4.11.5
+      semver: 7.7.1
+      update-notifier: 5.1.0
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - debug
+
+  /@voltagent/core@0.1.7:
+    resolution: {integrity: sha512-IiO1P25pLsgmK26ErFXNwFQzx1TKQfE5JIMccsgjYIGWC+2UbHgtM6IuqMn9ilhuNGTsRsEw/OCG1zPziMlc7A==}
+    dependencies:
+      '@dmitryrechkin/json-schema-to-zod': 1.0.1
+      '@hono/node-server': 1.14.0(hono@3.12.12)
+      '@hono/node-ws': 1.1.1(@hono/node-server@1.14.0)(hono@3.12.12)
+      '@libsql/client': 0.15.0
+      '@modelcontextprotocol/sdk': 1.10.1
+      '@n8n/json-schema-to-zod': 1.1.0(zod@3.24.2)
+      '@types/ws': 8.18.1
+      hono: 3.12.12
+      npm-check-updates: 17.1.18
+      uuid: 9.0.1
+      ws: 8.18.1
+      zod: 3.24.2
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  /@voltagent/supabase@0.1.2(@voltagent/core@0.1.7):
+    resolution: {integrity: sha512-/dW93YF/gEM4XSnTjNiwh9Edr5mdSkDsRFpGF2RcNd4stHBo8ChQIGutC/Q6df2Iu5JpMYJ1lq6tnCsWjeTlxw==}
+    peerDependencies:
+      '@voltagent/core': ^0.1.0
+    dependencies:
+      '@supabase/supabase-js': 2.49.4
+      '@voltagent/core': 0.1.7
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /@voltagent/vercel-ai@0.1.3(@voltagent/core@0.1.7)(react@19.1.0):
+    resolution: {integrity: sha512-O8NnKrAJEVJMayetyErqwr/49eG1qPF6um/HusD2jRzctmqlM5Ws03E/b+6E2ay8j4G5V0fVtbRImDy+SUuRZQ==}
+    peerDependencies:
+      '@voltagent/core': ^0.1.0
+    dependencies:
+      '@ai-sdk/openai': 1.3.10(zod@3.24.2)
+      '@voltagent/core': 0.1.7
+      ai: 4.2.11(react@19.1.0)(zod@3.24.2)
+      zod: 3.24.2
+    transitivePeerDependencies:
+      - react
+    dev: false
+
+  /@voltagent/voice@0.1.3(zod@3.24.2):
+    resolution: {integrity: sha512-QtXS3wuI10VBJOlwGwLaVaCNpMMUUcXVoo4KduQZafpWa5VzRHT/JOCa+AHcO1m/PxDjuKm1996LeVQfI5+u9Q==}
+    dependencies:
+      '@voltagent/core': 0.1.7
+      elevenlabs: 1.55.0
+      openai: 4.91.0(zod@3.24.2)
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - supports-color
+      - utf-8-validate
+      - ws
+      - zod
+    dev: false
+
+  /@voltagent/xsai@0.1.3(@voltagent/core@0.1.7)(effect@3.12.7):
+    resolution: {integrity: sha512-8CwbkSGd+VnFfFoe8NupzLCaghzaVlkF0cy+MmIr9CAHGOktrOpi7FYeqRPPgh5+Sd6Upou1hE9rT/FjMIzYyg==}
+    peerDependencies:
+      '@voltagent/core': ^0.1.0
+    dependencies:
+      '@voltagent/core': 0.1.7
+      xsai: 0.2.0-beta.3(effect@3.12.7)(zod@3.24.2)
+      zod: 3.24.2
+    transitivePeerDependencies:
+      - '@valibot/to-json-schema'
+      - '@zod/mini'
+      - arktype
+      - effect
+      - zod-to-json-schema
+    dev: false
 
   /@xsai/embed@0.2.0-beta.5:
     resolution: {integrity: sha512-ZgCUOw6Jq2a0awUj9wdCuSHxjTPF65gZfUAzuIed9TE5XVrNqK5eBU4dVlgPQQJPBFR99TTCJUyH1f8nZqi75w==}
@@ -4617,7 +4778,6 @@ packages:
         optional: true
     dependencies:
       ajv: 8.17.1
-    dev: false
 
   /ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
@@ -4760,7 +4920,6 @@ packages:
   /atomically@1.7.0:
     resolution: {integrity: sha512-Xcz9l0z7y9yQ9rdDaxlmaI4uJHf/T8g9hOEzJcsEqX2SjCj4J20uK7+ldkDHMbpJDK76wF7xEIgxc/vSlsfw5w==}
     engines: {node: '>=10.12.0'}
-    dev: false
 
   /axios@1.8.1:
     resolution: {integrity: sha512-NN+fvwH/kV01dYUQ3PTOZns4LWtWhOFCAhQ/pHb88WQ1hNe5V/dvFwc4VJcDL11LT9xSX0QtsR8sWUuyOuOq7g==}
@@ -4780,7 +4939,6 @@ packages:
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
-    dev: false
 
   /babel-jest@29.7.0(@babel/core@7.26.9):
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -5101,7 +5259,6 @@ packages:
       lowercase-keys: 2.0.0
       normalize-url: 4.5.1
       responselike: 1.0.2
-    dev: false
 
   /call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -5213,7 +5370,6 @@ packages:
 
   /ci-info@2.0.0:
     resolution: {integrity: sha512-5tK7EtrZ0N+OLFMthtqOj4fI2Jeb88C4CAZPu25LDVUgXJ0A3Js4PMGqrn0JU1W0Mh1/Z8wZzYPxqUrXeBboCQ==}
-    dev: false
 
   /ci-info@3.9.0:
     resolution: {integrity: sha512-NIxF55hv4nSqQswkAeiOi1r83xy8JldOFDTWiug55KBu9Jnblncd2U6ViHmYgHf01TPZS77NJBhBMKdWj9HQMQ==}
@@ -5349,7 +5505,6 @@ packages:
     resolution: {integrity: sha512-ROoL94jJH2dUVML2Y/5PEDNaSHgeOdSDicUyS7izcF63G6sTc/FTjLub4b8Il9S8S0beOfYt0TaA5qvFK+w0wA==}
     dependencies:
       mimic-response: 1.0.1
-    dev: false
 
   /clone@1.0.4:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
@@ -5442,7 +5597,6 @@ packages:
   /commander@11.1.0:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
-    dev: false
 
   /commander@13.1.0:
     resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
@@ -5489,7 +5643,6 @@ packages:
       onetime: 5.1.2
       pkg-up: 3.1.0
       semver: 7.7.1
-    dev: false
 
   /configstore@5.0.1:
     resolution: {integrity: sha512-aMKprgk5YhBNyH25hj8wGt2+D52Sw1DRRIzqBwLp2Ya9mFmY8KPvvtvmna8SxVR9JMZ4kzMD68N22vlaRpkeFA==}
@@ -5501,7 +5654,6 @@ packages:
       unique-string: 2.0.0
       write-file-atomic: 3.0.3
       xdg-basedir: 4.0.0
-    dev: false
 
   /console-control-strings@1.1.0:
     resolution: {integrity: sha512-ty/fTekppD2fIwRvnZAVdeOiGd1c7YXEixbgJTNzqcxJWKQnjJ/V1bNEEE6hygpM3WjwHFUVK6HTjWSzV4a8sQ==}
@@ -5715,7 +5867,6 @@ packages:
   /crypto-random-string@2.0.0:
     resolution: {integrity: sha512-v1plID3y9r/lPhviJ1wrXpLeyUIGAZ2SHNYTEapm7/8A9nLPoyvVp3RK/EPFqn5kEznyWgYZNsRtYYIWbuG8KA==}
     engines: {node: '>=8'}
-    dev: false
 
   /csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
@@ -5744,7 +5895,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       mimic-fn: 3.1.0
-    dev: false
 
   /debug@4.3.6:
     resolution: {integrity: sha512-O/09Bd4Z1fBrU4VzkhFqVgpPzaGbw6Sm9FEkBT1A/YBXQFGuuSxa1dN2nxgxS34JmKXqYx8CZAwEVoJFImUXIg==}
@@ -5787,7 +5937,6 @@ packages:
     engines: {node: '>=4'}
     dependencies:
       mimic-response: 1.0.1
-    dev: false
 
   /dedent@0.7.0:
     resolution: {integrity: sha512-Q6fKUPqnAHAyhiUgFU7BUzLiv0kd8saH9al7tnu5Q/okj6dnupxyTgFIBjVzJATdfIAm9NAsvXNzjaKa+bxVyA==}
@@ -5805,7 +5954,6 @@ packages:
   /deep-extend@0.6.0:
     resolution: {integrity: sha512-LOHxIOaPYdHlJRtCQfDIVZtfw/ufM8+rVj649RIHzcm/vGwQRXFt6OPqIFWsm2XEMrNIEtWR64sY1LEKD2vAOA==}
     engines: {node: '>=4.0.0'}
-    dev: false
 
   /deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
@@ -5823,7 +5971,6 @@ packages:
 
   /defer-to-connect@1.1.3:
     resolution: {integrity: sha512-0ISdNousHvZT2EiFlZeZAHBUvSxmKswVCEf8hW7KWgG4a8MVEu/3Vb6uWYozkjylyCxe0JBIiRB1jV45S70WVQ==}
-    dev: false
 
   /define-lazy-prop@2.0.0:
     resolution: {integrity: sha512-Ds09qNh8yw3khSjiJjiUInaGX9xlqZDY7JVryGxdxV7NPeuqQfplOpQ66yJFZut3jLa5zOwkXw1g9EI2uKh4Og==}
@@ -5921,7 +6068,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       is-obj: 2.0.0
-    dev: false
 
   /dotenv-expand@10.0.0:
     resolution: {integrity: sha512-GopVGCpVS1UKH75VKHGuQFqS1Gusej0z4FyQkPdwjil2gNIv+LNsqBlboOzpJFZKVT95GkCyWJbBSdFEFUWI2A==}
@@ -5959,7 +6105,6 @@ packages:
 
   /duplexer3@0.1.5:
     resolution: {integrity: sha512-1A8za6ws41LQgv9HrE/66jyC5yuSjQ3L/KOpFtoBilsAK2iA2wuS5rTt1OCzIvtS2V7nVmedsUU+DGRcjBmOYA==}
-    dev: false
 
   /duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
@@ -6192,7 +6337,6 @@ packages:
   /escape-goat@2.1.1:
     resolution: {integrity: sha512-8/uIhbG12Csjy2JEW7D9pHbreaVaS/OpN3ycnyvElTdwM5n6GY6W6e2IPemfvGZeUMqZ9A/3GqIZMgKnBhAw/Q==}
     engines: {node: '>=8'}
-    dev: false
 
   /escape-html@1.0.3:
     resolution: {integrity: sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow==}
@@ -6352,9 +6496,9 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       cross-spawn: 7.0.6
-      get-stream: 6.0.0
+      get-stream: 6.0.1
       human-signals: 2.1.0
-      is-stream: 2.0.0
+      is-stream: 2.0.1
       merge-stream: 2.0.0
       npm-run-path: 4.0.1
       onetime: 5.1.2
@@ -6550,7 +6694,6 @@ packages:
     resolution: {integrity: sha512-chzvGjd+Sp7KUvPHZv6EXV5Ir3Q7kYNpCr4aHrRW79qFtTefmQZNny+W1pW9kf5zeE6dikku2W50W/wAH2xWgw==}
     engines: {node: '>= 0.4.0'}
     hasBin: true
-    dev: false
 
   /figures@3.2.0:
     resolution: {integrity: sha512-yaduQFRKLXYOGgEn6AZau90j3ggSOyiqXU0F9JZfeXYhNa+Jk4X+s45A2zg5jns87GAFa34BBm2kXw4XpNcbdg==}
@@ -6604,7 +6747,6 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       locate-path: 3.0.0
-    dev: false
 
   /find-up@4.1.0:
     resolution: {integrity: sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==}
@@ -6878,14 +7020,12 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       pump: 3.0.2
-    dev: false
 
   /get-stream@5.2.0:
     resolution: {integrity: sha512-nBF+F1rAZVCu/p7rjzgA+Yb4lfYXrpl7a6VmJrU8wF9I1CKvP/QwPNZHnOlwbTkY6dvtFIzFMSyQXbLoTQPRpA==}
     engines: {node: '>=8'}
     dependencies:
       pump: 3.0.2
-    dev: false
 
   /get-stream@6.0.0:
     resolution: {integrity: sha512-A1B3Bh1UmL0bidM/YX2NsCOTnGJePL9rO/M+Mw3m9f2gUpfokS0hi5Eah0WSUEWZdZhIZtMjkIYS7mDfOqNHbg==}
@@ -7053,7 +7193,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       ini: 2.0.0
-    dev: false
 
   /globals@11.12.0:
     resolution: {integrity: sha512-WOBp/EEGUiIsJSp7wcv/y6MO+lV9UoncWqxuFfm8eBwzWNgyfBd6Gz+IeKQ9jCmyhoH99g15M3T+QaVHFjizVA==}
@@ -7132,7 +7271,6 @@ packages:
       p-cancelable: 1.1.0
       to-readable-stream: 1.0.0
       url-parse-lax: 3.0.0
-    dev: false
 
   /graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
@@ -7218,7 +7356,6 @@ packages:
   /has-yarn@2.1.0:
     resolution: {integrity: sha512-UqBRqi4ju7T+TqGNdqAO0PaSVGsDGJUBQvk9eUWNGRY1CFGDzYhLWoM7JQEemnlvVcv/YEmc2wNW8BC24EnUsw==}
     engines: {node: '>=8'}
-    dev: false
 
   /hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
@@ -7387,7 +7524,6 @@ packages:
   /import-lazy@2.1.0:
     resolution: {integrity: sha512-m7ZEHgtw69qOGw+jwxXkHlrlIPdTGkyh66zXZ1ajZbxkDBNjSY/LGbmjc7h0s2ELsUDTAhFr55TrPSSqJGPG0A==}
     engines: {node: '>=4'}
-    dev: false
 
   /import-local@3.1.0:
     resolution: {integrity: sha512-ASB07uLtnDs1o6EHjKpX34BKYDSqnFerfTOJL2HvMqF70LnxpjkzDB8J44oT9pu4AMPkQwf8jl6szgvNd2tRIg==}
@@ -7428,7 +7564,6 @@ packages:
   /ini@2.0.0:
     resolution: {integrity: sha512-7PnF4oN3CvZF23ADhA5wRaYEQpJ8qygSkbtTXWBeXWXmEVRXK+1ITciHWwHhsjv1TmW0MgacIv6hEi5pX5NQdA==}
     engines: {node: '>=10'}
-    dev: false
 
   /init-package-json@5.0.0:
     resolution: {integrity: sha512-kBhlSheBfYmq3e0L1ii+VKe3zBTLL5lDCDWR+f9dLmEGSB3MqLlMlsolubSsyI88Bg6EA+BIMlomAnQ1SwgQBw==}
@@ -7498,7 +7633,6 @@ packages:
     hasBin: true
     dependencies:
       ci-info: 2.0.0
-    dev: false
 
   /is-ci@3.0.1:
     resolution: {integrity: sha512-ZYvCgrefwqoQ6yTyYUbQu64HsITZ3NfKX1lzaEYdkTDcfKzzCI/wthRRYKkdjHKFVgNiXKAKm65Zo1pk2as/QQ==}
@@ -7559,7 +7693,6 @@ packages:
     dependencies:
       global-dirs: 3.0.1
       is-path-inside: 3.0.3
-    dev: false
 
   /is-interactive@1.0.0:
     resolution: {integrity: sha512-2HvIEKRoqS62guEC+qBjpvRubdX910WCMuJTZ+I9yvqKU2/12eSL549HMwtabb4oupdj2sMP50k+XJfB/8JE6w==}
@@ -7577,7 +7710,6 @@ packages:
   /is-npm@5.0.0:
     resolution: {integrity: sha512-WW/rQLOazUq+ST/bCAVBp/2oMERWLsR7OrKyt052dNDk4DHcDE0/7QSXITlmi+VBcV13DfIbysG3tZJm5RfdBA==}
     engines: {node: '>=10'}
-    dev: false
 
   /is-number@7.0.0:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
@@ -7661,7 +7793,6 @@ packages:
 
   /is-typedarray@1.0.0:
     resolution: {integrity: sha512-cyA56iCMHAh5CdzjJIa4aohJyeO1YbwLi3Jc35MmRU6poroFjIGZzUzupGiRPOjgHg9TLu43xbpwXk523fMxKA==}
-    dev: false
 
   /is-unicode-supported@0.1.0:
     resolution: {integrity: sha512-knxG2q4UC3u8stRGyAVJCOdxFmv5DZiRcdlIaAQXAbSfJya+OhopNotLQrstBhququ4ZpuKbDc/8S6mgXgPFPw==}
@@ -7691,7 +7822,6 @@ packages:
 
   /is-yarn-global@0.3.0:
     resolution: {integrity: sha512-VjSeb/lHmkoyd8ryPVIKvOCn4D1koMqY+vqyjjUfc3xyKtP4dYOxM44sZrnqQSzSds3xyOrUTLTC9LVCVgLngw==}
-    dev: false
 
   /isarray@1.0.0:
     resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
@@ -8289,7 +8419,6 @@ packages:
 
   /json-buffer@3.0.0:
     resolution: {integrity: sha512-CuUqjv0FUZIdXkHPI8MezCnFCdaTAacej1TZYulLoAg1h/PhwkdXFN4V/gzY4g+fMBCOV2xF+rp7t2XD2ns/NQ==}
-    dev: false
 
   /json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
@@ -8317,7 +8446,6 @@ packages:
 
   /json-schema-typed@7.0.3:
     resolution: {integrity: sha512-7DE8mpG+/fVw+dTpjbxnx47TaMnDfOI1jwft9g1VybltZCduyRQPJPvc+zzKY9WPHxhPWczyFuYa6I8Mw4iU5A==}
-    dev: false
 
   /json-schema@0.4.0:
     resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
@@ -8392,7 +8520,6 @@ packages:
     resolution: {integrity: sha512-9ykJ/46SN/9KPM/sichzQ7OvXyGDYKGTaDlKMGCAlg2UK8KRy4jb0d8sFc+0Tt0YYnThq8X2RZgCg74RPxgcVA==}
     dependencies:
       json-buffer: 3.0.0
-    dev: false
 
   /keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -8433,7 +8560,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       package-json: 6.5.0
-    dev: false
 
   /lerna@7.4.2:
     resolution: {integrity: sha512-gxavfzHfJ4JL30OvMunmlm4Anw7d7Tq6tdVHzUukLdS9nWnxCN/QB21qR+VJYp5tcyXogHKbdUEGh6qmeyzxSA==}
@@ -8782,7 +8908,6 @@ packages:
     dependencies:
       p-locate: 3.0.0
       path-exists: 3.0.0
-    dev: false
 
   /locate-path@5.0.0:
     resolution: {integrity: sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==}
@@ -8882,12 +9007,10 @@ packages:
   /lowercase-keys@1.0.1:
     resolution: {integrity: sha512-G2Lj61tXDnVFFOi8VZds+SoQjtQC3dgokKdDG2mTm1tx4m50NUHBOZSBwQQHyy0V12A0JTG4icfZQH+xPyh8VA==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /lowercase-keys@2.0.0:
     resolution: {integrity: sha512-tqNXrS78oMOE73NMxK4EMLQsQowWf8jKooH9g7xPavRT706R6bkQJ6DY2Te7QukaZsulxa30wQ7bk0pm4XiHmA==}
     engines: {node: '>=8'}
-    dev: false
 
   /lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
@@ -8924,7 +9047,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       semver: 6.3.1
-    dev: false
 
   /make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -9109,7 +9231,6 @@ packages:
   /mimic-fn@3.1.0:
     resolution: {integrity: sha512-Ysbi9uYW9hFyfrThdDEQuykN4Ey6BuwPD2kpI5ES/nFTDn/98yxYNLZJcgUAKPT/mcrLLKaGzJR9YVxJrIdASQ==}
     engines: {node: '>=8'}
-    dev: false
 
   /mimic-fn@4.0.0:
     resolution: {integrity: sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw==}
@@ -9124,7 +9245,6 @@ packages:
   /mimic-response@1.0.1:
     resolution: {integrity: sha512-j5EctnkH7amfV/q5Hgmoal1g2QHFJRraOtmx0JpIqkxhBhI/lJSl1nMpQ45hVarwNETOoWEimndZ4QK0RHxuxQ==}
     engines: {node: '>=4'}
-    dev: false
 
   /min-indent@1.0.1:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
@@ -9519,7 +9639,6 @@ packages:
   /normalize-url@4.5.1:
     resolution: {integrity: sha512-9UZCFRHQdNrfTpGg8+1INIg93B6zE0aXMVFkw1WFwvO4SlZywU6aLg5Of0Ap/PgcbSw4LNxvMWXMeugwMCX0AA==}
     engines: {node: '>=8'}
-    dev: false
 
   /npm-bundled@1.1.2:
     resolution: {integrity: sha512-x5DHup0SuyQcmL3s7Rx/YQ8sbw/Hzg0rj48eN0dV7hf5cmQq5PXIeioroH3raV1QC1yh3uTYuMThvEQF3iKgGQ==}
@@ -9538,7 +9657,6 @@ packages:
     resolution: {integrity: sha512-bkUy2g4v1i+3FeUf5fXMLbxmV95eG4/sS7lYE32GrUeVgQRfQEk39gpskksFunyaxQgTIdrvYbnuNbO/pSUSqw==}
     engines: {node: ^18.18.0 || >=20.0.0, npm: '>=8.12.1'}
     hasBin: true
-    dev: false
 
   /npm-install-checks@6.3.0:
     resolution: {integrity: sha512-W29RiK/xtpCGqn6f3ixfRYGk+zRyr+Ew9F2E20BfXxT5/euLdA/Nm7fO7OeTGuAmTs30cpgInyJ0cYe708YTZw==}
@@ -9918,7 +10036,6 @@ packages:
   /p-cancelable@1.1.0:
     resolution: {integrity: sha512-s73XxOZ4zpt1edZYZzvhqFa6uvQc1vwUa0K0BdtIZgQMAJj9IbebH+JkgKZc9h+B05PKHLOTl4ajG1BmNrVZlw==}
     engines: {node: '>=6'}
-    dev: false
 
   /p-filter@2.1.0:
     resolution: {integrity: sha512-ZBxxZ5sL2HghephhpGAQdoskxplTwr7ICaehZwLIlfL6acuVgZPm8yBNuRAFBGEqtD/hmUeq9eqLg2ys9Xr/yw==}
@@ -9964,7 +10081,6 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       p-limit: 2.3.0
-    dev: false
 
   /p-locate@4.1.0:
     resolution: {integrity: sha512-R79ZZ/0wAxKGu3oYMlz8jy/kbhsNrS7SKZ7PxEHBgJ5+F2mtFW2fK2cOtBh1cHYkQsbzFV7I+EoRKe6Yt0oK7A==}
@@ -10050,7 +10166,6 @@ packages:
       registry-auth-token: 4.2.2
       registry-url: 5.1.0
       semver: 6.3.1
-    dev: false
 
   /package-manager-detector@0.2.11:
     resolution: {integrity: sha512-BEnLolu+yuz22S56CU1SUKq3XC3PkwD5wv4ikR4MfGvnRVcmzXR9DwSlW2fEamyTPyXHomBJRzgapeuBvRNzJQ==}
@@ -10260,7 +10375,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       find-up: 3.0.0
-    dev: false
 
   /postcss-load-config@3.1.4:
     resolution: {integrity: sha512-6DiM4E7v4coTE4uzA8U//WhtPwyhiim3eyjEMFCnUpzbrkK9wJHgKDT2mR+HbtSrd/NubVaYTOpSpjUl8NQeRg==}
@@ -10303,7 +10417,6 @@ packages:
       axios: 1.8.4
     transitivePeerDependencies:
       - debug
-    dev: false
 
   /prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
@@ -10313,7 +10426,6 @@ packages:
   /prepend-http@2.0.0:
     resolution: {integrity: sha512-ravE6m9Atw9Z/jjttRUZ+clIXogdghyZAuWJ3qEzjT+jI/dL1ifAqhZeC5VHzQp1MSt1+jxKkFNemj/iO7tVUA==}
     engines: {node: '>=4'}
-    dev: false
 
   /prettier@2.8.8:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
@@ -10422,7 +10534,6 @@ packages:
     dependencies:
       end-of-stream: 1.4.4
       once: 1.4.0
-    dev: false
 
   /punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -10434,7 +10545,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       escape-goat: 2.1.1
-    dev: false
 
   /pure-rand@6.1.0:
     resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
@@ -10489,7 +10599,6 @@ packages:
       ini: 1.3.8
       minimist: 1.2.8
       strip-json-comments: 2.0.1
-    dev: false
 
   /react-dom@19.1.0(react@19.1.0):
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
@@ -10656,14 +10765,12 @@ packages:
     engines: {node: '>=6.0.0'}
     dependencies:
       rc: 1.2.8
-    dev: false
 
   /registry-url@5.1.0:
     resolution: {integrity: sha512-8acYXXTI0AkQv6RAOjE3vOaIXZkT9wo4LOFbBKYQEEnnMNBpKqdUrI6S4NT0KPIo/WVvJ5tE/X5LF/TQUf0ekw==}
     engines: {node: '>=8'}
     dependencies:
       rc: 1.2.8
-    dev: false
 
   /require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -10721,7 +10828,6 @@ packages:
     resolution: {integrity: sha512-/Fpe5guzJk1gPqdJLJR5u7eG/gNY4nImjbRDaVWVMRhne55TCmj2i9Q+54PBRfatRC8v/rIiv9BN0pMd9OV5EQ==}
     dependencies:
       lowercase-keys: 1.0.1
-    dev: false
 
   /restore-cursor@3.1.0:
     resolution: {integrity: sha512-l+sSefzHpj5qimhFSE5a8nufZYAM3sBSVMAPtYkmC+4EH2anSGaEMXSD0izRQbu9nfyQ9y5JrVmp7E8oZrUjvA==}
@@ -10841,7 +10947,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       semver: 6.3.1
-    dev: false
 
   /semver@5.7.2:
     resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
@@ -11329,7 +11434,6 @@ packages:
   /strip-json-comments@2.0.1:
     resolution: {integrity: sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
@@ -11599,7 +11703,6 @@ packages:
   /to-readable-stream@1.0.0:
     resolution: {integrity: sha512-Iq25XBt6zD5npPhlLVXGFN3/gyR2/qODcKNNyTMd4vbm39HUaOiAM4PMq0eMVC/Tkxz+Zjdsc55g9yyz+Yq00Q==}
     engines: {node: '>=6'}
-    dev: false
 
   /to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
@@ -11807,7 +11910,6 @@ packages:
     resolution: {integrity: sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==}
     dependencies:
       is-typedarray: 1.0.0
-    dev: false
 
   /typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
@@ -11886,7 +11988,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       crypto-random-string: 2.0.0
-    dev: false
 
   /universal-user-agent@6.0.1:
     resolution: {integrity: sha512-yCzhz6FN2wU1NiiQRogkTQszlQSlpWaw8SvVegAc+bDxbzHgh1vX8uIe8OYyMH6DwH+sdTJsgMl36+mSMdRJIQ==}
@@ -11944,7 +12045,6 @@ packages:
       semver: 7.7.1
       semver-diff: 3.1.1
       xdg-basedir: 4.0.0
-    dev: false
 
   /uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
@@ -11961,7 +12061,6 @@ packages:
     engines: {node: '>=4'}
     dependencies:
       prepend-http: 2.0.0
-    dev: false
 
   /use-sync-external-store@1.4.0(react@19.1.0):
     resolution: {integrity: sha512-9WXSPC5fMv61vaupRkCKCxsPxBocVnwakBEkMIHHpkTTg6icbJtg6jzgtLDm4bl3cSHAca52rYWih0k4K3PfHw==}
@@ -12163,7 +12262,6 @@ packages:
       is-typedarray: 1.0.0
       signal-exit: 3.0.7
       typedarray-to-buffer: 3.1.5
-    dev: false
 
   /write-file-atomic@4.0.2:
     resolution: {integrity: sha512-7KxauUdBmSdWnmpaGFg+ppNjKF8uNLry8LyzjauQDOVONfFLNKrKvQOxZ/VuTIcS/gge/YNahf5RIIQWTSarlg==}
@@ -12218,7 +12316,6 @@ packages:
   /xdg-basedir@4.0.0:
     resolution: {integrity: sha512-PSNhEJDejZYV7h50BohL09Er9VaIefr2LMAf3OEmpCkjOi34eYyQYAXUTjEQtZJTKcF0E2UKTh+osDLsgNim9Q==}
     engines: {node: '>=8'}
-    dev: false
 
   /xsai@0.2.0-beta.3(effect@3.12.7)(zod@3.24.2):
     resolution: {integrity: sha512-tuDrdLV4wqkZ77EabA5nJ7Pv8Jye1Layq2QsuJAO76gcLqh2uZBx0pwr9Kdxm5DPPHorxjcckZK89qM4CwnRDw==}
@@ -12260,9 +12357,13 @@ packages:
         optional: true
       '@zod/mini':
         optional: true
+      '@zod/mini':
+        optional: true
       arktype:
         optional: true
       effect:
+        optional: true
+      zod:
         optional: true
       zod:
         optional: true

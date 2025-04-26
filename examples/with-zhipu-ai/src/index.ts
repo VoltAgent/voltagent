@@ -1,26 +1,7 @@
-# @voltagent/zhipu-ai
-
-VoltAgent Zhipu AI provider integration using the Zhipu AI
-
-This package allows you to use Zhipu AI's fast inferencing models within your VoltAgent agents.
-
-## Installation
-
-```bash
-npm install @voltagent/zhipu-ai
-# or
-yarn add @voltagent/zhipu-ai
-# or
-pnpm add @voltagent/zhipu-ai
-```
-
-## Usage
-
-You need to provide your Zhipu AI API key. You can get one from [Zhipu AI](https://www.zhipuai.cn/) after signing up.
-
-```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
+import { VoltAgent, Agent, createTool } from "@voltagent/core";
 import { ZhipuProvider } from "@voltagent/zhipu-ai";
+import { z } from "zod";
+
 
 const zhipuProvider = new ZhipuProvider({
   apiKey: process.env.ZHIPU_API_KEY ?? (() => {
@@ -39,8 +20,8 @@ const weatherTool = createTool({
   execute: async (args) => {
     const { location, time } = args;
     return {
-      location,
       time,
+      location,
       temperature: 22,
       conditions: "sunny",
     };
@@ -64,8 +45,3 @@ new VoltAgent({
     agent,
   },
 });
-```
-
-## License
-
-Licensed under the MIT License, Copyright © 2025-present VoltAgent.
