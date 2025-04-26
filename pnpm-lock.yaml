@@ -652,10 +652,10 @@ importers:
         version: 1.0.1
       '@hono/node-server':
         specifier: ^1.14.0
-        version: 1.14.0(hono@3.12.12)
+        version: 1.14.0(hono@4.7.7)
       '@hono/node-ws':
         specifier: ^1.1.1
-        version: 1.1.1(@hono/node-server@1.14.0)(hono@3.12.12)
+        version: 1.1.1(@hono/node-server@1.14.0)(hono@4.7.7)
       '@libsql/client':
         specifier: ^0.15.0
         version: 0.15.0
@@ -669,8 +669,8 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       hono:
-        specifier: ^3.12.6
-        version: 3.12.12
+        specifier: ^4.7.7
+        version: 4.7.7
       npm-check-updates:
         specifier: ^17.1.18
         version: 17.1.18
@@ -2417,24 +2417,24 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@hono/node-server@1.14.0(hono@3.12.12):
+  /@hono/node-server@1.14.0(hono@4.7.7):
     resolution: {integrity: sha512-YUCxJwgHRKSqjrdTk9e4VMGKN27MK5r4+MGPyZTgKH+IYbK+KtYbHeOcPGJ91KGGD6RIQiz2dAHxvjauNhOS8g==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
     dependencies:
-      hono: 3.12.12
+      hono: 4.7.7
     dev: false
 
-  /@hono/node-ws@1.1.1(@hono/node-server@1.14.0)(hono@3.12.12):
+  /@hono/node-ws@1.1.1(@hono/node-server@1.14.0)(hono@4.7.7):
     resolution: {integrity: sha512-iFJrAw5GuBTstehBzLY2FyW5rRlXmO3Uwpijpm4Liv75owNP/UjZe3KExsLuEK4w+u+xhvHqOoQUyEKWUvyghw==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       '@hono/node-server': ^1.11.1
       hono: ^4.6.0
     dependencies:
-      '@hono/node-server': 1.14.0(hono@3.12.12)
-      hono: 3.12.12
+      '@hono/node-server': 1.14.0(hono@4.7.7)
+      hono: 4.7.7
       ws: 8.18.1
     transitivePeerDependencies:
       - bufferutil
@@ -7230,9 +7230,9 @@ packages:
     resolution: {integrity: sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==}
     dev: true
 
-  /hono@3.12.12:
-    resolution: {integrity: sha512-5IAMJOXfpA5nT+K0MNjClchzz0IhBHs2Szl7WFAhrFOsbtQsYmNynFyJRg/a3IPsmCfxcrf8txUGiNShXpK5Rg==}
-    engines: {node: '>=16.0.0'}
+  /hono@4.7.7:
+    resolution: {integrity: sha512-2PCpQRbN87Crty8/L/7akZN3UyZIAopSoRxCwRbJgUuV1+MHNFHzYFxZTg4v/03cXUm+jce/qa2VSBZpKBm3Qw==}
+    engines: {node: '>=16.9.0'}
     dev: false
 
   /hosted-git-info@2.8.9:
