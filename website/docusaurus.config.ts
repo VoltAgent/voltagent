@@ -104,6 +104,7 @@ const config: Config = {
         },
       },
     ],
+    "./plugins/gurubase/index.js",
   ],
   themeConfig: {
     image: "img/social.png",
