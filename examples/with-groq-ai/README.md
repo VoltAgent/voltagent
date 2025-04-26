@@ -49,5 +49,5 @@ VoltAgent is an open-source TypeScript framework for creating and managing AI ag
 ## Try Example
 
 ```bash
-npm create voltagent-app@latest -- --example with-vercel-ai
+npm create voltagent-app@latest -- --example with-groq-ai
 ```
