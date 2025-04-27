@@ -152,37 +152,38 @@ describe("GoogleGenAIProvider", () => {
         yield { text: "Hello", responseId: "chunk1" };
         yield { text: ", ", responseId: "chunk2" };
         yield { text: "world!", responseId: "chunk3", candidates: [{ finishReason: "STOP" }] };
-        yield { 
-          text: "", responseId: "final", 
+        yield {
+          text: "",
+          responseId: "final",
           usageMetadata: {
             promptTokenCount: 5,
             candidatesTokenCount: 15,
-            totalTokenCount: 20
-          }
+            totalTokenCount: 20,
+          },
         };
       }
 
       const mockGenerateContentStream = jest.fn().mockResolvedValue(mockGenerator());
-      
+
       const provider = new GoogleGenAIProvider({ apiKey: "test-api-key" });
       (provider as any).ai.models.generateContentStream = mockGenerateContentStream;
-      
+
       const onChunkMock = jest.fn();
       const onStepFinishMock = jest.fn();
-      
+
       const result = await provider.streamText({
         messages: [{ role: "user", content: "Hello!" }],
         model: "gemini-2.0-flash-001",
         onChunk: onChunkMock,
-        onStepFinish: onStepFinishMock
+        onStepFinish: onStepFinishMock,
       });
-      
+
       expect(result.textStream).toBeInstanceOf(ReadableStream);
-      
+
       // Read all chunks from the stream
       const reader = result.textStream.getReader();
       const chunks = [];
-      
+
       let done = false;
       while (!done) {
         const { value, done: isDone } = await reader.read();
@@ -192,9 +193,9 @@ describe("GoogleGenAIProvider", () => {
           chunks.push(value);
         }
       }
-      
+
       expect(chunks).toEqual(["Hello", ", ", "world!"]);
-      
+
       expect(onChunkMock).toHaveBeenCalledTimes(3);
       expect(onStepFinishMock).toHaveBeenCalledTimes(1);
       expect(onStepFinishMock).toHaveBeenCalledWith({
@@ -205,8 +206,8 @@ describe("GoogleGenAIProvider", () => {
         usage: {
           promptTokens: 5,
           completionTokens: 15,
-          totalTokens: 20
-        }
+          totalTokens: 20,
+        },
       });
     });
   });

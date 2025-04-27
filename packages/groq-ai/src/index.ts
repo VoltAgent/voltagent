@@ -13,7 +13,7 @@ import type {
   StreamTextOptions,
 } from "@voltagent/core";
 import type { z } from "zod";
-import { GroqProviderOptions, GroqMessage } from "./types";
+import type { GroqProviderOptions, GroqMessage } from "./types";
 import { Groq } from "groq-sdk";
 
 export class GroqProvider implements LLMProvider<string> {
@@ -43,7 +43,7 @@ export class GroqProvider implements LLMProvider<string> {
       content:
         typeof message.content === "string" ? message.content : JSON.stringify(message.content),
     };
-    return groqMessage;
+    return groqMessage as any;
   };
 
   createStepFromChunk = (chunk: {
@@ -154,8 +154,11 @@ export class GroqProvider implements LLMProvider<string> {
       });
 
       let accumulatedText = "";
-      let usage: any;
-      let finishReason: string | undefined;
+      let usage: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+      };
 
       // Create a readable stream to return to the caller
       const textStream = new ReadableStream({
@@ -183,11 +186,6 @@ export class GroqProvider implements LLMProvider<string> {
                 }
               }
 
-              // Extract finish reason and usage when available
-              if (chunk.choices[0]?.finish_reason) {
-                finishReason = chunk.choices[0].finish_reason;
-              }
-
               if (chunk.x_groq?.usage) {
                 usage = {
                   promptTokens: chunk.x_groq?.usage.prompt_tokens,
@@ -204,8 +202,6 @@ export class GroqProvider implements LLMProvider<string> {
             if (options.onFinish) {
               await options.onFinish({
                 text: accumulatedText,
-                usage,
-                finishReason,
               });
             }
 
@@ -258,7 +254,7 @@ export class GroqProvider implements LLMProvider<string> {
       const systemMessage = {
         role: "system",
         content: `${schemaDescription}\nRespond with ONLY a valid JSON object, nothing else.`,
-      };
+      } as any;
 
       // Extract common parameters
       const {
@@ -323,8 +319,8 @@ export class GroqProvider implements LLMProvider<string> {
   }
 
   async streamObject<TSchema extends z.ZodType>(
-    options: StreamObjectOptions<string, TSchema>,
+    _options: StreamObjectOptions<string, TSchema>,
   ): Promise<ProviderObjectStreamResponse<any, z.infer<TSchema>>> {
-    throw new Error("streamObject is not implemented for GoogleGenAIProvider yet.");
+    throw new Error("streamObject is not implemented for GroqProvider yet.");
   }
 }

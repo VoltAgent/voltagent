@@ -1,12 +1,12 @@
 {
   "name": "create-voltagent-app",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Create VoltAgent applications with one command",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
-    "create-voltagent": "dist/index.js",
-    "create-voltagent-app": "dist/index.js"
+    "create-voltagent": "./dist/index.js",
+    "create-voltagent-app": "./dist/index.js"
   },
   "files": [
     "dist",

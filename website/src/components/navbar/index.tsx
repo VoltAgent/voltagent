@@ -86,14 +86,6 @@ export default function Navbar() {
               Examples
             </Link>
             <Link
-              to="https://github.com/voltagent/voltagent/"
-              className={`${styles.navLink} ${
-                isActive("/docs/") ? styles.active : ""
-              }`}
-            >
-              Open Source
-            </Link>
-            <Link
               to="/blog/"
               className={`${styles.navLink} ${
                 isActive("/blog/") ? styles.active : ""
@@ -101,6 +93,14 @@ export default function Navbar() {
             >
               Blog
             </Link>
+            <div
+              className={`${styles.navLink} ${styles.navLinkDisabled} relative group cursor-pointer flex items-center`}
+            >
+              AI Agent Marketplace
+              <span className="absolute left-full ml-2 px-1.5 py-0.5 text-xs font-semibold text-emerald-400 border-solid border-emerald-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                Coming Soon
+              </span>
+            </div>
           </div>
         </div>
         <div className={styles.navbarRight}>
@@ -130,7 +130,7 @@ export default function Navbar() {
                           .map((stargazer, index) => (
                             <a
                               key={stargazer.login}
-                              href={`https://github.com/voltagent/voltagent/stargazers`}
+                              href="https://github.com/voltagent/voltagent/stargazers"
                               target="_blank"
                               rel="noopener noreferrer"
                               title={stargazer.login}
@@ -241,14 +241,14 @@ export default function Navbar() {
           >
             Examples
           </Link>
-          <Link
-            to="https://github.com/voltagent/voltagent/"
-            className={`${styles.mobileNavLink} ${
-              isActive("/docs/") ? styles.active : ""
-            }`}
+          <div
+            className={`${styles.mobileNavLink} ${styles.navLinkDisabled} flex items-center justify-center cursor-default`}
           >
-            Open Source
-          </Link>
+            AI Agent Marketplace
+            <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-400 rounded-full whitespace-nowrap">
+              Coming Soon
+            </span>
+          </div>
           <Link
             to="/blog/"
             className={`${styles.mobileNavLink} ${

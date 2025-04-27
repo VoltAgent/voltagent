@@ -143,15 +143,22 @@ export function Hero() {
         {/* Left Column: Text and Buttons */}
         <div>
           {/* Main Heading */}
-          <h2
-            className={`text-2xl text-left mb-2 text-main-emerald font-bold transition-all duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
+          <Link
+            href="https://github.com/voltagent/voltagent"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="no-underline hover:no-underline"
           >
-            Open Source
-          </h2>
+            <h2
+              className={`text-2xl text-left mb-2 text-main-emerald font-bold transition-all duration-1000 ${
+                isVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+              }`}
+            >
+              Open Source
+            </h2>
+          </Link>
 
           <h1
             className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-bold text-left mb-6 transition-all duration-1000 ${
