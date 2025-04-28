@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
+import fs from "node:fs";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type {
   Conversation,
@@ -118,7 +119,6 @@ export class LibSQLStorage implements Memory {
         try {
           // Create .voltagent directory if it doesn't exist
           const dirPath = join(process.cwd(), ".voltagent");
-          const fs = require("node:fs");
           if (!existsSync(dirPath)) {
             fs.mkdirSync(dirPath, { recursive: true });
           }

@@ -4,7 +4,6 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const mcp = new MCPConfiguration({
-  id: "peaka-mcp",
   servers: {
     peaka: {
       type: "stdio",

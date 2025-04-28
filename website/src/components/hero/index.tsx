@@ -1,6 +1,7 @@
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { useState, useEffect, useRef } from "react";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
+import { HeartIcon } from "@heroicons/react/24/solid";
 import { LineShadowText } from "../magicui/line-shadow-text";
 import { AgentsAnimation } from "../agents-animation";
 import { useLocation } from "@docusaurus/router";
@@ -12,6 +13,7 @@ export function Hero() {
     "npm create voltagent-app@latest",
   );
   const [isTyping, setIsTyping] = useState(false);
+  const [showHeart, setShowHeart] = useState(false);
   const originalCommand = "npm create voltagent-app@latest";
   const typingTimerRef = useRef(null);
 
@@ -117,48 +119,38 @@ export function Hero() {
 
   return (
     <div className="relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
-      {/* Adding global styles */}
-      <style>
-        {`
-          .command-text.pulse-effect {
-            animation: pulse 0.8s ease-in-out;
-          }
-          
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); color: #00ffaa; }
-            100% { transform: scale(1); }
-          }
-          
-          @keyframes blink {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-          }
-        `}
-      </style>
-
       <div className="mt-16 md:mt-24" />
       <div className="grid xs:grid-cols-1 mx-4 lg:mx-0 lg:grid-cols-2 gap-8 items-center">
         {/* Left Column: Text and Buttons */}
         <div>
           {/* Main Heading */}
-          <Link
-            href="https://github.com/voltagent/voltagent"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="no-underline hover:no-underline"
+          <h2
+            className={`text-2xl text-left mb-2 font-bold transition-all duration-1000 ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
           >
-            <h2
-              className={`text-2xl text-left mb-2 text-main-emerald font-bold transition-all duration-1000 ${
-                isVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
+            <Link
+              href="https://github.com/voltagent/voltagent/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-main-emerald no-underline hover:no-underline"
             >
-              Open Source
-            </h2>
-          </Link>
+              <span
+                className="inline-block relative"
+                onMouseEnter={() => setShowHeart(true)}
+                onMouseLeave={() => setShowHeart(false)}
+              >
+                Open Source
+                {showHeart && (
+                  <span className="absolute -right-8 top-1 animate-pulse">
+                    <HeartIcon className="w-6 h-6 text-main-emerald" />
+                  </span>
+                )}
+              </span>
+            </Link>
+          </h2>
 
           <h1
             className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-bold text-left mb-6 transition-all duration-1000 ${
@@ -169,7 +161,7 @@ export function Hero() {
           >
             TypeScript AI Agent
             <LineShadowText
-              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 landing-xs:ml-2 landing-md:ml-0 italic"
+              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 ml-2 landing-sm:ml-0 italic"
               shadowColor={"#00d992"}
             >
               Framework
@@ -205,9 +197,11 @@ export function Hero() {
               Get Started
             </Link>
 
-            <div
+            <button
+              type="button"
               onClick={handleCommandClick}
-              className="w-full sm:w-auto flex cursor-pointer items-center justify-center border backdrop-blur-sm h-[53px] border-solid border-[#113328] rounded-md px-4 py-3 font-[monospace] text-[13px] hover:bg-[#0e2c24] transition duration-300"
+              aria-label="Copy npm command to clipboard"
+              className="w-full sm:w-auto flex cursor-pointer items-center justify-center border backdrop-blur-sm h-[53px] border-solid border-[#113328] rounded-md px-4 py-3 font-[monospace] text-[13px] hover:bg-[#0e2c24] transition duration-300 bg-transparent"
             >
               <span className="mr-2 text-main-emerald">$</span>
               <span className="command-text text-main-emerald min-w-[220px] text-left relative">
@@ -218,7 +212,7 @@ export function Hero() {
                     <span className="animate-pulse">|</span>
                   )}
               </span>
-            </div>
+            </button>
           </div>
         </div>
 

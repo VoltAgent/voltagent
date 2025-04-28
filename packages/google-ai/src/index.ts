@@ -6,22 +6,27 @@ import {
   type GenerateContentResponseUsageMetadata,
   GoogleGenAI,
   type GoogleGenAIOptions,
+  type Schema,
 } from "@google/genai";
 import type {
   BaseMessage,
+  GenerateObjectOptions,
   LLMProvider,
   MessageRole,
+  ProviderObjectResponse,
   ProviderTextResponse,
   ProviderTextStreamResponse,
   StepWithContent,
   UsageInfo,
 } from "@voltagent/core";
+import type { z } from "zod";
 import type {
   GoogleGenerateContentStreamResult,
   GoogleGenerateTextOptions,
   GoogleProviderRuntimeOptions,
   GoogleStreamTextOptions,
 } from "./types";
+import { isZodObject, responseSchemaFromZodType } from "./utils/schema_helper";
 
 type StreamProcessingState = {
   accumulatedText: string;
@@ -30,10 +35,12 @@ type StreamProcessingState = {
 };
 export class GoogleGenAIProvider implements LLMProvider<string> {
   private ai: GoogleGenAI;
+  private isVertexAI: boolean;
 
   constructor(options: GoogleGenAIOptions) {
-    const hasApiKey = !!options?.apiKey;
-    const hasVertexAIConfig = options.vertexai && options.project && options.location;
+    const apiKey = options?.apiKey || process.env.GEMINI_API_KEY;
+    const hasApiKey = !!apiKey;
+    const hasVertexAIConfig = !!(options.vertexai && options.project && options.location);
 
     if (!hasApiKey && !hasVertexAIConfig) {
       throw new Error(
@@ -47,7 +54,8 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       );
     }
 
-    this.ai = new GoogleGenAI(options);
+    this.isVertexAI = hasVertexAIConfig;
+    this.ai = new GoogleGenAI({ ...options, apiKey });
 
     this.generateText = this.generateText.bind(this);
     this.streamText = this.streamText.bind(this);
@@ -57,6 +65,7 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     this._getUsageInfo = this._getUsageInfo.bind(this);
     this._processStreamChunk = this._processStreamChunk.bind(this);
     this._finalizeStream = this._finalizeStream.bind(this);
+    this.generateObject = this.generateObject.bind(this);
   }
 
   getModelIdentifier = (model: string): string => {
@@ -323,11 +332,96 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     };
   }
 
-  async generateObject(_options: any): Promise<any> {
-    throw new Error("generateObject is not implemented for GoogleGenAIProvider yet.");
+  async generateObject<TSchema extends z.ZodType>(
+    options: GenerateObjectOptions<string, TSchema>,
+  ): Promise<ProviderObjectResponse<GenerateContentResponse, z.infer<TSchema>>> {
+    const model = options.model;
+    const contents = options.messages.map(this.toMessage);
+    const providerOptions: GoogleProviderRuntimeOptions = options.provider || {};
+
+    if (!isZodObject(options.schema)) {
+      throw new Error("Schema provided to generateObject must be a valid ZodObject.");
+    }
+
+    const zodObjectSchema = options.schema;
+
+    let googleSchema: Schema | undefined;
+    try {
+      googleSchema = responseSchemaFromZodType(this.isVertexAI, zodObjectSchema);
+    } catch (error: any) {
+      throw new Error(`Failed to convert Zod schema to Google GenAI Schema: ${error.message}`);
+    }
+
+    const config: GenerateContentConfig = {
+      temperature: providerOptions.temperature || 0.2,
+      topP: providerOptions.topP,
+      stopSequences: providerOptions.stopSequences,
+      seed: providerOptions.seed,
+      presencePenalty: providerOptions.presencePenalty,
+      frequencyPenalty: providerOptions.frequencyPenalty,
+      responseMimeType: "application/json", // Maybe support other mime types via extraOptions?
+      ...(providerOptions.extraOptions && providerOptions.extraOptions),
+      responseSchema: googleSchema,
+    };
+
+    const generationParams: GenerateContentParameters = {
+      contents: contents,
+      model: model,
+      config: config,
+    };
+
+    const result = await this.ai.models.generateContent(generationParams);
+    const response = result;
+
+    const responseText = response.text;
+    const usageInfo = response?.usageMetadata;
+    const finishReason = response.candidates?.[0]?.finishReason?.toString();
+    const finalUsage = this._getUsageInfo(usageInfo);
+
+    let parsedObject: z.infer<TSchema> | null = null;
+    let parseError: Error | null = null;
+    let finalResponseText = "";
+
+    try {
+      if (responseText) {
+        finalResponseText = responseText;
+        parsedObject = options.schema.parse(JSON.parse(finalResponseText.trim()));
+      }
+    } catch (error: any) {
+      console.error("Failed to parse JSON response or validate against schema:", error);
+      parseError = error;
+    }
+
+    if (options.onStepFinish) {
+      const step: StepWithContent = {
+        id: response.responseId || "",
+        type: "text",
+        content: finalResponseText,
+        role: "assistant",
+        usage: finalUsage,
+      };
+      await options.onStepFinish(step);
+    }
+
+    const providerResponse: ProviderObjectResponse<GenerateContentResponse, z.infer<TSchema>> = {
+      provider: response,
+      object: parsedObject as z.infer<TSchema>,
+      usage: finalUsage,
+      finishReason: finishReason,
+    };
+
+    if (parseError) {
+      throw new Error(`Failed to generate valid object: ${parseError.message}`);
+    }
+
+    return providerResponse;
   }
 
+  /**
+   * streamObject is not supported for GoogleGenAIProvider because the Google SDK streams partial text,
+   * making it impossible to convert into a partial object.
+   */
   async streamObject(_options: any): Promise<any> {
-    throw new Error("streamObject is not implemented for GoogleGenAIProvider yet.");
+    throw new Error("streamObject is not supported for GoogleGenAIProvider");
   }
 }

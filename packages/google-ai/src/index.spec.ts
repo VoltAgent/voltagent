@@ -1,4 +1,5 @@
 import { FinishReason, type GenerateContentResponse, type GoogleGenAIOptions } from "@google/genai";
+import { z } from "zod";
 import { GoogleGenAIProvider } from "./index";
 
 const mockGenerateContent = jest.fn();
@@ -209,6 +210,138 @@ describe("GoogleGenAIProvider", () => {
           totalTokens: 20,
         },
       });
+    });
+  });
+
+  describe("generateObject", () => {
+    it("should generate an object successfully", async () => {
+      const testSchema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      const mockResponse: Partial<GenerateContentResponse> = {
+        text: JSON.stringify({ name: "Test User", age: 30 }),
+        responseId: "obj-response-id",
+        candidates: [{ finishReason: FinishReason.STOP }],
+        usageMetadata: {
+          promptTokenCount: 15,
+          candidatesTokenCount: 25,
+          totalTokenCount: 40,
+        },
+      };
+
+      mockGenerateContent.mockResolvedValueOnce(mockResponse);
+
+      const result = await provider.generateObject({
+        messages: [{ role: "user", content: "Generate user data" }],
+        model: "gemini-2.0-flash-001",
+        schema: testSchema,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.object).toEqual({ name: "Test User", age: 30 });
+      expect(result.usage).toEqual({
+        promptTokens: 15,
+        completionTokens: 25,
+        totalTokens: 40,
+      });
+      expect(result.finishReason).toBe("STOP");
+
+      // Verify the correct parameters were passed to generateContent
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: "Generate user data" }],
+            },
+          ],
+          model: "gemini-2.0-flash-001",
+          config: expect.objectContaining({
+            responseMimeType: "application/json",
+            responseSchema: expect.any(Object), // We don't need to deeply test the schema conversion here
+            temperature: 0.2, // Default temperature
+          }),
+        }),
+      );
+    });
+
+    it("should handle onStepFinish callback for generateObject", async () => {
+      const testSchema = z.object({ status: z.string() });
+      const mockResponseJson = { status: "completed" };
+      const mockResponse: Partial<GenerateContentResponse> = {
+        text: JSON.stringify(mockResponseJson),
+        responseId: "obj-step-id",
+        candidates: [{ finishReason: FinishReason.STOP }],
+        usageMetadata: {
+          promptTokenCount: 5,
+          candidatesTokenCount: 10,
+          totalTokenCount: 15,
+        },
+      };
+
+      mockGenerateContent.mockResolvedValueOnce(mockResponse);
+
+      const onStepFinishMock = jest.fn();
+
+      await provider.generateObject({
+        messages: [{ role: "user", content: "Get status" }],
+        model: "gemini-2.0-flash-001",
+        schema: testSchema,
+        onStepFinish: onStepFinishMock,
+      });
+
+      expect(onStepFinishMock).toHaveBeenCalledTimes(1);
+      expect(onStepFinishMock).toHaveBeenCalledWith({
+        id: "obj-step-id",
+        type: "text",
+        content: JSON.stringify(mockResponseJson),
+        role: "assistant",
+        usage: {
+          promptTokens: 5,
+          completionTokens: 10,
+          totalTokens: 15,
+        },
+      });
+    });
+
+    it("should throw error for invalid JSON response", async () => {
+      const testSchema = z.object({ data: z.string() });
+      const mockResponse: Partial<GenerateContentResponse> = {
+        text: "{ invalid json ", // Malformed JSON
+        responseId: "invalid-json-id",
+        candidates: [{ finishReason: FinishReason.STOP }],
+      };
+
+      mockGenerateContent.mockResolvedValueOnce(mockResponse);
+
+      await expect(
+        provider.generateObject({
+          messages: [{ role: "user", content: "Generate data" }],
+          model: "gemini-2.0-flash-001",
+          schema: testSchema,
+        }),
+      ).rejects.toThrow(/^Failed to generate valid object:/);
+    });
+
+    it("should throw error if response does not match schema", async () => {
+      const testSchema = z.object({ name: z.string(), age: z.number() }); // Expects age as number
+      const mockResponse: Partial<GenerateContentResponse> = {
+        text: JSON.stringify({ name: "Test User", age: "thirty" }), // Age is string, not number
+        responseId: "schema-mismatch-id",
+        candidates: [{ finishReason: FinishReason.STOP }],
+      };
+
+      mockGenerateContent.mockResolvedValueOnce(mockResponse);
+
+      await expect(
+        provider.generateObject({
+          messages: [{ role: "user", content: "Generate user data" }],
+          model: "gemini-2.0-flash-001",
+          schema: testSchema,
+        }),
+      ).rejects.toThrow(/^Failed to generate valid object:/);
     });
   });
 });

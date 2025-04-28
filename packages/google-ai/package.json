@@ -18,9 +18,10 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@google/genai": "^0.9.0",
-    "@voltagent/core": "^0.1.6",
-    "zod": "^3.24.2"
+    "@google/genai": "^0.10.0",
+    "@voltagent/core": "^0.1.7",
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
