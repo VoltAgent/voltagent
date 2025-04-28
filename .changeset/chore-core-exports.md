@@ -2,4 +2,4 @@
 "@voltagent/core": patch
 ---
 
-Add package exports
+fix: add package exports
