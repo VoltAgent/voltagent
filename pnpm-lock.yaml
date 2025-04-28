@@ -122,7 +122,7 @@ importers:
         specifier: ^0.40.0
         version: 0.40.0
       '@voltagent/anthropic-ai':
-        specifier: workspace:*
+        specifier: ^0.1.0
         version: link:../../packages/anthropic-ai
       '@voltagent/cli':
         specifier: ^0.1.1
@@ -206,7 +206,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/core
       '@voltagent/groq-ai':
-        specifier: workspace:*
+        specifier: ^0.1.0
         version: link:../../packages/groq-ai
       zod:
         specifier: ^3.24.2
