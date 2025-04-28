@@ -1,6 +1,8 @@
 ---
+
 title: Providers
 slug: /agents/providers
+
 ---
 
 # Providers (LLMProvider)
@@ -164,6 +166,105 @@ const agent = new Agent({
 ```
 
 **Choose `@voltagent/groq-ai` when:** You need to connect specifically to Groq API used for fast inferencing of supported models.
+
+### `@voltagent/anthropic-ai` (Anthropic AI Provider)
+
+Connects to Anthropic's Claude models using the official [`@anthropic-ai/sdk`](https://github.com/anthropics/anthropic-sdk-js) SDK.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { AnthropicProvider } from "@voltagent/anthropic-ai";
+
+// Create an agent using an Anthropic model
+const agent = new Agent({
+  name: "Claude Assistant",
+  description: "A helpful assistant powered by Anthropic's Claude",
+  llm: new AnthropicProvider(),
+  model: "claude-3-sonnet-20240229", // Specify the desired Anthropic model name
+});
+```
+
+Add API key in .env file
+
+```bash
+  ANTHROPIC_API_KEY=your_api_key
+```
+
+The Anthropic provider supports all Claude models, including:
+
+- `claude-3-opus-20240229` - Claude 3 Opus (most capable)
+- `claude-3-sonnet-20240229` - Claude 3 Sonnet (balanced)
+- `claude-3-haiku-20240307` - Claude 3 Haiku (fastest)
+- `claude-2.1` - Claude 2.1
+- `claude-2.0` - Claude 2.0
+
+You can also use the `latest` variants of these models, which will automatically use the most recent version.
+
+#### Advanced Configuration
+
+The Anthropic provider supports several configuration options:
+
+```typescript
+const anthropicProvider = new AnthropicProvider({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  // Optional: Provide a custom Anthropic client instance
+  client: customAnthropicClient,
+});
+```
+
+When using the provider with an agent, you can specify additional model parameters:
+
+```typescript
+const agent = new Agent({
+  name: "Claude Assistant",
+  description: "A helpful assistant powered by Anthropic's Claude",
+  llm: anthropicProvider,
+  model: "claude-3-sonnet-20240229",
+  provider: {
+    maxTokens: 2048, // Maximum tokens to generate
+    temperature: 0.7, // Controls randomness (0.0 to 1.0)
+    topP: 0.9, // Nucleus sampling parameter
+    stopSequences: ["\n\n", "Human:", "Assistant:"], // Custom stop sequences
+  },
+});
+```
+
+#### Tool Support
+
+The Anthropic provider fully supports tools with Claude models. Tools are defined using Zod schemas:
+
+```typescript
+import { Tool } from "@voltagent/core";
+import { z } from "zod";
+
+const weatherTool = new Tool({
+  name: "get_current_weather",
+  description: "Get the current weather in a location",
+  parameters: z.object({
+    location: z.string().describe("The location to get weather for"),
+  }),
+  execute: async (input) => {
+    // Tool implementation
+    return {
+      location: input.location,
+      temperature: 72,
+      conditions: "Sunny",
+    };
+  },
+});
+
+const agent = new Agent({
+  name: "Weather Assistant",
+  description: "A helpful weather assistant",
+  llm: anthropicProvider,
+  model: "claude-3-sonnet-20240229",
+  tools: [weatherTool],
+});
+```
+
+<br/>
+
+**Choose `@voltagent/anthropic-ai` when:** You want to use Anthropic's Claude models, which are known for their strong reasoning capabilities, helpfulness, and low hallucination rates. Claude models are particularly well-suited for tasks requiring detailed analysis, code generation, and complex reasoning.
 
 ## The `model` Parameter
 

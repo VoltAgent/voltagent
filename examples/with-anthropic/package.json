@@ -1,0 +1,30 @@
+{
+  "name": "with-anthropic",
+  "private": true,
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent"
+  ],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src ",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.0",
+    "@voltagent/anthropic-ai": "workspace:*",
+    "@voltagent/cli": "^0.1.1",
+    "@voltagent/core": "^0.1.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
