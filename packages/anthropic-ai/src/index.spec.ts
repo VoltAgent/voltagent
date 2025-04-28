@@ -81,6 +81,7 @@ describe("AnthropicProvider", () => {
         model: "claude-3-7-sonnet -20250219",
         tools: [
           {
+            id: "test-tool",
             name: "test-tool",
             description: "This is a test tool",
             parameters: z.object({
