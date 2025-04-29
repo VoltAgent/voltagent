@@ -55,10 +55,11 @@
 
 .navLink {
   text-decoration: none;
-  color: #dcdcdc;
-  font-size: 16px;
-  font-weight: 500;
+  color: #bdbdbd;
+  font-size: 14px;
+  font-weight: 600;
   transition: color 0.2s;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .navLink:hover {
@@ -182,13 +183,15 @@
   top: 64px;
   left: 0;
   right: 0;
-  background-color: #0a1017;
-  padding: 20px;
+  background-color: #08121b;
+  padding: 32px 24px;
   border-bottom: 1px solid #1a2533;
+  font-family: "IBM Plex Mono", monospace;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   align-items: flex-start;
   width: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .mobileLogo {
@@ -200,10 +203,11 @@
 
 .mobileNavLink {
   text-decoration: none;
-  color: #94a3b8;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 8px 0;
+  color: #bdbdbd;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.2s;
+  font-family: "IBM Plex Mono", monospace !important;
   width: 100%;
   display: block;
 }
@@ -216,20 +220,48 @@
 .mobileButtons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 16px;
+  margin-top: 24px;
+  width: 100%;
 }
 
 .mobileLoginButton {
-  color: #94a3b8;
+  color: #e2e8f0;
   font-size: 15px;
   font-weight: 500;
   text-decoration: none;
-  padding: 12px;
+  padding: 10px 14px;
   border-radius: 6px;
   text-align: center;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid #1a2533;
+  background-color: rgba(51, 65, 85, 0.1);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mobileLoginButton:hover {
+  border-color: #64748b;
+  color: #e2e8f0;
+}
+
+.mobileDiscordButton {
+  color: #5865f2;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  text-align: center;
+  background-color: rgba(88, 101, 242, 0.1);
+  border: 1px solid rgba(88, 101, 242, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.mobileDiscordButton:hover {
+  border-color: #5865f2;
 }
 
 .mobileSignupButton {
@@ -241,6 +273,17 @@
   padding: 12px;
   border-radius: 6px;
   text-align: center;
+}
+
+.mobileNavLink button {
+  font-family: "IBM Plex Mono", monospace !important;
+  font-weight: 600;
+  color: #bdbdbd;
+  font-size: 14px;
+}
+
+.mobileNavLink button:hover {
+  color: #ffffff;
 }
 
 @media (max-width: 1024px) {

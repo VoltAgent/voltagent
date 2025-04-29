@@ -3,6 +3,7 @@ import type { Voice as ElevenLabsVoice } from "elevenlabs/api/types/Voice";
 import type { VoiceMetadata } from "@voltagent/core";
 import { BaseVoiceProvider } from "../base";
 import type { ElevenLabsModel, ElevenLabsVoiceOptions } from "./types";
+import { Readable } from "node:stream";
 
 export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
   private readonly client: ElevenLabsClient;
@@ -68,7 +69,7 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
         throw new Error("Voice is required");
       }
 
-      const response = await this.client.generate({
+      const audioStream = await this.client.generate({
         text,
         voice: voice,
         model_id: this.ttsModel,
@@ -80,6 +81,9 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
         },
         stream: true,
       });
+
+      // Convert the AsyncIterable stream to a readable stream
+      const response = Readable.from(audioStream);
 
       return response;
     } catch (error) {

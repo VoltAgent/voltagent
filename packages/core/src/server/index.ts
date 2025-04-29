@@ -79,7 +79,10 @@ const printServerStartup = (port: number, message: string) => {
   );
   console.log(divider);
   console.log(
-    `${colors.green}  ✓ ${colors.bright}HTTP Server: ${colors.reset}${colors.white}http://localhost:${port}${colors.reset}`,
+    `${colors.green}  ✓ ${colors.bright}HTTP Server:  ${colors.reset}${colors.white}http://localhost:${port}${colors.reset}`,
+  );
+  console.log(
+    `${colors.green}  ✓ ${colors.bright}Swagger UI:   ${colors.reset}${colors.white}http://localhost:${port}/ui${colors.reset}`,
   );
   console.log();
   console.log(
@@ -170,13 +173,12 @@ export const startServer = async (preferredPort = 3141): Promise<ServerReturn> =
           `${colors.yellow}Port ${port} is already in use, trying next port...${colors.reset}`,
         );
         continue;
-      } else {
-        console.error(
-          `${colors.red}Unexpected error starting server on port ${port}:${colors.reset}`,
-          error,
-        );
-        throw error;
       }
+      console.error(
+        `${colors.red}Unexpected error starting server on port ${port}:${colors.reset}`,
+        error,
+      );
+      throw error;
     }
   }
 

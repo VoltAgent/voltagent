@@ -2,18 +2,35 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
+import { z } from "zod";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { swaggerUI } from "@hono/swagger-ui";
 import type { AgentHistoryEntry } from "../agent/history";
 import { AgentEventEmitter } from "../events";
 import { AgentRegistry } from "./registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
+import type { AgentStatus } from "../agent/types";
 import {
   checkForUpdates,
   updateAllPackages,
   updateSinglePackage,
   type PackageUpdateInfo,
 } from "../utils/update";
+import {
+  getAgentsRoute,
+  textRoute,
+  streamRoute,
+  objectRoute,
+  streamObjectRoute,
+  type ErrorSchema,
+  type TextResponseSchema,
+  type ObjectResponseSchema,
+  type AgentResponseSchema,
+  type TextRequestSchema,
+  type ObjectRequestSchema,
+} from "./api.routes";
 
-const app = new Hono();
+const app = new OpenAPIHono();
 
 // Nerdy landing page
 app.get("/", (c) => {
@@ -59,10 +76,9 @@ app.get("/", (c) => {
                 padding: 10px 15px;
                 border-radius: 4px;
                 transition: background-color 0.2s, color 0.2s;
-            }
+             }
             a:hover {
-                background-color: #64b5f6;
-                color: #2a2a2a;
+                text-decoration: underline; /* Add underline on hover */
             }
             .logo {
               font-size: 1.8em; /* Slightly smaller logo */
@@ -82,6 +98,11 @@ app.get("/", (c) => {
               <p style="margin-bottom: 15px;">If you find VoltAgent useful, please consider giving us a <a href="http://github.com/voltAgent/voltagent" target="_blank" style="border: none; padding: 0; font-weight: bold; color: #64b5f6;"> star on GitHub ⭐</a>!</p>
               <p>Need support or want to connect with the community? Join our <a href="https://s.voltagent.dev/discord" target="_blank" style="border: none; padding: 0; font-weight: bold; color: #64b5f6;">Discord server</a>.</p>
             </div>
+            <div style="margin-top: 30px; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 25px;">
+              <a href="/ui" target="_blank" style="border: none; padding: 0; font-weight: bold; color: #64b5f6;">Swagger UI</a>
+              <span style="color: #555555;">|</span> <!-- Optional separator -->
+              <a href="/doc" target="_blank" style="border: none; padding: 0; font-weight: bold; color: #64b5f6;">OpenAPI Spec</a>
+            </div>
         </div>
         <script>
             console.log("%c⚡ VoltAgent Activated ⚡ %c", "color: #64b5f6; font-size: 1.5em; font-weight: bold;", "color: #cccccc; font-size: 1em;");
@@ -96,35 +117,61 @@ app.use("/*", cors());
 // Store WebSocket connections for each agent
 const agentConnections = new Map<string, Set<WebSocket>>();
 
+// Enable CORS for all routes
+app.use(
+  "/*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
+    maxAge: 600,
+    credentials: true,
+  }),
+);
+
 // Get all agents
-app.get("/agents", (c: ApiContext) => {
+app.openapi(getAgentsRoute, (c) => {
   const registry = AgentRegistry.getInstance();
   const agents = registry.getAllAgents();
 
-  const response: ApiResponse<AgentResponse[]> = {
-    success: true,
-    data: agents.map((agent) => {
+  try {
+    const responseData = agents.map((agent) => {
       const fullState = agent.getFullState();
 
       // Ensure subAgents conform to the AgentResponse type
       return {
         ...fullState,
+        status: fullState.status as AgentStatus, // Cast status
         tools: agent.getToolsForApi(),
         subAgents:
           fullState.subAgents?.map((subAgent: any) => ({
             id: subAgent.id || "",
             name: subAgent.name || "",
             description: subAgent.description || "",
-            status: subAgent.status || "idle",
+            status: (subAgent.status as AgentStatus) || "idle", // Cast status
             model: subAgent.model || "",
             tools: subAgent.tools || [],
             memory: subAgent.memory,
           })) || [],
-      } as any;
-    }),
-  };
+      } as z.infer<typeof AgentResponseSchema>; // Assert type conformance
+    });
 
-  return c.json(response);
+    const response = {
+      success: true,
+      data: responseData,
+    } satisfies z.infer<
+      (typeof getAgentsRoute.responses)[200]["content"]["application/json"]["schema"]
+    >; // Use satisfies
+
+    return c.json(response);
+  } catch (error) {
+    console.error("Failed to get agents:", error);
+    return c.json(
+      { success: false, error: "Failed to retrieve agents" } satisfies z.infer<typeof ErrorSchema>,
+      500,
+    );
+  }
 });
 
 // Get agent by ID
@@ -145,7 +192,9 @@ app.get("/agents/:id", (c: ApiContext) => {
     success: true,
     data: {
       ...agent.getFullState(),
+      status: agent.getFullState().status as AgentStatus,
       tools: agent.getToolsForApi() as any,
+      subAgents: agent.getFullState().subAgents as any,
     },
   };
 
@@ -189,92 +238,68 @@ app.get("/agents/:id/history", async (c: ApiContext) => {
   return c.json(response);
 });
 
-// Enable CORS for all routes
-app.use(
-  "/*",
-  cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
-    maxAge: 600,
-    credentials: true,
-  }),
-);
-
 // Generate text response
-app.post("/agents/:id/text", async (c: ApiContext) => {
-  const id = c.req.param("id");
+app.openapi(textRoute, async (c) => {
+  const { id } = c.req.valid("param") as { id: string };
   const registry = AgentRegistry.getInstance();
   const agent = registry.getAgent(id);
 
   if (!agent) {
-    const response: ApiResponse<null> = {
-      success: false,
-      error: "Agent not found",
-    };
-    return c.json(response, 404);
+    return c.json(
+      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      404,
+    );
   }
 
   try {
-    const body = await c.req.json();
-    const { input, options = {} } = body;
+    const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
     const response = await agent.generateText(input, options);
-    return c.json({ success: true, data: response });
+    return c.json({ success: true, data: response } satisfies z.infer<typeof TextResponseSchema>);
   } catch (error) {
     return c.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to generate text",
-      },
+      } satisfies z.infer<typeof ErrorSchema>,
       500,
     );
   }
 });
 
 // Stream text response
-app.post("/agents/:id/stream", async (c: ApiContext) => {
-  const id = c.req.param("id");
+app.openapi(streamRoute, async (c) => {
+  const { id } = c.req.valid("param") as { id: string };
   const registry = AgentRegistry.getInstance();
   const agent = registry.getAgent(id);
 
   if (!agent) {
-    const response: ApiResponse<null> = {
-      success: false,
-      error: "Agent not found",
-    };
-    return c.json(response, 404);
+    return c.json(
+      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      404,
+    );
   }
 
   try {
-    const body = await c.req.json();
-    const { input, options = {} } = body;
+    const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
-    // Create a ReadableStream
     const stream = new ReadableStream({
       async start(controller) {
         try {
           const response = await agent.streamText(input, {
             ...options,
-            userId: "1",
           });
 
-          // Handle the stream
           for await (const chunk of response.textStream) {
-            // Format the chunk as SSE data with additional metadata
             const data = {
               text: chunk,
               timestamp: new Date().toISOString(),
               type: "text",
             };
             const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-
-            // Encode and send the message
             controller.enqueue(new TextEncoder().encode(sseMessage));
           }
 
-          // Send completion message
           const completionData = {
             done: true,
             timestamp: new Date().toISOString(),
@@ -282,25 +307,32 @@ app.post("/agents/:id/stream", async (c: ApiContext) => {
           };
           const completionMessage = `data: ${JSON.stringify(completionData)}\n\n`;
           controller.enqueue(new TextEncoder().encode(completionMessage));
-
-          // Close the stream
           controller.close();
         } catch (error) {
-          // Send error message
           const errorData = {
             error: error instanceof Error ? error.message : "Streaming failed",
             timestamp: new Date().toISOString(),
             type: "error",
           };
           const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
-          controller.enqueue(new TextEncoder().encode(errorMessage));
-          controller.close();
+          try {
+            controller.enqueue(new TextEncoder().encode(errorMessage));
+          } catch (e) {
+            console.error("Failed to enqueue error message:", e);
+          }
+          try {
+            controller.close();
+          } catch (e) {
+            console.error("Failed to close controller after error:", e);
+          }
         }
+      },
+      cancel(reason) {
+        console.log("Stream cancelled:", reason);
       },
     });
 
-    // Return the stream with SSE headers
-    return new Response(stream, {
+    return c.body(stream, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -311,72 +343,116 @@ app.post("/agents/:id/stream", async (c: ApiContext) => {
     return c.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to stream text",
-      },
+        error: error instanceof Error ? error.message : "Failed to initiate text stream",
+      } satisfies z.infer<typeof ErrorSchema>,
       500,
     );
   }
 });
 
 // Generate object response
-app.post("/agents/:id/object", async (c: ApiContext) => {
-  const id = c.req.param("id");
+app.openapi(objectRoute, async (c) => {
+  const { id } = c.req.valid("param") as { id: string };
   const registry = AgentRegistry.getInstance();
   const agent = registry.getAgent(id);
 
   if (!agent) {
-    const response: ApiResponse<null> = {
-      success: false,
-      error: "Agent not found",
-    };
-    return c.json(response, 404);
+    return c.json(
+      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      404,
+    );
   }
 
   try {
-    const body = await c.req.json();
-    const { input, schema, options = {} } = body;
+    const {
+      input,
+      schema,
+      options = {},
+    } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
     const response = await agent.generateObject(input, schema, options);
-    return c.json({ success: true, data: response });
+    return c.json({ success: true, data: response } satisfies z.infer<typeof ObjectResponseSchema>);
   } catch (error) {
     return c.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to generate object",
-      },
+      } satisfies z.infer<typeof ErrorSchema>,
       500,
     );
   }
 });
 
 // Stream object response
-app.post("/agents/:id/stream-object", async (c: ApiContext) => {
-  const id = c.req.param("id");
+app.openapi(streamObjectRoute, async (c) => {
+  const { id } = c.req.valid("param") as { id: string };
   const registry = AgentRegistry.getInstance();
   const agent = registry.getAgent(id);
 
   if (!agent) {
-    const response: ApiResponse<null> = {
-      success: false,
-      error: "Agent not found",
-    };
-    return c.json(response, 404);
+    return c.json(
+      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      404,
+    );
   }
 
   try {
-    const body = await c.req.json();
-    const { input, schema, options = {} } = body;
+    const {
+      input,
+      schema,
+      options = {},
+    } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
-    // Set up SSE headers
-    c.header("Content-Type", "text/event-stream");
-    c.header("Cache-Control", "no-cache");
-    c.header("Connection", "keep-alive");
+    const agentStream = await agent.streamObject(input, schema, options);
 
-    // Create a stream from the agent's streamObject method
-    const stream = await agent.streamObject(input, schema, options);
+    const sseStream = new ReadableStream({
+      async start(controller) {
+        const reader = agentStream.getReader();
+        const decoder = new TextDecoder();
 
-    // Return the stream
-    return new Response(stream, {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              const completionData = {
+                done: true,
+                type: "completion",
+                timestamp: new Date().toISOString(),
+              };
+              controller.enqueue(`data: ${JSON.stringify(completionData)}\n\n`);
+              break;
+            }
+            const chunkString = decoder.decode(value, { stream: true });
+            controller.enqueue(`data: ${chunkString}\n\n`);
+          }
+          controller.close();
+        } catch (error) {
+          const errorData = {
+            error: error instanceof Error ? error.message : "Object streaming failed",
+            type: "error",
+            timestamp: new Date().toISOString(),
+          };
+          try {
+            controller.enqueue(`data: ${JSON.stringify(errorData)}\n\n`);
+          } catch (e) {
+            console.error("Failed to enqueue error message:", e);
+          }
+          try {
+            controller.close();
+          } catch (e) {
+            console.error("Failed to close controller after error:", e);
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      },
+      cancel(reason) {
+        console.log("Object Stream cancelled:", reason);
+        agentStream.cancel(reason);
+      },
+    });
+
+    return c.body(sseStream, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -387,74 +463,8 @@ app.post("/agents/:id/stream-object", async (c: ApiContext) => {
     return c.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to stream object",
-      },
-      500,
-    );
-  }
-});
-
-// Execute a tool directly
-app.post("/agents/:id/tools/:toolName/execute", async (c: ApiContext) => {
-  // Get agent ID and decode URI component to handle spaces and special characters
-  const encodedId = c.req.param("id");
-  const id = decodeURIComponent(encodedId);
-
-  // Get and decode tool name
-  const encodedToolName = c.req.param("toolName");
-  const toolName = decodeURIComponent(encodedToolName);
-
-  console.log(`[API] Execute tool request for agent: "${id}", tool: "${toolName}"`);
-
-  const registry = AgentRegistry.getInstance();
-  const agent = registry.getAgent(id);
-
-  if (!agent) {
-    console.log(`[API] Agent not found: "${id}"`);
-    const response: ApiResponse<null> = {
-      success: false,
-      error: `Agent not found: ${id}`,
-    };
-    return c.json(response, 404);
-  }
-
-  try {
-    const body = await c.req.json();
-    const { params = {} } = body;
-
-    // Find the tool in the agent's tools
-    const tools = agent.getTools();
-    const tool = tools.find((t) => t.name === toolName);
-
-    if (!tool) {
-      console.log(`[API] Tool not found: "${toolName}" for agent: "${id}"`);
-      return c.json(
-        {
-          success: false,
-          error: `Tool '${toolName}' not found for this agent`,
-        },
-        404,
-      );
-    }
-
-    console.log(`[API] Executing tool "${toolName}" with params:`, params);
-
-    // Execute the tool
-    const result = await tool.execute(params);
-
-    console.log(`[API] Tool "${toolName}" executed successfully`);
-    return c.json({
-      success: true,
-      data: { result },
-    });
-  } catch (error) {
-    console.error(`[API] Error executing tool "${toolName}":`, error);
-
-    return c.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to execute tool",
-      },
+        error: error instanceof Error ? error.message : "Failed to initiate object stream",
+      } satisfies z.infer<typeof ErrorSchema>,
       500,
     );
   }
@@ -544,6 +554,22 @@ app.post("/updates/:packageName", async (c: ApiContext) => {
   }
 });
 
+// OpenAPI Documentation Endpoints
+
+// The OpenAPI specification endpoint
+app.doc("/doc", {
+  openapi: "3.1.0",
+  info: {
+    version: "1.0.0",
+    title: "VoltAgent Core API",
+    description: "API for managing and interacting with VoltAgents",
+  },
+  servers: [{ url: "http://localhost:3141", description: "Local development server" }],
+});
+
+// Swagger UI endpoint
+app.get("/ui", swaggerUI({ url: "/doc" }));
+
 export { app as default };
 
 // Create WebSocket server
@@ -592,7 +618,7 @@ export const createWebSocketServer = () => {
     });
   });
 
-  wss.on("connection", (ws, req) => {
+  wss.on("connection", async (ws, req) => {
     // Extract agent ID from URL - new URL structure /ws/agents/:id
     const url = new URL(req.url || "", "ws://localhost");
     const pathParts = url.pathname.split("/");
@@ -647,8 +673,8 @@ export const createWebSocketServer = () => {
     // Get agent and send initial full state
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (agent) {
-      // Get history
-      const history = agent.getHistory();
+      // Get history - needs await
+      const history = await agent.getHistory();
 
       if (history && history.length > 0) {
         // Send all history entries in one message
@@ -662,7 +688,7 @@ export const createWebSocketServer = () => {
 
         // Also check if there's an active history entry and send it individually
         const activeHistory = history.find(
-          (entry) => entry.status !== "completed" && entry.status !== "error",
+          (entry: AgentHistoryEntry) => entry.status !== "completed" && entry.status !== "error",
         );
 
         if (activeHistory) {

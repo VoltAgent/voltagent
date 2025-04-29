@@ -1,5 +1,17 @@
 # @voltagent/google-ai
 
+## 0.3.0
+
+### Minor Changes
+
+- [#52](https://github.com/VoltAgent/voltagent/pull/52) [`96f2395`](https://github.com/VoltAgent/voltagent/commit/96f239548a207d8cf34694999129980a7998f6e1) Thanks [@foxy17](https://github.com/foxy17)! - feat: Add `generateObject` method for structured JSON output via Zod schemas and Google's JSON mode.
+  feat: Add support for reading the Google GenAI API key from the `GEMINI_API_KEY` environment variable as a fallback.
+
+### Patch Changes
+
+- Updated dependencies [[`55c58b0`](https://github.com/VoltAgent/voltagent/commit/55c58b0da12dd94a3095aad4bc74c90757c98db4), [`d40cb14`](https://github.com/VoltAgent/voltagent/commit/d40cb14860a5abe8771e0b91200d10f522c62881), [`e88cb12`](https://github.com/VoltAgent/voltagent/commit/e88cb1249c4189ced9e245069bed5eab71cdd894), [`0651d35`](https://github.com/VoltAgent/voltagent/commit/0651d35442cda32b6057f8b7daf7fd8655a9a2a4)]:
+  - @voltagent/core@0.1.8
+
 ## 0.2.0
 
 ### Minor Changes
