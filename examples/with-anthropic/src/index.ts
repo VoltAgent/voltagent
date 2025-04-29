@@ -1,8 +1,8 @@
-import { VoltAgent, Agent, Tool } from "@voltagent/core";
+import { VoltAgent, Agent, createTool } from "@voltagent/core";
 import { AnthropicProvider } from "@voltagent/anthropic-ai";
 import { z } from "zod";
 
-const weatherTool = new Tool({
+const weatherTool = createTool({
   name: "get_current_weather",
   description: "Get the current weather in a location",
   // Use Zod schema instead of JSON Schema
@@ -15,6 +15,8 @@ const weatherTool = new Tool({
     };
   },
 });
+
+console.log(weatherTool);
 
 const agent = new Agent({
   name: "weather-agent",

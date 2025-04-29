@@ -113,7 +113,7 @@ importers:
         specifier: ^4.6.2
         version: 4.19.3
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.3.
         version: 5.8.2
 
   examples/with-anthropic:

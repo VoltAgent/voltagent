@@ -10,8 +10,19 @@ function zodToJsonSchema(schema: z.ZodType<any>): {
   properties: Record<string, unknown>;
   required?: string[];
 } {
-  if (schema instanceof z.ZodObject) {
-    const shape = schema._def.shape();
+  // Check if it's a ZodObject by checking for the typeName property
+  if (
+    schema &&
+    typeof schema === "object" &&
+    "_def" in schema &&
+    schema._def &&
+    typeof schema._def === "object" &&
+    "typeName" in schema._def &&
+    schema._def.typeName === "ZodObject"
+  ) {
+    // Use a safer type assertion approach
+    const def = schema._def as unknown as { shape: () => Record<string, z.ZodTypeAny> };
+    const shape = def.shape();
     const properties: Record<string, unknown> = {};
     const required: string[] = [];
 
