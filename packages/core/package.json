@@ -13,9 +13,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -24,9 +22,10 @@
     "test": "jest"
   },
   "dependencies": {
-    "@dmitryrechkin/json-schema-to-zod": "^1.0.1",
     "@hono/node-server": "^1.14.0",
     "@hono/node-ws": "^1.1.1",
+    "@hono/swagger-ui": "^0.5.1",
+    "@hono/zod-openapi": "^0.19.6",
     "@libsql/client": "^0.15.0",
     "@modelcontextprotocol/sdk": "^1.10.1",
     "@n8n/json-schema-to-zod": "^1.1.0",

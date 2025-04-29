@@ -1,7 +1,8 @@
 import type { Context } from "hono";
-import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import type { ToolStatusInfo as CoreToolStatusInfo, ToolStatus } from "../tool";
+
+export type { AgentStatus };
 
 export type ApiContext = Context;
 

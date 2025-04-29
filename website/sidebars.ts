@@ -63,6 +63,11 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "API",
+      items: ["api/overview"],
+    },
+    {
+      type: "category",
       label: "Community",
       items: [
         "community/overview",
