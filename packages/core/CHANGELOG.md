@@ -1,5 +1,39 @@
 # @voltagent/core
 
+## 0.1.8
+
+### Patch Changes
+
+- [#51](https://github.com/VoltAgent/voltagent/pull/51) [`55c58b0`](https://github.com/VoltAgent/voltagent/commit/55c58b0da12dd94a3095aad4bc74c90757c98db4) Thanks [@kwaa](https://github.com/kwaa)! - Use the latest Hono to avoid duplicate dependencies
+
+- [#59](https://github.com/VoltAgent/voltagent/pull/59) [`d40cb14`](https://github.com/VoltAgent/voltagent/commit/d40cb14860a5abe8771e0b91200d10f522c62881) Thanks [@kwaa](https://github.com/kwaa)! - fix: add package exports
+
+- [`e88cb12`](https://github.com/VoltAgent/voltagent/commit/e88cb1249c4189ced9e245069bed5eab71cdd894) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Enhance `createPrompt` with Template Literal Type Inference
+
+  Improved the `createPrompt` utility to leverage TypeScript's template literal types. This provides strong type safety by:
+
+  - Automatically inferring required variable names directly from `{{variable}}` placeholders in the template string.
+  - Enforcing the provision of all required variables with the correct types at compile time when calling `createPrompt`.
+
+  This significantly reduces the risk of runtime errors caused by missing or misspelled prompt variables.
+
+- [#65](https://github.com/VoltAgent/voltagent/pull/65) [`0651d35`](https://github.com/VoltAgent/voltagent/commit/0651d35442cda32b6057f8b7daf7fd8655a9a2a4) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Add OpenAPI (Swagger) Documentation for Core API - #64
+
+  - Integrated `@hono/zod-openapi` and `@hono/swagger-ui` to provide interactive API documentation.
+  - Documented the following core endpoints with request/response schemas, parameters, and examples:
+    - `GET /agents`: List all registered agents.
+    - `POST /agents/{id}/text`: Generate text response.
+    - `POST /agents/{id}/stream`: Stream text response (SSE).
+    - `POST /agents/{id}/object`: Generate object response (Note: Requires backend update to fully support JSON Schema input).
+    - `POST /agents/{id}/stream-object`: Stream object response (SSE) (Note: Requires backend update to fully support JSON Schema input).
+  - Added `/doc` endpoint serving the OpenAPI 3.1 specification in JSON format.
+  - Added `/ui` endpoint serving the interactive Swagger UI.
+  - Improved API discoverability:
+    - Added links to Swagger UI and OpenAPI Spec on the root (`/`) endpoint.
+    - Added links to Swagger UI in the server startup console logs.
+  - Refactored API schemas and route definitions into `api.routes.ts` for better organization.
+  - Standardized generation options (like `userId`, `temperature`, `maxTokens`) in the API schema with descriptions, examples, and sensible defaults.
+
 ## 0.1.7
 
 ### Patch Changes
