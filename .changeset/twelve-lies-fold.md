@@ -2,7 +2,7 @@
 "@voltagent/core": patch
 ---
 
-feat: Add OpenAPI (Swagger) Documentation for Core API - # 64
+feat: Add OpenAPI (Swagger) Documentation for Core API - #64
 
 - Integrated `@hono/zod-openapi` and `@hono/swagger-ui` to provide interactive API documentation.
 - Documented the following core endpoints with request/response schemas, parameters, and examples:
