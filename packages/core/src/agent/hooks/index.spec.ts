@@ -2,6 +2,10 @@ import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
 import { createTool, type AgentTool } from "../../tool";
 import { Agent } from "../index";
+// Import only OperationContext
+import type { OperationContext } from "../types";
+
+// Removed unused mock types
 
 // Mock LLM provider
 class MockProvider {
@@ -22,6 +26,31 @@ const createTestAgent = (name: string) => {
     llm: new MockProvider() as any,
     model: "mock-model",
   });
+};
+
+// Create mock OperationContext for tests
+const createMockContext = (id = "mock-op-1") => {
+  // No explicit type annotation here
+  const mockHistoryEntry = {
+    id: `history-${id}`,
+    timestamp: new Date(),
+    input: "test input",
+    output: "",
+    status: "working", // Use a valid AgentStatus string literal
+    steps: [] as any[],
+    events: [] as any[],
+    agentId: "test-agent",
+    conversationId: "conv-1",
+  };
+
+  // Cast the return object to OperationContext to satisfy the usage
+  return {
+    operationId: id,
+    userContext: new Map<string | symbol, any>(),
+    historyEntry: mockHistoryEntry,
+    eventUpdaters: new Map<string, any>(),
+    isActive: true,
+  } as OperationContext; // Add cast here
 };
 
 describe("Agent Hooks Functionality", () => {
@@ -86,7 +115,7 @@ describe("Agent Hooks Functionality", () => {
       });
 
       // Simulate a handoff (by calling the hook directly)
-      await agent.hooks.onHandoff!(agent, sourceAgent);
+      await agent.hooks.onHandoff?.(agent, sourceAgent);
 
       // Verify onHandoff was called with the agent and source agent
       expect(onHandoffSpy).toHaveBeenCalledWith(agent, sourceAgent);
@@ -106,13 +135,18 @@ describe("Agent Hooks Functionality", () => {
       // Add a test tool to the agent
       agent.addItems([tool]);
 
-      // Directly execute the hooks to test their functionality
-      await agent.hooks.onToolStart?.(agent, tool);
-      await agent.hooks.onToolEnd?.(agent, tool, "Tool result");
+      // Create a mock context for this test
+      const mockContext = createMockContext();
 
-      // Verify hooks were called with correct arguments
-      expect(onToolStartSpy).toHaveBeenCalledWith(agent, tool);
-      expect(onToolEndSpy).toHaveBeenCalledWith(agent, tool, "Tool result");
+      // Directly execute the hooks to test their functionality
+      // Pass the mock context
+      await agent.hooks.onToolStart?.(agent, tool, mockContext);
+      // Pass the mock context
+      await agent.hooks.onToolEnd?.(agent, tool, "Tool result", mockContext);
+
+      // Verify hooks were called with correct arguments, including the context
+      expect(onToolStartSpy).toHaveBeenCalledWith(agent, tool, mockContext);
+      expect(onToolEndSpy).toHaveBeenCalledWith(agent, tool, "Tool result", mockContext);
     });
   });
 });
