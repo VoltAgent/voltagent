@@ -559,9 +559,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     // Create the event data, including the serialized userContext
-    const eventData: Partial<StandardEventData> & { userContext?: Record<string, unknown> } = {
+    const eventData: Partial<StandardEventData> & {
+      userContext?: Record<string, unknown>;
+    } = {
       affectedNodeId,
-      status,
+      status: status as any,
       timestamp: new Date().toISOString(),
       sourceAgentId: this.id,
       ...data,
@@ -637,9 +639,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       }
     }
 
-    const eventData: Partial<StandardEventData> & { userContext?: Record<string, unknown> } = {
+    const eventData: Partial<StandardEventData> & {
+      userContext?: Record<string, unknown>;
+    } = {
       affectedNodeId: toolNodeId,
-      status: status as EventStatus,
+      status: status as any,
       timestamp: new Date().toISOString(),
       input,
       output,
@@ -1115,6 +1119,36 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         }
       },
       onError: async (error: unknown) => {
+        if (error instanceof Error && "toolCallId" in error) {
+          const eventUpdater = operationContext.eventUpdaters.get(error.toolCallId as string);
+
+          if (eventUpdater) {
+            // Create a unique node ID for the tool
+            const toolNodeId = `tool_${(error as any).toolName}_${this.id}`;
+
+            // Update the tracked event with completion status
+            eventUpdater({
+              data: {
+                affectedNodeId: toolNodeId,
+                error: error.message,
+                errorMessage: error.message,
+                status: "error",
+                updatedAt: new Date().toISOString(),
+                output: error.message,
+              },
+            });
+
+            // Remove the updater from the map
+            operationContext.eventUpdaters.delete(error.toolCallId as string);
+
+            // Call onToolEnd hook if a tool with this name exists
+            const tool = this.toolManager.getToolByName((error as any).toolName);
+            if (tool) {
+              await this.hooks.onToolEnd?.(this, tool, error, operationContext);
+            }
+          }
+        }
+
         // Changed 'any' to 'unknown'
         // Clear the updaters map
         operationContext.eventUpdaters.clear();
