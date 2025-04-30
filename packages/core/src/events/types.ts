@@ -1,7 +1,7 @@
 /**
  * Event statuses
  */
-export type EventStatus = "working" | "idle" | "error" | "completed" | "tool_calling";
+export type EventStatus = "idle" | "working" | "completed" | "error";
 
 /**
  * Standard event data interface

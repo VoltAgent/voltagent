@@ -82,24 +82,6 @@ export type AgentOptions = {
    * Sub-agents that this agent can delegate tasks to
    */
   subAgents?: any[]; // Using any to avoid circular dependency
-
-  // Remove duplicated fields below - they belong in CommonGenerateOptions
-  /*
-  // Context limit for conversation
-  contextLimit?: number;
-
-  // Specific tools to use for this generation (overrides agent's tools)
-  tools?: BaseTool[];
-
-  // Signal for aborting the operation
-  signal?: AbortSignal;
-
-  // Current history entry ID for parent context in tool execution
-  historyEntryId?: string;
-
-  // The OperationContext associated with this specific generation call
-  operationContext?: OperationContext;
-  */
 };
 
 /**
