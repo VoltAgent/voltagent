@@ -1,7 +1,7 @@
 /**
  * Event statuses
  */
-export type EventStatus = "idle" | "working" | "completed" | "error";
+export type EventStatus = "working" | "idle" | "error" | "completed" | "tool_calling";
 
 /**
  * Standard event data interface
@@ -17,19 +17,25 @@ export interface StandardEventData {
   timestamp: string;
 
   // Input data - to be used consistently for all event types
-  input?: any;
+  input?: unknown;
 
   // Output data - to be used consistently for all event types
-  output?: any;
+  output?: unknown;
 
   // In case of error
-  error?: any;
+  error?: unknown;
 
   // Error message (user-friendly message)
   errorMessage?: string;
 
   // For tool-specific additional information and other custom information
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+
+  // ID of the agent that originated the event (especially for sub-agent events)
+  sourceAgentId?: string;
+
+  // Optional serialized user context at the time of the event
+  userContext?: Record<string, unknown>;
 }
 
 /**

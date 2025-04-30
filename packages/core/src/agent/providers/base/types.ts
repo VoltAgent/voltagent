@@ -1,6 +1,6 @@
 import type { z } from "zod";
-import type { ProviderOptions } from "../../types";
-import { Tool } from "../../../tool";
+import type { ProviderOptions, ToolExecutionContext, OperationContext } from "../../types";
+import type { Tool } from "../../../tool";
 
 /**
  * Token usage information
@@ -194,6 +194,12 @@ export type ToolExecuteOptions = {
   signal?: AbortSignal;
 
   /**
+   * The operation context associated with the agent invocation triggering this tool execution.
+   * Provides access to operation-specific state like userContext.
+   */
+  operationContext?: OperationContext;
+
+  /**
    * Additional options can be added in the future
    */
   [key: string]: any;
@@ -244,6 +250,7 @@ export interface GenerateTextOptions<TModel> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface StreamTextOptions<TModel> {
@@ -257,6 +264,7 @@ export interface StreamTextOptions<TModel> {
   onFinish?: (result: { text: string }) => void | Promise<void>;
   onError?: (error: any) => void | Promise<void>;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
@@ -266,6 +274,7 @@ export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
@@ -277,6 +286,7 @@ export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
   onFinish?: (result: { object: z.infer<TSchema> }) => void | Promise<void>;
   onError?: (error: any) => void | Promise<void>;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 // Utility types to infer provider-specific types

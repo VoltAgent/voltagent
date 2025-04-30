@@ -9,7 +9,14 @@ export * from "./tool";
 export * from "./tool/reasoning/index";
 export * from "./memory";
 export * from "./agent/providers";
-export type { AgentOptions, AgentResponse, ModelToolCall } from "./agent/types";
+export type {
+  AgentOptions,
+  AgentResponse,
+  ModelToolCall,
+  OperationContext,
+  ToolExecutionContext,
+} from "./agent/types";
+export type { AgentHistoryEntry } from "./agent/history";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
 export * from "./utils";

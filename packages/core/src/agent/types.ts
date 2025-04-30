@@ -6,6 +6,7 @@ import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
 import type { AgentHistoryEntry } from "./history";
 import type { EventUpdater } from "../events";
+import type { ToolExecuteOptions } from "./providers/base/types";
 
 /**
  * Provider options type for LLM configurations
@@ -36,6 +37,9 @@ export type ProviderOptions = {
 
   // Callback when an error occurs during generation
   onError?: (error: unknown) => Promise<void>;
+
+  // Tool execution context passed down from the agent
+  toolExecutionContext?: ToolExecutionContext;
 };
 
 /**
@@ -78,6 +82,24 @@ export type AgentOptions = {
    * Sub-agents that this agent can delegate tasks to
    */
   subAgents?: any[]; // Using any to avoid circular dependency
+
+  // Remove duplicated fields below - they belong in CommonGenerateOptions
+  /*
+  // Context limit for conversation
+  contextLimit?: number;
+
+  // Specific tools to use for this generation (overrides agent's tools)
+  tools?: BaseTool[];
+
+  // Signal for aborting the operation
+  signal?: AbortSignal;
+
+  // Current history entry ID for parent context in tool execution
+  historyEntryId?: string;
+
+  // The OperationContext associated with this specific generation call
+  operationContext?: OperationContext;
+  */
 };
 
 /**
@@ -149,8 +171,10 @@ export interface CommonGenerateOptions {
   signal?: AbortSignal;
 
   // Current history entry ID for parent context in tool execution
-  // Internal use only, not exposed to external users
   historyEntryId?: string;
+
+  // The OperationContext associated with this specific generation call
+  operationContext?: OperationContext;
 }
 
 /**
@@ -167,9 +191,12 @@ export interface InternalGenerateOptions extends CommonGenerateOptions {
 
 /**
  * Public-facing generate options for external users
- * Omits internal implementation details
+ * Omits internal implementation details like historyEntryId and operationContext
  */
-export type PublicGenerateOptions = Omit<CommonGenerateOptions, "historyEntryId">;
+export type PublicGenerateOptions = Omit<
+  CommonGenerateOptions,
+  "historyEntryId" | "operationContext"
+>;
 
 /**
  * Agent status information
@@ -307,18 +334,40 @@ export interface AgentHandoffResult {
 }
 
 /**
- * Operation context to isolate state for concurrent operations
- * Prevents race conditions when the same agent instance is used concurrently
+ * Context for a specific agent operation (e.g., one generateText call)
  */
 export type OperationContext = {
+  /** Unique identifier for the operation (maps to historyEntryId) */
+  readonly operationId: string;
+
+  /** User-managed context map for this specific operation */
+  readonly userContext: Map<string | symbol, any>;
+
   /** The history entry associated with this operation */
   historyEntry: AgentHistoryEntry;
+
   /** Map to store tool event updaters using tool call ID as key */
   eventUpdaters: Map<string, EventUpdater>;
+
   /** Whether this operation is still active */
   isActive: boolean;
-  /** Parent agent ID */
+
+  /** Parent agent ID if part of a delegation chain */
   parentAgentId?: string;
-  /** Parent history entry ID */
+
+  /** Parent history entry ID if part of a delegation chain */
   parentHistoryEntryId?: string;
+};
+
+/**
+ * Tool execution context passed to tool.execute method
+ * Includes operation-specific context and necessary identifiers
+ * Extends base ToolExecuteOptions.
+ */
+export type ToolExecutionContext = ToolExecuteOptions & {
+  /** ID of the agent executing the tool */
+  agentId: string;
+
+  /** History ID associated with the current operation */
+  historyEntryId: string;
 };

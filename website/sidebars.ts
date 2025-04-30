@@ -29,6 +29,7 @@ const sidebars: SidebarsConfig = {
         "agents/providers",
         "agents/subagents",
         "agents/voice",
+        "agents/context",
       ],
     },
     {
