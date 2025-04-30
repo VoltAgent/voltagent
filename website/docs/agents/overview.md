@@ -320,6 +320,63 @@ const agent = new Agent({
 
 [Learn more about Hooks](./hooks.md)
 
+### Operation Context (`userContext`)
+
+**Why?** To pass custom, request-specific data between different parts of an agent's execution flow (like hooks and tools) for a single operation, without affecting other concurrent or subsequent operations. Useful for tracing, logging, metrics, or passing temporary configuration.
+
+`userContext` is a `Map` accessible via the `OperationContext` object, which is passed to hooks and available in tool execution contexts. This context is isolated to each individual operation (`generateText`, `streamObject`, etc.).
+
+```ts
+import {
+  Agent,
+  createHooks,
+  createTool,
+  type OperationContext,
+  type ToolExecutionContext,
+} from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+const hooks = createHooks({
+  onStart: async (agent: Agent<any>, context: OperationContext) => {
+    const requestId = `req-${Date.now()}`;
+    context.userContext.set("requestId", requestId); // Set data in context
+    console.log(`[${agent.name}] Operation started. RequestID: ${requestId}`);
+  },
+  onEnd: async (agent: Agent<any>, result: any, context: OperationContext) => {
+    const requestId = context.userContext.get("requestId"); // Get data from context
+    console.log(`[${agent.name}] Operation finished. RequestID: ${requestId}`);
+  },
+});
+
+const loggerTool = createTool({
+  name: "context_aware_logger",
+  description: "Logs a message using the request ID from context.",
+  parameters: z.object({ message: z.string() }),
+  execute: async (params: { message: string }, options?: ToolExecutionContext) => {
+    const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown";
+    const logMessage = `[ReqID: ${requestId}] Tool Log: ${params.message}`;
+    console.log(logMessage);
+    return `Logged: ${params.message}`;
+  },
+});
+
+const agent = new Agent({
+  name: "Context Agent",
+  description: "Uses userContext.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  hooks: hooks,
+  tools: [loggerTool],
+});
+
+await agent.generateText("Log this message: 'Processing user data.'");
+// The requestId set in onStart will be available in loggerTool and onEnd.
+```
+
+[Learn more about Operation Context (userContext)](./context.md)
+
 ### Retriever
 
 **Why?** To provide the agent with access to external knowledge bases or documents, allowing it to answer questions or generate content based on information not present in its original training data (Retrieval-Augmented Generation - RAG).
