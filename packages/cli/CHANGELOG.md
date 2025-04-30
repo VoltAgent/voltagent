@@ -1,5 +1,13 @@
 # @voltagent/cli
 
+## 0.1.4
+
+### Patch Changes
+
+- [#73](https://github.com/VoltAgent/voltagent/pull/73) [`ac6ecbc`](https://github.com/VoltAgent/voltagent/commit/ac6ecbc235a10a947a9f60155b04335761e6ac38) Thanks [@necatiozmen](https://github.com/necatiozmen)! - feat: Add placeholder `add` command
+
+  Introduces the `add <agent-slug>` command. Currently, this command informs users that the feature for adding agents from the marketplace is upcoming and provides a link to the GitHub discussions for early feedback and participation.
+
 ## 0.1.3
 
 ### Patch Changes
