@@ -67,7 +67,7 @@ const agent = new Agent({
 async function chat(input: string) {
   console.log(`User: ${input}`);
   // Use streamText for interactive responses
-  const response = await agent.streamText(input);
+  const stream = await agent.streamText(input);
 
   for await (const chunk of stream.textStream) {
     console.log(chunk);
