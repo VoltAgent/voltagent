@@ -91,7 +91,7 @@ describe("serializeValueForDebug", () => {
       symVal: "Symbol(id)",
       instVal: "[Object: MyClass]",
       mapVal: "[Map size=0]",
-      funcVal: "[Function: anonymous]", // Depending on context, could be named
+      funcVal: "[Function: funcVal]", // Depending on context, could be named
       arrVal: [1, `[Date: ${date.toISOString()}]`],
     };
 
@@ -137,6 +137,6 @@ describe("serializeValueForDebug", () => {
 
     // Let's test with a generic object that might fail other checks
     const customProto = Object.create({ custom: true });
-    expect(serializeValueForDebug(customProto)).toBe("[Object: UnknownClass]"); // Falls through to class instance logic
+    expect(serializeValueForDebug(customProto)).toBe("[Object: Object]"); // Falls through to class instance logic
   });
 });

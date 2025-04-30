@@ -86,7 +86,7 @@ describe("Agent Hooks Functionality", () => {
       await agent.generateText("Test input");
 
       // Verify onStart was called with the agent
-      expect(onStartSpy).toHaveBeenCalledWith(agent);
+      expect(onStartSpy).toHaveBeenCalledWith(agent, expect.anything());
     });
   });
 
@@ -102,7 +102,7 @@ describe("Agent Hooks Functionality", () => {
       const response = await agent.generateText("Test input");
 
       // Verify onEnd was called with the agent and response
-      expect(onEndSpy).toHaveBeenCalledWith(agent, response);
+      expect(onEndSpy).toHaveBeenCalledWith(agent, response, expect.anything());
     });
   });
 
