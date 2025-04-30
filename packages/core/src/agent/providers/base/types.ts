@@ -1,5 +1,12 @@
 import type { z } from "zod";
-import type { ProviderOptions, ToolExecutionContext, OperationContext } from "../../types";
+import type {
+  ProviderOptions,
+  ToolExecutionContext,
+  OperationContext,
+  StreamOnErrorCallback,
+  StreamTextOnFinishCallback,
+  StreamObjectOnFinishCallback,
+} from "../../types";
 import type { Tool } from "../../../tool";
 
 /**
@@ -261,8 +268,8 @@ export interface StreamTextOptions<TModel> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   onChunk?: StepChunkCallback;
-  onFinish?: (result: { text: string }) => void | Promise<void>;
-  onError?: (error: any) => void | Promise<void>;
+  onFinish?: StreamTextOnFinishCallback;
+  onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
   toolExecutionContext?: ToolExecutionContext;
 }
@@ -283,8 +290,8 @@ export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
   schema: TSchema;
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
-  onFinish?: (result: { object: z.infer<TSchema> }) => void | Promise<void>;
-  onError?: (error: any) => void | Promise<void>;
+  onFinish?: StreamObjectOnFinishCallback<z.infer<TSchema>>;
+  onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
   toolExecutionContext?: ToolExecutionContext;
 }
@@ -343,6 +350,11 @@ export type InferProviderParams<T> = T extends {
 // Base provider type
 export type LLMProvider<TProvider> = {
   // Core methods
+  /**
+   * Generates a text response based on the provided options.
+   * Implementers should catch underlying SDK/API errors and throw a VoltagentError.
+   * @throws {VoltagentError} If an error occurs during generation.
+   */
   generateText(
     options: GenerateTextOptions<InferModel<TProvider>>,
   ): Promise<ProviderTextResponse<InferGenerateTextResponse<TProvider>>>;
@@ -351,6 +363,11 @@ export type LLMProvider<TProvider> = {
     options: StreamTextOptions<InferModel<TProvider>>,
   ): Promise<ProviderTextStreamResponse<InferStreamResponse<TProvider>>>;
 
+  /**
+   * Generates a structured object response based on the provided options and schema.
+   * Implementers should catch underlying SDK/API errors and throw a VoltagentError.
+   * @throws {VoltagentError} If an error occurs during generation.
+   */
   generateObject<TSchema extends z.ZodType>(
     options: GenerateObjectOptions<InferModel<TProvider>, TSchema>,
   ): Promise<ProviderObjectResponse<InferGenerateObjectResponse<TProvider>, z.infer<TSchema>>>;

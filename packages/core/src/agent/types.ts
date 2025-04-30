@@ -7,6 +7,7 @@ import type { StepWithContent } from "./providers";
 import type { AgentHistoryEntry } from "./history";
 import type { EventUpdater } from "../events";
 import type { ToolExecuteOptions } from "./providers/base/types";
+import type { UsageInfo } from "./providers/base/types";
 
 /**
  * Provider options type for LLM configurations
@@ -353,3 +354,107 @@ export type ToolExecutionContext = ToolExecuteOptions & {
   /** History ID associated with the current operation */
   historyEntryId: string;
 };
+
+/**
+ * Specific information related to a tool execution error.
+ */
+export interface ToolErrorInfo {
+  /** The unique identifier of the tool call. */
+  toolCallId: string;
+
+  /** The name of the tool that was executed. */
+  toolName: string;
+
+  /** The original error thrown directly by the tool during execution (if available). */
+  toolExecutionError?: unknown;
+
+  /** The arguments passed to the tool when the error occurred (for debugging). */
+  toolArguments?: unknown;
+}
+
+/**
+ * Standardized error structure for Voltagent agent operations.
+ * Providers should wrap their specific errors in this structure before
+ * passing them to onError callbacks.
+ */
+export interface VoltagentError {
+  /** A clear, human-readable error message. This could be a general message or derived from toolError info. */
+  message: string;
+
+  /** The original error object thrown by the provider or underlying system (if available). */
+  originalError?: unknown;
+
+  /** Optional error code or identifier from the provider. */
+  code?: string | number;
+
+  /** Additional metadata related to the error (e.g., retry info, request ID). */
+  metadata?: Record<string, any>;
+
+  /** Information about the step or stage where the error occurred (optional, e.g., 'llm_request', 'tool_execution', 'response_parsing'). */
+  stage?: string;
+
+  /** If the error occurred during tool execution, this field contains the relevant details. Otherwise, it's undefined. */
+  toolError?: ToolErrorInfo;
+}
+
+/**
+ * Type for onError callbacks in streaming operations.
+ * Providers must pass an error conforming to the VoltagentError structure.
+ */
+export type StreamOnErrorCallback = (error: VoltagentError) => Promise<void> | void;
+
+/**
+ * Standardized object structure passed to the onFinish callback
+ * when streamText completes successfully.
+ */
+export interface StreamTextFinishResult {
+  /** The final, consolidated text output from the stream. */
+  text: string;
+
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+
+  /** The reason the stream finished (if available, e.g., 'stop', 'length', 'tool-calls'). */
+  finishReason?: string;
+
+  /** The original completion response object from the provider (if available). */
+  providerResponse?: unknown;
+
+  /** Any warnings generated during the completion (if available). */
+  warnings?: unknown[];
+}
+
+/**
+ * Type for the onFinish callback function for streamText.
+ */
+export type StreamTextOnFinishCallback = (result: StreamTextFinishResult) => Promise<void> | void;
+
+/**
+ * Standardized object structure passed to the onFinish callback
+ * when streamObject completes successfully.
+ * @template TObject The expected type of the fully formed object.
+ */
+export interface StreamObjectFinishResult<TObject> {
+  /** The final, fully formed object from the stream. */
+  object: TObject;
+
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+
+  /** The original completion response object from the provider (if available). */
+  providerResponse?: unknown;
+
+  /** Any warnings generated during the completion (if available). */
+  warnings?: unknown[];
+
+  /** The reason the stream finished (if available). Although less common for object streams. */
+  finishReason?: string;
+}
+
+/**
+ * Type for the onFinish callback function for streamObject.
+ * @template TObject The expected type of the fully formed object.
+ */
+export type StreamObjectOnFinishCallback<TObject> = (
+  result: StreamObjectFinishResult<TObject>,
+) => Promise<void> | void;

@@ -222,7 +222,8 @@ export class GroqProvider implements LLMProvider<string> {
             // Handle errors during streaming
             console.error("Error during Groq stream processing:", error);
             controller.error(error);
-            if (options.onError) options.onError(error);
+            // TODO: fix this
+            if (options.onError) options.onError(error as any);
           }
         },
       });
@@ -235,7 +236,8 @@ export class GroqProvider implements LLMProvider<string> {
     } catch (error) {
       // Handle API errors
       console.error("Groq streaming API error:", error);
-      if (options.onError) options.onError(error);
+      // TODO: fix this
+      if (options.onError) options.onError(error as any);
       throw error;
     }
   }

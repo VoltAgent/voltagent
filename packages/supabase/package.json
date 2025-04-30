@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
-    "@voltagent/core": "^0.1.6"
+    "@voltagent/core": "^0.1.8"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

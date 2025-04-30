@@ -1049,7 +1049,7 @@ importers:
         specifier: ^2.49.4
         version: 2.49.4
       '@voltagent/core':
-        specifier: ^0.1.6
+        specifier: ^0.1.8
         version: link:../core
     devDependencies:
       '@types/jest':
@@ -1077,7 +1077,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/core':
-        specifier: ^0.1.6
+        specifier: ^0.1.8
         version: link:../core
       ai:
         specifier: ^4.2.11
