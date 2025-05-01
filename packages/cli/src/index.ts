@@ -5,6 +5,7 @@ import figlet from "figlet";
 import { registerInitCommand } from "./commands/init";
 import { registerUpdateCommand } from "./commands/update";
 import { registerWhoamiCommand } from "./commands/whoami";
+import { registerAddCommand } from "./commands/add";
 import { captureError } from "./utils/analytics";
 import posthogClient from "./utils/analytics";
 
@@ -22,6 +23,7 @@ const createCLI = () => {
   registerInitCommand(program);
   registerUpdateCommand(program);
   registerWhoamiCommand(program);
+  registerAddCommand(program);
 
   return program;
 };

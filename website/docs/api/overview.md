@@ -44,6 +44,24 @@ This is the recommended way to explore the API's capabilities.
 Links to the Swagger UI (`/ui`) is also conveniently available on the API server's root page (`/`) and printed in the console logs when the server starts.
 :::
 
+## Common Generation Options
+
+When using the generation endpoints (`/text`, `/stream`, `/object`, `/stream-object`), you can provide an `options` object in the request body to customize the generation process. All options are optional.
+
+| Option             | Description                                                                   | Type                | Default |
+| ------------------ | ----------------------------------------------------------------------------- | ------------------- | ------- |
+| `userId`           | Optional user ID for context tracking.                                        | `string`            | -       |
+| `conversationId`   | Optional conversation ID for context tracking.                                | `string`            | -       |
+| `contextLimit`     | Optional limit for conversation history context.                              | `number` (integer)  | `10`    |
+| `temperature`      | Controls randomness (0-1). Lower is more deterministic.                       | `number`            | `0.7`   |
+| `maxTokens`        | Maximum number of tokens to generate in the response.                         | `number` (integer)  | `4000`  |
+| `topP`             | Controls diversity via nucleus sampling (0-1).                                | `number`            | `1.0`   |
+| `frequencyPenalty` | Penalizes repeated tokens (0-2). Higher values decrease repetition.           | `number`            | `0.0`   |
+| `presencePenalty`  | Penalizes tokens based on presence (0-2). Higher values encourage new topics. | `number`            | `0.0`   |
+| `seed`             | Optional integer seed for reproducible results.                               | `number` (integer)  | -       |
+| `stopSequences`    | An array of strings that will stop generation if encountered.                 | `array` of `string` | -       |
+| `extraOptions`     | A key-value object for provider-specific options.                             | `object`            | -       |
+
 ## OpenAPI Specification
 
 For developers needing the raw API specification for code generation or other tooling, the OpenAPI 3.1 specification is available in JSON format.
@@ -73,7 +91,7 @@ Currently, the Core API does not implement built-in authentication routes. Ensur
 
 ## Basic Example (Using cURL)
 
-You can quickly test the API using `curl`.
+You can quickly test the API using `curl`. Below are examples for key endpoints. You can optionally include `userId` and `conversationId` in the `options` object for context tracking, as shown in the second example for each generation endpoint.
 
 **List all agents:**
 
@@ -81,12 +99,76 @@ You can quickly test the API using `curl`.
 curl http://localhost:3141/agents
 ```
 
-**Generate text:**
+**Generate text (Basic):**
 
 ```bash
 curl -X POST http://localhost:3141/agents/your-agent-id/text \
      -H "Content-Type: application/json" \
-     -d '{ "input": "Tell me a short story about a robot learning to paint." }'
+     -d '{ "input": "Tell me a joke!" }'
+```
+
+**Generate text (With Options):**
+
+```bash
+curl -X POST http://localhost:3141/agents/your-agent-id/text \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Tell me a joke!", "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
+```
+
+**Stream text (Basic):**
+
+```bash
+# Note: SSE streams are continuous. This command will keep the connection open.
+curl -N -X POST http://localhost:3141/agents/your-agent-id/stream \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Tell me a joke!" }'
+```
+
+**Stream text (With Options):**
+
+```bash
+# Note: SSE streams are continuous. This command will keep the connection open.
+curl -N -X POST http://localhost:3141/agents/your-agent-id/stream \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Tell me a joke!", "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
+```
+
+**Generate object (Basic - requires a Zod schema JSON representation, see warning above):**
+
+```bash
+# Replace '{"type":"object", ...}' with the JSON representation of your Zod schema
+curl -X POST http://localhost:3141/agents/your-agent-id/object \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Extract the name and age from: John Doe is 30 years old.", "schema": {"type":"object", "properties": {"name": {"type": "string"}, "age": {"type": "number"}}, "required": ["name", "age"]} }'
+```
+
+**Generate object (With Options - requires a Zod schema JSON representation, see warning above):**
+
+```bash
+# Replace '{"type":"object", ...}' with the JSON representation of your Zod schema
+curl -X POST http://localhost:3141/agents/your-agent-id/object \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Extract the name and age from: John Doe is 30 years old.", "schema": {"type":"object", "properties": {"name": {"type": "string"}, "age": {"type": "number"}}, "required": ["name", "age"]}, "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
+```
+
+**Stream object parts (Basic - requires a Zod schema JSON representation, see warning above):**
+
+```bash
+# Note: SSE streams are continuous.
+# Replace '{"type":"object", ...}' with the JSON representation of your Zod schema
+curl -N -X POST http://localhost:3141/agents/your-agent-id/stream-object \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Generate user profile: Name: Alice, City: Wonderland", "schema": {"type":"object", "properties": {"name": {"type": "string"}, "city": {"type": "string"}}, "required": ["name", "city"]} }'
+```
+
+**Stream object parts (With Options - requires a Zod schema JSON representation, see warning above):**
+
+```bash
+# Note: SSE streams are continuous.
+# Replace '{"type":"object", ...}' with the JSON representation of your Zod schema
+curl -N -X POST http://localhost:3141/agents/your-agent-id/stream-object \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Generate user profile: Name: Alice, City: Wonderland", "schema": {"type":"object", "properties": {"name": {"type": "string"}, "city": {"type": "string"}}, "required": ["name", "city"]}, "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
 ```
 
 (Replace `your-agent-id` with the actual ID of one of your agents)

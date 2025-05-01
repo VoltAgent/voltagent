@@ -4743,8 +4743,6 @@ nav.table-of-contents .table-of-contents__link--active,
   padding: 2px 4px !important;
   margin-right: 2px !important;
   display: hidden !important;
-
-  
 }
 
 .DocSearch-Button-Key {
@@ -4758,6 +4756,8 @@ nav.table-of-contents .table-of-contents__link--active,
   width: auto !important;
   height: auto !important;
   line-height: 1 !important;
+  box-shadow: none !important;
+  margin-right: 0 !important
 }
 
 .DocSearch-Button-Placeholder {

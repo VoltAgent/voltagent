@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/core",
-  "version": "0.1.8",
+  "version": "0.1.10",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
   "license": "MIT",
   "exports": {
@@ -20,7 +20,6 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts,.tsx",
-    "start": "node dist/server/index.js",
     "test": "jest"
   },
   "dependencies": {
