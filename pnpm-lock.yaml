@@ -1195,8 +1195,11 @@ importers:
   packages/xsai:
     dependencies:
       '@voltagent/core':
-        specifier: ^0.1.6
+        specifier: ^0.1.9
         version: link:../core
+      '@voltagent/xsai':
+        specifier: ^0.1.3
+        version: 'link:'
       xsai:
         specifier: 0.2.0-beta.3
         version: 0.2.0-beta.3(effect@3.12.7)(zod@3.24.2)

@@ -54,17 +54,12 @@ export const AgentResponseSchema = z
 export const GenerateOptionsSchema = z
   .object({
     userId: z.string().optional().openapi({ description: "Optional user ID for context tracking" }),
-    conversationId: z
-      .string()
-      .optional()
-      .openapi({ description: "Optional conversation ID for context tracking" }),
-    contextLimit: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .default(10)
-      .openapi({ description: "Optional limit for conversation history context" }),
+    conversationId: z.string().optional().openapi({
+      description: "Optional conversation ID for context tracking",
+    }),
+    contextLimit: z.number().int().positive().optional().default(10).openapi({
+      description: "Optional limit for conversation history context",
+    }),
     temperature: z
       .number()
       .min(0)
@@ -77,15 +72,11 @@ export const GenerateOptionsSchema = z
       .int()
       .positive()
       .optional()
-      .default(1024)
+      .default(4000)
       .openapi({ description: "Maximum tokens to generate" }),
-    topP: z
-      .number()
-      .min(0)
-      .max(1)
-      .optional()
-      .default(1.0)
-      .openapi({ description: "Controls diversity via nucleus sampling (0-1)" }),
+    topP: z.number().min(0).max(1).optional().default(1.0).openapi({
+      description: "Controls diversity via nucleus sampling (0-1)",
+    }),
     frequencyPenalty: z
       .number()
       .min(0)
@@ -117,15 +108,92 @@ export const GenerateOptionsSchema = z
   })
   .passthrough(); // Allow other provider-specific options not explicitly defined here
 
+// Schema for individual content parts (text, image, file, etc.)
+const ContentPartSchema = z.union([
+  z
+    .object({
+      // Text part
+      type: z.literal("text"),
+      text: z.string(),
+    })
+    .openapi({ example: { type: "text", text: "Hello there!" } }),
+  z
+    .object({
+      // Image part
+      type: z.literal("image"),
+      image: z.string().openapi({ description: "Base64 encoded image data or a URL" }),
+      mimeType: z.string().optional().openapi({ example: "image/jpeg" }),
+      alt: z.string().optional().openapi({ description: "Alternative text for the image" }),
+    })
+    .openapi({
+      example: {
+        type: "image",
+        image: "data:image/png;base64,...",
+        mimeType: "image/png",
+      },
+    }),
+  z
+    .object({
+      // File part
+      type: z.literal("file"),
+      data: z.string().openapi({ description: "Base64 encoded file data" }),
+      filename: z.string().openapi({ example: "document.pdf" }),
+      mimeType: z.string().openapi({ example: "application/pdf" }),
+      size: z.number().optional().openapi({ description: "File size in bytes" }),
+    })
+    .openapi({
+      example: {
+        type: "file",
+        data: "...",
+        filename: "report.docx",
+        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      },
+    }),
+]);
+
+// Define a reusable schema for the message object content, used in both Text and Object requests
+const MessageContentSchema = z.union([
+  z.string().openapi({ description: "Plain text content" }),
+  z
+    .array(ContentPartSchema)
+    .openapi({ description: "An array of content parts (text, image, file)." }),
+]);
+
+// Define a reusable schema for a single message object
+const MessageObjectSchema = z
+  .object({
+    role: z.string().openapi({
+      description: "Role of the sender (e.g., 'user', 'assistant')",
+    }),
+    content: MessageContentSchema, // Use the reusable content schema
+  })
+  .openapi({ description: "A message object with role and content" });
+
 // Text Generation Schemas
-export const TextRequestSchema = z.object({
-  input: z
-    .string()
-    .openapi({ description: "Input text for the agent", example: "Tell me a joke!" }),
-  options: GenerateOptionsSchema.optional().openapi({
-    description: "Optional generation parameters",
-  }), // Use GenerateOptionsSchema
-});
+export const TextRequestSchema = z
+  .object({
+    input: z.union([
+      z.string().openapi({
+        description: "Input text for the agent",
+        example: "Tell me a joke!",
+      }),
+      z
+        .array(MessageObjectSchema) // Use the reusable message object schema
+        .openapi({
+          description: "An array of message objects, representing the conversation history",
+          example: [
+            { role: "user", content: "What is the weather?" },
+            { role: "assistant", content: "The weather is sunny." },
+            { role: "user", content: [{ type: "text", text: "Thanks!" }] },
+          ],
+        }),
+    ]),
+    options: GenerateOptionsSchema.optional().openapi({
+      description: "Optional generation parameters",
+      example: { temperature: 0.7, maxTokens: 100 },
+    }),
+  })
+  .openapi("TextGenerationRequest"); // Add OpenAPI metadata
 
 export const TextResponseSchema = z.object({
   success: z.literal(true),
@@ -142,38 +210,23 @@ export const StreamTextEventSchema = z.object({
 });
 
 // Object Generation Schemas
-export const ObjectRequestSchema = z.object({
-  input: z
-    .string()
-    .openapi({ description: "Input text for the agent", example: "Tell me a joke!" }),
-  schema: z
-    .object({})
-    .passthrough()
-    .openapi({
-      description: "JSON schema describing the desired output object structure.",
-      example: {
-        type: "object",
-        properties: {
-          joke_setup: {
-            type: "string",
-            description: "The setup part of the joke",
-          },
-          punchline: {
-            type: "string",
-            description: "The punchline of the joke",
-          },
-          rating: {
-            type: "number",
-            description: "A rating of how funny the joke is from 1 to 5",
-          },
-        },
-        required: ["joke_setup", "punchline"],
-      },
-    }), // Expect a JSON Schema object
-  options: GenerateOptionsSchema.optional().openapi({
-    description: "Optional generation parameters",
-  }), // Use GenerateOptionsSchema
-});
+export const ObjectRequestSchema = z
+  .object({
+    input: z.union([
+      z.string().openapi({ description: "Input text prompt" }),
+      z
+        .array(MessageObjectSchema) // Use the reusable message object schema
+        .openapi({ description: "Conversation history" }),
+    ]),
+    schema: z.any().openapi({
+      description: "The Zod schema for the desired object output (passed as JSON)",
+    }),
+    options: GenerateOptionsSchema.optional().openapi({
+      description: "Optional object generation parameters",
+      example: { temperature: 0.2 },
+    }),
+  })
+  .openapi("ObjectGenerationRequest"); // Add OpenAPI metadata
 
 export const ObjectResponseSchema = z.object({
   success: z.literal(true),

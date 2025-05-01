@@ -20,7 +20,6 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts,.tsx",
-    "start": "node dist/server/index.js",
     "test": "jest"
   },
   "dependencies": {

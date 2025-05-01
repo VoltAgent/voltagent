@@ -281,13 +281,23 @@ app.openapi(streamRoute, async (c) => {
   }
 
   try {
-    const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    const {
+      input,
+      options = {
+        maxTokens: 4000,
+        temperature: 0.7,
+      },
+    } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
           const response = await agent.streamText(input, {
             ...options,
+            provider: {
+              maxTokens: options.maxTokens,
+              temperature: options.temperature,
+            },
           });
 
           for await (const chunk of response.textStream) {

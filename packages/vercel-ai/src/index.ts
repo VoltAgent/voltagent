@@ -213,12 +213,12 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
 
     try {
       const result = await generateText({
+        ...options.provider,
         messages: vercelMessages,
         model: options.model,
         tools: vercelTools,
         maxSteps: options.maxSteps,
         abortSignal: options.signal,
-        ...options.provider,
         onStepFinish,
       });
 
@@ -297,6 +297,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       : undefined;
 
     const result = streamText({
+      ...options.provider,
       messages: vercelMessages,
       model: options.model,
       tools: vercelTools,
@@ -377,11 +378,11 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
 
     try {
       const result = await generateObject({
+        ...options.provider,
         messages: vercelMessages,
         model: options.model,
         schema: options.schema,
         abortSignal: options.signal,
-        ...options.provider,
       });
 
       // Call the custom onFinish handler if defined
@@ -467,11 +468,11 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     };
 
     const result = streamObject({
+      ...options.provider,
       messages: vercelMessages,
       model: options.model,
       schema: options.schema,
       abortSignal: options.signal,
-      ...options.provider,
       // Pass the correctly defined sdkOnFinish handler
       // Only pass it if either onStepFinish or onFinish is provided by the agent
       ...(options.onStepFinish || options.onFinish ? { onFinish: sdkOnFinish } : {}),

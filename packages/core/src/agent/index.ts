@@ -1041,6 +1041,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       maxSteps,
       tools,
       signal,
+      provider,
       toolExecutionContext: {
         operationContext: operationContext,
         agentId: this.id,
@@ -1313,6 +1314,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         model: this.model,
         schema,
         signal,
+        provider,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,
@@ -1468,6 +1470,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         messages,
         model: this.model,
         schema,
+        provider,
         signal,
         toolExecutionContext: {
           operationContext: operationContext,
