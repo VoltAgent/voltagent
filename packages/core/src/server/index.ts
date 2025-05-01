@@ -69,7 +69,7 @@ const preferredPorts: PortConfig[] = [
 ];
 
 // To make server startup logs visually more attractive
-const printServerStartup = (port: number, message: string) => {
+const printServerStartup = (port: number) => {
   const divider = `${colors.cyan}${"═".repeat(50)}${colors.reset}`;
 
   console.log("\n");
@@ -121,7 +121,7 @@ const tryStartServer = (port: number): Promise<ReturnType<typeof serve>> => {
 };
 
 // Function to start the server
-export const startServer = async (preferredPort = 3141): Promise<ServerReturn> => {
+export const startServer = async (): Promise<ServerReturn> => {
   // Collect all ports in an array - first preferred ports, then fallback ports
   const portsToTry: Array<PortConfig> = [
     ...preferredPorts,
@@ -134,9 +134,7 @@ export const startServer = async (preferredPort = 3141): Promise<ServerReturn> =
 
   // Try each port in sequence
   for (const portConfig of portsToTry) {
-    const { port, messages } = portConfig;
-    const randomIndex = Math.floor(Math.random() * messages.length);
-    const randomMessage = messages[randomIndex];
+    const { port } = portConfig;
 
     try {
       // Try to start the server and wait until successful
@@ -161,7 +159,7 @@ export const startServer = async (preferredPort = 3141): Promise<ServerReturn> =
         }
       });
 
-      printServerStartup(port, randomMessage);
+      printServerStartup(port);
 
       return { server, ws, port };
     } catch (error) {

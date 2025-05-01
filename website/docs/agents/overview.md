@@ -272,41 +272,56 @@ console.log(response.text);
 
 **Why?** To observe and potentially intercept or modify the agent's behavior at various lifecycle stages (start, end, tool calls, etc.) for logging, debugging, or custom logic.
 
-Hooks are triggered at specific points during the execution of `generate*`/`stream*` methods.
+Hooks are triggered at specific points during the execution of `generate*`/`stream*` methods. Each hook receives a single argument object containing relevant information like the agent instance and operation context.
 
 ```ts
-import { Agent, createHooks } from "@voltagent/core";
+import {
+  Agent,
+  createHooks,
+  type OnStartHookArgs,
+  type OnEndHookArgs,
+  type OnToolStartHookArgs,
+  type OnToolEndHookArgs,
+} from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const hooks = createHooks({
   // Called when any agent interaction starts (generateText, streamText, etc.)
-  onStart: async (agentInstance) => {
-    console.log(`Agent ${agentInstance.name} starting interaction...`);
+  onStart: async ({ agent, context }: OnStartHookArgs) => {
+    console.log(`Agent ${agent.name} starting interaction... Context:`, context);
   },
-  // Called when the interaction successfully finishes
-  onEnd: async (agentInstance, result) => {
-    // Result format depends on the method called (e.g., { text: ..., usage: ... } for generateText)
-    console.log(
-      `Agent ${agentInstance.name} finished. Final output:`,
-      result.text || result.object
-    );
+  // Called when the interaction finishes (successfully or with an error)
+  onEnd: async ({ agent, output, error, context }: OnEndHookArgs) => {
+    if (error) {
+      console.error(`Agent ${agent.name} finished with error:`, error);
+    } else if (output) {
+      // Output format depends on the method called (e.g., { text: ..., usage: ... } for generateText)
+      console.log(
+        `Agent ${agent.name} finished successfully. Final output:`,
+        output.text ?? output.object // Access 'text' or 'object' based on the operation type
+      );
+    }
+    console.log("Finished context:", context);
   },
   // Called before a tool is executed
-  onToolStart: async (agentInstance, toolCall) => {
-    console.log(`Agent ${agentInstance.name} starting tool: ${toolCall.toolName}`);
+  onToolStart: async ({ agent, tool, context }: OnToolStartHookArgs) => {
+    console.log(`Agent ${agent.name} starting tool: ${tool.name}. Context:`, context);
   },
-  // Called after a tool finishes execution
-  onToolEnd: async (agentInstance, toolResult) => {
-    console.log(
-      `Agent ${agentInstance.name} finished tool: ${toolResult.toolName}, Result:`,
-      toolResult.result
-    );
+  // Called after a tool finishes execution (successfully or with an error)
+  onToolEnd: async ({ agent, tool, output, error, context }: OnToolEndHookArgs) => {
+    if (error) {
+      console.error(`Agent ${agent.name} failed tool: ${tool.name}. Error:`, error);
+    } else {
+      console.log(
+        `Agent ${agent.name} finished tool: ${tool.name}. Result:`,
+        output // Tool output is directly available
+      );
+    }
+    console.log("Tool context:", context);
   },
-  // Called if an error occurs during the interaction
-  onError: async (agentInstance, error) => {
-    console.error(`Agent ${agentInstance.name} encountered an error:`, error);
-  },
+  // Note: There is no top-level 'onError' hook. Errors are handled within onEnd and onToolEnd.
+  // The 'onHandoff' hook (not shown here) is called when control is passed between agents (e.g., sub-agents).
 });
 
 const agent = new Agent({
@@ -319,6 +334,63 @@ const agent = new Agent({
 ```
 
 [Learn more about Hooks](./hooks.md)
+
+### Operation Context (`userContext`)
+
+**Why?** To pass custom, request-specific data between different parts of an agent's execution flow (like hooks and tools) for a single operation, without affecting other concurrent or subsequent operations. Useful for tracing, logging, metrics, or passing temporary configuration.
+
+`userContext` is a `Map` accessible via the `OperationContext` object, which is passed to hooks and available in tool execution contexts. This context is isolated to each individual operation (`generateText`, `streamObject`, etc.).
+
+```ts
+import {
+  Agent,
+  createHooks,
+  createTool,
+  type OperationContext,
+  type ToolExecutionContext,
+} from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+const hooks = createHooks({
+  onStart: async (agent: Agent<any>, context: OperationContext) => {
+    const requestId = `req-${Date.now()}`;
+    context.userContext.set("requestId", requestId); // Set data in context
+    console.log(`[${agent.name}] Operation started. RequestID: ${requestId}`);
+  },
+  onEnd: async (agent: Agent<any>, result: any, context: OperationContext) => {
+    const requestId = context.userContext.get("requestId"); // Get data from context
+    console.log(`[${agent.name}] Operation finished. RequestID: ${requestId}`);
+  },
+});
+
+const loggerTool = createTool({
+  name: "context_aware_logger",
+  description: "Logs a message using the request ID from context.",
+  parameters: z.object({ message: z.string() }),
+  execute: async (params: { message: string }, options?: ToolExecutionContext) => {
+    const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown";
+    const logMessage = `[ReqID: ${requestId}] Tool Log: ${params.message}`;
+    console.log(logMessage);
+    return `Logged: ${params.message}`;
+  },
+});
+
+const agent = new Agent({
+  name: "Context Agent",
+  description: "Uses userContext.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  hooks: hooks,
+  tools: [loggerTool],
+});
+
+await agent.generateText("Log this message: 'Processing user data.'");
+// The requestId set in onStart will be available in loggerTool and onEnd.
+```
+
+[Learn more about Operation Context (userContext)](./context.md)
 
 ### Retriever
 
@@ -384,10 +456,12 @@ console.log(response.text);
 
 VoltAgent achieves this through `LLMProvider` implementations. You configure your `Agent` with a specific provider instance and the desired model compatible with that provider.
 
-Currently, VoltAgent offers built-in support for:
+Currently, VoltAgent offers built-in providers for various services and APIs:
 
-- **`@voltagent/vercel-ai`**: Leverages the powerful Vercel AI SDK [\[1\]](https://sdk.vercel.ai/docs/introduction) to connect to a wide array of popular models (OpenAI, Anthropic, Google, Mistral, Cohere, and many more) with a standardized API.
-- **`@voltagent/xsai`**: Provides a lightweight alternative provider, compatible with OpenAI and OpenAI-compatible APIs, ideal for environments where bundle size is a concern (like browsers or edge functions) [\[2\]](https://xsai.js.org/docs).
+- **`@voltagent/vercel-ai`**: Uses the Vercel AI SDK to connect to a wide range of models (OpenAI, Anthropic, Google, Groq, etc.).
+- **`@voltagent/xsai`**: Connects to any OpenAI-compatible API (OpenAI, Groq, Together AI, local models, etc.).
+- **`@voltagent/google-ai`**: Uses the official Google AI SDK for Gemini and Vertex AI.
+- **`@voltagent/groq-ai`**: Connects specifically to the Groq API for fast inference.
 
 We plan to add more official provider integrations in the future. Furthermore, developers can create their own custom providers by implementing the `LLMProvider` interface to connect VoltAgent to virtually any AI model or service.
 
@@ -433,7 +507,7 @@ const response2 = await xsaiAgent.generateText("Hello XsAI!");
 console.log(response2.text);
 ```
 
-[Learn more about Providers](../providers/overview.md)
+[**Learn more about available Providers and their specific configurations.**](../providers/overview.md)
 
 ### Provider Options
 

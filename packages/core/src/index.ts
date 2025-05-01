@@ -9,7 +9,20 @@ export * from "./tool";
 export * from "./tool/reasoning/index";
 export * from "./memory";
 export * from "./agent/providers";
-export type { AgentOptions, AgentResponse, ModelToolCall } from "./agent/types";
+export type {
+  AgentOptions,
+  AgentResponse,
+  ModelToolCall,
+  OperationContext,
+  ToolExecutionContext,
+  VoltAgentError,
+  StreamTextFinishResult,
+  StreamTextOnFinishCallback,
+  StreamObjectFinishResult,
+  StreamObjectOnFinishCallback,
+  ToolErrorInfo,
+} from "./agent/types";
+export type { AgentHistoryEntry } from "./agent/history";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
 export * from "./utils";
@@ -44,9 +57,7 @@ export class VoltAgent {
 
     // Auto-start server if enabled
     if (options.autoStart !== false) {
-      const port =
-        options.port || process.env.PORT ? Number.parseInt(process.env.PORT || "3000") : 3000;
-      this.startServer(port).catch((err) => {
+      this.startServer().catch((err) => {
         console.error("[VoltAgent] Failed to start server:", err);
         process.exit(1);
       });
@@ -98,13 +109,13 @@ export class VoltAgent {
   /**
    * Start the server
    */
-  public async startServer(port = 3000): Promise<void> {
+  public async startServer(): Promise<void> {
     if (this.serverStarted) {
       console.log("[VoltAgent] Server is already running");
       return;
     }
 
-    await startServer(port);
+    await startServer();
     this.serverStarted = true;
   }
 

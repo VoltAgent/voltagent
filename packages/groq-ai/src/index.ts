@@ -13,7 +13,7 @@ import type {
   StreamTextOptions,
 } from "@voltagent/core";
 import type { z } from "zod";
-import type { GroqProviderOptions, GroqMessage } from "./types";
+import type { GroqProviderOptions } from "./types";
 import { Groq } from "groq-sdk";
 import { convertToolsForSDK } from "./utils";
 
@@ -39,12 +39,114 @@ export class GroqProvider implements LLMProvider<string> {
   };
 
   toMessage = (message: BaseMessage): Groq.Chat.ChatCompletionMessageParam => {
-    const groqMessage: GroqMessage = {
-      role: message.role,
-      content:
-        typeof message.content === "string" ? message.content : JSON.stringify(message.content),
+    // Determine the content first
+    let content: string | Array<Groq.Chat.ChatCompletionContentPart>;
+    if (typeof message.content === "string") {
+      content = message.content;
+    } else if (Array.isArray(message.content)) {
+      const mappedParts: Array<Groq.Chat.ChatCompletionContentPart> = [];
+      for (const part of message.content) {
+        if (part.type === "text" && typeof part.text === "string") {
+          mappedParts.push({ type: "text", text: part.text });
+        } else if (
+          part.type === "image" &&
+          part.image &&
+          part.mimeType &&
+          typeof part.image === "string" &&
+          typeof part.mimeType === "string"
+        ) {
+          // Handle potential data URI in image string
+          const imageUrl = part.image.startsWith("data:")
+            ? part.image
+            : `data:${part.mimeType};base64,${part.image}`;
+          mappedParts.push({
+            type: "image_url",
+            image_url: {
+              url: imageUrl,
+            },
+          });
+        } else {
+          console.warn(
+            `[GroqProvider] Unsupported or incomplete part type in array: ${part.type}. Skipping.`,
+          );
+        }
+      }
+      content = mappedParts.length > 0 ? mappedParts : ""; // Use empty string if array resulted in no parts
+    } else {
+      console.warn(
+        "[GroqProvider] Unknown or unsupported content type for message:",
+        message.content,
+      );
+      content = "";
+    }
+
+    // Helper function to ensure content is string when needed
+    const ensureStringContent = (
+      currentContent: string | Array<Groq.Chat.ChatCompletionContentPart>,
+      roleForWarning: string,
+    ): string => {
+      if (typeof currentContent === "string") {
+        return currentContent || "";
+      }
+      // If it's an array, convert it to a string representation for roles that require it.
+      console.warn(
+        `[GroqProvider] ${roleForWarning} message content must be a string for Groq. Converting array content to string representation.`,
+      );
+      // Explicitly check the type of each part in the array
+      return (
+        currentContent
+          .map((p) => {
+            if (p.type === "text") {
+              return p.text;
+            }
+            if (p.type === "image_url") {
+              // Safely access url property
+              const urlPreview = p.image_url?.url?.substring(0, 50) ?? "[No URL]";
+              return `[Image: ${urlPreview}...]`;
+            }
+            // Handle potential future part types or unexpected types gracefully
+            // Cast p to unknown to bypass the 'never' type before checking its structure
+            const unknownP = p as unknown;
+            let partType = "unknown";
+            if (typeof unknownP === "object" && unknownP !== null && "type" in unknownP) {
+              // Safely access type after checks, converting to string
+              partType = String((unknownP as { type: unknown }).type);
+            }
+            return `[Unsupported Part: ${partType}]`;
+          })
+          .join(" ") || ""
+      );
     };
-    return groqMessage as Groq.Chat.ChatCompletionMessageParam; //force cast to Groq type to omit "name" property
+    // Determine role and construct the final message param object based on role
+    switch (message.role) {
+      case "system":
+        return {
+          role: "system",
+          content: ensureStringContent(content, "System"),
+        };
+      case "user":
+        // User messages can have string or array content according to Groq docs
+        return { role: "user", content: content || "" };
+      case "assistant":
+        // Assistant messages in Groq likely expect string content.
+        return {
+          role: "assistant",
+          content: ensureStringContent(content, "Assistant"),
+        };
+      case "tool":
+        console.warn(
+          "[GroqProvider] Mapping 'tool' role to 'assistant' for content transmission. Groq's tool handling might differ.",
+        );
+        // Assuming tool results are passed as stringified content
+        return {
+          role: "assistant",
+          content: ensureStringContent(content, "Tool(as Assistant)"),
+        };
+      default:
+        console.warn(`[GroqProvider] Unsupported role: ${message.role}. Defaulting to 'user'.`);
+        // Defaulting to user role, which supports complex content
+        return { role: "user", content: content || "" };
+    }
   };
 
   createStepFromChunk = (chunk: {
@@ -406,6 +508,10 @@ export class GroqProvider implements LLMProvider<string> {
             // Handle errors during streaming
             console.error("Error during Groq stream processing:", error);
             controller.error(error);
+
+            // TODO: fix this
+            if (options.onError) options.onError(error as any);
+
           }
         },
       });
@@ -418,6 +524,9 @@ export class GroqProvider implements LLMProvider<string> {
     } catch (error) {
       // Handle API errors
       console.error("Groq streaming API error:", error);
+
+      // TODO: fix this
+      if (options.onError) options.onError(error as any);
       throw error;
     }
   }

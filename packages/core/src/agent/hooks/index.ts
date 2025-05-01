@@ -1,61 +1,75 @@
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../index";
+import type { OperationContext, VoltAgentError, AgentOperationOutput } from "../types";
+
+// Argument Object Interfaces
+export interface OnStartHookArgs {
+  agent: Agent<any>;
+  context: OperationContext;
+}
+
+export interface OnEndHookArgs {
+  agent: Agent<any>;
+  /** The standardized successful output object. Undefined on error. */
+  output: AgentOperationOutput | undefined;
+  /** The VoltAgentError object if the operation failed. Undefined on success. */
+  error: VoltAgentError | undefined;
+  context: OperationContext;
+}
+
+export interface OnHandoffHookArgs {
+  agent: Agent<any>;
+  source: Agent<any>;
+}
+
+export interface OnToolStartHookArgs {
+  agent: Agent<any>;
+  tool: AgentTool;
+  context: OperationContext;
+}
+
+export interface OnToolEndHookArgs {
+  agent: Agent<any>;
+  tool: AgentTool;
+  /** The successful output from the tool. Undefined on error. */
+  output: unknown | undefined;
+  /** The VoltAgentError if the tool execution failed. Undefined on success. */
+  error: VoltAgentError | undefined;
+  context: OperationContext;
+}
+
+// Hook Type Aliases (using single argument object)
+export type AgentHookOnStart = (args: OnStartHookArgs) => Promise<void> | void;
+export type AgentHookOnEnd = (args: OnEndHookArgs) => Promise<void> | void;
+export type AgentHookOnHandoff = (args: OnHandoffHookArgs) => Promise<void> | void;
+export type AgentHookOnToolStart = (args: OnToolStartHookArgs) => Promise<void> | void;
+export type AgentHookOnToolEnd = (args: OnToolEndHookArgs) => Promise<void> | void;
 
 /**
- * Type definition for agent hooks
+ * Type definition for agent hooks using single argument objects.
  */
 export type AgentHooks = {
-  /**
-   * Called before the agent is invoked
-   * @param agent The agent being invoked
-   */
-  onStart?: (agent: Agent<any>) => Promise<void> | void;
-
-  /**
-   * Called when the agent produces a final output
-   * @param agent The agent that produced the output
-   * @param output The output produced by the agent
-   */
-  onEnd?: (agent: Agent<any>, output: any) => Promise<void> | void;
-
-  /**
-   * Called when the agent is being handed off to
-   * @param agent The agent being handed off to
-   * @param source The agent that is handing off
-   */
-  onHandoff?: (agent: Agent<any>, source: Agent<any>) => Promise<void> | void;
-
-  /**
-   * Called before a tool is invoked
-   * @param agent The agent invoking the tool
-   * @param tool The tool being invoked
-   */
-  onToolStart?: (agent: Agent<any>, tool: AgentTool) => Promise<void> | void;
-
-  /**
-   * Called after a tool is invoked
-   * @param agent The agent that invoked the tool
-   * @param tool The tool that was invoked
-   * @param result The result of the tool invocation
-   */
-  onToolEnd?: (agent: Agent<any>, tool: AgentTool, result: any) => Promise<void> | void;
+  onStart?: AgentHookOnStart;
+  onEnd?: AgentHookOnEnd;
+  onHandoff?: AgentHookOnHandoff;
+  onToolStart?: AgentHookOnToolStart;
+  onToolEnd?: AgentHookOnToolEnd;
 };
 
 /**
- * Default empty implementation of hook methods
+ * Default empty implementation of hook methods.
  */
-const defaultHooks = {
-  onStart: async () => {},
-  onEnd: async () => {},
-  onHandoff: async () => {},
-  onToolStart: async () => {},
-  onToolEnd: async () => {},
+const defaultHooks: Required<AgentHooks> = {
+  // Mark as Required for internal consistency
+  onStart: async (_args: OnStartHookArgs) => {},
+  onEnd: async (_args: OnEndHookArgs) => {},
+  onHandoff: async (_args: OnHandoffHookArgs) => {},
+  onToolStart: async (_args: OnToolStartHookArgs) => {},
+  onToolEnd: async (_args: OnToolEndHookArgs) => {},
 };
 
 /**
- * Create hooks from an object literal
- * @param hooks Object with hook methods
- * @returns A complete hooks object
+ * Create hooks from an object literal.
  */
 export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
   return {
