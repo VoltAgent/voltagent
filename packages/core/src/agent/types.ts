@@ -6,6 +6,8 @@ import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
 import type { AgentHistoryEntry } from "./history";
 import type { EventUpdater } from "../events";
+import type { ToolExecuteOptions } from "./providers/base/types";
+import type { UsageInfo } from "./providers/base/types";
 
 /**
  * Provider options type for LLM configurations
@@ -36,6 +38,9 @@ export type ProviderOptions = {
 
   // Callback when an error occurs during generation
   onError?: (error: unknown) => Promise<void>;
+
+  // Tool execution context passed down from the agent
+  toolExecutionContext?: ToolExecutionContext;
 };
 
 /**
@@ -149,8 +154,10 @@ export interface CommonGenerateOptions {
   signal?: AbortSignal;
 
   // Current history entry ID for parent context in tool execution
-  // Internal use only, not exposed to external users
   historyEntryId?: string;
+
+  // The OperationContext associated with this specific generation call
+  operationContext?: OperationContext;
 }
 
 /**
@@ -167,9 +174,12 @@ export interface InternalGenerateOptions extends CommonGenerateOptions {
 
 /**
  * Public-facing generate options for external users
- * Omits internal implementation details
+ * Omits internal implementation details like historyEntryId and operationContext
  */
-export type PublicGenerateOptions = Omit<CommonGenerateOptions, "historyEntryId">;
+export type PublicGenerateOptions = Omit<
+  CommonGenerateOptions,
+  "historyEntryId" | "operationContext"
+>;
 
 /**
  * Agent status information
@@ -307,18 +317,189 @@ export interface AgentHandoffResult {
 }
 
 /**
- * Operation context to isolate state for concurrent operations
- * Prevents race conditions when the same agent instance is used concurrently
+ * Context for a specific agent operation (e.g., one generateText call)
  */
 export type OperationContext = {
+  /** Unique identifier for the operation (maps to historyEntryId) */
+  readonly operationId: string;
+
+  /** User-managed context map for this specific operation */
+  readonly userContext: Map<string | symbol, any>;
+
   /** The history entry associated with this operation */
   historyEntry: AgentHistoryEntry;
+
   /** Map to store tool event updaters using tool call ID as key */
   eventUpdaters: Map<string, EventUpdater>;
+
   /** Whether this operation is still active */
   isActive: boolean;
-  /** Parent agent ID */
+
+  /** Parent agent ID if part of a delegation chain */
   parentAgentId?: string;
-  /** Parent history entry ID */
+
+  /** Parent history entry ID if part of a delegation chain */
   parentHistoryEntryId?: string;
 };
+
+/**
+ * Tool execution context passed to tool.execute method
+ * Includes operation-specific context and necessary identifiers
+ * Extends base ToolExecuteOptions.
+ */
+export type ToolExecutionContext = ToolExecuteOptions & {
+  /** ID of the agent executing the tool */
+  agentId: string;
+
+  /** History ID associated with the current operation */
+  historyEntryId: string;
+};
+
+/**
+ * Specific information related to a tool execution error.
+ */
+export interface ToolErrorInfo {
+  /** The unique identifier of the tool call. */
+  toolCallId: string;
+
+  /** The name of the tool that was executed. */
+  toolName: string;
+
+  /** The original error thrown directly by the tool during execution (if available). */
+  toolExecutionError?: unknown;
+
+  /** The arguments passed to the tool when the error occurred (for debugging). */
+  toolArguments?: unknown;
+}
+
+/**
+ * Standardized error structure for Voltagent agent operations.
+ * Providers should wrap their specific errors in this structure before
+ * passing them to onError callbacks.
+ */
+export interface VoltAgentError {
+  /** A clear, human-readable error message. This could be a general message or derived from toolError info. */
+  message: string;
+
+  /** The original error object thrown by the provider or underlying system (if available). */
+  originalError?: unknown;
+
+  /** Optional error code or identifier from the provider. */
+  code?: string | number;
+
+  /** Additional metadata related to the error (e.g., retry info, request ID). */
+  metadata?: Record<string, any>;
+
+  /** Information about the step or stage where the error occurred (optional, e.g., 'llm_request', 'tool_execution', 'response_parsing'). */
+  stage?: string;
+
+  /** If the error occurred during tool execution, this field contains the relevant details. Otherwise, it's undefined. */
+  toolError?: ToolErrorInfo;
+}
+
+/**
+ * Type for onError callbacks in streaming operations.
+ * Providers must pass an error conforming to the VoltAgentError structure.
+ */
+export type StreamOnErrorCallback = (error: VoltAgentError) => Promise<void> | void;
+
+/**
+ * Standardized object structure passed to the onFinish callback
+ * when streamText completes successfully.
+ */
+export interface StreamTextFinishResult {
+  /** The final, consolidated text output from the stream. */
+  text: string;
+
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+
+  /** The reason the stream finished (if available, e.g., 'stop', 'length', 'tool-calls'). */
+  finishReason?: string;
+
+  /** The original completion response object from the provider (if available). */
+  providerResponse?: unknown;
+
+  /** Any warnings generated during the completion (if available). */
+  warnings?: unknown[];
+}
+
+/**
+ * Type for the onFinish callback function for streamText.
+ */
+export type StreamTextOnFinishCallback = (result: StreamTextFinishResult) => Promise<void> | void;
+
+/**
+ * Standardized object structure passed to the onFinish callback
+ * when streamObject completes successfully.
+ * @template TObject The expected type of the fully formed object.
+ */
+export interface StreamObjectFinishResult<TObject> {
+  /** The final, fully formed object from the stream. */
+  object: TObject;
+
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+
+  /** The original completion response object from the provider (if available). */
+  providerResponse?: unknown;
+
+  /** Any warnings generated during the completion (if available). */
+  warnings?: unknown[];
+
+  /** The reason the stream finished (if available). Although less common for object streams. */
+  finishReason?: string;
+}
+
+/**
+ * Type for the onFinish callback function for streamObject.
+ * @template TObject The expected type of the fully formed object.
+ */
+export type StreamObjectOnFinishCallback<TObject> = (
+  result: StreamObjectFinishResult<TObject>,
+) => Promise<void> | void;
+
+/**
+ * Standardized success result structure for generateText.
+ */
+export interface StandardizedTextResult {
+  /** The generated text. */
+  text: string;
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+  /** Original provider response (if needed). */
+  providerResponse?: unknown;
+  /** Finish reason (if available from provider). */
+  finishReason?: string;
+  /** Warnings (if available from provider). */
+  warnings?: unknown[];
+}
+
+/**
+ * Standardized success result structure for generateObject.
+ * @template TObject The expected type of the generated object.
+ */
+export interface StandardizedObjectResult<TObject> {
+  /** The generated object. */
+  object: TObject;
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+  /** Original provider response (if needed). */
+  providerResponse?: unknown;
+  /** Finish reason (if available from provider). */
+  finishReason?: string;
+  /** Warnings (if available from provider). */
+  warnings?: unknown[];
+}
+
+/**
+ * Unified output type for the onEnd hook, representing the successful result
+ * of any core agent operation. Use 'type guarding' or check specific fields
+ * within the hook implementation to determine the concrete type.
+ * Object types are generalized to 'unknown' here for the union.
+ */
+export type AgentOperationOutput =
+  | StandardizedTextResult
+  | StreamTextFinishResult
+  | StandardizedObjectResult<unknown> // Object type generalized
+  | StreamObjectFinishResult<unknown>; // Object type generalized

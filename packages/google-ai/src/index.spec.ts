@@ -129,7 +129,7 @@ describe("GoogleGenAIProvider", () => {
           seed: 123456,
           extraOptions: {
             customOption: "value",
-          },
+          } as Record<string, any>,
         },
       });
 
@@ -152,7 +152,11 @@ describe("GoogleGenAIProvider", () => {
       async function* mockGenerator() {
         yield { text: "Hello", responseId: "chunk1" };
         yield { text: ", ", responseId: "chunk2" };
-        yield { text: "world!", responseId: "chunk3", candidates: [{ finishReason: "STOP" }] };
+        yield {
+          text: "world!",
+          responseId: "chunk3",
+          candidates: [{ finishReason: "STOP" }],
+        };
         yield {
           text: "",
           responseId: "final",

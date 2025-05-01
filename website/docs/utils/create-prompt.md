@@ -41,7 +41,9 @@ import { createPrompt, PromptTemplate, PromptCreator } from "@voltagent/core";
 Define a template with default variables.
 
 ```typescript
-import { createPrompt } from "@voltagent/core";
+import { createPrompt, Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 
 // Define the prompt template and default variables
 const basicPrompt = createPrompt({
@@ -58,6 +60,15 @@ Output:
 You are a helpful assistant that simplifies complex topics.
 Task: summarize text
 */
+
+const agent = new Agent({
+  name: "Basic Assistant",
+  // Use the generated prompt in the description field
+  // highlight-next-line
+  description: prompt1,
+  llm: new VercelAIProvider(), // Example provider
+  model: openai("gpt-4o-mini"), // Example model
+});
 ```
 
 ### Overriding Defaults

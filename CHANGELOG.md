@@ -17,6 +17,17 @@ Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community]
 
 # Changelog
 
+## 0.1.9
+
+### Patch Changes
+
+- [#71](https://github.com/VoltAgent/voltagent/pull/71) [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Introduce `userContext` for passing custom data through agent operations (`@voltagent/core`).
+- [#71](https://github.com/VoltAgent/voltagent/pull/71) [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Standardize Agent Error and Finish Handling (`@voltagent/core`).
+- [`7a7a0f6`](https://github.com/VoltAgent/voltagent/commit/7a7a0f672adbe42635c3edc5f0a7f282575d0932) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Refactor Agent Hooks Signature to Use Single Argument Object - #57 (`@voltagent/core`).
+
+- Updated dependencies:
+  - `@voltagent/core@0.1.9`
+
 ## 0.1.8
 
 ### Minor Changes
