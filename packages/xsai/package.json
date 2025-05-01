@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/xsai",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "VoltAgent XsAI - XsAI provider integration for VoltAgent",
   "license": "MIT",
   "exports": {
@@ -23,8 +23,8 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.9",
-    "@voltagent/xsai": "^0.1.3",
+    "@voltagent/core": "^0.1.10",
+    "@voltagent/xsai": "^0.1.4",
     "xsai": "0.2.0-beta.3",
     "zod": "^3.24.2"
   },
