@@ -123,7 +123,6 @@ export class GroqProvider implements LLMProvider<string> {
             (toolItem) => functionName === toolItem.name,
           )?.execute;
           const functionArgs = JSON.parse(toolCall.function.arguments);
-          console.log("functionArgs", functionArgs);
           if (functionToCall === undefined) {
             throw `Function ${functionName} not found in tools`;
           }
@@ -131,7 +130,6 @@ export class GroqProvider implements LLMProvider<string> {
           if (functionResponse === undefined) {
             throw `Function ${functionName} returned undefined`;
           }
-          console.log(functionResponse);
           toolResults.push({ name: functionName, output: functionResponse });
 
           groqMessages.push({
@@ -142,7 +140,6 @@ export class GroqProvider implements LLMProvider<string> {
         }
         // Handle all tool results - each as a separate step
         if (toolCalls && toolResults && toolResults.length > 0) {
-          console.log("Tool results:", toolCalls);
           for (const toolResult of toolResults) {
             const step = this.createStepFromChunk({
               type: "tool-result",
