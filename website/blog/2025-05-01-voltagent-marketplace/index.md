@@ -1,7 +1,7 @@
 ---
 title: Community AI Agent Marketplace
 description: Exploring a VoltAgent Community Marketplace for sharing, discovering, and monetizing AI agents.
-tags: [mcp, tutorial]
+tags: [announcement]
 slug: ai-agent-marketplace
 image: https://cdn.voltagent.dev/2025-05-01-voltagent-marketplace/social-2.png
 authors: necatiozmen
