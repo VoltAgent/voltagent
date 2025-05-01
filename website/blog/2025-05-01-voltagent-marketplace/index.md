@@ -12,7 +12,7 @@ import GitHubDiscussionLink from '@site/src/components/blog-widgets/GitHubDiscus
 Just a few day back, we launched VoltAgent into the wild. Honestly, the energy and engagement from the community have blown us away.
 We've already seen contributors jump in, a flood of interest, and folks starting to tackle real-world problems using VoltAgent.
 
-We're seriously exploring our next big steps, one of is: [**The VoltAgent Community Marketplace**](/marketplace).
+We're seriously exploring our next big steps, one of is: [**The VoltAgent Community Marketplace**](https://voltagent.dev/marketplace/).
 It's a place where the community can share, discover, and even monetize AI agents built with the [VoltAgent framework](https://github.com/VoltAgent/voltagent/).
 
 ![Agent List View](https://cdn.voltagent.dev/2025-05-01-voltagent-marketplace/agent-list.png)
