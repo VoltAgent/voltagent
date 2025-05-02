@@ -415,6 +415,7 @@ export class GroqProvider implements LLMProvider<string> {
                     usage: usage,
                   });
                   if (step && options.onChunk) await options.onChunk(step);
+                  if (step && options.onStepFinish) await options.onStepFinish(step);
                   //Call the function with the arguments
                   const functionName = toolCall.function?.name;
                   const functionToCall = options.tools.find(
@@ -453,6 +454,7 @@ export class GroqProvider implements LLMProvider<string> {
                       usage: usage,
                     });
                     if (step && options.onChunk) await options.onChunk(step);
+                    if (step && options.onStepFinish) await options.onStepFinish(step);
                   }
                 }
                 // Call Groq API
