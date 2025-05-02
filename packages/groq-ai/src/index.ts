@@ -161,6 +161,27 @@ export class GroqProvider implements LLMProvider<string> {
         role: "assistant" as MessageRole,
         usage: chunk.usage || undefined,
       };
+    } else if (chunk.type === "tool-call" && chunk.toolCallId) {
+      return {
+        id: chunk.toolCallId,
+        type: "tool_call",
+        content: chunk.toolName,
+        name: chunk.toolName,
+        role: "tool" as MessageRole,
+        arguments: chunk.args,
+        usage: chunk.usage || undefined,
+      };
+    } else if (chunk.type === "tool-result" && chunk.toolCallId) {
+      return {
+        id: chunk.toolCallId,
+        type: "tool_result",
+        content: chunk.toolName,
+        name: chunk.toolName,
+        role: "tool" as MessageRole,
+        arguments: chunk.args,
+        result: chunk.result,
+        usage: chunk.usage || undefined,
+      };
     }
     return null;
   };
@@ -393,7 +414,7 @@ export class GroqProvider implements LLMProvider<string> {
                     args: toolCall.function?.arguments,
                     usage: usage,
                   });
-                  if (step && options.onStepFinish) await options.onStepFinish(step);
+                  if (step && options.onChunk) await options.onChunk(step);
                   //Call the function with the arguments
                   const functionName = toolCall.function?.name;
                   const functionToCall = options.tools.find(
@@ -410,6 +431,7 @@ export class GroqProvider implements LLMProvider<string> {
                     throw `Function ${functionName} returned undefined`;
                   }
                   toolResults.push({
+                    toolCallId: toolCall.id,
                     name: functionName,
                     output: functionResponse,
                   });
@@ -425,13 +447,12 @@ export class GroqProvider implements LLMProvider<string> {
                   for (const toolResult of toolResults) {
                     const step = that.createStepFromChunk({
                       type: "tool-result",
-                      toolCallId: toolCalls.find((toolItem) => toolResult.name === toolItem.id)?.id,
-                      toolName: toolCalls.find((toolItem) => toolResult.name === toolItem.id)
-                        ?.function?.name,
+                      toolCallId: toolResult.toolCallId,
+                      toolName: toolResult.name,
                       result: toolResult.output,
                       usage: usage,
                     });
-                    if (step && options.onStepFinish) await options.onStepFinish(step);
+                    if (step && options.onChunk) await options.onChunk(step);
                   }
                 }
                 // Call Groq API
@@ -508,7 +529,6 @@ export class GroqProvider implements LLMProvider<string> {
 
             // TODO: fix this
             if (options.onError) options.onError(error as any);
-
           }
         },
       });
@@ -695,7 +715,7 @@ export class GroqProvider implements LLMProvider<string> {
             // Handle errors during streaming
             console.error("Error during Groq stream processing:", error);
             controller.error(error);
-            if (options.onError) options.onError(error);
+            if (options.onError) options.onError(error as any);
           }
         },
       });
@@ -708,7 +728,7 @@ export class GroqProvider implements LLMProvider<string> {
     } catch (error) {
       // Handle API errors
       console.error("Groq streaming API error:", error);
-      if (options.onError) options.onError(error);
+      if (options.onError) options.onError(error as any);
       throw error;
     }
   }
