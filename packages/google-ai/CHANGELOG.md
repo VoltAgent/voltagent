@@ -1,5 +1,14 @@
 # @voltagent/google-ai
 
+## 0.3.2
+
+### Patch Changes
+
+- [`340feee`](https://github.com/VoltAgent/voltagent/commit/340feee1162e74c52def337af8f35d8d3117eefc) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Add index signature `[key: string]: any;` to `GoogleProviderRuntimeOptions`. This allows passing arbitrary extra options to the Google AI provider, alongside refactoring types to prevent TypeScript deep instantiation errors.
+
+- Updated dependencies [[`e5b3a46`](https://github.com/VoltAgent/voltagent/commit/e5b3a46e2e61f366fa3c67f9a37d4e4d9e0fe426), [`4649c3c`](https://github.com/VoltAgent/voltagent/commit/4649c3ccb9e56a7fcabfe6a0bcef2383ff6506ef), [`8e6d2e9`](https://github.com/VoltAgent/voltagent/commit/8e6d2e994398c1a727d4afea39d5e34ffc4a5fca)]:
+  - @voltagent/core@0.1.11
+
 ## 0.3.1
 
 ### Patch Changes

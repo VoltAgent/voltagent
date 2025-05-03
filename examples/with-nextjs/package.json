@@ -14,7 +14,7 @@
     "@libsql/client": "0.15.0",
     "@tailwindcss/postcss": "^4.1.4",
     "@voltagent/cli": "^0.1.4",
-    "@voltagent/core": "^0.1.10",
+    "@voltagent/core": "^0.1.11",
     "@voltagent/vercel-ai": "^0.1.5",
     "next": "15.3.1",
     "npm-check-updates": "^17.1.18",

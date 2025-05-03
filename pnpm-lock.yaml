@@ -66,7 +66,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -94,7 +94,7 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -125,7 +125,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -150,10 +150,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.1
+        specifier: ^0.3.2
         version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
@@ -276,10 +276,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.1
+        specifier: ^0.3.2
         version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
@@ -301,7 +301,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/groq-ai':
         specifier: ^0.1.3
@@ -329,7 +329,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -363,7 +363,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -412,7 +412,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -452,7 +452,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -492,7 +492,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -520,7 +520,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -548,7 +548,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -579,7 +579,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/supabase':
         specifier: ^0.1.3
@@ -610,7 +610,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -638,7 +638,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -666,7 +666,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -694,7 +694,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -722,7 +722,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -753,7 +753,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
@@ -787,7 +787,7 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../../packages/core
       '@voltagent/xsai':
         specifier: ^0.1.4
@@ -1031,7 +1031,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.11
         version: link:../core
       zod:
         specifier: ^3.24.2
@@ -5531,23 +5531,23 @@ packages:
       - supports-color
     dev: true
 
-  /@xsai/embed@0.2.0-beta.6:
-    resolution: {integrity: sha512-IO2K0HKG5D32Pp1vDO4NfP3/NVdzWJ0gqBqL4KQk9HI1qTo4jx7Z8uQXpG/7MPYnV3rD1umXhCE2PLEw7MLb2Q==}
+  /@xsai/embed@0.2.0:
+    resolution: {integrity: sha512-xXk6QG/23gHDmlMIEywB4+9JhiQv1DSnxqaJnQiiS2EAqzpKLV4JHT0tjAPAb4Gu+HUGjCQDup0rag6BopfnBg==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
+      '@xsai/shared': 0.2.0
     dev: false
 
-  /@xsai/generate-image@0.2.0-beta.6:
-    resolution: {integrity: sha512-lLbyFKDulMw93/DoT37hDCmhWZ5q7/4avRGERJZc364ZMDR5n18bVdhP0SXm3DZjX0DOhmE3TfM79pSmPdB4Pw==}
+  /@xsai/generate-image@0.2.0:
+    resolution: {integrity: sha512-O4keIwV2PHagtrGGOy/Pz+A+kJM8XpOsQoUUvr4nCcOXPpSYPlHs84SajLwdi8wAjy2ZbdRWk0OOtK1/jfLBWQ==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
+      '@xsai/shared': 0.2.0
     dev: false
 
-  /@xsai/generate-object@0.2.0-beta.6(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-zrlJ+lOmn0MImzD9iL+BKzlohW0wI+O/sTg9vAUN3/1qb/sjM8L+iM8AEUDHfGEWUQu3+lB2aqHi1wMNxU0+xw==}
+  /@xsai/generate-object@0.2.0(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-mXezX18gebJsFObBR4D2undF4PqA+GdraiffejIOL7SRWfJEyBCBYXMtL8CqbA/ESU2DuPQUFChusJA4dF1+ig==}
     dependencies:
-      '@xsai/generate-text': 0.2.0-beta.6
-      xsschema: 0.2.0-beta.6(effect@3.12.7)(zod@3.24.2)
+      '@xsai/generate-text': 0.2.0
+      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - '@zod/mini'
@@ -5557,46 +5557,46 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /@xsai/generate-speech@0.2.0-beta.6:
-    resolution: {integrity: sha512-LzaPoqilKsCk1+FB3LfRkxhijupOHC2q/nmAxGUuoWiOnWJtct5R27LL1BDe62KPqrYoQNtuezBQC4TYKE4Y/Q==}
+  /@xsai/generate-speech@0.2.0:
+    resolution: {integrity: sha512-mf4x2UtPO4xHYisrO5cnClSiHmQKpARATXKxPvH2gEVwyVW0Ipgc9nlkilOowtV8ZGWuv9VK2hVsV4+4ZKqwbQ==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
+      '@xsai/shared': 0.2.0
     dev: false
 
-  /@xsai/generate-text@0.2.0-beta.6:
-    resolution: {integrity: sha512-8YWdvkD4JVh6q+9wlCwQc7kyHQ8+WFfzbM8ZyZNqEpHOpzkrZzqY1o1Sg3RR0j16hLfd//S6UzJft2187RuuKw==}
+  /@xsai/generate-text@0.2.0:
+    resolution: {integrity: sha512-uS6p5OYyvE1/UGGnruDHGzjQx35bHxiq4PfJdeVF2zDW9gqNTSB8BtZLZwCIwbmJ+qG6p7sD2Stuc3Bij43klQ==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
-      '@xsai/shared-chat': 0.2.0-beta.6
+      '@xsai/shared': 0.2.0
+      '@xsai/shared-chat': 0.2.0
     dev: false
 
-  /@xsai/generate-transcription@0.2.0-beta.6:
-    resolution: {integrity: sha512-ML/iEyLhmobphOKFx7XcaJNJMnHPwmVx97Hr5HOAcjDt8NGNou1fHxBlwRGnPyh2kn5B/91UszUEGqjUFIRe9w==}
+  /@xsai/generate-transcription@0.2.0:
+    resolution: {integrity: sha512-J31VwUxhV4fSqPkdiT23ZNVgGgB7L8bA6EMu99LFjkEVxsqaTNwz58fyoaX3Ab9nEgK6OIKk2lofPgO/go0WIg==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
+      '@xsai/shared': 0.2.0
     dev: false
 
-  /@xsai/model@0.2.0-beta.6:
-    resolution: {integrity: sha512-QcmssRoUEarGvHIz7+r+HcDTRDPSj/wHP8pL0nWQ41I1fvVjOcwFZ718voVc+ak4Bh39EAE/e14bf9JfDgRwwQ==}
+  /@xsai/model@0.2.0:
+    resolution: {integrity: sha512-ETJYaIiUyNsRC0+pF9YupCi1KsLIG8I4yEGM61c3GaJvqZPE+Cpx6vhVjqlcPESiX9WRAgqJAdEa1Is6ndvQEA==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
+      '@xsai/shared': 0.2.0
     dev: false
 
-  /@xsai/shared-chat@0.2.0-beta.6:
-    resolution: {integrity: sha512-gzeMfPu7NHcHYeg1kIeET99wtrNezMbU6T85yk8xPovqJttcEkxpST0dAvXhPtwCyg4o3SYkKtT2Etl1xm3UEw==}
+  /@xsai/shared-chat@0.2.0:
+    resolution: {integrity: sha512-mzTY3ExsUWVKNgTSSGR1G9htfnkmN2l8qsmX02HBJ0Rqj8dneigd6dX5LNRlrUoyddBtOerxblPsHyfXOSWNHQ==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
+      '@xsai/shared': 0.2.0
     dev: false
 
-  /@xsai/shared@0.2.0-beta.6:
-    resolution: {integrity: sha512-mDKSXhQpiYansxwe0+oG20drKkYJrOuQM9fMiThgjNgTPBkGd1CvnwJWSwPZQeHgQ7ytNJ/Vd8P3s1lLUlT1Xg==}
+  /@xsai/shared@0.2.0:
+    resolution: {integrity: sha512-fFMJ1T/9P4o7iOmLvc4/UIFMy2tYkXUmL8aJWULmV36Ddq/gYYOndBZJZfoy3mNiDtxgDBkmIBMdIOFQu9iamg==}
     dev: false
 
-  /@xsai/stream-object@0.2.0-beta.6(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-gjeJb5lOH57goNmVc7vPOVJACnseYZokb+jhH3Hn/nHH5kHiljbjthVqx+BE9qFPgdqi6p+759WBUKnWNBVAlQ==}
+  /@xsai/stream-object@0.2.0(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-Uanx1CVeYEL8Au/T1VK9viNJWj11pIHuK1bPte3P0XcJKyztI+h07LFWqXeanPMxRe57XSUvV1gOc3ynPYTO/g==}
     dependencies:
-      '@xsai/stream-text': 0.2.0-beta.6
-      xsschema: 0.2.0-beta.6(effect@3.12.7)(zod@3.24.2)
+      '@xsai/stream-text': 0.2.0
+      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - '@zod/mini'
@@ -5606,18 +5606,18 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /@xsai/stream-text@0.2.0-beta.6:
-    resolution: {integrity: sha512-AdamwWJvPiGmioSq1V8DlBIO73bjqJBFTiPySLLMDP6q/UOeoRxFuddAK7JIFWmdgVEdJbOWIwftPpbLNRWAAQ==}
+  /@xsai/stream-text@0.2.0:
+    resolution: {integrity: sha512-pX78B2FtpLfEBoVWR2RFmdG7PeldIoSs/1Yh6rigOZTI2x47eviSjwqg32owB2ZaLPmwP9p51BnczNPhHl9vdg==}
     dependencies:
-      '@xsai/shared-chat': 0.2.0-beta.6
+      '@xsai/shared-chat': 0.2.0
     dev: false
 
-  /@xsai/tool@0.2.0-beta.6(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-zBPxCP+c/MzWPHm5PQmLWhsDdQ7jlGl5QmqyiruF0WMYbC+Dmf2lwqsRR3pMyYC1rBlwBtRUOkQPwguaSLGDlw==}
+  /@xsai/tool@0.2.0(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-nZu67odrfNUPeilXJ3dMlknrNC2ZjDDdN8gReCnukWf5dxoGMQPHifnaQeolAKSHr0adlYllfSlPy1NRAXpQgQ==}
     dependencies:
-      '@xsai/shared': 0.2.0-beta.6
-      '@xsai/shared-chat': 0.2.0-beta.6
-      xsschema: 0.2.0-beta.6(effect@3.12.7)(zod@3.24.2)
+      '@xsai/shared': 0.2.0
+      '@xsai/shared-chat': 0.2.0
+      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - '@zod/mini'
@@ -5627,14 +5627,14 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /@xsai/utils-chat@0.2.0-beta.6:
-    resolution: {integrity: sha512-dmcIVEqwhlKMkuo+3hZ6ZyrcAL/5zHG3Bf/n2Un2uUfPhqBT00CEbECcWxthmesQ/eOSLw9AVmQ300dxsv6mQQ==}
+  /@xsai/utils-chat@0.2.0:
+    resolution: {integrity: sha512-k/7ItqTVijGT6H+LnqmQx0GzOt30w07udiANKg1xL8mHLI2LuSCQPBvSZRtlbUmquWE/cKROM8TivLn60DtSQA==}
     dependencies:
-      '@xsai/shared-chat': 0.2.0-beta.6
+      '@xsai/shared-chat': 0.2.0
     dev: false
 
-  /@xsai/utils-stream@0.2.0-beta.6:
-    resolution: {integrity: sha512-1r/SF2N1YEPceyXzLtaX6Ie423nw5zS3x86FDzGp4gVvOMAij+YI6iRIn/4f6Tytjc7oNGIjtq8ZYH9lF4TSlg==}
+  /@xsai/utils-stream@0.2.0:
+    resolution: {integrity: sha512-2Ekphs1a3/NAytnRzIlQr41RxAu9GnUIyOqaeoZFaMEgBCkxkPgsxUIqbHymUvsU0PUPliFfxOgzKToNMGGo2w==}
     dev: false
 
   /@yarnpkg/lockfile@1.1.0:
@@ -14534,20 +14534,20 @@ packages:
   /xsai@0.2.0-beta.3(effect@3.12.7)(zod@3.24.2):
     resolution: {integrity: sha512-tuDrdLV4wqkZ77EabA5nJ7Pv8Jye1Layq2QsuJAO76gcLqh2uZBx0pwr9Kdxm5DPPHorxjcckZK89qM4CwnRDw==}
     dependencies:
-      '@xsai/embed': 0.2.0-beta.6
-      '@xsai/generate-image': 0.2.0-beta.6
-      '@xsai/generate-object': 0.2.0-beta.6(effect@3.12.7)(zod@3.24.2)
-      '@xsai/generate-speech': 0.2.0-beta.6
-      '@xsai/generate-text': 0.2.0-beta.6
-      '@xsai/generate-transcription': 0.2.0-beta.6
-      '@xsai/model': 0.2.0-beta.6
-      '@xsai/shared': 0.2.0-beta.6
-      '@xsai/shared-chat': 0.2.0-beta.6
-      '@xsai/stream-object': 0.2.0-beta.6(effect@3.12.7)(zod@3.24.2)
-      '@xsai/stream-text': 0.2.0-beta.6
-      '@xsai/tool': 0.2.0-beta.6(effect@3.12.7)(zod@3.24.2)
-      '@xsai/utils-chat': 0.2.0-beta.6
-      '@xsai/utils-stream': 0.2.0-beta.6
+      '@xsai/embed': 0.2.0
+      '@xsai/generate-image': 0.2.0
+      '@xsai/generate-object': 0.2.0(effect@3.12.7)(zod@3.24.2)
+      '@xsai/generate-speech': 0.2.0
+      '@xsai/generate-text': 0.2.0
+      '@xsai/generate-transcription': 0.2.0
+      '@xsai/model': 0.2.0
+      '@xsai/shared': 0.2.0
+      '@xsai/shared-chat': 0.2.0
+      '@xsai/stream-object': 0.2.0(effect@3.12.7)(zod@3.24.2)
+      '@xsai/stream-text': 0.2.0
+      '@xsai/tool': 0.2.0(effect@3.12.7)(zod@3.24.2)
+      '@xsai/utils-chat': 0.2.0
+      '@xsai/utils-stream': 0.2.0
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - '@zod/mini'
@@ -14557,8 +14557,8 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /xsschema@0.2.0-beta.6(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-xlGzeFtQV3nVEmrJ9PH3RI3tABDbGfPva9P4NvbFeO3NZjc/dmR4Ne6YFKb7G6DEfaXHaz6R/HSpGXWPgkovNw==}
+  /xsschema@0.2.0(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-UPPI+jP6pn/49q8w7Faz4CYRn33VvG7ngfNQ79nwqTauFP4/m3VusB095a4d5uZ4/TNip5GDxASpzKDoEouN5Q==}
     peerDependencies:
       '@valibot/to-json-schema': ^1.0.0
       '@zod/mini': ^4.0.0-beta
