@@ -1,0 +1,27 @@
+{
+  "name": "bedrock",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^2.2.8",
+    "@aws-sdk/credential-providers": "~3.799.0",
+    "@voltagent/core": "~0.1.11",
+    "@voltagent/vercel-ai": "~0.1.5",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
