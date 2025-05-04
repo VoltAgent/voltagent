@@ -146,3 +146,6 @@ dist
 
 # Create VoltAgent App
 !packages/create-voltagent-app/templates/base/.env
+
+# cursor
+.cursor

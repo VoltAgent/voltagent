@@ -11,7 +11,7 @@ import GitHubExampleLink from '@site/src/components/blog-widgets/GitHubExampleLi
 
 ## Introduction
 
-In this article, I'll demonstrate how we can implemented the Model Context Protocol (MCP) by integrating **VoltAgent** and **Peaka** to create an AI agent with data retrieval capabilities.
+In this article, I'll demonstrate how we can use the Model Context Protocol (MCP) by integrating **VoltAgent** and **Peaka** to create an AI agent with data retrieval capabilities.
 
 ![Peaka MCP VoltAgent](https://cdn.voltagent.dev/2025-04-26-peaka-mcp-voltagent/peaka-demo.gif)
 

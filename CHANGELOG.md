@@ -17,6 +17,38 @@ Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community]
 
 # Changelog
 
+## 0.1.9
+
+### Patch Changes
+
+- [#71](https://github.com/VoltAgent/voltagent/pull/71) [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Introduce `userContext` for passing custom data through agent operations (`@voltagent/core`).
+- [#71](https://github.com/VoltAgent/voltagent/pull/71) [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Standardize Agent Error and Finish Handling (`@voltagent/core`).
+- [`7a7a0f6`](https://github.com/VoltAgent/voltagent/commit/7a7a0f672adbe42635c3edc5f0a7f282575d0932) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Refactor Agent Hooks Signature to Use Single Argument Object - #57 (`@voltagent/core`).
+
+- Updated dependencies:
+  - `@voltagent/core@0.1.9`
+
+## 0.1.8
+
+### Minor Changes
+
+- [#52](https://github.com/VoltAgent/voltagent/pull/52) [`96f2395`](https://github.com/VoltAgent/voltagent/commit/96f239548a207d8cf34694999129980a7998f6e1) Thanks [@foxy17](https://github.com/foxy17)! - feat(`@voltagent/google-ai`): Add `generateObject` method and `GEMINI_API_KEY` env var support.
+- [`e88cb12`](https://github.com/VoltAgent/voltagent/commit/e88cb1249c4189ced9e245069bed5eab71cdd894) Thanks [@omeraplak](https://github.com/omeraplak)! - feat(`@voltagent/core`): Enhance `createPrompt` with Template Literal Type Inference.
+- [#65](https://github.com/VoltAgent/voltagent/pull/65) [`0651d35`](https://github.com/VoltAgent/voltagent/commit/0651d35442cda32b6057f8b7daf7fd8655a9a2a4) Thanks [@omeraplak](https://github.com/omeraplak)! - feat(`@voltagent/core`): Add OpenAPI (Swagger) Documentation for Core API - #64.
+
+### Patch Changes
+
+- [#51](https://github.com/VoltAgent/voltagent/pull/51) [`55c58b0`](https://github.com/VoltAgent/voltagent/commit/55c58b0da12dd94a3095aad4bc74c90757c98db4) Thanks [@kwaa](https://github.com/kwaa)! - fix(`@voltagent/core`): Use the latest Hono to avoid duplicate dependencies.
+- [#59](https://github.com/VoltAgent/voltagent/pull/59) [`d40cb14`](https://github.com/VoltAgent/voltagent/commit/d40cb14860a5abe8771e0b91200d10f522c62881) Thanks [@kwaa](https://github.com/kwaa)! - fix(`@voltagent/core`): Add package exports.
+- [#40](https://github.com/VoltAgent/voltagent/pull/40) [`37c2136`](https://github.com/VoltAgent/voltagent/commit/37c21367da7dd639c0854a14a933f7904dca3908) Thanks [@TheEmi](https://github.com/TheEmi)! - feat(`@voltagent/groq-ai`): Initial implementation using groq-sdk - #13.
+- [#67](https://github.com/VoltAgent/voltagent/pull/67) [`ba4b44d`](https://github.com/VoltAgent/voltagent/commit/ba4b44d61262d795f2afb7951be259bd4b4bec40) Thanks [@luixaviles](https://github.com/luixaviles)! - fix(`@voltagent/voice`): Fix stream handling in ElevenLabs provider - #62.
+
+- Updated dependencies:
+  - `@voltagent/groq-ai@0.1.1` -> `@voltagent/core@0.1.8`
+  - `@voltagent/google-ai@0.3.0` -> `@voltagent/core@0.1.8`
+  - `@voltagent/voice@0.1.4` -> `@voltagent/core@0.1.8`
+  - `@voltagent/xsai` -> `@voltagent/core@0.1.6`
+
 ## 0.1.7
 
 ### Minor Changes

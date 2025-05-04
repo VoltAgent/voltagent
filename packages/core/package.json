@@ -1,8 +1,15 @@
 {
   "name": "@voltagent/core",
-  "version": "0.1.7",
+  "version": "0.1.11",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -13,18 +20,18 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts,.tsx",
-    "start": "node dist/server/index.js",
     "test": "jest"
   },
   "dependencies": {
-    "@dmitryrechkin/json-schema-to-zod": "^1.0.1",
     "@hono/node-server": "^1.14.0",
     "@hono/node-ws": "^1.1.1",
+    "@hono/swagger-ui": "^0.5.1",
+    "@hono/zod-openapi": "^0.19.6",
     "@libsql/client": "^0.15.0",
     "@modelcontextprotocol/sdk": "^1.10.1",
     "@n8n/json-schema-to-zod": "^1.1.0",
     "@types/ws": "^8.18.1",
-    "hono": "^3.12.6",
+    "hono": "^4.7.7",
     "npm-check-updates": "^17.1.18",
     "uuid": "^9.0.1",
     "ws": "^8.18.1",

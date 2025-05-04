@@ -1,6 +1,13 @@
 import type { z } from "zod";
-import type { ProviderOptions } from "../../types";
-import { Tool } from "../../../tool";
+import type {
+  ProviderOptions,
+  ToolExecutionContext,
+  OperationContext,
+  StreamOnErrorCallback,
+  StreamTextOnFinishCallback,
+  StreamObjectOnFinishCallback,
+} from "../../types";
+import type { Tool } from "../../../tool";
 
 /**
  * Token usage information
@@ -194,6 +201,12 @@ export type ToolExecuteOptions = {
   signal?: AbortSignal;
 
   /**
+   * The operation context associated with the agent invocation triggering this tool execution.
+   * Provides access to operation-specific state like userContext.
+   */
+  operationContext?: OperationContext;
+
+  /**
    * Additional options can be added in the future
    */
   [key: string]: any;
@@ -244,6 +257,7 @@ export interface GenerateTextOptions<TModel> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface StreamTextOptions<TModel> {
@@ -254,9 +268,10 @@ export interface StreamTextOptions<TModel> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   onChunk?: StepChunkCallback;
-  onFinish?: (result: { text: string }) => void | Promise<void>;
-  onError?: (error: any) => void | Promise<void>;
+  onFinish?: StreamTextOnFinishCallback;
+  onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
@@ -266,6 +281,7 @@ export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
@@ -274,9 +290,10 @@ export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
   schema: TSchema;
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
-  onFinish?: (result: { object: z.infer<TSchema> }) => void | Promise<void>;
-  onError?: (error: any) => void | Promise<void>;
+  onFinish?: StreamObjectOnFinishCallback<z.infer<TSchema>>;
+  onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
+  toolExecutionContext?: ToolExecutionContext;
 }
 
 // Utility types to infer provider-specific types
@@ -333,6 +350,11 @@ export type InferProviderParams<T> = T extends {
 // Base provider type
 export type LLMProvider<TProvider> = {
   // Core methods
+  /**
+   * Generates a text response based on the provided options.
+   * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
+   * @throws {VoltAgentError} If an error occurs during generation.
+   */
   generateText(
     options: GenerateTextOptions<InferModel<TProvider>>,
   ): Promise<ProviderTextResponse<InferGenerateTextResponse<TProvider>>>;
@@ -341,6 +363,11 @@ export type LLMProvider<TProvider> = {
     options: StreamTextOptions<InferModel<TProvider>>,
   ): Promise<ProviderTextStreamResponse<InferStreamResponse<TProvider>>>;
 
+  /**
+   * Generates a structured object response based on the provided options and schema.
+   * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
+   * @throws {VoltAgentError} If an error occurs during generation.
+   */
   generateObject<TSchema extends z.ZodType>(
     options: GenerateObjectOptions<InferModel<TProvider>, TSchema>,
   ): Promise<ProviderObjectResponse<InferGenerateObjectResponse<TProvider>, z.infer<TSchema>>>;

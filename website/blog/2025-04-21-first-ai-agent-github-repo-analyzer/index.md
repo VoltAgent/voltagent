@@ -66,7 +66,7 @@ Agents often need tools to interact with the outside world (like APIs). In a rea
 - `fetchRepoStarsTool`: A tool that takes a repository name (e.g., `voltagent/core`) and returns the number of stars.
 - `fetchRepoContributorsTool`: A tool that takes a repository name and returns a list of contributors.
 
-_(To learn how to create your own tools, check out the [Tool Creation documentation](/docs/agents/tools).)_
+_(To learn how to create your own tools, check out the [Tool Creation documentation](/docs/agents/tools/).)_
 
 Let's assume these tools are defined in a separate file, perhaps `src/tools.ts`. We'll import them into our main agent file.
 

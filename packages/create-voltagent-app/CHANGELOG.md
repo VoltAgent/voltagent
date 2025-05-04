@@ -1,5 +1,11 @@
 # create-voltagent-app
 
+## 0.1.14
+
+### Patch Changes
+
+- [`8e6d2e9`](https://github.com/VoltAgent/voltagent/commit/8e6d2e994398c1a727d4afea39d5e34ffc4a5fca) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: add README
+
 ## 0.1.11
 
 ### Patch Changes

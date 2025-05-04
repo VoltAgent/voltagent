@@ -94,8 +94,9 @@ export const FeaturedBlog = () => {
           {REAL_POSTS.map((post) => (
             <a
               key={post.id}
-              href={`/blog/${post.slug}`}
+              href={`/blog/${post.slug}/`}
               target="_blank"
+              rel="noreferrer"
               className="group p-4 sm:p-5 md:p-6 rounded-lg border border-solid border-white/10 no-underline hover:border-gray-600 transition-colors flex flex-col h-full"
             >
               <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-5">
