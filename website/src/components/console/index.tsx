@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import {
   ListBulletIcon,
   EyeIcon,
-  ClockIcon,
   CommandLineIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
@@ -13,7 +12,7 @@ import { DotPattern } from "../ui/dot-pattern";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import AgentListView from "./AgentListView";
 import AgentDetailView from "./AgentDetailView";
-import MessageInspector from "./MessageInspector";
+import AgentChat from "./AgentChat";
 import FlowOverview from "./FlowOverview";
 
 export const Console = () => {
@@ -169,7 +168,7 @@ export const Console = () => {
                 </div>
               </div>
               <div>
-                <MessageInspector />
+                <AgentChat />
               </div>
             </motion.div>
           </div>
