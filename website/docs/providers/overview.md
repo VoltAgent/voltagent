@@ -30,7 +30,13 @@ VoltAgent offers several built-in providers, each tailored to different services
   - Choose this for dedicated integration with Google's models via their primary SDK.
 
 - **[`@voltagent/groq-ai`](./groq-ai.md):**
+
   - Uses the `groq-sdk` to interact specifically with the Groq API for high-speed inference on supported models.
   - Choose this when prioritizing the lowest latency responses offered by Groq.
+
+- **[`@voltagent/anthropic-ai`](./anthropic-ai.md):**
+  - Connects directly to Anthropic's AI models (Claude) using the official `anthropic-ai/sdk` SDK.
+  - Choose this for using Claude models with full support for tool calling, structured outputs, and streaming capabilities.
+  - Ideal for applications requiring advanced reasoning, complex tool interactions, and reliable structured data generation.
 
 Select the provider that best fits the LLM service or API you intend to use. See the individual provider pages linked above for detailed installation, configuration, and usage instructions.
