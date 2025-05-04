@@ -5,7 +5,7 @@ import "dotenv/config";
 
 const config: Config = {
   title: "VoltAgent",
-  tagline: "Open Source TypeScript AI AgentFramework",
+  tagline: "Open Source TypeScript AI Agent Framework",
   favicon: "img/favicon.ico",
   staticDirectories: ["static"],
   customFields: {
@@ -84,7 +84,12 @@ const config: Config = {
     [
       "@docusaurus/plugin-client-redirects",
       {
-        redirects: [],
+        redirects: [
+          {
+            to: "/ai-agent-marketplace/",
+            from: "/marketplace/",
+          },
+        ],
       },
     ],
     [

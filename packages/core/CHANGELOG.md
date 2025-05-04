@@ -1,5 +1,251 @@
 # @voltagent/core
 
+## 0.1.11
+
+### Patch Changes
+
+- [`e5b3a46`](https://github.com/VoltAgent/voltagent/commit/e5b3a46e2e61f366fa3c67f9a37d4e4d9e0fe426) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enhance API Overview documentation
+
+  - Added `curl` examples for all key generation endpoints (`/text`, `/stream`, `/object`, `/stream-object`).
+  - Clarified that `userId` and `conversationId` options are optional.
+  - Provided separate `curl` examples demonstrating usage both with and without optional parameters (`userId`, `conversationId`).
+  - Added a new "Common Generation Options" section with a detailed table explaining parameters like `temperature`, `maxTokens`, `contextLimit`, etc., including their types and default values.
+
+- [`4649c3c`](https://github.com/VoltAgent/voltagent/commit/4649c3ccb9e56a7fcabfe6a0bcef2383ff6506ef) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve agent event handling and error processing
+
+  - Enhanced start event emission in agent operations
+  - Fixed timeline event creation for agent operations
+
+- [`8e6d2e9`](https://github.com/VoltAgent/voltagent/commit/8e6d2e994398c1a727d4afea39d5e34ffc4a5fca) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Allow passing arbitrary provider-specific options via the `provider` object in agent generation methods (`generateText`, `streamText`, etc.).
+
+  Added an index signature `[key: string]: unknown;` to the `ProviderOptions` type (`voltagent/packages/core/src/agent/types.ts`). This allows users to pass any provider-specific parameters directly through the `provider` object, enhancing flexibility and enabling the use of features not covered by the standard options.
+
+  Example using a Vercel AI SDK option:
+
+  ```typescript
+  import { Agent } from "@voltagent/core";
+  import { VercelProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "Example Agent",
+    llm: new VercelProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  await agent.streamText("Tell me a joke", {
+    provider: {
+      // Standard options can still be used
+      temperature: 0.7,
+      // Provider-specific options are now allowed by the type
+      experimental_activeTools: ["tool1", "tool2"],
+      anotherProviderOption: "someValue",
+    },
+  });
+  ```
+
+## 0.1.10
+
+### Patch Changes
+
+- [#77](https://github.com/VoltAgent/voltagent/pull/77) [`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2) Thanks [@omeraplak](https://github.com/omeraplak)! - **API & Providers:** Standardized message content format for array inputs.
+
+  - The API (`/text`, `/stream`, `/object`, `/stream-object` endpoints) now strictly expects the `content` field within message objects (when `input` is an array) to be either a `string` or an `Array` of content parts (e.g., `[{ type: 'text', text: '...' }]`).
+  - The previous behavior of allowing a single content object (e.g., `{ type: 'text', ... }`) directly as the value for `content` in message arrays is no longer supported in the API schema. Raw string inputs remain unchanged.
+  - Provider logic (`google-ai`, `groq-ai`, `xsai`) updated to align with this stricter definition.
+
+  **Console:**
+
+  - **Added file and image upload functionality to the Assistant Chat.** Users can now attach multiple files/images via a button, preview attachments, and send them along with text messages.
+  - Improved the Assistant Chat resizing: Replaced size toggle buttons with a draggable handle (top-left corner).
+  - Chat window dimensions are now saved to local storage and restored on reload.
+
+  **Internal:**
+
+  - Added comprehensive test suites for Groq and XsAI providers.
+
+## 0.1.9
+
+### Patch Changes
+
+- [#71](https://github.com/VoltAgent/voltagent/pull/71) [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Introduce `userContext` for passing custom data through agent operations
+
+  Introduced `userContext`, a `Map<string | symbol, unknown>` within the `OperationContext`. This allows developers to store and retrieve custom data across agent lifecycle hooks (`onStart`, `onEnd`) and tool executions for a specific agent operation (like a `generateText` call). This context is isolated per operation, providing a way to manage state specific to a single request or task.
+
+  **Usage Example:**
+
+  ```typescript
+  import {
+    Agent,
+    createHooks,
+    createTool,
+    type OperationContext,
+    type ToolExecutionContext,
+  } from "@voltagent/core";
+  import { z } from "zod";
+
+  // Define hooks that set and retrieve data
+  const hooks = createHooks({
+    onStart: (agent: Agent<any>, context: OperationContext) => {
+      // Set data needed throughout the operation and potentially by tools
+      const requestId = `req-${Date.now()}`;
+      const traceId = `trace-${Math.random().toString(16).substring(2, 8)}`;
+      context.userContext.set("requestId", requestId);
+      context.userContext.set("traceId", traceId);
+      console.log(
+        `[${agent.name}] Operation started. RequestID: ${requestId}, TraceID: ${traceId}`
+      );
+    },
+    onEnd: (agent: Agent<any>, result: any, context: OperationContext) => {
+      // Retrieve data at the end of the operation
+      const requestId = context.userContext.get("requestId");
+      const traceId = context.userContext.get("traceId"); // Can retrieve traceId here too
+      console.log(
+        `[${agent.name}] Operation finished. RequestID: ${requestId}, TraceID: ${traceId}`
+      );
+      // Use these IDs for logging, metrics, cleanup, etc.
+    },
+  });
+
+  // Define a tool that uses the context data set in onStart
+  const customContextTool = createTool({
+    name: "custom_context_logger",
+    description: "Logs a message using trace ID from the user context.",
+    parameters: z.object({
+      message: z.string().describe("The message to log."),
+    }),
+    execute: async (params: { message: string }, options?: ToolExecutionContext) => {
+      // Access userContext via options.operationContext
+      const traceId = options?.operationContext?.userContext?.get("traceId") || "unknown-trace";
+      const requestId =
+        options?.operationContext?.userContext?.get("requestId") || "unknown-request"; // Can access requestId too
+      const logMessage = `[RequestID: ${requestId}, TraceID: ${traceId}] Tool Log: ${params.message}`;
+      console.log(logMessage);
+      // In a real scenario, you might interact with external systems using these IDs
+      return `Logged message with RequestID: ${requestId} and TraceID: ${traceId}`;
+    },
+  });
+
+  // Create an agent with the tool and hooks
+  const agent = new Agent({
+    name: "MyCombinedAgent",
+    llm: myLlmProvider, // Your LLM provider instance
+    model: myModel, // Your model instance
+    tools: [customContextTool],
+    hooks: hooks,
+  });
+
+  // Trigger the agent. The LLM might decide to use the tool.
+  await agent.generateText(
+    "Log the following information using the custom logger: 'User feedback received.'"
+  );
+
+  // Console output will show logs from onStart, the tool (if called), and onEnd,
+  // demonstrating context data flow.
+  ```
+
+- [#71](https://github.com/VoltAgent/voltagent/pull/71) [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Standardize Agent Error and Finish Handling
+
+  This change introduces a more robust and consistent way errors and successful finishes are handled across the `@voltagent/core` Agent and LLM provider implementations (like `@voltagent/vercel-ai`).
+
+  **Key Improvements:**
+
+  - **Standardized Errors (`VoltAgentError`):**
+
+    - Introduced `VoltAgentError`, `ToolErrorInfo`, and `StreamOnErrorCallback` types in `@voltagent/core`.
+    - LLM Providers (e.g., Vercel) now wrap underlying SDK/API errors into a structured `VoltAgentError` before passing them to `onError` callbacks or throwing them.
+    - Agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) now consistently handle `VoltAgentError`, enabling richer context (stage, code, tool details) in history events and logs.
+
+  - **Standardized Stream Finish Results:**
+
+    - Introduced `StreamTextFinishResult`, `StreamTextOnFinishCallback`, `StreamObjectFinishResult`, and `StreamObjectOnFinishCallback` types in `@voltagent/core`.
+    - LLM Providers (e.g., Vercel) now construct these standardized result objects upon successful stream completion.
+    - Agent streaming methods (`streamText`, `streamObject`) now receive these standardized results in their `onFinish` handlers, ensuring consistent access to final output (`text` or `object`), `usage`, `finishReason`, etc., for history, events, and hooks.
+
+  - **Updated Interfaces:** The `LLMProvider` interface and related options types (`StreamTextOptions`, `StreamObjectOptions`) have been updated to reflect these new standardized callback types and error-throwing expectations.
+
+  These changes lead to more predictable behavior, improved debugging capabilities through structured errors, and a more consistent experience when working with different LLM providers.
+
+- [`7a7a0f6`](https://github.com/VoltAgent/voltagent/commit/7a7a0f672adbe42635c3edc5f0a7f282575d0932) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Refactor Agent Hooks Signature to Use Single Argument Object - #57
+
+  This change refactors the signature for all agent hooks (`onStart`, `onEnd`, `onToolStart`, `onToolEnd`, `onHandoff`) in `@voltagent/core` to improve usability, readability, and extensibility.
+
+  **Key Changes:**
+
+  - **Single Argument Object:** All hooks now accept a single argument object containing named properties (e.g., `{ agent, context, output, error }`) instead of positional arguments.
+  - **`onEnd` / `onToolEnd` Refinement:** The `onEnd` and `onToolEnd` hooks no longer use an `isError` flag or a combined `outputOrError` parameter. They now have distinct `output: <Type> | undefined` and `error: VoltAgentError | undefined` properties, making it explicit whether the operation or tool execution succeeded or failed.
+  - **Unified `onEnd` Output:** The `output` type for the `onEnd` hook (`AgentOperationOutput`) is now a standardized union type, providing a consistent structure regardless of which agent method (`generateText`, `streamText`, etc.) completed successfully.
+
+  **Migration Guide:**
+
+  If you have implemented custom agent hooks, you will need to update their signatures:
+
+  **Before:**
+
+  ```typescript
+  const myHooks = {
+    onStart: async (agent, context) => {
+      /* ... */
+    },
+    onEnd: async (agent, outputOrError, context, isError) => {
+      if (isError) {
+        // Handle error (outputOrError is the error)
+      } else {
+        // Handle success (outputOrError is the output)
+      }
+    },
+    onToolStart: async (agent, tool, context) => {
+      /* ... */
+    },
+    onToolEnd: async (agent, tool, result, context) => {
+      // Assuming result might contain an error or be the success output
+    },
+    // ...
+  };
+  ```
+
+  **After:**
+
+  ```typescript
+  import type {
+    OnStartHookArgs,
+    OnEndHookArgs,
+    OnToolStartHookArgs,
+    OnToolEndHookArgs,
+    // ... other needed types
+  } from "@voltagent/core";
+
+  const myHooks = {
+    onStart: async (args: OnStartHookArgs) => {
+      const { agent, context } = args;
+      /* ... */
+    },
+    onEnd: async (args: OnEndHookArgs) => {
+      const { agent, output, error, context } = args;
+      if (error) {
+        // Handle error (error is VoltAgentError)
+      } else if (output) {
+        // Handle success (output is AgentOperationOutput)
+      }
+    },
+    onToolStart: async (args: OnToolStartHookArgs) => {
+      const { agent, tool, context } = args;
+      /* ... */
+    },
+    onToolEnd: async (args: OnToolEndHookArgs) => {
+      const { agent, tool, output, error, context } = args;
+      if (error) {
+        // Handle tool error (error is VoltAgentError)
+      } else {
+        // Handle tool success (output is the result)
+      }
+    },
+    // ...
+  };
+  ```
+
+  Update your hook function definitions to accept the single argument object and use destructuring or direct property access (`args.propertyName`) to get the required data.
+
 ## 0.1.8
 
 ### Patch Changes

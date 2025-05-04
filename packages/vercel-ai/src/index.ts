@@ -11,7 +11,12 @@ import type {
   StepWithContent,
   StreamObjectOptions,
   StreamTextOptions,
+  VoltAgentError,
+  ToolErrorInfo,
+  StreamObjectFinishResult,
+  UsageInfo,
 } from "@voltagent/core";
+// Import directly from the types file path within the dist folder
 import type {
   CallWarning,
   CoreMessage,
@@ -107,6 +112,54 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     return null;
   };
 
+  /**
+   * Creates a standardized VoltAgentError from a raw Vercel SDK error object.
+   */
+  private _createVoltagentErrorFromSdkError(
+    sdkError: any, // The raw error object from the SDK
+    errorStage:
+      | "llm_stream"
+      | "object_stream"
+      | "llm_generate"
+      | "object_generate"
+      | "tool_execution" = "llm_stream",
+  ): VoltAgentError {
+    const originalError = sdkError.error ?? sdkError; // Handle potential nesting
+    let voltagentErr: VoltAgentError;
+
+    const potentialToolCallId = (originalError as any)?.toolCallId;
+    const potentialToolName = (originalError as any)?.toolName;
+
+    if (potentialToolCallId && potentialToolName) {
+      const toolErrorDetails: ToolErrorInfo = {
+        toolCallId: potentialToolCallId,
+        toolName: potentialToolName,
+        toolArguments: (originalError as any)?.args,
+        toolExecutionError: originalError,
+      };
+      voltagentErr = {
+        message: `Error during Vercel SDK operation (tool '${potentialToolName}'): ${originalError instanceof Error ? originalError.message : "Unknown tool error"}`,
+        originalError: originalError,
+        toolError: toolErrorDetails,
+        stage: "tool_execution",
+        code: (originalError as any)?.code,
+      };
+    } else {
+      voltagentErr = {
+        message:
+          originalError instanceof Error
+            ? originalError.message
+            : `An unknown error occurred during Vercel AI operation (stage: ${errorStage})`,
+        originalError: originalError,
+        toolError: undefined,
+        stage: errorStage,
+        code: (originalError as any)?.code,
+      };
+    }
+    // Return the created error instead of calling callback
+    return voltagentErr;
+  }
+
   generateText = async (
     options: GenerateTextOptions<LanguageModelV1>,
   ): Promise<ProviderTextResponse<GenerateTextResult<Record<string, any>, never>>> => {
@@ -158,31 +211,38 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         }
       : undefined;
 
-    const result = await generateText({
-      messages: vercelMessages,
-      model: options.model,
-      tools: vercelTools,
-      maxSteps: options.maxSteps,
-      abortSignal: options.signal,
-      ...options.provider,
-      onStepFinish,
-    });
+    try {
+      const result = await generateText({
+        ...options.provider,
+        messages: vercelMessages,
+        model: options.model,
+        tools: vercelTools,
+        maxSteps: options.maxSteps,
+        abortSignal: options.signal,
+        onStepFinish,
+      });
 
-    // Return standardized response
-    return {
-      provider: result,
-      text: result.text || "",
-      usage: result.usage
-        ? {
-            promptTokens: result.usage.promptTokens,
-            completionTokens: result.usage.completionTokens,
-            totalTokens: result.usage.totalTokens,
-          }
-        : undefined,
-      toolCalls: result.toolCalls,
-      toolResults: result.toolResults,
-      finishReason: result.finishReason,
-    };
+      // Return standardized response
+      return {
+        provider: result,
+        text: result.text || "",
+        usage: result.usage
+          ? {
+              promptTokens: result.usage.promptTokens,
+              completionTokens: result.usage.completionTokens,
+              totalTokens: result.usage.totalTokens,
+            }
+          : undefined,
+        toolCalls: result.toolCalls,
+        toolResults: result.toolResults,
+        finishReason: result.finishReason,
+      };
+    } catch (sdkError) {
+      // Create VoltAgentError using the helper
+      const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_generate"); // Use appropriate stage
+      // Throw the standardized error
+      throw voltagentErr;
+    }
   };
 
   async streamText(
@@ -237,6 +297,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       : undefined;
 
     const result = streamText({
+      ...options.provider,
       messages: vercelMessages,
       model: options.model,
       tools: vercelTools,
@@ -250,11 +311,28 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
           if (step) await options.onChunk(step);
         }
       },
-      onFinish: async (result) => {
-        if (options.onFinish) await options.onFinish(result);
-      },
-      onError: (error) => {
-        options.onError?.(error.error);
+      onFinish: options.onFinish
+        ? async (
+            result: Omit<StepResult<Record<string, any>>, "stepType" | "isContinued"> & {
+              readonly steps: StepResult<Record<string, any>>[];
+            },
+          ) => {
+            options.onFinish?.({
+              text: result.text,
+              usage: result.usage,
+              finishReason: result.finishReason,
+              warnings: result.warnings,
+              providerResponse: result,
+            });
+          }
+        : undefined,
+      onError: (sdkError) => {
+        // Create the error using the helper
+        const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_stream");
+        // Call the agent's onError callback if it exists
+        if (options.onError) {
+          options.onError(voltagentErr);
+        }
       },
     });
 
@@ -298,29 +376,37 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         }
       : undefined;
 
-    const result = await generateObject({
-      messages: vercelMessages,
-      model: options.model,
-      schema: options.schema,
-      abortSignal: options.signal,
-      ...options.provider,
-    });
+    try {
+      const result = await generateObject({
+        ...options.provider,
+        messages: vercelMessages,
+        model: options.model,
+        schema: options.schema,
+        abortSignal: options.signal,
+      });
 
-    await onFinish?.(result);
+      // Call the custom onFinish handler if defined
+      await onFinish?.(result);
 
-    // Return standardized response
-    return {
-      provider: result,
-      object: result.object,
-      usage: result.usage
-        ? {
-            promptTokens: result.usage.promptTokens,
-            completionTokens: result.usage.completionTokens,
-            totalTokens: result.usage.totalTokens,
-          }
-        : undefined,
-      finishReason: result.finishReason,
-    };
+      // Return standardized response
+      return {
+        provider: result,
+        object: result.object,
+        usage: result.usage
+          ? {
+              promptTokens: result.usage.promptTokens,
+              completionTokens: result.usage.completionTokens,
+              totalTokens: result.usage.totalTokens,
+            }
+          : undefined,
+        finishReason: result.finishReason,
+      };
+    } catch (sdkError) {
+      // Create VoltAgentError using the helper
+      const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "object_generate"); // Use appropriate stage
+      // Throw the standardized error
+      throw voltagentErr;
+    }
   };
 
   async streamObject<TSchema extends z.ZodType>(
@@ -333,43 +419,70 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
   > {
     const vercelMessages = options.messages.map(this.toMessage);
 
-    // For object streaming, we use onFinish as onStepFinish is not supported
-    const onFinish = options.onStepFinish
-      ? async (event: {
-          object: z.infer<TSchema> | undefined;
-          error: unknown | undefined;
-          usage: LanguageModelUsage;
-          response: LanguageModelResponseMetadata;
-          warnings?: CallWarning[];
-          providerMetadata: ProviderMetadata | undefined;
-        }) => {
-          if (options.onStepFinish) {
-            const jsonResult = event.object ? JSON.stringify(event.object) : "";
+    // Define the onFinish handler to be passed to the Vercel SDK
+    const sdkOnFinish = async (event: {
+      // Type for Vercel SDK event
+      object: z.infer<TSchema> | undefined;
+      error: unknown | undefined; // Handle potential error in event?
+      usage: LanguageModelUsage;
+      response: LanguageModelResponseMetadata;
+      warnings?: CallWarning[];
+      providerMetadata: ProviderMetadata | undefined;
+    }) => {
+      // --- Handle onStepFinish simulation (if provided by Agent) ---
+      // This uses the final object/usage info from the finish event
+      if (options.onStepFinish) {
+        const jsonResult = event.object ? JSON.stringify(event.object) : "";
+        const step = this.createStepFromChunk({
+          type: "text", // Simulate as a text step containing the final JSON
+          text: jsonResult,
+          usage: event.usage, // Use usage from the event
+        });
+        if (step) await options.onStepFinish(step);
+      }
+      // --- End handle onStepFinish simulation ---
 
-            // Create a step with usage information directly passed
-            const step = this.createStepFromChunk({
-              type: "text",
-              text: jsonResult,
-              usage: event.usage,
-            });
-
-            if (step) await options.onStepFinish(step);
-          }
-          if (options.onFinish && event.object) {
-            await options.onFinish({ object: event.object });
-          }
+      // --- Handle onFinish callback (if provided by Agent) ---
+      if (options.onFinish && event.object) {
+        // Check if Agent wants onFinish and object exists
+        let mappedUsage: UsageInfo | undefined = undefined;
+        if (event.usage) {
+          mappedUsage = {
+            promptTokens: event.usage.promptTokens,
+            completionTokens: event.usage.completionTokens,
+            totalTokens: event.usage.totalTokens,
+          };
         }
-      : options.onFinish;
+        // Construct the standardized result object
+        const finishResult: StreamObjectFinishResult<z.infer<TSchema>> = {
+          object: event.object, // The final object from the event
+          usage: mappedUsage, // Mapped usage info
+          warnings: event.warnings,
+          providerResponse: event, // Include the original SDK event object
+          // finishReason is not typically available in Vercel's streamObject finish event
+        };
+        // Call the agent's onFinish with the standardized result
+        await options.onFinish(finishResult);
+      }
+      // --- End handle onFinish callback ---
+    };
 
     const result = streamObject({
+      ...options.provider,
       messages: vercelMessages,
       model: options.model,
       schema: options.schema,
       abortSignal: options.signal,
-      ...options.provider,
-      ...(onFinish ? { onFinish } : {}),
-      onError: (error) => {
-        options.onError?.(error.error);
+      // Pass the correctly defined sdkOnFinish handler
+      // Only pass it if either onStepFinish or onFinish is provided by the agent
+      ...(options.onStepFinish || options.onFinish ? { onFinish: sdkOnFinish } : {}),
+      onError: (sdkError) => {
+        // Create the error using the helper
+        const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "object_stream");
+        // Call the agent's onError callback if it exists
+        if (options.onError) {
+          options.onError(voltagentErr);
+        }
       },
     });
 

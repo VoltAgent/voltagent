@@ -7,6 +7,7 @@ import {
   GoogleGenAI,
   type GoogleGenAIOptions,
   type Schema,
+  type Part,
 } from "@google/genai";
 import type {
   BaseMessage,
@@ -94,37 +95,68 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
 
   toMessage = (message: BaseMessage): Content => {
     const role = this.toGoogleRole(message.role);
-    if (typeof message.content === "string") {
-      if (role !== "user" && role !== "model") {
-        throw new Error(
-          `Invalid role '${role}' passed to toMessage for string content. Expected 'user' or 'model'.`,
-        );
-      }
-      return { role, parts: [{ text: message.content }] };
-    }
-    const parts = message.content
-      .map((part) => {
-        if (part.type === "text") {
-          return { text: part.text };
-        }
-        console.warn(`Unsupported part type: ${part.type}. Skipping.`);
-        return null;
-      })
-      .filter((part): part is { text: string } => part !== null);
 
-    if (parts.length === 0) {
-      console.warn(
-        `No supported parts found for message with role ${role}. Creating empty text part.`,
-      );
-      return { role, parts: [{ text: "" }] };
-    }
-
+    // Validate role early, applicable to all content types
     if (role !== "user" && role !== "model") {
       throw new Error(
-        `Invalid role '${role}' passed to toMessage for structured content. Expected 'user' or 'model'.`,
+        `Invalid role '${role}' passed to toMessage. Expected 'user' or 'model' for Google GenAI. Original role: ${message.role}.`,
       );
     }
-    return { role, parts };
+
+    if (typeof message.content === "string") {
+      // Handle string content
+      return { role, parts: [{ text: message.content }] };
+    }
+
+    if (Array.isArray(message.content)) {
+      // Handle array of content parts
+      const parts: Part[] = message.content
+        .map((part): Part | null => {
+          if (part.type === "text" && typeof part.text === "string") {
+            return { text: part.text };
+          }
+          if (
+            part.type === "image" &&
+            part.image &&
+            part.mimeType &&
+            typeof part.image === "string" &&
+            typeof part.mimeType === "string"
+          ) {
+            // Google expects inlineData with base64 string and mimeType
+            const base64Data = part.image.startsWith("data:")
+              ? part.image.split(",")[1] // Extract base64 data from data URI
+              : part.image; // Assume it's already base64 if not a data URI
+            return {
+              inlineData: {
+                data: base64Data,
+                mimeType: part.mimeType,
+              },
+            };
+          }
+          console.warn(
+            `[GoogleGenAIProvider] Unsupported part type in array: ${part.type}. Skipping.`,
+          );
+          return null;
+        })
+        .filter((part): part is Part => part !== null);
+
+      if (parts.length === 0) {
+        console.warn(
+          `[GoogleGenAIProvider] Message content array resulted in zero valid parts. Role: ${role}. Original content:`,
+          message.content,
+        );
+        // Return an empty text part to avoid errors, although this might not be ideal.
+        return { role, parts: [{ text: "" }] };
+      }
+
+      return { role, parts };
+    }
+
+    // Fallback if content is neither string nor array (or unsupported single object)
+    console.warn(
+      `[GoogleGenAIProvider] Unsupported content type: ${typeof message.content}. Falling back to empty content.`,
+    );
+    return { role, parts: [{ text: "" }] };
   };
 
   private _createStepFromChunk(

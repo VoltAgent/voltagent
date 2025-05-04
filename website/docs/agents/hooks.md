@@ -14,7 +14,18 @@ This is useful for logging, monitoring, adding validation, managing resources, o
 The recommended way to define hooks is using the `createHooks` helper function. This creates a typed hooks object that can be passed to one or more agents during initialization.
 
 ```ts
-import { Agent, createHooks, type AgentTool, type AgentOutput } from "@voltagent/core";
+import {
+  Agent,
+  createHooks,
+  type AgentTool,
+  type AgentOperationOutput, // Unified success output type
+  type VoltAgentError, // Standardized error type
+  type OnStartHookArgs, // Argument types for hooks
+  type OnEndHookArgs,
+  type OnToolStartHookArgs,
+  type OnToolEndHookArgs,
+  type OnHandoffHookArgs,
+} from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
@@ -22,56 +33,66 @@ import { openai } from "@ai-sdk/openai";
 const myAgentHooks = createHooks({
   /**
    * Called before the agent starts processing a request.
-   * @param agent - The Agent instance that is starting.
    */
-  onStart: async (agent: Agent<any>) => {
+  onStart: async (args: OnStartHookArgs) => {
+    const { agent, context } = args;
     console.log(`[Hook] Agent ${agent.name} starting interaction at ${new Date().toISOString()}`);
-    // Example: Initialize request-specific resources
+    console.log(`[Hook] Operation ID: ${context.operationId}`);
   },
 
   /**
-   * Called after the agent successfully finishes processing a request.
-   * @param agent - The Agent instance that finished.
-   * @param output - The final output object from the agent method (structure depends on the method called, e.g., generateText vs generateObject).
+   * Called after the agent finishes processing a request, successfully or with an error.
    */
-  onEnd: async (agent: Agent<any>, output: AgentOutput) => {
-    console.log(`[Hook] Agent ${agent.name} finished processing.`);
-    // Example: Log usage or analyze the result
-    if (output.usage) {
-      console.log(`[Hook] Token Usage: ${output.usage.total_tokens}`);
-    }
-    if (output.text) {
-      console.log(`[Hook] Final text length: ${output.text.length}`);
+  onEnd: async (args: OnEndHookArgs) => {
+    const { agent, output, error, context } = args;
+    if (error) {
+      console.error(`[Hook] Agent ${agent.name} finished with error:`, error.message);
+      // Log detailed error info
+      console.error(`[Hook] Error Details:`, JSON.stringify(error, null, 2));
+    } else if (output) {
+      console.log(`[Hook] Agent ${agent.name} finished successfully.`);
+      // Example: Log usage or analyze the result based on output type
+      if ("usage" in output && output.usage) {
+        console.log(`[Hook] Token Usage: ${output.usage.totalTokens}`);
+      }
+      if ("text" in output && output.text) {
+        console.log(`[Hook] Final text length: ${output.text.length}`);
+      }
+      if ("object" in output && output.object) {
+        console.log(`[Hook] Final object keys: ${Object.keys(output.object).join(", ")}`);
+      }
     }
   },
 
   /**
    * Called just before a tool's execute function is called.
-   * @param agent - The Agent instance using the tool.
-   * @param tool - The AgentTool definition object that is about to be executed.
    */
-  onToolStart: async (agent: Agent<any>, tool: AgentTool) => {
+  onToolStart: async (args: OnToolStartHookArgs) => {
+    const { agent, tool, context } = args;
     console.log(`[Hook] Agent ${agent.name} starting tool: ${tool.name}`);
     // Example: Validate tool inputs or log intent
   },
 
   /**
-   * Called after a tool's execute function successfully completes.
-   * @param agent - The Agent instance that used the tool.
-   * @param tool - The AgentTool definition object that executed.
-   * @param result - The result returned by the tool's execute function.
+   * Called after a tool's execute function completes or throws.
    */
-  onToolEnd: async (agent: Agent<any>, tool: AgentTool, result: any) => {
-    console.log(`[Hook] Tool ${tool.name} completed with result:`, result);
-    // Example: Log tool output or trigger follow-up actions
+  onToolEnd: async (args: OnToolEndHookArgs) => {
+    const { agent, tool, output, error, context } = args;
+    if (error) {
+      console.error(`[Hook] Tool ${tool.name} failed with error:`, error.message);
+      // Log detailed tool error
+      console.error(`[Hook] Tool Error Details:`, JSON.stringify(error, null, 2));
+    } else {
+      console.log(`[Hook] Tool ${tool.name} completed successfully with result:`, output);
+      // Example: Log tool output or trigger follow-up actions
+    }
   },
 
   /**
    * Called when a task is handed off from a source agent to this agent (in sub-agent scenarios).
-   * @param agent - The Agent instance receiving the handoff.
-   * @param sourceAgent - The Agent instance that initiated the handoff.
    */
-  onHandoff: async (agent: Agent<any>, sourceAgent: Agent<any>) => {
+  onHandoff: async (args: OnHandoffHookArgs) => {
+    const { agent, sourceAgent } = args;
     console.log(`[Hook] Task handed off from ${sourceAgent.name} to ${agent.name}`);
     // Example: Track collaboration flow in multi-agent systems
   },
@@ -97,7 +118,11 @@ const agentWithInlineHooks = new Agent({
   llm: provider,
   model: openai("gpt-4o"),
   hooks: {
-    onStart: async (agent) => {
+    onStart: async ({ agent, context }) => {
+      // Use object destructuring
+      /* ... */
+    },
+    onEnd: async ({ agent, output, error, context }) => {
       /* ... */
     },
     // ... other inline hooks ...
@@ -107,36 +132,103 @@ const agentWithInlineHooks = new Agent({
 
 ## Available Hooks
 
+All hooks receive a single argument object containing relevant information.
+
 ### `onStart`
 
 - **Triggered:** Before the agent begins processing a request (`generateText`, `streamText`, etc.).
-- **Parameters:** `(agent: Agent)`
+- **Argument Object (`OnStartHookArgs`):** `{ agent: Agent, context: OperationContext }`
 - **Use Cases:** Initialization logic, request logging, setting up request-scoped resources.
+
+```ts
+// Example: Log the start of an operation
+onStart: async ({ agent, context }) => {
+  console.log(`Agent ${agent.name} starting operation ${context.operationId}`);
+};
+```
 
 ### `onEnd`
 
-- **Triggered:** After the agent successfully completes processing a request.
-- **Parameters:** `(agent: Agent, output: AgentOutput)`
-- **Use Cases:** Cleanup logic, logging completion status and results, analyzing final output, recording usage statistics.
-- **Note:** The structure of the `output` object depends on the primary agent method called (e.g., `{ text: string, usage: ... }` for `generateText`, `{ object: T, usage: ... }` for `generateObject`).
+- **Triggered:** After the agent finishes processing a request, either successfully or with an error.
+- **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, context: OperationContext }`
+- **Use Cases:** Cleanup logic, logging completion status and results (success or failure), analyzing final output or error details, recording usage statistics.
+- **Note:** The `output` object's specific structure within the `AgentOperationOutput` union depends on the agent method called. Check for specific fields (`text`, `object`) or use type guards. `error` will contain the structured `VoltAgentError` on failure.
+
+```ts
+// Example: Log the outcome of an operation
+onEnd: async ({ agent, output, error, context }) => {
+  if (error) {
+    console.error(`Agent ${agent.name} operation ${context.operationId} failed: ${error.message}`);
+  } else {
+    // Check output type if needed
+    if (output && "text" in output) {
+      console.log(
+        `Agent ${agent.name} operation ${context.operationId} succeeded with text output.`
+      );
+    } else if (output && "object" in output) {
+      console.log(
+        `Agent ${agent.name} operation ${context.operationId} succeeded with object output.`
+      );
+    } else {
+      console.log(`Agent ${agent.name} operation ${context.operationId} succeeded.`);
+    }
+    // Log usage if available
+    if (output?.usage) {
+      console.log(`  Usage: ${output.usage.totalTokens} tokens`);
+    }
+  }
+};
+```
 
 ### `onToolStart`
 
 - **Triggered:** Just before an agent executes a specific tool.
-- **Parameters:** `(agent: Agent, tool: AgentTool)`
+- **Argument Object (`OnToolStartHookArgs`):** `{ agent: Agent, tool: AgentTool, context: OperationContext }`
 - **Use Cases:** Logging tool usage intent, validating tool inputs (though typically handled by Zod schema), modifying tool arguments (use with caution).
+
+```ts
+// Example: Log when a tool is about to be used
+onToolStart: async ({ agent, tool, context }) => {
+  console.log(
+    `Agent ${agent.name} invoking tool '${tool.name}' for operation ${context.operationId}`
+  );
+};
+```
 
 ### `onToolEnd`
 
-- **Triggered:** After a tool's `execute` function successfully completes.
-- **Parameters:** `(agent: Agent, tool: AgentTool, result: any)`
-- **Use Cases:** Logging tool results, post-processing tool output before it's sent back to the LLM, triggering subsequent actions based on tool results.
+- **Triggered:** After a tool's `execute` function successfully completes or fails.
+- **Argument Object (`OnToolEndHookArgs`):** `{ agent: Agent, tool: AgentTool, output: unknown | undefined, error: VoltAgentError | undefined, context: OperationContext }`
+- **Use Cases:** Logging tool results or errors, post-processing tool output, triggering subsequent actions based on tool success or failure.
+
+```ts
+// Example: Log the result or error of a tool execution
+onToolEnd: async ({ agent, tool, output, error, context }) => {
+  if (error) {
+    console.error(
+      `Tool '${tool.name}' failed in operation ${context.operationId}: ${error.message}`
+    );
+  } else {
+    console.log(
+      `Tool '${tool.name}' succeeded in operation ${context.operationId}. Result:`,
+      output
+    );
+  }
+};
+```
 
 ### `onHandoff`
 
 - **Triggered:** When one agent delegates a task to another agent (using the `delegate_task` tool in a sub-agent setup).
-- **Parameters:** `(agent: Agent, sourceAgent: Agent)`
+- **Argument Object (`OnHandoffHookArgs`):** `{ agent: Agent, sourceAgent: Agent }`
 - **Use Cases:** Tracking and visualizing workflow in multi-agent systems, adding context during agent collaboration.
+
+```ts
+// Example: Log agent handoffs
+onHandoff: async ({ agent, sourceAgent }) => {
+  console.log(`Task handed off from agent '${sourceAgent.name}' to agent '${agent.name}'`);
+};
+```
 
 ## Asynchronous Hooks and Error Handling
 
@@ -147,8 +239,8 @@ const agentWithInlineHooks = new Agent({
 
 Hooks enable a variety of powerful patterns:
 
-1.  **Logging & Observability**: Track agent execution steps, timings, inputs, and outputs for monitoring and debugging.
-2.  **Analytics**: Collect detailed usage data (token counts, tool usage frequency, etc.) for analysis.
+1.  **Logging & Observability**: Track agent execution steps, timings, inputs, outputs, and errors for monitoring and debugging.
+2.  **Analytics**: Collect detailed usage data (token counts, tool usage frequency, success/error rates) for analysis.
 3.  **Request/Response Modification**: (Use with caution) Modify inputs before processing or outputs after generation.
 4.  **State Management**: Initialize or clean up request-specific state or resources.
-5.  **Workflow Orchestration**: Trigger external actions or notifications based on agent events (e.g., notify on tool failure).
+5.  **Workflow Orchestration**: Trigger external actions or notifications based on agent events (e.g., notify on tool failure or successful completion with specific output).

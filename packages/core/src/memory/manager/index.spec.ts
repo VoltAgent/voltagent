@@ -62,6 +62,8 @@ const createMockContext = (): OperationContext => {
     historyEntry: mockHistoryEntry,
     eventUpdaters: new Map(),
     isActive: true,
+    operationId: "test-operation",
+    userContext: new Map(),
   };
 };
 
@@ -195,7 +197,7 @@ class MockMemory implements Memory {
     this.historyEvents[id] = { ...this.historyEvents[id], ...updates };
 
     // Update event in the history entry's events array
-    if (this.historyEntries[historyId] && this.historyEntries[historyId].events) {
+    if (this.historyEntries[historyId]?.events) {
       const eventIndex = this.historyEntries[historyId].events.findIndex((e: any) => e.id === id);
       if (eventIndex !== -1) {
         this.historyEntries[historyId].events[eventIndex] = this.historyEvents[id];
@@ -235,7 +237,7 @@ class MockMemory implements Memory {
     this.historySteps[id] = { ...this.historySteps[id], ...updates };
 
     // Update step in the history entry's steps array
-    if (this.historyEntries[historyId] && this.historyEntries[historyId].steps) {
+    if (this.historyEntries[historyId]?.steps) {
       const stepIndex = this.historyEntries[historyId].steps.findIndex((s: any) => s.id === id);
       if (stepIndex !== -1) {
         this.historyEntries[historyId].steps[stepIndex] = this.historySteps[id];

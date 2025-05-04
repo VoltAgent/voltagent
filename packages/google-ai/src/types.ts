@@ -7,6 +7,7 @@ export interface GoogleProviderRuntimeOptions
     "temperature" | "topP" | "stopSequences" | "seed" | "presencePenalty" | "frequencyPenalty"
   > {
   extraOptions?: Record<string, any>;
+  [key: string]: any;
 }
 
 // Define concrete types instead of using Omit with generics since it was causing
