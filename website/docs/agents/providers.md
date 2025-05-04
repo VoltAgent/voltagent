@@ -64,3 +64,9 @@ It's important to understand that the value you provide for the `model` paramete
 - Other providers (like `@voltagent/vercel-ai`) expect a **model object** imported from their corresponding SDK (e.g., `openai('gpt-4o')`, `anthropic('claude-3-5-sonnet-20240620')`).
 
 Always refer to the documentation for the specific provider you are using to know what format is expected for the `model` parameter.
+
+## Available Providers
+
+VoltAgent offers built-in providers for various popular services and SDKs, including Vercel AI, Google AI (Gemini/Vertex), Groq, and any OpenAI-compatible API endpoint (via xsAI).
+
+**For detailed information on each available provider, including specific installation, configuration, and usage instructions, please see the [Providers Overview](../providers/overview.md).**
