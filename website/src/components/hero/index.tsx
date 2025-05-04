@@ -1,10 +1,8 @@
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { useState, useEffect, useRef } from "react";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import { HeartIcon } from "@heroicons/react/24/solid";
 import { LineShadowText } from "../magicui/line-shadow-text";
 import { AgentsAnimation } from "../agents-animation";
-import { useLocation } from "@docusaurus/router";
 import Link from "@docusaurus/Link";
 
 export function Hero() {
