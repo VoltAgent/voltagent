@@ -54,6 +54,38 @@ yarn add @voltagent/langfuse-exporter
 pnpm add @voltagent/langfuse-exporter
 ```
 
+## Usage
+
+Import `VoltAgent` from `@voltagent/core` and `LangfuseExporter` from this package. Pass an instance of the exporter to the `VoltAgent` constructor.
+
+```typescript
+import { Agent, VoltAgent } from "@voltagent/core";
+import { LangfuseExporter } from "@voltagent/langfuse-exporter";
+// ... other necessary imports
+
+// Configure the exporter (use environment variables for keys)
+const langfuseExporter = new LangfuseExporter({
+  publicKey: process.env.LANGFUSE_PUBLIC_KEY, // Your Langfuse Public Key
+  secretKey: process.env.LANGFUSE_SECRET_KEY, // Your Langfuse Secret Key
+  baseUrl: process.env.LANGFUSE_BASE_URL, // Optional: Defaults to Langfuse Cloud URL
+  // debug: true, // Optional: Enable detailed logging from the exporter
+});
+
+// Define your agent(s)
+const myAgent = new Agent({
+  name: "My Assistant",
+  // ... other agent options (llm, model, tools, etc.)
+});
+
+// Initialize VoltAgent with the exporter
+new VoltAgent({
+  agents: {
+    myAgent, // Register your agent(s)
+  },
+  telemetryExporter: langfuseExporter, // Pass the exporter instance
+});
+```
+
 ## What is VoltAgent?
 
 > An **AI Agent Framework** provides the foundational structure and tools needed to build applications powered by autonomous agents. These agents, often driven by Large Language Models (LLMs), can perceive their environment, make decisions, and take actions to achieve specific goals. Building such agents from scratch involves managing complex interactions with LLMs, handling state, connecting to external tools and data, and orchestrating workflows.
