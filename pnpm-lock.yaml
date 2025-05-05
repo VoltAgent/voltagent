@@ -96,9 +96,6 @@ importers:
       '@voltagent/core':
         specifier: ^0.1.11
         version: link:../../packages/core
-      '@voltagent/langfuse-exporter':
-        specifier: ^0.1.0
-        version: link:../../packages/langfuse-exporter
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
         version: link:../../packages/vercel-ai
