@@ -90,6 +90,10 @@ export function Manifesto() {
           want to build it together with the community. We're just getting
           started and we're excited to have you join us.
         </p>
+        <p className="text-[#dcdcdc] leading-relaxed">
+          Thanks to all the amazing tools in the AI development and
+          observability ecosystem that inspired us.
+        </p>
       </div>
 
       {/* Footer */}

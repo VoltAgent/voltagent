@@ -451,20 +451,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       NodeType.MESSAGE,
       this.id,
       {
-        input: input, // We now always use the input field (instead of message)
+        input: input,
       },
-      "agent",
-      context,
-    );
-
-    // Standardized agent event
-    this.createStandardTimelineEvent(
-      context.historyEntry.id,
-      "start",
-      initialStatus as EventStatus,
-      NodeType.AGENT,
-      this.id,
-      {},
       "agent",
       context,
     );
@@ -766,7 +754,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId: internalOptions.parentAgentId,
       parentHistoryEntryId: internalOptions.parentHistoryEntryId,
     });
-
+    let messages: BaseMessage[] = [];
     try {
       // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
@@ -791,8 +779,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Combine messages
-      let messages = [systemMessage, ...contextMessages];
+      messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
+
+      this.createStandardTimelineEvent(
+        operationContext.historyEntry.id,
+        "start",
+        "working",
+        NodeType.AGENT,
+        this.id,
+        {
+          input: messages,
+        },
+        "agent",
+        operationContext,
+      );
 
       // Create step finish handler for tracking generation steps
       const onStepFinish = this.memoryManager.createStepFinishHandler(
@@ -846,7 +847,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
               // Call onToolStart hook
               if (tool) {
-                await this.hooks.onToolStart?.({ agent: this, tool, context: operationContext });
+                await this.hooks.onToolStart?.({
+                  agent: this,
+                  tool,
+                  context: operationContext,
+                });
               }
             }
           } else if (step.type === "tool_result") {
@@ -903,6 +908,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       // Add "completed" timeline event using original provider response fields
       this.addAgentEvent(operationContext, "finished", "completed", {
+        input: messages,
         output: response.text,
         usage: response.usage,
         affectedNodeId: `agent_${this.id}`,
@@ -944,6 +950,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       // Add "error" timeline event using structured info (already handles voltagentError)
       this.addAgentEvent(operationContext, "finished", "error", {
+        input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
         affectedNodeId: `agent_${this.id}`,
@@ -1018,9 +1025,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       contextMessages,
     });
 
+    // Standardized agent event
+
     // Combine messages
     let messages = [systemMessage, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
+
+    this.createStandardTimelineEvent(
+      operationContext.historyEntry.id,
+      "start",
+      "working",
+      NodeType.AGENT,
+      this.id,
+      {
+        input: messages,
+      },
+      "agent",
+      operationContext,
+    );
 
     // Create step finish handler for tracking generation steps
     const onStepFinish = this.memoryManager.createStepFinishHandler(
@@ -1070,7 +1092,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
             // Call onToolStart hook
             if (tool) {
-              await this.hooks.onToolStart?.({ agent: this, tool, context: operationContext });
+              await this.hooks.onToolStart?.({
+                agent: this,
+                tool,
+                context: operationContext,
+              });
             }
           }
         } else if (chunk.type === "tool_result") {
@@ -1126,6 +1152,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.addStepToHistory(step, operationContext);
       },
       onFinish: async (result: StreamTextFinishResult) => {
+        if (!operationContext.isActive) {
+          // Agent is not active, so we don't need to update the history or add a timeline event
+          return;
+        }
         // Handle agent's internal status and history using standardized result
         // Remove the previous loose extraction
         // const text = result?.text || result?.choices?.[0]?.message?.content || "";
@@ -1142,6 +1172,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
         // Add "completed" timeline event using standardized result
         this.addAgentEvent(operationContext, "finished", "completed", {
+          input: messages,
           output: result.text,
           usage: result.usage,
           affectedNodeId: `agent_${this.id}`,
@@ -1218,6 +1249,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           error: error, // Pass the whole VoltAgentError object
           errorMessage: error.message, // Use the main message
           affectedNodeId: `agent_${this.id}`,
+          input: messages,
           status: "error",
           metadata: {
             // Include metadata if available
@@ -1274,7 +1306,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId: internalOptions.parentAgentId,
       parentHistoryEntryId: internalOptions.parentHistoryEntryId,
     });
-
+    let messages: BaseMessage[] = [];
     try {
       // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
@@ -1299,8 +1331,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Combine messages
-      let messages = [systemMessage, ...contextMessages];
+      messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
+
+      this.createStandardTimelineEvent(
+        operationContext.historyEntry.id,
+        "start",
+        "working",
+        NodeType.AGENT,
+        this.id,
+        {
+          input: messages,
+        },
+        "agent",
+        operationContext,
+      );
 
       // Create step finish handler for tracking generation steps
       const onStepFinish = this.memoryManager.createStepFinishHandler(
@@ -1342,6 +1387,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         usage: response.usage,
         affectedNodeId: `agent_${this.id}`,
         status: "completed",
+        input: messages,
       });
 
       // Update the history entry with final output
@@ -1383,6 +1429,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         errorMessage: voltagentError.message, // Use the standardized message
         affectedNodeId: `agent_${this.id}`,
         status: "error",
+        input: messages,
         metadata: {
           // Include detailed metadata from VoltAgentError
           code: voltagentError.code,
@@ -1431,7 +1478,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId: internalOptions.parentAgentId,
       parentHistoryEntryId: internalOptions.parentHistoryEntryId,
     });
-
+    let messages: BaseMessage[] = [];
     try {
       // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
@@ -1456,8 +1503,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Combine messages
-      let messages = [systemMessage, ...contextMessages];
+      messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
+
+      this.createStandardTimelineEvent(
+        operationContext.historyEntry.id,
+        "start",
+        "working",
+        NodeType.AGENT,
+        this.id,
+        {
+          input: messages,
+        },
+        "agent",
+        operationContext,
+      );
 
       // Create step finish handler for tracking generation steps
       const onStepFinish = this.memoryManager.createStepFinishHandler(
@@ -1489,11 +1549,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           }
         },
         onFinish: async (result: StreamObjectFinishResult<z.infer<T>>) => {
+          if (!operationContext.isActive) {
+            // Agent is not active, so we don't need to update the history or add a timeline event
+            return;
+          }
           // Handle agent's internal status and history using standardized result
           const responseStr = JSON.stringify(result.object); // Stringify the object from standardized result
 
           // Add "completed" timeline event using standardized result
           this.addAgentEvent(operationContext, "finished", "completed", {
+            input: messages,
             output: responseStr,
             usage: result.usage,
             affectedNodeId: `agent_${this.id}`,
@@ -1577,6 +1642,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
           // Add "error" timeline event using VoltAgentError fields (already correct)
           this.addAgentEvent(operationContext, "finished", "error", {
+            input: messages,
             error: error,
             errorMessage: error.message,
             affectedNodeId: `agent_${this.id}`,
@@ -1620,6 +1686,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     } catch (error) {
       // Add "error" timeline event
       this.addAgentEvent(operationContext, "finished", "error", {
+        input: messages,
         error,
         errorMessage: error instanceof Error ? error.message : "Unknown error",
         affectedNodeId: `agent_${this.id}`,

@@ -126,6 +126,16 @@ run();
 
 Currently, the provider only processes the `text` parts of `BaseMessage` content arrays. Other modalities (like images) are ignored. Future versions may add support if the underlying Google SDK allows straightforward integration.
 
+## Tool Calling Support
+
+⚠️ **Not Supported (Yet).**
+
+The `@voltagent/google-ai` provider does not currently support native tool calling or function calling features directly through VoltAgent's `generateText` or `streamText` methods with tool definitions.
+
+If you need to use tool calling with Google models (like Gemini), we recommend using the [`@voltagent/vercel-ai`](/docs/providers/vercel-ai) provider. The Vercel AI SDK provides a unified interface for tool calling across various models, including Google's. You can find more details in the [Vercel AI SDK Google Provider documentation](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai).
+
+We welcome community contributions to add direct tool calling support to this provider!
+
 ## Model Selection & Options
 
 The specific Google model (e.g., `'gemini-1.5-pro'`, `'gemini-1.5-flash'`) is set via the `model` property during `Agent` instantiation.

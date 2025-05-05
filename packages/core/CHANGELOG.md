@@ -1,5 +1,49 @@
 # @voltagent/core
 
+## 0.1.11
+
+### Patch Changes
+
+- [`e5b3a46`](https://github.com/VoltAgent/voltagent/commit/e5b3a46e2e61f366fa3c67f9a37d4e4d9e0fe426) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enhance API Overview documentation
+
+  - Added `curl` examples for all key generation endpoints (`/text`, `/stream`, `/object`, `/stream-object`).
+  - Clarified that `userId` and `conversationId` options are optional.
+  - Provided separate `curl` examples demonstrating usage both with and without optional parameters (`userId`, `conversationId`).
+  - Added a new "Common Generation Options" section with a detailed table explaining parameters like `temperature`, `maxTokens`, `contextLimit`, etc., including their types and default values.
+
+- [`4649c3c`](https://github.com/VoltAgent/voltagent/commit/4649c3ccb9e56a7fcabfe6a0bcef2383ff6506ef) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve agent event handling and error processing
+
+  - Enhanced start event emission in agent operations
+  - Fixed timeline event creation for agent operations
+
+- [`8e6d2e9`](https://github.com/VoltAgent/voltagent/commit/8e6d2e994398c1a727d4afea39d5e34ffc4a5fca) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Allow passing arbitrary provider-specific options via the `provider` object in agent generation methods (`generateText`, `streamText`, etc.).
+
+  Added an index signature `[key: string]: unknown;` to the `ProviderOptions` type (`voltagent/packages/core/src/agent/types.ts`). This allows users to pass any provider-specific parameters directly through the `provider` object, enhancing flexibility and enabling the use of features not covered by the standard options.
+
+  Example using a Vercel AI SDK option:
+
+  ```typescript
+  import { Agent } from "@voltagent/core";
+  import { VercelProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "Example Agent",
+    llm: new VercelProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  await agent.streamText("Tell me a joke", {
+    provider: {
+      // Standard options can still be used
+      temperature: 0.7,
+      // Provider-specific options are now allowed by the type
+      experimental_activeTools: ["tool1", "tool2"],
+      anotherProviderOption: "someValue",
+    },
+  });
+  ```
+
 ## 0.1.10
 
 ### Patch Changes

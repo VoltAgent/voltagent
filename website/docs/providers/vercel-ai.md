@@ -307,3 +307,21 @@ async function main() {
 
 main();
 ```
+
+### Provider-Specific Options
+
+You can pass provider-specific options directly to the underlying Vercel AI SDK functions (`generateText`, `streamText`, `generateObject`, `streamObject`) using the `provider` property within the options object. This allows you to leverage features or configurations specific to the Vercel AI SDK or the underlying model provider that might not be part of the standard VoltAgent options.
+
+For example, to use an experimental Vercel AI SDK feature:
+
+```typescript
+agent.streamText("Tell me a joke", {
+  provider: {
+    // Pass any Vercel AI SDK compatible option here
+    experimental_activeTools: ["tool1", "tool2"], // Example Vercel AI SDK option
+    // otherProviderOptions...
+  },
+});
+```
+
+Refer to the [Vercel AI SDK documentation](https://sdk.vercel.ai/docs) for the available options for each function and model provider.

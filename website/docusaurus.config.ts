@@ -84,7 +84,12 @@ const config: Config = {
     [
       "@docusaurus/plugin-client-redirects",
       {
-        redirects: [],
+        redirects: [
+          {
+            to: "/ai-agent-marketplace/",
+            from: "/marketplace/",
+          },
+        ],
       },
     ],
     [

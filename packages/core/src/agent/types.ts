@@ -41,6 +41,8 @@ export type ProviderOptions = {
 
   // Tool execution context passed down from the agent
   toolExecutionContext?: ToolExecutionContext;
+
+  [key: string]: unknown;
 };
 
 /**

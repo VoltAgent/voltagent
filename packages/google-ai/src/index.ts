@@ -152,36 +152,6 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       return { role, parts };
     }
 
-    /* START REMOVAL
-    // Handle single object content - This section is being removed as it's likely not 
-    // compliant with the strict BaseMessage type definition (string | Array<Part>)
-    if (typeof message.content === 'object' && message.content !== null) {
-        console.warn('[GoogleGenAIProvider] Received single object content, which might not be standard BaseMessage format. Attempting conversion.');
-        const contentObj = message.content as { type?: unknown; text?: unknown; image?: unknown; mimeType?: unknown };
-
-        if (contentObj.type === 'text' && typeof contentObj.text === 'string') {
-            return { role, parts: [{ text: contentObj.text }] };
-        }
-        if (contentObj.type === 'image' && contentObj.image && contentObj.mimeType && typeof contentObj.image === 'string' && typeof contentObj.mimeType === 'string') {
-             const base64Data = contentObj.image.startsWith('data:')
-               ? contentObj.image.split(',')[1]
-               : contentObj.image;
-             return { 
-                 role, 
-                 parts: [{ 
-                     inlineData: {
-                         data: base64Data,
-                         mimeType: contentObj.mimeType
-                     }
-                 }]
-             };
-        }
-        
-        console.warn(`[GoogleGenAIProvider] Single object content could not be converted to valid Google GenAI parts. Type: ${contentObj.type}. Falling back to empty content.`);
-        return { role, parts: [{ text: "" }] }; // Fallback for unhandled single object
-    }
-    END REMOVAL */
-
     // Fallback if content is neither string nor array (or unsupported single object)
     console.warn(
       `[GoogleGenAIProvider] Unsupported content type: ${typeof message.content}. Falling back to empty content.`,
