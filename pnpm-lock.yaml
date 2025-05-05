@@ -96,6 +96,9 @@ importers:
       '@voltagent/core':
         specifier: ^0.1.11
         version: link:../../packages/core
+      '@voltagent/langfuse-exporter':
+        specifier: ^0.1.0
+        version: link:../../packages/langfuse-exporter
       '@voltagent/vercel-ai':
         specifier: ^0.1.5
         version: link:../../packages/vercel-ai
@@ -1166,6 +1169,9 @@ importers:
 
   packages/langfuse-exporter:
     dependencies:
+      '@opentelemetry/api':
+        specifier: ^1.0.0
+        version: 1.9.0
       '@opentelemetry/core':
         specifier: ^2.0.0
         version: 2.0.0(@opentelemetry/api@1.9.0)

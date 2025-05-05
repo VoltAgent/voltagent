@@ -437,18 +437,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private async initializeHistory(
     input: string | BaseMessage[],
     initialStatus: AgentStatus = "working",
-    options: { parentAgentId?: string; parentHistoryEntryId?: string } = {},
+    options: { parentAgentId?: string; parentHistoryEntryId?: string; operationName: string } = {
+      operationName: "unknown",
+    },
   ): Promise<OperationContext> {
-    // --- Start OpenTelemetry Span ---
-    // Determine span name dynamically based on input or a default
-    const operationName = `agent.operation${typeof input === "string" ? `: ${input.substring(0, 30)}...` : ""}`;
+    const operationName = options.operationName;
     const parentContext = apiContext.active(); // Get current active context if any
 
     // Start the main span for this operation (WITHOUT user/session initially)
     const otelSpan = tracer.startSpan(
       operationName,
       {
-        kind: SpanKind.INTERNAL, // This is an internal operation within the application
+        kind: SpanKind.INTERNAL,
         attributes: {
           "voltagent.agent.id": this.id,
           "voltagent.agent.name": this.name,
@@ -458,13 +458,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ...(options.parentHistoryEntryId && {
             "voltagent.parent.history.id": options.parentHistoryEntryId,
           }),
-          // Add initial input if simple string? Be mindful of large inputs.
-          // 'voltagent.input.text': typeof input === 'string' ? input : undefined,
         },
       },
       parentContext,
     );
-    // --------------------------------
 
     // Create a new history entry (without events initially)
     const historyEntry = await this.historyManager.addEntry(
@@ -691,10 +688,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         ); // Debug Log
       }
     }
-    // --- Removed OTEL Tool Span END Handling ---
-    // The ending logic will be moved to where the tool result is processed
 
-    // --- Existing Event Handling Logic ---
     const metadata: Record<string, unknown> = {
       ...(data.metadata || {}),
     };
@@ -763,7 +757,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       }
       return result;
     };
-    // --- End Existing Event Handling Logic ---
   };
 
   /**
@@ -779,10 +772,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const otelSpan = context.otelSpan;
 
     if (otelSpan) {
-      // --- Enrich and End OpenTelemetry Span ---
       try {
-        // Extract relevant data for attributes
-        // IMPORTANT: Use attribute keys expected by your exporter (e.g., VoltAgentLangfuseExporter)
         const attributes: Attributes = {};
         if (data.input) {
           // Input might be complex, stringify unless exporter handles objects
@@ -838,9 +828,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             code: SpanStatusCode.ERROR,
             message: String(data.errorMessage || "Agent operation failed"),
           });
-          // Record the error as an exception on the span
           if (data.error) {
-            // Ensure error is an Error object
             const errorObj =
               data.error instanceof Error ? data.error : new Error(String(data.error));
             otelSpan.recordException(errorObj);
@@ -849,9 +837,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           }
         }
       } catch (e) {
-        // Error during span enrichment, log it but don't fail the event
-        console.error("[VoltAgentCore] Error enriching OTEL span in addAgentEvent:", e);
-        // Optionally add an event/attribute to the span indicating enrichment failure
         otelSpan.setAttribute("otel.enrichment.error", true);
         otelSpan.setStatus({
           code: SpanStatusCode.ERROR,
@@ -861,7 +846,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // Always end the span when the agent event indicates completion/error
         otelSpan.end();
       }
-      // -----------------------------------------
     } else {
       console.warn(
         `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
@@ -973,7 +957,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const operationContext = await this.initializeHistory(
       input,
       "working",
-      { parentAgentId, parentHistoryEntryId },
+      { parentAgentId, parentHistoryEntryId, operationName: "generateText" },
       // No IDs passed here yet
     );
 
@@ -987,7 +971,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Now update the OTEL span with the IDs
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
       if (finalConversationId)
@@ -1113,15 +1096,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 );
               }
 
-              // --- OTEL Span End Logic ---
               this._endOtelToolSpan(operationContext, toolCallId, toolName, {
                 result: step.result,
                 content: step.content,
                 error: step.result?.error,
               });
-              // --- End OTEL Span End Logic ---
 
-              // --- Existing Hook Logic ---
               const tool = this.toolManager.getToolByName(toolName);
               if (tool) {
                 await this.hooks.onToolEnd?.({
@@ -1132,7 +1112,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   context: operationContext,
                 });
               }
-              // --- End Existing Hook Logic ---
             }
           }
 
@@ -1157,19 +1136,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         usage: response.usage,
         affectedNodeId: `agent_${this.id}`,
         status: "completed",
-        // Optionally add original provider metadata here if needed later
-        // metadata: { providerResponse: response }
       });
 
       // Mark operation as inactive
       operationContext.isActive = false;
 
-      // --- Create Standardized Output for Hook ---
       const standardizedOutput: StandardizedTextResult = {
         text: response.text,
         usage: response.usage,
         finishReason: response.finishReason,
-        // warnings: response.warnings, // Assuming ProviderTextResponse might have warnings
         providerResponse: response, // Include the original provider response
       };
 
@@ -1181,7 +1156,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context: operationContext,
       });
 
-      // Ensure proper typing with an explicit cast for the return value
       // Return the ORIGINAL provider response
       const typedResponse = response as InferGenerateTextResponse<TProvider>;
       return typedResponse;
@@ -1246,12 +1220,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     } = internalOptions; // Extract IDs and contextLimit
 
     // Create an initial context first
-    const operationContext = await this.initializeHistory(
-      input,
-      "working",
-      { parentAgentId, parentHistoryEntryId },
-      // No IDs passed here yet
-    );
+    const operationContext = await this.initializeHistory(input, "working", {
+      parentAgentId,
+      parentHistoryEntryId,
+      operationName: "streamText",
+    });
 
     // Now prepare context using the created operationContext
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1263,7 +1236,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Now update the OTEL span with the IDs
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
       if (finalConversationId)
@@ -1353,7 +1325,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             const toolCallId = chunk.id;
             const toolName = chunk.name;
 
-            // --- Existing Event Updater Logic ---
             const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
             if (eventUpdater) {
               const isError = Boolean(chunk.result?.error);
@@ -1377,17 +1348,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 `[VoltAgentCore] EventUpdater not found for toolCallId: ${toolCallId} in streamText`,
               );
             }
-            // --- End Existing Event Updater Logic ---
 
-            // --- OTEL Span End Logic ---
             this._endOtelToolSpan(operationContext, toolCallId, toolName, {
               result: chunk.result,
               content: chunk.content,
               error: chunk.result?.error,
             });
-            // --- End OTEL Span End Logic ---
 
-            // --- Existing Hook Logic ---
             const tool = this.toolManager.getToolByName(toolName);
             if (tool) {
               await this.hooks.onToolEnd?.({
@@ -1398,7 +1365,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 context: operationContext,
               });
             }
-            // --- End Existing Hook Logic ---
           }
         }
       },
@@ -1421,9 +1387,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           // Agent is not active, so we don't need to update the history or add a timeline event
           return;
         }
-        // Handle agent's internal status and history using standardized result
-        // Remove the previous loose extraction
-        // const text = result?.text || result?.choices?.[0]?.message?.content || "";
 
         // Clear the updaters map
         operationContext.eventUpdaters.clear();
@@ -1576,7 +1539,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const operationContext = await this.initializeHistory(
       input,
       "working",
-      { parentAgentId, parentHistoryEntryId },
+      { parentAgentId, parentHistoryEntryId, operationName: "generateObject" },
       // No IDs passed here yet
     );
 
@@ -1681,12 +1644,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Mark operation as inactive
       operationContext.isActive = false;
 
-      // --- Create Standardized Output for Hook ---
       const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
         object: response.object,
         usage: response.usage,
         finishReason: response.finishReason,
-        // warnings: response.warnings,
         providerResponse: response,
       };
       // Call onEnd hook
@@ -1700,7 +1661,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const typedResponse = response as InferGenerateObjectResponse<TProvider>;
       return typedResponse;
     } catch (error) {
-      // --- Updated Error Handling ---
       // Assume the error is VoltAgentError based on provider contract
       const voltagentError = error as VoltAgentError;
 
@@ -1726,7 +1686,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         output: voltagentError.message,
         status: "error",
       });
-      // --- End Updated Error Handling ---
 
       // Mark operation as inactive
       operationContext.isActive = false;
@@ -1763,12 +1722,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     } = internalOptions; // Extract IDs, provider, contextLimit
 
     // Create an initial context first
-    const operationContext = await this.initializeHistory(
-      input,
-      "working",
-      { parentAgentId, parentHistoryEntryId },
-      // No IDs passed here yet
-    );
+    const operationContext = await this.initializeHistory(input, "working", {
+      parentAgentId,
+      parentHistoryEntryId,
+      operationName: "streamObject",
+    });
 
     // Now prepare context using the created operationContext
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1780,7 +1738,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Now update the OTEL span with the IDs
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
       if (finalConversationId)

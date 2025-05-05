@@ -60,20 +60,20 @@ function extractMetadata(attributes: any): Record<string, any> {
   return metadata;
 }
 
-type VoltAgentLangfuseExporterParams = {
+type LangfuseExporterParams = {
   publicKey?: string;
   secretKey?: string;
   baseUrl?: string;
   debug?: boolean;
 } & LangfuseOptions;
 
-export class VoltAgentLangfuseExporter implements SpanExporter {
+export class LangfuseExporter implements SpanExporter {
   private readonly langfuse: Langfuse;
   private readonly debug: boolean;
 
-  constructor(params: VoltAgentLangfuseExporterParams) {
+  constructor(params: LangfuseExporterParams) {
     if (!params.secretKey) {
-      throw new Error("Langfuse secretKey is required for VoltAgentLangfuseExporter.");
+      throw new Error("Langfuse secretKey is required for LangfuseExporter.");
     }
     this.debug = params.debug ?? false;
     this.langfuse = new Langfuse({
@@ -84,7 +84,7 @@ export class VoltAgentLangfuseExporter implements SpanExporter {
 
     if (this.debug) {
       this.langfuse.debug();
-      this.logDebug("VoltAgentLangfuseExporter initialized.");
+      this.logDebug("LangfuseExporter initialized.");
     }
   }
 
@@ -149,8 +149,8 @@ export class VoltAgentLangfuseExporter implements SpanExporter {
         sessionId = String(attrs["session.id"]);
       // Keep existing logic for other trace attributes
       if (tags === undefined && Array.isArray(attrs.tags)) tags = attrs.tags.map(String);
-      if (traceName === undefined && attrs["resource.name"] != null)
-        traceName = String(attrs["resource.name"]);
+      if (traceName === undefined && attrs["voltagent.agent.name"] != null)
+        traceName = String(attrs["voltagent.agent.name"]);
       if (langfuseTraceId === undefined && attrs.langfuseTraceId != null)
         langfuseTraceId = String(attrs.langfuseTraceId);
       if (attrs.langfuseUpdateParent != null) updateParent = Boolean(attrs.langfuseUpdateParent);
@@ -167,6 +167,8 @@ export class VoltAgentLangfuseExporter implements SpanExporter {
       sessionId?: string;
       tags?: string[];
       metadata?: Record<string, any>;
+      input?: any;
+      output?: any;
     } = { id: finalTraceId };
 
     if (updateParent) {
@@ -174,6 +176,8 @@ export class VoltAgentLangfuseExporter implements SpanExporter {
       traceParams.userId = userId;
       traceParams.sessionId = sessionId;
       traceParams.tags = tags;
+      traceParams.input = safeJsonParse(String(rootSpan?.attributes["ai.prompt.messages"] ?? null));
+      traceParams.output = safeJsonParse(String(rootSpan?.attributes["ai.response.text"] ?? null));
       // Add combined metadata from root span? Let's extract from root if available.
       traceParams.metadata = rootSpan ? extractMetadata(rootSpan.attributes) : undefined;
     }
@@ -317,10 +321,7 @@ export class VoltAgentLangfuseExporter implements SpanExporter {
     }
     const timestamp = new Date().toISOString();
     // Avoid stringifying large objects in logs if possible
-    console.log(
-      `[${timestamp}] [VoltAgentLangfuseExporter] ${message}`,
-      args.length > 0 ? args : "",
-    );
+    console.log(`[${timestamp}] [LangfuseExporter] ${message}`, args.length > 0 ? args : "");
   }
 
   // Helper to get parentSpanId consistently across OTEL versions

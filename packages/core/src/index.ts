@@ -5,8 +5,6 @@ import { checkForUpdates } from "./utils/update";
 
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
-/* import { trace } from "@opentelemetry/api"; */
-// ---------------------------
 
 export * from "./agent";
 export * from "./agent/hooks";
@@ -39,7 +37,6 @@ export * from "./voice";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;
-// -------------------------------------------------------------
 
 type VoltAgentOptions = {
   agents: Record<string, Agent<any>>;
@@ -53,7 +50,6 @@ type VoltAgentOptions = {
    * It's recommended to only provide this in one VoltAgent instance per application process.
    */
   telemetryExporter?: SpanExporter | SpanExporter[];
-  // ------------------------------------
 };
 
 /**
@@ -169,15 +165,6 @@ export class VoltAgent {
       return;
     }
 
-    // Check if a global provider is already registered externally
-    /*  const existingGlobalProvider = trace.getTracerProvider();
-    if (existingGlobalProvider && !registeredProvider) {
-      console.warn(
-        "[VoltAgent] An external OpenTelemetry TracerProvider seems to be already registered. VoltAgent will not register its own provider. Ensure the external provider is configured correctly.",
-      );
-      return;
-    } */
-
     console.log("[VoltAgent] Initializing OpenTelemetry v2+ with provided exporter(s)...");
 
     try {
@@ -185,17 +172,14 @@ export class VoltAgent {
         ? exporterOrExporters
         : [exporterOrExporters];
 
-      // --- v2.x: Create SpanProcessors ---
       const spanProcessors = exporters.map((exporter, index) => {
         console.log(`[VoltAgent] Creating SimpleSpanProcessor for exporter ${index + 1}.`);
         return new BatchSpanProcessor(exporter);
       });
-      // -------------------------------------
 
       const provider = new NodeTracerProvider({
         spanProcessors: spanProcessors,
       });
-      // -------------------------------------------
 
       provider.register();
       isTelemetryInitializedByVoltAgent = true;
@@ -232,7 +216,6 @@ export class VoltAgent {
       );
     }
   }
-  // --------------------------------
 }
 
 export default VoltAgent;

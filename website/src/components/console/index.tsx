@@ -65,7 +65,7 @@ export const Console = () => {
                 >
                   The VoltAgent Developer Console
                 </Link>{" "}
-                gives you full visibility into your Voltagent-based AI agents
+                gives you full visibility into your VoltAgent-based AI agents
                 during development and execution.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-gray-400">
