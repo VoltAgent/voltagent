@@ -241,7 +241,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         eventUpdater({
           status: "error" as AgentStatus,
           data: {
-            status: "error" as EventStatus,
+            status: "errored" as EventStatus,
             error: error,
             errorMessage: error instanceof Error ? error.message : "Unknown error",
           },
@@ -439,6 +439,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationName: options.operationName,
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
+      modelName: this.getModelName(),
     });
 
     // Create a new history entry
@@ -897,9 +898,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
               if (eventUpdater) {
                 const isError = Boolean(step.result?.error);
-                const statusForEvent: EventStatus = isError ? "error" : "completed";
+                const statusForEvent: any = isError ? "errored" : "completed";
                 await eventUpdater({
-                  status: statusForEvent as AgentStatus,
                   data: {
                     error: step.result?.error,
                     errorMessage: step.result?.error?.message,
@@ -1104,9 +1104,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
             if (eventUpdater) {
               const isError = Boolean(chunk.result?.error);
-              const statusForEvent: EventStatus = isError ? "error" : "completed";
+              const statusForEvent: any = isError ? "errored" : "completed";
               await eventUpdater({
-                status: statusForEvent as AgentStatus,
                 data: {
                   error: chunk.result?.error,
                   errorMessage: chunk.result?.error?.message,
@@ -1189,12 +1188,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             try {
               const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
               await eventUpdater({
-                status: "error" as AgentStatus,
                 data: {
                   affectedNodeId: toolNodeId,
                   error: error.message,
                   errorMessage: error.message,
-                  status: "error" as EventStatus,
+                  status: "errored",
                   updatedAt: new Date().toISOString(),
                   output: error.message,
                 },
@@ -1529,12 +1527,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               try {
                 const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
                 await eventUpdater({
-                  status: "error" as AgentStatus,
                   data: {
                     affectedNodeId: toolNodeId,
                     error: error.message,
                     errorMessage: error.message,
-                    status: "error" as EventStatus,
+                    status: "errored",
                     updatedAt: new Date().toISOString(),
                     output: error.message,
                   },

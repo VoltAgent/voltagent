@@ -22,6 +22,7 @@ interface StartOperationSpanOptions {
   sessionId?: string;
   parentAgentId?: string;
   parentHistoryEntryId?: string;
+  modelName?: string;
 }
 
 export function startOperationSpan(options: StartOperationSpanOptions): Span {
@@ -33,6 +34,7 @@ export function startOperationSpan(options: StartOperationSpanOptions): Span {
     sessionId,
     parentAgentId,
     parentHistoryEntryId,
+    modelName,
   } = options;
   const parentContext = apiContext.active();
 
@@ -43,6 +45,7 @@ export function startOperationSpan(options: StartOperationSpanOptions): Span {
     ...(sessionId && { "session.id": sessionId }),
     ...(parentAgentId && { "voltagent.parent.agent.id": parentAgentId }),
     ...(parentHistoryEntryId && { "voltagent.parent.history.id": parentHistoryEntryId }),
+    ...(modelName && { "ai.model.name": modelName }),
   };
 
   const otelSpan = tracer.startSpan(

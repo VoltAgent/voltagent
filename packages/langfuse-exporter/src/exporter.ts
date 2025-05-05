@@ -2,7 +2,6 @@ import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { Langfuse, type LangfuseOptions } from "langfuse";
 import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
 
-// --- Helper Function to Safely Parse JSON ---
 function safeJsonParse(jsonString: string | undefined | null): any {
   if (typeof jsonString !== "string") return jsonString; // Return as is if not a string
   try {
@@ -13,7 +12,6 @@ function safeJsonParse(jsonString: string | undefined | null): any {
   }
 }
 
-// --- Helper Function to Extract Metadata ---
 function extractMetadata(attributes: any): Record<string, any> {
   const metadata: Record<string, any> = {};
   const langfuseReservedKeys = new Set([
@@ -25,9 +23,7 @@ function extractMetadata(attributes: any): Record<string, any> {
     "gen_ai.usage.prompt_tokens",
     "gen_ai.usage.completion_tokens",
     "ai.usage.tokens",
-    "ai.response.model",
-    "gen_ai.request.model",
-    "ai.model.id",
+    "ai.model.name",
     "ai.response.finishReason",
     "gen_ai.finishReason",
     "ai.response.msToFirstChunk",
@@ -37,19 +33,28 @@ function extractMetadata(attributes: any): Record<string, any> {
     "tool.error.message",
     // Keys potentially controlling trace structure (might be filtered later)
     "langfuseTraceId",
-    "langfusePrompt",
     "langfuseUpdateParent",
     "userId",
     "sessionId",
     "tags",
-    "resource.name",
+    "enduser.id",
+    "session.id",
+    "voltagent.agent.name",
   ]);
-  const metadataPrefix = "ai.telemetry.metadata.";
+  const metadataPrefixOtel = "ai.telemetry.metadata.";
+  const metadataPrefixCore = "metadata."; // Prefix used by voltagent core
 
   for (const key in attributes) {
-    if (key.startsWith(metadataPrefix)) {
-      const cleanKey = key.substring(metadataPrefix.length);
+    if (key.startsWith(metadataPrefixOtel)) {
+      const cleanKey = key.substring(metadataPrefixOtel.length);
       if (attributes[key] != null) {
+        metadata[cleanKey] = attributes[key];
+      }
+    } else if (key.startsWith(metadataPrefixCore)) {
+      // Handle core prefix
+      const cleanKey = key.substring(metadataPrefixCore.length);
+      // Avoid adding internal core metadata prefixed with 'internal.'
+      if (!cleanKey.startsWith("internal.") && attributes[key] != null) {
         metadata[cleanKey] = attributes[key];
       }
     } else if (!langfuseReservedKeys.has(key) && attributes[key] != null) {
@@ -123,7 +128,6 @@ export class LangfuseExporter implements SpanExporter {
   }
 
   private processTraceSpans(traceId: string, spans: ReadableSpan[]): void {
-    // --- Simplified Trace Processing ---
     let rootSpan: ReadableSpan | undefined = undefined;
     let traceName: string | undefined = undefined;
     let userId: string | undefined = undefined;
@@ -169,6 +173,7 @@ export class LangfuseExporter implements SpanExporter {
       metadata?: Record<string, any>;
       input?: any;
       output?: any;
+      model?: string;
     } = { id: finalTraceId };
 
     if (updateParent) {
@@ -180,6 +185,7 @@ export class LangfuseExporter implements SpanExporter {
       traceParams.output = safeJsonParse(String(rootSpan?.attributes["ai.response.text"] ?? null));
       // Add combined metadata from root span? Let's extract from root if available.
       traceParams.metadata = rootSpan ? extractMetadata(rootSpan.attributes) : undefined;
+      traceParams.model = String(rootSpan?.attributes["ai.model.name"]) ?? undefined;
     }
 
     this.logDebug(`Creating/Updating Langfuse trace ${finalTraceId}`, traceParams);
@@ -203,10 +209,10 @@ export class LangfuseExporter implements SpanExporter {
       attrs["gen_ai.usage.prompt_tokens"] != null ||
       attrs["gen_ai.usage.completion_tokens"] != null ||
       attrs["ai.usage.tokens"] != null ||
-      attrs["ai.response.model"] != null || // Also check for model response
-      name.includes("llm") || // Check name heuristic
+      attrs["ai.model.name"] != null ||
+      name.includes("llm") ||
       name.includes("generate") ||
-      name.includes("stream") // Added stream as potential indicator
+      name.includes("stream")
     );
   }
 
@@ -240,7 +246,6 @@ export class LangfuseExporter implements SpanExporter {
     const attributes = span.attributes;
     const parentObservationId = this.getParentSpanId(span);
 
-    // --- Simplified Usage Parsing ---
     const usage: {
       input?: number;
       output?: number;
@@ -254,15 +259,9 @@ export class LangfuseExporter implements SpanExporter {
     if (outputTokens != null) usage.output = Number(outputTokens);
     if (totalTokens != null) usage.total = Number(totalTokens);
     if (usage.input != null || usage.output != null || usage.total != null) usage.unit = "TOKENS"; // Set unit if any token count exists
-    // --- End Usage Parsing ---
 
-    // --- Model & Params ---
-    const model = String(
-      attributes["ai.response.model"] ??
-        attributes["gen_ai.request.model"] ??
-        attributes["ai.model.id"] ??
-        "unknown",
-    );
+    // Prioritize modelName from metadata, then fallback to standard OTEL attributes
+    const model = String(attributes["ai.model.name"] ?? "unknown");
     const modelParameters: Record<string, any> = {};
     // Extract known parameters directly
     if (attributes["gen_ai.request.temperature"] != null)
@@ -275,9 +274,7 @@ export class LangfuseExporter implements SpanExporter {
       attributes["ai.response.finishReason"] ?? attributes["gen_ai.finishReason"] ?? "",
     );
     if (finishReason) modelParameters.finish_reason = finishReason;
-    // --- End Model & Params ---
 
-    // --- Completion Start Time ---
     let completionStartTime: Date | undefined;
     const msToFirstChunk =
       attributes["ai.response.msToFirstChunk"] ?? attributes["ai.stream.msToFirstChunk"];
@@ -287,7 +284,8 @@ export class LangfuseExporter implements SpanExporter {
         completionStartTime = new Date(this.hrTimeToDate(span.startTime).getTime() + ms);
       }
     }
-    // --- End Completion Start Time ---
+
+    const metadata = extractMetadata(attributes);
 
     const generationData = {
       traceId,
@@ -303,9 +301,13 @@ export class LangfuseExporter implements SpanExporter {
       // Directly use attributes set by core agent - cast to string before parsing
       input: safeJsonParse(String(attributes["ai.prompt.messages"] ?? null)), // Cast to string
       output: safeJsonParse(String(attributes["ai.response.text"] ?? null)), // Cast to string
-      level: "DEFAULT" as any,
+      level: (metadata.originalError ? "ERROR" : "DEFAULT") as
+        | "DEFAULT"
+        | "ERROR"
+        | "DEBUG"
+        | "WARNING",
       statusMessage: span.status.message,
-      metadata: extractMetadata(attributes), // Extract remaining attributes
+      metadata: metadata, // Extract remaining attributes
     };
 
     this.logDebug(
@@ -359,7 +361,4 @@ export class LangfuseExporter implements SpanExporter {
     await this.langfuse.shutdownAsync();
     this.logDebug("Exporter shut down.");
   }
-
-  // --- Removed Unused Parsing/Filtering Methods ---
-  // parseInput, parseOutput, parseSpanMetadata, extractTraceMetadata, filterTraceAttributes, filterSpanAttributes removed
 }
