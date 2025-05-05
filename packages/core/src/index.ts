@@ -165,15 +165,12 @@ export class VoltAgent {
       return;
     }
 
-    console.log("[VoltAgent] Initializing OpenTelemetry v2+ with provided exporter(s)...");
-
     try {
       const exporters = Array.isArray(exporterOrExporters)
         ? exporterOrExporters
         : [exporterOrExporters];
 
-      const spanProcessors = exporters.map((exporter, index) => {
-        console.log(`[VoltAgent] Creating SimpleSpanProcessor for exporter ${index + 1}.`);
+      const spanProcessors = exporters.map((exporter) => {
         return new BatchSpanProcessor(exporter);
       });
 
@@ -185,11 +182,8 @@ export class VoltAgent {
       isTelemetryInitializedByVoltAgent = true;
       registeredProvider = provider;
 
-      console.log("[VoltAgent] OpenTelemetry initialized and registered globally.");
-
       // Add automatic shutdown on SIGTERM
       process.on("SIGTERM", () => {
-        console.log("[VoltAgent] SIGTERM received, shutting down OpenTelemetry provider...");
         this.shutdownTelemetry().catch((err) =>
           console.error("[VoltAgent] Error during SIGTERM telemetry shutdown:", err),
         );
@@ -201,10 +195,8 @@ export class VoltAgent {
 
   public async shutdownTelemetry(): Promise<void> {
     if (isTelemetryInitializedByVoltAgent && registeredProvider) {
-      console.log("[VoltAgent] Shutting down OpenTelemetry provider...");
       try {
         await registeredProvider.shutdown();
-        console.log("[VoltAgent] OpenTelemetry provider shut down successfully.");
         isTelemetryInitializedByVoltAgent = false;
         registeredProvider = null;
       } catch (error) {
