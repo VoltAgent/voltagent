@@ -237,7 +237,12 @@ export class VoltAgentLangfuseExporter implements SpanExporter {
     const parentObservationId = this.getParentSpanId(span);
 
     // --- Simplified Usage Parsing ---
-    const usage: { input?: number; output?: number; total?: number; unit?: "TOKENS" } = {};
+    const usage: {
+      input?: number;
+      output?: number;
+      total?: number;
+      unit?: "TOKENS";
+    } = {};
     const inputTokens = attributes["gen_ai.usage.prompt_tokens"];
     const outputTokens = attributes["gen_ai.usage.completion_tokens"];
     const totalTokens = attributes["ai.usage.tokens"];

@@ -729,7 +729,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       ...standardData,
       ...(userContextData && { userContext: userContextData }),
     };
-    internalEventData.metadata = { ...internalEventData.metadata, sourceAgentId: this.id };
+    internalEventData.metadata = {
+      ...internalEventData.metadata,
+      sourceAgentId: this.id,
+    };
     const eventEmitter = AgentEventEmitter.getInstance();
     const eventUpdater = await eventEmitter.createTrackedEvent({
       agentId: this.id,
@@ -750,9 +753,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         type: "tool",
       });
     }
-    return async (update: { status?: AgentStatus; data?: Record<string, unknown> }): Promise<
-      AgentHistoryEntry | undefined
-    > => {
+    return async (update: {
+      status?: AgentStatus;
+      data?: Record<string, unknown>;
+    }): Promise<AgentHistoryEntry | undefined> => {
       const result = await eventUpdater(update);
       if (parentUpdater) {
         await parentUpdater(update);
@@ -923,7 +927,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           toolSpan.setAttribute("tool.error.message", errorMessage);
           const errorObj = toolError instanceof Error ? toolError : new Error(errorMessage);
           toolSpan.recordException(errorObj);
-          toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: errorObj.message });
+          toolSpan.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: errorObj.message,
+          });
         } else {
           toolSpan.setStatus({ code: SpanStatusCode.OK });
         }
@@ -1333,7 +1340,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
             // Call onToolStart hook
             if (tool) {
-              await this.hooks.onToolStart?.({ agent: this, tool, context: operationContext });
+              await this.hooks.onToolStart?.({
+                agent: this,
+                tool,
+                context: operationContext,
+              });
             }
           }
         } else if (chunk.type === "tool_result") {
