@@ -164,12 +164,6 @@ export function startToolSpan(options: StartToolSpanOptions): Span {
     },
     parentOtelContext,
   );
-  console.log(
-    "[Agent OTEL] Tool Span started:",
-    toolSpan.spanContext().spanId,
-    "for tool:",
-    toolName,
-  );
   return toolSpan;
 }
 
@@ -186,7 +180,6 @@ export function endToolSpan(options: EndToolSpanOptions): void {
     return;
   }
 
-  console.log(`[Agent OTEL] Ending Tool Span: ${span.spanContext().spanId}`);
   try {
     const toolResultContent = resultData.result ?? resultData.content;
     const toolError = resultData.result?.error ?? resultData.error;
