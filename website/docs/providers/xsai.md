@@ -111,9 +111,29 @@ run();
 
 ## Multi-modal Support
 
-❌ **Not Supported.**
+⚠️ **Conditional Support.**
 
-The provider currently only handles text content. Image or other multi-modal inputs are not processed by this provider.
+The `@voltagent/xsai` provider will pass multi-modal `BaseMessage` structures (containing text and image parts in the `content` array) to the underlying xsAI functions.
+
+xsAI cannot verify that the model you use is multimodal, so you must confirm this before using it.
+
+Refer to the [Multi-modal Agents](../agents/multi-modal.md) guide for details on configuring and using multi-modal models.
+
+```typescript
+// Example: Sending multi-modal input
+const messages = [
+  {
+    role: "user",
+    content: [
+      { type: "text", text: "Describe this image:" },
+      { type: "image", image: "data:image/png;base64,..." },
+    ],
+  },
+];
+
+const response = await agent.generateText(messages);
+```
+
 
 ## Model Selection & Options
 

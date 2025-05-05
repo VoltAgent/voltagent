@@ -1,4 +1,4 @@
-import { levelUp, amethyst } from "@codesandbox/sandpack-themes";
+import { amethyst } from "@codesandbox/sandpack-themes";
 import {
   SandpackProvider,
   SandpackLayout,
@@ -6,7 +6,6 @@ import {
   SandpackFileExplorer,
 } from "@codesandbox/sandpack-react";
 import { useState } from "react";
-import { ArrowDownIcon } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 
 export default function LivePreview() {
