@@ -3,13 +3,8 @@ import { startServer } from "./server";
 import { AgentRegistry } from "./server/registry";
 import { checkForUpdates } from "./utils/update";
 
-// --- OpenTelemetry Imports ---
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import {
-  /*   BatchSpanProcessor, */
-  SimpleSpanProcessor,
-  type SpanExporter,
-} from "@opentelemetry/sdk-trace-base";
+import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 /* import { trace } from "@opentelemetry/api"; */
 // ---------------------------
 
@@ -42,7 +37,6 @@ export { AgentRegistry } from "./server/registry";
 export * from "./utils/update";
 export * from "./voice";
 
-// --- Statik Değişkenler Telemetry Kurulumunu Takip Etmek İçin ---
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;
 // -------------------------------------------------------------
@@ -52,7 +46,6 @@ type VoltAgentOptions = {
   port?: number;
   autoStart?: boolean;
   checkDependencies?: boolean;
-  // --- Yeni Telemetry Parametresi ---
   /**
    * Optional OpenTelemetry SpanExporter instance or array of instances.
    * If provided, VoltAgent will attempt to initialize and register
@@ -74,11 +67,9 @@ export class VoltAgent {
     this.registry = AgentRegistry.getInstance();
     this.registerAgents(options.agents);
 
-    // --- Telemetry Kurulumu --- (Constructor içinde çağrı)
     if (options.telemetryExporter) {
       this.initializeGlobalTelemetry(options.telemetryExporter);
     }
-    // --------------------------
 
     // Check dependencies if enabled
     if (options.checkDependencies !== false) {
@@ -170,7 +161,6 @@ export class VoltAgent {
     return this.registry.getAgentCount();
   }
 
-  // --- Yeni Telemetry Metotları ---
   private initializeGlobalTelemetry(exporterOrExporters: SpanExporter | SpanExporter[]): void {
     if (isTelemetryInitializedByVoltAgent) {
       console.warn(
@@ -195,23 +185,21 @@ export class VoltAgent {
         ? exporterOrExporters
         : [exporterOrExporters];
 
-      // --- v2.x: SpanProcessor'ları oluştur ---
+      // --- v2.x: Create SpanProcessors ---
       const spanProcessors = exporters.map((exporter, index) => {
-        console.log(`[VoltAgent] Creating BatchSpanProcessor for exporter ${index + 1}.`);
-        return new SimpleSpanProcessor(exporter);
+        console.log(`[VoltAgent] Creating SimpleSpanProcessor for exporter ${index + 1}.`);
+        return new BatchSpanProcessor(exporter);
       });
       // -------------------------------------
 
-      // --- v2.x: Provider'ı processor'larla başlat ---
       const provider = new NodeTracerProvider({
-        // resource: new Resource({ [SemanticResourceAttributes.SERVICE_NAME]: 'voltagent-app' }),
-        spanProcessors: spanProcessors, // Processor'ları constructor'da ver
+        spanProcessors: spanProcessors,
       });
       // -------------------------------------------
 
       provider.register();
       isTelemetryInitializedByVoltAgent = true;
-      registeredProvider = provider; // Keep reference for shutdown
+      registeredProvider = provider;
 
       console.log("[VoltAgent] OpenTelemetry initialized and registered globally.");
 
@@ -227,9 +215,6 @@ export class VoltAgent {
     }
   }
 
-  /**
-   * Shuts down the OpenTelemetry provider if it was initialized by VoltAgent.
-   */
   public async shutdownTelemetry(): Promise<void> {
     if (isTelemetryInitializedByVoltAgent && registeredProvider) {
       console.log("[VoltAgent] Shutting down OpenTelemetry provider...");
@@ -250,10 +235,8 @@ export class VoltAgent {
   // --------------------------------
 }
 
-// Default export for easy usage
 export default VoltAgent;
 
-// Automatically start the server if this module is run directly (CommonJS check)
 if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
   new VoltAgent({ agents: {}, autoStart: true, checkDependencies: true });
 }
