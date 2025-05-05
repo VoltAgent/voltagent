@@ -3,6 +3,16 @@ import { startServer } from "./server";
 import { AgentRegistry } from "./server/registry";
 import { checkForUpdates } from "./utils/update";
 
+// --- OpenTelemetry Imports ---
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import {
+  /*   BatchSpanProcessor, */
+  SimpleSpanProcessor,
+  type SpanExporter,
+} from "@opentelemetry/sdk-trace-base";
+/* import { trace } from "@opentelemetry/api"; */
+// ---------------------------
+
 export * from "./agent";
 export * from "./agent/hooks";
 export * from "./tool";
@@ -32,11 +42,25 @@ export { AgentRegistry } from "./server/registry";
 export * from "./utils/update";
 export * from "./voice";
 
+// --- Statik Değişkenler Telemetry Kurulumunu Takip Etmek İçin ---
+let isTelemetryInitializedByVoltAgent = false;
+let registeredProvider: NodeTracerProvider | null = null;
+// -------------------------------------------------------------
+
 type VoltAgentOptions = {
   agents: Record<string, Agent<any>>;
   port?: number;
   autoStart?: boolean;
   checkDependencies?: boolean;
+  // --- Yeni Telemetry Parametresi ---
+  /**
+   * Optional OpenTelemetry SpanExporter instance or array of instances.
+   * If provided, VoltAgent will attempt to initialize and register
+   * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
+   * It's recommended to only provide this in one VoltAgent instance per application process.
+   */
+  telemetryExporter?: SpanExporter | SpanExporter[];
+  // ------------------------------------
 };
 
 /**
@@ -49,6 +73,12 @@ export class VoltAgent {
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.registerAgents(options.agents);
+
+    // --- Telemetry Kurulumu --- (Constructor içinde çağrı)
+    if (options.telemetryExporter) {
+      this.initializeGlobalTelemetry(options.telemetryExporter);
+    }
+    // --------------------------
 
     // Check dependencies if enabled
     if (options.checkDependencies !== false) {
@@ -139,6 +169,85 @@ export class VoltAgent {
   public getAgentCount(): number {
     return this.registry.getAgentCount();
   }
+
+  // --- Yeni Telemetry Metotları ---
+  private initializeGlobalTelemetry(exporterOrExporters: SpanExporter | SpanExporter[]): void {
+    if (isTelemetryInitializedByVoltAgent) {
+      console.warn(
+        "[VoltAgent] Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
+      );
+      return;
+    }
+
+    // Check if a global provider is already registered externally
+    /*  const existingGlobalProvider = trace.getTracerProvider();
+    if (existingGlobalProvider && !registeredProvider) {
+      console.warn(
+        "[VoltAgent] An external OpenTelemetry TracerProvider seems to be already registered. VoltAgent will not register its own provider. Ensure the external provider is configured correctly.",
+      );
+      return;
+    } */
+
+    console.log("[VoltAgent] Initializing OpenTelemetry v2+ with provided exporter(s)...");
+
+    try {
+      const exporters = Array.isArray(exporterOrExporters)
+        ? exporterOrExporters
+        : [exporterOrExporters];
+
+      // --- v2.x: SpanProcessor'ları oluştur ---
+      const spanProcessors = exporters.map((exporter, index) => {
+        console.log(`[VoltAgent] Creating BatchSpanProcessor for exporter ${index + 1}.`);
+        return new SimpleSpanProcessor(exporter);
+      });
+      // -------------------------------------
+
+      // --- v2.x: Provider'ı processor'larla başlat ---
+      const provider = new NodeTracerProvider({
+        // resource: new Resource({ [SemanticResourceAttributes.SERVICE_NAME]: 'voltagent-app' }),
+        spanProcessors: spanProcessors, // Processor'ları constructor'da ver
+      });
+      // -------------------------------------------
+
+      provider.register();
+      isTelemetryInitializedByVoltAgent = true;
+      registeredProvider = provider; // Keep reference for shutdown
+
+      console.log("[VoltAgent] OpenTelemetry initialized and registered globally.");
+
+      // Add automatic shutdown on SIGTERM
+      process.on("SIGTERM", () => {
+        console.log("[VoltAgent] SIGTERM received, shutting down OpenTelemetry provider...");
+        this.shutdownTelemetry().catch((err) =>
+          console.error("[VoltAgent] Error during SIGTERM telemetry shutdown:", err),
+        );
+      });
+    } catch (error) {
+      console.error("[VoltAgent] Failed to initialize OpenTelemetry:", error);
+    }
+  }
+
+  /**
+   * Shuts down the OpenTelemetry provider if it was initialized by VoltAgent.
+   */
+  public async shutdownTelemetry(): Promise<void> {
+    if (isTelemetryInitializedByVoltAgent && registeredProvider) {
+      console.log("[VoltAgent] Shutting down OpenTelemetry provider...");
+      try {
+        await registeredProvider.shutdown();
+        console.log("[VoltAgent] OpenTelemetry provider shut down successfully.");
+        isTelemetryInitializedByVoltAgent = false;
+        registeredProvider = null;
+      } catch (error) {
+        console.error("[VoltAgent] Error shutting down OpenTelemetry provider:", error);
+      }
+    } else {
+      console.log(
+        "[VoltAgent] Telemetry provider was not initialized by this VoltAgent instance or already shut down.",
+      );
+    }
+  }
+  // --------------------------------
 }
 
 // Default export for easy usage

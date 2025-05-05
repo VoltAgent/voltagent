@@ -1,7 +1,10 @@
 {
-  "name": "bedrock",
+  "name": "voltagent-example-with-zapier-mcp",
   "version": "1.0.0",
   "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -9,9 +12,6 @@
     "start": "node dist/index.js",
     "volt": "volt"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.8",
     "@aws-sdk/credential-providers": "~3.799.0",

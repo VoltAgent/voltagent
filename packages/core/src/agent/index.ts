@@ -38,11 +38,26 @@ import type {
   StandardizedTextResult,
   StandardizedObjectResult,
 } from "./types";
+import type { UsageInfo } from "./providers/base/types";
 import type { BaseRetriever } from "../retriever/retriever";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import type { StandardEventData } from "../events/types";
 import type { Voice } from "../voice";
 import { serializeValueForDebug } from "../utils/serialization";
+
+// --- OpenTelemetry Imports ---
+import {
+  trace,
+  type Span,
+  SpanKind,
+  SpanStatusCode,
+  type Attributes,
+  context as apiContext,
+} from "@opentelemetry/api";
+
+// Get a tracer instance for this library
+const tracer = trace.getTracer("voltagent-core", "0.1.0"); // Use your package name and version
+// -----------------------------
 
 /**
  * Agent class for interacting with AI models
@@ -416,6 +431,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Initialize a new history entry
    * @param input User input
    * @param initialStatus Initial status
+   * @param options Options including parent context
    * @returns Created operation context
    */
   private async initializeHistory(
@@ -423,6 +439,33 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     initialStatus: AgentStatus = "working",
     options: { parentAgentId?: string; parentHistoryEntryId?: string } = {},
   ): Promise<OperationContext> {
+    // --- Start OpenTelemetry Span ---
+    // Determine span name dynamically based on input or a default
+    const operationName = `agent.operation${typeof input === "string" ? `: ${input.substring(0, 30)}...` : ""}`;
+    const parentContext = apiContext.active(); // Get current active context if any
+
+    // Start the main span for this operation (WITHOUT user/session initially)
+    const otelSpan = tracer.startSpan(
+      operationName,
+      {
+        kind: SpanKind.INTERNAL, // This is an internal operation within the application
+        attributes: {
+          "voltagent.agent.id": this.id,
+          "voltagent.agent.name": this.name,
+          ...(options.parentAgentId && {
+            "voltagent.parent.agent.id": options.parentAgentId,
+          }),
+          ...(options.parentHistoryEntryId && {
+            "voltagent.parent.history.id": options.parentHistoryEntryId,
+          }),
+          // Add initial input if simple string? Be mindful of large inputs.
+          // 'voltagent.input.text': typeof input === 'string' ? input : undefined,
+        },
+      },
+      parentContext,
+    );
+    // --------------------------------
+
     // Create a new history entry (without events initially)
     const historyEntry = await this.historyManager.addEntry(
       input,
@@ -430,10 +473,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       initialStatus,
       [], // Empty steps initially
       { events: [] }, // Start with empty events array
+      // Do NOT pass otelSpan etc. to addEntry, they belong in OperationContext below
     );
 
     // Create operation context, including parent context if provided
-    const context: OperationContext = {
+    const opContext: OperationContext = {
       operationId: historyEntry.id,
       userContext: new Map<string | symbol, unknown>(),
       historyEntry,
@@ -441,11 +485,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       isActive: true,
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
+      // Assign the created OpenTelemetry span to the context
+      otelSpan: otelSpan,
     };
 
-    // Standardized message event
+    // Standardized message event (Pass the created opContext here)
     this.createStandardTimelineEvent(
-      context.historyEntry.id,
+      opContext.historyEntry.id,
       "start",
       "idle" as EventStatus,
       NodeType.MESSAGE,
@@ -454,10 +500,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: input,
       },
       "agent",
-      context,
+      opContext, // Pass the context with the otelSpan
     );
 
-    return context;
+    return opContext;
   }
 
   /**
@@ -604,99 +650,116 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     status: EventStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
   ): Promise<EventUpdater> => {
-    const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
-
-    // Move custom fields to metadata
-    const metadata: Record<string, unknown> = {
-      toolName,
-      ...(data.metadata || {}),
-    };
-
-    // Extract data fields to use while avoiding parameter reassignment
-    const { toolId, input, output, error, errorMessage } = data;
-
-    if (toolId) {
-      metadata.toolId = toolId;
+    // Ensure the toolSpans map exists on the context
+    if (!context.toolSpans) {
+      context.toolSpans = new Map<string, Span>();
     }
 
-    // Serialize userContext if context is available and userContext has entries
+    const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
+    const toolCallId = data.toolId?.toString(); // Get toolCallId
+
+    // --- OpenTelemetry Tool Span START Handling ---
+    // Only start span if status is 'working' and we have an ID
+    if (toolCallId && status === "working") {
+      // Check if a span for this ID already exists (should not happen ideally)
+      if (context.toolSpans.has(toolCallId)) {
+        console.warn(`[VoltAgentCore] OTEL tool span already exists for toolCallId: ${toolCallId}`);
+      } else {
+        const parentOtelContext = context.otelSpan
+          ? trace.setSpan(apiContext.active(), context.otelSpan)
+          : apiContext.active();
+        const toolSpan = tracer.startSpan(
+          `tool.execution: ${toolName}`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes: {
+              "tool.call.id": toolCallId,
+              "tool.name": toolName,
+              "tool.arguments": data.input ? JSON.stringify(data.input) : undefined,
+              "voltagent.agent.id": this.id,
+            },
+          },
+          parentOtelContext,
+        );
+        // Store the active tool span
+        context.toolSpans.set(toolCallId, toolSpan);
+        console.log(
+          "[Agent.addToolEvent] Tool Span started:",
+          toolSpan.spanContext().spanId,
+          "for tool:",
+          toolName,
+        ); // Debug Log
+      }
+    }
+    // --- Removed OTEL Tool Span END Handling ---
+    // The ending logic will be moved to where the tool result is processed
+
+    // --- Existing Event Handling Logic ---
+    const metadata: Record<string, unknown> = {
+      ...(data.metadata || {}),
+    };
+    const { input, output, error, errorMessage, ...standardData } = data;
     let userContextData: Record<string, unknown> | undefined = undefined;
     if (context?.userContext && context.userContext.size > 0) {
       try {
-        // Use the custom serialization helper
         userContextData = {};
         for (const [key, value] of context.userContext.entries()) {
           const stringKey = typeof key === "symbol" ? key.toString() : String(key);
           userContextData[stringKey] = serializeValueForDebug(value);
         }
-      } catch (error) {
-        console.warn("Failed to serialize userContext for tool event:", error);
+      } catch (err) {
+        // Use different variable name
+        console.warn("Failed to serialize userContext for tool event:", err);
         userContextData = { serialization_error: true };
       }
     }
-
-    const eventData: Partial<StandardEventData> & {
+    const internalEventData: Partial<StandardEventData> & {
       userContext?: Record<string, unknown>;
+      toolId?: string;
     } = {
       affectedNodeId: toolNodeId,
-      status: status as any,
+      status: status as any, // Keep cast for internal system
       timestamp: new Date().toISOString(),
-      input,
-      output,
-      error,
-      errorMessage,
+      input: data.input,
+      output: data.output,
+      error: data.error,
+      errorMessage: data.errorMessage,
       metadata,
-      ...(userContextData && { userContext: userContextData }), // Add userContext if available
+      toolId: toolCallId,
+      ...standardData,
+      ...(userContextData && { userContext: userContextData }),
     };
-
-    // Add source agent ID to metadata instead
-    metadata.sourceAgentId = this.id;
-
+    internalEventData.metadata = { ...internalEventData.metadata, sourceAgentId: this.id };
     const eventEmitter = AgentEventEmitter.getInstance();
-
-    // Create tracked event for the current agent
     const eventUpdater = await eventEmitter.createTrackedEvent({
       agentId: this.id,
       historyId: context.historyEntry.id,
       name: eventName,
       status: status as AgentStatus,
-      data: eventData,
+      data: internalEventData,
       type: "tool",
     });
-
-    // If we have parent context, create a tracked event for the parent too
     let parentUpdater: EventUpdater | null = null;
-
     if (context.parentAgentId && context.parentHistoryEntryId) {
       parentUpdater = await eventEmitter.createTrackedEvent({
         agentId: context.parentAgentId,
         historyId: context.parentHistoryEntryId,
         name: eventName,
         status: status as AgentStatus,
-        data: { ...eventData, sourceAgentId: this.id },
+        data: { ...internalEventData, sourceAgentId: this.id },
         type: "tool",
       });
     }
-
-    // Return a combined updater that updates both events and maintains the return type
-    // The input 'update' object should expect AgentStatus for its status field
-    return async (update: {
-      status?: AgentStatus; // Changed EventStatus to AgentStatus
-      data?: Record<string, unknown>;
-    }): Promise<AgentHistoryEntry | undefined> => {
-      // Update current agent's event
-      // The eventUpdater from createTrackedEvent expects AgentStatus
+    return async (update: { status?: AgentStatus; data?: Record<string, unknown> }): Promise<
+      AgentHistoryEntry | undefined
+    > => {
       const result = await eventUpdater(update);
-
-      // Update parent agent's event if it exists
       if (parentUpdater) {
-        // parentUpdater also expects AgentStatus
         await parentUpdater(update);
       }
-
-      // Return the result from the current agent's update
       return result;
     };
+    // --- End Existing Event Handling Logic ---
   };
 
   /**
@@ -708,6 +771,99 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     status: EventStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
   ): void => {
+    // Retrieve the OpenTelemetry span from the context
+    const otelSpan = context.otelSpan;
+
+    if (otelSpan) {
+      // --- Enrich and End OpenTelemetry Span ---
+      try {
+        // Extract relevant data for attributes
+        // IMPORTANT: Use attribute keys expected by your exporter (e.g., VoltAgentLangfuseExporter)
+        const attributes: Attributes = {};
+        if (data.input) {
+          // Input might be complex, stringify unless exporter handles objects
+          attributes["ai.prompt.messages"] =
+            typeof data.input === "string" ? data.input : JSON.stringify(data.input);
+        }
+        if (data.output) {
+          // Output might be complex, stringify unless exporter handles objects
+          attributes["ai.response.text"] =
+            typeof data.output === "string" ? data.output : JSON.stringify(data.output);
+        }
+        if (data.usage && typeof data.usage === "object") {
+          // Use UsageInfo type assertion if imported correctly
+          const usageInfo = data.usage as UsageInfo;
+          if (usageInfo.promptTokens != null)
+            attributes["gen_ai.usage.prompt_tokens"] = usageInfo.promptTokens;
+          if (usageInfo.completionTokens != null)
+            attributes["gen_ai.usage.completion_tokens"] = usageInfo.completionTokens;
+          if (usageInfo.totalTokens != null) attributes["ai.usage.tokens"] = usageInfo.totalTokens;
+        }
+        if (data.metadata && typeof data.metadata === "object") {
+          for (const [key, value] of Object.entries(data.metadata)) {
+            if (
+              ![
+                "usage",
+                "finishReason",
+                "input",
+                "output",
+                "error",
+                "errorMessage",
+                "affectedNodeId",
+                "status",
+                "timestamp",
+              ].includes(key) &&
+              value != null
+            ) {
+              // Stringify non-primitive metadata values for OTEL attributes
+              const attributeValue =
+                typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+                  ? value
+                  : JSON.stringify(value);
+              attributes[`ai.telemetry.metadata.${key}`] = attributeValue;
+            }
+          }
+        }
+
+        otelSpan.setAttributes(attributes);
+
+        if (status === "completed") {
+          otelSpan.setStatus({ code: SpanStatusCode.OK });
+        } else if (status === "error") {
+          otelSpan.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: String(data.errorMessage || "Agent operation failed"),
+          });
+          // Record the error as an exception on the span
+          if (data.error) {
+            // Ensure error is an Error object
+            const errorObj =
+              data.error instanceof Error ? data.error : new Error(String(data.error));
+            otelSpan.recordException(errorObj);
+          } else if (data.errorMessage) {
+            otelSpan.recordException(new Error(String(data.errorMessage)));
+          }
+        }
+      } catch (e) {
+        // Error during span enrichment, log it but don't fail the event
+        console.error("[VoltAgentCore] Error enriching OTEL span in addAgentEvent:", e);
+        // Optionally add an event/attribute to the span indicating enrichment failure
+        otelSpan.setAttribute("otel.enrichment.error", true);
+        otelSpan.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: "Span enrichment failed",
+        });
+      } finally {
+        // Always end the span when the agent event indicates completion/error
+        otelSpan.end();
+      }
+      // -----------------------------------------
+    } else {
+      console.warn(
+        `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
+      );
+    }
+
     // Move non-standard fields to metadata
     const metadata: Record<string, unknown> = {
       ...(data.metadata || {}),
@@ -739,37 +895,102 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   };
 
   /**
+   * Helper method to enrich and end an OpenTelemetry span associated with a tool call.
+   */
+  private _endOtelToolSpan(
+    context: OperationContext,
+    toolCallId: string,
+    toolName: string,
+    // Use a generic structure for the result data from step/chunk
+    resultData: { result?: any; content?: any; error?: any },
+  ): void {
+    const toolSpan = context.toolSpans?.get(toolCallId);
+    if (toolSpan) {
+      console.log(
+        `[Agent._endOtelToolSpan] Ending Tool Span: ${toolSpan.spanContext().spanId} for tool: ${toolName}`,
+      ); // Debug Log
+      try {
+        // Prefer result if available, otherwise use content
+        const toolResultContent = resultData.result ?? resultData.content;
+        // Check for error within result or directly on resultData
+        const toolError = resultData.result?.error ?? resultData.error;
+        const isError = Boolean(toolError);
+
+        // Set attributes
+        toolSpan.setAttribute("tool.result", JSON.stringify(toolResultContent));
+        if (isError) {
+          const errorMessage = toolError?.message || String(toolError || "Unknown tool error");
+          toolSpan.setAttribute("tool.error.message", errorMessage);
+          const errorObj = toolError instanceof Error ? toolError : new Error(errorMessage);
+          toolSpan.recordException(errorObj);
+          toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: errorObj.message });
+        } else {
+          toolSpan.setStatus({ code: SpanStatusCode.OK });
+        }
+      } catch (e) {
+        console.error("[VoltAgentCore] Error enriching OTEL tool span in _endOtelToolSpan:", e);
+        if (toolSpan.isRecording()) {
+          toolSpan.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: "Tool span enrichment failed",
+          });
+        }
+      } finally {
+        if (toolSpan.isRecording()) toolSpan.end();
+        context.toolSpans?.delete(toolCallId); // Remove from map
+      }
+    } else {
+      console.warn(
+        `[VoltAgentCore] OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan`,
+      );
+    }
+  }
+
+  /**
    * Generate a text response without streaming
    */
   async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferGenerateTextResponse<TProvider>> {
-    // Create internal options structure by casting
-    // This is safe because PublicGenerateOptions is a subset of InternalGenerateOptions
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      contextLimit = 10,
+    } = internalOptions; // Extract IDs and contextLimit
 
-    // Create an initial context with "working" status
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
-    });
+    // Create an initial context first
+    const operationContext = await this.initializeHistory(
+      input,
+      "working",
+      { parentAgentId, parentHistoryEntryId },
+      // No IDs passed here yet
+    );
+
+    // Now prepare context using the created operationContext
+    const { messages: contextMessages, conversationId: finalConversationId } =
+      await this.memoryManager.prepareConversationContext(
+        operationContext, // Pass the created context
+        input,
+        userId,
+        initialConversationId, // Use the one from options initially
+        contextLimit,
+      );
+
+    // Now update the OTEL span with the IDs
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
+
     let messages: BaseMessage[] = [];
     try {
       // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
-
-      const { userId, conversationId, contextLimit = 10, provider, signal } = internalOptions;
-
-      // Use memory manager to prepare messages and context
-      const { messages: contextMessages, conversationId: finalConversationId } =
-        await this.memoryManager.prepareConversationContext(
-          operationContext,
-          input,
-          userId,
-          conversationId,
-          contextLimit,
-        );
 
       // Get system message with input for RAG
       const systemMessage = await this.getSystemMessage({
@@ -813,8 +1034,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         model: this.model,
         maxSteps,
         tools,
-        provider,
-        signal,
+        provider: internalOptions.provider,
+        signal: internalOptions.signal,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,
@@ -858,37 +1079,53 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             // Handle tool completion with the result when tool returns
             if (step.name && step.id) {
               // Get the updater for this tool call
-              const eventUpdater = operationContext.eventUpdaters.get(step.id);
+              const toolCallId = step.id;
+              const toolName = step.name;
 
+              const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
               if (eventUpdater) {
-                // Create a unique node ID for the tool
-                const toolNodeId = `tool_${step.name}_${this.id}`;
+                const isError = Boolean(step.result?.error);
+                const statusForEvent: EventStatus = isError ? "error" : "completed";
 
-                // Update the tracked event with completion status
-                eventUpdater({
+                // Update the internal tracked event first
+                await eventUpdater({
+                  status: statusForEvent as AgentStatus,
                   data: {
-                    affectedNodeId: toolNodeId,
-                    status: "completed",
+                    error: step.result?.error,
+                    errorMessage: step.result?.error?.message,
+                    status: statusForEvent,
                     updatedAt: new Date().toISOString(),
                     output: step.result ?? step.content,
                   },
                 });
-
-                // Remove the updater from the map
-                operationContext.eventUpdaters.delete(step.id);
-
-                // Call onToolEnd hook
-                const tool = this.toolManager.getToolByName(step.name);
-                if (tool) {
-                  await this.hooks.onToolEnd?.({
-                    agent: this,
-                    tool,
-                    output: step.result ?? step.content,
-                    error: undefined, // Success case
-                    context: operationContext,
-                  });
-                }
+                // Remove the updater
+                operationContext.eventUpdaters.delete(toolCallId);
+              } else {
+                console.warn(
+                  `[VoltAgentCore] EventUpdater not found for toolCallId: ${toolCallId} in generateText`,
+                );
               }
+
+              // --- OTEL Span End Logic ---
+              this._endOtelToolSpan(operationContext, toolCallId, toolName, {
+                result: step.result,
+                content: step.content,
+                error: step.result?.error,
+              });
+              // --- End OTEL Span End Logic ---
+
+              // --- Existing Hook Logic ---
+              const tool = this.toolManager.getToolByName(toolName);
+              if (tool) {
+                await this.hooks.onToolEnd?.({
+                  agent: this,
+                  tool,
+                  output: step.result ?? step.content,
+                  error: step.result?.error,
+                  context: operationContext,
+                });
+              }
+              // --- End Existing Hook Logic ---
             }
           }
 
@@ -992,31 +1229,42 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferStreamTextResponse<TProvider>> {
-    // Create internal options structure by casting
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      contextLimit = 10,
+    } = internalOptions; // Extract IDs and contextLimit
 
-    // Create an initial context with "working" status
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
-    });
+    // Create an initial context first
+    const operationContext = await this.initializeHistory(
+      input,
+      "working",
+      { parentAgentId, parentHistoryEntryId },
+      // No IDs passed here yet
+    );
 
-    // No try...catch here, let errors propagate up after potentially being handled by onError callbacks
+    // Now prepare context using the created operationContext
+    const { messages: contextMessages, conversationId: finalConversationId } =
+      await this.memoryManager.prepareConversationContext(
+        operationContext, // Pass the created context
+        input,
+        userId,
+        initialConversationId, // Use the one from options initially
+        contextLimit,
+      );
+
+    // Now update the OTEL span with the IDs
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
 
     // Call onStart hook
     await this.hooks.onStart?.({ agent: this, context: operationContext });
-
-    const { userId, conversationId, contextLimit = 10, provider, signal } = internalOptions;
-
-    // Use memory manager to prepare messages and context
-    const { messages: contextMessages, conversationId: finalConversationId } =
-      await this.memoryManager.prepareConversationContext(
-        operationContext,
-        input,
-        userId,
-        conversationId,
-        contextLimit,
-      );
 
     // Get system message with input for RAG
     const systemMessage = await this.getSystemMessage({
@@ -1024,8 +1272,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
     });
-
-    // Standardized agent event
 
     // Combine messages
     let messages = [systemMessage, ...contextMessages];
@@ -1062,8 +1308,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       model: this.model,
       maxSteps,
       tools,
-      signal,
-      provider,
+      signal: internalOptions.signal,
+      provider: internalOptions.provider,
       toolExecutionContext: {
         operationContext: operationContext,
         agentId: this.id,
@@ -1073,69 +1319,75 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (chunk.type === "tool_call") {
           // Update tool status to working when tool is called
           if (chunk.name && chunk.id) {
-            // Get the tool if it exists
             const tool = this.toolManager.getToolByName(chunk.name);
-
-            // Create a tracked event for this tool call
+            // Create a tracked event for this tool call (Starts OTEL span)
             const eventUpdater = await this.addToolEvent(
               operationContext,
               "tool_working",
               chunk.name,
               "working",
-              {
-                toolId: chunk.id,
-                input: chunk.arguments || {},
-              },
+              { toolId: chunk.id, input: chunk.arguments || {} },
             );
             // Store the updater with the tool call ID
             operationContext.eventUpdaters.set(chunk.id, eventUpdater);
 
             // Call onToolStart hook
             if (tool) {
-              await this.hooks.onToolStart?.({
-                agent: this,
-                tool,
-                context: operationContext,
-              });
+              await this.hooks.onToolStart?.({ agent: this, tool, context: operationContext });
             }
           }
         } else if (chunk.type === "tool_result") {
           // Handle tool completion with the result when tool returns
           if (chunk.name && chunk.id) {
-            // Get the updater for this tool call
-            const eventUpdater = operationContext.eventUpdaters.get(chunk.id);
+            const toolCallId = chunk.id;
+            const toolName = chunk.name;
 
+            // --- Existing Event Updater Logic ---
+            const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
             if (eventUpdater) {
-              // Create a unique node ID for the tool
-              const toolNodeId = `tool_${chunk.name}_${this.id}`;
+              const isError = Boolean(chunk.result?.error);
+              const statusForEvent: EventStatus = isError ? "error" : "completed";
 
-              // Update the tracked event with completion status
-              eventUpdater({
+              // Update the internal tracked event first
+              await eventUpdater({
+                status: statusForEvent as AgentStatus,
                 data: {
-                  affectedNodeId: toolNodeId,
                   error: chunk.result?.error,
                   errorMessage: chunk.result?.error?.message,
-                  status: chunk.result?.error ? "errored" : "completed",
+                  status: statusForEvent,
                   updatedAt: new Date().toISOString(),
                   output: chunk.result ?? chunk.content,
                 },
               });
-
-              // Remove the updater from the map
-              operationContext.eventUpdaters.delete(chunk.id);
-
-              // Call onToolEnd hook
-              const tool = this.toolManager.getToolByName(chunk.name);
-              if (tool) {
-                await this.hooks.onToolEnd?.({
-                  agent: this,
-                  tool,
-                  output: chunk.result ?? chunk.content,
-                  error: undefined,
-                  context: operationContext,
-                });
-              }
+              // Remove the updater
+              operationContext.eventUpdaters.delete(toolCallId);
+            } else {
+              console.warn(
+                `[VoltAgentCore] EventUpdater not found for toolCallId: ${toolCallId} in streamText`,
+              );
             }
+            // --- End Existing Event Updater Logic ---
+
+            // --- OTEL Span End Logic ---
+            this._endOtelToolSpan(operationContext, toolCallId, toolName, {
+              result: chunk.result,
+              content: chunk.content,
+              error: chunk.result?.error,
+            });
+            // --- End OTEL Span End Logic ---
+
+            // --- Existing Hook Logic ---
+            const tool = this.toolManager.getToolByName(toolName);
+            if (tool) {
+              await this.hooks.onToolEnd?.({
+                agent: this,
+                tool,
+                output: chunk.result ?? chunk.content,
+                error: chunk.result?.error,
+                context: operationContext,
+              });
+            }
+            // --- End Existing Hook Logic ---
           }
         }
       },
@@ -1144,8 +1396,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         await onStepFinish(step);
 
         // Call user's onStepFinish if provided
-        if (provider?.onStepFinish) {
-          await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
+        if (internalOptions.provider?.onStepFinish) {
+          await (internalOptions.provider.onStepFinish as (step: StepWithContent) => Promise<void>)(
+            step,
+          );
         }
 
         // Add step to history immediately
@@ -1197,8 +1451,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
 
         // Call user's onFinish if provided, passing the standardized result
-        if (provider?.onFinish) {
-          await (provider.onFinish as StreamTextOnFinishCallback)(result);
+        if (internalOptions.provider?.onFinish) {
+          await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(result);
         }
       },
       onError: async (error: VoltAgentError) => {
@@ -1246,10 +1500,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
         // Add "error" timeline event using VoltAgentError fields
         this.addAgentEvent(operationContext, "finished", "error", {
+          input: messages,
           error: error, // Pass the whole VoltAgentError object
           errorMessage: error.message, // Use the main message
           affectedNodeId: `agent_${this.id}`,
-          input: messages,
           status: "error",
           metadata: {
             // Include metadata if available
@@ -1271,8 +1525,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         operationContext.isActive = false;
 
         // Call user's onError if provided, passing the VoltAgentError
-        if (provider?.onError) {
-          await (provider.onError as StreamOnErrorCallback)(error);
+        if (internalOptions.provider?.onError) {
+          await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
 
         // Call onEnd hook for cleanup opportunity, even on error
@@ -1298,30 +1552,44 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     schema: T,
     options: PublicGenerateOptions = {},
   ): Promise<InferGenerateObjectResponse<TProvider>> {
-    // Create internal options structure by casting
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      contextLimit = 10,
+    } = internalOptions; // Extract IDs and contextLimit
 
-    // Create an initial context with "working" status
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
-    });
+    // Create an initial context first
+    const operationContext = await this.initializeHistory(
+      input,
+      "working",
+      { parentAgentId, parentHistoryEntryId },
+      // No IDs passed here yet
+    );
+
+    // Now prepare context using the created operationContext
+    const { messages: contextMessages, conversationId: finalConversationId } =
+      await this.memoryManager.prepareConversationContext(
+        operationContext, // Pass the created context
+        input,
+        userId,
+        initialConversationId, // Use the one from options initially
+        contextLimit,
+      );
+
+    // Now update the OTEL span with the IDs
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
+
     let messages: BaseMessage[] = [];
     try {
       // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
-
-      const { userId, conversationId, contextLimit = 10, provider, signal } = internalOptions;
-
-      // Use memory manager to prepare messages and context
-      const { messages: contextMessages, conversationId: finalConversationId } =
-        await this.memoryManager.prepareConversationContext(
-          operationContext,
-          input,
-          userId,
-          conversationId,
-          contextLimit,
-        );
 
       // Get system message with input for RAG
       const systemMessage = await this.getSystemMessage({
@@ -1358,8 +1626,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         messages,
         model: this.model,
         schema,
-        signal,
-        provider,
+        signal: internalOptions.signal,
+        provider: internalOptions.provider,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,
@@ -1371,8 +1639,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
           await onStepFinish(step);
           // Call user's onStepFinish if provided
-          if (provider?.onStepFinish) {
-            await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
+          if (internalOptions.provider?.onStepFinish) {
+            await (
+              internalOptions.provider.onStepFinish as (step: StepWithContent) => Promise<void>
+            )(step);
           }
         },
       });
@@ -1471,29 +1741,45 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     schema: T,
     options: PublicGenerateOptions = {},
   ): Promise<InferStreamObjectResponse<TProvider>> {
-    // Create internal options structure by casting
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
-    const { provider } = internalOptions; // Extract provider for onFinish usage
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
-    });
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      provider,
+      contextLimit = 10,
+    } = internalOptions; // Extract IDs, provider, contextLimit
+
+    // Create an initial context first
+    const operationContext = await this.initializeHistory(
+      input,
+      "working",
+      { parentAgentId, parentHistoryEntryId },
+      // No IDs passed here yet
+    );
+
+    // Now prepare context using the created operationContext
+    const { messages: contextMessages, conversationId: finalConversationId } =
+      await this.memoryManager.prepareConversationContext(
+        operationContext, // Pass the created context
+        input,
+        userId,
+        initialConversationId, // Use the one from options initially
+        contextLimit,
+      );
+
+    // Now update the OTEL span with the IDs
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
+
     let messages: BaseMessage[] = [];
     try {
       // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
-
-      const { userId, conversationId, contextLimit = 10, signal } = internalOptions;
-
-      // Use memory manager to prepare messages and context
-      const { messages: contextMessages, conversationId: finalConversationId } =
-        await this.memoryManager.prepareConversationContext(
-          operationContext,
-          input,
-          userId,
-          conversationId,
-          contextLimit,
-        );
 
       // Get system message with input for RAG
       const systemMessage = await this.getSystemMessage({
@@ -1531,7 +1817,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         model: this.model,
         schema,
         provider,
-        signal,
+        signal: internalOptions.signal,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,

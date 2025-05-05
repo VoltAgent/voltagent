@@ -8,6 +8,7 @@ import type { AgentHistoryEntry } from "./history";
 import type { EventUpdater } from "../events";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
+import type { Span } from "@opentelemetry/api";
 
 /**
  * Provider options type for LLM configurations
@@ -342,6 +343,12 @@ export type OperationContext = {
 
   /** Parent history entry ID if part of a delegation chain */
   parentHistoryEntryId?: string;
+
+  /** The root OpenTelemetry span for this operation */
+  otelSpan?: Span;
+
+  /** Map to store active OpenTelemetry spans for tool calls within this operation */
+  toolSpans?: Map<string, Span>; // Key: toolCallId
 };
 
 /**
