@@ -45,7 +45,7 @@ import type { Voice } from "../voice";
 import { serializeValueForDebug } from "../utils/serialization";
 
 import { startOperationSpan, endOperationSpan, startToolSpan, endToolSpan } from "./open-telemetry";
-import type { Span } from "@opentelemetry/api"; // Keep Span type import for OperationContext
+import type { Span } from "@opentelemetry/api";
 
 /**
  * Agent class for interacting with AI models
@@ -241,7 +241,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         eventUpdater({
           status: "error" as AgentStatus,
           data: {
-            status: "errored" as EventStatus,
+            status: "error" as EventStatus,
             error: error,
             errorMessage: error instanceof Error ? error.message : "Unknown error",
           },
@@ -898,7 +898,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
               if (eventUpdater) {
                 const isError = Boolean(step.result?.error);
-                const statusForEvent: any = isError ? "errored" : "completed";
+                const statusForEvent: any = isError ? "error" : "completed";
                 await eventUpdater({
                   data: {
                     error: step.result?.error,
@@ -1104,7 +1104,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
             if (eventUpdater) {
               const isError = Boolean(chunk.result?.error);
-              const statusForEvent: any = isError ? "errored" : "completed";
+              const statusForEvent: any = isError ? "error" : "completed";
               await eventUpdater({
                 data: {
                   error: chunk.result?.error,
@@ -1192,7 +1192,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   affectedNodeId: toolNodeId,
                   error: error.message,
                   errorMessage: error.message,
-                  status: "errored",
+                  status: "error",
                   updatedAt: new Date().toISOString(),
                   output: error.message,
                 },
@@ -1531,7 +1531,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                     affectedNodeId: toolNodeId,
                     error: error.message,
                     errorMessage: error.message,
-                    status: "errored",
+                    status: "error",
                     updatedAt: new Date().toISOString(),
                     output: error.message,
                   },
