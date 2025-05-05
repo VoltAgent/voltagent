@@ -815,13 +815,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // --- Update OTEL Span with IDs ---
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
       if (finalConversationId)
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
-    // -------------------------------
 
     let messages: BaseMessage[] = [];
     try {
@@ -1028,13 +1026,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // --- Update OTEL Span with IDs ---
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
       if (finalConversationId)
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
-    // -------------------------------
 
     await this.hooks.onStart?.({ agent: this, context: operationContext });
 
@@ -1289,13 +1285,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // --- Update OTEL Span with IDs ---
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
       if (finalConversationId)
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
-    // -------------------------------
 
     let messages: BaseMessage[] = [];
     try {
@@ -1441,13 +1435,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // --- Update OTEL Span with IDs ---
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
       if (finalConversationId)
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
-    // -------------------------------
 
     let messages: BaseMessage[] = [];
     try {
