@@ -1,9 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { Tool } from "@voltagent/core";
 //@ts-ignore
 import { EventSourceParser } from "@anthropic-ai/sdk/lib/streaming";
-import { createTool, type BaseMessage } from "@voltagent/core";
-//@ts-ignore
-import { MockLanguageModelV1 } from "ai/test";
+import type { BaseMessage } from "@voltagent/core";
 import { z } from "zod";
 import { AnthropicProvider } from ".";
 
@@ -75,7 +74,7 @@ describe("AnthropicProvider", () => {
       const provider = new AnthropicProvider({
         apiKey: "sk-ant-api03-test-key",
       });
-      const tool = createTool({
+      const options = {
         id: "test-tool",
         name: "test-tool",
         description: "This is a test tool",
@@ -83,7 +82,9 @@ describe("AnthropicProvider", () => {
           name: z.string(),
         }),
         execute: jest.fn().mockResolvedValue("test-tool-response"),
-      });
+      };
+
+      const tool = new Tool(options);
 
       const result = await provider.generateText({
         messages: [{ role: "user", content: "Hello!" }],

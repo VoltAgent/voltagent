@@ -16,8 +16,6 @@ const weatherTool = createTool({
   },
 });
 
-console.log(weatherTool);
-
 const agent = new Agent({
   name: "weather-agent",
   description: "A helpful weather assistant that answers questions with weather tools",
