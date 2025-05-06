@@ -1,0 +1,35 @@
+{
+  "name": "voltagent-example-with-voice-xsai",
+  "private": true,
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent",
+    "voice",
+    "xsai"
+  ],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src ",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.10",
+    "@voltagent/cli": "^0.1.4",
+    "@voltagent/core": "^0.1.12",
+    "@voltagent/vercel-ai": "^0.1.5",
+    "@voltagent/voice": "^0.1.4",
+    "dotenv": "^16.4.5",
+    "openai": "^4.91.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
