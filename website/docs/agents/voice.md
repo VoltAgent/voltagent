@@ -42,6 +42,7 @@ pnpm add @voltagent/voice
 
 - **OpenAI**: High-quality voices and transcription.
 - **ElevenLabs**: Realistic, customizable voices.
+- **xsAI**: Lightweight OpenAI-compatible voice API.
 
 ## Basic Usage
 
@@ -66,6 +67,16 @@ const elevenLabsVoice = new ElevenLabsVoiceProvider({
   apiKey: process.env.ELEVENLABS_API_KEY, // Ensure API key is set
   ttsModel: "eleven_multilingual_v2",
   voice: "Rachel", // Example voice ID
+});
+
+// Or initialize with xsAI
+import { XsaiVoiceProvider } from "@voltagent/voice";
+
+const xsAIVoice = new XsaiVoiceProvider({
+  apiKey: process.env.OPENAI_API_KEY!,
+  ttsModel: "tts-1",
+  voice: "alloy",
+  // If you are not using OpenAI, simply specify the `baseURL`
 });
 ```
 

@@ -15,10 +15,10 @@ export type XsaiVoiceOptions = BaseVoiceProviderOptions & {
   baseURL?: string;
 
   /** Model *id* for TTS (required by xsAI) – default `"tts-1"` */
-  ttsModel?: any;
+  ttsModel?: string;
 
   /** Model *id* for STT (required by xsAI) – default `"whisper-1"` */
-  speechModel?: any;
+  speechModel?: string;
 
   /** Voice ID (library‑specific) – defaults to `"alloy"` */
   voice?: string;
