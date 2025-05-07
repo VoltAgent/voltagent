@@ -55,55 +55,7 @@ export class XsAIProvider implements LLMProvider<string> {
   };
 
   toMessage = (message: BaseMessage): Message => {
-    let content: string;
-
-    if (typeof message.content === "string") {
-      content = message.content;
-    } else if (Array.isArray(message.content)) {
-      // Attempt to concatenate text from content parts
-      const textParts = message.content.filter(
-        (part): part is Extract<typeof part, { type: "text" }> =>
-          part.type === "text" && typeof part.text === "string",
-      );
-      content = textParts.map((part) => part.text).join("");
-
-      const hasNonTextParts = message.content.some((part) => part.type !== "text");
-      if (hasNonTextParts) {
-        console.warn(
-          `[XsAIProvider] Message (role: ${message.role}) contained non-text content parts...`,
-        );
-      }
-      if (!content && message.content.length > 0) {
-        // If content is empty after filtering, but the original array wasn't empty,
-        // it means it contained only non-text parts or text parts with no text.
-        if (!hasNonTextParts) {
-          // This case means it had text parts, but their text was empty/nullish
-          console.warn(
-            `[XsAIProvider] Message (role: ${message.role}) content array yielded no text.`,
-          );
-        }
-        // We default to empty string if the array resulted in no text, regardless of non-text parts
-        content = "";
-      }
-    } else {
-      // Handle unexpected content types (null, undefined, etc.)
-      console.warn(
-        `[XsAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
-        message.content,
-      );
-      content = ""; // Fallback to empty string
-    }
-
-    // Map roles. XsAI only supports user/assistant. Default others to assistant.
-    const role: "user" | "assistant" = message.role === "user" ? "user" : "assistant";
-    if (message.role !== "user" && message.role !== "assistant") {
-      console.warn(`[XsAIProvider] Mapping role '${message.role}' to 'assistant'.`);
-    }
-
-    return {
-      role,
-      content,
-    };
+    return message as Message;
   };
 
   convertTools = async (tools: BaseTool[]): Promise<ToolResult[] | undefined> => {
