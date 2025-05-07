@@ -1,3 +1,3 @@
-export { weatherTool } from "./weather.js";
-export { checkCalendarTool, addCalendarEventTool } from "./calendar.js";
-export { searchTool } from "./search.js";
+export { weatherTool } from "./weather";
+export { checkCalendarTool, addCalendarEventTool } from "./calendar";
+export { searchTool } from "./search";

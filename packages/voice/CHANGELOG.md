@@ -1,5 +1,20 @@
 # @voltagent/voice
 
+## 0.1.5
+
+### Patch Changes
+
+- [#98](https://github.com/VoltAgent/voltagent/pull/98) [`c3db06d`](https://github.com/VoltAgent/voltagent/commit/c3db06d722ea27585c37be126ae49b0361729747) Thanks [@yusuf-eren](https://github.com/yusuf-eren)! - feat(xsAI): add xsAI voice provider
+
+  This adds support for the xsAI voice provider, including:
+
+  - Core provider implementation support
+  - Support for API key authentication and custom headers
+  - Base URL configuration for API endpoints
+
+- Updated dependencies [[`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107), [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925)]:
+  - @voltagent/core@0.1.13
+
 ## 0.1.4
 
 ### Patch Changes
