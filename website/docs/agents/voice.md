@@ -70,9 +70,9 @@ const elevenLabsVoice = new ElevenLabsVoiceProvider({
 });
 
 // Or initialize with xsAI
-import { XsaiVoiceProvider } from "@voltagent/voice";
+import { XsAIVoiceProvider } from "@voltagent/voice";
 
-const xsAIVoice = new XsaiVoiceProvider({
+const xsAIVoice = new XsAIVoiceProvider({
   apiKey: process.env.OPENAI_API_KEY!,
   ttsModel: "tts-1",
   voice: "alloy",

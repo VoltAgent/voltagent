@@ -19,7 +19,7 @@ async function collectChunks(stream: NodeJS.ReadableStream): Promise<Buffer> {
 /* ------------------------------------------------------------------ */
 /*  xsAI provider                                                     */
 /* ------------------------------------------------------------------ */
-export class XsaiVoiceProvider extends BaseVoiceProvider {
+export class XsAIVoiceProvider extends BaseVoiceProvider {
   private readonly apiKey: string;
   private readonly baseURL: string;
   private readonly ttsModel: string;
