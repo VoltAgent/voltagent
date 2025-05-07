@@ -16,6 +16,7 @@ VoltAgent offers built-in providers for various popular services and SDKs. This 
 - **[Vercel AI Provider](../providers/vercel-ai.md):** Integrates with the Vercel AI SDK, allowing you to use various models supported by Vercel.
 - **[Google AI Provider](../providers/google-ai.md):** Connects to Google's AI models, including Gemini and Vertex AI, via their official SDK.
 - **[Groq AI Provider](../providers/groq-ai.md):** Leverages the Groq API for extremely fast inference on supported models like Llama and Mixtral.
+- **[Anthropic AI Provider](../providers/anthropic-ai.md):** Connects directly to Anthropic's AI models (Claude) using the official Anthropic AI SDK.
 - **[xsAI (OpenAI-Compatible) Provider](../providers/xsai.md):** Provides compatibility with any OpenAI-compatible API endpoint, including self-hosted models or other third-party services.
 
 Choose the provider that best suits the LLM or service you want to use. Detailed configuration and usage instructions can be found on each provider's specific documentation page linked above.
@@ -55,8 +56,6 @@ async function run() {
 
 run();
 ```
-
-**Choose `@voltagent/groq-ai` when:** You need to connect specifically to Groq API used for fast inferencing of supported models.
 
 ## The `model` Parameter
 
