@@ -5,6 +5,7 @@ import {
   EyeIcon,
   CommandLineIcon,
   ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { DotPattern } from "../ui/dot-pattern";
@@ -14,6 +15,8 @@ import AgentListView from "./AgentListView";
 import AgentDetailView from "./AgentDetailView";
 import AgentChat from "./AgentChat";
 import FlowOverview from "./FlowOverview";
+import { GitHubLogo } from "@site/static/img/logos";
+import Link from "@docusaurus/Link";
 
 export const Console = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -27,6 +30,7 @@ export const Console = () => {
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 landing-xs:mb-8 sm:mb-12 landing-md:mb-24">
         {/* Header Section - Responsive */}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 mb-12 sm:mb-24 items-center">
           <div className="flex flex-col items-center relative">
             <div className="flex items-baseline justify-start">
@@ -55,22 +59,26 @@ export const Console = () => {
               className="text-left md:ml-8"
             >
               <p className="text-sm sm:text-base md:text-lg text-[#dcdcdc] mb-4">
-                The VoltAgent Developer Console gives you full visibility into
-                your Voltagent-based AI agents during development and execution.
+                <Link
+                  to="https://voltagent.dev/docs/observability/developer-console/"
+                  className="text-[#00d992] no-underline font-bold"
+                >
+                  The VoltAgent Developer Console
+                </Link>{" "}
+                gives you full visibility into your VoltAgent-based AI agents
+                during development and execution.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-gray-400">
-                <span className="text-[#00d992] font-bold text-base sm:text-lg">
-                  Real-time visualization
-                </span>{" "}
-                of your agent's execution flow, including function calls, tool
-                usage, and message history as it happens.
+                Real-time visualization of your agent's execution flow,
+                including function calls, tool usage, and message history as it
+                happens.
               </p>
             </motion.div>
           </div>
         </div>
       </div>
 
-      <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] mb-12 sm:mb-24 px-4 sm:px-6 lg:px-8">
+      <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] px-4 sm:px-6 lg:px-8">
         <iframe
           src="https://console.voltagent.dev/demo"
           title="Voltage Agent Console"
@@ -84,7 +92,28 @@ export const Console = () => {
           }}
         />
       </div>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6  mt-6">
+        <Link
+          to="https://console.voltagent.dev/demo"
+          className="inline-flex items-center no-underline  w-full  bg-emerald-400/10 mb-12 sm:mb-24 text-emerald-400 
+          border-solid border border-emerald-400/20 text-base sm:text-lg font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 w-full justify-center"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+          }}
+        >
+          <div className="flex items-center justify-center px-4 py-3 sm:py-4   ">
+            <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 mr-2 animate-pulse" />
+            <span className="text-xs sm:text-base">See Console Live Demo</span>
+            <ArrowTopRightOnSquareIcon
+              className="hidden sm:inline-block w-5 h-5 ml-2 mb-1"
+              aria-hidden="true"
+            />
+          </div>
+        </Link>
+      </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 sm:mb-16">
         <div className="text-left">
           <h2 className="text-xl sm:text-2xl md:text-3xl text-emerald-500 font-bold mb-4">

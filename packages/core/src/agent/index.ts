@@ -44,6 +44,9 @@ import type { StandardEventData } from "../events/types";
 import type { Voice } from "../voice";
 import { serializeValueForDebug } from "../utils/serialization";
 
+import { startOperationSpan, endOperationSpan, startToolSpan, endToolSpan } from "./open-telemetry";
+import type { Span } from "@opentelemetry/api";
+
 /**
  * Agent class for interacting with AI models
  */
@@ -416,24 +419,36 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Initialize a new history entry
    * @param input User input
    * @param initialStatus Initial status
+   * @param options Options including parent context
    * @returns Created operation context
    */
   private async initializeHistory(
     input: string | BaseMessage[],
     initialStatus: AgentStatus = "working",
-    options: { parentAgentId?: string; parentHistoryEntryId?: string } = {},
+    options: {
+      parentAgentId?: string;
+      parentHistoryEntryId?: string;
+      operationName: string;
+    } = {
+      operationName: "unknown",
+    },
   ): Promise<OperationContext> {
-    // Create a new history entry (without events initially)
-    const historyEntry = await this.historyManager.addEntry(
-      input,
-      "", // Empty output initially
-      initialStatus,
-      [], // Empty steps initially
-      { events: [] }, // Start with empty events array
-    );
+    const otelSpan = startOperationSpan({
+      agentId: this.id,
+      agentName: this.name,
+      operationName: options.operationName,
+      parentAgentId: options.parentAgentId,
+      parentHistoryEntryId: options.parentHistoryEntryId,
+      modelName: this.getModelName(),
+    });
 
-    // Create operation context, including parent context if provided
-    const context: OperationContext = {
+    // Create a new history entry
+    const historyEntry = await this.historyManager.addEntry(input, "", initialStatus, [], {
+      events: [],
+    });
+
+    // Create operation context
+    const opContext: OperationContext = {
       operationId: historyEntry.id,
       userContext: new Map<string | symbol, unknown>(),
       historyEntry,
@@ -441,11 +456,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       isActive: true,
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
+      otelSpan: otelSpan, // Assign the span from the helper
     };
 
     // Standardized message event
     this.createStandardTimelineEvent(
-      context.historyEntry.id,
+      opContext.historyEntry.id,
       "start",
       "idle" as EventStatus,
       NodeType.MESSAGE,
@@ -454,10 +470,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: input,
       },
       "agent",
-      context,
+      opContext,
     );
 
-    return context;
+    return opContext;
   }
 
   /**
@@ -604,97 +620,97 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     status: EventStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
   ): Promise<EventUpdater> => {
-    const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
-
-    // Move custom fields to metadata
-    const metadata: Record<string, unknown> = {
-      toolName,
-      ...(data.metadata || {}),
-    };
-
-    // Extract data fields to use while avoiding parameter reassignment
-    const { toolId, input, output, error, errorMessage } = data;
-
-    if (toolId) {
-      metadata.toolId = toolId;
+    // Ensure the toolSpans map exists on the context
+    if (!context.toolSpans) {
+      context.toolSpans = new Map<string, Span>();
     }
 
-    // Serialize userContext if context is available and userContext has entries
+    const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
+    const toolCallId = data.toolId?.toString();
+
+    if (toolCallId && status === "working") {
+      if (context.toolSpans.has(toolCallId)) {
+        console.warn(`[VoltAgentCore] OTEL tool span already exists for toolCallId: ${toolCallId}`);
+      } else {
+        // Call the helper function
+        const toolSpan = startToolSpan({
+          toolName,
+          toolCallId,
+          toolInput: data.input,
+          agentId: this.id,
+          parentSpan: context.otelSpan, // Pass the parent operation span
+        });
+        // Store the active tool span
+        context.toolSpans.set(toolCallId, toolSpan);
+      }
+    }
+
+    const metadata: Record<string, unknown> = {
+      ...(data.metadata || {}),
+    };
+    const { input, output, error, errorMessage, ...standardData } = data;
     let userContextData: Record<string, unknown> | undefined = undefined;
     if (context?.userContext && context.userContext.size > 0) {
       try {
-        // Use the custom serialization helper
         userContextData = {};
         for (const [key, value] of context.userContext.entries()) {
           const stringKey = typeof key === "symbol" ? key.toString() : String(key);
           userContextData[stringKey] = serializeValueForDebug(value);
         }
-      } catch (error) {
-        console.warn("Failed to serialize userContext for tool event:", error);
+      } catch (err) {
+        console.warn("Failed to serialize userContext for tool event:", err);
         userContextData = { serialization_error: true };
       }
     }
-
-    const eventData: Partial<StandardEventData> & {
+    const internalEventData: Partial<StandardEventData> & {
       userContext?: Record<string, unknown>;
+      toolId?: string;
     } = {
       affectedNodeId: toolNodeId,
-      status: status as any,
+      status: status as any, // Keep cast for internal system
       timestamp: new Date().toISOString(),
-      input,
-      output,
-      error,
-      errorMessage,
+      input: data.input,
+      output: data.output,
+      error: data.error,
+      errorMessage: data.errorMessage,
       metadata,
-      ...(userContextData && { userContext: userContextData }), // Add userContext if available
+      toolId: toolCallId,
+      ...standardData,
+      ...(userContextData && { userContext: userContextData }),
     };
-
-    // Add source agent ID to metadata instead
-    metadata.sourceAgentId = this.id;
-
+    internalEventData.metadata = {
+      ...internalEventData.metadata,
+      sourceAgentId: this.id,
+      toolName: toolName,
+    };
     const eventEmitter = AgentEventEmitter.getInstance();
-
-    // Create tracked event for the current agent
     const eventUpdater = await eventEmitter.createTrackedEvent({
       agentId: this.id,
       historyId: context.historyEntry.id,
       name: eventName,
       status: status as AgentStatus,
-      data: eventData,
+      data: internalEventData,
       type: "tool",
     });
-
-    // If we have parent context, create a tracked event for the parent too
     let parentUpdater: EventUpdater | null = null;
-
     if (context.parentAgentId && context.parentHistoryEntryId) {
       parentUpdater = await eventEmitter.createTrackedEvent({
         agentId: context.parentAgentId,
         historyId: context.parentHistoryEntryId,
         name: eventName,
         status: status as AgentStatus,
-        data: { ...eventData, sourceAgentId: this.id },
+        data: { ...internalEventData, sourceAgentId: this.id },
         type: "tool",
       });
     }
-
-    // Return a combined updater that updates both events and maintains the return type
-    // The input 'update' object should expect AgentStatus for its status field
     return async (update: {
-      status?: AgentStatus; // Changed EventStatus to AgentStatus
+      status?: AgentStatus;
       data?: Record<string, unknown>;
     }): Promise<AgentHistoryEntry | undefined> => {
-      // Update current agent's event
-      // The eventUpdater from createTrackedEvent expects AgentStatus
       const result = await eventUpdater(update);
-
-      // Update parent agent's event if it exists
       if (parentUpdater) {
-        // parentUpdater also expects AgentStatus
         await parentUpdater(update);
       }
-
-      // Return the result from the current agent's update
       return result;
     };
   };
@@ -708,6 +724,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     status: EventStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
   ): void => {
+    // Retrieve the OpenTelemetry span from the context
+    const otelSpan = context.otelSpan;
+
+    if (otelSpan) {
+      endOperationSpan({ span: otelSpan, status: status as any, data });
+    } else {
+      console.warn(
+        `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
+      );
+    }
+
     // Move non-standard fields to metadata
     const metadata: Record<string, unknown> = {
       ...(data.metadata || {}),
@@ -739,46 +766,73 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   };
 
   /**
+   * Helper method to enrich and end an OpenTelemetry span associated with a tool call.
+   */
+  private _endOtelToolSpan(
+    context: OperationContext,
+    toolCallId: string,
+    toolName: string,
+    resultData: { result?: any; content?: any; error?: any },
+  ): void {
+    const toolSpan = context.toolSpans?.get(toolCallId);
+
+    if (toolSpan) {
+      endToolSpan({ span: toolSpan, resultData });
+      context.toolSpans?.delete(toolCallId); // Remove from map after ending
+    } else {
+      console.warn(
+        `[VoltAgentCore] OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
+      );
+    }
+  }
+
+  /**
    * Generate a text response without streaming
    */
   async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferGenerateTextResponse<TProvider>> {
-    // Create internal options structure by casting
-    // This is safe because PublicGenerateOptions is a subset of InternalGenerateOptions
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      contextLimit = 10,
+    } = internalOptions;
 
-    // Create an initial context with "working" status
     const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
+      parentAgentId,
+      parentHistoryEntryId,
+      operationName: "generateText",
     });
+
+    const { messages: contextMessages, conversationId: finalConversationId } =
+      await this.memoryManager.prepareConversationContext(
+        operationContext,
+        input,
+        userId,
+        initialConversationId,
+        contextLimit,
+      );
+
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
+
     let messages: BaseMessage[] = [];
     try {
-      // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
 
-      const { userId, conversationId, contextLimit = 10, provider, signal } = internalOptions;
-
-      // Use memory manager to prepare messages and context
-      const { messages: contextMessages, conversationId: finalConversationId } =
-        await this.memoryManager.prepareConversationContext(
-          operationContext,
-          input,
-          userId,
-          conversationId,
-          contextLimit,
-        );
-
-      // Get system message with input for RAG
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
       });
 
-      // Combine messages
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
@@ -788,14 +842,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         "working",
         NodeType.AGENT,
         this.id,
-        {
-          input: messages,
-        },
+        { input: messages },
         "agent",
         operationContext,
       );
 
-      // Create step finish handler for tracking generation steps
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
         userId,
@@ -813,39 +864,26 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         model: this.model,
         maxSteps,
         tools,
-        provider,
-        signal,
+        provider: internalOptions.provider,
+        signal: internalOptions.signal,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,
           historyEntryId: operationContext.historyEntry.id,
         } as ToolExecutionContext,
         onStepFinish: async (step) => {
-          // Add step to history immediately
           this.addStepToHistory(step, operationContext);
-
           if (step.type === "tool_call") {
-            // Update tool status to working when tool is called
             if (step.name && step.id) {
-              // Get the tool if it exists
               const tool = this.toolManager.getToolByName(step.name);
-
-              // Create a tracked event for this tool call
               const eventUpdater = await this.addToolEvent(
                 operationContext,
                 "tool_working",
                 step.name,
                 "working",
-                {
-                  toolId: step.id,
-                  input: step.arguments || {},
-                },
+                { toolId: step.id, input: step.arguments || {} },
               );
-              // Store the updater with the tool call ID
               operationContext.eventUpdaters.set(step.id, eventUpdater);
-              // --- End re-added logic ---
-
-              // Call onToolStart hook
               if (tool) {
                 await this.hooks.onToolStart?.({
                   agent: this,
@@ -855,100 +893,80 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               }
             }
           } else if (step.type === "tool_result") {
-            // Handle tool completion with the result when tool returns
             if (step.name && step.id) {
-              // Get the updater for this tool call
-              const eventUpdater = operationContext.eventUpdaters.get(step.id);
-
+              const toolCallId = step.id;
+              const toolName = step.name;
+              const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
               if (eventUpdater) {
-                // Create a unique node ID for the tool
-                const toolNodeId = `tool_${step.name}_${this.id}`;
-
-                // Update the tracked event with completion status
-                eventUpdater({
+                const isError = Boolean(step.result?.error);
+                const statusForEvent: any = isError ? "error" : "completed";
+                await eventUpdater({
                   data: {
-                    affectedNodeId: toolNodeId,
-                    status: "completed",
+                    error: step.result?.error,
+                    errorMessage: step.result?.error?.message,
+                    status: statusForEvent,
                     updatedAt: new Date().toISOString(),
                     output: step.result ?? step.content,
                   },
                 });
-
-                // Remove the updater from the map
-                operationContext.eventUpdaters.delete(step.id);
-
-                // Call onToolEnd hook
-                const tool = this.toolManager.getToolByName(step.name);
-                if (tool) {
-                  await this.hooks.onToolEnd?.({
-                    agent: this,
-                    tool,
-                    output: step.result ?? step.content,
-                    error: undefined, // Success case
-                    context: operationContext,
-                  });
-                }
+                operationContext.eventUpdaters.delete(toolCallId);
+              } else {
+                console.warn(
+                  `[VoltAgentCore] EventUpdater not found for toolCallId: ${toolCallId} in generateText`,
+                );
+              }
+              this._endOtelToolSpan(operationContext, toolCallId, toolName, {
+                result: step.result,
+                content: step.content,
+                error: step.result?.error,
+              });
+              const tool = this.toolManager.getToolByName(toolName);
+              if (tool) {
+                await this.hooks.onToolEnd?.({
+                  agent: this,
+                  tool,
+                  output: step.result ?? step.content,
+                  error: step.result?.error,
+                  context: operationContext,
+                });
               }
             }
           }
-
           await onStepFinish(step);
         },
       });
 
-      // Clear the updaters map
       operationContext.eventUpdaters.clear();
-
-      // Update the history entry with final output from provider response
       this.updateHistoryEntry(operationContext, {
-        output: response.text, // Use original provider response field
-        usage: response.usage, // Use original provider response field
+        output: response.text,
+        usage: response.usage,
         status: "completed",
       });
-
-      // Add "completed" timeline event using original provider response fields
       this.addAgentEvent(operationContext, "finished", "completed", {
         input: messages,
         output: response.text,
         usage: response.usage,
         affectedNodeId: `agent_${this.id}`,
         status: "completed",
-        // Optionally add original provider metadata here if needed later
-        // metadata: { providerResponse: response }
       });
-
-      // Mark operation as inactive
       operationContext.isActive = false;
-
-      // --- Create Standardized Output for Hook ---
       const standardizedOutput: StandardizedTextResult = {
         text: response.text,
         usage: response.usage,
         finishReason: response.finishReason,
-        // warnings: response.warnings, // Assuming ProviderTextResponse might have warnings
-        providerResponse: response, // Include the original provider response
+        providerResponse: response,
       };
-
-      // Call onEnd hook
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
         context: operationContext,
       });
-
-      // Ensure proper typing with an explicit cast for the return value
-      // Return the ORIGINAL provider response
       const typedResponse = response as InferGenerateTextResponse<TProvider>;
       return typedResponse;
     } catch (error) {
-      // Assume the error is VoltAgentError based on provider contract
       const voltagentError = error as VoltAgentError;
-
-      // Clear any remaining updaters (important if the error was not tool-specific)
       operationContext.eventUpdaters.clear();
-
-      // Add "error" timeline event using structured info (already handles voltagentError)
       this.addAgentEvent(operationContext, "finished", "error", {
         input: messages,
         error: voltagentError,
@@ -963,25 +981,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ...voltagentError.metadata,
         },
       });
-
-      // Update the history entry with the standardized error message (already handles voltagentError)
       this.updateHistoryEntry(operationContext, {
         output: voltagentError.message,
         status: "error",
       });
-
-      // Mark operation as inactive
       operationContext.isActive = false;
-
-      // Call onEnd hook
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
         context: operationContext,
       });
-
-      throw voltagentError; // Re-throw the VoltAgentError
+      throw voltagentError;
     }
   }
 
@@ -992,42 +1003,43 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferStreamTextResponse<TProvider>> {
-    // Create internal options structure by casting
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      contextLimit = 10,
+    } = internalOptions;
 
-    // Create an initial context with "working" status
     const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
+      parentAgentId,
+      parentHistoryEntryId,
+      operationName: "streamText",
     });
 
-    // No try...catch here, let errors propagate up after potentially being handled by onError callbacks
-
-    // Call onStart hook
-    await this.hooks.onStart?.({ agent: this, context: operationContext });
-
-    const { userId, conversationId, contextLimit = 10, provider, signal } = internalOptions;
-
-    // Use memory manager to prepare messages and context
     const { messages: contextMessages, conversationId: finalConversationId } =
       await this.memoryManager.prepareConversationContext(
         operationContext,
         input,
         userId,
-        conversationId,
+        initialConversationId,
         contextLimit,
       );
 
-    // Get system message with input for RAG
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
+
+    await this.hooks.onStart?.({ agent: this, context: operationContext });
+
     const systemMessage = await this.getSystemMessage({
       input,
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
     });
-
-    // Standardized agent event
-
-    // Combine messages
     let messages = [systemMessage, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
 
@@ -1037,14 +1049,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       "working",
       NodeType.AGENT,
       this.id,
-      {
-        input: messages,
-      },
+      { input: messages },
       "agent",
       operationContext,
     );
 
-    // Create step finish handler for tracking generation steps
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
       userId,
@@ -1062,8 +1071,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       model: this.model,
       maxSteps,
       tools,
-      signal,
-      provider,
+      signal: internalOptions.signal,
+      provider: internalOptions.provider,
       toolExecutionContext: {
         operationContext: operationContext,
         agentId: this.id,
@@ -1071,26 +1080,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       } as ToolExecutionContext,
       onChunk: async (chunk: StepWithContent) => {
         if (chunk.type === "tool_call") {
-          // Update tool status to working when tool is called
           if (chunk.name && chunk.id) {
-            // Get the tool if it exists
             const tool = this.toolManager.getToolByName(chunk.name);
-
-            // Create a tracked event for this tool call
             const eventUpdater = await this.addToolEvent(
               operationContext,
               "tool_working",
               chunk.name,
               "working",
-              {
-                toolId: chunk.id,
-                input: chunk.arguments || {},
-              },
+              { toolId: chunk.id, input: chunk.arguments || {} },
             );
-            // Store the updater with the tool call ID
             operationContext.eventUpdaters.set(chunk.id, eventUpdater);
-
-            // Call onToolStart hook
             if (tool) {
               await this.hooks.onToolStart?.({
                 agent: this,
@@ -1100,77 +1099,65 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             }
           }
         } else if (chunk.type === "tool_result") {
-          // Handle tool completion with the result when tool returns
           if (chunk.name && chunk.id) {
-            // Get the updater for this tool call
-            const eventUpdater = operationContext.eventUpdaters.get(chunk.id);
-
+            const toolCallId = chunk.id;
+            const toolName = chunk.name;
+            const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
             if (eventUpdater) {
-              // Create a unique node ID for the tool
-              const toolNodeId = `tool_${chunk.name}_${this.id}`;
-
-              // Update the tracked event with completion status
-              eventUpdater({
+              const isError = Boolean(chunk.result?.error);
+              const statusForEvent: any = isError ? "error" : "completed";
+              await eventUpdater({
                 data: {
-                  affectedNodeId: toolNodeId,
                   error: chunk.result?.error,
                   errorMessage: chunk.result?.error?.message,
-                  status: chunk.result?.error ? "errored" : "completed",
+                  status: statusForEvent,
                   updatedAt: new Date().toISOString(),
                   output: chunk.result ?? chunk.content,
                 },
               });
-
-              // Remove the updater from the map
-              operationContext.eventUpdaters.delete(chunk.id);
-
-              // Call onToolEnd hook
-              const tool = this.toolManager.getToolByName(chunk.name);
-              if (tool) {
-                await this.hooks.onToolEnd?.({
-                  agent: this,
-                  tool,
-                  output: chunk.result ?? chunk.content,
-                  error: undefined,
-                  context: operationContext,
-                });
-              }
+              operationContext.eventUpdaters.delete(toolCallId);
+            } else {
+              console.warn(
+                `[VoltAgentCore] EventUpdater not found for toolCallId: ${toolCallId} in streamText`,
+              );
+            }
+            this._endOtelToolSpan(operationContext, toolCallId, toolName, {
+              result: chunk.result,
+              content: chunk.content,
+              error: chunk.result?.error,
+            });
+            const tool = this.toolManager.getToolByName(toolName);
+            if (tool) {
+              await this.hooks.onToolEnd?.({
+                agent: this,
+                tool,
+                output: chunk.result ?? chunk.content,
+                error: chunk.result?.error,
+                context: operationContext,
+              });
             }
           }
         }
       },
       onStepFinish: async (step: StepWithContent) => {
-        // Call agent's internal onStepFinish
         await onStepFinish(step);
-
-        // Call user's onStepFinish if provided
-        if (provider?.onStepFinish) {
-          await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
+        if (internalOptions.provider?.onStepFinish) {
+          await (internalOptions.provider.onStepFinish as (step: StepWithContent) => Promise<void>)(
+            step,
+          );
         }
-
-        // Add step to history immediately
         this.addStepToHistory(step, operationContext);
       },
       onFinish: async (result: StreamTextFinishResult) => {
         if (!operationContext.isActive) {
-          // Agent is not active, so we don't need to update the history or add a timeline event
           return;
         }
-        // Handle agent's internal status and history using standardized result
-        // Remove the previous loose extraction
-        // const text = result?.text || result?.choices?.[0]?.message?.content || "";
-
-        // Clear the updaters map
         operationContext.eventUpdaters.clear();
-
-        // Update the history entry with final output from standardized result
         this.updateHistoryEntry(operationContext, {
-          output: result.text, // Use result.text directly
-          usage: result.usage, // Use result.usage directly
+          output: result.text,
+          usage: result.usage,
           status: "completed",
         });
-
-        // Add "completed" timeline event using standardized result
         this.addAgentEvent(operationContext, "finished", "completed", {
           input: messages,
           output: result.text,
@@ -1178,58 +1165,48 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           affectedNodeId: `agent_${this.id}`,
           status: "completed",
           metadata: {
-            // Include additional info from the result
             finishReason: result.finishReason,
             warnings: result.warnings,
             providerResponse: result.providerResponse,
           },
         });
-
-        // Mark operation as inactive
         operationContext.isActive = false;
-
-        // Call onEnd hook
         await this.hooks.onEnd?.({
           agent: this,
           output: result,
           error: undefined,
           context: operationContext,
         });
-
-        // Call user's onFinish if provided, passing the standardized result
-        if (provider?.onFinish) {
-          await (provider.onFinish as StreamTextOnFinishCallback)(result);
+        if (internalOptions.provider?.onFinish) {
+          await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(result);
         }
       },
       onError: async (error: VoltAgentError) => {
-        // Check if it's a tool execution error using the dedicated field
         if (error.toolError) {
           const { toolCallId, toolName } = error.toolError;
           const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
-
           if (eventUpdater) {
-            // Create a unique node ID for the tool
-            const toolNodeId = `tool_${toolName}_${this.id}`;
-
-            // Update the tracked event with completion status using VoltAgentError fields
-            eventUpdater({
-              data: {
-                affectedNodeId: toolNodeId,
-                error: error.message, // Use the main error message
-                errorMessage: error.message,
-                status: "error", // Explicitly set status to error
-                updatedAt: new Date().toISOString(),
-                output: error.message, // Output is the error message
-              },
-            });
-
-            // Remove the updater from the map
-            operationContext.eventUpdaters.delete(toolCallId);
-
-            // Call onToolEnd hook
+            try {
+              const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
+              await eventUpdater({
+                data: {
+                  affectedNodeId: toolNodeId,
+                  error: error.message,
+                  errorMessage: error.message,
+                  status: "error",
+                  updatedAt: new Date().toISOString(),
+                  output: error.message,
+                },
+              });
+              operationContext.eventUpdaters.delete(toolCallId);
+            } catch (updateError) {
+              console.error(
+                `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
+                updateError,
+              );
+            }
             const tool = this.toolManager.getToolByName(toolName);
             if (tool) {
-              // Pass the VoltAgentError as the error argument
               await this.hooks.onToolEnd?.({
                 agent: this,
                 tool,
@@ -1240,42 +1217,29 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             }
           }
         }
-
-        // Clear the updaters map regardless of error type
         operationContext.eventUpdaters.clear();
-
-        // Add "error" timeline event using VoltAgentError fields
         this.addAgentEvent(operationContext, "finished", "error", {
-          error: error, // Pass the whole VoltAgentError object
-          errorMessage: error.message, // Use the main message
-          affectedNodeId: `agent_${this.id}`,
           input: messages,
+          error: error,
+          errorMessage: error.message,
+          affectedNodeId: `agent_${this.id}`,
           status: "error",
           metadata: {
-            // Include metadata if available
             code: error.code,
             originalError: error.originalError,
             stage: error.stage,
-            toolError: error.toolError, // Include toolError details if present
+            toolError: error.toolError,
             ...error.metadata,
           },
         });
-
-        // Update the history entry with the main error message
         this.updateHistoryEntry(operationContext, {
-          output: error.message, // Use the main message
+          output: error.message,
           status: "error",
         });
-
-        // Mark operation as inactive
         operationContext.isActive = false;
-
-        // Call user's onError if provided, passing the VoltAgentError
-        if (provider?.onError) {
-          await (provider.onError as StreamOnErrorCallback)(error);
+        if (internalOptions.provider?.onError) {
+          await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
-
-        // Call onEnd hook for cleanup opportunity, even on error
         await this.hooks.onEnd?.({
           agent: this,
           output: undefined,
@@ -1284,8 +1248,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
       },
     });
-
-    // Ensure proper typing with an explicit cast
     const typedResponse = response as InferStreamTextResponse<TProvider>;
     return typedResponse;
   }
@@ -1298,39 +1260,45 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     schema: T,
     options: PublicGenerateOptions = {},
   ): Promise<InferGenerateObjectResponse<TProvider>> {
-    // Create internal options structure by casting
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      contextLimit = 10,
+    } = internalOptions;
 
-    // Create an initial context with "working" status
     const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
+      parentAgentId,
+      parentHistoryEntryId,
+      operationName: "generateObject",
     });
+
+    const { messages: contextMessages, conversationId: finalConversationId } =
+      await this.memoryManager.prepareConversationContext(
+        operationContext,
+        input,
+        userId,
+        initialConversationId,
+        contextLimit,
+      );
+
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
+
     let messages: BaseMessage[] = [];
     try {
-      // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
 
-      const { userId, conversationId, contextLimit = 10, provider, signal } = internalOptions;
-
-      // Use memory manager to prepare messages and context
-      const { messages: contextMessages, conversationId: finalConversationId } =
-        await this.memoryManager.prepareConversationContext(
-          operationContext,
-          input,
-          userId,
-          conversationId,
-          contextLimit,
-        );
-
-      // Get system message with input for RAG
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
       });
-
-      // Combine messages
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
@@ -1340,14 +1308,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         "working",
         NodeType.AGENT,
         this.id,
-        {
-          input: messages,
-        },
+        { input: messages },
         "agent",
         operationContext,
       );
 
-      // Create step finish handler for tracking generation steps
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
         userId,
@@ -1358,30 +1323,26 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         messages,
         model: this.model,
         schema,
-        signal,
-        provider,
+        signal: internalOptions.signal,
+        provider: internalOptions.provider,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,
           historyEntryId: operationContext.historyEntry.id,
         } as ToolExecutionContext,
         onStepFinish: async (step) => {
-          // Add step to history immediately
           this.addStepToHistory(step, operationContext);
-
           await onStepFinish(step);
-          // Call user's onStepFinish if provided
-          if (provider?.onStepFinish) {
-            await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
+          if (internalOptions.provider?.onStepFinish) {
+            await (
+              internalOptions.provider.onStepFinish as (step: StepWithContent) => Promise<void>
+            )(step);
           }
         },
       });
 
-      // Convert response to string for history
       const responseStr =
         typeof response === "string" ? response : JSON.stringify(response?.object);
-
-      // Add "completed" timeline event
       this.addAgentEvent(operationContext, "finished", "completed", {
         output: responseStr,
         usage: response.usage,
@@ -1389,77 +1350,54 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
         input: messages,
       });
-
-      // Update the history entry with final output
       this.updateHistoryEntry(operationContext, {
         output: responseStr,
         usage: response.usage,
         status: "completed",
       });
-
-      // Mark operation as inactive
       operationContext.isActive = false;
-
-      // --- Create Standardized Output for Hook ---
       const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
         object: response.object,
         usage: response.usage,
         finishReason: response.finishReason,
-        // warnings: response.warnings,
         providerResponse: response,
       };
-      // Call onEnd hook
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
         context: operationContext,
       });
-      // Return original response
       const typedResponse = response as InferGenerateObjectResponse<TProvider>;
       return typedResponse;
     } catch (error) {
-      // --- Updated Error Handling ---
-      // Assume the error is VoltAgentError based on provider contract
       const voltagentError = error as VoltAgentError;
-
-      // Add "error" timeline event using structured info
       this.addAgentEvent(operationContext, "finished", "error", {
-        error: voltagentError, // Keep the original VoltAgentError object
-        errorMessage: voltagentError.message, // Use the standardized message
+        input: messages,
+        error: voltagentError,
+        errorMessage: voltagentError.message,
         affectedNodeId: `agent_${this.id}`,
         status: "error",
-        input: messages,
         metadata: {
-          // Include detailed metadata from VoltAgentError
           code: voltagentError.code,
           originalError: voltagentError.originalError,
           stage: voltagentError.stage,
-          toolError: voltagentError.toolError, // Include toolError (less likely here, but for consistency)
+          toolError: voltagentError.toolError,
           ...voltagentError.metadata,
         },
       });
-
-      // Update the history entry with the standardized error message
       this.updateHistoryEntry(operationContext, {
         output: voltagentError.message,
         status: "error",
       });
-      // --- End Updated Error Handling ---
-
-      // Mark operation as inactive
       operationContext.isActive = false;
-
-      // Call onEnd hook for cleanup opportunity, even on error
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
         context: operationContext,
       });
-
-      // Handle error cases
-      throw voltagentError; // Re-throw the VoltAgentError
+      throw voltagentError;
     }
   }
 
@@ -1471,38 +1409,46 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     schema: T,
     options: PublicGenerateOptions = {},
   ): Promise<InferStreamObjectResponse<TProvider>> {
-    // Create internal options structure by casting
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
-    const { provider } = internalOptions; // Extract provider for onFinish usage
+    const {
+      userId,
+      conversationId: initialConversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      provider,
+      contextLimit = 10,
+    } = internalOptions;
+
     const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId: internalOptions.parentAgentId,
-      parentHistoryEntryId: internalOptions.parentHistoryEntryId,
+      parentAgentId,
+      parentHistoryEntryId,
+      operationName: "streamObject",
     });
+
+    const { messages: contextMessages, conversationId: finalConversationId } =
+      await this.memoryManager.prepareConversationContext(
+        operationContext,
+        input,
+        userId,
+        initialConversationId,
+        contextLimit,
+      );
+
+    if (operationContext.otelSpan) {
+      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
+      if (finalConversationId)
+        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
+    }
+
     let messages: BaseMessage[] = [];
     try {
-      // Call onStart hook
       await this.hooks.onStart?.({ agent: this, context: operationContext });
 
-      const { userId, conversationId, contextLimit = 10, signal } = internalOptions;
-
-      // Use memory manager to prepare messages and context
-      const { messages: contextMessages, conversationId: finalConversationId } =
-        await this.memoryManager.prepareConversationContext(
-          operationContext,
-          input,
-          userId,
-          conversationId,
-          contextLimit,
-        );
-
-      // Get system message with input for RAG
       const systemMessage = await this.getSystemMessage({
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
       });
-
-      // Combine messages
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
@@ -1512,14 +1458,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         "working",
         NodeType.AGENT,
         this.id,
-        {
-          input: messages,
-        },
+        { input: messages },
         "agent",
         operationContext,
       );
 
-      // Create step finish handler for tracking generation steps
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
         userId,
@@ -1531,32 +1474,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         model: this.model,
         schema,
         provider,
-        signal,
+        signal: internalOptions.signal,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,
           historyEntryId: operationContext.historyEntry.id,
         } as ToolExecutionContext,
         onStepFinish: async (step) => {
-          // Add step to history immediately
           this.addStepToHistory(step, operationContext);
-
           await onStepFinish(step);
-
-          // Call user's onStepFinish if provided
           if (provider?.onStepFinish) {
             await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
           }
         },
         onFinish: async (result: StreamObjectFinishResult<z.infer<T>>) => {
           if (!operationContext.isActive) {
-            // Agent is not active, so we don't need to update the history or add a timeline event
             return;
           }
-          // Handle agent's internal status and history using standardized result
-          const responseStr = JSON.stringify(result.object); // Stringify the object from standardized result
-
-          // Add "completed" timeline event using standardized result
+          const responseStr = JSON.stringify(result.object);
           this.addAgentEvent(operationContext, "finished", "completed", {
             input: messages,
             output: responseStr,
@@ -1564,40 +1499,28 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             affectedNodeId: `agent_${this.id}`,
             status: "completed",
             metadata: {
-              // Include additional info from the result
               finishReason: result.finishReason,
               warnings: result.warnings,
               providerResponse: result.providerResponse,
             },
           });
-
-          // Update the history entry with final output using standardized result
           this.updateHistoryEntry(operationContext, {
             output: responseStr,
             usage: result.usage,
             status: "completed",
           });
-
-          // Mark operation as inactive
           operationContext.isActive = false;
-
-          // Call onEnd hook
           await this.hooks.onEnd?.({
             agent: this,
             output: result,
             error: undefined,
             context: operationContext,
           });
-
-          // Call user's onFinish if provided, passing the standardized result
           if (provider?.onFinish) {
             await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<T>>)(result);
           }
         },
         onError: async (error: VoltAgentError) => {
-          // --- Handle potential tool error event update ---
-          // Check if it's a tool execution error using the dedicated field
-          // (less common for streamObject but check for consistency)
           if (error.toolError) {
             const { toolCallId, toolName } = error.toolError;
             const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
@@ -1605,12 +1528,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               try {
                 const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
                 await eventUpdater({
-                  status: "error" as AgentStatus,
                   data: {
                     affectedNodeId: toolNodeId,
                     error: error.message,
                     errorMessage: error.message,
-                    status: "error" as EventStatus,
+                    status: "error",
                     updatedAt: new Date().toISOString(),
                     output: error.message,
                   },
@@ -1622,7 +1544,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   updateError,
                 );
               }
-              // Call onToolEnd hook
               const tool = this.toolManager.getToolByName(toolName);
               if (tool) {
                 await this.hooks.onToolEnd?.({
@@ -1635,12 +1556,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               }
             }
           }
-          // --- End handle potential tool error event update ---
-
-          // Clear any remaining updaters (important if the error was not tool-specific)
           operationContext.eventUpdaters.clear();
-
-          // Add "error" timeline event using VoltAgentError fields (already correct)
           this.addAgentEvent(operationContext, "finished", "error", {
             input: messages,
             error: error,
@@ -1655,22 +1571,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               ...error.metadata,
             },
           });
-
-          // Update the history entry with the main error message (already correct)
           this.updateHistoryEntry(operationContext, {
             output: error.message,
             status: "error",
           });
-
-          // Mark operation as inactive (already correct)
           operationContext.isActive = false;
-
-          // Call user's onError if provided, passing the VoltAgentError (already correct)
           if (provider?.onError) {
             await (provider.onError as StreamOnErrorCallback)(error);
           }
-
-          // Call onEnd hook for cleanup opportunity, even on error (already correct)
           await this.hooks.onEnd?.({
             agent: this,
             output: undefined,
@@ -1679,12 +1587,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           });
         },
       });
-
-      // Ensure proper typing with an explicit cast
       const typedResponse = response as InferStreamObjectResponse<TProvider>;
       return typedResponse;
     } catch (error) {
-      // Add "error" timeline event
       this.addAgentEvent(operationContext, "finished", "error", {
         input: messages,
         error,
@@ -1692,25 +1597,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         affectedNodeId: `agent_${this.id}`,
         status: "error",
       });
-
-      // Update the history entry with error message
       this.updateHistoryEntry(operationContext, {
         output: error instanceof Error ? error.message : "Unknown error",
         status: "error",
       });
-
-      // Mark operation as inactive
       operationContext.isActive = false;
-
-      // Call onEnd hook for cleanup opportunity, even on error
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: error as VoltAgentError,
         context: operationContext,
       });
-
-      // Handle error cases
       throw error;
     }
   }

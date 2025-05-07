@@ -59,6 +59,6 @@ The idea for a VoltAgent Community Marketplace is currently maturing, and we're 
 
 <GitHubDiscussionLink url="https://github.com/orgs/VoltAgent/discussions/74/" />
 
-Everyone who provides feedback there will get early access to list their Voltagent-based AI agents when the marketplace goes live.
+Everyone who provides feedback there will get early access to list their VoltAgent-based AI agents when the marketplace goes live.
 
 Let us know what you think.

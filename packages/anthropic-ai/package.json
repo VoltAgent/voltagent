@@ -14,12 +14,12 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "dts": "tsc --emitDeclarationOnly --outDir dist --declaration --traceResolution",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "tsup -v",
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
-    "@voltagent/core": "^0.1.3",
+    "@voltagent/core": "0.1.10",
     "zod": "^3.22.4"
   },
   "devDependencies": {

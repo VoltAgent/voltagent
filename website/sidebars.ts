@@ -46,7 +46,11 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Observability",
-      items: ["observability/overview", "observability/developer-console"],
+      items: [
+        "observability/overview",
+        "observability/developer-console",
+        "observability/langfuse",
+      ],
     },
     {
       type: "category",

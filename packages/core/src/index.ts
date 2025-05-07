@@ -3,6 +3,9 @@ import { startServer } from "./server";
 import { AgentRegistry } from "./server/registry";
 import { checkForUpdates } from "./utils/update";
 
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
+
 export * from "./agent";
 export * from "./agent/hooks";
 export * from "./tool";
@@ -32,11 +35,21 @@ export { AgentRegistry } from "./server/registry";
 export * from "./utils/update";
 export * from "./voice";
 
+let isTelemetryInitializedByVoltAgent = false;
+let registeredProvider: NodeTracerProvider | null = null;
+
 type VoltAgentOptions = {
   agents: Record<string, Agent<any>>;
   port?: number;
   autoStart?: boolean;
   checkDependencies?: boolean;
+  /**
+   * Optional OpenTelemetry SpanExporter instance or array of instances.
+   * If provided, VoltAgent will attempt to initialize and register
+   * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
+   * It's recommended to only provide this in one VoltAgent instance per application process.
+   */
+  telemetryExporter?: SpanExporter | SpanExporter[];
 };
 
 /**
@@ -49,6 +62,10 @@ export class VoltAgent {
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.registerAgents(options.agents);
+
+    if (options.telemetryExporter) {
+      this.initializeGlobalTelemetry(options.telemetryExporter);
+    }
 
     // Check dependencies if enabled
     if (options.checkDependencies !== false) {
@@ -139,12 +156,62 @@ export class VoltAgent {
   public getAgentCount(): number {
     return this.registry.getAgentCount();
   }
+
+  private initializeGlobalTelemetry(exporterOrExporters: SpanExporter | SpanExporter[]): void {
+    if (isTelemetryInitializedByVoltAgent) {
+      console.warn(
+        "[VoltAgent] Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
+      );
+      return;
+    }
+
+    try {
+      const exporters = Array.isArray(exporterOrExporters)
+        ? exporterOrExporters
+        : [exporterOrExporters];
+
+      const spanProcessors = exporters.map((exporter) => {
+        return new BatchSpanProcessor(exporter);
+      });
+
+      const provider = new NodeTracerProvider({
+        spanProcessors: spanProcessors,
+      });
+
+      provider.register();
+      isTelemetryInitializedByVoltAgent = true;
+      registeredProvider = provider;
+
+      // Add automatic shutdown on SIGTERM
+      process.on("SIGTERM", () => {
+        this.shutdownTelemetry().catch((err) =>
+          console.error("[VoltAgent] Error during SIGTERM telemetry shutdown:", err),
+        );
+      });
+    } catch (error) {
+      console.error("[VoltAgent] Failed to initialize OpenTelemetry:", error);
+    }
+  }
+
+  public async shutdownTelemetry(): Promise<void> {
+    if (isTelemetryInitializedByVoltAgent && registeredProvider) {
+      try {
+        await registeredProvider.shutdown();
+        isTelemetryInitializedByVoltAgent = false;
+        registeredProvider = null;
+      } catch (error) {
+        console.error("[VoltAgent] Error shutting down OpenTelemetry provider:", error);
+      }
+    } else {
+      console.log(
+        "[VoltAgent] Telemetry provider was not initialized by this VoltAgent instance or already shut down.",
+      );
+    }
+  }
 }
 
-// Default export for easy usage
 export default VoltAgent;
 
-// Automatically start the server if this module is run directly (CommonJS check)
 if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
   new VoltAgent({ agents: {}, autoStart: true, checkDependencies: true });
 }

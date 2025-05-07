@@ -78,13 +78,13 @@ export default function Navbar() {
                   </div>
                 </Link>
                 <div className="cursor-pointer p-3 hover:bg-gray-800/50  text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
-                  <a
-                    href="/ai-agent-marketplace/"
+                  <Link
+                    to="/ai-agent-marketplace/"
                     className="flex items-center no-underline text-inherit "
                   >
                     <ShoppingCartIcon className="w-5 h-5 mr-3 text-[#00d992]" />
                     <span className="text-sm">Marketplace</span>
-                  </a>
+                  </Link>
                 </div>
                 <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
                   <div className="flex items-center">
@@ -259,10 +259,7 @@ export default function Navbar() {
               <ChevronDownIcon className="w-5 h-5 ml-1" />
             </button>
             <div id="mobile-products-dropdown" className="hidden  mt-4 mb-2 ">
-              <Link
-                to="https://console.voltagent.dev/demo"
-                className="no-underline"
-              >
+              <Link to="/ai-agent-monitoring/" className="no-underline">
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992]" />
                   <span className="text-sm">Developer Console</span>
@@ -281,12 +278,12 @@ export default function Navbar() {
               <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 rounded-b-md">
                 <div className="flex items-center">
                   <ShoppingCartIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                  <a
-                    href="/ai-agent-marketplace/"
+                  <Link
+                    to="/ai-agent-marketplace/"
                     className="text-sm no-underline text-inherit"
                   >
                     Marketplace
-                  </a>
+                  </Link>
                 </div>
               </div>
               <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">

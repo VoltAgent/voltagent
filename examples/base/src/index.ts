@@ -14,9 +14,3 @@ new VoltAgent({
     agent,
   },
 });
-
-agent.streamText("Hello", {
-  provider: {
-    experimental_activeTools: true,
-  },
-});

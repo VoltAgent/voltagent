@@ -92,7 +92,7 @@ export function Manifesto() {
         </p>
         <p className="text-[#dcdcdc] leading-relaxed">
           Thanks to all the amazing tools in the AI development and
-          observability ecosystem that inspired us.🙏
+          observability ecosystem that inspired us.
         </p>
       </div>
 
