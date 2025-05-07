@@ -1,5 +1,11 @@
 # create-voltagent-app
 
+## 0.1.16
+
+### Patch Changes
+
+- [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
+
 ## 0.1.14
 
 ### Patch Changes

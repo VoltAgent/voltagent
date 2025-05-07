@@ -1,5 +1,18 @@
 # @voltagent/groq-ai
 
+## 0.1.4
+
+### Patch Changes
+
+- [#83](https://github.com/VoltAgent/voltagent/pull/83) [`5edf79d`](https://github.com/VoltAgent/voltagent/commit/5edf79d73b7f114c2e894cc532ce7fc8b3354a10) Thanks [@TheEmi](https://github.com/TheEmi)! - Added tool handling by manually calling the desired functions for generateText and streamText
+  Fixed some type issues.
+  Added streamObject support
+
+- [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
+
+- Updated dependencies [[`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107), [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925)]:
+  - @voltagent/core@0.1.13
+
 ## 0.1.3
 
 ### Patch Changes

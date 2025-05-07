@@ -1,5 +1,16 @@
 # @voltagent/google-ai
 
+## 0.3.3
+
+### Patch Changes
+
+- [#99](https://github.com/VoltAgent/voltagent/pull/99) [`82c1066`](https://github.com/VoltAgent/voltagent/commit/82c1066462456aa71bb9427cfd46d061235088d5) Thanks [@luixaviles](https://github.com/luixaviles)! - feat(google-ai): add function calling support for Google SDK integration
+
+- [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
+
+- Updated dependencies [[`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107), [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925)]:
+  - @voltagent/core@0.1.13
+
 ## 0.3.2
 
 ### Patch Changes

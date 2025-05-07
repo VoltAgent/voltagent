@@ -66,10 +66,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -94,10 +94,10 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -125,10 +125,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -150,10 +150,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.2
+        specifier: ^0.3.3
         version: link:../../packages/google-ai
       zod:
         specifier: 3.24.2
@@ -276,10 +276,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.2
+        specifier: ^0.3.3
         version: link:../../packages/google-ai
       zod:
         specifier: 3.24.2
@@ -301,10 +301,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/groq-ai':
-        specifier: ^0.1.3
+        specifier: ^0.1.4
         version: link:../../packages/groq-ai
       zod:
         specifier: 3.24.2
@@ -329,13 +329,13 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^0.1.1
         version: link:../../packages/langfuse-exporter
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -360,10 +360,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -394,10 +394,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       next:
         specifier: 15.3.1
@@ -443,10 +443,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -483,10 +483,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       axios:
         specifier: ^1.5.0
@@ -523,10 +523,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -551,10 +551,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -579,10 +579,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -610,13 +610,13 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/supabase':
         specifier: ^0.1.3
         version: link:../../packages/supabase
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -641,10 +641,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -669,10 +669,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -697,10 +697,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -725,10 +725,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -753,13 +753,13 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
-        specifier: ^0.1.4
+        specifier: ^0.1.5
         version: link:../../packages/voice
       zod:
         specifier: 3.24.2
@@ -784,13 +784,13 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
-        specifier: ^0.1.4
+        specifier: ^0.1.5
         version: link:../../packages/voice
       dotenv:
         specifier: ^16.4.5
@@ -821,13 +821,13 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ^0.1.5
+        specifier: ^0.1.6
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
-        specifier: ^0.1.4
+        specifier: ^0.1.5
         version: link:../../packages/voice
       dotenv:
         specifier: ^16.4.5
@@ -855,10 +855,10 @@ importers:
         specifier: ^0.1.4
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.12
+        specifier: ^0.1.13
         version: link:../../packages/core
       '@voltagent/xsai':
-        specifier: ^0.1.4
+        specifier: ^0.1.5
         version: link:../../packages/xsai
       zod:
         specifier: 3.24.2
@@ -883,10 +883,10 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~0.1.12
+        specifier: ~0.1.13
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: ~0.1.5
+        specifier: ~0.1.6
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -1136,7 +1136,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0
       '@voltagent/core':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../core
       zod:
         specifier: 3.24.2
@@ -1170,7 +1170,7 @@ importers:
   packages/groq-ai:
     dependencies:
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.13
         version: link:../core
       groq-sdk:
         specifier: ^0.20.0
@@ -1275,7 +1275,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.13
         version: link:../core
       ai:
         specifier: ^4.2.11
@@ -1309,7 +1309,7 @@ importers:
   packages/voice:
     dependencies:
       '@voltagent/core':
-        specifier: ^0.1.8
+        specifier: ^0.1.13
         version: link:../core
       '@xsai/generate-speech':
         specifier: ^0.2.0
@@ -1346,10 +1346,10 @@ importers:
   packages/xsai:
     dependencies:
       '@voltagent/core':
-        specifier: ^0.1.10
+        specifier: ^0.1.13
         version: link:../core
       '@voltagent/xsai':
-        specifier: ^0.1.4
+        specifier: ^0.1.5
         version: 'link:'
       xsai:
         specifier: 0.2.0-beta.3
