@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { Tool } from "@voltagent/core";
+import { createTool, Tool } from "@voltagent/core";
 //@ts-ignore
 import { EventSourceParser } from "@anthropic-ai/sdk/lib/streaming";
 import type { BaseMessage } from "@voltagent/core";
@@ -74,7 +74,7 @@ describe("AnthropicProvider", () => {
       const provider = new AnthropicProvider({
         apiKey: "sk-ant-api03-test-key",
       });
-      const options = {
+      const options = createTool({
         id: "test-tool",
         name: "test-tool",
         description: "This is a test tool",
@@ -82,7 +82,7 @@ describe("AnthropicProvider", () => {
           name: z.string(),
         }),
         execute: jest.fn().mockResolvedValue("test-tool-response"),
-      };
+      });
 
       const tool = new Tool(options);
 

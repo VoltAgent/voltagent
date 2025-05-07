@@ -345,16 +345,17 @@ export class AnthropicProvider implements LLMProvider<string> {
   }
 
   async generateObject<TSchema extends z.ZodType>(
-    options: GenerateObjectOptions<string, TSchema>,
+    options: GenerateObjectOptions<unknown, TSchema>,
   ): Promise<ProviderObjectResponse<any, z.infer<TSchema>>> {
     const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
 
     const anthropicMessages = options.messages.map(this.toMessage);
+    const model = (options.model || this.model) as string;
 
     try {
       const response = await this.anthropic.messages.create({
         messages: anthropicMessages,
-        model: options.model || this.model,
+        model: model,
         max_tokens: maxTokens,
         temperature: temperature,
         top_p: topP,
@@ -417,16 +418,17 @@ export class AnthropicProvider implements LLMProvider<string> {
   }
 
   async streamObject<TSchema extends z.ZodType>(
-    options: StreamObjectOptions<string, TSchema>,
+    options: StreamObjectOptions<unknown, TSchema>,
   ): Promise<ProviderObjectStreamResponse<any, z.infer<TSchema>>> {
     try {
       const anthropicMessages = options.messages.map(this.toMessage);
+      const model = (options.model || this.model) as string;
 
       const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
 
       const response = await this.anthropic.messages.create({
         messages: anthropicMessages,
-        model: options.model || this.model,
+        model: model,
         max_tokens: maxTokens,
         temperature: temperature,
         top_p: topP,
