@@ -22,7 +22,7 @@
     "@voltagent/core": "^0.1.14",
     "@voltagent/supabase": "^0.1.4",
     "@voltagent/vercel-ai": "^0.1.7",
-    "zod": "3.24.2"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

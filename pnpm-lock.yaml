@@ -72,7 +72,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -100,7 +100,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -131,7 +131,7 @@ importers:
         specifier: ^0.1.14
         version: link:../../packages/core
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -159,7 +159,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -184,7 +184,7 @@ importers:
         specifier: ^0.3.4
         version: link:../../packages/google-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -285,7 +285,7 @@ importers:
         specifier: ^4.7.7
         version: 4.7.7
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -310,7 +310,7 @@ importers:
         specifier: ^0.3.4
         version: link:../../packages/google-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -335,7 +335,7 @@ importers:
         specifier: ^0.1.5
         version: link:../../packages/groq-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -366,7 +366,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -394,7 +394,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -446,7 +446,7 @@ importers:
         specifier: ^4.1.4
         version: 4.1.4
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -477,7 +477,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -526,7 +526,7 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -557,7 +557,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -585,7 +585,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -613,7 +613,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -647,7 +647,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -675,7 +675,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -703,7 +703,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -731,7 +731,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -759,7 +759,7 @@ importers:
         specifier: ^0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -790,7 +790,7 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/voice
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -827,7 +827,7 @@ importers:
         specifier: ^4.91.0
         version: 4.91.0(zod@3.24.2)
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -864,7 +864,7 @@ importers:
         specifier: ^4.91.0
         version: 4.97.0(zod@3.24.2)
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -889,7 +889,7 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/xsai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -917,7 +917,7 @@ importers:
         specifier: ~0.1.7
         version: link:../../packages/vercel-ai
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/node':
@@ -937,9 +937,9 @@ importers:
         version: 0.40.0
       '@voltagent/core':
         specifier: 0.1.14
-        version: link:../core
+        version: 0.1.14
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/jest':
@@ -1085,7 +1085,7 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/jest':
@@ -1201,7 +1201,7 @@ importers:
         specifier: ^0.1.14
         version: link:../core
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
       zod-to-json-schema:
         specifier: ^3.24.5
@@ -1238,7 +1238,7 @@ importers:
         specifier: ^0.20.0
         version: 0.20.1
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/jest':
@@ -1343,7 +1343,7 @@ importers:
         specifier: ^4.2.11
         version: 4.2.11(react@19.1.0)(zod@3.24.2)
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/jest':
@@ -1417,7 +1417,7 @@ importers:
         specifier: 0.2.0-beta.3
         version: 0.2.0-beta.3(effect@3.12.7)(zod@3.24.2)
       zod:
-        specifier: 3.24.2
+        specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
       '@types/jest':
@@ -6689,6 +6689,31 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /@voltagent/core@0.1.14:
+    resolution: {integrity: sha512-r2lvDQStKQkxld+zVLtCKiPsfboor47BPXsKyriKgM4FW32HcNGqI9y/ZzvbJiNdzsPYVYHFjP90KNjwKvg6aA==}
+    dependencies:
+      '@hono/node-server': 1.14.0(hono@4.7.7)
+      '@hono/node-ws': 1.1.1(@hono/node-server@1.14.0)(hono@4.7.7)
+      '@hono/swagger-ui': 0.5.1(hono@4.7.7)
+      '@hono/zod-openapi': 0.19.6(hono@4.7.7)(zod@3.24.2)
+      '@libsql/client': 0.15.4
+      '@modelcontextprotocol/sdk': 1.10.1
+      '@n8n/json-schema-to-zod': 1.1.0(zod@3.24.2)
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/sdk-trace-base': 2.0.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-node': 2.0.0(@opentelemetry/api@1.9.0)
+      '@types/ws': 8.18.1
+      hono: 4.7.7
+      npm-check-updates: 17.1.18
+      uuid: 9.0.1
+      ws: 8.18.2
+      zod: 3.24.2
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
 
   /@xsai/embed@0.2.0:
     resolution: {integrity: sha512-xXk6QG/23gHDmlMIEywB4+9JhiQv1DSnxqaJnQiiS2EAqzpKLV4JHT0tjAPAb4Gu+HUGjCQDup0rag6BopfnBg==}

@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/google-ai",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "VoltAgent Google AI - Google Generative AI provider integration for VoltAgent",
   "license": "MIT",
   "main": "dist/index.js",
@@ -20,7 +20,7 @@
   "dependencies": {
     "@google/genai": "^0.10.0",
     "@voltagent/core": "^0.1.14",
-    "zod": "3.24.2",
+    "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
