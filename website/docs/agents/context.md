@@ -150,12 +150,10 @@ const hooks = createHooks({
 });
 
 // Define a tool that uses the context data set in onStart
-const customContextTool = createTool({
-  name: "custom_context_logger",
-  description: "Logs a message using the request ID from the user context.",
-  parameters: z.object({
-    message: z.string().describe("The message to log."),
-  }),
+const loggerTool = createTool({
+  name: "context_aware_logger",
+  description: "Logs a message using the request ID from context.",
+  parameters: z.object({ message: z.string() }),
   execute: async (params: { message: string }, options?: ToolExecutionContext) => {
     // Access userContext via options.operationContext
     const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown-request";
@@ -170,7 +168,7 @@ const agent = new Agent({
   name: "MyCombinedAgent",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  tools: [customContextTool],
+  tools: [loggerTool],
   hooks: hooks,
 });
 

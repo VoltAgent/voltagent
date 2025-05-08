@@ -97,7 +97,7 @@ const googleProvider = new GoogleGenAIProvider({ apiKey: "YOUR_GEMINI_API_KEY" }
 
 const agent = new Agent({
   name: "Google Gemini Agent",
-  description: "An agent powered by Google Gemini",
+  instructions: "An agent powered by Google Gemini",
   llm: googleProvider,
   model: "gemini-1.5-flash", // Specify the desired Google model ID
 });
@@ -170,7 +170,7 @@ async function main() {
 
   const agent = new Agent({
     name: "Google Text Agent",
-    description: "Generates text using Google AI",
+    instructions: "Generates text using Google AI",
     llm: googleProvider,
     model: "gemini-1.5-flash",
   });
@@ -203,7 +203,7 @@ async function main() {
 
   const agent = new Agent({
     name: 'Google Streaming Agent',
-    description: 'Streams text using Google AI',
+    instructions: 'Streams text using Google AI',
     llm: googleProvider,
     model: 'gemini-1.5-flash',
   });
@@ -253,7 +253,7 @@ async function main() {
   // Ensure the model supports function calling/JSON mode
   const agent = new Agent({
     name: "Google Object Agent",
-    description: "Generates structured data using Google AI",
+    instructions: "Generates structured data using Google AI",
     llm: googleProvider,
     model: "gemini-1.5-pro", // Models like Pro are generally better for structured output
   });

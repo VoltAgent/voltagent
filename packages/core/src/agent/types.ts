@@ -62,11 +62,6 @@ export type AgentOptions = {
   name: string;
 
   /**
-   * Agent description
-   */
-  description?: string;
-
-  /**
    * Memory storage for the agent (optional)
    * Set to false to explicitly disable memory
    */
@@ -86,7 +81,31 @@ export type AgentOptions = {
    * Sub-agents that this agent can delegate tasks to
    */
   subAgents?: any[]; // Using any to avoid circular dependency
-};
+} & (
+  | {
+      /**
+       * @deprecated Use `instructions` instead.
+       * Agent description (deprecated, use instructions)
+       */
+      description: string;
+      /**
+       * Agent instructions. This is the preferred field.
+       */
+      instructions?: string;
+    }
+  | {
+      /**
+       * @deprecated Use `instructions` instead.
+       * Agent description (deprecated, use instructions)
+       */
+      description?: undefined; // Ensure description is treated as absent
+      /**
+       * Agent instructions. This is the preferred field.
+       * Required if description is not provided.
+       */
+      instructions: string;
+    }
+);
 
 /**
  * Provider instance type helper

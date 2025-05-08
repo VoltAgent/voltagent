@@ -71,7 +71,7 @@ Remember, these are just starting points. Ultimately, I recommend experimenting.
 
 I've found VoltAgent to be an effective tool for creating AI agents, and I can develop multiple agents simply using its **Supervisor Agents** and **Subagents**.
 
-1. **Define Agents:** First, I define my subagents that specialize in a particular task (e.g., "Story Writer" agent, "Translator" agent). An agent consists of a name, description (instructions), and the LLM it uses.
+1. **Define Agents:** First, I define my subagents that specialize in a particular task (e.g., "Story Writer" agent, "Translator" agent). An agent consists of a name, instructions, and the LLM it uses.
 2. **Build the Supervisor:** Second, I build the supervisor agent that will manage these subagents. In defining the supervisor, I simply specify which subagents it will manage using the `subAgents` parameter.
 3. **Automatic Installation:** What I like is that whenever I install a supervisor agent, VoltAgent automatically configures the following in the background:
 
@@ -116,16 +116,16 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // 1. Create Subagents
-const storyWriter = new Agent({
-  name: "Story Writer",
-  description: "You are an expert at writing creative and engaging short stories.",
+const storyAgent = new Agent({
+  name: "Story Agent",
+  instructions: "You are an expert at writing creative and engaging short stories.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
-const translator = new Agent({
-  name: "Translator",
-  description: "You are a skilled translator, proficient in translating text accurately.",
+const translatorAgent = new Agent({
+  name: "Translator Agent",
+  instructions: "You are a skilled translator, proficient in translating text accurately.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
@@ -133,14 +133,14 @@ const translator = new Agent({
 // 2. Create the Supervisor Agent (linking subagents)
 const supervisorAgent = new Agent({
   name: "Supervisor Agent",
-  description:
-    "You manage workflows between specialized agents. " +
-    "When asked for a story, use the Story Writer. " +
-    "Then, use the Translator to translate the story. Present both versions to the user.",
+  instructions:
+    "You manage a workflow between specialized agents. When asked for a story, " +
+    "use the Story Agent. Then, use the Translator Agent to translate the story. " +
+    "Present both versions to the user.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   // Connect the subagents here
-  subAgents: [storyWriter, translator],
+  subAgents: [storyAgent, translatorAgent],
 });
 
 new VoltAgent({
@@ -184,7 +184,7 @@ Inside the console:
 
 ![Multi-Agent LLM Example](https://cdn.voltagent.dev/2025-04-23-multi-agent-llm/multi-agent-llm-demo.gif)
 
-The Supervisor Agent then executed the workflow: it first delegated the story writing task to the `Story Writer` subagent, then delegated the translation task to the `Translator` subagent, and finally presented both results in the chat interface. I found that VoltAgent handled all the background coordination automatically.
+The Supervisor Agent then executed the workflow: it first delegated the story writing task to the `Story Agent` subagent, then delegated the translation task to the `Translator Agent` subagent, and finally presented both results in the chat interface. I found that VoltAgent handled all the background coordination automatically.
 
 ## My Final Thoughts
 

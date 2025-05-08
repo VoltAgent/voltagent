@@ -155,8 +155,8 @@ import { openai } from "@ai-sdk/openai";
 const allTools = await mcpConfig.getTools();
 
 const agent = new Agent({
-  name: "MCP-enabled Assistant",
-  description: "An assistant that can use MCP tools configured at startup",
+  name: "MCP Aware Agent",
+  instructions: "An assistant that can use MCP tools configured at startup",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: allTools, // Add MCP tools during initialization

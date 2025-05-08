@@ -34,7 +34,7 @@
   // Define your agent(s)
   const agent = new Agent({
     name: "my-voltagent-app",
-    description: "A helpful assistant that answers questions without using tools",
+    instructions: "A helpful assistant that answers questions without using tools",
     llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
   });

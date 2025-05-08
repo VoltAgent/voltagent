@@ -67,7 +67,7 @@ const anthropicProvider = new AnthropicProvider({ apiKey: "YOUR_ANTHROPIC_API_KE
 
 const agent = new Agent({
   name: "Claude Agent",
-  description: "An agent powered by Claude",
+  instructions: "An agent powered by Claude",
   llm: anthropicProvider,
   model: "claude-3-sonnet-20240229", // Specify the desired Claude model
 });
@@ -115,7 +115,7 @@ const weatherTool = createTool({
 
 const agent = new Agent({
   name: "weather-agent",
-  description: "A helpful weather assistant",
+  instructions: "A helpful weather assistant",
   llm: new AnthropicProvider(),
   model: "claude-3-sonnet-20240229",
   tools: [weatherTool],

@@ -70,19 +70,19 @@ For a complete, runnable example demonstrating the use of this provider, please 
 Instantiate your `Agent` with the configured `GroqProvider`:
 
 ```typescript
-import { Agent } from '@voltagent/core';
-import { GroqProvider } from '@voltagent/groq-ai';
+import { Agent } from "@voltagent/core";
+import { GroqProvider } from "@voltagent/groq-ai";
 
 // Using environment variable configuration from above
 const groqProvider = new GroqProvider();
 
 const agent = new Agent({
-  name: 'Groq Speed Agent',
-  description: 'An agent powered by Groq's fast inference',
+  name: "Groq Speed Agent",
+  instructions: "An agent powered by Groq's fast inference",
   llm: groqProvider,
   // Specify the desired Groq model ID (e.g., Llama3, Mixtral)
   // Find available models: https://console.groq.com/docs/models
-  model: 'llama3-8b-8192',
+  model: "llama3-8b-8192",
 });
 
 // Example call
@@ -152,7 +152,7 @@ async function main() {
 
   const agent = new Agent({
     name: "Groq Text Agent",
-    description: "Generates text using Groq AI",
+    instructions: "Generates text using Groq AI",
     llm: groqProvider,
     model: "mixtral-8x7b-32768", // Example model
   });
@@ -187,7 +187,7 @@ async function main() {
 
   const agent = new Agent({
     name: "Groq Streaming Agent",
-    description: "Streams text using Groq AI",
+    instructions: "Streams text using Groq AI",
     llm: groqProvider,
     model: "llama3-8b-8192", // Example model
   });
@@ -238,7 +238,7 @@ async function main() {
   // Use a model supporting JSON mode
   const agent = new Agent({
     name: "Groq Object Agent",
-    description: "Generates structured data using Groq AI",
+    instructions: "Generates structured data using Groq AI",
     llm: groqProvider,
     model: "llama3-70b-8192",
   });

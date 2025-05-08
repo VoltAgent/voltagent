@@ -122,12 +122,12 @@ describe("SubAgentManager", () => {
       const subAgentAgent1 = {
         id: "agent1",
         name: "Agent 1",
-        description: "First agent",
+        instructions: "First agent",
       } as Agent<any>;
       const subAgentAgent2 = {
         id: "agent2",
         name: "Agent 2",
-        description: "Second agent",
+        instructions: "Second agent",
       } as Agent<any>;
 
       const subAgentManager = new SubAgentManager("TestAgent", [subAgentAgent1, subAgentAgent2]);

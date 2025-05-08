@@ -9,7 +9,9 @@ The `Agent` class is the fundamental building block of VoltAgent. It acts as the
 
 ## Creating an Agent
 
-At its core, an agent needs a name, a description (which guides its behavior), an LLM Provider to handle communication with an AI model, and the specific model to use.
+At its core, an agent needs a name, instructions (which guides its behavior), an LLM Provider to handle communication with an AI model, and the specific model to use.
+
+**Note: The `description` field for `Agent` is deprecated and will be removed in a future version. Please use `instructions` instead.**
 
 ```ts
 import { Agent } from "@voltagent/core";
@@ -18,7 +20,7 @@ import { openai } from "@ai-sdk/openai"; // Defines the specific model source
 
 const agent = new Agent({
   name: "My Assistant",
-  description: "A helpful and friendly assistant that can answer questions clearly and concisely.",
+  instructions: "A helpful and friendly assistant that can answer questions clearly and concisely.",
   // The LLM Provider acts as the bridge to the AI service
   llm: new VercelAIProvider(),
   // The model specifies which AI model to use (e.g., from OpenAI via Vercel AI SDK)
@@ -46,7 +48,7 @@ import { z } from "zod";
 // Example Tool (see Tools section for details)
 const weatherTool = createTool({
   name: "get_weather",
-  description: "Get the current weather for a specific location",
+  instructions: "Get the current weather for a specific location",
   parameters: z.object({ location: z.string().describe("City and state") }),
   execute: async ({ location }) => {
     console.log(`Tool: Getting weather for ${location}`);
@@ -57,7 +59,7 @@ const weatherTool = createTool({
 
 const agent = new Agent({
   name: "Chat Assistant",
-  description: "A helpful assistant that can check the weather.",
+  instructions: "A helpful assistant that can check the weather.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: [weatherTool],
@@ -95,7 +97,7 @@ import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Markdown Assistant",
-  description: "A helpful assistant that formats answers clearly.",
+  instructions: "A helpful assistant that formats answers clearly.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   markdown: true, // Enable automatic Markdown formatting
@@ -124,7 +126,7 @@ import { z } from "zod";
 
 const agent = new Agent({
   name: "Data Extractor",
-  description: "Extracts structured data.",
+  instructions: "Extracts structured data.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"), // Ensure model supports structured output/function calling
 });
@@ -203,7 +205,7 @@ import { z } from "zod";
 // Create a weather tool using the helper function
 const weatherTool = createTool({
   name: "get_weather",
-  description: "Get the current weather for a specific location",
+  instructions: "Get the current weather for a specific location",
   parameters: z.object({
     location: z.string().describe("The city and state, e.g., San Francisco, CA"),
   }),
@@ -221,7 +223,7 @@ const weatherTool = createTool({
 
 const agent = new Agent({
   name: "Weather Assistant",
-  description: "An assistant that can check the weather using available tools.",
+  instructions: "An assistant that can check the weather using available tools.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"), // Models supporting tool use are required
   tools: [weatherTool], // Provide the list of tools to the agent
@@ -253,7 +255,7 @@ const writingAgent = new Agent({ name: "Writer" /* ... */ });
 // Create a coordinator agent that uses the others
 const mainAgent = new Agent({
   name: "Coordinator",
-  description: "Coordinates research and writing tasks by delegating to specialized sub-agents.",
+  instructions: "Coordinates research and writing tasks by delegating to specialized sub-agents.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   // List the agents this one can delegate tasks to
@@ -326,7 +328,7 @@ const hooks = createHooks({
 
 const agent = new Agent({
   name: "Observable Agent",
-  description: "An agent with logging hooks.",
+  instructions: "An agent with logging hooks.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   hooks, // Attach the defined hooks
@@ -367,7 +369,7 @@ const hooks = createHooks({
 
 const loggerTool = createTool({
   name: "context_aware_logger",
-  description: "Logs a message using the request ID from context.",
+  instructions: "Logs a message using the request ID from context.",
   parameters: z.object({ message: z.string() }),
   execute: async (params: { message: string }, options?: ToolExecutionContext) => {
     const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown";
@@ -379,7 +381,7 @@ const loggerTool = createTool({
 
 const agent = new Agent({
   name: "Context Agent",
-  description: "Uses userContext.",
+  instructions: "Uses userContext.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   hooks: hooks,
@@ -435,7 +437,7 @@ class SimpleRetriever extends BaseRetriever {
 // Create agent with the retriever
 const agent = new Agent({
   name: "Knowledge Assistant",
-  description: "An assistant that uses retrieved documents to answer questions.",
+  instructions: "An assistant that uses retrieved documents to answer questions.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   retriever: new SimpleRetriever(), // Add the retriever instance
@@ -475,7 +477,7 @@ import { anthropic } from "@ai-sdk/anthropic"; // Model definition for Anthropic
 // Agent using OpenAI via Vercel
 const vercelOpenAIAgent = new Agent({
   name: "Vercel OpenAI Assistant",
-  description: "Assistant using Vercel AI SDK with OpenAI.",
+  instructions: "Assistant using Vercel AI SDK with OpenAI.",
   llm: new VercelAIProvider(), // The provider
   model: openai("gpt-4o"), // The specific model
 });
@@ -483,7 +485,7 @@ const vercelOpenAIAgent = new Agent({
 // Agent using Anthropic via Vercel
 const vercelAnthropicAgent = new Agent({
   name: "Vercel Anthropic Assistant",
-  description: "Assistant using Vercel AI SDK with Anthropic.",
+  instructions: "Assistant using Vercel AI SDK with Anthropic.",
   llm: new VercelAIProvider(), // Same provider
   model: anthropic("claude-3-5-sonnet-20240620"), // Different model
 });
@@ -494,7 +496,7 @@ import { XsAIProvider } from "@voltagent/xsai";
 // Agent using XsAI Provider (might use different model naming)
 const xsaiAgent = new Agent({
   name: "XsAI Assistant",
-  description: "Assistant using XsAI Provider.",
+  instructions: "Assistant using XsAI Provider.",
   llm: new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY }), // Provider instance
   model: "xsai-model-name", // Model identifier specific to this provider
 });
@@ -522,7 +524,7 @@ import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Configurable Assistant",
-  description: "An assistant with configurable generation parameters",
+  instructions: "An assistant with configurable generation parameters",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
@@ -604,7 +606,7 @@ const mcpTools = await mcpConfig.getTools();
 // Create an agent that can utilize these external MCP tools
 const agent = new Agent({
   name: "MCP Agent",
-  description: "Uses external model capabilities via MCP",
+  instructions: "Uses external model capabilities via MCP",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   // Add the tools fetched from the MCP server
@@ -667,7 +669,7 @@ await pipeline(elAudioStream, createWriteStream("elevenlabs_output.mp3"));
 
 const agent = new Agent({
   name: "Voice Assistant",
-  description: "A helpful voice assistant",
+  instructions: "A helpful voice assistant",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   // Assign a voice provider instance to the agent's voice property

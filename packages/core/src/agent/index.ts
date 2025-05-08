@@ -62,9 +62,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   readonly name: string;
 
   /**
-   * Agent description
+   * @deprecated Use `instructions` instead. Will be removed in a future version.
    */
   readonly description: string;
+
+  /**
+   * Agent instructions. This is the preferred field over `description`.
+   */
+  readonly instructions: string;
 
   /**
    * The LLM provider to use
@@ -120,7 +125,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Create a new agent
    */
   constructor(
-    options: Omit<AgentOptions, "provider" | "model"> &
+    options: AgentOptions &
       TProvider & {
         model: ModelType<TProvider>;
         subAgents?: Agent<any>[]; // Keep any for now
@@ -133,7 +138,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   ) {
     this.id = options.id || options.name;
     this.name = options.name;
-    this.description = options.description || "A helpful AI assistant";
+    this.instructions = options.instructions ?? options.description ?? "A helpful AI assistant";
+    this.description = this.instructions;
     this.llm = options.llm as ProviderInstance<TProvider>;
     this.model = options.model;
     this.retriever = options.retriever;
@@ -176,7 +182,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     historyEntryId: string;
     contextMessages: BaseMessage[];
   }): Promise<BaseMessage> {
-    let baseDescription = this.description || ""; // Ensure baseDescription is a string
+    let baseInstructions = this.instructions || ""; // Ensure baseInstructions is a string
 
     // --- Add Instructions from Toolkits --- (Simplified Logic)
     let toolInstructions = "";
@@ -191,16 +197,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       }
     }
     if (toolInstructions) {
-      baseDescription = `${baseDescription}${toolInstructions}`;
+      baseInstructions = `${baseInstructions}${toolInstructions}`;
     }
     // --- End Add Instructions from Toolkits ---
 
     // Add Markdown Instruction if Enabled
     if (this.markdown) {
-      baseDescription = `${baseDescription}\n\nUse markdown to format your answers.`;
+      baseInstructions = `${baseInstructions}\n\nUse markdown to format your answers.`;
     }
 
-    let description = baseDescription;
+    let finalInstructions = baseInstructions;
 
     // If retriever exists and we have input, get context
     if (this.retriever && input && historyEntryId) {
@@ -226,7 +232,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       try {
         const context = await this.retriever.retrieve(input);
         if (context?.trim()) {
-          description = `${description}\n\nRelevant Context:\n${context}`;
+          finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
 
           // Update the event
           eventUpdater({
@@ -256,17 +262,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const agentsMemory = await this.prepareAgentsMemory(contextMessages);
 
       // Generate the supervisor message with the agents memory inserted
-      description = this.subAgentManager.generateSupervisorSystemMessage(description, agentsMemory);
+      finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
+        finalInstructions,
+        agentsMemory,
+      );
 
       return {
         role: "system",
-        content: description,
+        content: finalInstructions,
       };
     }
 
     return {
       role: "system",
-      content: `You are ${this.name}. ${description}`,
+      content: `You are ${this.name}. ${finalInstructions}`,
     };
   }
 
@@ -484,6 +493,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       id: this.id,
       name: this.name,
       description: this.description,
+      instructions: this.instructions,
       status: "idle",
       model: this.getModelName(),
       // Create a node representing this agent

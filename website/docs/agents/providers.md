@@ -43,7 +43,7 @@ const myProvider = new VercelAIProvider();
 // 3. Create the Agent, passing the provider and model ID
 const agent = new Agent({
   name: "My Configured Agent",
-  description: "An agent ready to interact via the specified provider",
+  instructions: "An agent ready to interact via the specified provider",
   llm: myProvider, // Assign the provider instance
   model: openai("gpt-4o-mini"), // Pass the model object from Vercel AI SDK
 });

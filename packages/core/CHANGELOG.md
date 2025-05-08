@@ -42,7 +42,7 @@
   // Define your agent(s)
   const agent = new Agent({
     name: "my-voltagent-app",
-    description: "A helpful assistant that answers questions without using tools",
+    instructions: "A helpful assistant that answers questions without using tools",
     llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
   });
@@ -461,7 +461,6 @@
   const webInfoToolkit = createToolkit({
     name: "web_information",
     description: "Tools for getting information from the web.",
-    instructions: "Use these tools to find current information online.",
     addInstructions: true, // Add the instructions to the system prompt
     tools: [getWeather, searchWeb],
   });
@@ -524,7 +523,7 @@
 
   const agent = new Agent({
     name: "MyThinkingAgent",
-    description: "An agent equipped with reasoning tools.",
+    instructions: "An agent equipped with reasoning tools.",
     llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
     tools: [reasoningToolkit], // Pass the toolkit

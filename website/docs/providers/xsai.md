@@ -86,7 +86,7 @@ const xsaiProvider = new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
 
 const agent = new Agent({
   name: "Compatible Agent",
-  description: "An agent using an OpenAI-compatible API via xsAI",
+  instructions: "An agent using an OpenAI-compatible API via xsAI",
   llm: xsaiProvider,
   // Model identifier specific to the target API (e.g., OpenAI, Groq, local)
   model: "gpt-4o-mini",
@@ -166,7 +166,7 @@ async function main() {
 
   const agent = new Agent({
     name: "xsAI Text Agent",
-    description: "Generates text using an OpenAI-compatible API",
+    instructions: "Generates text using an OpenAI-compatible API",
     llm: provider,
     model: "gpt-4o-mini",
   });
@@ -198,7 +198,7 @@ async function main() {
 
   const agent = new Agent({
     name: "xsAI Streaming Agent",
-    description: "Streams text using an OpenAI-compatible API",
+    instructions: "Streams text using an OpenAI-compatible API",
     llm: provider,
     model: "gpt-4o-mini",
   });
@@ -240,7 +240,7 @@ async function main() {
 
   const agent = new Agent({
     name: "xsAI Object Agent",
-    description: "Generates structured objects",
+    instructions: "Generates structured objects",
     llm: provider,
     model: "gpt-4o", // Use a model known for good JSON output
   });
@@ -280,7 +280,7 @@ async function main() {
 
   const agent = new Agent({
     name: "xsAI Object Streaming Agent",
-    description: "Streams structured objects",
+    instructions: "Streams structured objects",
     llm: provider,
     model: "gpt-4o",
   });

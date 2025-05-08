@@ -104,7 +104,7 @@ const provider = new VercelAIProvider();
 // Assign the hooks when creating an agent
 const agentWithHooks = new Agent({
   name: "My Agent with Hooks",
-  description: "An assistant demonstrating hooks",
+  instructions: "An assistant demonstrating hooks",
   llm: provider,
   model: openai("gpt-4o"),
   // Pass the hooks object during initialization
@@ -114,7 +114,7 @@ const agentWithHooks = new Agent({
 // Alternatively, define hooks inline (less reusable)
 const agentWithInlineHooks = new Agent({
   name: "Inline Hooks Agent",
-  description: "Another assistant",
+  instructions: "Another assistant",
   llm: provider,
   model: openai("gpt-4o"),
   hooks: {

@@ -6,7 +6,7 @@ import { weatherTool, searchTool, checkCalendarTool, addCalendarEventTool } from
 
 const agent = new Agent({
   name: "Base Agent",
-  description: "You are a helpful assistant",
+  description: "s222ss",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],

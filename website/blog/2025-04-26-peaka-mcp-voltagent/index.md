@@ -97,8 +97,8 @@ const mcp = new MCPConfiguration({
 
   // 3. Create our actual chatbot agent
   const agent = new Agent({
-    name: "Peaka Data Assistant",
-    description: "I can look things up in Peaka's data.",
+    name: "Peaka Data Agent",
+    instructions: "I can look things up in Peaka's data.",
     llm: new VercelAIProvider(), // Which AI service to use
     model: openai("gpt-4o-mini"), // Which specific AI brain
     tools, // <-- Super important! Give the agent the tools from Peaka!

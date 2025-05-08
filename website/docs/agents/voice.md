@@ -213,7 +213,7 @@ const provider = new OpenAIAgentProvider({
 // Create the agent, passing the voice instance
 const voiceEnabledAgent = new Agent({
   name: "VoiceBot",
-  description: "An agent that can speak.",
+  instructions: "An agent that can speak.",
   provider,
   model: "gpt-4o", // Choose an appropriate model
   voice: voice, // Assign the voice provider here

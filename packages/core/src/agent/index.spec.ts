@@ -371,7 +371,7 @@ describe("Agent", () => {
 
       expect(defaultAgent.id).toBeDefined();
       expect(defaultAgent.name).toBe("Default Agent");
-      expect(defaultAgent.description).toBe("A helpful AI assistant");
+      expect(defaultAgent.instructions).toBe("A helpful AI assistant");
       expect(defaultAgent.model).toBe(mockModel);
       expect(defaultAgent.llm).toBe(mockProvider);
     });
@@ -380,14 +380,14 @@ describe("Agent", () => {
       const customAgent = new TestAgent({
         id: "custom-id",
         name: "Custom Agent",
-        description: "Custom description",
+        instructions: "Custom description",
         model: mockModel,
         llm: mockProvider,
       });
 
       expect(customAgent.id).toBe("custom-id");
       expect(customAgent.name).toBe("Custom Agent");
-      expect(customAgent.description).toBe("Custom description");
+      expect(customAgent.instructions).toBe("Custom description");
       expect(customAgent.llm).toBe(mockProvider);
     });
   });
@@ -633,7 +633,7 @@ describe("Agent", () => {
       // Check basic properties
       expect(state.id).toBe(agent.id);
       expect(state.name).toBe(agent.name);
-      expect(state.description).toBe(agent.description);
+      expect(state.description).toBe(agent.instructions);
       expect(state.node_id).toBe(`agent_${agent.id}`);
 
       // Check tools property

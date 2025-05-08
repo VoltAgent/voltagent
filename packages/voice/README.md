@@ -100,7 +100,7 @@ import { openai } from "@ai-sdk/openai"; // Example model
 // Define a simple agent
 const agent = new Agent({
   name: "my-agent",
-  description: "A helpful assistant that answers questions without using tools",
+  instructions: "A helpful assistant that answers questions without using tools",
   // Note: You can swap VercelAIProvider and openai with other supported providers/models
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
