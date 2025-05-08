@@ -358,6 +358,7 @@ describe("Agent", () => {
       memory: mockMemory,
       memoryOptions: {},
       tools: [],
+      instructions: "A helpful AI assistant",
     });
   });
 
@@ -367,6 +368,7 @@ describe("Agent", () => {
         name: "Default Agent",
         model: mockModel,
         llm: mockProvider,
+        instructions: "A helpful AI assistant",
       });
 
       expect(defaultAgent.id).toBeDefined();
@@ -389,6 +391,30 @@ describe("Agent", () => {
       expect(customAgent.name).toBe("Custom Agent");
       expect(customAgent.instructions).toBe("Custom description");
       expect(customAgent.llm).toBe(mockProvider);
+    });
+
+    it("should use description for instructions if instructions property is not provided", () => {
+      const agentWithDesc = new TestAgent({
+        name: "Agent With Description Only",
+        description: "Uses provided description",
+        model: mockModel,
+        llm: mockProvider,
+        // instructions property is intentionally omitted
+      });
+      expect(agentWithDesc.instructions).toBe("Uses provided description");
+      expect(agentWithDesc.description).toBe("Uses provided description"); // Verifying this.description is also updated
+    });
+
+    it("should use instructions if both instructions and description are provided", () => {
+      const agentWithBoth = new TestAgent({
+        name: "Agent With Both Properties",
+        instructions: "Uses provided instructions",
+        description: "This description should be ignored",
+        model: mockModel,
+        llm: mockProvider,
+      });
+      expect(agentWithBoth.instructions).toBe("Uses provided instructions");
+      expect(agentWithBoth.description).toBe("Uses provided instructions"); // Verifying this.description is also updated
     });
   });
 
@@ -709,6 +735,7 @@ describe("Agent", () => {
         name: "New Agent",
         model: mockModel,
         llm: mockProvider,
+        instructions: "A helpful AI assistant",
       });
 
       // Register the agent through AgentRegistry
@@ -722,6 +749,7 @@ describe("Agent", () => {
         name: "New Agent",
         model: mockModel,
         llm: mockProvider,
+        instructions: "A helpful AI assistant",
       });
 
       newAgent.unregister();
@@ -792,6 +820,7 @@ describe("Agent", () => {
         name: "Error Stream Agent",
         model: mockModel,
         llm: errorProvider,
+        instructions: "Error Stream Agent instructions",
       });
 
       await expect(errorAgent.streamText("Hello")).rejects.toThrow("Stream error");
@@ -805,6 +834,7 @@ describe("Agent", () => {
         name: "Error Object Stream Agent",
         model: mockModel,
         llm: errorProvider,
+        instructions: "Error Object Stream Agent instructions",
       });
 
       const schema = z.object({
@@ -851,6 +881,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Use any type to bypass type checking for the mock retriever
         retriever: mockRetriever as any,
+        instructions: "Retriever Test Agent instructions",
       });
 
       // Generate text to trigger retriever
@@ -879,6 +910,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Use any type to bypass type checking for the mock retriever
         retriever: errorRetriever as any,
+        instructions: "Error Retriever Test Agent instructions",
       });
 
       // Generate text should still work despite retriever error
@@ -904,6 +936,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Use any type to bypass type checking for the mock retriever
         retriever: mockRetriever as any,
+        instructions: "State Retriever Test Agent instructions",
       });
 
       // Get full state
@@ -928,6 +961,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         hooks: createHooks({ onStart: onStartSpy }),
+        instructions: "Context Test Agent instructions",
       });
 
       await agentWithHook.generateText("test initialization");
@@ -952,6 +986,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         hooks: createHooks({ onStart: onStartSpy, onEnd: onEndSpy }),
+        instructions: "Hook Context Agent instructions",
       });
 
       await agentWithHooks.generateText("test hooks");
@@ -990,6 +1025,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Pass the updated hooks
         hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
+        instructions: "Modify Context Agent instructions",
       });
 
       await agentWithModifyHooks.generateText("test modification");
@@ -1025,6 +1061,7 @@ describe("Agent", () => {
         tools: [mockTool],
         // Pass the updated hook
         hooks: createHooks({ onStart: onStartHook }),
+        instructions: "Tool Context Agent instructions",
       });
 
       // Need to trigger the tool
@@ -1095,6 +1132,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Pass the updated hooks
         hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
+        instructions: "Isolation Test Agent instructions",
       });
 
       // Run operations sequentially to ensure isolation
