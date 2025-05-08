@@ -31,7 +31,7 @@ import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "My Assistant",
-  description: "This agent automatically uses local file memory.",
+  instructions: "This agent automatically uses local file memory.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   // No memory provider specified - uses default LibSQLStorage to .voltagent/memory.db
@@ -47,7 +47,7 @@ You can completely disable memory persistence and retrieval by setting the `memo
 ```ts
 const agent = new Agent({
   name: "Stateless Assistant",
-  description: "This agent has no memory.",
+  instructions: "This agent has no memory.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   memory: false, // Memory completely disabled

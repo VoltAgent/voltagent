@@ -29,7 +29,7 @@ import { openai } from "@ai-sdk/openai";
 // Create a specialized agent for writing stories
 const storyAgent = new Agent({
   name: "Story Agent",
-  description: "You are a creative story writer. Create original, engaging short stories.",
+  instructions: "You are a creative story writer. Create original, engaging short stories.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
@@ -37,7 +37,7 @@ const storyAgent = new Agent({
 // Create a specialized agent for translation
 const translatorAgent = new Agent({
   name: "Translator Agent",
-  description: "You are a skilled translator. Translate text accurately.",
+  instructions: "You are a skilled translator. Translate text accurately.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
@@ -55,7 +55,7 @@ import { openai } from "@ai-sdk/openai";
 // Create a supervisor agent with specialized agents as subagents
 const supervisorAgent = new Agent({
   name: "Supervisor Agent",
-  description: "You manage a workflow between specialized agents.",
+  instructions: "You manage a workflow between specialized agents.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   // Specify subagents during initialization
@@ -121,14 +121,14 @@ import { openai } from "@ai-sdk/openai";
 // Create specialized agents
 const storyAgent = new Agent({
   name: "Story Agent",
-  description: "You are a creative story writer. Create original, engaging short stories.",
+  instructions: "You are a creative story writer. Create original, engaging short stories.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
 const translatorAgent = new Agent({
   name: "Translator Agent",
-  description: "You are a skilled translator. Translate text accurately.",
+  instructions: "You are a skilled translator. Translate text accurately.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
@@ -136,7 +136,7 @@ const translatorAgent = new Agent({
 // Create the supervisor agent
 const supervisorAgent = new Agent({
   name: "Supervisor Agent",
-  description:
+  instructions:
     "You manage a workflow between specialized agents. When asked for a story, " +
     "use the Story Agent to create it. Then use the Translator Agent to translate the story. " +
     "Present both versions to the user.",
@@ -168,7 +168,7 @@ import { openai } from "@ai-sdk/openai";
 // Create a supervisor agent with hooks for monitoring subagent interactions
 const supervisorAgent = new Agent({
   name: "Supervisor Agent",
-  description: "You manage a workflow between specialized agents.",
+  instructions: "You manage a workflow between specialized agents.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [storyAgent, translatorAgent],
@@ -208,7 +208,7 @@ import { openai } from "@ai-sdk/openai";
 // Create a new specialized agent
 const factCheckerAgent = new Agent({
   name: "Fact Checker Agent",
-  description: "You verify facts and provide accurate information.",
+  instructions: "You verify facts and provide accurate information.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });

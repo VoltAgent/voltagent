@@ -86,13 +86,13 @@ export class SubAgentManager {
    * @param baseDescription - The base description of the agent
    * @param agentsMemory - Optional string containing formatted memory from previous agent interactions
    */
-  public generateSupervisorSystemMessage(baseDescription: string, agentsMemory = ""): string {
+  public generateSupervisorSystemMessage(baseInstructions: string, agentsMemory = ""): string {
     if (this.subAgents.length === 0) {
-      return baseDescription;
+      return baseInstructions;
     }
 
     const subAgentList = this.subAgents
-      .map((agent) => `- ${agent.name}: ${agent.description}`)
+      .map((agent) => `- ${agent.name}: ${agent.instructions}`)
       .join("\n");
 
     return `
@@ -103,7 +103,7 @@ ${subAgentList}
 </specialized_agents>
 
 <instructions>
-${baseDescription}
+${baseInstructions}
 </instructions>
 
 <guidelines>

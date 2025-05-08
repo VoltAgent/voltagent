@@ -1,10 +1,9 @@
 import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
-
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 
 const bedrock = createAmazonBedrock({
-  region: 'us-east-1',
+  region: "us-east-1",
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   sessionToken: process.env.AWS_SESSION_TOKEN,
@@ -17,7 +16,7 @@ async function main() {
         zapier: {
           type: "http",
           url: process.env.ZAPIER_MCP_URL!,
-        }
+        },
       },
     });
 
@@ -29,10 +28,10 @@ async function main() {
       description: "A helpful assistant using a lightweight provider",
       tools: zapierTools,
       llm: new VercelAIProvider(),
-      model: bedrock('amazon.nova-lite-v1:0'),
+      model: bedrock("amazon.nova-lite-v1:0"),
       markdown: true,
     });
-  
+
     new VoltAgent({
       agents: {
         agent,

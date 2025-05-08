@@ -9,6 +9,20 @@ In VoltAgent, **Providers** are the connection layer between your `Agent` and th
 
 This abstraction allows you to build agents that are **model agnostic**. You can easily switch the underlying LLM (e.g., from OpenAI to Groq, or from a cloud service to a local model) often just by changing the provider configuration, without needing to modify your core agent logic.
 
+## Available Providers
+
+VoltAgent offers built-in providers for various popular services and SDKs. This allows you to connect your agents to different LLMs with minimal code changes.
+
+- **[Vercel AI Provider](../providers/vercel-ai.md):** Integrates with the Vercel AI SDK, allowing you to use various models supported by Vercel.
+- **[Google AI Provider](../providers/google-ai.md):** Connects to Google's AI models, including Gemini and Vertex AI, via their official SDK.
+- **[Groq AI Provider](../providers/groq-ai.md):** Leverages the Groq API for extremely fast inference on supported models like Llama and Mixtral.
+- **[Anthropic AI Provider](../providers/anthropic-ai.md):** Connects directly to Anthropic's AI models (Claude) using the official Anthropic AI SDK.
+- **[xsAI (OpenAI-Compatible) Provider](../providers/xsai.md):** Provides compatibility with any OpenAI-compatible API endpoint, including self-hosted models or other third-party services.
+
+Choose the provider that best suits the LLM or service you want to use. Detailed configuration and usage instructions can be found on each provider's specific documentation page linked above.
+
+For a general overview of all available providers, see the [Providers Overview](../providers/overview.md).
+
 ## Configuring an Agent with a Provider
 
 When you create an `Agent` instance, you assign a configured provider instance to the `llm` property and specify the desired model identifier using the `model` property.
@@ -29,7 +43,7 @@ const myProvider = new VercelAIProvider();
 // 3. Create the Agent, passing the provider and model ID
 const agent = new Agent({
   name: "My Configured Agent",
-  description: "An agent ready to interact via the specified provider",
+  instructions: "An agent ready to interact via the specified provider",
   llm: myProvider, // Assign the provider instance
   model: openai("gpt-4o-mini"), // Pass the model object from Vercel AI SDK
 });
@@ -83,9 +97,3 @@ It's important to understand that the value you provide for the `model` paramete
 - Other providers (like `@voltagent/vercel-ai`) expect a **model object** imported from their corresponding SDK (e.g., `openai('gpt-4o')`, `anthropic('claude-3-5-sonnet-20240620')`).
 
 Always refer to the documentation for the specific provider you are using to know what format is expected for the `model` parameter.
-
-## Available Providers
-
-VoltAgent offers built-in providers for various popular services and SDKs, including Vercel AI, Google AI (Gemini/Vertex), Groq, and any OpenAI-compatible API endpoint (via xsAI).
-
-**For detailed information on each available provider, including specific installation, configuration, and usage instructions, please see the [Providers Overview](../providers/overview.md).**

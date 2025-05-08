@@ -41,7 +41,7 @@ const getWeatherTool = createTool({
 
 const agent = new Agent({
   name: "WeatherAgent",
-  description: "An agent that can fetch weather information.",
+  instructions: "An agent that can fetch weather information.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [getWeatherTool], // Add the tool to the agent
@@ -98,7 +98,7 @@ import { Agent, createTool, createToolkit, type Toolkit } from "@voltagent/core"
 
 const agent = new Agent({
     name: "MultiToolAgent",
-    description: "An agent with various tools and toolkits.",
+    instructions: "An agent with various tools and toolkits.",
     llm: /* ... */,
     model: /* ... */,
     tools: [

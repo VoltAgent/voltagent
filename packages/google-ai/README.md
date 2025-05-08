@@ -117,7 +117,7 @@ const googleProvider = new GoogleGenAIProvider({
 // Create an agent using a Google model
 const agent = new Agent({
   name: "Google Assistant",
-  description: "A helpful and friendly assistant that can answer questions clearly and concisely.",
+  instructions: "A helpful and friendly assistant that can answer questions clearly and concisely.",
   llm: googleProvider,
   model: "gemini-1.5-pro-latest", // Specify the desired Google model
 });
@@ -174,7 +174,7 @@ const googleVertexProvider = new GoogleGenAIProvider({
 
 const agent = new Agent({
   name: "Google Assistant",
-  description: "A helpful and friendly assistant that can answer questions clearly and concisely.",
+  instructions: "A helpful and friendly assistant that can answer questions clearly and concisely.",
   llm: googleProvider,
   model: "gemini-1.5-pro-latest", // Specify the desired Google model
 });

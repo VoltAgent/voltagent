@@ -414,7 +414,6 @@ const agent = new Agent({
   name: "Dynamic Assistant",
   description: "An assistant that can gain new abilities",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
 });
 
 // Later, add tools to the agent

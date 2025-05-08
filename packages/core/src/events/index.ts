@@ -249,7 +249,7 @@ export class AgentEventEmitter extends EventEmitter {
       // Log the removal for debugging purposes
 
       return updatedEntry;
-    } catch (error) {
+    } catch (_error) {
       // Tracked event update failed, but still remove from the Map to prevent memory leaks
       // We shouldn't continue tracking even if it failed
       this.trackedEvents.delete(eventId);
