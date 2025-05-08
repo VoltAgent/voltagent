@@ -156,7 +156,7 @@ export type ProviderType<T> = T extends { llm: LLMProvider<infer P> } ? P : neve
  * Common generate options - internal version that includes historyEntryId
  * Not exposed directly to users
  */
-export interface CommonGenerateOptions {
+export interface CommonGenerateOptions<TContext = Record<string, any>> {
   // Common LLM provider properties
   provider?: ProviderOptions;
 
@@ -179,14 +179,18 @@ export interface CommonGenerateOptions {
   historyEntryId?: string;
 
   // The OperationContext associated with this specific generation call
-  operationContext?: OperationContext;
+  operationContext?: OperationContext<TContext>;
+
+  // Initial user context to be merged into the OperationContext
+  initialUserContext?: TContext;
 }
 
 /**
  * Internal options extending CommonGenerateOptions with parent context fields
  * Used for internal implementation of agent methods
  */
-export interface InternalGenerateOptions extends CommonGenerateOptions {
+export interface InternalGenerateOptions<TContext = Record<string, any>>
+  extends CommonGenerateOptions<TContext> {
   // Parent agent ID for tracking delegation chain
   parentAgentId?: string;
 
@@ -198,8 +202,8 @@ export interface InternalGenerateOptions extends CommonGenerateOptions {
  * Public-facing generate options for external users
  * Omits internal implementation details like historyEntryId and operationContext
  */
-export type PublicGenerateOptions = Omit<
-  CommonGenerateOptions,
+export type PublicGenerateOptions<TContext = Record<string, any>> = Omit<
+  CommonGenerateOptions<TContext>,
   "historyEntryId" | "operationContext"
 >;
 
@@ -248,7 +252,6 @@ export type AgentResponse = {
    * Additional metadata
    */
   metadata: {
-    agentId: string;
     agentName: string;
     [key: string]: unknown;
   };
@@ -257,7 +260,7 @@ export type AgentResponse = {
 /**
  * Agent handoff options
  */
-export type AgentHandoffOptions = {
+export type AgentHandoffOptions<TContext = Record<string, any>> = {
   /**
    * The task description to be handed off
    */
@@ -275,7 +278,7 @@ export type AgentHandoffOptions = {
   sourceAgent?: any; // Using any to avoid circular dependency
 
   /**
-   * Additional context to provide to the target agent
+   * Additional context to provide to the target agent (DEPRECATED: use supervisorUserContext)
    */
   context?: Record<string, unknown>;
 
@@ -306,6 +309,12 @@ export type AgentHandoffOptions = {
    * Parent history entry ID
    */
   parentHistoryEntryId?: string;
+
+  /**
+   * User context from the supervisor agent to be passed to the sub-agent.
+   * This will be merged into the sub-agent's OperationContext.
+   */
+  supervisorUserContext?: TContext;
 };
 
 /**
@@ -341,12 +350,12 @@ export interface AgentHandoffResult {
 /**
  * Context for a specific agent operation (e.g., one generateText call)
  */
-export type OperationContext = {
+export type OperationContext<TContext = Record<string, any>> = {
   /** Unique identifier for the operation (maps to historyEntryId) */
   readonly operationId: string;
 
-  /** User-managed context map for this specific operation */
-  readonly userContext: Map<string | symbol, any>;
+  /** User-managed context for this specific operation. It can be initialized with `initialUserContext` from generate options. */
+  readonly userContext: TContext;
 
   /** The history entry associated with this operation */
   historyEntry: AgentHistoryEntry;

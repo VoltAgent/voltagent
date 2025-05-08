@@ -1,123 +1,80 @@
 ---
 title: Operation Context (userContext)
 slug: /agents/context
-description: Pass custom data through agent operations using userContext.
+description: Pass custom data and manage state through agent operations using userContext.
 ---
 
 # Operation Context (`userContext`)
 
-VoltAgent provides a powerful mechanism called `userContext` to pass custom data through the lifecycle of a single agent operation (like a `generateText` or `streamObject` call). This context is isolated to each individual operation, ensuring that data doesn't leak between concurrent or subsequent requests.
+VoltAgent's `userContext` provides a robust way to pass custom data and manage state throughout the lifecycle of a single agent operation (e.g., a `generateText` or `streamObject` call). This context is isolated to each operation, ensuring data integrity across concurrent or subsequent requests.
 
-## What is `userContext`?
+## Understanding and Initializing `userContext`
 
-`userContext` is a property within the `OperationContext` object. `OperationContext` itself encapsulates information about a specific agent task, including its unique ID (`operationId`), the associated history entry, and event tracking details.
+`userContext` is a property within the `OperationContext` object, which encapsulates all information about a specific agent task.
 
-`userContext` is specifically a `Map<string | symbol, unknown>`.
+**Key Characteristics:**
 
-- **Map**: It allows you to store key-value pairs.
-- **Keys**: Can be strings or symbols, providing flexibility in how you identify your context data.
-- **Values**: Can be of `unknown` type, meaning you can store virtually any kind of data – strings, numbers, objects, custom class instances, etc.
-
-## Why Use `userContext`?
-
-`userContext` solves the problem of needing to maintain and access request-specific state or data across different parts of an agent's execution flow, particularly between lifecycle hooks and tool executions.
-
-Common use cases include:
-
-1.  **Tracing & Logging**: Propagate unique request IDs or trace IDs generated at the start (`onStart`) into tool executions for distributed tracing or detailed logging.
-2.  **Request-Specific Configuration**: Pass configuration details relevant only to the current operation (e.g., user preferences, tenant IDs) from `onStart` to tools.
-3.  **Metrics & Analytics**: Store timing information or other metrics in `onStart` and finalize/report them in `onEnd`.
-4.  **Resource Management**: Store references to resources allocated in `onStart` (like database connections specific to the request) and release them in `onEnd`.
-5.  **Passing Data Between Hooks**: Set a value in `onStart` and retrieve it in `onEnd` for the same operation.
-
-### Advanced Use Case: Managing Playwright Browser Instances
-
-Another powerful use case for `userContext` is managing stateful resources that should be isolated per operation, such as a Playwright `Browser` or `Page` instance. This avoids the complexity of passing the instance explicitly between hooks and tools.
-
-**Scenario:** You want an agent to perform browser automation tasks using Playwright. Each agent operation should have its own isolated browser session.
-
-1.  **Initialization (in Tools or Hooks):** Instead of initializing the browser directly in `onStart`, you can create a helper function (e.g., `ensureBrowser`) that tools call. This function checks `userContext` first. If a `Page` instance for the current `operationId` doesn't exist, it launches Playwright, creates a `Page`, and stores it in `userContext` using a unique key (like a `Symbol`).
-2.  **Tool Access:** Tools needing browser access (e.g., `clickElement`, `navigateToUrl`) call the `ensureBrowser` helper, passing their `options.operationContext`. The helper retrieves the correct `Page` instance from `userContext`.
-3.  **Cleanup (`onEnd` Hook):** An `onEnd` hook retrieves the `Browser` instance from `userContext` using the operation's context and calls `browser.close()` to ensure resources are released when the operation finishes.
+- **Generic Object (`TContext`)**: `userContext` is a generic object, allowing you to define a specific TypeScript type for your context data (e.g., `type MyOperationState = { userId: string, traceId: string; }`). This provides type safety and an enhanced developer experience with IDE autocompletion.
+- **Default Type**: If no specific type is provided when calling an agent's generation method, `userContext` defaults to `Record<string, any>`.
+- **Initialization**: You can set an initial state for `userContext` using the `initialUserContext` option when invoking agent generation methods:
 
 ```typescript
-import {
-  Agent,
-  createHooks,
-  createTool,
-  type OnEndHookArgs,
-  type OperationContext,
-  type ToolExecutionContext,
-} from "@voltagent/core";
-import { chromium, type Browser, type Page } from "playwright";
+// Define your context type
+type CallContext = {
+  correlationId: string;
+  userId: string;
+  featureFlags?: Record<string, boolean>;
+};
 
-const PAGE_KEY = Symbol("playwrightPage");
-const BROWSER_KEY = Symbol("playwrightBrowser");
-
-// Helper to get/create page within the context
-async function ensurePage(context: OperationContext): Promise<Page> {
-  let page = context.userContext.get(PAGE_KEY) as Page | undefined;
-  if (!page || page.isClosed()) {
-    console.log(`[${context.operationId}] Creating new browser/page for context...`);
-    const browser = await chromium.launch();
-    page = await browser.newPage();
-    context.userContext.set(BROWSER_KEY, browser); // Store browser for cleanup
-    context.userContext.set(PAGE_KEY, page);
-  }
-  return page;
-}
-
-// Hook for cleanup
-const hooks = createHooks({
-  onEnd: async ({ context }: OnEndHookArgs) => {
-    const browser = context.userContext.get(BROWSER_KEY) as Browser | undefined;
-    if (browser) {
-      console.log(`[${context.operationId}] Closing browser for context...`);
-      await browser.close();
-    }
-  },
+const agent = new Agent({
+  /* ... agent configuration ... */
 });
 
-// Example Tool
-const navigateTool = createTool({
-  name: "navigate",
-  parameters: z.object({ url: z.string().url() }),
-  execute: async ({ url }, options?: ToolExecutionContext) => {
-    if (!options?.operationContext) throw new Error("Context required");
-    const page = await ensurePage(options.operationContext); // Get page via context
-    await page.goto(url);
-    return `Navigated to ${url}`;
-  },
-});
+const initialData: CallContext = {
+  correlationId: `cid-${Date.now()}`,
+  userId: "user-123",
+  featureFlags: { newAnalysisLogic: true },
+};
 
-// Agent setup (LLM/Model details omitted)
-const browserAgent = new Agent({
-  name: "Browser Agent",
-  // ... llm, model ...
-  hooks: hooks,
-  tools: [navigateTool],
+// Provide the context type and initial data to the agent's method
+await agent.generateText<CallContext>("Process this request based on user profile.", {
+  initialUserContext: initialData,
 });
-
-// Usage:
-// await browserAgent.generateText("Navigate to https://example.com");
-// await browserAgent.generateText("Navigate to https://google.com"); // Uses a *different* browser instance
 ```
 
-This pattern ensures each `generateText` call gets its own clean browser environment managed via the isolated `userContext`.
+If `initialUserContext` is not provided, `userContext` defaults to an empty object (`{}`). Inside the agent's lifecycle (hooks, tool execution), `operationContext.userContext` will then be the initialized object.
 
-For a full implementation of this pattern, see the [VoltAgent Playwright Example](https://github.com/voltagent/voltagent/tree/main/examples/with-playwright).
+## How `userContext` Works
 
-## How it Works
+1.  **Operation Start & Context Creation**: When an agent operation begins (e.g., `agent.generateText(...)`), VoltAgent creates a unique `OperationContext`.
+2.  **`userContext` Initialization**: `userContext` within this `OperationContext` is initialized:
+    - With the data from `initialUserContext` if provided.
+    - As an empty object (`{}`) otherwise.
+    - Its type is determined by the generic type argument passed to the generation method (e.g., `<CallContext>`).
+3.  **Access in Hooks**: The `OperationContext` (and thus the typed `userContext`) is passed to `onStart` and `onEnd` agent lifecycle hooks. Hooks can be made generic to accept specific context types (e.g., `OnStartHookArgs<CallContext>`).
+4.  **Access in Tools**: `OperationContext` (and its `userContext`) is available within a tool's `execute` function via the optional `options` parameter (as `options.operationContext`).
+5.  **Isolation**: Each call to an agent's generation method receives its own independent `OperationContext` and `userContext`. Data is not shared between different operations.
+6.  **Propagation in Agent Hierarchies (Supervisor-SubAgent)**:
+    When using a supervisor agent that delegates tasks to sub-agents via the `delegate_task` tool:
+    - The `initialUserContext` provided to the supervisor agent populates its `userContext`.
+    - When `delegate_task` is invoked, the supervisor's current `userContext` is automatically packaged.
+    - This (potentially merged) context is then passed as `supervisorUserContext` to `SubAgentManager.handoffTask`.
+    - Finally, `handoffTask` uses this to set the `initialUserContext` for the sub-agent's operation.
+    - This ensures that context like a `correlationId` or `userId` set at the supervisor level is available throughout the entire chain of delegated operations.
 
-1.  **Initialization**: When an agent operation (e.g., `agent.generateText(...)`) begins, VoltAgent creates a unique `OperationContext`.
-2.  **Empty Map**: Within this context, `userContext` is initialized as an empty `Map`.
-3.  **Access via Hooks**: The `OperationContext` (including `userContext`) is passed as an argument to the `onStart` and `onEnd` agent lifecycle hooks.
-4.  **Access via Tools**: The `OperationContext` is also accessible within a tool's `execute` function via the optional `options` parameter (specifically `options.operationContext`).
-5.  **Isolation**: Each call to an agent generation method (`generateText`, `streamText`, etc.) gets its own independent `OperationContext` and `userContext`. Data stored in one operation's `userContext` is not visible to others.
+## Key Use Cases & Benefits
 
-## Usage Example
+`userContext` is invaluable for:
 
-This example demonstrates how to set context data in the `onStart` hook and access it in both the `onEnd` hook and within a tool's `execute` function.
+- **Tracing & Logging**: Propagating request/trace IDs (set via `initialUserContext` or in `onStart`) for distributed tracing.
+- **Request-Specific Configuration**: Passing data like user preferences, tenant IDs, or API keys (from `initialUserContext` or `onStart`) to tools.
+- **Metrics & Analytics**: Aggregating metrics initiated in `onStart` (potentially using data from `initialUserContext`) and finalizing them in `onEnd`.
+- **Dynamic Resource Management**: Handling resources (e.g., database connections) configured via `initialUserContext` and managed across hooks.
+- **Data Flow Between Hooks**: Initializing data via `initialUserContext`, augmenting it in `onStart`, and accessing the final state in `onEnd`.
+
+## Core Usage Example
+
+This example demonstrates initializing `userContext` with `initialUserContext`, modifying it in an `onStart` hook, and accessing it in an `onEnd` hook and a tool.
 
 ```typescript
 import {
@@ -133,49 +90,162 @@ import { z } from "zod";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
-// Define hooks that set and retrieve data
+// 1. Define your context type
+type AppSessionContext = {
+  requestId: string; // Must be provided by initialUserContext
+  userId?: string; // Can be provided by initialUserContext
+  processingStartTime?: number;
+  toolCallCount?: number;
+};
+
+// 2. Define hooks that use the typed context
 const hooks = createHooks({
-  onStart: ({ agent, context }: OnStartHookArgs) => {
-    // Set a unique request ID for this operation
-    const requestId = `req-${Date.now()}`;
-    context.userContext.set("requestId", requestId);
-    console.log(`[${agent.name}] Operation started. RequestID: ${requestId}`);
+  onStart: ({ agent, context }: OnStartHookArgs<AppSessionContext>) => {
+    console.log(
+      `[${agent.name}] Op Start. ReqID: ${context.userContext.requestId}, User: ${context.userContext.userId || "N/A"}`
+    );
+    context.userContext.processingStartTime = Date.now(); // Add data in the hook
+    context.userContext.toolCallCount = 0; // Initialize
   },
-  onEnd: ({ agent, context }: OnEndHookArgs) => {
-    // Retrieve the request ID at the end of the operation
-    const requestId = context.userContext.get("requestId");
-    console.log(`[${agent.name}] Operation finished. RequestID: ${requestId}`);
-    // Use this ID for logging, metrics, cleanup, etc.
+  onEnd: ({ agent, context }: OnEndHookArgs<AppSessionContext>) => {
+    const duration = Date.now() - (context.userContext.processingStartTime || Date.now());
+    console.log(
+      `[${agent.name}] Op End. ReqID: ${context.userContext.requestId}. Duration: ${duration}ms. Tools called: ${context.userContext.toolCallCount}`
+    );
   },
 });
 
-// Define a tool that uses the context data set in onStart
-const loggerTool = createTool({
-  name: "context_aware_logger",
-  description: "Logs a message using the request ID from context.",
-  parameters: z.object({ message: z.string() }),
-  execute: async (params: { message: string }, options?: ToolExecutionContext) => {
-    // Access userContext via options.operationContext
-    const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown-request";
-    const logMessage = `[RequestID: ${requestId}] Tool Log: ${params.message}`;
+// 3. Define a tool that accesses and modifies the context
+const contextualTool = createTool({
+  name: "contextual_processor",
+  description: "Processes data using information from userContext.",
+  parameters: z.object({ data: z.string() }),
+  execute: async (params: { data: string }, options?: ToolExecutionContext) => {
+    const opCtx = options?.operationContext as OperationContext<AppSessionContext> | undefined;
+    const requestId = opCtx?.userContext?.requestId || "unknown";
+
+    if (opCtx?.userContext) {
+      opCtx.userContext.toolCallCount = (opCtx.userContext.toolCallCount || 0) + 1;
+    }
+
+    const logMessage = `[ReqID: ${requestId}] Tool processing: ${params.data}. Current tool calls: ${opCtx?.userContext?.toolCallCount}`;
     console.log(logMessage);
-    // In a real scenario, you might interact with external systems using this ID
-    return `Logged message with RequestID: ${requestId}`;
+    return `Processed '${params.data}' with RequestID: ${requestId}`;
   },
 });
 
+// 4. Configure Agent
 const agent = new Agent({
-  name: "MyCombinedAgent",
+  name: "ContextDemoAgent",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  tools: [loggerTool],
+  tools: [contextualTool],
   hooks: hooks,
+  instructions: "Use the contextual_processor tool for any data processing task.",
 });
 
-// Trigger the agent.
-await agent.generateText(
-  "Log the following information using the custom logger: 'User feedback received.'"
-);
+// 5. Trigger the agent with initialUserContext
+async function runDemo() {
+  const initialData: AppSessionContext = {
+    requestId: `req-demo-${Date.now()}`,
+    userId: "demo-user-007",
+    // processingStartTime and toolCallCount will be set by hooks
+  };
 
-// Console output will show logs from onStart, the tool (if called), and onEnd,
+  await agent.generateText<AppSessionContext>(
+    "Process the data: 'important customer feedback' using the tool.",
+    { initialUserContext: initialData }
+  );
+}
+
+runDemo();
 ```
+
+## Advanced Scenario: Managing Playwright Instances with `userContext`
+
+`userContext` is excellent for managing stateful, operation-isolated resources like Playwright `Browser` or `Page` instances. `initialUserContext` can pass browser configurations or user-specific details (e.g., cookies, initial URL).
+
+```typescript
+import {
+  Agent,
+  createHooks,
+  createTool,
+  type OnEndHookArgs,
+  type OperationContext,
+  type ToolExecutionContext,
+} from "@voltagent/core";
+import { chromium, type Browser, type Page } from "playwright";
+import { z } from "zod"; // Make sure z is imported for tool parameters
+
+// Define a context type for Playwright data
+type PlaywrightSessionContext = {
+  playwrightPage?: Page;
+  playwrightBrowser?: Browser;
+  initialUrl?: string;
+  downloadsPath?: string;
+};
+
+// Helper to get/create page within the context
+async function ensurePage(context: OperationContext<PlaywrightSessionContext>): Promise<Page> {
+  let page = context.userContext.playwrightPage;
+  if (!page || page.isClosed()) {
+    console.log(`[${context.operationId}] Creating new browser/page...`);
+    // Potentially use launch options from context.userContext if needed
+    const browser = await chromium.launch();
+    page = await browser.newPage();
+    context.userContext.playwrightBrowser = browser;
+    context.userContext.playwrightPage = page;
+
+    const urlToNavigate = context.userContext.initialUrl || "about:blank";
+    console.log(`[${context.operationId}] Navigating to initial URL: ${urlToNavigate}`);
+    await page.goto(urlToNavigate);
+  }
+  return page;
+}
+
+const playwrightHooks = createHooks({
+  onEnd: async ({ context }: OnEndHookArgs<PlaywrightSessionContext>) => {
+    const browser = context.userContext.playwrightBrowser;
+    if (browser) {
+      console.log(`[${context.operationId}] Closing browser...`);
+      await browser.close();
+      // Clear from context to prevent re-use of closed browser reference
+      context.userContext.playwrightBrowser = undefined;
+      context.userContext.playwrightPage = undefined;
+    }
+  },
+});
+
+const navigateAndScreenshotTool = createTool({
+  name: "navigate_and_screenshot",
+  parameters: z.object({ url: z.string().url(), path: z.string() }),
+  execute: async ({ url, path }, options?: ToolExecutionContext) => {
+    if (!options?.operationContext) throw new Error("OperationContext required");
+    const page = await ensurePage(
+      options.operationContext as OperationContext<PlaywrightSessionContext>
+    );
+    await page.goto(url);
+    await page.screenshot({ path });
+    return `Screenshot of ${url} saved to ${path}`;
+  },
+});
+
+const browserAgent = new Agent({
+  name: "PlaywrightAgent",
+  // ... llm, model configuration ...
+  hooks: playwrightHooks,
+  tools: [navigateAndScreenshotTool],
+  instructions: "Use tools to interact with web pages.",
+});
+
+// Example Usage with initialUserContext:
+async function runPlaywrightDemo() {
+  await browserAgent.generateText<PlaywrightSessionContext>(
+    "Navigate to https://example.com and take a screenshot, save it as example.png",
+    { initialUserContext: { initialUrl: "about:blank", downloadsPath: "./downloads" } }
+  );
+}
+// runPlaywrightDemo(); // Uncomment to run
+```
+
+This pattern ensures each agent operation gets its own managed browser environment. For a complete example, see the [VoltAgent Playwright Example](https://github.com/voltagent/voltagent/tree/main/examples/with-playwright).

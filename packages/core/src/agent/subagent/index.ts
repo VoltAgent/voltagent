@@ -3,7 +3,7 @@ import { AgentRegistry } from "../../server/registry";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
-import type { AgentHandoffOptions, AgentHandoffResult } from "../types";
+import type { AgentHandoffOptions, AgentHandoffResult, OperationContext } from "../types";
 import { createTool } from "../../tool";
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
@@ -143,16 +143,18 @@ ${agentsMemory || "No previous agent interactions available."}
   /**
    * Hand off a task to another agent
    */
-  public async handoffTask(options: AgentHandoffOptions): Promise<AgentHandoffResult> {
+  public async handoffTask<TContext = Record<string, any>>(
+    options: AgentHandoffOptions<TContext>,
+  ): Promise<AgentHandoffResult> {
     const {
       task,
       targetAgent,
-      context = {},
       conversationId,
       userId,
       sourceAgent,
       parentAgentId,
       parentHistoryEntryId,
+      supervisorUserContext,
     } = options;
 
     // Use the provided conversationId or generate a new one
@@ -172,15 +174,16 @@ ${agentsMemory || "No previous agent interactions available."}
         role: "system",
         content: `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
 ${task}
-Context: ${JSON.stringify(context)}`,
+Context: ${JSON.stringify(options.context)}`,
       };
 
-      // Send the handoff to the target agent, INCLUDING PARENT CONTEXT
+      // Send the handoff to the target agent, INCLUDING PARENT CONTEXT and SUPERVISOR USER CONTEXT
       const response = await targetAgent.generateText([handoffMessage, ...sharedContext], {
         conversationId: handoffConversationId,
         userId,
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
+        initialUserContext: supervisorUserContext,
       });
 
       return {
@@ -214,13 +217,19 @@ Context: ${JSON.stringify(context)}`,
   /**
    * Hand off a task to multiple agents in parallel
    */
-  public async handoffToMultiple(
-    options: Omit<AgentHandoffOptions, "targetAgent"> & {
+  public async handoffToMultiple<TContext = Record<string, any>>(
+    options: Omit<AgentHandoffOptions<TContext>, "targetAgent"> & {
       targetAgents: Agent<any>[];
     },
   ): Promise<AgentHandoffResult[]> {
-    const { targetAgents, conversationId, parentAgentId, parentHistoryEntryId, ...restOptions } =
-      options;
+    const {
+      targetAgents,
+      conversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      supervisorUserContext,
+      ...restOptions
+    } = options;
 
     // Use the same conversationId for all handoffs to maintain context
     const handoffConversationId = conversationId || crypto.randomUUID();
@@ -229,12 +238,16 @@ Context: ${JSON.stringify(context)}`,
     const results = await Promise.all(
       targetAgents.map(async (agent) => {
         try {
-          return await this.handoffTask({
-            ...restOptions,
+          return await this.handoffTask<TContext>({
+            ...(restOptions as Omit<
+              AgentHandoffOptions<TContext>,
+              "targetAgent" | "targetAgents" | "supervisorUserContext"
+            >),
             targetAgent: agent,
             conversationId: handoffConversationId,
             parentAgentId,
             parentHistoryEntryId,
+            supervisorUserContext,
           });
         } catch (error) {
           console.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
@@ -306,22 +319,39 @@ Context: ${JSON.stringify(context)}`,
           }
 
           // Get the source agent from options if available
-          const sourceAgent = options.sourceAgent;
+          const sourceAgent = options.sourceAgent as Agent<any> | undefined;
 
           // Get current history entry ID for parent context
-          // This is passed from the Agent class via options when the tool is called
-          const currentHistoryEntryId = options.currentHistoryEntryId;
+          const currentHistoryEntryId = options.currentHistoryEntryId as string | undefined;
+
+          // Get supervisor's userContext from the OperationContext passed in options
+          const opContextFromToolOptions = options.operationContext as
+            | OperationContext<Record<string, any>>
+            | undefined;
+          const supervisorUserContextForHandoff = opContextFromToolOptions?.userContext || {};
+
+          // Combine supervisor's userContext with the context provided by the LLM call
+          const combinedContextForHandoff = { ...supervisorUserContextForHandoff, ...context };
 
           // Wait for all agent tasks to complete using Promise.all
-          const results = await this.handoffToMultiple({
+          const results = await this.handoffToMultiple<Record<string, any>>({
             task,
             targetAgents: agents,
-            context,
             sourceAgent,
-            // Pass parent context for event propagation
             parentAgentId: sourceAgent?.id,
             parentHistoryEntryId: currentHistoryEntryId,
-            ...options,
+            supervisorUserContext: combinedContextForHandoff,
+            ...(options as Partial<
+              Omit<
+                AgentHandoffOptions<Record<string, any>>,
+                | "task"
+                | "targetAgents"
+                | "sourceAgent"
+                | "parentAgentId"
+                | "parentHistoryEntryId"
+                | "supervisorUserContext"
+              >
+            >),
           });
 
           // Return structured results with agent names, their responses, and status

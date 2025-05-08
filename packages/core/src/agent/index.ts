@@ -431,17 +431,19 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * @param options Options including parent context
    * @returns Created operation context
    */
-  private async initializeHistory(
+  private async initializeHistory<TContext extends Record<string, any> = Record<string, any>>(
     input: string | BaseMessage[],
     initialStatus: AgentStatus = "working",
     options: {
       parentAgentId?: string;
       parentHistoryEntryId?: string;
       operationName: string;
+      initialUserContext?: TContext;
     } = {
       operationName: "unknown",
+      initialUserContext: {} as TContext,
     },
-  ): Promise<OperationContext> {
+  ): Promise<OperationContext<TContext>> {
     const otelSpan = startOperationSpan({
       agentId: this.id,
       agentName: this.name,
@@ -457,15 +459,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     });
 
     // Create operation context
-    const opContext: OperationContext = {
+    const opContext: OperationContext<TContext> = {
       operationId: historyEntry.id,
-      userContext: new Map<string | symbol, unknown>(),
+      userContext: options.initialUserContext ?? ({} as TContext),
       historyEntry,
       eventUpdaters: new Map<string, EventUpdater>(),
       isActive: true,
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
-      otelSpan: otelSpan, // Assign the span from the helper
+      otelSpan: otelSpan,
     };
 
     // Standardized message event
@@ -558,7 +560,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     nodeName: string,
     data: Partial<StandardEventData> = {},
     type: "memory" | "tool" | "agent" | "retriever" = "agent",
-    context?: OperationContext,
+    context?: OperationContext<any>,
   ): void => {
     if (!historyId) return;
 
@@ -566,13 +568,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Serialize userContext if context is available and userContext has entries
     let userContextData: Record<string, unknown> | undefined = undefined;
-    if (context?.userContext && context.userContext.size > 0) {
+    if (context?.userContext && Object.keys(context.userContext).length > 0) {
       try {
-        // Use the custom serialization helper
-        userContextData = {};
-        for (const [key, value] of context.userContext.entries()) {
-          const stringKey = typeof key === "symbol" ? key.toString() : String(key);
-          userContextData[stringKey] = serializeValueForDebug(value);
+        // Directly serialize the userContext object
+        const serialized = serializeValueForDebug(context.userContext);
+        // Ensure it's a record for the event data
+        if (typeof serialized === "object" && serialized !== null && !Array.isArray(serialized)) {
+          userContextData = serialized as Record<string, unknown>;
+        } else {
+          userContextData = { serialized_context: serialized };
         }
       } catch (error) {
         console.warn("Failed to serialize userContext:", error);
@@ -589,7 +593,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       timestamp: new Date().toISOString(),
       sourceAgentId: this.id,
       ...data,
-      ...(userContextData && { userContext: userContextData }), // Add userContext if available
+      ...(userContextData && { userContext: userContextData }),
     };
 
     // Create the event payload
@@ -624,7 +628,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Fix delete operator usage for better performance
    */
   private addToolEvent = async (
-    context: OperationContext,
+    context: OperationContext<any>,
     eventName: string,
     toolName: string,
     status: EventStatus,
@@ -660,12 +664,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
     const { input, output, error, errorMessage, ...standardData } = data;
     let userContextData: Record<string, unknown> | undefined = undefined;
-    if (context?.userContext && context.userContext.size > 0) {
+    if (context?.userContext && Object.keys(context.userContext).length > 0) {
       try {
-        userContextData = {};
-        for (const [key, value] of context.userContext.entries()) {
-          const stringKey = typeof key === "symbol" ? key.toString() : String(key);
-          userContextData[stringKey] = serializeValueForDebug(value);
+        const serialized = serializeValueForDebug(context.userContext);
+        if (typeof serialized === "object" && serialized !== null && !Array.isArray(serialized)) {
+          userContextData = serialized as Record<string, unknown>;
+        } else {
+          userContextData = { serialized_context: serialized };
         }
       } catch (err) {
         console.warn("Failed to serialize userContext for tool event:", err);
@@ -799,23 +804,25 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a text response without streaming
    */
-  async generateText(
+  async generateText<TContext extends Record<string, any> = Record<string, any>>(
     input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions<TContext> = {},
   ): Promise<InferGenerateTextResponse<TProvider>> {
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const internalOptions = options as InternalGenerateOptions<TContext>;
     const {
       userId,
       conversationId: initialConversationId,
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      initialUserContext,
     } = internalOptions;
 
-    const operationContext = await this.initializeHistory(input, "working", {
+    const operationContext = await this.initializeHistory<TContext>(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "generateText",
+      initialUserContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1009,23 +1016,25 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a text response
    */
-  async streamText(
+  async streamText<TContext extends Record<string, any> = Record<string, any>>(
     input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions<TContext> = {},
   ): Promise<InferStreamTextResponse<TProvider>> {
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const internalOptions = options as InternalGenerateOptions<TContext>;
     const {
       userId,
       conversationId: initialConversationId,
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      initialUserContext,
     } = internalOptions;
 
-    const operationContext = await this.initializeHistory(input, "working", {
+    const operationContext = await this.initializeHistory<TContext>(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "streamText",
+      initialUserContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1265,24 +1274,29 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a structured object response
    */
-  async generateObject<T extends z.ZodType>(
+  async generateObject<
+    T extends z.ZodType,
+    TContext extends Record<string, any> = Record<string, any>,
+  >(
     input: string | BaseMessage[],
     schema: T,
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions<TContext> = {},
   ): Promise<InferGenerateObjectResponse<TProvider>> {
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const internalOptions = options as InternalGenerateOptions<TContext>;
     const {
       userId,
       conversationId: initialConversationId,
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      initialUserContext,
     } = internalOptions;
 
-    const operationContext = await this.initializeHistory(input, "working", {
+    const operationContext = await this.initializeHistory<TContext>(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "generateObject",
+      initialUserContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1414,12 +1428,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<T extends z.ZodType>(
+  async streamObject<
+    T extends z.ZodType,
+    TContext extends Record<string, any> = Record<string, any>,
+  >(
     input: string | BaseMessage[],
     schema: T,
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions<TContext> = {},
   ): Promise<InferStreamObjectResponse<TProvider>> {
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
+    const internalOptions = options as InternalGenerateOptions<TContext>;
     const {
       userId,
       conversationId: initialConversationId,
@@ -1427,12 +1444,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId,
       provider,
       contextLimit = 10,
+      initialUserContext,
     } = internalOptions;
 
-    const operationContext = await this.initializeHistory(input, "working", {
+    const operationContext = await this.initializeHistory<TContext>(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "streamObject",
+      initialUserContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =

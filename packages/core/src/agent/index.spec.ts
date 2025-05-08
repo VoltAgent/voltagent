@@ -953,8 +953,7 @@ describe("Agent", () => {
   });
 
   describe("userContext", () => {
-    it("should initialize userContext within OperationContext", async () => {
-      // Create agent with a spy hook to capture the context
+    it("should initialize userContext within OperationContext with a default empty object if no initialUserContext is provided", async () => {
       const onStartSpy = jest.fn();
       const agentWithHook = new TestAgent({
         name: "Context Test Agent",
@@ -964,23 +963,44 @@ describe("Agent", () => {
         instructions: "Context Test Agent instructions",
       });
 
-      await agentWithHook.generateText("test initialization");
+      await agentWithHook.generateText("test initialization no context");
 
-      // Verify onStart was called
       expect(onStartSpy).toHaveBeenCalled();
-
-      // Get the context passed to onStart from the single argument object
       const operationContext: OperationContext = onStartSpy.mock.calls[0][0].context;
-
-      // Check if userContext exists and is a Map
       expect(operationContext).toHaveProperty("userContext");
-      expect(operationContext.userContext).toBeInstanceOf(Map);
-      expect(operationContext.userContext.size).toBe(0); // Should be empty initially
+      expect(operationContext.userContext).toEqual({}); // Should be an empty object by default
     });
 
-    it("should pass userContext to onStart and onEnd hooks", async () => {
+    it("should initialize userContext within OperationContext with provided initialUserContext", async () => {
+      const onStartSpy = jest.fn();
+      const initialContextData = { customKey: "customValue", numberKey: 123 };
+      type MyContextType = typeof initialContextData;
+
+      const agentWithHook = new TestAgent({
+        name: "Context Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onStart: onStartSpy }),
+        instructions: "Context Test Agent instructions",
+      });
+
+      await agentWithHook.generateText<MyContextType>("test initialization with context", {
+        initialUserContext: initialContextData,
+      });
+
+      expect(onStartSpy).toHaveBeenCalled();
+      const operationContext: OperationContext<MyContextType> = onStartSpy.mock.calls[0][0].context;
+      expect(operationContext).toHaveProperty("userContext");
+      expect(operationContext.userContext).toEqual(initialContextData);
+      expect(operationContext.userContext.customKey).toBe("customValue");
+    });
+
+    it("should pass userContext to onStart and onEnd hooks, and it should be the same object reference", async () => {
       const onStartSpy = jest.fn();
       const onEndSpy = jest.fn();
+      const initialContextData = { message: "hello from test" };
+      type MyContextType = typeof initialContextData;
+
       const agentWithHooks = new TestAgent({
         name: "Hook Context Agent",
         model: mockModel,
@@ -989,56 +1009,57 @@ describe("Agent", () => {
         instructions: "Hook Context Agent instructions",
       });
 
-      await agentWithHooks.generateText("test hooks");
+      await agentWithHooks.generateText<MyContextType>("test hooks with context", {
+        initialUserContext: initialContextData,
+      });
 
       expect(onStartSpy).toHaveBeenCalled();
       expect(onEndSpy).toHaveBeenCalled();
 
-      // Access context from the single argument object (index 0)
-      const startContext: OperationContext = onStartSpy.mock.calls[0][0].context;
-      const endContext: OperationContext = onEndSpy.mock.calls[0][0].context;
+      const startContext: OperationContext<MyContextType> = onStartSpy.mock.calls[0][0].context;
+      const endContext: OperationContext<MyContextType> = onEndSpy.mock.calls[0][0].context;
 
       expect(startContext).toHaveProperty("userContext");
-      expect(startContext.userContext).toBeInstanceOf(Map);
+      expect(startContext.userContext).toEqual(initialContextData);
       expect(endContext).toHaveProperty("userContext");
-      expect(endContext.userContext).toBeInstanceOf(Map);
-      // Verify it's the same context object passed to both
-      expect(startContext.userContext).toBe(endContext.userContext);
+      expect(endContext.userContext).toEqual(initialContextData);
+      expect(startContext.userContext).toBe(endContext.userContext); // Verify same object reference
     });
 
-    it("should allow modifying userContext in onStart and reading in onEnd", async () => {
-      const testValue = "test data";
-      const testKey = "customKey";
+    it("should allow modifying userContext in onStart and reading modified object in onEnd", async () => {
+      const initialData = { originalKey: "originalValue" };
+      type MyContextType = { originalKey?: string; modifiedKey?: string };
 
-      // Update onStartHook to accept a single object argument
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
-        context.userContext.set(testKey, testValue);
+      const onStartHook = jest.fn(({ context }: { context: OperationContext<MyContextType> }) => {
+        // Modify by adding a new key and setting the old one to undefined
+        context.userContext.originalKey = undefined;
+        context.userContext.modifiedKey = "modifiedValue";
       });
-      // Update onEndHook to accept a single object argument
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
-        expect(context.userContext.get(testKey)).toBe(testValue);
+      const onEndHook = jest.fn(({ context }: { context: OperationContext<MyContextType> }) => {
+        expect(context.userContext.originalKey).toBeUndefined();
+        expect(context.userContext.modifiedKey).toBe("modifiedValue");
       });
 
       const agentWithModifyHooks = new TestAgent({
         name: "Modify Context Agent",
         model: mockModel,
         llm: mockProvider,
-        // Pass the updated hooks
         hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
         instructions: "Modify Context Agent instructions",
       });
 
-      await agentWithModifyHooks.generateText("test modification");
+      await agentWithModifyHooks.generateText<MyContextType>("test modification with context", {
+        initialUserContext: initialData,
+      });
 
       expect(onStartHook).toHaveBeenCalled();
       expect(onEndHook).toHaveBeenCalled();
     });
 
-    it("should pass userContext to tool execution context", async () => {
-      const testValue = "data from start";
-      const testKey = Symbol("toolTestKey");
+    it("should pass userContext (as an object) to tool execution context", async () => {
+      const initialToolContext = { toolData: "data for tool" };
+      type MyToolContextType = typeof initialToolContext;
 
-      // Mock tool execute function to check context
       const toolExecuteSpy = jest.fn();
       const mockTool = createTool({
         id: "context-tool",
@@ -1048,81 +1069,63 @@ describe("Agent", () => {
         execute: toolExecuteSpy,
       });
 
-      // Hook to add data to context before tool execution
-      // Update onStartHook to accept a single object argument
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
-        context.userContext.set(testKey, testValue);
-      });
+      // Define the hook, casting to any for the problematic parameter type for now
+      // to bypass strict type checking that might depend on the exact generic definition of AgentHookOnStart
+      const onStartHook = jest.fn(
+        ({ context }: { context: OperationContext<MyToolContextType> }) => {
+          expect(context.userContext.toolData).toBe("data for tool");
+        },
+      ) as any; // Cast to any to satisfy linter for now
 
       const agentWithToolAndHook = new TestAgent({
         name: "Tool Context Agent",
         model: mockModel,
         llm: mockProvider,
         tools: [mockTool],
-        // Pass the updated hook
         hooks: createHooks({ onStart: onStartHook }),
         instructions: "Tool Context Agent instructions",
       });
 
-      // Need to trigger the tool
-      await agentWithToolAndHook.generateText("Use the context-tool");
-
-      // Verify the tool's execute method was called
-      // The mock provider simulates the call, so we check the spy
-      // The exact number of calls depends on the mock provider logic
-      // For this test, we only need to ensure it was called at least once
-      // and check the context passed during one of those calls.
-      // However, the current mock provider logic doesn't actually call the tool's execute.
-      // We need to adjust the mock provider or the test setup.
-
-      // Let's spy on the provider's generateText and check the toolExecutionContext passed
       const generateTextSpy = jest.spyOn(mockProvider, "generateText");
 
-      await agentWithToolAndHook.generateText("Use the context-tool again");
+      await agentWithToolAndHook.generateText<MyToolContextType>("Use the context-tool", {
+        initialUserContext: initialToolContext,
+      });
 
+      expect(onStartHook).toHaveBeenCalled(); // Ensure onStartHook was called and assertions passed
       expect(generateTextSpy).toHaveBeenCalled();
-      const generateTextOptions = generateTextSpy.mock.calls[0][0]; // First argument to generateText
 
-      // The provider receives toolExecutionContext
+      const generateTextOptions = generateTextSpy.mock.calls[0][0];
       expect(generateTextOptions.toolExecutionContext).toBeDefined();
       expect(generateTextOptions.toolExecutionContext?.operationContext).toBeDefined();
-      expect(
-        generateTextOptions.toolExecutionContext?.operationContext?.userContext,
-      ).toBeInstanceOf(Map);
-      expect(
-        generateTextOptions.toolExecutionContext?.operationContext?.userContext?.get(testKey),
-      ).toBe(testValue); // Verify data from onStart is there
 
-      generateTextSpy.mockRestore(); // Clean up spy
+      // Check the userContext within the operationContext passed to the tool
+      const opContextForTool = generateTextOptions.toolExecutionContext
+        ?.operationContext as OperationContext<MyToolContextType>; // Cast to the correct type
+      expect(opContextForTool.userContext).toEqual(initialToolContext);
+      expect(opContextForTool.userContext.toolData).toBe("data for tool");
+
+      generateTextSpy.mockRestore();
     });
 
-    it("should keep userContext isolated between operations", async () => {
-      const key1 = "op1Key";
-      const value1 = "op1Value";
-      const key2 = "op2Key";
-      const value2 = "op2Value";
+    it("should keep userContext (as an object) isolated between operations", async () => {
+      type OpContextType = { opSpecificValue?: string };
+      const op1Data: OpContextType = { opSpecificValue: "Value for Op1" };
+      const op2Data: OpContextType = { opSpecificValue: "Value for Op2" };
 
-      // Update onStartHook to accept a single object argument
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onStartHook = jest.fn(({ context }: { context: OperationContext<OpContextType> }) => {
         if (context.historyEntry.input === "Operation 1") {
-          context.userContext.set(key1, value1);
-          // Check that op2 data is not present
-          expect(context.userContext.has(key2)).toBe(false);
+          expect(context.userContext.opSpecificValue).toBe("Value for Op1");
         } else if (context.historyEntry.input === "Operation 2") {
-          context.userContext.set(key2, value2);
-          // Check that op1 data is not present
-          expect(context.userContext.has(key1)).toBe(false);
+          expect(context.userContext.opSpecificValue).toBe("Value for Op2");
         }
       });
 
-      // Update onEndHook to accept a single object argument
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onEndHook = jest.fn(({ context }: { context: OperationContext<OpContextType> }) => {
         if (context.historyEntry.input === "Operation 1") {
-          expect(context.userContext.get(key1)).toBe(value1);
-          expect(context.userContext.has(key2)).toBe(false);
+          expect(context.userContext.opSpecificValue).toBe("Value for Op1");
         } else if (context.historyEntry.input === "Operation 2") {
-          expect(context.userContext.get(key2)).toBe(value2);
-          expect(context.userContext.has(key1)).toBe(false);
+          expect(context.userContext.opSpecificValue).toBe("Value for Op2");
         }
       });
 
@@ -1130,16 +1133,17 @@ describe("Agent", () => {
         name: "Isolation Test Agent",
         model: mockModel,
         llm: mockProvider,
-        // Pass the updated hooks
         hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
         instructions: "Isolation Test Agent instructions",
       });
 
-      // Run operations sequentially to ensure isolation
-      await isolationAgent.generateText("Operation 1");
-      await isolationAgent.generateText("Operation 2");
+      await isolationAgent.generateText<OpContextType>("Operation 1", {
+        initialUserContext: op1Data,
+      });
+      await isolationAgent.generateText<OpContextType>("Operation 2", {
+        initialUserContext: op2Data,
+      });
 
-      // Check calls
       expect(onStartHook).toHaveBeenCalledTimes(2);
       expect(onEndHook).toHaveBeenCalledTimes(2);
     });
