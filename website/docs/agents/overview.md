@@ -11,8 +11,6 @@ The `Agent` class is the fundamental building block of VoltAgent. It acts as the
 
 At its core, an agent needs a name, instructions (which guides its behavior), an LLM Provider to handle communication with an AI model, and the specific model to use.
 
-**Note: The `description` field for `Agent` is deprecated and will be removed in a future version. Please use `instructions` instead.**
-
 ```ts
 import { Agent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai"; // Handles communication
