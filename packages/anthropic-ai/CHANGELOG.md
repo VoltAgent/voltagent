@@ -1,5 +1,12 @@
 # @voltagent/anthropic-ai
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [[`b31c8f2`](https://github.com/VoltAgent/voltagent/commit/b31c8f2ad1b4bf242b197a094300cb3397109a94)]:
+  - @voltagent/core@0.1.17
+
 ## 0.1.2
 
 ### Patch Changes
