@@ -13,8 +13,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "dts": "tsc --emitDeclarationOnly --outDir dist --declaration --traceResolution",
-    "lint": "tsup -v",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
