@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { createTool, Tool } from "@voltagent/core";
 //@ts-ignore
 import { EventSourceParser } from "@anthropic-ai/sdk/lib/streaming";
+import { createTool } from "@voltagent/core";
 import type { BaseMessage } from "@voltagent/core";
 import { z } from "zod";
 import { AnthropicProvider } from ".";
@@ -41,13 +41,22 @@ describe("AnthropicProvider", () => {
       });
 
       const result = await provider.generateText({
-        messages: [{ role: "user", content: "Hello!" }],
+        messages: [
+          { role: "system" as const, content: "You are a helpful assistant." },
+          { role: "user" as const, content: "Hello!" },
+        ],
         model: "claude-3-7-sonnet-20250219",
       });
 
       expect(result).toBeDefined();
       expect(result.text).toBe("Hello, I am a test response!");
       expect(mockAnthropicClient.messages.create).toHaveBeenCalledTimes(1);
+
+      // Verify system message handling
+      const createParams = mockAnthropicClient.messages.create.mock.calls[0][0];
+      expect(createParams.messages.length).toBe(1);
+      expect(createParams.messages[0].role).toBe("user");
+      expect(createParams.system).toContain("You are a helpful assistant.");
     });
     it("should accept tools", async () => {
       const mockAnthropicClient = {
@@ -74,7 +83,7 @@ describe("AnthropicProvider", () => {
       const provider = new AnthropicProvider({
         apiKey: "sk-ant-api03-test-key",
       });
-      const options = createTool({
+      createTool({
         id: "test-tool",
         name: "test-tool",
         description: "This is a test tool",
@@ -84,7 +93,15 @@ describe("AnthropicProvider", () => {
         execute: jest.fn().mockResolvedValue("test-tool-response"),
       });
 
-      const tool = new Tool(options);
+      const tool = createTool({
+        id: "test-tool",
+        name: "test-tool",
+        description: "This is a test tool",
+        parameters: z.object({
+          name: z.string(),
+        }),
+        execute: jest.fn().mockResolvedValue("test-tool-response"),
+      });
 
       const result = await provider.generateText({
         messages: [{ role: "user", content: "Hello!" }],
@@ -174,7 +191,10 @@ describe("AnthropicProvider", () => {
 
       // Test streaming
       const stream = await provider.streamText({
-        messages: [{ role: "user", content: "Hello!" }],
+        messages: [
+          { role: "system" as const, content: "You are a helpful assistant." },
+          { role: "user" as const, content: "Hello!" },
+        ],
         model: "claude-3-7-sonnet-20250219",
       });
 
@@ -196,6 +216,13 @@ describe("AnthropicProvider", () => {
       expect(chunks.length).toBeGreaterThan(0);
       expect(accumulatedText).toBe("Hello, world!");
       expect(mockAnthropicClient.messages.create).toHaveBeenCalledTimes(1);
+
+      // Verify system message handling
+      const createParams = mockAnthropicClient.messages.create.mock.calls[0][0];
+      expect(createParams.messages.length).toBe(1);
+      expect(createParams.messages[0].role).toBe("user");
+      expect(createParams.system).toContain("You are a helpful assistant.");
+
       expect(mockAnthropicClient.messages.create).toHaveBeenCalledWith(
         expect.objectContaining({
           stream: true,
@@ -241,13 +268,23 @@ describe("AnthropicProvider", () => {
         hobbies: z.array(z.string()),
       });
       const result = await provider.generateObject({
-        messages: [{ role: "user", content: "Get user info" }],
+        messages: [
+          { role: "system" as const, content: "You are a helpful assistant." },
+          { role: "user" as const, content: "Get user info" },
+        ],
         model: "claude-3-7-sonnet-20250219",
         schema,
       });
 
       expect(result).toBeDefined();
       expect(result.object).toEqual(testObject);
+
+      // Verify system message handling
+      const createParams = mockAnthropicClient.messages.create.mock.calls[0][0];
+      expect(createParams.messages.length).toBe(1);
+      expect(createParams.messages[0].role).toBe("user");
+      expect(createParams.system).toContain("You are a helpful assistant.");
+      expect(createParams.system).toContain("You must return the response in valid JSON Format");
     });
 
     it("should format object response with JSON format in onStepFinish for AnthropicProvider", async () => {
@@ -284,8 +321,8 @@ describe("AnthropicProvider", () => {
         client: mockAnthropicClient as any,
       });
 
-      // Create a spy for the createStepFromChunk method
-      const createStepFromChunkSpy = jest.spyOn(anthropicProvider, "createStepFromChunk");
+      // Create a spy for the createStepFromChunk function from utils
+      const createStepFromChunkSpy = jest.spyOn(require("./utils"), "createStepFromChunk");
       createStepFromChunkSpy.mockReturnValue({
         id: "",
         role: "assistant",
@@ -321,7 +358,11 @@ describe("AnthropicProvider", () => {
       expect(createCall.system).toEqual(expect.any(String));
 
       // ASSERTION 2: Was createStepFromChunk called with the right parameters?
-      const createStepCall = createStepFromChunkSpy.mock.calls[0][0];
+      const createStepCall = createStepFromChunkSpy.mock.calls[0][0] as {
+        type: string;
+        text: string;
+        usage: { input_tokens: number; output_tokens: number };
+      };
       expect(createStepCall.type).toBe("text");
       expect(createStepCall.text).toBe(JSON.stringify(testObject));
       expect(createStepCall.usage).toEqual({
@@ -497,13 +538,23 @@ describe("AnthropicProvider", () => {
 
       // Test streaming with the object schema
       const result = await provider.streamObject({
-        messages: [{ role: "user", content: "Get user info" }],
+        messages: [
+          { role: "system" as const, content: "You are a helpful assistant." },
+          { role: "user" as const, content: "Get user info" },
+        ],
         model: "claude-3-7-sonnet-20250219",
         schema,
       });
 
       expect(result).toBeDefined();
       expect(result.objectStream).toBeDefined();
+
+      // Verify system message handling
+      const createParams = mockAnthropicClient.messages.create.mock.calls[0][0];
+      expect(createParams.messages.length).toBe(1);
+      expect(createParams.messages[0].role).toBe("user");
+      expect(createParams.system).toContain("You are a helpful assistant.");
+      expect(createParams.system).toContain("You must return the response in valid JSON Format");
 
       // Process the stream
       const reader = result.objectStream.getReader();
@@ -696,6 +747,52 @@ describe("AnthropicProvider", () => {
         role: "assistant",
         content: "Hello",
       });
+    });
+  });
+
+  describe("toTool", () => {
+    const provider = new AnthropicProvider({
+      apiKey: "sk-ant-api03-test-key",
+    });
+
+    it("should convert a tool to Anthropic format", () => {
+      // Create a tool using createTool function
+      const toolOptions = createTool({
+        id: "search-tool",
+        name: "search",
+        description: "Search for information on the web",
+        parameters: z.object({
+          query: z.string().describe("The search query"),
+          limit: z.number().optional().describe("Maximum number of results to return"),
+        }),
+        execute: jest.fn().mockResolvedValue("search results"),
+      });
+
+      const tool = createTool(toolOptions);
+
+      // Convert the tool to Anthropic format
+      const anthropicTool = provider.toTool(tool);
+
+      // Verify the converted tool has the correct structure
+      expect(anthropicTool).toEqual(
+        expect.objectContaining({
+          name: "search",
+          description: "Search for information on the web",
+          input_schema: expect.objectContaining({
+            type: "object",
+            properties: expect.objectContaining({
+              query: expect.objectContaining({
+                type: "string",
+                description: "The search query",
+              }),
+              limit: expect.objectContaining({
+                type: "number",
+              }),
+            }),
+            required: expect.arrayContaining(["query"]),
+          }),
+        }),
+      );
     });
   });
 });

@@ -1,16 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ContentBlock, Message, Usage } from "@anthropic-ai/sdk/resources/messages";
 import type {
   BaseMessage,
+  BaseTool,
   GenerateObjectOptions,
   GenerateTextOptions,
   LLMProvider,
-  MessageRole,
   ProviderObjectResponse,
   ProviderObjectStreamResponse,
   ProviderTextResponse,
   ProviderTextStreamResponse,
-  StepWithContent,
   StreamObjectOptions,
   StreamTextOptions,
   VoltAgentError,
@@ -19,10 +17,19 @@ import type { z } from "zod";
 import type {
   AnthropicMessage,
   AnthropicProviderOptions,
+  AnthropicTool,
   AnthropicToolCall,
   StopMessageChunk,
 } from "./types";
-import { coreToolToAnthropic } from "./utils";
+import {
+  createResponseObject,
+  createStepFromChunk,
+  generateVoltError,
+  getSystemMessage,
+  handleStepFinish,
+  processResponseContent,
+  zodToJsonSchema,
+} from "./utils";
 
 export class AnthropicProvider implements LLMProvider<string> {
   private anthropic: Anthropic;
@@ -34,9 +41,9 @@ export class AnthropicProvider implements LLMProvider<string> {
       options.client ?? new Anthropic({ apiKey: options.apiKey ?? process.env.ANTHROPIC_API_KEY });
     this.model = "claude-3-7-sonnet-20250219";
 
-    this.createStepFromChunk = this.createStepFromChunk.bind(this);
     this.getModelIdentifier = this.getModelIdentifier.bind(this);
     this.toMessage = this.toMessage.bind(this);
+    this.toTool = this.toTool.bind(this);
     this.generateText = this.generateText.bind(this);
     this.streamText = this.streamText.bind(this);
     this.generateObject = this.generateObject.bind(this);
@@ -47,141 +54,38 @@ export class AnthropicProvider implements LLMProvider<string> {
     return model;
   }
 
-  toMessage = (message: BaseMessage): AnthropicMessage => {
-    return message as AnthropicMessage;
-  };
-
-  createStepFromChunk = (chunk: { type: string; [key: string]: any }): StepWithContent | null => {
-    if (chunk.type === "text" && chunk.text) {
+  toMessage = (message: BaseMessage): AnthropicMessage | null => {
+    if (message.role === "tool") {
       return {
-        id: "",
-        type: "text",
-        content: chunk.text,
-        role: "assistant" as MessageRole,
-        usage: chunk.usage || undefined,
+        role: "assistant",
+        content: String(message.content),
       };
     }
-
-    if (chunk.type === "tool-call" || chunk.type === "tool_call") {
-      return {
-        id: chunk.toolCallId,
-        type: "tool_call",
-        name: chunk.toolName,
-        arguments: chunk.args,
-        content: JSON.stringify([
-          {
-            type: "tool-call",
-            toolCallId: chunk.toolCallId,
-            toolName: chunk.toolName,
-            args: chunk.args,
-          },
-        ]),
-        role: "assistant" as MessageRole,
-        usage: chunk.usage || undefined,
-      };
+    if (message.role === "system") {
+      return null;
     }
-
-    if (chunk.type === "tool-result" || chunk.type === "tool_result") {
-      return {
-        id: chunk.toolCallId,
-        type: "tool_result",
-        name: chunk.toolName,
-        result: chunk.result,
-        content: JSON.stringify([
-          {
-            type: "tool-result",
-            toolCallId: chunk.toolCallId,
-            result: chunk.result,
-          },
-        ]),
-        role: "assistant" as MessageRole,
-        usage: chunk.usage || undefined,
-      };
-    }
-
-    return null;
-  };
-
-  private processResponseContent(content: ContentBlock[]): {
-    responseText: string;
-    toolCalls: AnthropicToolCall[];
-  } {
-    let responseText = "";
-    const toolCalls: AnthropicToolCall[] = [];
-
-    if (!content || content.length === 0) {
-      return { responseText, toolCalls };
-    }
-
-    for (const item of content) {
-      if (item.type === "text") {
-        responseText += item.text;
-      } else if (item.type === "tool_use") {
-        toolCalls.push({
-          type: "tool-call",
-          toolCallId: item.id,
-          toolName: item.name,
-          args: item.input || {},
-        });
-      }
-    }
-
-    return { responseText, toolCalls };
-  }
-
-  private async handleStepFinish(
-    options: GenerateTextOptions<string>,
-    responseText: string,
-    toolCalls: AnthropicToolCall[],
-    usage?: Usage,
-  ): Promise<void> {
-    if (!options.onStepFinish) return;
-
-    if (responseText) {
-      const step = this.createStepFromChunk({
-        type: "text",
-        text: responseText,
-        usage,
-      });
-      if (step) await options.onStepFinish(step);
-    }
-
-    for (const toolCall of toolCalls) {
-      const step = this.createStepFromChunk({
-        type: "tool-call",
-        toolCallId: toolCall.toolCallId,
-        toolName: toolCall.toolName,
-        args: toolCall.args,
-        usage,
-      });
-      if (step) await options.onStepFinish(step);
-    }
-  }
-
-  private createResponseObject(
-    response: Message,
-    responseText: string,
-    toolCalls: AnthropicToolCall[],
-  ): ProviderTextResponse<any> {
     return {
-      provider: response,
-      text: responseText,
-      usage: response.usage
-        ? {
-            promptTokens: response.usage.input_tokens,
-            completionTokens: response.usage.output_tokens,
-            totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-          }
-        : undefined,
-      toolCalls: toolCalls,
-      finishReason: response.stop_reason as string,
+      role: message.role,
+      content: String(message.content),
+    };
+  };
+
+  private getAnthropicMessages(messages: BaseMessage[]): AnthropicMessage[] {
+    return messages.map(this.toMessage).filter((message) => message !== null);
+  }
+
+  toTool(tool: BaseTool): AnthropicTool {
+    return {
+      name: tool.name,
+      description: tool.description,
+      input_schema: zodToJsonSchema(tool.parameters),
     };
   }
 
   async generateText(options: GenerateTextOptions<string>): Promise<ProviderTextResponse<any>> {
     try {
-      const anthropicMessages = options.messages.map(this.toMessage);
-      const anthropicTools = options.tools ? coreToolToAnthropic(options.tools) : undefined;
+      const anthropicMessages = this.getAnthropicMessages(options.messages);
+      const anthropicTools = options.tools ? options.tools.map(this.toTool) : undefined;
 
       const response = await this.anthropic.messages.create({
         messages: anthropicMessages,
@@ -192,10 +96,11 @@ export class AnthropicProvider implements LLMProvider<string> {
         stop_sequences: options.provider?.stopSequences,
         stream: false,
         tools: anthropicTools,
+        system: getSystemMessage(options.messages),
       });
 
       //Processes the response content
-      const { responseText, toolCalls } = this.processResponseContent(response.content);
+      const { responseText, toolCalls } = processResponseContent(response.content);
 
       //Adds tool calls to the messages if there are any
       if (toolCalls.length > 0) {
@@ -207,22 +112,20 @@ export class AnthropicProvider implements LLMProvider<string> {
       }
 
       //Handles onStepFinish
-      await this.handleStepFinish(options, responseText, toolCalls, response.usage);
+      await handleStepFinish(options, responseText, toolCalls, response.usage);
 
-      return this.createResponseObject(response, responseText, toolCalls);
+      return createResponseObject(response, responseText, toolCalls);
     } catch (error) {
-      console.error("Anthropic API error:", error);
-      return { error: String(error) } as any;
+      throw generateVoltError("Error while generating Text in Anthropic AI", error, "llm_generate");
     }
   }
 
   async streamText(options: StreamTextOptions<string>): Promise<ProviderTextStreamResponse<any>> {
     try {
-      const anthropicMessages = options.messages.map(this.toMessage);
-      const anthropicTools = options.tools ? coreToolToAnthropic(options.tools) : undefined;
+      const anthropicMessages = this.getAnthropicMessages(options.messages);
+      const anthropicTools = options.tools ? options.tools.map(this.toTool) : undefined;
 
       const { temperature = 0.7, maxTokens = 1024, topP, stopSequences } = options.provider || {};
-
       const response = await this.anthropic.messages.create({
         messages: anthropicMessages,
         model: options.model || this.model,
@@ -232,6 +135,7 @@ export class AnthropicProvider implements LLMProvider<string> {
         stop_sequences: stopSequences,
         stream: true,
         tools: anthropicTools,
+        system: getSystemMessage(options.messages),
       });
 
       const textStream = new ReadableStream({
@@ -244,7 +148,7 @@ export class AnthropicProvider implements LLMProvider<string> {
               if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
                 currentText += chunk.delta.text;
 
-                const textChunk = this.createStepFromChunk({
+                const textChunk = createStepFromChunk({
                   type: "text",
                   text: chunk.delta.text,
                   usage: undefined,
@@ -279,13 +183,13 @@ export class AnthropicProvider implements LLMProvider<string> {
 
                 // Handle onChunk callback for tool call
                 if (options?.onChunk) {
-                  const step = this.createStepFromChunk(toolCall);
+                  const step = createStepFromChunk(toolCall);
                   if (step) await options.onChunk(step);
                 }
 
                 // Handle onStepFinish for tool call
                 if (options.onStepFinish) {
-                  const step = this.createStepFromChunk(toolCall);
+                  const step = createStepFromChunk(toolCall);
                   if (step) await options.onStepFinish(step);
                 }
               }
@@ -313,11 +217,11 @@ export class AnthropicProvider implements LLMProvider<string> {
               }
             }
           } catch (error) {
-            const voltError: VoltAgentError = {
-              message: "Error while parsing streamed text response from Anthropic API",
-              originalError: error,
-            };
-            // Handle errors
+            const voltError = generateVoltError(
+              "Error while parsing streamed text response from Anthropic API",
+              error,
+              "llm_stream",
+            );
             if (options.onError) {
               options.onError(voltError);
             }
@@ -331,25 +235,25 @@ export class AnthropicProvider implements LLMProvider<string> {
         textStream: textStream,
       };
     } catch (error) {
-      const voltError: VoltAgentError = {
-        message: "Error generating streaming text in Anthropic API",
-        originalError: error,
-      };
-      //Handles Api Errors
+      const voltError = generateVoltError(
+        "Error generating streaming text in Anthropic AI",
+        error,
+        "llm_stream",
+      );
       if (options.onError) {
         options.onError(voltError);
       }
-      console.error("Anthropic API error:", error);
       throw voltError;
     }
   }
 
   async generateObject<TSchema extends z.ZodType>(
-    options: GenerateObjectOptions<unknown, TSchema>,
+    options: GenerateObjectOptions<string, TSchema>,
   ): Promise<ProviderObjectResponse<any, z.infer<TSchema>>> {
     const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
+    const systemPrompt = `${getSystemMessage(options.messages)} You must return the response in valid JSON Format with proper schema, nothing else `;
 
-    const anthropicMessages = options.messages.map(this.toMessage);
+    const anthropicMessages = this.getAnthropicMessages(options.messages);
     const model = (options.model || this.model) as string;
 
     try {
@@ -361,8 +265,7 @@ export class AnthropicProvider implements LLMProvider<string> {
         top_p: topP,
         stop_sequences: stopSequences,
         stream: false,
-        system:
-          "You must return the response in valid JSON Format with proper schema, nothing else ",
+        system: systemPrompt,
       });
 
       let resposneText = "";
@@ -391,7 +294,7 @@ export class AnthropicProvider implements LLMProvider<string> {
       }
 
       if (options.onStepFinish) {
-        const step = this.createStepFromChunk({
+        const step = createStepFromChunk({
           type: "text",
           text: resposneText,
           usage: response.usage,
@@ -410,31 +313,31 @@ export class AnthropicProvider implements LLMProvider<string> {
         finishReason: response.stop_reason as string,
       };
     } catch (error) {
-      console.error(
-        `Failed to create object ${error instanceof Error ? error.message : String(error)}`,
+      throw generateVoltError(
+        "Error while generating object in Anthropic AI",
+        error,
+        "llm_generate",
       );
-      return { error: String(error) } as any;
     }
   }
 
   async streamObject<TSchema extends z.ZodType>(
-    options: StreamObjectOptions<unknown, TSchema>,
+    options: StreamObjectOptions<string, TSchema>,
   ): Promise<ProviderObjectStreamResponse<any, z.infer<TSchema>>> {
     try {
-      const anthropicMessages = options.messages.map(this.toMessage);
-      const model = (options.model || this.model) as string;
-
+      const anthropicMessages = this.getAnthropicMessages(options.messages);
+      const systemPrompt = `${getSystemMessage(options.messages)} You must return the response in valid JSON Format, with proper schema `;
       const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
 
       const response = await this.anthropic.messages.create({
         messages: anthropicMessages,
-        model: model,
+        model: options.model || this.model,
         max_tokens: maxTokens,
         temperature: temperature,
         top_p: topP,
         stop_sequences: stopSequences,
         stream: true,
-        system: "You must return the response in valid JSON Format, with proper schema ",
+        system: systemPrompt,
       });
 
       let accumulatedText = "";
@@ -500,10 +403,11 @@ export class AnthropicProvider implements LLMProvider<string> {
               }
             }
           } catch (error) {
-            const voltError: VoltAgentError = {
-              message: "Error while parsing streamed object response in Anthropic API",
-              originalError: error,
-            };
+            const voltError = generateVoltError(
+              "Error while parsing streamed object response in Anthropic API",
+              error,
+              "llm_stream",
+            );
             if (options.onError) {
               options.onError(voltError);
             }
@@ -517,18 +421,14 @@ export class AnthropicProvider implements LLMProvider<string> {
         objectStream,
       };
     } catch (error) {
-      const voltError: VoltAgentError = {
-        message: "Error while generating streamed object from Anthropic API",
-        originalError: error,
-      };
-
+      const voltError = generateVoltError(
+        "Error while generating streamed object from Anthropic API",
+        error,
+        "llm_stream",
+      );
       if (options.onError) {
         options.onError(voltError);
       }
-
-      console.error(
-        `Failed to create object ${error instanceof Error ? error.message : String(error)}`,
-      );
       throw voltError;
     }
   }
