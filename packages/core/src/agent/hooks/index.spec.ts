@@ -124,6 +124,7 @@ describe("Agent Hooks Functionality", () => {
       };
       const errorAgent = new Agent({
         name: "ErrorAgent",
+        instructions: "Error agent",
         llm: errorProvider as any,
         model: "mock-error-model",
         hooks: createHooks({ onEnd: onEndSpy }),

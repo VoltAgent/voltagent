@@ -34,7 +34,7 @@ const memory = new InMemoryStorage({
 
 const agent = new Agent({
   name: "Ephemeral Agent",
-  description: "An agent using in-memory storage (history resets on restart).",
+  instructions: "An agent using in-memory storage (history resets on restart).",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   memory: memory, // Assign the InMemoryStorage instance

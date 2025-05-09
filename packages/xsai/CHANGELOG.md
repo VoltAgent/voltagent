@@ -1,5 +1,31 @@
 # @voltagent/xsai
 
+## 0.1.6
+
+### Patch Changes
+
+- [#102](https://github.com/VoltAgent/voltagent/pull/102) [`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: use 'instructions' field for Agent definitions in examples - #88
+
+  Updated documentation examples (READMEs, docs, blogs) and relevant package code examples to use the `instructions` field instead of `description` when defining `Agent` instances.
+
+  This change aligns the examples with the preferred API usage for the `Agent` class, where `instructions` provides behavioral guidance to the agent/LLM. This prepares for the eventual deprecation of the `description` field specifically for `Agent` class definitions.
+
+  **Example Change for Agent Definition:**
+
+  ```diff
+    const agent = new Agent({
+      name: "My Assistant",
+  -   description: "A helpful assistant.",
+  +   instructions: "A helpful assistant.",
+      llm: new VercelAIProvider(),
+      model: openai("gpt-4o-mini"),
+    });
+  ```
+
+- Updated dependencies [[`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3)]:
+  - @voltagent/core@0.1.14
+  - @voltagent/xsai@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

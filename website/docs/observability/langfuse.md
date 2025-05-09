@@ -56,17 +56,16 @@ When creating your main `VoltAgent` instance, pass the configured `langfuseExpor
 
 ```typescript
 // Define your agent(s)
-const myAgent = new Agent({
-  name: "My Assistant",
-  description: "A helpful assistant that answers questions without using tools",
+const agent = new Agent({
+  name: "my-voltagent-app",
+  instructions: "A helpful assistant that answers questions without using tools",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
 });
 
 // Initialize VoltAgent with the exporter
 new VoltAgent({
   agents: {
-    myAgent, // Register your agent(s)
+    agent, // Register your agent(s)
   },
   // highlight-next-line
   telemetryExporter: langfuseExporter, // Pass the exporter instance

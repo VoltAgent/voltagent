@@ -115,7 +115,7 @@ const mockFetchRepoContributorsTool = {
 // 1. Create the stars fetcher agent
 const starsFetcherAgent = new Agent({
   name: "StarsFetcher",
-  description: "Fetches the number of stars for a GitHub repository using a tool.",
+  instructions: "Fetches the number of stars for a GitHub repository using a tool.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [mockFetchRepoStarsTool], // Use the mock tool
@@ -124,7 +124,7 @@ const starsFetcherAgent = new Agent({
 // 2. Create the contributors fetcher agent
 const contributorsFetcherAgent = new Agent({
   name: "ContributorsFetcher",
-  description: "Fetches the list of contributors for a GitHub repository using a tool.",
+  instructions: "Fetches the list of contributors for a GitHub repository using a tool.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [mockFetchRepoContributorsTool], // Use the mock tool
@@ -133,7 +133,7 @@ const contributorsFetcherAgent = new Agent({
 // 3. Create the analyzer agent (no tools needed)
 const analyzerAgent = new Agent({
   name: "RepoAnalyzer",
-  description: "Analyzes repository statistics (stars, contributors) and provides insights.",
+  instructions: "Analyzes repository statistics (stars, contributors) and provides insights.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   // This agent doesn't need tools; it processes data provided by the supervisor.
@@ -142,7 +142,7 @@ const analyzerAgent = new Agent({
 // 4. Create the supervisor agent that coordinates all the sub-agents
 const supervisorAgent = new Agent({
   name: "Supervisor",
-  description: `You are a GitHub repository analyzer. When given a GitHub repository URL or owner/repo format, you will:
+  instructions: `You are a GitHub repository analyzer. When given a GitHub repository URL or owner/repo format, you will:
 1. Extract the owner/repo name.
 2. Use the StarsFetcher agent to get the repository's star count.
 3. Use the ContributorsFetcher agent to get the repository's contributors.

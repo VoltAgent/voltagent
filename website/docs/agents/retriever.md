@@ -83,7 +83,7 @@ const provider = new VercelAIProvider();
 // Create an agent and attach the retriever directly
 const agent = new Agent({
   name: "RAG Assistant",
-  description: "A helpful assistant with access to document knowledge",
+  instructions: "A helpful assistant with access to document knowledge",
   llm: provider,
   model: openai("gpt-4o"),
   // Attach the retriever instance directly
@@ -133,10 +133,10 @@ const provider = new VercelAIProvider();
 
 // Create an agent and add the retriever as a tool
 const agent = new Agent({
-  name: "Tool-using Assistant",
-  description: "A helpful assistant that can search internal docs when needed",
-  llm: provider,
-  model: openai("gpt-4o"), // Ensure model supports tool use
+  name: "Selective Assistant",
+  instructions: "A helpful assistant that can search internal docs when needed",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
   // Add the retriever's tool interface to the tools array
   // highlight-next-line
   tools: [retrieverAsTool.tool],

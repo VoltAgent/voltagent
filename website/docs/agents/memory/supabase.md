@@ -172,7 +172,7 @@ const memory = new SupabaseMemory({
 
 const agent = new Agent({
   name: "Supabase Memory Agent",
-  description: "An agent using Supabase for memory.",
+  instructions: "An agent using Supabase for memory.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   memory: memory, // Assign the memory provider instance

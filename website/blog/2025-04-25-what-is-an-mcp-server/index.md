@@ -153,10 +153,9 @@ const mcpConfig = new MCPConfiguration({
   },
 });
 
-const agent = new Agent({
+const mcpAgent = new Agent({
   name: "MCP Filesystem Agent",
-  description:
-    "I am an agent that can read and write files inside a specific 'data' directory, using tools provided by an MCP server.",
+  instructions: "You can interact with the local filesystem. List files, read files, write files.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: await mcpConfig.getTools(),
@@ -164,7 +163,7 @@ const agent = new Agent({
 
 new VoltAgent({
   agents: {
-    fsAgent: agent,
+    fsAgent: mcpAgent,
   },
 });
 ```
@@ -176,7 +175,7 @@ new VoltAgent({
   - `command: "npx"` specifies _how_ to run it.
   - `args: [...]` provides the details: the MCP server package (`@modelcontextprotocol/server-filesystem`) and, crucially, `path.resolve("./data")`. This locks the server down, only allowing it to see inside a `./data` folder within my project. **I had to remember to actually create this `data` folder later (`mkdir data`)!** This is super important for security.
 - **`Agent` Definition:** I created my `Agent` instance. The key part is `tools: await mcpConfig.getTools()`. This line tells VoltAgent: "Go connect to all the servers I defined in `mcpConfig`, find out what tools they offer (like `readFile`, `writeFile` from the filesystem server), and make those tools available for this agent's LLM to use."
-- **`VoltAgent` Initialization:** I started the main VoltAgent server and registered my `agent` under the key `fsAgent`. This key is how I'll select it in the VoltAgent Console.
+- **`VoltAgent` Initialization:** I started the main VoltAgent server and registered my `mcpAgent` under the key `fsAgent`. This key is how I'll select it in the VoltAgent Console.
 
 #### Running the Agent
 

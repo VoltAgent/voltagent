@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/langfuse-exporter",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "OpenTelemetry SpanExporter for sending VoltAgent traces to Langfuse.",
   "license": "MIT",
   "exports": {
@@ -25,7 +25,7 @@
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@supabase/supabase-js": "^2.49.4",
-    "@voltagent/core": "^0.1.12",
+    "@voltagent/core": "^0.1.16",
     "langfuse": "^3.37.2"
   },
   "devDependencies": {
