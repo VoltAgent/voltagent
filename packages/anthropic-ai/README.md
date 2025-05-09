@@ -1,11 +1,3 @@
----
-title: Anthropic AI (Claude)
-slug: /providers/anthropic-ai
----
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # Anthropic AI Provider (`@voltagent/anthropic-ai`)
 
 The Anthropic AI Provider integrates VoltAgent with Anthropic's Claude models. It wraps the official [`@anthropic-ai/sdk`](https://github.com/anthropics/anthropic-sdk-typescript) SDK.
