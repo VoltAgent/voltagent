@@ -81,6 +81,11 @@ export type AgentOptions = {
    * Sub-agents that this agent can delegate tasks to
    */
   subAgents?: any[]; // Using any to avoid circular dependency
+
+  /**
+   * Optional user-defined context to be passed around
+   */
+  userContext?: Map<string | symbol, unknown>;
 } & (
   | {
       /**
@@ -180,6 +185,9 @@ export interface CommonGenerateOptions {
 
   // The OperationContext associated with this specific generation call
   operationContext?: OperationContext;
+
+  // Optional user-defined context to be passed from a parent operation
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -306,6 +314,11 @@ export type AgentHandoffOptions = {
    * Parent history entry ID
    */
   parentHistoryEntryId?: string;
+
+  /**
+   * Optional user-defined context to be passed from the supervisor agent
+   */
+  userContext?: Map<string | symbol, unknown>;
 };
 
 /**

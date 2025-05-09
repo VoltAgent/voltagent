@@ -1,6 +1,7 @@
 import { SubAgentManager } from "./index";
 import type { Agent } from "../index";
 import type { AgentHandoffOptions } from "../types";
+import type { BaseMessage } from "../providers";
 
 // Creating a Mock Agent class
 class MockAgent {
@@ -266,6 +267,65 @@ describe("SubAgentManager", () => {
           status: "success",
         },
       ]);
+      handoffToMultipleSpy.mockRestore();
+    });
+
+    it("should pass supervisor's userContext to sub-agents via handoffOptions", async () => {
+      subAgentManager.addSubAgent(mockAgent1); // Math Agent
+
+      // Spy on mockAgent1.generateText to check the options it receives
+      const generateTextSpy = jest.spyOn(mockAgent1, "generateText");
+
+      const supervisorUserContext = new Map<string | symbol, unknown>();
+      supervisorUserContext.set("supervisorKey", "supervisorValue");
+
+      // Mock the OperationContext that the delegate_tool would receive from the supervisor agent
+      const mockSupervisorOperationContext = {
+        operationId: "supervisor-op-id",
+        userContext: supervisorUserContext,
+        historyEntry: { id: "supervisor-history-id" }, // simplified mock
+        eventUpdaters: new Map(),
+        isActive: true,
+      } as any; // Cast to any to simplify for test, real one is more complex
+
+      // Create the delegate tool, providing the necessary options that would normally come from the Agent class
+      const tool = subAgentManager.createDelegateTool({
+        sourceAgent: { id: "supervisor-agent-id" }, // Simplified mock of sourceAgent
+        operationContext: mockSupervisorOperationContext, // Pass the mocked supervisor's OperationContext
+        currentHistoryEntryId: "supervisor-history-id",
+      });
+
+      await tool.execute({
+        task: "Test task for userContext passing",
+        targetAgents: ["Math Agent"], // Delegate to mockAgent1
+        context: { someTaskContext: "taskSpecificData" },
+      });
+
+      // Check if handoffToMultiple was called (it internally calls handoffTask)
+      // We are more interested in what generateText of the sub-agent receives
+      expect(generateTextSpy).toHaveBeenCalled();
+
+      // Check the options passed to mockAgent1.generateText
+      const generateTextCallArgs = generateTextSpy.mock.calls[0];
+      // Define types for the arguments received by the spy
+      const messagesPassedToSubAgent = generateTextCallArgs[0] as BaseMessage[];
+      const optionsPassedToSubAgent = generateTextCallArgs[1] as {
+        userContext?: Map<string | symbol, unknown>;
+      };
+
+      // Verify the system message is part of what's passed
+      expect(messagesPassedToSubAgent[0].role).toBe("system");
+      expect(messagesPassedToSubAgent[0].content).toContain("Task handed off");
+
+      // Verify the userContext from the supervisor was passed in the options
+      expect(optionsPassedToSubAgent).toBeDefined();
+      expect(optionsPassedToSubAgent.userContext).toBeDefined();
+      expect(optionsPassedToSubAgent.userContext).toBeInstanceOf(Map);
+      expect(optionsPassedToSubAgent.userContext?.get("supervisorKey")).toBe("supervisorValue");
+      // It should be the same instance as it's directly passed through options in createDelegateTool to handoffToMultiple
+      expect(optionsPassedToSubAgent.userContext).toBe(supervisorUserContext);
+
+      generateTextSpy.mockRestore();
     });
   });
 
