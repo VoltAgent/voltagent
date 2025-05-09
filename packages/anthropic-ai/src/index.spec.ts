@@ -748,6 +748,123 @@ describe("AnthropicProvider", () => {
         content: "Hello",
       });
     });
+
+    it("should handle multimodal content with text and image", () => {
+      const message: BaseMessage = {
+        role: "user",
+        content: [
+          { type: "text", text: "What's in this image?" },
+          {
+            type: "image",
+            image: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD",
+            mimeType: "image/jpeg",
+          },
+        ],
+      };
+
+      const result = provider.toMessage(message);
+
+      expect(result).toEqual({
+        role: "user",
+        content: [
+          { type: "text", text: "What's in this image?" },
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: "image/jpeg",
+              data: "/9j/4AAQSkZJRgABAQEASABIAAD",
+            },
+          },
+        ],
+      });
+    });
+
+    it("should handle image with URL", () => {
+      const imageUrl = new URL("https://example.com/image.jpg");
+      const message: BaseMessage = {
+        role: "user",
+        content: [
+          { type: "text", text: "Describe this image:" },
+          { type: "image", image: imageUrl },
+        ],
+      };
+
+      const result = provider.toMessage(message);
+
+      expect(result).toEqual({
+        role: "user",
+        content: [
+          { type: "text", text: "Describe this image:" },
+          {
+            type: "image",
+            source: {
+              type: "url",
+              url: "https://example.com/image.jpg",
+            },
+          },
+        ],
+      });
+    });
+
+    it("should handle file content by converting to text", () => {
+      const message: BaseMessage = {
+        role: "user",
+        content: [
+          { type: "text", text: "Check this file:" },
+          {
+            type: "file",
+            data: "base64content",
+            filename: "document.pdf",
+            mimeType: "application/pdf",
+          },
+        ],
+      };
+
+      const result = provider.toMessage(message);
+
+      expect(result).toEqual({
+        role: "user",
+        content: [
+          { type: "text", text: "Check this file:" },
+          {
+            type: "text",
+            text: "[File: document.pdf (application/pdf)]",
+          },
+        ],
+      });
+    });
+
+    it("should handle base64 image without data URI prefix", () => {
+      const message: BaseMessage = {
+        role: "user",
+        content: [
+          { type: "text", text: "What's in this image?" },
+          {
+            type: "image",
+            image: "iVBORw0KGgoAAAANSUhEUgAA",
+            mimeType: "image/png",
+          },
+        ],
+      };
+
+      const result = provider.toMessage(message);
+
+      expect(result).toEqual({
+        role: "user",
+        content: [
+          { type: "text", text: "What's in this image?" },
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: "image/png",
+              data: "iVBORw0KGgoAAAANSUhEUgAA",
+            },
+          },
+        ],
+      });
+    });
   });
 
   describe("toTool", () => {

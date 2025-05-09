@@ -138,6 +138,8 @@ askAboutImage(catImageBase64, "What breed is this cat?");
 
 Here's a summary of the official VoltAgent providers:
 
+- **`@voltagent/anthropic-ai`**: ✅ **Supports Image Input.** The provider fully supports multi-modal content with Claude 3 models, handling both image URLs and base64-encoded images (including data URIs). Supported image formats include JPEG, PNG, GIF, and WebP. File content is converted to text descriptions.
+
 - **`@voltagent/google-ai`**: ✅ **Supports Image Input.** The provider correctly maps `ImagePart` data to the format expected by the Google Generative AI SDK (Gemini models).
 
 - **`@voltagent/groq-ai`**: ✅ **Supports Image Input.** The provider maps `ImagePart` data to the `image_url` format compatible with Groq API (for models that support vision).

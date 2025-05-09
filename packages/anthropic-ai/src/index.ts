@@ -27,6 +27,7 @@ import {
   generateVoltError,
   getSystemMessage,
   handleStepFinish,
+  processContent,
   processResponseContent,
   zodToJsonSchema,
 } from "./utils";
@@ -55,6 +56,7 @@ export class AnthropicProvider implements LLMProvider<string> {
   }
 
   toMessage = (message: BaseMessage): AnthropicMessage | null => {
+    // Special role handling
     if (message.role === "tool") {
       return {
         role: "assistant",
@@ -64,9 +66,12 @@ export class AnthropicProvider implements LLMProvider<string> {
     if (message.role === "system") {
       return null;
     }
+
+    const processedContent = processContent(message.content);
+
     return {
       role: message.role,
-      content: String(message.content),
+      content: processedContent,
     };
   };
 
@@ -101,15 +106,6 @@ export class AnthropicProvider implements LLMProvider<string> {
 
       //Processes the response content
       const { responseText, toolCalls } = processResponseContent(response.content);
-
-      //Adds tool calls to the messages if there are any
-      if (toolCalls.length > 0) {
-        anthropicMessages.push({
-          role: "assistant",
-          content: "",
-          tool_calls: toolCalls,
-        });
-      }
 
       //Handles onStepFinish
       await handleStepFinish(options, responseText, toolCalls, response.usage);
