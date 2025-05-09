@@ -438,6 +438,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId?: string;
       parentHistoryEntryId?: string;
       operationName: string;
+      userContext?: Map<string | symbol, unknown>;
     } = {
       operationName: "unknown",
     },
@@ -459,7 +460,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Create operation context
     const opContext: OperationContext = {
       operationId: historyEntry.id,
-      userContext: new Map<string | symbol, unknown>(),
+      userContext: options.userContext
+        ? new Map(options.userContext)
+        : new Map<string | symbol, unknown>(),
       historyEntry,
       eventUpdaters: new Map<string, EventUpdater>(),
       isActive: true,
@@ -810,12 +813,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "generateText",
+      userContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1020,12 +1025,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "streamText",
+      userContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1277,12 +1284,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "generateObject",
+      userContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1427,12 +1436,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId,
       provider,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "streamObject",
+      userContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
