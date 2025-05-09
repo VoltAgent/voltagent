@@ -462,6 +462,7 @@ Currently, VoltAgent offers built-in providers for various services and APIs:
 - **`@voltagent/xsai`**: Connects to any OpenAI-compatible API (OpenAI, Groq, Together AI, local models, etc.).
 - **`@voltagent/google-ai`**: Uses the official Google AI SDK for Gemini and Vertex AI.
 - **`@voltagent/groq-ai`**: Connects specifically to the Groq API for fast inference.
+- **`@voltagent/anthropic-ai`**: Connects directly to Anthropic's AI models (Claude) using the official `anthropic-ai/sdk` SDK.
 
 We plan to add more official provider integrations in the future. Furthermore, developers can create their own custom providers by implementing the `LLMProvider` interface to connect VoltAgent to virtually any AI model or service.
 
