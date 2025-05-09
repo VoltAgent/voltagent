@@ -15,11 +15,25 @@ div[class^="announcementBar_"] {
   font-weight: 600;
   color: #000000 !important;
   cursor: pointer;
+  padding: 0 16px;
+  justify-content: center;
+  text-align: center;
 }
 
 /* Remove underline from announcement bar links */
 div[class^="announcementBar_"] a {
   text-decoration: none;
+}
+
+/* Mobile styles for announcement bar */
+@media (max-width: 768px) {
+  div[class^="announcementBar_"] {
+    height: auto;
+    min-height: 50px;
+    padding: 10px 12px;
+    font-size: 16px !important;
+    line-height: 1.3;
+  }
 }
 
 .footer {

@@ -240,7 +240,6 @@ const config: Config = {
       content:
         ' <a target="_blank"  rel="noopener noreferrer" href="https://x.com/voltagent_dev/status/1920193193905434748">🤘Check out the first two weeks of VoltAgent!</a>',
       backgroundColor: "#10b981",
-      textColor: "#ffffff",
       isCloseable: true,
     },
   } satisfies Preset.ThemeConfig,
