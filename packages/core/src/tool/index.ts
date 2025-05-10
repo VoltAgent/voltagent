@@ -4,8 +4,8 @@ import type { z } from "zod";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
-// Also export Toolkit
-export type { Toolkit } from "./toolkit";
+// Export Toolkit type and createToolkit function
+export { type Toolkit, createToolkit } from "./toolkit";
 
 /**
  * Tool definition compatible with Vercel AI SDK
