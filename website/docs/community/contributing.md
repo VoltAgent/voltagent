@@ -30,6 +30,7 @@ VoltAgent is a monorepo containing several key packages:
 
 - `@voltagent/core`: The heart of the framework, containing the main APIs, request/response handling, middleware pipeline, etc. Contributions here often involve core feature development or architectural improvements.
 - `@voltagent/voice`: Handles voice input/output capabilities. Contributions could involve new STT/TTS integrations or improving voice interaction logic.
+- `@voltagent/anthropic-ai`: Provides integration with Anthropic's Claude AI models. Contributions could include improving model interactions, adding new Claude capabilities, or optimizing prompt handling.
 - `@voltagent/xsai`: Focuses on integrating AI functionalities (e.g., LLMs, vector stores). Contributions might include new AI service integrations or improving existing ones.
 - `@voltagent/vercel-ai`: Specific integrations for Vercel AI SDK.
 - `@voltagent/cli`: The command-line interface for creating and managing VoltAgent projects. Contributions typically involve adding/improving commands or developer workflows.

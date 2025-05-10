@@ -61,7 +61,7 @@ run();
 
 It's important to understand that the value you provide for the `model` parameter is interpreted _by the specific `llm` provider_ you have configured for the agent.
 
-- Some providers (like `@voltagent/xsai`, `@voltagent/google-ai`, `@voltagent/groq-ai`) expect a **string** identifier (e.g., `'gpt-4o-mini'`, `'gemini-1.5-pro'`, `'llama3-70b-8192'`) that corresponds to a model available on the target API.
+- Some providers (like `@voltagent/xsai`, `@voltagent/google-ai`, `@voltagent/groq-ai`, `@voltagent/anthropic-ai`) expect a **string** identifier (e.g., `'gpt-4o-mini'`, `'gemini-1.5-pro'`, `'llama3-70b-8192'`) that corresponds to a model available on the target API.
 - Other providers (like `@voltagent/vercel-ai`) expect a **model object** imported from their corresponding SDK (e.g., `openai('gpt-4o')`, `anthropic('claude-3-5-sonnet-20240620')`).
 
 Always refer to the documentation for the specific provider you are using to know what format is expected for the `model` parameter.

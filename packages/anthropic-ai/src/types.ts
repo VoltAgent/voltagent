@@ -1,4 +1,5 @@
 import type { Message } from "@anthropic-ai/sdk/resources/messages";
+import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 
 export interface AnthropicProviderOptions {
   apiKey?: string;
@@ -11,6 +12,7 @@ export interface AnthropicToolCall {
   toolName: string;
   args: Record<string, any>;
 }
+
 export interface AnthropicTool {
   name: string;
   description?: string;
@@ -22,11 +24,8 @@ export interface AnthropicTool {
   };
 }
 
-export interface AnthropicMessage {
-  role: "assistant" | "user";
-  content: string;
-  tool_calls?: AnthropicToolCall[];
-}
+// Use Anthropic SDK types directly
+export type AnthropicMessage = MessageParam;
 
 export interface StopMessageChunk {
   type: "message_stop";
