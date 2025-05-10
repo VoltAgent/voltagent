@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.18
+
+### Patch Changes
+
+- [#113](https://github.com/VoltAgent/voltagent/pull/113) [`0a120f4`](https://github.com/VoltAgent/voltagent/commit/0a120f4bf1b71575a4b6c67c94104633c58e1410) Thanks [@nhc](https://github.com/nhc)! - export createTool from toolkit
+
 ## 0.1.17
 
 ### Patch Changes
