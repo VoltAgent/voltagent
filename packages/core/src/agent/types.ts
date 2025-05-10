@@ -80,12 +80,22 @@ export type AgentOptions = {
   /**
    * Sub-agents that this agent can delegate tasks to
    */
-  subAgents?: any[]; // Using any to avoid circular dependency
+  subAgents?: any[]; // Using unknown to avoid circular dependency
 
   /**
    * Optional user-defined context to be passed around
    */
   userContext?: Map<string | symbol, unknown>;
+
+  /**
+   * Agent instructions (system prompt). This is preferred over `description`.
+   */
+  instructions?: string;
+
+  /**
+   * @deprecated Use `instructions` instead. Will be removed in a future version.
+   */
+  description?: string;
 } & (
   | {
       /**

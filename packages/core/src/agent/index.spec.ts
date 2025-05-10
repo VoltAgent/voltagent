@@ -20,6 +20,8 @@ import type {
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
 import { createHooks } from "./hooks";
+import { HistoryManager } from "./history";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: any };
@@ -323,6 +325,70 @@ class TestAgent<TProvider extends { llm: LLMProvider<any> }> extends Agent<TProv
   }
 }
 
+// Mock HistoryManager
+jest.mock("./history", () => ({
+  HistoryManager: jest.fn().mockImplementation(() => {
+    // createMockHistoryEntry test dosyasının global kapsamında tanımlıdır.
+    // Çağrıldığında AgentHistoryEntry'ye benzeyen bir nesne döndürür.
+    return {
+      addEntry: jest.fn().mockImplementation(async (input, _output, status, _steps, _options) => {
+        let entryInputString = "default_mock_input";
+        if (typeof input === "string") {
+          entryInputString = input;
+        } else if (
+          Array.isArray(input) &&
+          input.length > 0 &&
+          input[0] &&
+          typeof input[0].content === "string"
+        ) {
+          entryInputString = input[0].content;
+        } else if (input && typeof input === "object" && !Array.isArray(input)) {
+          entryInputString = JSON.stringify(input);
+        }
+        // createMockHistoryEntry, bu test dosyasında daha önce tanımlanmıştır.
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        return Promise.resolve(createMockHistoryEntry(entryInputString, status || "working"));
+      }),
+      getEntries: jest.fn().mockResolvedValue([]),
+      updateEntry: jest.fn().mockImplementation(async (id: string, updates: any) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry("updated_input_for_mock");
+        return Promise.resolve({ ...baseEntry, id, ...updates });
+      }),
+      addStepsToEntry: jest.fn().mockImplementation(async (id: string, newSteps: any[]) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry("steps_added_input_for_mock");
+        return Promise.resolve({
+          ...baseEntry,
+          id,
+          steps: [...(baseEntry.steps || []), ...newSteps],
+        });
+      }),
+      // Agent tarafından kullanılan diğer HistoryManager metodları buraya eklenebilir.
+      // Örneğin: getEntryById, addEventToEntry
+      getEntryById: jest.fn().mockImplementation(async (id: string) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        return Promise.resolve(createMockHistoryEntry(`entry_for_${id}`));
+      }),
+      addEventToEntry: jest.fn().mockImplementation(async (id: string, event: any) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
+        return Promise.resolve({ ...baseEntry, id, events: [...(baseEntry.events || []), event] });
+      }),
+    };
+  }),
+}));
+
+// Mock VoltAgentExporter
+const mockTelemetryExporter = {
+  publicKey: "mock-telemetry-public-key",
+  exportHistoryEntry: jest.fn(),
+  exportTimelineEvent: jest.fn(),
+  exportHistorySteps: jest.fn(),
+  updateHistoryEntry: jest.fn(),
+  updateTimelineEvent: jest.fn(),
+} as unknown as VoltAgentExporter;
+
 describe("Agent", () => {
   let agent: TestAgent<{ llm: MockProvider }>;
   let mockModel: MockModelType;
@@ -414,8 +480,48 @@ describe("Agent", () => {
         llm: mockProvider,
       });
       expect(agentWithBoth.instructions).toBe("Uses provided instructions");
-      expect(agentWithBoth.description).toBe("Uses provided instructions"); // Verifying this.description is also updated
+      expect(agentWithBoth.description).toBe("Uses provided instructions");
     });
+
+    // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
+    it("should pass telemetryExporter to HistoryManager if provided", () => {
+      (HistoryManager as jest.Mock).mockClear();
+
+      new Agent({
+        name: "TelemetryAgent",
+        instructions: "Telemetry agent instructions",
+        model: mockModel,
+        llm: mockProvider,
+        telemetryExporter: mockTelemetryExporter,
+        memory: mockMemory as any,
+      });
+
+      expect(HistoryManager).toHaveBeenCalledTimes(1);
+      expect(HistoryManager).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.anything(),
+        expect.any(Number),
+        mockTelemetryExporter,
+      );
+    });
+
+    it("should instantiate HistoryManager without telemetryExporter if not provided", () => {
+      (HistoryManager as jest.Mock).mockClear();
+
+      new Agent({
+        name: "NoTelemetryAgent",
+        instructions: "No telemetry agent instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: mockMemory as any,
+      });
+
+      expect(HistoryManager).toHaveBeenCalledTimes(1);
+      const historyManagerArgs = (HistoryManager as jest.Mock).mock.calls[0];
+      expect(historyManagerArgs.length).toBeGreaterThanOrEqual(3);
+      expect(historyManagerArgs[3]).toBeUndefined();
+    });
+    // --- END NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
   });
 
   describe("generate", () => {

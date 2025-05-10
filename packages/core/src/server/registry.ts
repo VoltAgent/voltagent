@@ -1,5 +1,6 @@
 import type { Agent } from "../agent";
 import { AgentEventEmitter } from "../events";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 
 /**
  * Registry to manage and track agents
@@ -8,6 +9,7 @@ export class AgentRegistry {
   private static instance: AgentRegistry | null = null;
   private agents: Map<string, Agent<any>> = new Map();
   private isInitialized = false;
+  private globalVoltAgentExporter?: VoltAgentExporter;
 
   /**
    * Track parent-child relationships between agents (child -> parents)
@@ -156,5 +158,20 @@ export class AgentRegistry {
    */
   public isRegistryInitialized(): boolean {
     return this.isInitialized;
+  }
+
+  /**
+   * Set the global VoltAgentExporter instance.
+   * This is typically called by the main VoltAgent instance.
+   */
+  public setGlobalVoltAgentExporter(exporter: VoltAgentExporter): void {
+    this.globalVoltAgentExporter = exporter;
+  }
+
+  /**
+   * Get the global VoltAgentExporter instance.
+   */
+  public getGlobalVoltAgentExporter(): VoltAgentExporter | undefined {
+    return this.globalVoltAgentExporter;
   }
 }

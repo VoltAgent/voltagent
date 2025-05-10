@@ -5,6 +5,7 @@ import { checkForUpdates } from "./utils/update";
 
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
+import type { VoltAgentExporter } from "./telemetry/exporter";
 
 export * from "./agent";
 export * from "./agent/hooks";
@@ -34,6 +35,7 @@ export * from "./mcp";
 export { AgentRegistry } from "./server/registry";
 export * from "./utils/update";
 export * from "./voice";
+export * from "./telemetry/exporter";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;
@@ -44,12 +46,13 @@ type VoltAgentOptions = {
   autoStart?: boolean;
   checkDependencies?: boolean;
   /**
-   * Optional OpenTelemetry SpanExporter instance or array of instances.
+   * Optional OpenTelemetry SpanExporter instance or array of instances,
+   * or a VoltAgentExporter instance or array of instances.
    * If provided, VoltAgent will attempt to initialize and register
    * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
    * It's recommended to only provide this in one VoltAgent instance per application process.
    */
-  telemetryExporter?: SpanExporter | SpanExporter[];
+  telemetryExporter?: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[];
 };
 
 /**
@@ -64,6 +67,27 @@ export class VoltAgent {
     this.registerAgents(options.agents);
 
     if (options.telemetryExporter) {
+      // Find the VoltAgentExporter and set it globally
+      const exporters = Array.isArray(options.telemetryExporter)
+        ? options.telemetryExporter
+        : [options.telemetryExporter];
+      const voltExporter = exporters.find(
+        (exp): exp is VoltAgentExporter =>
+          typeof (exp as VoltAgentExporter).exportHistoryEntry === "function" &&
+          typeof (exp as VoltAgentExporter).publicKey === "string",
+      );
+      if (voltExporter) {
+        this.registry.setGlobalVoltAgentExporter(voltExporter);
+
+        // Distribute the exporter to all currently registered agents
+        const allAgents = this.registry.getAllAgents();
+        allAgents.forEach((agent) => {
+          // Check if the agent has the internal method to set the exporter
+          if (typeof (agent as any)._INTERNAL_setVoltAgentExporter === "function") {
+            (agent as any)._INTERNAL_setVoltAgentExporter(voltExporter);
+          }
+        });
+      }
       this.initializeGlobalTelemetry(options.telemetryExporter);
     }
 
@@ -157,7 +181,9 @@ export class VoltAgent {
     return this.registry.getAgentCount();
   }
 
-  private initializeGlobalTelemetry(exporterOrExporters: SpanExporter | SpanExporter[]): void {
+  private initializeGlobalTelemetry(
+    exporterOrExporters: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[],
+  ): void {
     if (isTelemetryInitializedByVoltAgent) {
       console.warn(
         "[VoltAgent] Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
@@ -166,16 +192,36 @@ export class VoltAgent {
     }
 
     try {
-      const exporters = Array.isArray(exporterOrExporters)
+      const allExporters = Array.isArray(exporterOrExporters)
         ? exporterOrExporters
         : [exporterOrExporters];
 
-      const spanProcessors = exporters.map((exporter) => {
+      // Filter out VoltAgentExporter instances for BatchSpanProcessor
+      const spanExporters = allExporters.filter(
+        (exp): exp is SpanExporter =>
+          (exp as SpanExporter).export !== undefined &&
+          (exp as SpanExporter).shutdown !== undefined,
+      );
+
+      if (spanExporters.length === 0) {
+        console.log(
+          "[VoltAgent] No OpenTelemetry SpanExporters provided. Skipping OpenTelemetry NodeTracerProvider initialization.",
+        );
+        // We still mark telemetry as initialized by VoltAgent if any exporter (incl. VoltAgentExporter) was passed,
+        // to prevent multiple VoltAgent instances from trying to set up their own things.
+        // However, the registeredProvider will remain null if only VoltAgentExporters are present.
+        if (allExporters.length > 0) {
+          isTelemetryInitializedByVoltAgent = true;
+        }
+        return;
+      }
+
+      const spanProcessors = spanExporters.map((exporter) => {
         return new BatchSpanProcessor(exporter);
       });
 
       const provider = new NodeTracerProvider({
-        spanProcessors: spanProcessors,
+        spanProcessors: spanProcessors, // Use the filtered list
       });
 
       provider.register();

@@ -2,7 +2,15 @@ import { v4 as uuidv4 } from "uuid";
 import { AgentEventEmitter } from "../../events";
 import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/types";
 import type { AgentStatus } from "../types";
-import { MemoryManager } from "../../memory";
+import type { MemoryManager } from "../../memory";
+import type { VoltAgentExporter } from "../../telemetry/exporter";
+import type {
+  ExportAgentHistoryPayload,
+  ExportTimelineEventPayload,
+  AgentHistoryUpdatableFields,
+  TimelineEventUpdatableFields,
+} from "../../telemetry/client";
+import type { TimelineEventType, EventStatus } from "../../events";
 
 /**
  * Step information for history
@@ -11,7 +19,7 @@ export interface HistoryStep {
   type: "message" | "tool_call" | "tool_result" | "text";
   name?: string;
   content?: string;
-  arguments?: Record<string, any>;
+  arguments?: Record<string, unknown>;
 }
 
 /**
@@ -44,7 +52,7 @@ export interface TimelineEvent {
    * Optional additional data specific to the event type
    * In the new format: { status, input, output, updatedAt etc. }
    */
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 
   /**
    * Optional timestamp for when the event was last updated
@@ -74,7 +82,7 @@ export interface AgentHistoryEntry {
   /**
    * Original input to the agent
    */
-  input: string | Record<string, any> | BaseMessage[];
+  input: string | Record<string, unknown> | BaseMessage[];
 
   /**
    * Final output from the agent
@@ -128,18 +136,28 @@ export class HistoryManager {
   private memoryManager: MemoryManager;
 
   /**
+   * Optional VoltAgentExporter for sending telemetry data.
+   */
+  private voltAgentExporter?: VoltAgentExporter;
+
+  /**
    * Create a new history manager
    *
-   * @param maxEntries - Maximum number of history entries to keep (0 = unlimited)
-   * @param agentId - Agent ID for emitting events
+   * @param agentId - Agent ID for emitting events and for storage
    * @param memoryManager - Memory manager instance to use
+   * @param maxEntries - Maximum number of history entries to keep (0 = unlimited)
+   * @param voltAgentExporter - Optional exporter for telemetry
    */
-  constructor(maxEntries = 0, agentId: string, memoryManager: MemoryManager) {
-    this.maxEntries = maxEntries;
+  constructor(
+    agentId: string,
+    memoryManager: MemoryManager,
+    maxEntries = 0,
+    voltAgentExporter?: VoltAgentExporter,
+  ) {
     this.agentId = agentId;
-
-    // Use provided memory manager
     this.memoryManager = memoryManager;
+    this.maxEntries = maxEntries;
+    this.voltAgentExporter = voltAgentExporter;
   }
 
   /**
@@ -150,6 +168,14 @@ export class HistoryManager {
   }
 
   /**
+   * Sets the VoltAgentExporter for this history manager instance.
+   * This allows the exporter to be set after the HistoryManager is created.
+   */
+  public setExporter(exporter: VoltAgentExporter): void {
+    this.voltAgentExporter = exporter;
+  }
+
+  /**
    * Add a new history entry
    *
    * @param input - Input to the agent
@@ -157,33 +183,34 @@ export class HistoryManager {
    * @param status - Status of the entry
    * @param steps - Steps taken during generation
    * @param options - Additional options for the entry
+   * @param agentSnapshot - Optional agent snapshot for telemetry
    * @returns The new history entry
    */
   public async addEntry(
-    input: string | Record<string, any> | BaseMessage[],
+    input: string | Record<string, unknown> | BaseMessage[],
     output: string,
     status: AgentStatus,
     steps: HistoryStep[] = [],
     options: Partial<
       Omit<AgentHistoryEntry, "id" | "timestamp" | "input" | "output" | "status" | "steps">
     > = {},
+    agentSnapshot?: Record<string, unknown>,
   ): Promise<AgentHistoryEntry> {
     if (!this.agentId) {
       throw new Error("Agent ID must be set to manage history");
     }
 
-    // If maxEntries is set and we already have that many entries, remove the oldest
     if (this.maxEntries > 0) {
       const entries = await this.getEntries();
       if (entries.length >= this.maxEntries) {
         // TODO: Implement deletion of oldest entry
-        // For now, we'll just let them accumulate
       }
     }
 
+    const entryTimestamp = new Date();
     const entry: AgentHistoryEntry = {
       id: uuidv4(),
-      timestamp: new Date(),
+      timestamp: entryTimestamp,
       input,
       output,
       status,
@@ -191,11 +218,43 @@ export class HistoryManager {
       ...options,
     };
 
-    // Store in memory storage
     await this.memoryManager.storeHistoryEntry(this.agentId, entry);
 
-    // Emit event
     AgentEventEmitter.getInstance().emitHistoryEntryCreated(this.agentId, entry);
+
+    if (this.voltAgentExporter) {
+      try {
+        let sanitizedInput: Record<string, unknown>;
+        if (typeof entry.input === "string") {
+          sanitizedInput = { text: entry.input };
+        } else if (Array.isArray(entry.input)) {
+          sanitizedInput = { messages: entry.input };
+        } else {
+          sanitizedInput = entry.input;
+        }
+
+        const historyPayload: ExportAgentHistoryPayload = {
+          agent_id: this.agentId,
+          project_id: this.voltAgentExporter.publicKey,
+          history_id: entry.id,
+          event_timestamp: entry.timestamp.toISOString(),
+          type: "agent_run",
+          status: entry.status,
+          input: sanitizedInput,
+          output: { text: entry.output },
+          steps: entry.steps,
+          usage: entry.usage,
+          sequence_number: entry._sequenceNumber || 0,
+          agent_snapshot: agentSnapshot,
+        };
+        await this.voltAgentExporter.exportHistoryEntry(historyPayload);
+      } catch (telemetryError) {
+        console.warn(
+          `[HistoryManager] Failed to export history entry to telemetry service for agent ${this.agentId}. Error:`,
+          telemetryError,
+        );
+      }
+    }
 
     return entry;
   }
@@ -214,9 +273,38 @@ export class HistoryManager {
     if (!this.agentId) return undefined;
 
     try {
-      // Directly use the MemoryManager's addEventToHistoryEntry method
-      // This correctly saves the event in the new relational database structure
-      return await this.memoryManager.addEventToHistoryEntry(this.agentId, entryId, event);
+      const updatedEntry = await this.memoryManager.addEventToHistoryEntry(
+        this.agentId,
+        entryId,
+        event,
+      );
+
+      if (this.voltAgentExporter && updatedEntry && event.id) {
+        try {
+          const exportEventType: TimelineEventType = event.type as TimelineEventType;
+          const payload: ExportTimelineEventPayload = {
+            project_id: this.voltAgentExporter.publicKey,
+            history_entry_id: entryId,
+            event_id: event.id,
+            timestamp: event.timestamp.toISOString(),
+            type: exportEventType,
+            name: event.name,
+            details: event.data,
+            status: event.data?.status as EventStatus,
+            error: event.data?.error as Record<string, unknown> | undefined,
+            input: event.data?.input as Record<string, unknown> | undefined,
+            output: event.data?.output as Record<string, unknown> | undefined,
+          };
+          await this.voltAgentExporter.exportTimelineEvent(payload);
+        } catch (telemetryError) {
+          console.warn(
+            `[HistoryManager] Failed to export timeline event to telemetry service for agent ${this.agentId}, entry ${entryId}. Error:`,
+            telemetryError,
+          );
+        }
+      }
+
+      return updatedEntry;
     } catch (error) {
       console.error(`[HistoryManager] Failed to add event to entry: ${entryId}`, error);
       return undefined;
@@ -236,22 +324,34 @@ export class HistoryManager {
   ): Promise<AgentHistoryEntry | undefined> {
     if (!this.agentId) return undefined;
 
-    // Convert StepWithContent to HistoryStep
     const historySteps: HistoryStep[] = steps.map((step) => ({
       type: step.type,
       name: step.name,
       content: step.content,
-      arguments: step.arguments,
+      arguments: step.arguments as Record<string, unknown>,
     }));
 
-    // Add steps to entry in memory storage
     const updatedEntry = await this.memoryManager.addStepsToHistoryEntry(
       this.agentId,
       entryId,
       historySteps,
     );
 
-    // Emit update event if agent ID is set
+    if (this.voltAgentExporter && updatedEntry) {
+      try {
+        await this.voltAgentExporter.exportHistorySteps(
+          this.voltAgentExporter.publicKey,
+          entryId,
+          historySteps,
+        );
+      } catch (telemetryError) {
+        console.warn(
+          `[HistoryManager] Failed to export history steps to telemetry service for agent ${this.agentId}, entry ${entryId}. Error:`,
+          telemetryError,
+        );
+      }
+    }
+
     if (updatedEntry) {
       AgentEventEmitter.getInstance().emitHistoryUpdate(this.agentId, updatedEntry);
     }
@@ -293,7 +393,6 @@ export class HistoryManager {
       return undefined;
     }
 
-    // Entries are already sorted by timestamp (newest first)
     return entries[0];
   }
 
@@ -302,7 +401,6 @@ export class HistoryManager {
    */
   public async clear(): Promise<void> {
     // Not implemented yet
-    // Would need to add a method to MemoryManager to delete all entries for an agent
   }
 
   /**
@@ -314,16 +412,53 @@ export class HistoryManager {
    */
   public async updateEntry(
     id: string,
-    updates: Partial<Omit<AgentHistoryEntry, "id" | "timestamp">>,
+    updates: Partial<
+      Omit<AgentHistoryEntry, "id" | "timestamp"> & {
+        agent_snapshot?: Record<string, unknown>;
+      }
+    >,
   ): Promise<AgentHistoryEntry | undefined> {
     if (!this.agentId) return undefined;
 
-    // Update entry in memory storage
-    const updatedEntry = await this.memoryManager.updateHistoryEntry(this.agentId, id, updates);
+    const updatedEntry = await this.memoryManager.updateHistoryEntry(
+      this.agentId,
+      id,
+      updates as Partial<AgentHistoryEntry>,
+    );
 
-    // Emit update event if agent ID is set
     if (updatedEntry) {
       AgentEventEmitter.getInstance().emitHistoryUpdate(this.agentId, updatedEntry);
+
+      if (this.voltAgentExporter) {
+        try {
+          const finalUpdates: Partial<AgentHistoryUpdatableFields> = {};
+
+          if (updates.input !== undefined) {
+            if (typeof updates.input === "string") finalUpdates.input = { text: updates.input };
+            else finalUpdates.input = updates.input as Record<string, unknown> | BaseMessage[];
+          }
+          if (updates.output !== undefined) finalUpdates.output = updates.output;
+          if (updates.status !== undefined) finalUpdates.status = updates.status;
+          if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
+          if (updates._sequenceNumber !== undefined)
+            finalUpdates.sequence_number = updates._sequenceNumber;
+          if (updates.agent_snapshot !== undefined)
+            finalUpdates.agent_snapshot = updates.agent_snapshot;
+
+          if (Object.keys(finalUpdates).length > 0) {
+            await this.voltAgentExporter.updateHistoryEntry(
+              this.voltAgentExporter.publicKey,
+              id,
+              finalUpdates as AgentHistoryUpdatableFields,
+            );
+          }
+        } catch (telemetryError) {
+          console.warn(
+            `[HistoryManager] Failed to export history entry update to telemetry service for agent ${this.agentId}, entry ${id}. Error:`,
+            telemetryError,
+          );
+        }
+      }
     }
 
     return updatedEntry;
@@ -346,10 +481,8 @@ export class HistoryManager {
       const entry = await this.getEntryById(historyId);
       if (!entry || !entry.events) return undefined;
 
-      // First search directly by ID
       let timelineEvent = entry.events.find((event) => event.id === eventId);
 
-      // If not found, search by _trackedEventId
       if (!timelineEvent) {
         timelineEvent = entry.events.find(
           (event) => event.data && event.data._trackedEventId === eventId,
@@ -376,7 +509,7 @@ export class HistoryManager {
     eventId: string,
     updates: {
       status?: AgentStatus;
-      data?: Record<string, any>;
+      data?: Record<string, unknown>;
     },
   ): Promise<AgentHistoryEntry | undefined> {
     if (!this.agentId) return undefined;
@@ -385,10 +518,8 @@ export class HistoryManager {
       const entry = await this.getEntryById(historyId);
       if (!entry || !entry.events) return undefined;
 
-      // First find the event by ID
       let eventIndex = entry.events.findIndex((event) => event.id === eventId);
 
-      // If not found, search by _trackedEventId
       if (eventIndex === -1) {
         eventIndex = entry.events.findIndex(
           (event) => event.data && event.data._trackedEventId === eventId,
@@ -427,6 +558,33 @@ export class HistoryManager {
         events: updatedEntry.events,
         status: updates.status,
       });
+
+      // Export the specific timeline event update if exporter is configured
+      if (this.voltAgentExporter && originalEvent.id) {
+        try {
+          const eventSpecificUpdates: Partial<TimelineEventUpdatableFields> = {};
+          if (updates.status) eventSpecificUpdates.status = updates.status as EventStatus; // Cast to EventStatus
+          if (updates.data) eventSpecificUpdates.details = updates.data; // 'data' from update maps to 'details' in exporter
+          // Add other updatable fields if necessary, e.g., originalEvent.type, originalEvent.name
+          // eventSpecificUpdates.type = originalEvent.type as TimelineEventType;
+          // eventSpecificUpdates.name = originalEvent.name;
+          // eventSpecificUpdates.timestamp = new Date().toISOString(); // Or use originalEvent.timestamp.toISOString() if not changing
+
+          if (Object.keys(eventSpecificUpdates).length > 0) {
+            await this.voltAgentExporter.updateTimelineEvent(
+              // project_id is handled by exporter using its publicKey
+              historyId,
+              originalEvent.id, // event_id
+              eventSpecificUpdates as TimelineEventUpdatableFields, // Cast to ensure full type if only partial was built
+            );
+          }
+        } catch (telemetryError) {
+          console.warn(
+            `[HistoryManager] Failed to export timeline event update to telemetry service for agent ${this.agentId}, event ${originalEvent.id}. Error:`,
+            telemetryError,
+          );
+        }
+      }
 
       return result;
     } catch (error) {
