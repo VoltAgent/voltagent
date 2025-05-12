@@ -128,7 +128,25 @@ Bu plan, Voltagent agent geçmiş verilerinin ve agent durum anlık görüntüle
 ### `timeline_events`
 
 - Sütunlar: `id`, `account_id`, `history_entry_id`, `event_timestamp`, `name`, `affected_node_id`, `data`, `type`, `created_at`, `updated_at`, vb.
-- RLS: Doğrudan `INSERT` yok. `SELECT` yetkisi "account members" için (ilişkili `agent_history_entries` üzerinden doğrulama ile).
+- **ÖNEMLİ:** Bu tablo artık kullanılmayacak. Yerine `agent_timeline_events` kullanılacak. (Bu bölüm ileride kaldırılabilir.)
+
+### `agent_timeline_events` (Yeni Tablo)
+
+- Sütunlar:
+  - `id uuid PRIMARY KEY DEFAULT uuid_generate_v4()`
+  - `account_id uuid NOT NULL REFERENCES basejump.accounts(id)`
+  - `project_id uuid NOT NULL REFERENCES public.projects(id)`
+  - `history_entry_id uuid NOT NULL REFERENCES public.agent_history_entries(id) ON DELETE CASCADE`
+  - `value JSONB NOT NULL` (Tüm `TimelineEvent` nesnesini veya ilgili veriyi JSON olarak saklar)
+  - `created_at TIMESTAMPTZ DEFAULT now()`
+  - `updated_at TIMESTAMPTZ DEFAULT now()`
+  - `created_by uuid REFERENCES auth.users(id)`
+  - `updated_by uuid REFERENCES auth.users(id)`
+- RLS:
+  - `INSERT`: Edge fonksiyonları tarafından `service_role` ile yapılacak. Doğrudan kullanıcı izni olmayacak. `value` alanı geçerli bir JSON olmalıdır.
+  - `SELECT`: Kullanıcılar, üyesi oldukları hesaba ve projeye ait `agent_history_entries` kaydı ile ilişkili `agent_timeline_events` kayıtlarını okuyabilmelidir. (Yani `history_entry_id` üzerinden `agent_history_entries`'deki `account_id` ve `project_id` kontrolü ile).
+  - `UPDATE`: Edge fonksiyonları tarafından `service_role` ile yapılacak. Sadece `value` alanı güncellenebilir olmalı.
+  - `DELETE`: Kaskad silme (`ON DELETE CASCADE`) ile veya özel bir kural ile yönetilebilir. Şimdilik doğrudan silme izni yok.
 
 ## Telemetri Servisi Entegrasyonu Yapılacaklar Listesi (Vault & Edge Function Mimarisi)
 
@@ -137,7 +155,8 @@ Bu plan, Voltagent agent geçmiş verilerinin ve agent durum anlık görüntüle
   - [x] `projects` tablosuna `public_key TEXT UNIQUE NOT NULL` sütunu eklendi.
   - [x] `projects` tablosundan `secret_key` / `secret_key_hash` sütunları kaldırıldı.
   - [x] `agent_history_entries` tablosu oluşturuldu ve RLS ayarlandı.
-  - [x] `timeline_events` tablosu oluşturuldu ve RLS ayarlandı.
+  - [x] **YENİ:** `agent_timeline_events` tablosu (`20250512183007_agent_timeline_events.sql` migrasyonu ile, `value JSONB` ve `project_id` içerecek şekilde) oluşturuldu ve RLS ayarlandı.
+  - [x] **YENİ:** Eski `timeline_events` tablosu (`20250509194256_timeline_events.sql` ve `20250512183008_drop_timeline_events.sql` migrasyonları ile) ve ilgili RLS/tetikleyiciler silindi.
   - [x] Eski RPC migrasyon dosyaları silindi.
 - [x] **2. `create-project-and-keys` Edge Fonksiyonu ile Anahtar Yönetim Akışının Uygulanması**
   - [x] Proje oluşturma, `api_secret_key` üretimi, Vault'a kayıt ve kullanıcıya bir kerelik gösterim mantığını içeren `create-project-and-keys` Edge Fonksiyonu geliştirilecek.
@@ -147,6 +166,7 @@ Bu plan, Voltagent agent geçmiş verilerinin ve agent durum anlık görüntüle
   - [x] `export-history-steps` Edge Fonksiyonu geliştirilecek.
   - [x] `update-agent-history` Edge Fonksiyonu geliştirilecek.
   - [x] `update-timeline-event` Edge Fonksiyonu geliştirilecek.
+  - [x] **YENİ:** `export-timeline-event` ve `update-timeline-event` Edge Fonksiyonları, yeni `agent_timeline_events` tablosu (`value JSONB` alanı ve `project_id` ile) çalışacak şekilde güncellendi.
   - [ ] Edge Fonksiyonları için güvenlik (Vault erişimi, girdi doğrulama) sağlanacak. **(Lint sorunları şimdilik ertelendi, öncelik birim testlerinde)**
 - [x] **4. `VoltAgentExporter` ve `TelemetryServiceApiClient` Güncellemeleri**
   - [x] `VoltAgentExporterOptions` arayüzü (`edgeFunctionBaseUrl` içerecek şekilde) güncellenecek.
@@ -164,6 +184,8 @@ Bu plan, Voltagent agent geçmiş verilerinin ve agent durum anlık görüntüle
   - [x] `addStepsToEntry` metodu `export-history-steps` Edge Fonksiyonunu çağıracak.
   - [x] `HistoryManager.updateEntry` metodu `update-agent-history` Edge Fonksiyonunu çağıracak (sadece ilgili alanlar için).
   - [x] `HistoryManager.updateTrackedEvent` metodu `update-timeline-event` Edge Fonksiyonunu çağıracak.
+  - [x] **YENİ:** `HistoryManager`'ın `addEventToEntry` ve `updateTrackedEvent` metodları, telemetri verilerini yeni Edge Fonksiyonu beklentilerine uygun şekilde (`value JSONB` yapısını dikkate alarak) gönderecek şekilde güncellendi.
+  - [ ] ~~**YENİ:** `MemoryManager` (ve altındaki `Memory` arayüzü/implementasyonları), timeline olaylarını ayrı `agent_timeline_events` tablosunda (`value JSONB` ve `project_id` ile) yönetecek şekilde güncellenecek.~~ **(KULLANICI İSTEĞİ ÜZERİNE ATLANDI - Yerel depolama mevcut yapıda kalacak)**
   - [x] `VoltAgent` ve `Agent` sınıfları telemetri yapılandırmasını yönetecek.
 - [ ] **6. Güvenlik ve Yapılandırma Gözden Geçirmesi**
   - [ ] Vault anahtar yönetimi ve Edge Fonksiyon güvenliği incelenecek.

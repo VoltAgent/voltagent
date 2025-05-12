@@ -1,11 +1,10 @@
 import type { VoltAgentExporterOptions } from "../exporter";
 // AgentHistoryEntry ve TimelineEvent tiplerini core paketinizdeki tanımlardan import etmeliyiz.
 // Örnek import yolu, gerçek yapınıza göre düzeltilmelidir.
-import type { AgentHistoryEntry } from "../../agent/history"; // Veya "../history" vs.
+import type { AgentHistoryEntry, HistoryStep, TimelineEvent } from "../../agent/history"; // Veya "../history" vs.
 import type { AgentStatus } from "../../agent/types";
 import type { UsageInfo } from "../../agent/providers";
 import type { EventStatus, TimelineEventType } from "../../events";
-import type { HistoryStep } from "../../agent/history"; // Added HistoryStep import
 
 // Edge Function'ların beklediği payload tipleri için arayüzler
 // Bunlar, Edge Function içindeki AgentHistoryEntryData'ya benzer olmalı
@@ -33,17 +32,10 @@ export interface ExportAgentHistoryPayload {
 
 // TimelineEvent için payload (eğer ayrı bir endpoint olacaksa)
 export interface ExportTimelineEventPayload {
-  project_id: string;
-  history_entry_id: string;
-  event_id: string;
-  timestamp: string;
-  type: TimelineEventType;
-  name?: string;
-  details?: Record<string, unknown>;
-  status?: EventStatus;
-  error?: Record<string, unknown>;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
+  // project_id is handled by the API client/exporter itself based on the publicKey
+  history_entry_id: string; // ID of the parent history entry
+  event_id: string; // ID of the event itself
+  event: TimelineEvent; // The entire event object to be stored in the 'value' column
 }
 
 // Payload for exporting history steps
@@ -193,7 +185,7 @@ export class TelemetryServiceApiClient {
     await this._callEdgeFunction("update-agent-history", {
       project_id,
       history_id,
-      ...updates,
+      updates,
     } as unknown as Record<string, unknown>);
   }
 
