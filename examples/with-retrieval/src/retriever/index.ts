@@ -1,5 +1,4 @@
-import { z } from "zod";
-import { createTool, BaseRetriever, BaseMessage } from "@voltagent/core";
+import { BaseRetriever, type BaseMessage } from "@voltagent/core";
 import { documents } from "../data/documents.js";
 
 /**
@@ -36,9 +35,25 @@ export class SimpleRetriever extends BaseRetriever {
    * @returns Promise resolving to a formatted context string
    */
   async retrieve(input: string | BaseMessage[]): Promise<string> {
-    // Convert input to search text
-    const searchText =
-      typeof input === "string" ? input : (input[input.length - 1].content as string);
+    let searchText = "";
+
+    if (typeof input === "string") {
+      searchText = input;
+    } else if (Array.isArray(input) && input.length > 0) {
+      const lastMessage = input[input.length - 1];
+
+      // Handle content as array of content parts with text type
+      if (Array.isArray(lastMessage.content)) {
+        const textParts = lastMessage.content
+          .filter((part: any) => part.type === "text")
+          .map((part: any) => part.text);
+
+        searchText = textParts.join(" ");
+      } else {
+        // Fallback to string content
+        searchText = lastMessage.content as string;
+      }
+    }
 
     const keywords = searchText.toLowerCase().split(/\s+/);
 

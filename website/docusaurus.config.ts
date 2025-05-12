@@ -236,9 +236,9 @@ const config: Config = {
       additionalLanguages: ["diff", "diff-ts", "diff-yml", "bash"],
     },
     announcementBar: {
-      id: "first_two_weeks",
+      id: "product_hunt_support",
       content:
-        ' <a target="_blank"  rel="noopener noreferrer" href="https://x.com/voltagent_dev/status/1920193193905434748">🤘Check out the first two weeks of VoltAgent!</a>',
+        ' <a target="_blank" rel="noopener noreferrer" href="https://www.producthunt.com/products/voltagent-opensource-ai-agent-framework/">🚀 We just launched on Product Hunt! Check us out and show your support!</a>',
       backgroundColor: "#10b981",
       isCloseable: true,
     },

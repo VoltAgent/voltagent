@@ -1,5 +1,14 @@
 # @voltagent/google-ai
 
+## 0.3.6
+
+### Patch Changes
+
+- [#109](https://github.com/VoltAgent/voltagent/pull/109) [`5589efd`](https://github.com/VoltAgent/voltagent/commit/5589efd25d16f6bb226f2735ffa457e38fe079ab) Thanks [@luixaviles](https://github.com/luixaviles)! - feat(google-ai): enchance streamText with function call handling
+
+- Updated dependencies [[`0a120f4`](https://github.com/VoltAgent/voltagent/commit/0a120f4bf1b71575a4b6c67c94104633c58e1410)]:
+  - @voltagent/core@0.1.18
+
 ## 0.3.4
 
 ### Patch Changes

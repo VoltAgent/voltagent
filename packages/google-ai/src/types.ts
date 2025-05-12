@@ -35,6 +35,7 @@ type BaseGoogleTextOptions = {
 export type GoogleGenerateTextOptions = BaseGoogleTextOptions;
 
 export type GoogleStreamTextOptions = BaseGoogleTextOptions & {
+  tools?: BaseTool[];
   onChunk?: (chunk: any) => void | Promise<void>;
   onFinish?: (result: { text: string }) => void | Promise<void>;
   onError?: (error: any) => void | Promise<void>;
