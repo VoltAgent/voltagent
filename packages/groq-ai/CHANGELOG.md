@@ -1,5 +1,11 @@
 # @voltagent/groq-ai
 
+## 0.1.7
+
+### Patch Changes
+
+- [`3fdef67`](https://github.com/VoltAgent/voltagent/commit/3fdef675bfac9d227592805f337396eae15f03ca) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: only the `dist` directory is included in the published npm package.
+
 ## 0.1.5
 
 ### Patch Changes

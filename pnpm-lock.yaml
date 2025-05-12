@@ -122,7 +122,7 @@ importers:
         specifier: ^0.40.0
         version: 0.40.0
       '@voltagent/anthropic-ai':
-        specifier: ^0.1.4
+        specifier: ^0.1.6
         version: link:../../packages/anthropic-ai
       '@voltagent/cli':
         specifier: ^0.1.5
@@ -181,7 +181,7 @@ importers:
         specifier: ^0.1.18
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.6
+        specifier: ^0.3.7
         version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
@@ -307,7 +307,7 @@ importers:
         specifier: ^0.1.18
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.6
+        specifier: ^0.3.7
         version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
@@ -332,7 +332,7 @@ importers:
         specifier: ^0.1.18
         version: link:../../packages/core
       '@voltagent/groq-ai':
-        specifier: ^0.1.6
+        specifier: ^0.1.7
         version: link:../../packages/groq-ai
       zod:
         specifier: ^3.24.2

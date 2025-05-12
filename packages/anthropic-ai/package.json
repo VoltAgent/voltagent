@@ -1,11 +1,7 @@
 {
   "name": "@voltagent/anthropic-ai",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Anthropic AI provider for VoltAgent",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": ["dist"],
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -13,6 +9,12 @@
       "require": "./dist/index.js"
     }
   },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
