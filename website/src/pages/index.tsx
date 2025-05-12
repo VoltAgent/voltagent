@@ -15,7 +15,7 @@ import { CommunitySection } from "../components/community-section";
 export default function Home(): JSX.Element {
   const title = "VoltAgent - Open Source TypeScript AI Agent Framework";
   const description =
-    "VoltAgent is a platform for building and deploying AI agents with ease.";
+    "VoltAgent is an observability-first TypeScript AI Agent framework.";
 
   return (
     <>
