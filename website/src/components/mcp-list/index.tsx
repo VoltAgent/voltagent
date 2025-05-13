@@ -4,6 +4,7 @@ import {
   MagnifyingGlassIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
 
 // Import integration logos
 import { AhrefLogo } from "../../../static/img/logos/integrations/ahref";
@@ -121,31 +122,46 @@ const MCPCard = ({ mcp }) => {
 
 export const MCPList = () => {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-          Multi-Cloud Platform Connections
-        </h2>
-        <p className="text-gray-400">
-          Connect your agents with these services to enhance their capabilities
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-8 relative">
-        <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <MagnifyingGlassIcon
-              className="h-5 w-5 text-gray-400"
-              aria-hidden="true"
-            />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      {/* Header Section - Updated to match marketplace style */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 landing-md:mb-24 mb-12 items-center">
+        <div className="flex flex-col items-center relative">
+          <div className="flex items-baseline justify-start">
+            <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
+              <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
+            </div>
+            <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
+              voltagent
+            </span>
+            <div className="relative">
+              <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
+                MCP
+              </span>
+            </div>
           </div>
-          <input
-            type="text"
-            className="block w-full rounded-md border-0 bg-slate-800/50 py-3 pl-10 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#00d992] sm:text-sm"
-            placeholder="Search your favourite MCPs"
-          />
+          <p className="mt-2 text-center self-center text-gray-400 text-sm">
+            Enhance your agents with popular services
+          </p>
+        </div>
+
+        <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-left md:ml-8"
+          >
+            <p className="text-base sm:text-lg text-[#dcdcdc] mb-4">
+              Model Context Providers are the most popular integration servers
+              in the AI ecosystem.
+            </p>
+            <p className="text-base sm:text-lg text-gray-400">
+              <span className="text-[#00d992] font-bold text-lg">
+                Choose a provider
+              </span>{" "}
+              to see usage guide and documentation.
+            </p>
+          </motion.div>
         </div>
       </div>
 
