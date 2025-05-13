@@ -46,7 +46,7 @@ import { z } from "zod";
 // Example Tool (see Tools section for details)
 const weatherTool = createTool({
   name: "get_weather",
-  instructions: "Get the current weather for a specific location",
+  description: "Get the current weather for a specific location",
   parameters: z.object({ location: z.string().describe("City and state") }),
   execute: async ({ location }) => {
     console.log(`Tool: Getting weather for ${location}`);
@@ -203,7 +203,7 @@ import { z } from "zod";
 // Create a weather tool using the helper function
 const weatherTool = createTool({
   name: "get_weather",
-  instructions: "Get the current weather for a specific location",
+  description: "Get the current weather for a specific location",
   parameters: z.object({
     location: z.string().describe("The city and state, e.g., San Francisco, CA"),
   }),
@@ -367,7 +367,7 @@ const hooks = createHooks({
 
 const loggerTool = createTool({
   name: "context_aware_logger",
-  instructions: "Logs a message using the request ID from context.",
+  description: "Logs a message using the request ID from context.",
   parameters: z.object({ message: z.string() }),
   execute: async (params: { message: string }, options?: ToolExecutionContext) => {
     const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown";
