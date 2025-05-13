@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "name": "Ahrefs",
+    "description": "Access Ahrefs SEO and backlink analytics data",
+    "category": "Analytics",
+    "logoKey": "ahref"
+  },
+  {
+    "id": 2,
+    "name": "Airtable",
+    "description": "Interact with Airtable bases and records",
+    "category": "Database",
+    "logoKey": "airtable"
+  },
+  {
+    "id": 3,
+    "name": "Anthropic",
+    "description": "AI assistant with Claude for natural language tasks",
+    "category": "AI",
+    "logoKey": "anthropic"
+  },
+  {
+    "id": 4,
+    "name": "Asana",
+    "description": "Manage projects and tasks with Asana API",
+    "category": "Productivity",
+    "logoKey": "asana"
+  },
+  {
+    "id": 5,
+    "name": "Cohere",
+    "description": "Access Cohere's language models for NLP tasks",
+    "category": "AI",
+    "logoKey": "cohere"
+  },
+  {
+    "id": 6,
+    "name": "Dropbox",
+    "description": "Manage and access files stored in Dropbox",
+    "category": "Storage",
+    "logoKey": "dropbox"
+  },
+  {
+    "id": 7,
+    "name": "Figma",
+    "description": "Access and interact with Figma design files",
+    "category": "Design",
+    "logoKey": "figma"
+  },
+  {
+    "id": 8,
+    "name": "Gmail",
+    "description": "Send, receive, and manage emails through Gmail",
+    "category": "Communication",
+    "logoKey": "gmail"
+  },
+  {
+    "id": 9,
+    "name": "Google Calendar",
+    "description": "Schedule and manage events in Google Calendar",
+    "category": "Productivity",
+    "logoKey": "googleCalendar"
+  },
+  {
+    "id": 10,
+    "name": "Google Drive",
+    "description": "Store, access, and manage files in Google Drive",
+    "category": "Storage",
+    "logoKey": "googleDrive"
+  },
+  {
+    "id": 11,
+    "name": "Google Sheets",
+    "description": "Work with data in Google Sheets spreadsheets",
+    "category": "Data",
+    "logoKey": "googleSheets"
+  },
+  {
+    "id": 12,
+    "name": "Hubspot",
+    "description": "Access and manage Hubspot CRM data and contacts",
+    "category": "CRM",
+    "logoKey": "hubspot"
+  },
+  {
+    "id": 13,
+    "name": "Intercom",
+    "description": "Manage customer communications with Intercom",
+    "category": "Support",
+    "logoKey": "intercom"
+  },
+  {
+    "id": 14,
+    "name": "Jira",
+    "description": "Track issues and manage projects in Jira",
+    "category": "Development",
+    "logoKey": "jira"
+  },
+  {
+    "id": 15,
+    "name": "Mailchimp",
+    "description": "Manage email campaigns and contacts in Mailchimp",
+    "category": "Marketing",
+    "logoKey": "mailchimp"
+  },
+  {
+    "id": 16,
+    "name": "Microsoft Teams",
+    "description": "Collaborate and communicate through Microsoft Teams",
+    "category": "Communication",
+    "logoKey": "microsoftTeams"
+  },
+  {
+    "id": 17,
+    "name": "Mixpanel",
+    "description": "Access and analyze user behavior data with Mixpanel",
+    "category": "Analytics",
+    "logoKey": "mixpanel"
+  },
+  {
+    "id": 18,
+    "name": "Notion",
+    "description": "Access and manage content in Notion workspaces",
+    "category": "Productivity",
+    "logoKey": "notion"
+  },
+  {
+    "id": 19,
+    "name": "OneDrive",
+    "description": "Store and access files in Microsoft OneDrive",
+    "category": "Storage",
+    "logoKey": "oneDrive"
+  },
+  {
+    "id": 20,
+    "name": "Pinecone",
+    "description": "Vector database for AI applications",
+    "category": "AI",
+    "logoKey": "pinecone"
+  }
+]
