@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   MagnifyingGlassIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
-
+import { DotPattern } from "../ui/dot-pattern";
 // Import integration logos
 import { AhrefLogo } from "../../../static/img/logos/integrations/ahref";
 import { AirtableLogo } from "../../../static/img/logos/integrations/airtable";
@@ -61,13 +61,20 @@ const mcpData = mcpDataJson.map((item) => ({
   logo: logoMap[item.logoKey],
 }));
 
+// Tab options for filtering
+const tabOptions = [
+  { id: "zapier", name: "Zapier" },
+  { id: "gumloop", name: "Gumloop" },
+  { id: "community", name: "Community" },
+];
+
 // MCP Card Component
 const MCPCard = ({ mcp }) => {
   const handleClick = () => console.log(`Clicked on ${mcp.name}`);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 0 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="group border-solid border-[#1e293b]/40 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/60 hover:shadow-[0_0_15px_rgba(0,217,146,0.15)] cursor-pointer"
@@ -109,7 +116,7 @@ const MCPCard = ({ mcp }) => {
 
         {/* Try Connection Button */}
         <div className="w-full flex items-center justify-center px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]">
-          <span>Try MCP connection</span>
+          <span>See MCP Details</span>
           <ArrowTopRightOnSquareIcon
             className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200"
             aria-hidden="true"
@@ -120,10 +127,51 @@ const MCPCard = ({ mcp }) => {
   );
 };
 
-export const MCPList = () => {
+// Tab component
+const Tab = ({ active, onClick, children }) => {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div
+      className={`relative px-8 py-4 text-lg font-medium cursor-pointer transition-all duration-300 ${
+        active ? "text-[#00d992]" : "text-gray-500 hover:text-gray-300"
+      }`}
+      onClick={onClick}
+      role="tab"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          onClick();
+        }
+      }}
+      aria-selected={active}
+    >
+      {children}
+      <div
+        className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+          active ? "bg-[#00d992]" : "bg-transparent"
+        }`}
+      />
+    </div>
+  );
+};
+
+export const MCPList = () => {
+  const [activeTab, setActiveTab] = useState("zapier");
+
+  // Filter MCPs based on active tab
+  const filteredMcps = mcpData.filter((_mcp, index) => {
+    if (activeTab === "zapier") {
+      return index < 12;
+    }
+    if (activeTab === "gumloop") {
+      return index >= 12 && index < 19;
+    }
+    return index >= 19;
+  });
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center">
       {/* Header Section - Updated to match marketplace style */}
+      <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 landing-md:mb-24 mb-12 items-center">
         <div className="flex flex-col items-center relative">
           <div className="flex items-baseline justify-start">
@@ -144,7 +192,7 @@ export const MCPList = () => {
           </p>
         </div>
 
-        <div className="relative">
+        <div className="relative ">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -165,11 +213,33 @@ export const MCPList = () => {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="mb-8">
+        <div
+          className="flex justify-start border-b border-gray-800"
+          role="tablist"
+        >
+          {tabOptions.map((tab) => (
+            <Tab
+              key={tab.id}
+              active={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.name}
+            </Tab>
+          ))}
+        </div>
+      </div>
+
       {/* MCP Grid */}
-      <div className="py-8 px-3">
+      <div
+        className="p-7 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm "
+        role="tabpanel"
+        aria-labelledby={`tab-${activeTab}`}
+      >
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {mcpData.map((mcp) => (
+            {filteredMcps.map((mcp) => (
               <MCPCard key={mcp.id} mcp={mcp} />
             ))}
           </div>
