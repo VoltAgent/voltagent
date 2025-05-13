@@ -131,7 +131,7 @@ const MCPCard = ({ mcp }) => {
 const Tab = ({ active, onClick, children }) => {
   return (
     <div
-      className={`relative px-8 py-4 text-lg font-medium cursor-pointer transition-all duration-300 ${
+      className={`relative px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium cursor-pointer transition-all duration-300 flex-1 text-center ${
         active ? "text-[#00d992]" : "text-gray-500 hover:text-gray-300"
       }`}
       onClick={onClick}
@@ -169,42 +169,43 @@ export const MCPList = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center">
-      {/* Header Section - Updated to match marketplace style */}
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 sm:py-20 flex flex-col items-center">
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 landing-md:mb-24 mb-12 items-center">
-        <div className="flex flex-col items-center relative">
+
+      {/* Header Section - Mobile optimized */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 landing-md:mb-16 sm:landing-md:mb-24 mb-8 items-center w-full">
+        <div className="flex flex-col items-center sm:items-center relative">
           <div className="flex items-baseline justify-start">
             <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
               <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
             </div>
-            <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
+            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#00d992]">
               voltagent
             </span>
             <div className="relative">
-              <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
+              <span className="ml-2 text-xl sm:text-xl md:text-2xl font-medium text-gray-400">
                 MCP
               </span>
             </div>
           </div>
-          <p className="mt-2 text-center self-center text-gray-400 text-sm">
+          <p className="mt-2 text-center self-center text-gray-400 text-xs sm:text-sm">
             Enhance your agents with popular services
           </p>
         </div>
 
-        <div className="relative ">
+        <div className="relative mt-4 sm:mt-0">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-left md:ml-8"
+            className="text-center sm:text-left md:ml-8"
           >
-            <p className="text-base sm:text-lg text-[#dcdcdc] mb-4">
+            <p className="text-sm sm:text-base md:text-lg text-[#dcdcdc] mb-3 sm:mb-4">
               Model Context Providers are the most popular integration servers
               in the AI ecosystem.
             </p>
-            <p className="text-base sm:text-lg text-gray-400">
-              <span className="text-[#00d992] font-bold text-lg">
+            <p className="text-sm sm:text-base md:text-lg text-gray-400">
+              <span className="text-[#00d992] font-bold text-base sm:text-lg">
                 Choose a provider
               </span>{" "}
               to see usage guide and documentation.
@@ -213,10 +214,10 @@ export const MCPList = () => {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="mb-8">
+      {/* Tab Navigation - Full width on mobile */}
+      <div className="mb-8 w-full">
         <div
-          className="flex justify-start border-b border-gray-800"
+          className="flex justify-between border-b border-gray-800 w-full"
           role="tablist"
         >
           {tabOptions.map((tab) => (
@@ -231,14 +232,14 @@ export const MCPList = () => {
         </div>
       </div>
 
-      {/* MCP Grid */}
+      {/* MCP Grid - Responsive padding */}
       <div
-        className="p-7 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm "
+        className="p-3 sm:p-5 md:p-7 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm w-full"
         role="tabpanel"
         aria-labelledby={`tab-${activeTab}`}
       >
-        <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             {filteredMcps.map((mcp) => (
               <MCPCard key={mcp.id} mcp={mcp} />
             ))}
