@@ -95,12 +95,9 @@ export class TelemetryServiceApiClient {
         } catch (_e) {
           errorBody = await response.text();
         }
-        console.error(
-          `[TelemetryServiceApiClient] Error calling ${functionName}: ${response.status} ${response.statusText}`,
-          errorBody,
-        );
+
         throw new Error(
-          `Failed to call Edge Function ${functionName}: ${response.status} ${response.statusText} - ${JSON.stringify(errorBody)}`,
+          `Failed to call VoltAgentExporter Function ${functionName}: ${response.status} ${response.statusText} - ${JSON.stringify(errorBody)}`,
         );
       }
       return await response.json();

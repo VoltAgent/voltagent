@@ -88,7 +88,7 @@ describe("TelemetryServiceApiClient", () => {
       const client = apiClient as any;
 
       await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(
-        `Failed to call Edge Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorBody)}`,
+        `Failed to call VoltAgentExporter Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorBody)}`,
       );
     });
 
@@ -108,7 +108,7 @@ describe("TelemetryServiceApiClient", () => {
       const client = apiClient as any;
 
       await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(
-        `Failed to call Edge Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorText)}`,
+        `Failed to call VoltAgentExporter Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorText)}`,
       );
     });
 

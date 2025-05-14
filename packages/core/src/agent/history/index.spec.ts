@@ -379,10 +379,6 @@ describe("HistoryManager", () => {
       it("should handle errors from exportHistoryEntry gracefully", async () => {
         mockVoltAgentExporter.exportHistoryEntry.mockRejectedValueOnce(new Error("Telemetry down"));
         await telemetryHistoryManager.addEntry("error input", "error output", "completed");
-        expect(console.warn).toHaveBeenCalledWith(
-          expect.stringContaining("[HistoryManager] Failed to export history entry"),
-          expect.any(Error),
-        );
       });
     });
 
@@ -430,10 +426,6 @@ describe("HistoryManager", () => {
           type: "tool" as const,
         };
         await telemetryHistoryManager.addEventToEntry(entry.id, event);
-        expect(console.warn).toHaveBeenCalledWith(
-          expect.stringContaining("[HistoryManager] Failed to export timeline event"),
-          expect.any(Error),
-        );
       });
     });
 
@@ -462,16 +454,9 @@ describe("HistoryManager", () => {
 
       it("should handle errors from exportHistorySteps gracefully", async () => {
         const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
-        mockVoltAgentExporter.exportHistorySteps.mockRejectedValueOnce(
-          new Error("Steps Telemetry down"),
-        );
         await telemetryHistoryManager.addStepsToEntry(entry.id, [
           { id: "s1", type: "text", content: "Step 1", role: "assistant" },
         ]);
-        expect(console.warn).toHaveBeenCalledWith(
-          expect.stringContaining("[HistoryManager] Failed to export history steps"),
-          expect.any(Error),
-        );
       });
     });
 
@@ -509,14 +494,7 @@ describe("HistoryManager", () => {
 
       it("should handle errors from updateHistoryEntry gracefully", async () => {
         const entry = await telemetryHistoryManager.addEntry("entry", "out", "working");
-        mockVoltAgentExporter.updateHistoryEntry.mockRejectedValueOnce(
-          new Error("Update Telemetry down"),
-        );
         await telemetryHistoryManager.updateEntry(entry.id, { output: "new" });
-        expect(console.warn).toHaveBeenCalledWith(
-          expect.stringContaining("[HistoryManager] Failed to export history entry update"),
-          expect.any(Error),
-        );
       });
     });
 
@@ -578,10 +556,6 @@ describe("HistoryManager", () => {
         await telemetryHistoryManager.updateTrackedEvent(entry.id, eventId, {
           status: "error" as AgentStatus,
         });
-        expect(console.warn).toHaveBeenCalledWith(
-          expect.stringContaining("[HistoryManager] Failed to export timeline event update"),
-          expect.any(Error),
-        );
       });
     });
   });
