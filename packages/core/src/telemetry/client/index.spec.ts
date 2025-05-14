@@ -11,7 +11,7 @@ import type { HistoryStep } from "../../agent/history"; // Adjust path as necess
 global.fetch = jest.fn();
 
 const mockOptions: VoltAgentExporterOptions = {
-  edgeFunctionBaseUrl: "http://localhost:8000/functions/v1",
+  edgbaseUrleFunctionBaseUrl: "http://localhost:8000/functions/v1",
   publicKey: "test-public-key",
   secretKey: "test-secret-key",
   supabaseAnonKey: "test-anon-key",
@@ -61,21 +61,18 @@ describe("TelemetryServiceApiClient", () => {
       const payload = { data: "test" };
       await apiClient["_callEdgeFunction"](functionName, payload);
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        `${mockOptions.edgeFunctionBaseUrl}/${functionName}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${mockOptions.supabaseAnonKey}`,
-          },
-          body: JSON.stringify({
-            publicKey: mockOptions.publicKey,
-            clientSecretKey: mockOptions.secretKey,
-            payload,
-          }),
+      expect(global.fetch).toHaveBeenCalledWith(`${mockOptions.baseUrl}/${functionName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${mockOptions.supabaseAnonKey}`,
         },
-      );
+        body: JSON.stringify({
+          publicKey: mockOptions.publicKey,
+          clientSecretKey: mockOptions.secretKey,
+          payload,
+        }),
+      });
     });
 
     it("should throw an error if response is not ok", async () => {

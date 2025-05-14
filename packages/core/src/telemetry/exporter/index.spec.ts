@@ -28,7 +28,7 @@ jest.mock("../client", () => ({
 }));
 
 const mockOptions: VoltAgentExporterOptions = {
-  edgeFunctionBaseUrl: "http://localhost:8000/functions/v1",
+  baseUrl: "http://localhost:8000/functions/v1",
   publicKey: "test-public-key",
   secretKey: "test-secret-key",
   supabaseAnonKey: "test-anon-key",
@@ -167,19 +167,6 @@ describe("VoltAgentExporter", () => {
       await exporter.updateTimelineEvent(history_id, event_id, updates);
 
       expect(mockUpdateTimelineEvent).toHaveBeenCalledWith(history_id, event_id, updates);
-    });
-
-    it("should not throw if apiClient is not initialized and log a warning", async () => {
-      const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-
-      const tempExporter = new VoltAgentExporter(mockOptions);
-      (tempExporter as any).apiClient = undefined;
-
-      await tempExporter.updateTimelineEvent("h1", "e1", {});
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "[VoltAgentExporter] TelemetryServiceApiClient is not initialized. Cannot update timeline event.",
-      );
-      consoleWarnSpy.mockRestore();
     });
 
     it("should re-throw errors from apiClient.updateTimelineEvent if apiClient is present", async () => {

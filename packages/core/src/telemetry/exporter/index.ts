@@ -6,7 +6,7 @@ export interface VoltAgentExporterOptions {
    * The base URL for the Supabase Edge Functions.
    * e.g., "https://<your-project-id>.supabase.co/functions/v1"
    */
-  edgeFunctionBaseUrl: string;
+  baseUrl: string;
 
   /**
    * The public API key for the project, used to identify the project
@@ -46,9 +46,8 @@ import {
   type ExportAgentHistoryPayload,
   type ExportTimelineEventPayload,
   type AgentHistoryUpdatableFields,
-  type TimelineEventUpdatableFields,
 } from "../client";
-import type { HistoryStep } from "../../agent/history";
+import type { HistoryStep, TimelineEvent } from "../../agent/history";
 
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;
@@ -81,15 +80,8 @@ export class VoltAgentExporter {
       // };
 
       const result = await this.apiClient.exportAgentHistory(historyEntryData); // Pass directly if already formatted
-      console.info(
-        "[VoltAgentExporter] History entry exported successfully:",
-        result.historyEntryId,
-      );
       return result;
     } catch (error) {
-      console.error("[VoltAgentExporter] Failed to export history entry:", error);
-      // Decide on error handling: re-throw, return a specific error object, or silently fail.
-      // For now, re-throwing to let the caller (HistoryManager) decide.
       throw error;
     }
   }
@@ -114,13 +106,8 @@ export class VoltAgentExporter {
       // };
 
       const result = await this.apiClient.exportTimelineEvent(timelineEventData); // Pass directly if already formatted
-      console.info(
-        "[VoltAgentExporter] Timeline event exported successfully:",
-        result.timelineEventId,
-      );
       return result;
     } catch (error) {
-      console.error("[VoltAgentExporter] Failed to export timeline event:", error);
       throw error;
     }
   }
@@ -139,15 +126,9 @@ export class VoltAgentExporter {
   ): Promise<void> {
     try {
       await this.apiClient.exportHistorySteps(project_id, history_id, steps);
-      console.info(
-        `[VoltAgentExporter] History steps exported successfully for entry: ${history_id}`,
-      );
+
       // No specific result to return for void methods
     } catch (error) {
-      console.error(
-        `[VoltAgentExporter] Failed to export history steps for entry ${history_id}:`,
-        error,
-      );
       throw error;
     }
   }
@@ -167,10 +148,8 @@ export class VoltAgentExporter {
   ): Promise<void> {
     try {
       await this.apiClient.updateAgentHistory(project_id, history_id, updates);
-      console.info(`[VoltAgentExporter] History entry ${history_id} updated successfully.`);
       // No specific result to return for void methods
     } catch (error) {
-      console.error(`[VoltAgentExporter] Failed to update history entry ${history_id}:`, error);
       throw error;
     }
   }
@@ -180,22 +159,18 @@ export class VoltAgentExporter {
    * @param project_id - The project ID associated with the timeline event.
    * @param history_id - The ID of the parent history entry.
    * @param event_id - The ID of the timeline event to update.
-   * @param updates - An object containing the fields to update.
-   *                  Should conform to Partial<TimelineEventUpdatableFields>.
+   * @param event - The full timeline event object to update.
    * @returns A promise that resolves when the operation is complete.
    */
   public async updateTimelineEvent(
     history_id: string,
     event_id: string,
-    updates: TimelineEventUpdatableFields,
+    event: TimelineEvent,
   ): Promise<void> {
     if (!this.apiClient) {
-      console.warn(
-        "[VoltAgentExporter] TelemetryServiceApiClient is not initialized. Cannot update timeline event.",
-      );
       return;
     }
-    await this.apiClient.updateTimelineEvent(history_id, event_id, updates);
+    await this.apiClient.updateTimelineEvent(history_id, event_id, event);
   }
 
   // TODO: Add methods for batch export if needed in the future.

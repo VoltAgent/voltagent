@@ -22,10 +22,5 @@ new VoltAgent({
       secretKey: process.env.LANGFUSE_SECRET_KEY,
       baseUrl: process.env.LANGFUSE_BASE_URL,
     }),
-    new VoltAgentExporter({
-      publicKey: "pk_a5c7813c857c490d385db87686e851a6",
-      secretKey: "sk_live_b92e01d6e255d06093a737d49385fb4384882e610f5300e282f89987078de421",
-      edgeFunctionBaseUrl: "https://server.voltagent.dev/functions/v1",
-    }),
   ],
 });

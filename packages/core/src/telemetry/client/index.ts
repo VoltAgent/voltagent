@@ -85,8 +85,8 @@ export class TelemetryServiceApiClient {
     functionName: string,
     payload: Record<string, unknown>,
   ): Promise<any> {
-    const { edgeFunctionBaseUrl, publicKey, secretKey, supabaseAnonKey } = this.options;
-    const functionUrl = `${edgeFunctionBaseUrl}/${functionName}`;
+    const { baseUrl, publicKey, secretKey, supabaseAnonKey } = this.options;
+    const functionUrl = `${baseUrl}/${functionName}`;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -192,12 +192,12 @@ export class TelemetryServiceApiClient {
   public async updateTimelineEvent(
     history_id: string,
     event_id: string,
-    updates: TimelineEventUpdatableFields,
+    updatedEvent: TimelineEvent,
   ): Promise<void> {
     await this._callEdgeFunction("update-timeline-event", {
       history_id,
       event_id,
-      updates,
+      event: updatedEvent,
     } as unknown as Record<string, unknown>);
   }
 }

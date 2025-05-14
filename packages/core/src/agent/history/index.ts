@@ -8,9 +8,7 @@ import type {
   ExportAgentHistoryPayload,
   ExportTimelineEventPayload,
   AgentHistoryUpdatableFields,
-  TimelineEventUpdatableFields,
 } from "../../telemetry/client";
-import type { EventStatus } from "../../events";
 
 /**
  * Step information for history
@@ -289,7 +287,7 @@ export class HistoryManager {
             history_entry_id: entryId,
             event_id: event.id, // Still need the event ID for identification
             // Send the entire event object. The backend will store this in the 'value' JSONB column.
-            event: event, // Pass the whole event object
+            event, // Pass the whole event object
           };
 
           // We need to ensure the type ExportTimelineEventPayload matches this structure
@@ -558,37 +556,18 @@ export class HistoryManager {
         status: updates.status,
       });
 
+      const updatedEvent = updatedEntry.events[eventIndex]; // This is the complete, updated event
+
       // Export the specific timeline event update if exporter is configured
       if (this.voltAgentExporter && originalEvent.id) {
+        // Use originalEvent.id as it's guaranteed
         try {
-          // Prepare the updates payload according to TimelineEventUpdatableFields
-          // The backend Edge Function expects these fields to merge into the 'value' JSONB column.
-          const telemetryUpdates: TimelineEventUpdatableFields = {};
-
-          if (updates.data) {
-            // The 'updates.data' from the function argument should be mapped to 'details'
-            // or spread into the telemetryUpdates if the structure matches.
-            // For now, assuming 'details' is the correct field in TimelineEventUpdatableFields
-            // for arbitrary data updates.
-            telemetryUpdates.details = {
-              ...(originalEvent.data || {}), // Preserve existing data
-              ...(updates.data || {}), // Merge new data
-            };
-          }
-          if (updates.status) {
-            telemetryUpdates.status = updates.status as EventStatus; // Cast to EventStatus
-          }
-
-          // Add a timestamp for the update itself within the telemetry payload, if desired by exporter
-          // telemetryUpdates.timestamp = new Date().toISOString();
-
-          if (Object.keys(telemetryUpdates).length > 0) {
-            await this.voltAgentExporter.updateTimelineEvent(
-              historyId,
-              originalEvent.id, // event_id
-              telemetryUpdates, // Send the prepared updates directly
-            );
-          }
+          // Standardize: Send the entire updated event object
+          await this.voltAgentExporter.updateTimelineEvent(
+            historyId, // history_id (maps to history_entry_id in the backend via lookup)
+            originalEvent.id, // event_id
+            updatedEvent, // Send the full updated event object
+          );
         } catch (telemetryError) {
           console.warn(
             `[HistoryManager] Failed to export timeline event update to telemetry service for agent ${this.agentId}, event ${originalEvent.id}. Error:`,

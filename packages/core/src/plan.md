@@ -74,11 +74,11 @@ Bu plan, Voltagent agent geçmiş verilerinin ve agent durum anlık görüntüle
 4.  **`VoltAgentExporter` ve `TelemetryServiceApiClient` Güncellemeleri:**
 
     - **`VoltAgentExporterOptions` Arayüzü:**
-      - `rpcUrl` yerine `edgeFunctionBaseUrl: string` (örn: `https://<id>.supabase.co/functions/v1`) alacak.
+      - `rpcUrl` yerine `baseUrl: string` (örn: `https://<id>.supabase.co/functions/v1`) alacak.
       - `publicKey: string` ve `secretKey: string` (bu, istemcinin sağlayacağı `clientSecretKey` olacak) alanları kalacak.
       - `supabaseAnonKey` opsiyonel olarak kalabilir (Edge Function'a anonim çağrı yapılıyorsa).
     - **`TelemetryServiceApiClient` Sınıfı/Modülü:**
-      - Bu katman, `VoltAgentExporter`'dan aldığı yapılandırma ile `fetch` API'sini kullanarak yukarıda tanımlanan Edge Fonksiyonlarına (`edgeFunctionBaseUrl + '/export-agent-history'`, `edgeFunctionBaseUrl + '/export-timeline-event'`) `POST` istekleri yapacaktır.
+      - Bu katman, `VoltAgentExporter`'dan aldığı yapılandırma ile `fetch` API'sini kullanarak yukarıda tanımlanan Edge Fonksiyonlarına (`baseUrl + '/export-agent-history'`, `baseUrl + '/export-timeline-event'`) `POST` istekleri yapacaktır.
       - İstek gövdesi `{ publicKey, clientSecretKey, payload }` formatında olacaktır.
       - Gerekli `Authorization: Bearer <supabase_anon_key>` ve `Content-Type: application/json` başlıklarını ekleyecektir.
     - **`exportHistorySteps` metodları:**
@@ -169,7 +169,7 @@ Bu plan, Voltagent agent geçmiş verilerinin ve agent durum anlık görüntüle
   - [x] **YENİ:** `export-timeline-event` ve `update-timeline-event` Edge Fonksiyonları, yeni `agent_timeline_events` tablosu (`value JSONB` alanı ve `project_id` ile) çalışacak şekilde güncellendi.
   - [ ] Edge Fonksiyonları için güvenlik (Vault erişimi, girdi doğrulama) sağlanacak. **(Lint sorunları şimdilik ertelendi, öncelik birim testlerinde)**
 - [x] **4. `VoltAgentExporter` ve `TelemetryServiceApiClient` Güncellemeleri**
-  - [x] `VoltAgentExporterOptions` arayüzü (`edgeFunctionBaseUrl` içerecek şekilde) güncellenecek.
+  - [x] `VoltAgentExporterOptions` arayüzü (`baseUrl` içerecek şekilde) güncellenecek.
   - [x] `TelemetryServiceApiClient`, Edge Fonksiyonlarını çağıracak şekilde geliştirilecek.
   - [x] `TelemetryServiceApiClient'a exportHistorySteps metodu eklenecek.`
   - [x] `VoltAgentExporter'a exportHistorySteps metodu eklenecek.`

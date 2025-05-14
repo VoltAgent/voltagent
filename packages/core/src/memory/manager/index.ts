@@ -727,13 +727,9 @@ export class MemoryManager {
       const entry = await this.memory.getHistoryEntry(entryId);
       if (!entry || entry._agentId !== agentId) return undefined;
 
-      const eventId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : (Math.random() * 10000000000).toString();
-
       // Prepare the event data - use camelCase
       const eventData = {
-        id: eventId,
+        id: event.id,
         history_id: entryId,
         _agentId: agentId,
         timestamp: event.timestamp || new Date(),
@@ -746,7 +742,7 @@ export class MemoryManager {
       };
 
       // Save the event and pass agentId
-      await this.memory.addHistoryEvent(eventId, eventData, entryId, agentId);
+      await this.memory.addHistoryEvent(event.id, eventData, entryId, agentId);
 
       return await this.getHistoryEntryById(agentId, entryId);
     } catch (error) {
