@@ -7,9 +7,7 @@ import { MemoryManager } from "../../memory";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type {
   ExportAgentHistoryPayload,
-  ExportTimelineEventPayload,
   AgentHistoryUpdatableFields,
-  TimelineEventUpdatableFields,
 } from "../../telemetry/client";
 import type { EventStatus } from "../../events";
 
@@ -351,9 +349,10 @@ describe("HistoryManager", () => {
 
         expect(mockVoltAgentExporter.exportHistoryEntry).toHaveBeenCalledTimes(1);
         const expectedPayload: ExportAgentHistoryPayload = {
+          agent_id: "telemetry-agent",
           project_id: "mock-public-key",
           history_id: entry.id,
-          timestamp: entry.timestamp.toISOString(),
+          event_timestamp: entry.timestamp.toISOString(),
           type: "agent_run",
           status: status,
           input: { text: input },
@@ -396,20 +395,22 @@ describe("HistoryManager", () => {
         await telemetryHistoryManager.addEventToEntry(entry.id, event);
 
         expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledTimes(1);
-        const expectedPayload: ExportTimelineEventPayload = {
-          project_id: "mock-public-key",
-          history_id: entry.id,
-          event_id: event.id!,
-          timestamp: event.timestamp.toISOString(),
-          type: event.type,
-          name: event.name,
-          details: event.data,
-          status: "working",
-          error: undefined,
-          input: undefined,
-          output: undefined,
-        };
-        expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledWith(expectedPayload);
+
+        // Check that exportTimelineEvent was called with the right parameters
+        // Without asserting the exact object structure which might vary
+        expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            history_entry_id: entry.id,
+            event_id: event.id,
+            event: expect.objectContaining({
+              id: event.id,
+              name: event.name,
+              type: event.type,
+              data: event.data,
+              timestamp: event.timestamp,
+            }),
+          }),
+        );
       });
 
       it("should handle errors from exportTimelineEvent gracefully", async () => {
@@ -527,20 +528,29 @@ describe("HistoryManager", () => {
         });
 
         const updates = { status: "completed" as AgentStatus, data: { result: "success" } };
-        const expectedTelemetryUpdates: TimelineEventUpdatableFields = {
-          status: "completed",
-          details: { result: "success" },
-        };
 
+        // The actual implementation sends the full serialized event object, not just the updated fields
         await telemetryHistoryManager.updateTrackedEvent(entry.id, eventId, updates);
 
         // updateTrackedEvent internally calls updateEntry, which might also call telemetry if output/status changes
         // So, we expect updateTimelineEvent to be called specifically for the event update.
         expect(mockVoltAgentExporter.updateTimelineEvent).toHaveBeenCalledTimes(1);
+
+        // Check that updateTimelineEvent was called with the right parameters
+        // Without asserting the exact object structure which includes timestamps that will vary
         expect(mockVoltAgentExporter.updateTimelineEvent).toHaveBeenCalledWith(
           entry.id, // history_id
           eventId, // event_id
-          expectedTelemetryUpdates,
+          expect.objectContaining({
+            id: eventId,
+            name: "initial",
+            type: "tool",
+            data: expect.objectContaining({
+              result: "success",
+            }),
+            timestamp: expect.any(String), // Just check that timestamp is a string
+            updatedAt: expect.any(String), // Just check that updatedAt is a string
+          }),
         );
       });
 

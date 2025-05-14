@@ -136,6 +136,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         retriever?: BaseRetriever;
         voice?: Voice;
         markdown?: boolean;
+        telemetryExporter?: VoltAgentExporter;
       },
   ) {
     this.id = options.id || options.name;
@@ -165,7 +166,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.subAgentManager = new SubAgentManager(this.name, options.subAgents || []);
 
     // Initialize history manager
-    const chosenExporter = AgentRegistry.getInstance().getGlobalVoltAgentExporter();
+    const chosenExporter =
+      options.telemetryExporter || AgentRegistry.getInstance().getGlobalVoltAgentExporter();
     this.historyManager = new HistoryManager(
       this.id,
       this.memoryManager,

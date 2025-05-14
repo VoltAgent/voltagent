@@ -64,11 +64,12 @@ describe("VoltAgentExporter", () => {
       const historyData: ExportAgentHistoryPayload = {
         project_id: "proj-1",
         history_id: "hist-1",
-        timestamp: new Date().toISOString(),
+        event_timestamp: new Date().toISOString(),
         type: "agent_run",
         status: "completed",
         input: { text: "hello" },
         sequence_number: 1,
+        agent_id: "agent-1",
       };
       const mockResponse = { historyEntryId: "entry-123" };
       mockExportAgentHistory.mockResolvedValueOnce(mockResponse);
@@ -91,12 +92,13 @@ describe("VoltAgentExporter", () => {
   describe("exportTimelineEvent", () => {
     it("should call apiClient.exportTimelineEvent with the provided data", async () => {
       const eventData: ExportTimelineEventPayload = {
-        project_id: "proj-1",
-        history_id: "hist-1",
+        history_entry_id: "hist-1",
         event_id: "evt-1",
-        timestamp: new Date().toISOString(),
-        type: "agent" as any,
-        name: "start",
+        event: {
+          timestamp: new Date(),
+          type: "agent" as any,
+          name: "start",
+        },
       };
       const mockResponse = { timelineEventId: "event-456" };
       mockExportTimelineEvent.mockResolvedValueOnce(mockResponse);
@@ -160,7 +162,7 @@ describe("VoltAgentExporter", () => {
     it("should call apiClient.updateTimelineEvent with the provided data", async () => {
       const history_id = "hist-1";
       const event_id = "evt-1";
-      const updates: TimelineEventUpdatableFields = { status: "completed" as any };
+      const updates: TimelineEventUpdatableFields = { status: "completed" };
       mockUpdateTimelineEvent.mockResolvedValueOnce(undefined as any);
 
       await exporter.updateTimelineEvent(history_id, event_id, updates);
@@ -172,7 +174,9 @@ describe("VoltAgentExporter", () => {
       const error = new Error("API client failed");
       mockUpdateTimelineEvent.mockRejectedValueOnce(error);
 
-      await expect(exporter.updateTimelineEvent("h1", "e1", {})).rejects.toThrow(error);
+      await expect(
+        exporter.updateTimelineEvent("h1", "e1", { status: "completed" }),
+      ).rejects.toThrow(error);
     });
   });
 });

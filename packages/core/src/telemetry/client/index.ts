@@ -183,12 +183,12 @@ export class TelemetryServiceApiClient {
   public async updateTimelineEvent(
     history_id: string,
     event_id: string,
-    updatedEvent: TimelineEvent,
+    updates: TimelineEventUpdatableFields,
   ): Promise<void> {
     await this._callEdgeFunction("update-timeline-event", {
       history_id,
       event_id,
-      event: updatedEvent,
+      updates,
     } as unknown as Record<string, unknown>);
   }
 }

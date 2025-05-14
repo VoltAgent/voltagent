@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltAgentExporter } from "@voltagent/core";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { LangfuseExporter } from "@voltagent/langfuse-exporter";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { weatherTool, searchTool, checkCalendarTool, addCalendarEventTool } from "./tools";

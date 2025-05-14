@@ -28,8 +28,8 @@ describe("TelemetryServiceApiClient", () => {
   describe("constructor", () => {
     it("should throw an error if fetch is not available and not provided", () => {
       const originalFetch = globalThis.fetch;
-      //@ts-ignore
-      delete globalThis.fetch;
+      //@ts-expect-error - Temporarily removing fetch to test error handling
+      globalThis.fetch = undefined;
       try {
         expect(() => new TelemetryServiceApiClient({ ...mockOptions, fetch: undefined })).toThrow(
           "Fetch API is not available. Please provide a fetch implementation via VoltAgentExporterOptions.",
@@ -58,7 +58,8 @@ describe("TelemetryServiceApiClient", () => {
       });
       const functionName = "test-function";
       const payload = { data: "test" };
-      await apiClient["_callEdgeFunction"](functionName, payload);
+      const client = apiClient as any;
+      await client._callEdgeFunction(functionName, payload);
 
       expect(global.fetch).toHaveBeenCalledWith(`${mockOptions.baseUrl}/${functionName}`, {
         method: "POST",
@@ -84,8 +85,9 @@ describe("TelemetryServiceApiClient", () => {
       });
       const functionName = "test-error-function";
       const payload = { data: "test" };
+      const client = apiClient as any;
 
-      await expect(apiClient["_callEdgeFunction"](functionName, payload)).rejects.toThrow(
+      await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(
         `Failed to call Edge Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorBody)}`,
       );
     });
@@ -103,8 +105,9 @@ describe("TelemetryServiceApiClient", () => {
       });
       const functionName = "test-text-error-function";
       const payload = { data: "test" };
+      const client = apiClient as any;
 
-      await expect(apiClient["_callEdgeFunction"](functionName, payload)).rejects.toThrow(
+      await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(
         `Failed to call Edge Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorText)}`,
       );
     });
@@ -114,10 +117,9 @@ describe("TelemetryServiceApiClient", () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(networkError);
       const functionName = "test-network-error";
       const payload = { data: "test" };
+      const client = apiClient as any;
 
-      await expect(apiClient["_callEdgeFunction"](functionName, payload)).rejects.toThrow(
-        networkError,
-      );
+      await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(networkError);
     });
   });
 
@@ -126,9 +128,10 @@ describe("TelemetryServiceApiClient", () => {
       const mockResult = { historyEntryId: "new-id" };
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
       const historyData: ExportAgentHistoryPayload = {
+        agent_id: "agent-1",
         project_id: "proj-1",
         history_id: "hist-1",
-        timestamp: new Date().toISOString(),
+        event_timestamp: new Date().toISOString(),
         type: "agent_run",
         status: "completed",
         input: { text: "hello" },
@@ -154,12 +157,13 @@ describe("TelemetryServiceApiClient", () => {
       const mockResult = { timelineEventId: "event-id-1" };
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
       const eventData: ExportTimelineEventPayload = {
-        project_id: "proj-1",
-        history_id: "hist-1",
+        history_entry_id: "hist-1",
         event_id: "evt-1",
-        timestamp: new Date().toISOString(),
-        type: "agent",
-        name: "start",
+        event: {
+          timestamp: new Date(),
+          type: "agent",
+          name: "start",
+        },
       };
       const result = await apiClient.exportTimelineEvent(eventData);
       expect(global.fetch).toHaveBeenCalledWith(
@@ -209,7 +213,7 @@ describe("TelemetryServiceApiClient", () => {
           body: JSON.stringify({
             publicKey: mockOptions.publicKey,
             clientSecretKey: mockOptions.secretKey,
-            payload: { project_id, history_id, ...updates },
+            payload: { project_id, history_id, updates },
           }),
         }),
       );
@@ -221,7 +225,12 @@ describe("TelemetryServiceApiClient", () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // Returns void
       const history_id = "hist-1";
       const event_id = "evt-1";
-      const updates: TimelineEventUpdatableFields = { status: "completed" as any };
+      const updates: TimelineEventUpdatableFields = {
+        timestamp: new Date().toISOString(),
+        type: "agent",
+        name: "completed",
+        status: "completed",
+      };
       await apiClient.updateTimelineEvent(history_id, event_id, updates);
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining("/update-timeline-event"),

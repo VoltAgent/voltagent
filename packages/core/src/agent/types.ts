@@ -9,6 +9,7 @@ import type { EventUpdater } from "../events";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
 import type { Span } from "@opentelemetry/api";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 
 /**
  * Provider options type for LLM configurations
@@ -86,6 +87,12 @@ export type AgentOptions = {
    * Optional user-defined context to be passed around
    */
   userContext?: Map<string | symbol, unknown>;
+
+  /**
+   * Telemetry exporter for the agent
+   * Used to send telemetry data to an external service
+   */
+  telemetryExporter?: VoltAgentExporter;
 
   /**
    * Agent instructions (system prompt). This is preferred over `description`.

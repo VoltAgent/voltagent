@@ -32,8 +32,9 @@ import {
   type ExportAgentHistoryPayload,
   type ExportTimelineEventPayload,
   type AgentHistoryUpdatableFields,
+  type TimelineEventUpdatableFields,
 } from "../client";
-import type { HistoryStep, TimelineEvent } from "../../agent/history";
+import type { HistoryStep } from "../../agent/history";
 
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;
@@ -54,22 +55,18 @@ export class VoltAgentExporter {
   public async exportHistoryEntry(
     historyEntryData: ExportAgentHistoryPayload,
   ): Promise<{ historyEntryId: string }> {
-    try {
-      // TODO: Add any transformation or validation logic here if needed
-      // before sending to the API client.
-      // For example, ensuring event_timestamp is correctly formatted if it's a Date object.
-      // const payload: ExportAgentHistoryPayload = {
-      //   ...historyEntryData,
-      //   event_timestamp: typeof historyEntryData.event_timestamp === 'string'
-      //     ? historyEntryData.event_timestamp
-      //     : (historyEntryData.event_timestamp as Date).toISOString(), // Example: Convert Date to ISO string
-      // };
+    // TODO: Add any transformation or validation logic here if needed
+    // before sending to the API client.
+    // For example, ensuring event_timestamp is correctly formatted if it's a Date object.
+    // const payload: ExportAgentHistoryPayload = {
+    //   ...historyEntryData,
+    //   event_timestamp: typeof historyEntryData.event_timestamp === 'string'
+    //     ? historyEntryData.event_timestamp
+    //     : (historyEntryData.event_timestamp as Date).toISOString(), // Example: Convert Date to ISO string
+    // };
 
-      const result = await this.apiClient.exportAgentHistory(historyEntryData); // Pass directly if already formatted
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    const result = await this.apiClient.exportAgentHistory(historyEntryData); // Pass directly if already formatted
+    return result;
   }
 
   /**
@@ -82,20 +79,16 @@ export class VoltAgentExporter {
   public async exportTimelineEvent(
     timelineEventData: ExportTimelineEventPayload,
   ): Promise<{ timelineEventId: string }> {
-    try {
-      // TODO: Add any transformation or validation logic here if needed.
-      // const payload: ExportTimelineEventPayload = {
-      //   ...timelineEventData,
-      //   event_timestamp: typeof timelineEventData.event_timestamp === 'string'
-      //    ? timelineEventData.event_timestamp
-      //    : (timelineEventData.event_timestamp as Date).toISOString(), // Example
-      // };
+    // TODO: Add any transformation or validation logic here if needed.
+    // const payload: ExportTimelineEventPayload = {
+    //   ...timelineEventData,
+    //   event_timestamp: typeof timelineEventData.event_timestamp === 'string'
+    //    ? timelineEventData.event_timestamp
+    //    : (timelineEventData.event_timestamp as Date).toISOString(), // Example
+    // };
 
-      const result = await this.apiClient.exportTimelineEvent(timelineEventData); // Pass directly if already formatted
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    const result = await this.apiClient.exportTimelineEvent(timelineEventData); // Pass directly if already formatted
+    return result;
   }
 
   /**
@@ -110,13 +103,8 @@ export class VoltAgentExporter {
     history_id: string,
     steps: HistoryStep[],
   ): Promise<void> {
-    try {
-      await this.apiClient.exportHistorySteps(project_id, history_id, steps);
-
-      // No specific result to return for void methods
-    } catch (error) {
-      throw error;
-    }
+    await this.apiClient.exportHistorySteps(project_id, history_id, steps);
+    // No specific result to return for void methods
   }
 
   /**
@@ -132,31 +120,26 @@ export class VoltAgentExporter {
     history_id: string,
     updates: Partial<AgentHistoryUpdatableFields>,
   ): Promise<void> {
-    try {
-      await this.apiClient.updateAgentHistory(project_id, history_id, updates);
-      // No specific result to return for void methods
-    } catch (error) {
-      throw error;
-    }
+    await this.apiClient.updateAgentHistory(project_id, history_id, updates);
+    // No specific result to return for void methods
   }
 
   /**
    * Updates specific fields of a timeline event.
-   * @param project_id - The project ID associated with the timeline event.
    * @param history_id - The ID of the parent history entry.
    * @param event_id - The ID of the timeline event to update.
-   * @param event - The full timeline event object to update.
+   * @param updates - An object containing the fields to update.
    * @returns A promise that resolves when the operation is complete.
    */
   public async updateTimelineEvent(
     history_id: string,
     event_id: string,
-    event: TimelineEvent,
+    updates: TimelineEventUpdatableFields,
   ): Promise<void> {
     if (!this.apiClient) {
       return;
     }
-    await this.apiClient.updateTimelineEvent(history_id, event_id, event);
+    await this.apiClient.updateTimelineEvent(history_id, event_id, updates);
   }
 
   // TODO: Add methods for batch export if needed in the future.

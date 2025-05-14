@@ -562,11 +562,18 @@ export class HistoryManager {
       if (this.voltAgentExporter && originalEvent.id) {
         // Use originalEvent.id as it's guaranteed
         try {
-          // Standardize: Send the entire updated event object
+          // Convert Date objects to ISO strings for the TimelineEventUpdatableFields type
+          const serializedEvent = {
+            ...updatedEvent,
+            timestamp: updatedEvent.timestamp.toISOString(),
+            updatedAt: updatedEvent.updatedAt ? updatedEvent.updatedAt.toISOString() : undefined,
+          };
+
+          // Standardize: Send the serialized event object with string timestamps
           await this.voltAgentExporter.updateTimelineEvent(
             historyId, // history_id (maps to history_entry_id in the backend via lookup)
             originalEvent.id, // event_id
-            updatedEvent, // Send the full updated event object
+            serializedEvent, // Send the serialized event object with string timestamps
           );
         } catch (telemetryError) {
           console.warn(
