@@ -45,7 +45,6 @@ export interface TimelineEventUpdatableFields {
   timestamp?: string;
   type?: TimelineEventType;
   name?: string;
-  details?: Record<string, unknown>;
   status?: EventStatus;
   error?: Record<string, unknown>;
   input?: Record<string, unknown>;
