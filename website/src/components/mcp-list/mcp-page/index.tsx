@@ -6,6 +6,7 @@ import {
   ServerIcon,
   WrenchScrewdriverIcon,
   ServerStackIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../ui/dot-pattern";
@@ -80,6 +81,27 @@ export const MCPDetailPage = () => {
   const mcp = {
     ...firstMcp,
     logo: logoMap[firstMcp.logoKey],
+  };
+
+  // Track which tools are expanded
+  const [expandedTools, setExpandedTools] = useState(() => {
+    // Initialize with first two tool items expanded if they exist
+    const initialState = {};
+    if (mcp.tools && mcp.tools.length > 0) {
+      initialState[mcp.tools[0].id] = true;
+      if (mcp.tools.length > 1) {
+        initialState[mcp.tools[1].id] = true;
+      }
+    }
+    return initialState;
+  });
+
+  // Toggle tool expansion
+  const toggleTool = (toolId) => {
+    setExpandedTools((prev) => ({
+      ...prev,
+      [toolId]: !prev[toolId],
+    }));
   };
 
   // Generate config code based on actual MCP data
@@ -239,55 +261,83 @@ export const MCPDetailPage = () => {
               </div>
 
               <div className="p-6 overflow-x-auto">
-                <table className="min-w-full bg-slate-800/50 rounded-lg overflow-hidden">
-                  <thead className="bg-slate-700/70 text-left">
-                    <tr>
-                      <th className="py-3 px-4 text-gray-300 font-medium">
-                        Tool
-                      </th>
-                      <th className="py-3 px-4 text-gray-300 font-medium">
-                        Description
-                      </th>
-                      <th className="py-3 px-4 text-gray-300 font-medium">
-                        Inputs
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-700">
-                    {mcp.tools.map((tool) => (
-                      <tr key={tool.id} className="hover:bg-slate-700/30">
-                        <td className="py-3 px-4">
-                          <code className="text-[#00d992] font-mono">
-                            {tool.name}
-                          </code>
-                        </td>
-                        <td className="py-3 px-4 text-gray-300">
-                          {tool.description}
-                        </td>
-                        <td className="py-3 px-4">
-                          {tool.inputs?.map((input) => (
-                            <div key={input.name} className="mb-2 last:mb-0">
-                              <div className="flex items-start">
-                                <code className="text-blue-400 font-mono">
-                                  {input.name}
-                                </code>
-                                {input.required && (
-                                  <span className="text-red-400 ml-1">*</span>
-                                )}
+                <div className="grid grid-cols-1 gap-4">
+                  {mcp.tools.map((tool) => (
+                    <div
+                      key={tool.id}
+                      className={`border rounded-lg bg-slate-800/50 overflow-hidden border-solid hover:border-[#00d992] transition-all duration-300`}
+                    >
+                      {/* Tool header */}
+                      <div
+                        className="bg-slate-700/50 outline-none shadow-none focus:outline-none px-4 py-3 border-b cursor-pointer w-full text-left"
+                        onClick={() => toggleTool(tool.id)}
+                        onKeyUp={(e) =>
+                          e.key === "Enter" && toggleTool(tool.id)
+                        }
+                        aria-expanded={!!expandedTools[tool.id]}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <code className="text-[#00d992] font-mono text-sm font-medium">
+                                {tool.name}
+                              </code>
+                            </div>
+                            <div className="text-sm text-gray-300">
+                              {tool.description}
+                            </div>
+                          </div>
+                          <ChevronDownIcon
+                            className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${
+                              expandedTools[tool.id]
+                                ? "transform rotate-180"
+                                : ""
+                            }`}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Tool content - only visible when expanded */}
+                      {expandedTools[tool.id] && (
+                        <div className="p-4">
+                          {/* Inputs */}
+                          {tool.inputs && tool.inputs.length > 0 && (
+                            <div>
+                              <div className="text-sm text-gray-400 mb-2">
+                                Inputs
                               </div>
-                              <div className="text-gray-400 text-sm">
-                                <div className="font-mono text-xs text-gray-500">
-                                  {input.type}
-                                </div>
-                                <div>{input.description}</div>
+                              <div className="flex flex-wrap gap-3">
+                                {tool.inputs.map((input) => (
+                                  <div
+                                    key={input.name}
+                                    className="bg-slate-700/30 border border-slate-700/70 rounded-md p-3 flex-grow basis-[250px]"
+                                  >
+                                    <div className="flex items-center mb-1">
+                                      <code className="text-blue-400 font-mono text-sm">
+                                        {input.name}
+                                      </code>
+                                      {input.required && (
+                                        <span className="text-red-400 ml-1 text-xs">
+                                          *
+                                        </span>
+                                      )}
+                                      <span className="ml-2 font-mono text-xs text-gray-500 bg-slate-800/50 px-2 py-0.5 rounded">
+                                        {input.type}
+                                      </span>
+                                    </div>
+                                    <div className="text-gray-400 text-sm">
+                                      {input.description}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
