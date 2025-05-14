@@ -26,7 +26,9 @@ export type AgentResponse = {
         model: string;
         tools?: ToolStatusInfo[];
         memory?: Record<string, any>;
+        isTelemetryEnabled?: boolean;
       }[];
+  isTelemetryEnabled?: boolean;
 };
 
 export type ApiResponse<T> = {

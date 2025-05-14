@@ -16,11 +16,4 @@ new VoltAgent({
   agents: {
     agent,
   },
-  telemetryExporter: [
-    new VoltAgentExporter({
-      publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
-      secretKey: process.env.VOLTAGENT_SECRET_KEY!,
-      baseUrl: "https://server.voltagent.dev",
-    }),
-  ],
 });

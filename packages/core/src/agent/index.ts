@@ -1736,6 +1736,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Checks if telemetry (VoltAgentExporter) is configured for this agent.
+   * @returns True if telemetry is configured, false otherwise.
+   */
+  public isTelemetryConfigured(): boolean {
+    return this.historyManager.isExporterConfigured();
+  }
+
+  /**
    * Add one or more tools or toolkits to the agent.
    * Delegates to ToolManager's addItems method.
    * @returns Object containing added items (difficult to track precisely here, maybe simplify return)

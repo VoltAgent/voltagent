@@ -174,6 +174,14 @@ export class HistoryManager {
   }
 
   /**
+   * Checks if a VoltAgentExporter is configured for this history manager.
+   * @returns True if an exporter is configured, false otherwise.
+   */
+  public isExporterConfigured(): boolean {
+    return !!this.voltAgentExporter;
+  }
+
+  /**
    * Add a new history entry
    *
    * @param input - Input to the agent

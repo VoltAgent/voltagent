@@ -46,6 +46,9 @@ export const AgentResponseSchema = z
       .optional()
       .openapi({ description: "List of sub-agents" }), // Use SubAgent schema
     memory: z.any().optional(), // Simplified memory representation
+    isTelemetryEnabled: z
+      .boolean()
+      .openapi({ description: "Indicates if telemetry is configured for the agent" }),
     // Add other fields from getFullState if necessary and want them documented
   })
   .passthrough();
