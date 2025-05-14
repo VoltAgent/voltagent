@@ -105,11 +105,7 @@ export class TelemetryServiceApiClient {
       }
       return await response.json();
     } catch (error) {
-      console.error(
-        `[TelemetryServiceApiClient] Network or other error calling ${functionName}:`,
-        error,
-      );
-      throw error; // Re-throw the error to be handled by the caller
+      throw error;
     }
   }
 
