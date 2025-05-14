@@ -83,7 +83,7 @@ export class TelemetryServiceApiClient {
         headers,
         body: JSON.stringify({
           publicKey,
-          clientSecretKey: secretKey, // Exporter'daki secretKey'i clientSecretKey olarak gönderiyoruz
+          clientSecretKey: secretKey,
           payload,
         }),
       });
