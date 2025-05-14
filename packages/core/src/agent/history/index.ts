@@ -32,7 +32,7 @@ export interface TimelineEvent {
   /**
    * Timestamp when the event occurred
    */
-  timestamp: Date;
+  timestamp: string;
 
   /**
    * Name of the event (e.g., "generating", "tool_calling", "tool_result", etc.)
@@ -55,7 +55,7 @@ export interface TimelineEvent {
   /**
    * Optional timestamp for when the event was last updated
    */
-  updatedAt?: Date;
+  updatedAt?: string;
 
   /**
    * Type of the event
@@ -235,7 +235,7 @@ export class HistoryManager {
           agent_id: this.agentId,
           project_id: this.voltAgentExporter.publicKey,
           history_id: entry.id,
-          event_timestamp: entry.timestamp.toISOString(),
+          timestamp: entry.timestamp.toISOString(),
           type: "agent_run",
           status: entry.status,
           input: sanitizedInput,
@@ -282,17 +282,14 @@ export class HistoryManager {
           // The backend now expects the entire event object nested, likely under a 'value' key
           // or as the main event payload itself depending on the exporter implementation.
           // Assuming the exporter expects the event object directly:
-          const payload = {
-            // project_id is likely handled by the exporter/client itself now
-            history_entry_id: entryId,
-            event_id: event.id, // Still need the event ID for identification
-            // Send the entire event object. The backend will store this in the 'value' JSONB column.
-            event, // Pass the whole event object
+          const payload: ExportTimelineEventPayload = {
+            history_id: entryId,
+            event_id: event.id,
+            event,
           };
 
           // We need to ensure the type ExportTimelineEventPayload matches this structure
-          // For now, casting to any to proceed, assuming the type will be updated.
-          await this.voltAgentExporter.exportTimelineEvent(payload as ExportTimelineEventPayload);
+          await this.voltAgentExporter.exportTimelineEvent(payload);
         } catch (telemetryError) {
           console.warn(
             `[HistoryManager] Failed to export timeline event to telemetry service for agent ${this.agentId}, entry ${entryId}. Error:`,
@@ -543,7 +540,7 @@ export class HistoryManager {
       // Update the event
       updatedEntry.events[eventIndex] = {
         ...originalEvent,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
         data: {
           ...originalEvent.data,
           ...(updates.data || {}),
@@ -562,11 +559,11 @@ export class HistoryManager {
       if (this.voltAgentExporter && originalEvent.id) {
         // Use originalEvent.id as it's guaranteed
         try {
-          // Convert Date objects to ISO strings for the TimelineEventUpdatableFields type
+          // Timestamps in updatedEvent are already strings (timestamp from original, updatedAt just set to ISOString)
           const serializedEvent = {
             ...updatedEvent,
-            timestamp: updatedEvent.timestamp.toISOString(),
-            updatedAt: updatedEvent.updatedAt ? updatedEvent.updatedAt.toISOString() : undefined,
+            // timestamp: updatedEvent.timestamp, // No longer needed, already string
+            // updatedAt: updatedEvent.updatedAt, // No longer needed, already string
           };
 
           // Standardize: Send the serialized event object with string timestamps

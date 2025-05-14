@@ -64,7 +64,7 @@ describe("VoltAgentExporter", () => {
       const historyData: ExportAgentHistoryPayload = {
         project_id: "proj-1",
         history_id: "hist-1",
-        event_timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
         type: "agent_run",
         status: "completed",
         input: { text: "hello" },
@@ -92,10 +92,10 @@ describe("VoltAgentExporter", () => {
   describe("exportTimelineEvent", () => {
     it("should call apiClient.exportTimelineEvent with the provided data", async () => {
       const eventData: ExportTimelineEventPayload = {
-        history_entry_id: "hist-1",
+        history_id: "hist-1",
         event_id: "evt-1",
         event: {
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           type: "agent" as any,
           name: "start",
         },
@@ -142,7 +142,9 @@ describe("VoltAgentExporter", () => {
     it("should call apiClient.updateAgentHistory with the provided data", async () => {
       const project_id = "proj-1";
       const history_id = "hist-1";
-      const updates: Partial<AgentHistoryUpdatableFields> = { output: "new output" };
+      const updates: Partial<AgentHistoryUpdatableFields> = {
+        output: "new output",
+      };
       mockUpdateAgentHistory.mockResolvedValueOnce(undefined as any);
 
       await exporter.updateHistoryEntry(project_id, history_id, updates);

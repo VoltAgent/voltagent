@@ -120,7 +120,7 @@ export class AgentEventEmitter extends EventEmitter {
     // Create timeline event
     const event: TimelineEvent = {
       id: uuidv4(), // Add unique ID for the event
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       name: eventName,
       data: additionalData,
       type,

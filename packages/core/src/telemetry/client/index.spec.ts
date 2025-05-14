@@ -131,7 +131,7 @@ describe("TelemetryServiceApiClient", () => {
         agent_id: "agent-1",
         project_id: "proj-1",
         history_id: "hist-1",
-        event_timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
         type: "agent_run",
         status: "completed",
         input: { text: "hello" },
@@ -157,10 +157,10 @@ describe("TelemetryServiceApiClient", () => {
       const mockResult = { timelineEventId: "event-id-1" };
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
       const eventData: ExportTimelineEventPayload = {
-        history_entry_id: "hist-1",
+        history_id: "hist-1",
         event_id: "evt-1",
         event: {
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           type: "agent",
           name: "start",
         },

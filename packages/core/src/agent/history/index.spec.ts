@@ -269,7 +269,7 @@ describe("HistoryManager", () => {
       const entry = await historyManager.addEntry("Input", "Output", "completed");
 
       const event = {
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         name: "test-event",
         type: "agent" as const,
         data: {
@@ -352,7 +352,7 @@ describe("HistoryManager", () => {
           agent_id: "telemetry-agent",
           project_id: "mock-public-key",
           history_id: entry.id,
-          event_timestamp: entry.timestamp.toISOString(),
+          timestamp: entry.timestamp.toISOString(),
           type: "agent_run",
           status: status,
           input: { text: input },
@@ -386,7 +386,7 @@ describe("HistoryManager", () => {
         const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
         const event = {
           id: "event-123",
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           name: "test-event",
           type: "agent" as const,
           data: { status: "working" as EventStatus, custom: "data" },
@@ -400,7 +400,7 @@ describe("HistoryManager", () => {
         // Without asserting the exact object structure which might vary
         expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledWith(
           expect.objectContaining({
-            history_entry_id: entry.id,
+            history_id: entry.id,
             event_id: event.id,
             event: expect.objectContaining({
               id: event.id,
@@ -420,7 +420,7 @@ describe("HistoryManager", () => {
         );
         const event = {
           id: "err-event",
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           name: "err",
           type: "tool" as const,
         };
@@ -522,12 +522,15 @@ describe("HistoryManager", () => {
         // Add an initial event that updateTrackedEvent can find
         await telemetryHistoryManager.addEventToEntry(entry.id, {
           id: eventId,
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           name: "initial",
           type: "tool",
         });
 
-        const updates = { status: "completed" as AgentStatus, data: { result: "success" } };
+        const updates = {
+          status: "completed" as AgentStatus,
+          data: { result: "success" },
+        };
 
         // The actual implementation sends the full serialized event object, not just the updated fields
         await telemetryHistoryManager.updateTrackedEvent(entry.id, eventId, updates);
@@ -559,7 +562,7 @@ describe("HistoryManager", () => {
         const eventId = "tracked-error-event-1";
         await telemetryHistoryManager.addEventToEntry(entry.id, {
           id: eventId,
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           name: "initial-err",
           type: "tool",
         });

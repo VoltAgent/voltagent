@@ -10,7 +10,7 @@ export interface ExportAgentHistoryPayload {
   history_id: string;
   session_id?: string;
   request_id?: string;
-  event_timestamp: string;
+  timestamp: string;
   type: string;
   status: string;
   input: Record<string, unknown>;
@@ -23,7 +23,7 @@ export interface ExportAgentHistoryPayload {
 }
 
 export interface ExportTimelineEventPayload {
-  history_entry_id: string;
+  history_id: string;
   event_id: string;
   event: TimelineEvent;
 }
@@ -165,12 +165,12 @@ export class TelemetryServiceApiClient {
   public async updateTimelineEvent(
     history_id: string,
     event_id: string,
-    updates: TimelineEventUpdatableFields,
+    eventData: TimelineEventUpdatableFields,
   ): Promise<void> {
     await this._callEdgeFunction("update-timeline-event", {
       history_id,
       event_id,
-      updates,
+      event: eventData,
     } as unknown as Record<string, unknown>);
   }
 }
