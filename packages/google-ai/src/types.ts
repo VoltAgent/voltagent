@@ -3,8 +3,10 @@ import type {
   GenerateContentResponse,
   ToolConfig,
   Tool,
+  FunctionCall,
+  FunctionResponse,
 } from "@google/genai";
-import type { BaseMessage, BaseTool, StepWithContent } from "@voltagent/core";
+import type { BaseMessage, BaseTool, ProviderTextResponse, StepWithContent } from "@voltagent/core";
 
 // Define explicit runtime options to avoid deep generic instantiation
 export interface GoogleProviderRuntimeOptions
@@ -39,6 +41,11 @@ export type GoogleStreamTextOptions = BaseGoogleTextOptions & {
   onChunk?: (chunk: any) => void | Promise<void>;
   onFinish?: (result: { text: string }) => void | Promise<void>;
   onError?: (error: any) => void | Promise<void>;
+};
+
+export type GoogleProviderTextResponse = ProviderTextResponse<GenerateContentResponse> & {
+  toolCalls?: FunctionCall[];
+  toolResults?: FunctionResponse[];
 };
 
 export type GoogleGenerateContentStreamResult = AsyncGenerator<

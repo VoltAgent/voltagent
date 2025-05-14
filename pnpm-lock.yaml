@@ -122,8 +122,8 @@ importers:
         specifier: ^0.40.0
         version: 0.40.0
       '@voltagent/anthropic-ai':
-        specifier: ^0.1.4
-        version: 0.1.6(@voltagent/core@packages+core)
+        specifier: ^0.1.6
+        version: link:../../packages/anthropic-ai
       '@voltagent/cli':
         specifier: ^0.1.5
         version: link:../../packages/cli
@@ -181,8 +181,8 @@ importers:
         specifier: ^0.1.18
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.6
-        version: 0.3.7(@voltagent/core@packages+core)
+        specifier: ^0.3.7
+        version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -307,8 +307,8 @@ importers:
         specifier: ^0.1.18
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.6
-        version: 0.3.7(@voltagent/core@packages+core)
+        specifier: ^0.3.7
+        version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -332,8 +332,8 @@ importers:
         specifier: ^0.1.18
         version: link:../../packages/core
       '@voltagent/groq-ai':
-        specifier: ^0.1.6
-        version: 0.1.7(@voltagent/core@packages+core)
+        specifier: ^0.1.7
+        version: link:../../packages/groq-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -6683,46 +6683,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /@voltagent/anthropic-ai@0.1.6(@voltagent/core@packages+core):
-    resolution: {integrity: sha512-6BJv92CttotiXfxfsFIynsyiEsgkB/h6IlSK1pIxkXdBbhgbFMZLRSpw24HuB/IU8RdjTr12MCuUyqsV+mxVdg==}
-    peerDependencies:
-      '@voltagent/core': ^0.1.0
-    dependencies:
-      '@anthropic-ai/sdk': 0.40.0
-      '@voltagent/core': link:packages/core
-      zod: 3.24.2
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
-  /@voltagent/google-ai@0.3.7(@voltagent/core@packages+core):
-    resolution: {integrity: sha512-XclEuxKdrjRlyNYsDj1NjVQ/vscIS7lQ4WuaZJDoKASwI6pfVTnTk5HPeroOEkFbsD4n5su9hDH302hMoutzUw==}
-    peerDependencies:
-      '@voltagent/core': ^0.1.0
-    dependencies:
-      '@google/genai': 0.10.0
-      '@voltagent/core': link:packages/core
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.5(zod@3.24.2)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - supports-color
-      - utf-8-validate
-    dev: false
-
-  /@voltagent/groq-ai@0.1.7(@voltagent/core@packages+core):
-    resolution: {integrity: sha512-t1/j3DBUOLv8/fFS6FTaxRwjQmlwktxRulQ6uk27rZQOJ7xvGyDa27FUYpNfGH4eKKqMGWr8BTpkXf+GEaB0Ng==}
-    peerDependencies:
-      '@voltagent/core': ^0.1.0
-    dependencies:
-      '@voltagent/core': link:packages/core
-      groq-sdk: 0.20.1
-      zod: 3.24.2
-    transitivePeerDependencies:
-      - encoding
-    dev: false
 
   /@xsai/embed@0.2.0:
     resolution: {integrity: sha512-xXk6QG/23gHDmlMIEywB4+9JhiQv1DSnxqaJnQiiS2EAqzpKLV4JHT0tjAPAb4Gu+HUGjCQDup0rag6BopfnBg==}

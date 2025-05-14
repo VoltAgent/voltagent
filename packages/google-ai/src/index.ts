@@ -10,6 +10,7 @@ import {
   type Part,
   type FunctionCall,
   createPartFromFunctionResponse,
+  type FunctionResponse,
 } from "@google/genai";
 import type {
   BaseMessage,
@@ -17,7 +18,6 @@ import type {
   LLMProvider,
   MessageRole,
   ProviderObjectResponse,
-  ProviderTextResponse,
   ProviderTextStreamResponse,
   StepWithContent,
   UsageInfo,
@@ -29,6 +29,7 @@ import type {
   GoogleProviderRuntimeOptions,
   GoogleStreamTextOptions,
   GoogleGenerateTextOptions,
+  GoogleProviderTextResponse,
 } from "./types";
 import { isZodObject, responseSchemaFromZodType } from "./utils/schema_helper";
 import { prepareToolsForGoogleSDK, executeFunctionCalls } from "./utils/function-calling";
@@ -242,7 +243,11 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     model: string,
     baseConfig: GenerateContentConfig,
     options: GoogleGenerateTextOptions,
-  ): Promise<GenerateContentResponse> {
+  ): Promise<{
+    finalResponse: GenerateContentResponse;
+    functionCalls: FunctionCall[];
+    functionResults: FunctionResponse[];
+  }> {
     functionCalls.forEach((functionCall) => {
       if (!functionCall.id) {
         // should have a random id. For example: 'call_o0eSbOWhYH2mvL6ogbbXn5uH'
@@ -300,7 +305,11 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       console.debug(
         "[GoogleGenAIProvider] No valid function response parts generated. Returning initial response.",
       );
-      return initialResponse;
+      return {
+        finalResponse: initialResponse,
+        functionCalls: functionCalls,
+        functionResults: functionResponses,
+      };
     }
 
     const updatedContents = [...originalContents];
@@ -318,12 +327,17 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     };
 
     const finalResult = await this.ai.models.generateContent(generationParams);
-    return finalResult;
+    // Return the final result along with the initial calls and their results
+    return {
+      finalResponse: finalResult,
+      functionCalls: functionCalls,
+      functionResults: functionResponses,
+    };
   }
 
   generateText = async (
     options: GoogleGenerateTextOptions,
-  ): Promise<ProviderTextResponse<GenerateContentResponse>> => {
+  ): Promise<GoogleProviderTextResponse> => {
     const model = options.model;
     const currentContents = options.messages.map(this.toMessage);
     const providerOptions: GoogleProviderRuntimeOptions = options.provider || {};
@@ -358,18 +372,26 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     };
 
     let response = await this.ai.models.generateContent(generationParams);
-    const functionCalls = response.functionCalls;
-    if (functionCalls && functionCalls.length > 0) {
+    let functionCalls: FunctionCall[] | undefined = undefined;
+    let functionResults: FunctionResponse[] | undefined = undefined;
+
+    const functionCallsInResponse = response.functionCalls;
+    if (functionCallsInResponse && functionCallsInResponse.length > 0) {
       // If the model returns function calls, handle and execute them.
-      response = await this._handleFunctionCalling(
+      const handlingResult = await this._handleFunctionCalling(
         response,
-        functionCalls,
+        functionCallsInResponse,
         availableTools,
         currentContents,
         model,
         config,
         options,
       );
+      // Update response with the final one after function calls
+      response = handlingResult.finalResponse;
+      // Capture tool data for the final response
+      functionCalls = handlingResult.functionCalls;
+      functionResults = handlingResult.functionResults;
     }
 
     const responseText = response.text;
@@ -387,11 +409,13 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       if (step) await options.onStepFinish(step);
     }
 
-    const providerResponse: ProviderTextResponse<GenerateContentResponse> = {
+    const providerResponse: GoogleProviderTextResponse = {
       provider: response,
       text: responseText ?? "",
       usage: finalUsage,
       finishReason: finishReason,
+      toolCalls: functionCalls,
+      toolResults: functionResults,
     };
 
     return providerResponse;

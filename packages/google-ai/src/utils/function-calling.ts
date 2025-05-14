@@ -8,12 +8,11 @@ import type { FunctionCall, FunctionResponse, FunctionDeclaration } from "@googl
 /**
  * Creates a default tool configuration
  */
-export function createDefaultToolConfig(tools: BaseTool[]): GoogleToolConfig {
+export function createDefaultToolConfig(): GoogleToolConfig {
   return {
-    // Force the model to call any function present in the tool list.
     functionCallingConfig: {
-      mode: FunctionCallingConfigMode.ANY,
-      allowedFunctionNames: tools.map((tool) => tool.name),
+      // Let the model decide whether to call a function or not
+      mode: FunctionCallingConfigMode.AUTO,
     },
   };
 }
@@ -48,7 +47,7 @@ export function prepareToolsForGoogleSDK(
 
   return {
     tools: { functionDeclarations },
-    toolConfig: createDefaultToolConfig(tools),
+    toolConfig: createDefaultToolConfig(),
   };
 }
 

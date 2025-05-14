@@ -46,7 +46,7 @@ import { z } from "zod";
 // Example Tool (see Tools section for details)
 const weatherTool = createTool({
   name: "get_weather",
-  instructions: "Get the current weather for a specific location",
+  description: "Get the current weather for a specific location",
   parameters: z.object({ location: z.string().describe("City and state") }),
   execute: async ({ location }) => {
     console.log(`Tool: Getting weather for ${location}`);
@@ -203,7 +203,7 @@ import { z } from "zod";
 // Create a weather tool using the helper function
 const weatherTool = createTool({
   name: "get_weather",
-  instructions: "Get the current weather for a specific location",
+  description: "Get the current weather for a specific location",
   parameters: z.object({
     location: z.string().describe("The city and state, e.g., San Francisco, CA"),
   }),
@@ -367,7 +367,7 @@ const hooks = createHooks({
 
 const loggerTool = createTool({
   name: "context_aware_logger",
-  instructions: "Logs a message using the request ID from context.",
+  description: "Logs a message using the request ID from context.",
   parameters: z.object({ message: z.string() }),
   execute: async (params: { message: string }, options?: ToolExecutionContext) => {
     const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown";
@@ -462,6 +462,7 @@ Currently, VoltAgent offers built-in providers for various services and APIs:
 - **`@voltagent/xsai`**: Connects to any OpenAI-compatible API (OpenAI, Groq, Together AI, local models, etc.).
 - **`@voltagent/google-ai`**: Uses the official Google AI SDK for Gemini and Vertex AI.
 - **`@voltagent/groq-ai`**: Connects specifically to the Groq API for fast inference.
+- **`@voltagent/anthropic-ai`**: Connects directly to Anthropic's AI models (Claude) using the official `anthropic-ai/sdk` SDK.
 
 We plan to add more official provider integrations in the future. Furthermore, developers can create their own custom providers by implementing the `LLMProvider` interface to connect VoltAgent to virtually any AI model or service.
 

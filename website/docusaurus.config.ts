@@ -238,7 +238,7 @@ const config: Config = {
     announcementBar: {
       id: "product_hunt_support",
       content:
-        ' <a target="_blank" rel="noopener noreferrer" href="https://www.producthunt.com/products/voltagent-opensource-ai-agent-framework/">🚀 We just launched on Product Hunt! Check us out and show your support!</a>',
+        ' <a target="_blank" rel="noopener noreferrer" href="https://github.com/VoltAgent/voltagent/tree/main/examples/">🚀 Refer to 20+ AI Agent Examples with Source Code</a>',
       backgroundColor: "#10b981",
       isCloseable: true,
     },

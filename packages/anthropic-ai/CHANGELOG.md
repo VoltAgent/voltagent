@@ -1,5 +1,30 @@
 # @voltagent/anthropic-ai
 
+## 0.1.6
+
+### Patch Changes
+
+- [#110](https://github.com/VoltAgent/voltagent/pull/110) [`6180880`](https://github.com/VoltAgent/voltagent/commit/6180880a91ea0bb380dd0595e3c3ed6e5c15bc8e) Thanks [@VenomHare](https://github.com/VenomHare)! - ### Features
+
+  - Added multi-modal support for message handling.
+
+  ### Improvements
+
+  - Improved logic for generating system prompts.
+  - Implemented enhanced error handling within the provider.
+
+  ### Refactoring
+
+  - Moved utility functions to `utils` folder for better code organization.
+
+  ### Documentation
+
+  - Updated and refined documentation for clarity.
+
+  ### Testing
+
+  - Added tests for newly implemented logic.
+
 ## 0.1.4
 
 ### Patch Changes
