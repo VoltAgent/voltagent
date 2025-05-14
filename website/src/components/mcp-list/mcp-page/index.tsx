@@ -18,13 +18,16 @@ import { AhrefLogo } from "../../../../static/img/logos/integrations/ahref";
 import { AirtableLogo } from "../../../../static/img/logos/integrations/airtable";
 import { AnthropicLogo } from "../../../../static/img/logos/integrations/anthropic";
 import { AsanaLogo } from "../../../../static/img/logos/integrations/asana";
-
+import { ZapierLogo } from "../../../../static/img/logos/integrations/zapier";
+import { GumloopLogo } from "../../../../static/img/logos/integrations/gumloop";
 // Map logo components by key - only including the ones we need for now
 const logoMap = {
   ahref: AhrefLogo,
   airtable: AirtableLogo,
   anthropic: AnthropicLogo,
   asana: AsanaLogo,
+  zapier: ZapierLogo,
+  gumloop: GumloopLogo,
 };
 
 // Animation variants for code block
@@ -75,6 +78,33 @@ const CodeBlock = ({ code }) => {
   );
 };
 
+// Tab component
+const Tab = ({ active, onClick, children }) => {
+  return (
+    <div
+      className={`relative px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium cursor-pointer transition-all duration-300  text-center ${
+        active ? "text-[#00d992]" : "text-gray-500 hover:text-gray-300"
+      }`}
+      onClick={onClick}
+      role="tab"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          onClick();
+        }
+      }}
+      aria-selected={active}
+    >
+      {children}
+      <div
+        className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+          active ? "bg-[#00d992]" : "bg-transparent"
+        }`}
+      />
+    </div>
+  );
+};
+
 export const MCPDetailPage = () => {
   // Use the first item from mcpData.json
   const firstMcp = mcpDataJson[0];
@@ -82,6 +112,9 @@ export const MCPDetailPage = () => {
     ...firstMcp,
     logo: logoMap[firstMcp.logoKey],
   };
+
+  // Track active tab
+  const [activeTab, setActiveTab] = useState("zapier"); // Default to first tab
 
   // Track which tools are expanded
   const [expandedTools, setExpandedTools] = useState(() => {
@@ -104,26 +137,193 @@ export const MCPDetailPage = () => {
     }));
   };
 
-  // Generate config code based on actual MCP data
-  const configCode = `{
+  // Tab options for filtering
+  const tabOptions = [
+    {
+      id: "zapier",
+      name: "Zapier",
+      component: <ZapierLogo className="h-6 w-auto text-white" />,
+      serverConfig: `{
   "mcpServers": {
-    "${mcp.name.toLowerCase()}": {
+    "zapier": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-${mcp.logoKey}"
+        "@modelcontextprotocol/server-zapier"
       ],
       "env": {
-        "${mcp.name.toUpperCase().replace(/\s+/g, "_")}_ACCESS_TOKEN": "<YOUR_TOKEN>",
-        "${mcp.name
-          .toUpperCase()
-          .replace(/\s+/g, "_")}_API_URL": "https://api.${mcp.name
-          .toLowerCase()
-          .replace(/\s+/g, "")}.com/v1"
+        "ZAPIER_ACCESS_TOKEN": "<YOUR_TOKEN>",
+        "ZAPIER_API_URL": "https://api.zapier.com/v1"
       }
     }
   }
-}`;
+}`,
+      tools: [
+        {
+          id: "zap_run",
+          name: "run_zap",
+          description: "Execute a Zapier automation workflow",
+          inputs: [
+            {
+              name: "zap_id",
+              type: "string",
+              required: true,
+              description: "The ID of the Zap to execute",
+            },
+            {
+              name: "input_data",
+              type: "object",
+              required: true,
+              description: "Data to pass to the Zap workflow",
+            },
+          ],
+        },
+        {
+          id: "zap_list",
+          name: "list_zaps",
+          description: "List available Zapier automations",
+          inputs: [
+            {
+              name: "status",
+              type: "string",
+              required: false,
+              description:
+                "Filter by Zap status: 'active', 'disabled', or 'all'",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "gumloop",
+      name: "Gumloop",
+      component: <GumloopLogo className="h-7 w-auto text-white" />,
+      serverConfig: `{
+  "mcpServers": {
+    "gumloop": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-gumloop"
+      ],
+      "env": {
+        "GUMLOOP_ACCESS_TOKEN": "<YOUR_TOKEN>",
+        "GUMLOOP_API_URL": "https://api.gumloop.com/v1"
+      }
+    }
+  }
+}`,
+      tools: [
+        {
+          id: "gum_search",
+          name: "search_contacts",
+          description: "Search for contacts in the Gumloop database",
+          inputs: [
+            {
+              name: "query",
+              type: "string",
+              required: true,
+              description: "Search query string",
+            },
+            {
+              name: "limit",
+              type: "number",
+              required: false,
+              description: "Maximum number of results to return",
+            },
+          ],
+        },
+        {
+          id: "gum_create",
+          name: "create_contact",
+          description: "Create a new contact in Gumloop",
+          inputs: [
+            {
+              name: "contact_data",
+              type: "object",
+              required: true,
+              description: "Contact information to store",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "community",
+      name: "Community",
+      serverConfig: `{
+  "mcpServers": {
+    "custom_integration": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-custom"
+      ],
+      "env": {
+        "CUSTOM_ACCESS_TOKEN": "<YOUR_TOKEN>",
+        "CUSTOM_API_URL": "https://api.your-service.com/v1"
+      }
+    }
+  }
+}`,
+      tools: [],
+    },
+  ];
+
+  // Get current tab data
+  const currentTab =
+    tabOptions.find((tab) => tab.id === activeTab) || tabOptions[0];
+
+  // Get config code based on active tab
+  const configCode = currentTab.serverConfig;
+
+  // Recommended servers data
+  const recommendedServers = [
+    {
+      id: "aws",
+      name: "AWS Kb Retrieval Server",
+      description: "An MCP server implementation for retrieving",
+      icon: {
+        type: "text",
+        value: "AWS",
+        bgColor: "bg-yellow-100",
+        textColor: "text-yellow-800",
+      },
+    },
+    {
+      id: "cursor",
+      name: "Cursor",
+      description: "The AI Code Editor",
+      icon: {
+        type: "component",
+        component: BoltIcon,
+        bgColor: "bg-gray-700",
+        textColor: "text-white",
+      },
+    },
+    {
+      id: "minimax",
+      name: "MiniMax MCP",
+      description: "Official MiniMax Model Context Protocol (MCP)",
+      icon: {
+        type: "text",
+        value: "MM",
+        bgColor: "bg-pink-600",
+        textColor: "text-white",
+      },
+    },
+    {
+      id: "playwright",
+      name: "Playwright MCP",
+      description: "Playwright MCP server",
+      icon: {
+        type: "text",
+        value: "PW",
+        bgColor: "bg-gradient-to-br from-blue-500 via-green-500 to-red-500",
+        textColor: "text-white",
+      },
+    },
+  ];
 
   const MCP_Logo = mcp.logo;
 
@@ -143,12 +343,27 @@ export const MCPDetailPage = () => {
       {/* Main title and description */}
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-          How to Use {mcp.name} in Your Voltagent Project?
+          How to Use {currentTab.name} in Your Voltagent Project?
         </h1>
         <div className="text-gray-400 flex items-center">
-          <span className="font-mono">{mcp.logoKey}</span>
+          <span className="font-mono">{currentTab.id}</span>
           <span className="mx-2">-</span>
           <span>Model Context Provider</span>
+        </div>
+      </div>
+
+      {/* Tab Navigation - Full width on mobile */}
+      <div className="mb-8 w-full">
+        <div className="flex border-b border-gray-800 w-full" role="tablist">
+          {tabOptions.map((tab) => (
+            <Tab
+              key={tab.id}
+              active={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.component || tab.name}
+            </Tab>
+          ))}
         </div>
       </div>
 
@@ -166,7 +381,8 @@ export const MCPDetailPage = () => {
                   Server Config
                 </span>
                 <div className="text-gray-400 text-sm">
-                  Configuration parameters for your {mcp.name} MCP server.
+                  Configuration parameters for your {currentTab.name} MCP
+                  server.
                 </div>
               </div>
             </div>
@@ -176,40 +392,44 @@ export const MCPDetailPage = () => {
           {/* What is section */}
           <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
             <span className="text-lg font-bold text-white mb-6">
-              {mcp.name} - {mcp.category} Provider
+              {currentTab.name} - Provider
             </span>
 
             <div className="flex justify-center mb-8">
               <div className="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center">
-                <MCP_Logo className="w-16 h-16" />
+                {currentTab.component || (
+                  <div className="text-3xl font-bold text-gray-300">
+                    {currentTab.name.charAt(0)}
+                  </div>
+                )}
               </div>
             </div>
 
             <p className="text-gray-300 mb-8 text-center">
-              {mcp.description} through the Voltagent MCP framework, allowing
-              seamless integration with your AI agents.
+              {currentTab.name} integration through the Voltagent MCP framework,
+              allowing seamless interaction with your AI agents.
             </p>
 
             <h3 className="text-xl font-bold text-white mb-4">
-              What is {mcp.name} MCP?
+              What is {currentTab.name} MCP?
             </h3>
             <p className="text-gray-300 mb-4">
-              {mcp.name} MCP is a Model Context Provider that enables your
-              Voltagent-based AI agents to interact with {mcp.name}'s{" "}
-              {mcp.category.toLowerCase()} features. It provides a standardized
-              interface to access and manipulate data from {mcp.name}, making it
-              easy to integrate into your AI workflows.
+              {currentTab.name} MCP is a Model Context Provider that enables
+              your Voltagent-based AI agents to interact with {currentTab.name}
+              's features. It provides a standardized interface to access and
+              manipulate data, making it easy to integrate into your AI
+              workflows.
             </p>
 
             <h3 className="text-xl font-bold text-white mb-4">
-              How to use {mcp.name} MCP?
+              How to use {currentTab.name} MCP?
             </h3>
             <p className="text-gray-300 mb-4">
-              To use the {mcp.name} MCP, you'll need to first obtain an API
-              token from your {mcp.name} account. Configure your Voltagent
-              application with this token and the appropriate API URL. You can
-              then use the MCP endpoints to access {mcp.name}'s capabilities
-              directly from your AI agents.
+              To use the {currentTab.name} MCP, you'll need to first obtain an
+              API token from your {currentTab.name} account. Configure your
+              Voltagent application with this token and the appropriate API URL.
+              You can then use the MCP endpoints to access {currentTab.name}'s
+              capabilities directly from your AI agents.
             </p>
 
             <h3 className="text-xl font-bold text-white mb-4">Key features</h3>
@@ -218,15 +438,15 @@ export const MCPDetailPage = () => {
                 <span className="font-medium text-white">
                   Seamless Integration:
                 </span>{" "}
-                Connect directly to your {mcp.name} account with simple
+                Connect directly to your {currentTab.name} account with simple
                 configuration.
               </li>
               <li>
                 <span className="font-medium text-white">
                   Comprehensive API Access:
                 </span>{" "}
-                Full access to {mcp.name}'s {mcp.category.toLowerCase()}{" "}
-                features through a unified API.
+                Full access to {currentTab.name}'s features through a unified
+                API.
               </li>
               <li>
                 <span className="font-medium text-white">
@@ -265,7 +485,7 @@ export const MCPDetailPage = () => {
                   {mcp.tools.map((tool) => (
                     <div
                       key={tool.id}
-                      className={`border rounded-lg bg-slate-800/50 overflow-hidden border-solid hover:border-[#00d992] transition-all duration-300`}
+                      className="border rounded-lg bg-slate-800/50 overflow-hidden border-solid hover:border-[#00d992] transition-all duration-300"
                     >
                       {/* Tool header */}
                       <div
@@ -388,60 +608,35 @@ export const MCPDetailPage = () => {
               </div>
             </div>
 
-            <div className="p-6">
-              {/* AWS KB Server */}
-              <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
-                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-yellow-100 rounded-md">
-                  <span className="text-xs font-bold text-yellow-800">AWS</span>
+            <div className="p-4 space-y-3">
+              {recommendedServers.map((server) => (
+                <div
+                  key={server.id}
+                  className="rounded-md border border-gray-700 hover:border-[#00d992] transition-all duration-300 flex items-start"
+                >
+                  <div
+                    className={`w-7 h-7 mr-2.5 flex-shrink-0 flex items-center justify-center ${server.icon.bgColor} rounded-md`}
+                  >
+                    {server.icon.type === "component" ? (
+                      <server.icon.component className="w-4 h-4 text-white" />
+                    ) : (
+                      <span
+                        className={`text-xs font-bold ${server.icon.textColor}`}
+                      >
+                        {server.icon.value}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-white font-medium text-sm mb-0.5">
+                      {server.name}
+                    </h4>
+                    <span className="text-xs text-gray-400">
+                      {server.description}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-white font-medium mb-1">
-                    AWS Kb Retrieval Server
-                  </h4>
-                  <p className="text-xs text-gray-400">
-                    An MCP server implementation for retrieving information from
-                    the AWS...
-                  </p>
-                </div>
-              </div>
-
-              {/* Cursor */}
-              <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
-                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-gray-700 rounded-md">
-                  <BoltIcon className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h4 className="text-white font-medium mb-1">Cursor</h4>
-                  <p className="text-xs text-gray-400">The AI Code Editor</p>
-                </div>
-              </div>
-
-              {/* MiniMax MCP */}
-              <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
-                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-pink-600 rounded-md">
-                  <span className="text-xs font-bold text-white">MM</span>
-                </div>
-                <div>
-                  <h4 className="text-white font-medium mb-1">MiniMax MCP</h4>
-                  <p className="text-xs text-gray-400">
-                    Official MiniMax Model Context Protocol (MCP) server that
-                    enables interaction...
-                  </p>
-                </div>
-              </div>
-
-              {/* Playwright MCP */}
-              <div className="p-3 rounded-md border border-gray-700 flex items-start">
-                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-blue-500 via-green-500 to-red-500 rounded-md">
-                  <span className="text-xs font-bold text-white">PW</span>
-                </div>
-                <div>
-                  <h4 className="text-white font-medium mb-1">
-                    Playwright MCP
-                  </h4>
-                  <p className="text-xs text-gray-400">Playwright MCP server</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

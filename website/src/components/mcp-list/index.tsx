@@ -29,8 +29,6 @@ import { NotionLogo } from "../../../static/img/logos/integrations/notion";
 import { OneDriveLogo } from "../../../static/img/logos/integrations/one-drive";
 import { PineconeLogo } from "../../../static/img/logos/integrations/pinecone";
 // Temporarily using other logos as fallbacks
-import { AhrefLogo as ZapierLogo } from "../../../static/img/logos/integrations/ahref";
-import { AhrefLogo as GumloopLogo } from "../../../static/img/logos/integrations/ahref";
 
 // Import MCP data from json file
 import mcpDataJson from "./mcpData.json";
@@ -64,21 +62,6 @@ const mcpData = mcpDataJson.map((item) => ({
   ...item,
   logo: logoMap[item.logoKey],
 }));
-
-// Tab options for filtering
-const tabOptions = [
-  {
-    id: "zapier",
-    name: "Zapier",
-    component: <ZapierLogo className="h-6 w-auto" />,
-  },
-  {
-    id: "gumloop",
-    name: "Gumloop",
-    component: <GumloopLogo className="h-7 w-auto text-white" />,
-  },
-  { id: "community", name: "Community" },
-];
 
 // MCP Card Component
 const MCPCard = ({ mcp }) => {
@@ -222,21 +205,6 @@ export const MCPList = () => {
               to see usage guide and documentation.
             </p>
           </motion.div>
-        </div>
-      </div>
-
-      {/* Tab Navigation - Full width on mobile */}
-      <div className="mb-8 w-full">
-        <div className="flex border-b border-gray-800 w-full" role="tablist">
-          {tabOptions.map((tab) => (
-            <Tab
-              key={tab.id}
-              active={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.component || tab.name}
-            </Tab>
-          ))}
         </div>
       </div>
 
