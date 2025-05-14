@@ -204,9 +204,6 @@ export class VoltAgent {
       );
 
       if (spanExporters.length === 0) {
-        console.log(
-          "[VoltAgent] No OpenTelemetry SpanExporters provided. Skipping OpenTelemetry NodeTracerProvider initialization.",
-        );
         // We still mark telemetry as initialized by VoltAgent if any exporter (incl. VoltAgentExporter) was passed,
         // to prevent multiple VoltAgent instances from trying to set up their own things.
         // However, the registeredProvider will remain null if only VoltAgentExporters are present.
