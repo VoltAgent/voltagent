@@ -1,7 +1,5 @@
-import { Agent, VoltAgent } from "@voltagent/core";
-import { LangfuseExporter } from "@voltagent/langfuse-exporter";
+import { Agent, VoltAgent, VoltAgentExporter } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-
 import { openai } from "@ai-sdk/openai";
 
 import { weatherTool, searchTool, checkCalendarTool, addCalendarEventTool } from "./tools";
@@ -19,10 +17,10 @@ new VoltAgent({
     agent,
   },
   telemetryExporter: [
-    new LangfuseExporter({
-      publicKey: process.env.LANGFUSE_PUBLIC_KEY,
-      secretKey: process.env.LANGFUSE_SECRET_KEY,
-      baseUrl: process.env.LANGFUSE_BASE_URL,
+    new VoltAgentExporter({
+      publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
+      secretKey: process.env.VOLTAGENT_SECRET_KEY!,
+      baseUrl: "https://server.voltagent.dev/functions/v1",
     }),
   ],
 });

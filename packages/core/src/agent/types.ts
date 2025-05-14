@@ -93,16 +93,6 @@ export type AgentOptions = {
    * Used to send telemetry data to an external service
    */
   telemetryExporter?: VoltAgentExporter;
-
-  /**
-   * Agent instructions (system prompt). This is preferred over `description`.
-   */
-  instructions?: string;
-
-  /**
-   * @deprecated Use `instructions` instead. Will be removed in a future version.
-   */
-  description?: string;
 } & (
   | {
       /**
