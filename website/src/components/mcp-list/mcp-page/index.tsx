@@ -10,6 +10,7 @@ import {
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../ui/dot-pattern";
 import mcpDataJson from "../mcpData.json";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Import the needed logo components
 import { AhrefLogo } from "../../../../static/img/logos/integrations/ahref";
@@ -25,25 +26,49 @@ const logoMap = {
   asana: AsanaLogo,
 };
 
+// Animation variants for code block
+const codeBlockVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+};
+
 // Code display component
 const CodeBlock = ({ code }) => {
   return (
-    <div className="relative bg-slate-800/70 rounded-md overflow-hidden">
-      <div className="absolute right-2 top-2 text-gray-400 hover:text-white cursor-pointer">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-labelledby="copyIcon"
-        >
-          <title id="copyIcon">Copy code</title>
-          <path d="M8 3a1 1 0 011-1spana1 1 0 110 2H9a1 1 0 01-1-1z" />
-          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-        </svg>
-      </div>
-      <pre className="p-4 text-sm text-gray-300 overflow-auto max-h-96">
-        <code>{code}</code>
+    <div className="relative max-w-4xl overflow-hidden transition-all duration-300">
+      {/* Code content with line numbers */}
+      <pre className="text-left bg-white/5 rounded-none overflow-x-auto p-0 text-[10px] sm:text-sm font-mono m-0">
+        <div className="flex">
+          <div className="py-3 px-3 text-right text-gray-500 leading-[1.4] select-none border-r border-gray-700 min-w-[30px] landing-xs:text-[9px] landing-md:text-xs">
+            {Array.from({ length: code.split("\n").length || 1 }, (_, i) => (
+              <div key={`line-${i + 1}`}>{i + 1}</div>
+            ))}
+          </div>
+          <div className="py-3 px-3 block landing-xs:text-[9px] landing-md:text-xs w-full relative">
+            <motion.div
+              className="absolute inset-0 "
+              layoutId="codeHighlight"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            <AnimatePresence mode="wait">
+              <motion.code
+                key="code-block"
+                id="code-content"
+                className="block relative z-10 text-gray-300"
+                variants={codeBlockVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                {code}
+              </motion.code>
+            </AnimatePresence>
+          </div>
+        </div>
       </pre>
     </div>
   );
@@ -110,7 +135,7 @@ export const MCPDetailPage = () => {
         <div className="lg:col-span-2">
           {/* Server Config section (moved from sidebar) */}
           <div className="rounded-lg  backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
-            <div className="flex items-center px-6  py-4   border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#191c24] border-white/10  border-solid">
+            <div className="flex items-center px-6  py-4   border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735]  border-white/10  border-solid">
               <div className="bg-[#00d992]/10 w-8 h-8  landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
                 <ServerIcon className="w-5 h-5 text-[#00d992]" />
               </div>
@@ -123,9 +148,7 @@ export const MCPDetailPage = () => {
                 </div>
               </div>
             </div>
-            <div className="p-6">
-              <CodeBlock code={configCode} />
-            </div>
+            <CodeBlock code={configCode} />
           </div>
 
           {/* What is section */}
@@ -200,22 +223,22 @@ export const MCPDetailPage = () => {
 
           {/* Tools Section */}
           {mcp.tools && mcp.tools.length > 0 && (
-            <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
-              <div className="flex items-start mb-6">
-                <div className="bg-[#00d992]/10 w-12 h-12 rounded-md flex items-center justify-center shrink-0 mr-4">
+            <div className="rounded-lg backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
+              <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
+                <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
                   <WrenchScrewdriverIcon className="w-5 h-5 text-[#00d992]" />
                 </div>
                 <div>
-                  <span className="text-lg font-semibold text-white mb-1">
+                  <span className="text-md font-semibold text-white mb-1">
                     Tools
                   </span>
-                  <p className="text-gray-400">
+                  <div className="text-gray-400 text-sm">
                     Available tools for the {mcp.name} Model Context Provider.
-                  </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="p-6 overflow-x-auto">
                 <table className="min-w-full bg-slate-800/50 rounded-lg overflow-hidden">
                   <thead className="bg-slate-700/70 text-left">
                     <tr>
@@ -300,67 +323,74 @@ export const MCPDetailPage = () => {
           </div>
 
           {/* Recommended Servers */}
-          <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
-            <div className="flex items-start mb-6">
-              <div className="bg-[#00d992]/10 w-12 h-12 rounded-md flex items-center justify-center shrink-0 mr-4">
+          <div className="rounded-lg backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
+            <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
+              <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
                 <ServerStackIcon className="w-5 h-5 text-[#00d992]" />
               </div>
               <div>
-                <span className="text-lg font-semibold text-white mb-1">
+                <span className="text-md font-semibold text-white mb-1">
                   Recommended Servers
                 </span>
+                <div className="text-gray-400 text-sm">
+                  Other MCP servers you might find useful.
+                </div>
               </div>
             </div>
 
-            {/* AWS KB Server */}
-            <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
-              <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-yellow-100 rounded-md">
-                <span className="text-xs font-bold text-yellow-800">AWS</span>
+            <div className="p-6">
+              {/* AWS KB Server */}
+              <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
+                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-yellow-100 rounded-md">
+                  <span className="text-xs font-bold text-yellow-800">AWS</span>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium mb-1">
+                    AWS Kb Retrieval Server
+                  </h4>
+                  <p className="text-xs text-gray-400">
+                    An MCP server implementation for retrieving information from
+                    the AWS...
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-white font-medium mb-1">
-                  AWS Kb Retrieval Server
-                </h4>
-                <p className="text-xs text-gray-400">
-                  An MCP server implementation for retrieving information from
-                  the AWS...
-                </p>
-              </div>
-            </div>
 
-            {/* Cursor */}
-            <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
-              <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-gray-700 rounded-md">
-                <BoltIcon className="w-5 h-5 text-white" />
+              {/* Cursor */}
+              <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
+                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-gray-700 rounded-md">
+                  <BoltIcon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-white font-medium mb-1">Cursor</h4>
+                  <p className="text-xs text-gray-400">The AI Code Editor</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-white font-medium mb-1">Cursor</h4>
-                <p className="text-xs text-gray-400">The AI Code Editor</p>
-              </div>
-            </div>
 
-            {/* MiniMax MCP */}
-            <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
-              <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-pink-600 rounded-md">
-                <span className="text-xs font-bold text-white">MM</span>
+              {/* MiniMax MCP */}
+              <div className="mb-4 p-3 rounded-md border border-gray-700 flex items-start">
+                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-pink-600 rounded-md">
+                  <span className="text-xs font-bold text-white">MM</span>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium mb-1">MiniMax MCP</h4>
+                  <p className="text-xs text-gray-400">
+                    Official MiniMax Model Context Protocol (MCP) server that
+                    enables interaction...
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-white font-medium mb-1">MiniMax MCP</h4>
-                <p className="text-xs text-gray-400">
-                  Official MiniMax Model Context Protocol (MCP) server that
-                  enables interaction...
-                </p>
-              </div>
-            </div>
 
-            {/* Playwright MCP */}
-            <div className="p-3 rounded-md border border-gray-700 flex items-start">
-              <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-blue-500 via-green-500 to-red-500 rounded-md">
-                <span className="text-xs font-bold text-white">PW</span>
-              </div>
-              <div>
-                <h4 className="text-white font-medium mb-1">Playwright MCP</h4>
-                <p className="text-xs text-gray-400">Playwright MCP server</p>
+              {/* Playwright MCP */}
+              <div className="p-3 rounded-md border border-gray-700 flex items-start">
+                <div className="w-8 h-8 mr-3 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-blue-500 via-green-500 to-red-500 rounded-md">
+                  <span className="text-xs font-bold text-white">PW</span>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium mb-1">
+                    Playwright MCP
+                  </h4>
+                  <p className="text-xs text-gray-400">Playwright MCP server</p>
+                </div>
               </div>
             </div>
           </div>
