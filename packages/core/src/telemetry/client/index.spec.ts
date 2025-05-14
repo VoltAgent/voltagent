@@ -11,10 +11,9 @@ import type { HistoryStep } from "../../agent/history"; // Adjust path as necess
 global.fetch = jest.fn();
 
 const mockOptions: VoltAgentExporterOptions = {
-  edgbaseUrleFunctionBaseUrl: "http://localhost:8000/functions/v1",
+  baseUrl: "http://localhost:8000/functions/v1",
   publicKey: "test-public-key",
   secretKey: "test-secret-key",
-  supabaseAnonKey: "test-anon-key",
   fetch: global.fetch,
 };
 
@@ -65,7 +64,6 @@ describe("TelemetryServiceApiClient", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${mockOptions.supabaseAnonKey}`,
         },
         body: JSON.stringify({
           publicKey: mockOptions.publicKey,

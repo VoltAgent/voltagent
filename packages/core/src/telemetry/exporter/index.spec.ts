@@ -31,7 +31,6 @@ const mockOptions: VoltAgentExporterOptions = {
   baseUrl: "http://localhost:8000/functions/v1",
   publicKey: "test-public-key",
   secretKey: "test-secret-key",
-  supabaseAnonKey: "test-anon-key",
 };
 
 describe("VoltAgentExporter", () => {

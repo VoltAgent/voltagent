@@ -85,21 +85,12 @@ export class TelemetryServiceApiClient {
     functionName: string,
     payload: Record<string, unknown>,
   ): Promise<any> {
-    const { baseUrl, publicKey, secretKey, supabaseAnonKey } = this.options;
+    const { baseUrl, publicKey, secretKey } = this.options;
     const functionUrl = `${baseUrl}/${functionName}`;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-
-    // Eğer supabaseAnonKey varsa, Supabase Edge Fonksiyonları genellikle
-    // bir Bearer token bekler (Supabase client'ının yaptığı gibi).
-    if (supabaseAnonKey) {
-      headers.Authorization = `Bearer ${supabaseAnonKey}`;
-    }
-    // Not: Edge fonksiyonlarımız gövde içinde publicKey ve clientSecretKey aldığı için,
-    // bu header'daki anonKey sadece fonksiyon çağrısını yetkilendirmek için olabilir (eğer fonksiyon ayarları gerektiriyorsa).
-    // Asıl kimlik doğrulama gövde içindeki anahtarlarla yapılacak.
 
     try {
       const response = await this.fetchImplementation(functionUrl, {

@@ -3,8 +3,7 @@
  */
 export interface VoltAgentExporterOptions {
   /**
-   * The base URL for the Supabase Edge Functions.
-   * e.g., "https://<your-project-id>.supabase.co/functions/v1"
+   * The base URL for the VoltAgent Edge Functions.
    */
   baseUrl: string;
 
@@ -20,19 +19,6 @@ export interface VoltAgentExporterOptions {
    * This will be sent as 'clientSecretKey' in the request body.
    */
   secretKey: string;
-
-  /**
-   * Optional Supabase anonymous key.
-   * This might be needed if your Edge Functions require an Authorization: Bearer token
-   * for invocation, even if they use service_role internally for database operations.
-   * Typically, service_role functions don't strictly need this for invocation if called
-   * directly via the functions URL, but it depends on your Supabase project's RLS
-   * and function security settings (e.g., if you've set up JWT verification for functions).
-   * For functions using `service_role` key internally and accessed via `supabase.functions.invoke`,
-   * this might not be needed for the `Authorization` header for the invocation itself,
-   * but the Supabase client might still require it for initialization.
-   */
-  supabaseAnonKey?: string;
 
   /**
    * Optional fetch implementation. Defaults to global fetch.
