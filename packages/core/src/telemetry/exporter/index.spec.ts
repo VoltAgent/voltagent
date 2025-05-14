@@ -68,7 +68,6 @@ describe("VoltAgentExporter", () => {
         type: "agent_run",
         status: "completed",
         input: { text: "hello" },
-        sequence_number: 1,
         agent_id: "agent-1",
       };
       const mockResponse = { historyEntryId: "entry-123" };

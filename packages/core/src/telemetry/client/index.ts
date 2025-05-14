@@ -8,8 +8,6 @@ export interface ExportAgentHistoryPayload {
   agent_id: string;
   project_id: string;
   history_id: string;
-  session_id?: string;
-  request_id?: string;
   timestamp: string;
   type: string;
   status: string;
@@ -17,9 +15,10 @@ export interface ExportAgentHistoryPayload {
   output?: Record<string, unknown>;
   error?: Record<string, unknown>;
   usage?: Record<string, unknown>;
-  sequence_number: number;
   agent_snapshot?: Record<string, unknown>;
   steps?: HistoryStep[];
+  userId?: string;
+  conversationId?: string;
 }
 
 export interface ExportTimelineEventPayload {
@@ -40,7 +39,6 @@ export interface AgentHistoryUpdatableFields {
   status?: AgentStatus;
   usage?: UsageInfo;
   agent_snapshot?: Record<string, unknown>;
-  sequence_number?: number;
 }
 
 export interface TimelineEventUpdatableFields {
@@ -72,7 +70,7 @@ export class TelemetryServiceApiClient {
   private async _callEdgeFunction(
     functionName: string,
     payload: Record<string, unknown>,
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { baseUrl, publicKey, secretKey } = this.options;
     const functionUrl = `${baseUrl}/${functionName}`;
 
@@ -92,7 +90,7 @@ export class TelemetryServiceApiClient {
       });
 
       if (!response.ok) {
-        let errorBody: any;
+        let errorBody: unknown;
         try {
           errorBody = await response.json();
         } catch (_e) {
@@ -122,7 +120,9 @@ export class TelemetryServiceApiClient {
     const payload = {
       ...historyEntryData,
     };
-    return this._callEdgeFunction("export-agent-history", payload);
+    return (await this._callEdgeFunction("export-agent-history", payload)) as {
+      historyEntryId: string;
+    };
   }
 
   public async exportTimelineEvent(
@@ -131,7 +131,9 @@ export class TelemetryServiceApiClient {
     const payload = {
       ...timelineEventData,
     };
-    return this._callEdgeFunction("export-timeline-event", payload);
+    return (await this._callEdgeFunction("export-timeline-event", payload)) as {
+      timelineEventId: string;
+    };
   }
 
   public async exportHistorySteps(

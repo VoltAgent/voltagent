@@ -135,7 +135,6 @@ describe("TelemetryServiceApiClient", () => {
         type: "agent_run",
         status: "completed",
         input: { text: "hello" },
-        sequence_number: 1,
       };
       const result = await apiClient.exportAgentHistory(historyData);
       expect(global.fetch).toHaveBeenCalledWith(
@@ -238,7 +237,7 @@ describe("TelemetryServiceApiClient", () => {
           body: JSON.stringify({
             publicKey: mockOptions.publicKey,
             clientSecretKey: mockOptions.secretKey,
-            payload: { history_id, event_id, updates },
+            payload: { history_id, event_id, event: updates },
           }),
         }),
       );

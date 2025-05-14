@@ -28,7 +28,7 @@ jest.mock("../../telemetry/exporter", () => ({
 describe("HistoryManager", () => {
   let historyManager: HistoryManager;
   let mockMemoryManager: jest.Mocked<MemoryManager>;
-  let mockEntries: any[] = [];
+  let mockEntries: AgentHistoryEntry[] = [];
   let mockVoltAgentExporter: jest.Mocked<VoltAgentExporter>;
 
   beforeEach(() => {
@@ -337,6 +337,8 @@ describe("HistoryManager", () => {
         const output = "telemetry output";
         const status: AgentStatus = "completed";
         const agentSnapshot = { state: "snapshot" };
+        const userId = "test-user-123";
+        const conversationId = "test-conv-456";
 
         const entry = await telemetryHistoryManager.addEntry(
           input,
@@ -345,6 +347,8 @@ describe("HistoryManager", () => {
           [],
           {},
           agentSnapshot,
+          userId,
+          conversationId,
         );
 
         expect(mockVoltAgentExporter.exportHistoryEntry).toHaveBeenCalledTimes(1);
@@ -359,8 +363,9 @@ describe("HistoryManager", () => {
           output: { text: output },
           steps: [],
           usage: undefined,
-          sequence_number: 0,
           agent_snapshot: agentSnapshot,
+          userId: userId,
+          conversationId: conversationId,
         };
         expect(mockVoltAgentExporter.exportHistoryEntry).toHaveBeenCalledWith(expectedPayload);
       });

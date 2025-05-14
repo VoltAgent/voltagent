@@ -445,6 +445,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId?: string;
       operationName: string;
       userContext?: Map<string | symbol, unknown>;
+      userId?: string;
+      conversationId?: string;
     } = {
       operationName: "unknown",
     },
@@ -467,6 +469,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         events: [],
       },
       this.getFullState(),
+      options.userId,
+      options.conversationId,
     );
 
     const opContext: OperationContext = {
@@ -567,7 +571,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private createStandardTimelineEvent = (
     historyId: string,
     eventName: string,
-    status: AgentStatus,
+    status: EventStatus,
     nodeType: NodeType,
     nodeName: string,
     data: Partial<StandardEventData> = {},
@@ -836,6 +840,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId,
       operationName: "generateText",
       userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1048,6 +1054,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId,
       operationName: "streamText",
       userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1307,6 +1315,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId,
       operationName: "generateObject",
       userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1459,6 +1469,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId,
       operationName: "streamObject",
       userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =

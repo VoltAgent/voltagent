@@ -182,6 +182,8 @@ export class HistoryManager {
    * @param steps - Steps taken during generation
    * @param options - Additional options for the entry
    * @param agentSnapshot - Optional agent snapshot for telemetry
+   * @param userId - Optional userId for telemetry
+   * @param conversationId - Optional conversationId for telemetry
    * @returns The new history entry
    */
   public async addEntry(
@@ -193,6 +195,8 @@ export class HistoryManager {
       Omit<AgentHistoryEntry, "id" | "timestamp" | "input" | "output" | "status" | "steps">
     > = {},
     agentSnapshot?: Record<string, unknown>,
+    userId?: string,
+    conversationId?: string,
   ): Promise<AgentHistoryEntry> {
     if (!this.agentId) {
       throw new Error("Agent ID must be set to manage history");
@@ -242,8 +246,9 @@ export class HistoryManager {
           output: { text: entry.output },
           steps: entry.steps,
           usage: entry.usage,
-          sequence_number: entry._sequenceNumber || 0,
           agent_snapshot: agentSnapshot,
+          userId: userId,
+          conversationId: conversationId,
         };
         await this.voltAgentExporter.exportHistoryEntry(historyPayload);
       } catch (telemetryError) {
@@ -434,8 +439,6 @@ export class HistoryManager {
           if (updates.output !== undefined) finalUpdates.output = updates.output;
           if (updates.status !== undefined) finalUpdates.status = updates.status;
           if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
-          if (updates._sequenceNumber !== undefined)
-            finalUpdates.sequence_number = updates._sequenceNumber;
           if (updates.agent_snapshot !== undefined)
             finalUpdates.agent_snapshot = updates.agent_snapshot;
 
