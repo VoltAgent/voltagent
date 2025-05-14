@@ -4,7 +4,155 @@
     "name": "Ahrefs",
     "description": "Access Ahrefs SEO and backlink analytics data",
     "category": "Analytics",
-    "logoKey": "ahref"
+    "logoKey": "ahref",
+    "tools": [
+      {
+        "id": "domain_rating",
+        "name": "domain_rating",
+        "description": "Get domain rating for a domain",
+        "inputs": [
+          {
+            "name": "domain",
+            "type": "string",
+            "required": true,
+            "description": "Domain name to check"
+          }
+        ]
+      },
+      {
+        "id": "backlinks_stats",
+        "name": "backlinks_stats",
+        "description": "Get backlinks statistics for a domain or URL",
+        "inputs": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (default: 'domain')"
+          }
+        ]
+      },
+      {
+        "id": "outlinks_stats",
+        "name": "outlinks_stats",
+        "description": "Get outlinks statistics for a domain or URL",
+        "inputs": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (default: 'domain')"
+          }
+        ]
+      },
+      {
+        "id": "metrics",
+        "name": "metrics",
+        "description": "Get comprehensive metrics for a domain or URL",
+        "inputs": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "include_history",
+            "type": "boolean",
+            "required": false,
+            "description": "Include historical data (default: false)"
+          }
+        ]
+      },
+      {
+        "id": "domain_rating_history",
+        "name": "domain_rating_history",
+        "description": "Get domain rating history for a domain",
+        "inputs": [
+          {
+            "name": "domain",
+            "type": "string",
+            "required": true,
+            "description": "Domain name to check"
+          },
+          {
+            "name": "period",
+            "type": "string",
+            "required": false,
+            "description": "Time period for history (default: '1y')"
+          }
+        ]
+      },
+      {
+        "id": "url_rating_history",
+        "name": "url_rating_history",
+        "description": "Get URL rating history for a URL",
+        "inputs": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "URL to analyze"
+          },
+          {
+            "name": "period",
+            "type": "string",
+            "required": false,
+            "description": "Time period for history (default: '1y')"
+          }
+        ]
+      },
+      {
+        "id": "refdomains_history",
+        "name": "refdomains_history",
+        "description": "Get referring domains history for a domain or URL",
+        "inputs": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "period",
+            "type": "string",
+            "required": false,
+            "description": "Time period for history (default: '1y')"
+          }
+        ]
+      },
+      {
+        "id": "pages_history",
+        "name": "pages_history",
+        "description": "Get pages history for a domain or URL",
+        "inputs": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "period",
+            "type": "string",
+            "required": false,
+            "description": "Time period for history (default: '1y')"
+          }
+        ]
+      }
+    ]
   },
   {
     "id": 2,

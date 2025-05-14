@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   MagnifyingGlassIcon,
   ArrowTopRightOnSquareIcon,
@@ -27,6 +28,9 @@ import { MixpanelLogo } from "../../../static/img/logos/integrations/mixpanel";
 import { NotionLogo } from "../../../static/img/logos/integrations/notion";
 import { OneDriveLogo } from "../../../static/img/logos/integrations/one-drive";
 import { PineconeLogo } from "../../../static/img/logos/integrations/pinecone";
+// Temporarily using other logos as fallbacks
+import { AhrefLogo as ZapierLogo } from "../../../static/img/logos/integrations/ahref";
+import { AhrefLogo as GumloopLogo } from "../../../static/img/logos/integrations/ahref";
 
 // Import MCP data from json file
 import mcpDataJson from "./mcpData.json";
@@ -63,67 +67,74 @@ const mcpData = mcpDataJson.map((item) => ({
 
 // Tab options for filtering
 const tabOptions = [
-  { id: "zapier", name: "Zapier" },
-  { id: "gumloop", name: "Gumloop" },
+  {
+    id: "zapier",
+    name: "Zapier",
+    component: <ZapierLogo className="h-6 w-auto" />,
+  },
+  {
+    id: "gumloop",
+    name: "Gumloop",
+    component: <GumloopLogo className="h-7 w-auto text-white" />,
+  },
   { id: "community", name: "Community" },
 ];
 
 // MCP Card Component
 const MCPCard = ({ mcp }) => {
-  const handleClick = () => console.log(`Clicked on ${mcp.name}`);
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 0 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="group border-solid border-[#1e293b]/40 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/60 hover:shadow-[0_0_15px_rgba(0,217,146,0.15)] cursor-pointer"
-      style={{
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-        backgroundColor: "rgba(58, 66, 89, 0.3)",
-      }}
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          handleClick();
-        }
-      }}
-    >
-      <div className="p-4 flex flex-col h-full">
-        {/* Header with category badge */}
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center">
-            <div className="w-8 h-8 mr-2 flex items-center justify-center bg-slate-800/50 rounded-full">
-              <mcp.logo className="w-5 h-5" />
+    <Link to="/mcp-detail">
+      <motion.div
+        initial={{ opacity: 0, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="group border-solid border-[#1e293b]/40 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/60 hover:shadow-[0_0_15px_rgba(0,217,146,0.15)] cursor-pointer"
+        style={{
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
+          backgroundColor: "rgba(58, 66, 89, 0.3)",
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            // Key handling is not needed here as the Link component will handle navigation
+          }
+        }}
+      >
+        <div className="p-4 flex flex-col h-full">
+          {/* Header with category badge */}
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center">
+              <div className="w-8 h-8 mr-2 flex items-center justify-center bg-slate-800/50 rounded-full">
+                <mcp.logo className="w-5 h-5" />
+              </div>
+              <span className="text-[#00d992] font-bold text-base sm:text-lg truncate">
+                {mcp.name}
+              </span>
             </div>
-            <span className="text-[#00d992] font-bold text-base sm:text-lg truncate">
-              {mcp.name}
+
+            <span className="px-2 py-0.5 text-xs rounded-full bg-[#1e293b] text-gray-300">
+              {mcp.category}
             </span>
           </div>
 
-          <span className="px-2 py-0.5 text-xs rounded-full bg-[#1e293b] text-gray-300">
-            {mcp.category}
-          </span>
-        </div>
+          {/* Description */}
+          <p className="text-gray-400 text-xs sm:text-sm mb-4 flex-grow">
+            {mcp.description}
+          </p>
 
-        {/* Description */}
-        <p className="text-gray-400 text-xs sm:text-sm mb-4 flex-grow">
-          {mcp.description}
-        </p>
-
-        {/* Try Connection Button */}
-        <div className="w-full flex items-center justify-center px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]">
-          <span>See MCP Details</span>
-          <ArrowTopRightOnSquareIcon
-            className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200"
-            aria-hidden="true"
-          />
+          {/* Try Connection Button */}
+          <div className="w-full flex items-center justify-center px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]">
+            <span>See MCP Details</span>
+            <ArrowTopRightOnSquareIcon
+              className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200"
+              aria-hidden="true"
+            />
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 };
 
@@ -131,7 +142,7 @@ const MCPCard = ({ mcp }) => {
 const Tab = ({ active, onClick, children }) => {
   return (
     <div
-      className={`relative px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium cursor-pointer transition-all duration-300 flex-1 text-center ${
+      className={`relative px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium cursor-pointer transition-all duration-300  text-center ${
         active ? "text-[#00d992]" : "text-gray-500 hover:text-gray-300"
       }`}
       onClick={onClick}
@@ -216,17 +227,14 @@ export const MCPList = () => {
 
       {/* Tab Navigation - Full width on mobile */}
       <div className="mb-8 w-full">
-        <div
-          className="flex justify-between border-b border-gray-800 w-full"
-          role="tablist"
-        >
+        <div className="flex border-b border-gray-800 w-full" role="tablist">
           {tabOptions.map((tab) => (
             <Tab
               key={tab.id}
               active={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
             >
-              {tab.name}
+              {tab.component || tab.name}
             </Tab>
           ))}
         </div>
