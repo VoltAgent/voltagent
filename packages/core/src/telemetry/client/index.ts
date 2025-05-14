@@ -1,18 +1,10 @@
 import type { VoltAgentExporterOptions } from "../exporter";
-// AgentHistoryEntry ve TimelineEvent tiplerini core paketinizdeki tanımlardan import etmeliyiz.
-// Örnek import yolu, gerçek yapınıza göre düzeltilmelidir.
-import type { AgentHistoryEntry, HistoryStep, TimelineEvent } from "../../agent/history"; // Veya "../history" vs.
+import type { AgentHistoryEntry, HistoryStep, TimelineEvent } from "../../agent/history";
 import type { AgentStatus } from "../../agent/types";
 import type { UsageInfo } from "../../agent/providers";
 import type { EventStatus, TimelineEventType } from "../../events";
 
-// Edge Function'ların beklediği payload tipleri için arayüzler
-// Bunlar, Edge Function içindeki AgentHistoryEntryData'ya benzer olmalı
 export interface ExportAgentHistoryPayload {
-  // Edge Function'ın payload'da beklediği AgentHistoryEntry alanları.
-  // 'id' ve 'timestamp' genellikle sunucu tarafında ayarlanır veya farklı şekilde ele alınır.
-  // 'events' ayrı bir endpoint ile gönderilecek.
-  // Edge Function içindeki AgentHistoryEntryData ile tutarlı olmalı.
   agent_id: string;
   project_id: string;
   history_id: string;
@@ -30,22 +22,18 @@ export interface ExportAgentHistoryPayload {
   steps?: HistoryStep[];
 }
 
-// TimelineEvent için payload (eğer ayrı bir endpoint olacaksa)
 export interface ExportTimelineEventPayload {
-  // project_id is handled by the API client/exporter itself based on the publicKey
-  history_entry_id: string; // ID of the parent history entry
-  event_id: string; // ID of the event itself
-  event: TimelineEvent; // The entire event object to be stored in the 'value' column
+  history_entry_id: string;
+  event_id: string;
+  event: TimelineEvent;
 }
 
-// Payload for exporting history steps
 export interface ExportHistoryStepsPayload {
   project_id: string;
   history_id: string;
-  steps: HistoryStep[]; // Changed from TimelineEventType[] to HistoryStep[]
+  steps: HistoryStep[];
 }
 
-// Interface for updatable fields in agent_history_entries via the update function
 export interface AgentHistoryUpdatableFields {
   input?: AgentHistoryEntry["input"];
   output?: string;
@@ -131,12 +119,8 @@ export class TelemetryServiceApiClient {
   public async exportAgentHistory(
     historyEntryData: ExportAgentHistoryPayload,
   ): Promise<{ historyEntryId: string }> {
-    // AgentHistoryEntry'den 'id', 'timestamp', 'events' gibi alanları çıkarıp
-    // Edge Function'ın beklediği payload'a dönüştür.
-    // event_timestamp'ı ISO string olarak formatla.
     const payload = {
       ...historyEntryData,
-      // event_timestamp: historyEntryData.timestamp.toISOString(), // Eğer timestamp Date objesi ise
     };
     return this._callEdgeFunction("export-agent-history", payload);
   }
@@ -146,16 +130,14 @@ export class TelemetryServiceApiClient {
   ): Promise<{ timelineEventId: string }> {
     const payload = {
       ...timelineEventData,
-      // event_timestamp: timelineEventData.timestamp.toISOString(), // Eğer timestamp Date objesi ise
     };
-    // Henüz bu fonksiyonu oluşturmadık, ama şimdiden yerini hazırlayalım.
     return this._callEdgeFunction("export-timeline-event", payload);
   }
 
   public async exportHistorySteps(
     project_id: string,
     history_id: string,
-    steps: HistoryStep[], // Changed from TimelineEventType[] to HistoryStep[]
+    steps: HistoryStep[],
   ): Promise<void> {
     const payload: ExportHistoryStepsPayload = {
       project_id,
