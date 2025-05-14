@@ -41,7 +41,11 @@ export class VoltAgentExporter {
   public readonly publicKey: string;
 
   constructor(options: VoltAgentExporterOptions) {
-    this.apiClient = new TelemetryServiceApiClient(options);
+    let baseUrl = options.baseUrl;
+    if (baseUrl.includes("https://server.voltagent.dev")) {
+      baseUrl = `${baseUrl}/functions/v1`;
+    }
+    this.apiClient = new TelemetryServiceApiClient({ ...options, baseUrl });
     this.publicKey = options.publicKey;
   }
 
