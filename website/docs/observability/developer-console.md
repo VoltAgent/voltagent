@@ -32,7 +32,7 @@ For production tracing and observability, VoltAgent offers the `VoltAgentExporte
 
 To use this:
 
-1. You need to set up a project at [https://console.voltagent.dev/setup-tracing](https://console.voltagent.dev/setup-tracing) to obtain API keys (Public and Secret).
+1. You need to set up a project at [https://console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup) to obtain API keys (Public and Secret).
 2. Configure the `VoltAgentExporter` in your agent's setup, as shown in the [Overview](./overview.md#production-tracing-with-voltagentexporter) documentation.
 
 Data sent via the `VoltAgentExporter` is stored securely and can be accessed through your project dashboard on the VoltAgent platform, allowing for long-term analysis, monitoring of deployed agents, and debugging of production issues. This is separate from the local, real-time view offered by connecting the Developer Console to your local agent.
