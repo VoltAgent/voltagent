@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@voltagent/cli": "^0.1.5",
-    "@voltagent/core": "^0.1.18",
+    "@voltagent/core": "^0.1.19",
     "@voltagent/xsai": "^0.1.7",
     "zod": "^3.24.2"
   },
