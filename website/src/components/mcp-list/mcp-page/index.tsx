@@ -12,6 +12,9 @@ import Link from "@docusaurus/Link";
 import { DotPattern } from "../../ui/dot-pattern";
 import mcpDataJson from "../mcpData.json";
 import { motion, AnimatePresence } from "framer-motion";
+import { Claude37Logo } from "../../../../static/img/logos/claudie";
+import { CursorLogo } from "../../../../static/img/logos/cursor";
+import { ComposioLogo } from "../../../../static/img/logos/composio";
 
 // Import the needed logo components
 import { AhrefLogo } from "../../../../static/img/logos/integrations/ahref";
@@ -28,6 +31,7 @@ const logoMap = {
   asana: AsanaLogo,
   zapier: ZapierLogo,
   gumloop: GumloopLogo,
+  composio: ComposioLogo,
 };
 
 // Animation variants for code block
@@ -249,6 +253,26 @@ export const MCPDetailPage = () => {
       ],
     },
     {
+      id: "composio",
+      name: "Composio",
+      component: <ComposioLogo className="h-6 w-auto" />,
+      serverConfig: `{
+  "mcpServers": {
+    "composio_generic": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-composio-generic"
+      ],
+      "env": {
+        "COMPOSIO_API_KEY": "<YOUR_COMPOSIO_API_KEY>"
+      }
+    }
+  }
+}`,
+      tools: [],
+    },
+    {
       id: "community",
       name: "Community",
       serverConfig: `{
@@ -276,6 +300,101 @@ export const MCPDetailPage = () => {
 
   // Get config code based on active tab
   const configCode = currentTab.serverConfig;
+
+  // State for the server config nested tabs
+  const [activeServerConfigTab, setActiveServerConfigTab] =
+    useState("voltagent");
+
+  // Define code snippets for the new server config tabs
+  // These will be dynamic based on the main currentTab
+  const cursorCodeSnippet = `
+# In your Cursor AI Agent (Python environment with Voltagent SDK)
+
+# 1. Initialize Voltagent or get context for the MCP server
+#    (Assuming the '${currentTab.id}' MCP server is configured and running)
+mcp_server_id = "${currentTab.id}" # e.g., "zapier", "gumloop", or "ahrefs_generic"
+
+# 2. Define the tool you want to use from this MCP server
+#    (Let's assume the server has a tool named 'example_tool'
+#     and it takes 'param1' and 'param2')
+#    Refer to the '${currentTab.name} MCP' documentation for available tools.
+tool_to_call = f"{mcp_server_id}.example_tool"
+
+# 3. Prepare your input data
+input_payload = {
+    "param1": "value_from_cursor_context",
+    "param2": 123
+}
+
+# 4. Call the tool via Voltagent's MCP interface
+try:
+    # result = voltagent.mcp.call(tool_name=tool_to_call, data=input_payload) # Conceptual SDK call
+    print(f"Calling tool '{tool_to_call}' on MCP server '{mcp_server_id}'...")
+    print(f"With payload: {input_payload}")
+    print("\nSimulated Response from MCP:")
+    print({"status": "success", "data": "Tool executed successfully with provided params on ${currentTab.id} server."})
+except Exception as e:
+    print(f"Error calling MCP tool: {e}")
+  `;
+
+  const claudeCodeSnippet = `
+# Interacting with Claude (e.g., through an API or UI with tool use capabilities)
+# Claude is instructed to use a tool via an MCP server related to '${currentTab.name}'.
+
+# User Prompt to Claude:
+# "Claude, please use the '${currentTab.id}' MCP server to execute 'example_tool'
+#  with param1 set to 'claude_request_data' and param2 set to 789."
+
+# Claude's Internal Thought Process / Tool Invocation (Conceptual):
+# Tool Invocation Request for Voltagent MCP:
+#   Target MCP Server ID: "${currentTab.id}"
+#   Tool Name: "example_tool" # (Refer to '${currentTab.name} MCP' docs for actual tool names)
+#   Parameters:
+#     param1: "claude_request_data"
+#     param2: 789
+
+# Expected Interaction with Voltagent/MCP layer:
+# Voltagent would route this to the '${currentTab.id}' MCP server,
+# call 'example_tool' with the provided parameters.
+
+# Simulated Response from MCP to Claude (then relayed to user):
+# {
+#   "status": "success",
+#   "output": {
+#     "message": "Claude's request to 'example_tool' on '${currentTab.id}' processed successfully.",
+#     "details": "Result of example_tool execution would appear here."
+#   }
+# }
+
+# Claude's Response to User (example):
+# "Okay, I've used the '${currentTab.id}' MCP server to execute 'example_tool'
+#  with your parameters. The server responded indicating success."
+  `;
+
+  const serverConfigTabsData = [
+    {
+      id: "voltagent",
+      name: "Voltagent",
+      code: configCode, // This is the main server config for the selected MCP
+      iconComponent: null,
+    },
+    {
+      id: "cursor",
+      name: "Cursor",
+      code: cursorCodeSnippet,
+      iconComponent: <CursorLogo className="h-4 w-4 mr-2 text-white" />,
+    },
+    {
+      id: "claude",
+      name: "Claude",
+      code: claudeCodeSnippet,
+      iconComponent: <Claude37Logo className="h-4 w-4 mr-2" />,
+    },
+  ];
+
+  const activeCodeBlockContent =
+    serverConfigTabsData.find((tab) => tab.id === activeServerConfigTab)
+      ?.code || "Select a tab to view the configuration or usage example.";
 
   // Recommended servers data
   const recommendedServers = [
@@ -378,15 +497,50 @@ export const MCPDetailPage = () => {
               </div>
               <div>
                 <span className="text-md font-semibold text-white mb-1">
-                  Server Config
+                  Server Config & Usage Examples
                 </span>
                 <div className="text-gray-400 text-sm">
-                  Configuration parameters for your {currentTab.name} MCP
-                  server.
+                  Configure your {currentTab.name} MCP server and see how to
+                  call it.
                 </div>
               </div>
             </div>
-            <CodeBlock code={configCode} />
+            {/* New Nested Tab Navigation for Server Config */}
+            <div
+              className="flex border-b border-gray-700 bg-[#222735]/50"
+              role="tablist"
+            >
+              {serverConfigTabsData.map((tab) => (
+                <div
+                  key={tab.id}
+                  className={`flex items-center relative px-3 py-2 text-sm font-medium cursor-pointer transition-all duration-300 text-center ${
+                    activeServerConfigTab === tab.id
+                      ? "text-[#00d992]"
+                      : "text-gray-500 hover:text-gray-300"
+                  }`}
+                  onClick={() => setActiveServerConfigTab(tab.id)}
+                  role="tab"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      setActiveServerConfigTab(tab.id);
+                    }
+                  }}
+                  aria-selected={activeServerConfigTab === tab.id}
+                >
+                  {tab.iconComponent}
+                  {tab.name}
+                  <div
+                    className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                      activeServerConfigTab === tab.id
+                        ? "bg-[#00d992]"
+                        : "bg-transparent"
+                    }`}
+                  />
+                </div>
+              ))}
+            </div>
+            <CodeBlock code={activeCodeBlockContent} />
           </div>
 
           {/* What is section - Hardcoded Ahrefs content */}

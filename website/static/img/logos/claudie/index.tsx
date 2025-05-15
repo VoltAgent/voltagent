@@ -4,7 +4,9 @@ export const Claude37Logo = ({ className }: { className?: string }) => (
     viewBox="0 0 256 257"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
+    aria-labelledby="claudeLogoTitle"
   >
+    <title id="claudeLogoTitle">Claude Logo</title>
     <path
       d="M50.2,170.3l50.4-28.3l0.8-2.5l-0.8-1.4h-2.5l-8.4-0.5l-28.8-0.8l-25-1l-24.2-1.3l-6.1-1.3L0,125.8l0.6-3.8
       l5.1-3.4l7.3,0.6l16.2,1.1l24.3,1.7l17.6,1l26.1,2.7h4.1l0.6-1.7l-1.4-1l-1.1-1l-25.1-17L47.1,87L32.9,76.6l-7.7-5.2l-3.9-4.9
