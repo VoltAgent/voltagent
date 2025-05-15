@@ -16,11 +16,26 @@ You can access the hosted Developer Console at:
 
 When you run a VoltAgent application locally with observability enabled, it exposes a local server (typically on port `3141`). The Developer Console connects directly to this local server via your browser.
 
-**Key Features:**
+**Key Features (Local Debugging):**
 
-- **Local Connection:** The console communicates directly with your local agent process. No data is sent to or stored on any external servers. Your agent's execution data remains entirely on your machine.
+- **Local Connection:** The console communicates directly with your local agent process. No data is sent to or stored on any external servers for this local debugging mode. Your agent's execution data remains entirely on your machine.
 - **Real-time Visualization:** See the agent's execution flow, including function calls, tool usage, and message history, as it happens.
 - **Debugging Tools:** Inspect the details of each step, view logs, and analyze the agent's state at different points in time.
+
+**Important Note on Data:** The Developer Console at [https://console.voltagent.dev/](https://console.voltagent.dev/) when connected to your `localhost` is for **local debugging only**. It does not store your data remotely.
+
+### Production Observability with `VoltAgentExporter`
+
+While the Developer Console provides an excellent interface for real-time local debugging, it's not designed for persistent storage or monitoring of agents running in production environments.
+
+For production tracing and observability, VoltAgent offers the `VoltAgentExporter`. This component allows you to send your agent's telemetry data (traces, execution details) to the VoltAgent cloud platform (`https://server.voltagent.dev` by default).
+
+To use this:
+
+1. You need to set up a project at [https://console.voltagent.dev/setup-tracing](https://console.voltagent.dev/setup-tracing) to obtain API keys (Public and Secret).
+2. Configure the `VoltAgentExporter` in your agent's setup, as shown in the [Overview](./overview.md#production-tracing-with-voltagentexporter) documentation.
+
+Data sent via the `VoltAgentExporter` is stored securely and can be accessed through your project dashboard on the VoltAgent platform, allowing for long-term analysis, monitoring of deployed agents, and debugging of production issues. This is separate from the local, real-time view offered by connecting the Developer Console to your local agent.
 
 ### Getting Started
 
@@ -83,11 +98,6 @@ You can usually select individual steps in the execution trace to inspect the de
 
 #### Connection Management
 
-The console provides feedback on its connection status to your local VoltAgent server. Look for indicators (like the `ConnectionAlert` component) showing whether the connection is active or if there are issues. You might also find settings to change the target URL if your agent isn't running on the default `http://localhost:3141`.
+The console provides feedback on its connection status to your local VoltAgent server (e.g., `http://localhost:3141`). Look for indicators (like the `ConnectionAlert` component) showing whether the connection is active or if there are issues. You might also find settings to change the target URL if your agent isn't running on the default `http://localhost:3141`.
 
-### Using the Console
-
-~~Once connected, you can navigate through agent runs, inspect individual steps, view detailed logs, and more.~~
-
-<!-- Placeholder for a GIF demonstrating a key feature, e.g., inspecting an agent run -->
-<!-- ![Inspecting Agent Run](placeholder-inspect.gif) -->
+Remember, this connection is for local debugging. For sending data to the VoltAgent cloud for persistent storage and production monitoring, you should configure the `VoltAgentExporter` in your application code.

@@ -12,13 +12,16 @@ const agent = new Agent({
   tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],
 });
 
+const publicKey = process.env.VOLTAGENT_PUBLIC_KEY;
+const secretKey = process.env.VOLTAGENT_SECRET_KEY;
+
 new VoltAgent({
   agents: {
     agent,
   },
   telemetryExporter: new VoltAgentExporter({
-    publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
-    secretKey: process.env.VOLTAGENT_SECRET_KEY!,
+    publicKey,
+    secretKey,
     baseUrl: "https://server.voltagent.dev",
   }),
 });
