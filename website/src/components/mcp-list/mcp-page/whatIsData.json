@@ -1,0 +1,110 @@
+{
+  "ahref": {
+    "providerTitle": "Ahrefs MCP: Supercharge Your AI Agents with SEO Intelligence",
+    "mainDescription": "Empower your Voltagent AI agents with Ahrefs' leading SEO analytics through the Model Context Protocol (MCP). Automate competitor research, keyword analysis, and backlink audits to elevate your AI-driven SEO strategies.",
+    "whatIsTitle": "What is Ahrefs MCP for AI Agents?",
+    "whatIsContent": "Ahrefs is a premier SEO and content research platform. The Ahrefs Model Context Protocol (MCP) integration for Voltagent acts as a direct data pipeline, allowing your AI agents to programmatically access and utilize Ahrefs' vast database. This means your AI agents can autonomously perform SEO tasks, uncover insights, and help you dominate search rankings by leveraging a standardized MCP interface.",
+    "howToUseTitle": "How to Use Ahrefs MCP with Your Voltagent AI Agents for SEO Wins",
+    "howToUseContent": "Integrating the Ahrefs MCP allows your Voltagent AI agents to execute powerful SEO tasks. Here's how your agents can leverage this for an edge:\n\n*   **How AI Agents Conduct Backlink Analysis via MCP:** \n    Train your AI agents to dive deep into backlink profiles using Ahrefs data fetched through the MCP. They can analyze link quality, anchor text, and track changes over time, identifying new link-building opportunities for your AI-driven campaigns.\n\n*   **AI-Powered Keyword Research with Ahrefs MCP:** \n    Enable your AI agents to discover what your audience searches for. Using the Ahrefs MCP, agents can retrieve search volumes, keyword difficulty, and ranking data, helping you build an AI-optimized content strategy.\n\n*   **Automating Competitor SEO Analysis with AI Agents & MCP:** \n    Configure your AI agents to continuously monitor competitor SEO strategies via the Ahrefs MCP. They can analyze ranking keywords, top content, and backlink tactics, providing actionable intelligence for your AI to adapt.\n\n*   **How AI Agents Monitor Site Health using Ahrefs MCP:** \n    Your Voltagent agents can regularly assess domain SEO health (like Domain Rating) and URL performance using Ahrefs data via MCP, tracking history and metrics to flag issues for your AI to address.\n\n*   **AI Agents Auditing Outgoing Links via MCP:** \n    Instruct your AI agents to analyze outgoing links from your site using Ahrefs MCP data, evaluating their quality and SEO impact to ensure your AI maintains a healthy link profile.\n\n*   **AI Agents Gaining SERP Insights through Ahrefs MCP:** \n    Your AI agents can retrieve and analyze SERP data for target keywords via Ahrefs MCP, understanding ranking dynamics and identifying opportunities for your AI to optimize for.",
+    "keyFeatures": [
+      {
+        "title": "How AI Agents Use Ahrefs MCP for Smarter SEO Decisions",
+        "description": "Empower your Voltagent AI agents to make superior SEO choices by leveraging real-time Ahrefs data and insights accessed via the Model Context Protocol."
+      },
+      {
+        "title": "How to Automate SEO Analysis with AI Agents and MCP",
+        "description": "Streamline your workflow by having your AI agents conduct repetitive SEO analysis and reporting using Ahrefs data through the MCP."
+      },
+      {
+        "title": "How AI Agents Understand Competitor SEO via MCP",
+        "description": "Enable your AI agents to learn from and adapt to competitor SEO strategies by continuously analyzing Ahrefs data obtained through the Model Context Protocol."
+      },
+      {
+        "title": "How AI Agents Build MCP-Driven Content Strategies",
+        "description": "Guide your AI agents to develop content strategies that rank, using Ahrefs MCP data to identify high-potential topics and optimize content."
+      },
+      {
+        "title": "How AI Agents Proactively Monitor SEO with Ahrefs MCP",
+        "description": "Set up your AI agents to use Ahrefs MCP for automated SEO performance monitoring, swiftly identifying issues and opportunities."
+      }
+    ]
+  },
+  "zapier": {
+    "providerTitle": "Zapier - Provider",
+    "mainDescription": "Zapier integration through the Voltagent MCP framework, allowing seamless interaction with your AI agents.",
+    "whatIsTitle": "What is Zapier MCP?",
+    "whatIsContent": "Zapier MCP is a Model Context Provider that enables your Voltagent-based AI agents to interact with Zapier's features. It provides a standardized interface to access and manipulate data, making it easy to integrate into your AI workflows.",
+    "howToUseTitle": "How to use Zapier MCP?",
+    "howToUseContent": "To use the Zapier MCP, you'll need to first obtain an API token from your Zapier account. Configure your Voltagent application with this token and the appropriate API URL. You can then use the MCP endpoints to access Zapier's capabilities directly from your AI agents.",
+    "keyFeatures": [
+      {
+        "title": "Seamless Integration:",
+        "description": "Connect directly to your Zapier account with simple configuration."
+      },
+      {
+        "title": "Comprehensive API Access:",
+        "description": "Full access to Zapier's features through a unified API."
+      },
+      {
+        "title": "Secure Authentication:",
+        "description": "Secure token-based authentication to protect your account."
+      },
+      {
+        "title": "Robust Error Handling:",
+        "description": "Clear error messages and recovery options for all operations."
+      }
+    ]
+  },
+  "gumloop": {
+    "providerTitle": "Gumloop - Provider",
+    "mainDescription": "Gumloop integration through the Voltagent MCP framework, allowing seamless interaction with your AI agents.",
+    "whatIsTitle": "What is Gumloop MCP?",
+    "whatIsContent": "Gumloop MCP is a Model Context Provider that enables your Voltagent-based AI agents to interact with Gumloop's features. It provides a standardized interface to access and manipulate data, making it easy to integrate into your AI workflows.",
+    "howToUseTitle": "How to use Gumloop MCP?",
+    "howToUseContent": "To use the Gumloop MCP, you'll need to first obtain an API token from your Gumloop account. Configure your Voltagent application with this token and the appropriate API URL. You can then use the MCP endpoints to access Gumloop's capabilities directly from your AI agents.",
+    "keyFeatures": [
+      {
+        "title": "Seamless Integration:",
+        "description": "Connect directly to your Gumloop account with simple configuration."
+      },
+      {
+        "title": "Comprehensive API Access:",
+        "description": "Full access to Gumloop's features through a unified API."
+      },
+      {
+        "title": "Secure Authentication:",
+        "description": "Secure token-based authentication to protect your account."
+      },
+      {
+        "title": "Robust Error Handling:",
+        "description": "Clear error messages and recovery options for all operations."
+      }
+    ]
+  },
+  "community": {
+    "providerTitle": "Community - Provider",
+    "mainDescription": "Community integration through the Voltagent MCP framework, allowing seamless interaction with your AI agents.",
+    "whatIsTitle": "What is Community MCP?",
+    "whatIsContent": "Community MCP is a Model Context Provider that enables your Voltagent-based AI agents to interact with Community's features. It provides a standardized interface to access and manipulate data, making it easy to integrate into your AI workflows.",
+    "howToUseTitle": "How to use Community MCP?",
+    "howToUseContent": "To use the Community MCP, you'll need to first obtain an API token from your Community account. Configure your Voltagent application with this token and the appropriate API URL. You can then use the MCP endpoints to access Community's capabilities directly from your AI agents.",
+    "keyFeatures": [
+      {
+        "title": "Seamless Integration:",
+        "description": "Connect directly to your Community account with simple configuration."
+      },
+      {
+        "title": "Comprehensive API Access:",
+        "description": "Full access to Community's features through a unified API."
+      },
+      {
+        "title": "Secure Authentication:",
+        "description": "Secure token-based authentication to protect your account."
+      },
+      {
+        "title": "Robust Error Handling:",
+        "description": "Clear error messages and recovery options for all operations."
+      }
+    ]
+  }
+}

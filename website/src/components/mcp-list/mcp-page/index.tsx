@@ -389,76 +389,144 @@ export const MCPDetailPage = () => {
             <CodeBlock code={configCode} />
           </div>
 
-          {/* What is section */}
+          {/* What is section - Hardcoded Ahrefs content */}
           <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
             <span className="text-lg font-bold text-white mb-6">
-              {currentTab.name} - Provider
+              Ahrefs MCP: Supercharge Your AI Agents with SEO Intelligence
             </span>
 
             <div className="flex justify-center mb-8">
               <div className="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center">
-                {currentTab.component || (
-                  <div className="text-3xl font-bold text-gray-300">
-                    {currentTab.name.charAt(0)}
-                  </div>
-                )}
+                <AhrefLogo className="w-12 h-12 text-white" />
               </div>
             </div>
 
             <p className="text-gray-300 mb-8 text-center">
-              {currentTab.name} integration through the Voltagent MCP framework,
-              allowing seamless interaction with your AI agents.
+              Empower your Voltagent AI agents with Ahrefs' leading SEO
+              analytics through the Model Context Protocol (MCP). Automate
+              competitor research, keyword analysis, and backlink audits to
+              elevate your AI-driven SEO strategies.
             </p>
 
             <h3 className="text-xl font-bold text-white mb-4">
-              What is {currentTab.name} MCP?
+              What is Ahrefs MCP for AI Agents?
             </h3>
             <p className="text-gray-300 mb-4">
-              {currentTab.name} MCP is a Model Context Provider that enables
-              your Voltagent-based AI agents to interact with {currentTab.name}
-              's features. It provides a standardized interface to access and
-              manipulate data, making it easy to integrate into your AI
-              workflows.
+              Ahrefs is a premier SEO and content research platform. The Ahrefs
+              Model Context Protocol (MCP) integration for Voltagent acts as a
+              direct data pipeline, allowing your AI agents to programmatically
+              access and utilize Ahrefs' vast database. This means your AI
+              agents can autonomously perform SEO tasks, uncover insights, and
+              help you dominate search rankings by leveraging a standardized MCP
+              interface.
             </p>
 
             <h3 className="text-xl font-bold text-white mb-4">
-              How to use {currentTab.name} MCP?
+              How to Use Ahrefs MCP with Your Voltagent AI Agents for SEO Wins
             </h3>
-            <p className="text-gray-300 mb-4">
-              To use the {currentTab.name} MCP, you'll need to first obtain an
-              API token from your {currentTab.name} account. Configure your
-              Voltagent application with this token and the appropriate API URL.
-              You can then use the MCP endpoints to access {currentTab.name}'s
-              capabilities directly from your AI agents.
-            </p>
+            <div className="text-gray-300 mb-4 space-y-3">
+              <p>
+                Integrating the Ahrefs MCP allows your Voltagent AI agents to
+                execute powerful SEO tasks. Here's how your agents can leverage
+                this for an edge:
+              </p>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>
+                  <span className="font-medium text-white">
+                    How AI Agents Conduct Backlink Analysis via MCP:
+                  </span>{" "}
+                  Train your AI agents to dive deep into backlink profiles using
+                  Ahrefs data fetched through the MCP. They can analyze link
+                  quality, anchor text, and track changes over time, identifying
+                  new link-building opportunities for your AI-driven campaigns.
+                </li>
+                <li>
+                  <span className="font-medium text-white">
+                    AI-Powered Keyword Research with Ahrefs MCP:
+                  </span>{" "}
+                  Enable your AI agents to discover what your audience searches
+                  for. Using the Ahrefs MCP, agents can retrieve search volumes,
+                  keyword difficulty, and ranking data, helping you build an
+                  AI-optimized content strategy.
+                </li>
+                <li>
+                  <span className="font-medium text-white">
+                    Automating Competitor SEO Analysis with AI Agents & MCP:
+                  </span>{" "}
+                  Configure your AI agents to continuously monitor competitor
+                  SEO strategies via the Ahrefs MCP. They can analyze ranking
+                  keywords, top content, and backlink tactics, providing
+                  actionable intelligence for your AI to adapt.
+                </li>
+                <li>
+                  <span className="font-medium text-white">
+                    How AI Agents Monitor Site Health using Ahrefs MCP:
+                  </span>{" "}
+                  Your Voltagent agents can regularly assess domain SEO health
+                  (like Domain Rating) and URL performance using Ahrefs data via
+                  MCP, tracking history and metrics to flag issues for your AI
+                  to address.
+                </li>
+                <li>
+                  <span className="font-medium text-white">
+                    AI Agents Auditing Outgoing Links via MCP:
+                  </span>{" "}
+                  Instruct your AI agents to analyze outgoing links from your
+                  site using Ahrefs MCP data, evaluating their quality and SEO
+                  impact to ensure your AI maintains a healthy link profile.
+                </li>
+                <li>
+                  <span className="font-medium text-white">
+                    AI Agents Gaining SERP Insights through Ahrefs MCP:
+                  </span>{" "}
+                  Your AI agents can retrieve and analyze SERP data for target
+                  keywords via Ahrefs MCP, understanding ranking dynamics and
+                  identifying opportunities for your AI to optimize for.
+                </li>
+              </ul>
+            </div>
 
             <h3 className="text-xl font-bold text-white mb-4">Key features</h3>
             <ul className="list-disc pl-5 space-y-2 text-gray-300">
               <li>
                 <span className="font-medium text-white">
-                  Seamless Integration:
+                  How AI Agents Use Ahrefs MCP for Smarter SEO Decisions:
                 </span>{" "}
-                Connect directly to your {currentTab.name} account with simple
-                configuration.
+                Empower your Voltagent AI agents to make superior SEO choices by
+                leveraging real-time Ahrefs data and insights accessed via the
+                Model Context Protocol.
               </li>
               <li>
                 <span className="font-medium text-white">
-                  Comprehensive API Access:
+                  How to Automate SEO Analysis with AI Agents and MCP:
                 </span>{" "}
-                Full access to {currentTab.name}'s features through a unified
-                API.
+                Streamline your workflow by having your AI agents conduct
+                repetitive SEO analysis and reporting using Ahrefs data through
+                the MCP.
               </li>
               <li>
                 <span className="font-medium text-white">
-                  Secure Authentication:
+                  How AI Agents Understand Competitor SEO via MCP:
                 </span>{" "}
-                Secure token-based authentication to protect your account.
+                Enable your AI agents to learn from and adapt to competitor SEO
+                strategies by continuously analyzing Ahrefs data obtained
+                through the Model Context Protocol.
               </li>
               <li>
                 <span className="font-medium text-white">
-                  Robust Error Handling:
+                  How AI Agents Build MCP-Driven Content Strategies:
                 </span>{" "}
-                Clear error messages and recovery options for all operations.
+                Guide your AI agents to develop content strategies that rank,
+                using Ahrefs MCP data to identify high-potential topics and
+                optimize content.
+              </li>
+              <li>
+                <span className="font-medium text-white">
+                  How AI Agents Proactively Monitor SEO with Ahrefs MCP:
+                </span>{" "}
+                Set up your AI agents to use Ahrefs MCP for automated SEO
+                performance monitoring, swiftly identifying issues and
+                opportunities.
               </li>
             </ul>
           </div>
