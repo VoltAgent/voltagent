@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import {
   ArrowLeftIcon,
@@ -15,14 +16,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Claude37Logo } from "../../../../static/img/logos/claudie";
 import { CursorLogo } from "../../../../static/img/logos/cursor";
 import { ComposioLogo } from "../../../../static/img/logos/composio";
-
-// Import the needed logo components
 import { AhrefLogo } from "../../../../static/img/logos/integrations/ahref";
 import { AirtableLogo } from "../../../../static/img/logos/integrations/airtable";
 import { AnthropicLogo } from "../../../../static/img/logos/integrations/anthropic";
 import { AsanaLogo } from "../../../../static/img/logos/integrations/asana";
 import { ZapierLogo } from "../../../../static/img/logos/integrations/zapier";
 import { GumloopLogo } from "../../../../static/img/logos/integrations/gumloop";
+import {
+  claudeTabContent,
+  cursorTabContent,
+  type TabContentItem,
+} from "./serverConfigContent"; // Remove extension
+
 // Map logo components by key - only including the ones we need for now
 const logoMap = {
   ahref: AhrefLogo,
@@ -146,7 +151,6 @@ export const MCPDetailPage = () => {
     {
       id: "zapier",
       name: "Zapier",
-      component: <ZapierLogo className="h-6 w-auto text-white" />,
       serverConfig: `{
   "mcpServers": {
     "zapier": {
@@ -201,7 +205,6 @@ export const MCPDetailPage = () => {
     {
       id: "gumloop",
       name: "Gumloop",
-      component: <GumloopLogo className="h-7 w-auto text-white" />,
       serverConfig: `{
   "mcpServers": {
     "gumloop": {
@@ -255,7 +258,6 @@ export const MCPDetailPage = () => {
     {
       id: "composio",
       name: "Composio",
-      component: <ComposioLogo className="h-6 w-auto" />,
       serverConfig: `{
   "mcpServers": {
     "composio_generic": {
@@ -305,96 +307,68 @@ export const MCPDetailPage = () => {
   const [activeServerConfigTab, setActiveServerConfigTab] =
     useState("voltagent");
 
-  // Define code snippets for the new server config tabs
-  // These will be dynamic based on the main currentTab
-  const cursorCodeSnippet = `
-# In your Cursor AI Agent (Python environment with Voltagent SDK)
+  // Add metadata for each tab
+  const tabMetadata = {
+    zapier: {
+      creator: "Zapier Inc.",
+      creatorIcon: "bg-red-500",
+      link: "https://zapier.com/mcp",
+    },
+    gumloop: {
+      creator: "Gumloop",
+      creatorIcon: "bg-blue-500",
+      link: "https://gumloop.com/mcp",
+    },
+    composio: {
+      creator: "Composio Team",
+      creatorIcon: "bg-green-500",
+      link: "https://composio.dev",
+    },
+    community: {
+      creator: "MCP Community",
+      creatorIcon: "bg-purple-500",
+      link: "https://modelcontextprotocol.github.io/community",
+    },
+  };
 
-# 1. Initialize Voltagent or get context for the MCP server
-#    (Assuming the '${currentTab.id}' MCP server is configured and running)
-mcp_server_id = "${currentTab.id}" # e.g., "zapier", "gumloop", or "ahrefs_generic"
+  // Get metadata for current tab
+  const currentMetadata = tabMetadata[activeTab] || tabMetadata.zapier;
 
-# 2. Define the tool you want to use from this MCP server
-#    (Let's assume the server has a tool named 'example_tool'
-#     and it takes 'param1' and 'param2')
-#    Refer to the '${currentTab.name} MCP' documentation for available tools.
-tool_to_call = f"{mcp_server_id}.example_tool"
+  // Define content for the new server config tabs
+  // Content can be a string (for a single code block) or an array of objects for mixed content
 
-# 3. Prepare your input data
-input_payload = {
-    "param1": "value_from_cursor_context",
-    "param2": 123
-}
-
-# 4. Call the tool via Voltagent's MCP interface
-try:
-    # result = voltagent.mcp.call(tool_name=tool_to_call, data=input_payload) # Conceptual SDK call
-    print(f"Calling tool '{tool_to_call}' on MCP server '{mcp_server_id}'...")
-    print(f"With payload: {input_payload}")
-    print("\nSimulated Response from MCP:")
-    print({"status": "success", "data": "Tool executed successfully with provided params on ${currentTab.id} server."})
-except Exception as e:
-    print(f"Error calling MCP tool: {e}")
-  `;
-
-  const claudeCodeSnippet = `
-# Interacting with Claude (e.g., through an API or UI with tool use capabilities)
-# Claude is instructed to use a tool via an MCP server related to '${currentTab.name}'.
-
-# User Prompt to Claude:
-# "Claude, please use the '${currentTab.id}' MCP server to execute 'example_tool'
-#  with param1 set to 'claude_request_data' and param2 set to 789."
-
-# Claude's Internal Thought Process / Tool Invocation (Conceptual):
-# Tool Invocation Request for Voltagent MCP:
-#   Target MCP Server ID: "${currentTab.id}"
-#   Tool Name: "example_tool" # (Refer to '${currentTab.name} MCP' docs for actual tool names)
-#   Parameters:
-#     param1: "claude_request_data"
-#     param2: 789
-
-# Expected Interaction with Voltagent/MCP layer:
-# Voltagent would route this to the '${currentTab.id}' MCP server,
-# call 'example_tool' with the provided parameters.
-
-# Simulated Response from MCP to Claude (then relayed to user):
-# {
-#   "status": "success",
-#   "output": {
-#     "message": "Claude's request to 'example_tool' on '${currentTab.id}' processed successfully.",
-#     "details": "Result of example_tool execution would appear here."
-#   }
-# }
-
-# Claude's Response to User (example):
-# "Okay, I've used the '${currentTab.id}' MCP server to execute 'example_tool'
-#  with your parameters. The server responded indicating success."
-  `;
-
-  const serverConfigTabsData = [
+  const serverConfigTabsData: {
+    id: string;
+    name: string;
+    content: string | TabContentItem[]; // Updated type for content
+    iconComponent: React.ReactNode | null;
+  }[] = [
     {
       id: "voltagent",
       name: "Voltagent",
-      code: configCode, // This is the main server config for the selected MCP
+      content: configCode, // This is the main server config for the selected MCP
       iconComponent: null,
     },
     {
       id: "cursor",
       name: "Cursor",
-      code: cursorCodeSnippet,
+      content: cursorTabContent, // Use imported content
       iconComponent: <CursorLogo className="h-4 w-4 mr-2 text-white" />,
     },
     {
       id: "claude",
       name: "Claude",
-      code: claudeCodeSnippet,
+      content: claudeTabContent, // Use imported content
       iconComponent: <Claude37Logo className="h-4 w-4 mr-2" />,
     },
   ];
 
-  const activeCodeBlockContent =
-    serverConfigTabsData.find((tab) => tab.id === activeServerConfigTab)
-      ?.code || "Select a tab to view the configuration or usage example.";
+  const selectedTabData = serverConfigTabsData.find(
+    (tab) => tab.id === activeServerConfigTab,
+  );
+  const activeContentToRender = selectedTabData?.content;
+  const defaultMessage =
+    "Select a tab to view the configuration or usage example.";
 
   // Recommended servers data
   const recommendedServers = [
@@ -444,8 +418,6 @@ except Exception as e:
     },
   ];
 
-  const MCP_Logo = mcp.logo;
-
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 flex flex-col">
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
@@ -462,7 +434,7 @@ except Exception as e:
       {/* Main title and description */}
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-          How to Use {currentTab.name} in Your Voltagent Project?
+          Ahrefs MCP Servers
         </h1>
         <div className="text-gray-400 flex items-center">
           <span className="font-mono">{currentTab.id}</span>
@@ -480,7 +452,7 @@ except Exception as e:
               active={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
             >
-              {tab.component || tab.name}
+              {tab.name}
             </Tab>
           ))}
         </div>
@@ -540,20 +512,46 @@ except Exception as e:
                 </div>
               ))}
             </div>
-            <CodeBlock code={activeCodeBlockContent} />
+            <div className="p-4">
+              {" "}
+              {/* Wrapper for content area below tabs */}
+              {activeContentToRender ? (
+                typeof activeContentToRender === "string" ? (
+                  <CodeBlock code={activeContentToRender} />
+                ) : (
+                  activeContentToRender.map((item, index) =>
+                    item.type === "code" ? (
+                      <CodeBlock
+                        key={`${item.type}-${index}-${item.value.slice(0, 10)}`}
+                        code={item.value}
+                      />
+                    ) : (
+                      <p
+                        key={`${item.type}-${index}-${item.value.slice(0, 10)}`}
+                        className="text-gray-300 my-2 whitespace-pre-line text-sm leading-relaxed"
+                      >
+                        {item.value}
+                      </p>
+                    ),
+                  )
+                )
+              ) : (
+                <p className="text-gray-400 text-sm my-2">{defaultMessage}</p>
+              )}
+            </div>
           </div>
 
           {/* What is section - Hardcoded Ahrefs content */}
           <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
-            <span className="text-lg font-bold text-white mb-6">
-              Ahrefs MCP: Supercharge Your AI Agents with SEO Intelligence
-            </span>
-
             <div className="flex justify-center mb-8">
               <div className="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center">
                 <AhrefLogo className="w-12 h-12 text-white" />
               </div>
             </div>
+
+            <p className="text-lg font-bold text-white text-center mb-6">
+              Ahrefs MCP: Supercharge Your AI Agents with SEO Intelligence
+            </p>
 
             <p className="text-gray-300 mb-8 text-center">
               Empower your Voltagent AI agents with Ahrefs' leading SEO
@@ -644,7 +642,7 @@ except Exception as e:
             <ul className="list-disc pl-5 space-y-2 text-gray-300">
               <li>
                 <span className="font-medium text-white">
-                  How AI Agents Use Ahrefs MCP for Smarter SEO Decisions:
+                  Use Ahrefs MCP for Smarter SEO Decisions:
                 </span>{" "}
                 Empower your Voltagent AI agents to make superior SEO choices by
                 leveraging real-time Ahrefs data and insights accessed via the
@@ -652,7 +650,7 @@ except Exception as e:
               </li>
               <li>
                 <span className="font-medium text-white">
-                  How to Automate SEO Analysis with AI Agents and MCP:
+                  Automate SEO Analysis with AI Agents and MCP:
                 </span>{" "}
                 Streamline your workflow by having your AI agents conduct
                 repetitive SEO analysis and reporting using Ahrefs data through
@@ -668,7 +666,7 @@ except Exception as e:
               </li>
               <li>
                 <span className="font-medium text-white">
-                  How AI Agents Build MCP-Driven Content Strategies:
+                  Build MCP-Driven Content Strategies:
                 </span>{" "}
                 Guide your AI agents to develop content strategies that rank,
                 using Ahrefs MCP data to identify high-potential topics and
@@ -791,27 +789,58 @@ except Exception as e:
           <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
             <div className="flex items-center mb-5">
               <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
-                <MCP_Logo className="w-5 h-5" />
+                {mcp.logo && <mcp.logo className="w-5 h-5" />}
               </div>
               <span className="text-xl font-semibold text-white">
-                {mcp.name}
+                {mcp.name} MCP
               </span>
             </div>
 
             <div className="mb-4">
-              <div className="flex items-center mb-2">
+              <div className="flex items-center">
                 <span className="text-gray-400 text-sm mr-2">Created By</span>
                 <div className="flex items-center">
-                  <span className="inline-block w-4 h-4 mr-2 bg-orange-500 rounded-md" />
-                  <span className="text-gray-200">modelcontextprotocol</span>
+                  <span
+                    className={`inline-block w-4 h-4 mr-2 ${currentMetadata.creatorIcon} rounded-md`}
+                  />
+                  <span className="text-gray-200">
+                    {currentMetadata.creator}
+                  </span>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm">5 months ago</div>
             </div>
 
-            <p className="text-gray-300">
-              {mcp.name} API, enabling {mcp.category.toLowerCase()}
+            <p className="text-gray-300 mb-5 text-xs">
+              Official {currentTab.name} Model Context Protocol (MCP) server for
+              AI agents
             </p>
+
+            {/* Add link to the provider website */}
+            <a
+              href={currentMetadata.link}
+              className="mt-4 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#00d992]/20 hover:bg-[#00d992]/30 transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View MCP Documentation"
+            >
+              View MCP Documentation
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 ml-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <title>External link icon</title>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
           </div>
 
           {/* Recommended Servers */}
