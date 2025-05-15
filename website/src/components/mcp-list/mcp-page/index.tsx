@@ -26,7 +26,9 @@ import {
   claudeTabContent,
   cursorTabContent,
   type TabContentItem,
-} from "./serverConfigContent"; // Remove extension
+  type TabOption,
+  tabOptions,
+} from "./serverConfigContent"; // Import tabOptions
 
 // Map logo components by key - only including the ones we need for now
 const logoMap = {
@@ -147,154 +149,7 @@ export const MCPDetailPage = () => {
   };
 
   // Tab options for filtering
-  const tabOptions = [
-    {
-      id: "zapier",
-      name: "Zapier",
-      serverConfig: `{
-  "mcpServers": {
-    "zapier": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-zapier"
-      ],
-      "env": {
-        "ZAPIER_ACCESS_TOKEN": "<YOUR_TOKEN>",
-        "ZAPIER_API_URL": "https://api.zapier.com/v1"
-      }
-    }
-  }
-}`,
-      tools: [
-        {
-          id: "zap_run",
-          name: "run_zap",
-          description: "Execute a Zapier automation workflow",
-          inputs: [
-            {
-              name: "zap_id",
-              type: "string",
-              required: true,
-              description: "The ID of the Zap to execute",
-            },
-            {
-              name: "input_data",
-              type: "object",
-              required: true,
-              description: "Data to pass to the Zap workflow",
-            },
-          ],
-        },
-        {
-          id: "zap_list",
-          name: "list_zaps",
-          description: "List available Zapier automations",
-          inputs: [
-            {
-              name: "status",
-              type: "string",
-              required: false,
-              description:
-                "Filter by Zap status: 'active', 'disabled', or 'all'",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "gumloop",
-      name: "Gumloop",
-      serverConfig: `{
-  "mcpServers": {
-    "gumloop": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-gumloop"
-      ],
-      "env": {
-        "GUMLOOP_ACCESS_TOKEN": "<YOUR_TOKEN>",
-        "GUMLOOP_API_URL": "https://api.gumloop.com/v1"
-      }
-    }
-  }
-}`,
-      tools: [
-        {
-          id: "gum_search",
-          name: "search_contacts",
-          description: "Search for contacts in the Gumloop database",
-          inputs: [
-            {
-              name: "query",
-              type: "string",
-              required: true,
-              description: "Search query string",
-            },
-            {
-              name: "limit",
-              type: "number",
-              required: false,
-              description: "Maximum number of results to return",
-            },
-          ],
-        },
-        {
-          id: "gum_create",
-          name: "create_contact",
-          description: "Create a new contact in Gumloop",
-          inputs: [
-            {
-              name: "contact_data",
-              type: "object",
-              required: true,
-              description: "Contact information to store",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "composio",
-      name: "Composio",
-      serverConfig: `{
-  "mcpServers": {
-    "composio_generic": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-composio-generic"
-      ],
-      "env": {
-        "COMPOSIO_API_KEY": "<YOUR_COMPOSIO_API_KEY>"
-      }
-    }
-  }
-}`,
-      tools: [],
-    },
-    {
-      id: "community",
-      name: "Community",
-      serverConfig: `{
-  "mcpServers": {
-    "custom_integration": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-custom"
-      ],
-      "env": {
-        "CUSTOM_ACCESS_TOKEN": "<YOUR_TOKEN>",
-        "CUSTOM_API_URL": "https://api.your-service.com/v1"
-      }
-    }
-  }
-}`,
-      tools: [],
-    },
-  ];
+  // Tab options are now imported from serverConfigContent.ts
 
   // Get current tab data
   const currentTab =
