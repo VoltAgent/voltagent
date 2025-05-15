@@ -316,7 +316,6 @@ So no joke, my first AutoGPT experiment went something like:
 4. Laughed when it decided to create a file to store its findings
 5. Stared in confusion as it got distracted, started researching quantum entanglement in incredible detail
 6. Facepalmed when it spent 20 minutes essentially talking to itself about how fascinating quantum tunneling is
-7. Checked my OpenAI bill and immediately shut it down
 
 It was like watching a super smart person with ZERO impulse control or time management skills. Fascinating, occasionally brilliant, but definitely not ready for production use.
 
@@ -338,7 +337,7 @@ When AutoGPT is on its game, it can do some impressive stuff:
 
 AutoGPT sits in an interesting space between research playground and practical tool:
 
-- **Resource Intensive**: The autonomous exploration approach can consume a significant amount of tokens. It's definitely worth monitoring usage during extended sessions.
+- **Resource Intensive**: The autonomous exploration approach can consume a significant amount of computational resources. It's definitely worth monitoring system usage during extended sessions.
 
 - **Exploration vs Predictability**: AutoGPT's variability between runs is notable – I've seen it tackle the same task differently each time. Sometimes this leads to brilliant insights, other times to unexpected detours. This makes it particularly valuable for exploratory work where that unpredictability can spark new ideas.
 
@@ -352,13 +351,10 @@ AutoGPT sits in an interesting space between research playground and practical t
 
 - **AI Researchers**: It's genuinely interesting to study how it approaches problems - both successfully and when it fails.
 
-- **People with Disposable API Credits**: Seriously, watch your OpenAI bill if you're letting this thing run for hours.
-
 **Who Should Definitely NOT Use AutoGPT:**
 
 - Anyone building something for actual users
 - People who need predictable results
-- Anyone concerned about efficiency or cost
 - Those without a sandbox environment to safely run code
 - Folks who value their sanity
 
