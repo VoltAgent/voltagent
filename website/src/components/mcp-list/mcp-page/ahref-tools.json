@@ -1,0 +1,2119 @@
+{
+  "providers": [
+    {
+      "name": "gumloop",
+      "tools": [
+        {
+          "id": "domain_rating",
+          "name": "domain rating",
+          "description": "Get domain rating for a domain",
+          "inputs": [
+            {
+              "name": "domain",
+              "type": "string",
+              "required": true,
+              "description": "Domain name to check"
+            },
+            {
+              "name": "history",
+              "type": "boolean",
+              "required": false,
+              "description": "Include historic data if true"
+            }
+          ]
+        },
+        {
+          "id": "backlinks_stats",
+          "name": "backlinks stats",
+          "description": "Get backlinks statistics for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of results to return"
+            }
+          ]
+        },
+        {
+          "id": "outlinks_stats",
+          "name": "outlinks stats",
+          "description": "Get outlinks statistics for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "include_internal",
+              "type": "boolean",
+              "required": false,
+              "description": "Include internal links in analysis"
+            }
+          ]
+        },
+        {
+          "id": "metrics",
+          "name": "metrics",
+          "description": "Get comprehensive metrics for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "metrics",
+              "type": "array",
+              "required": false,
+              "description": "Array of specific metrics to return"
+            }
+          ]
+        },
+        {
+          "id": "domain_rating_history",
+          "name": "domain rating history",
+          "description": "Get domain rating history for a domain",
+          "inputs": [
+            {
+              "name": "domain",
+              "type": "string",
+              "required": true,
+              "description": "Domain name to analyze"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date for history (YYYY-MM-DD)"
+            },
+            {
+              "name": "date_to",
+              "type": "string",
+              "required": false,
+              "description": "End date for history (YYYY-MM-DD)"
+            }
+          ]
+        },
+        {
+          "id": "url_rating_history",
+          "name": "url rating history",
+          "description": "Get URL rating history for a URL",
+          "inputs": [
+            {
+              "name": "url",
+              "type": "string",
+              "required": true,
+              "description": "URL to analyze"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date for history (YYYY-MM-DD)"
+            },
+            {
+              "name": "date_to",
+              "type": "string",
+              "required": false,
+              "description": "End date for history (YYYY-MM-DD)"
+            }
+          ]
+        },
+        {
+          "id": "refdomains_history",
+          "name": "refdomains history",
+          "description": "Get referring domains history for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date for history (YYYY-MM-DD)"
+            }
+          ]
+        },
+        {
+          "id": "pages_history",
+          "name": "pages history",
+          "description": "Get pages history for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date for history (YYYY-MM-DD)"
+            }
+          ]
+        },
+        {
+          "id": "metrics_history",
+          "name": "metrics history",
+          "description": "Get metrics history for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "metrics",
+              "type": "array",
+              "required": false,
+              "description": "Array of specific metrics to include"
+            },
+            {
+              "name": "interval",
+              "type": "string",
+              "required": false,
+              "description": "Time interval between data points (daily, weekly, monthly)"
+            }
+          ]
+        },
+        {
+          "id": "keywords_history",
+          "name": "keywords history",
+          "description": "Get keywords history for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code to filter keywords (e.g., us, uk, de)"
+            }
+          ]
+        },
+        {
+          "id": "total_search_volume_history",
+          "name": "total search volume history",
+          "description": "Get total search volume history for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date for history (YYYY-MM-DD)"
+            }
+          ]
+        },
+        {
+          "id": "backlinks",
+          "name": "backlinks",
+          "description": "Get backlinks for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of backlinks to return"
+            }
+          ]
+        },
+        {
+          "id": "broken_backlinks",
+          "name": "broken backlinks",
+          "description": "Get broken backlinks for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of broken backlinks to return"
+            }
+          ]
+        },
+        {
+          "id": "refdomains",
+          "name": "refdomains",
+          "description": "Get referring domains for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of referring domains to return"
+            }
+          ]
+        },
+        {
+          "id": "anchors",
+          "name": "anchors",
+          "description": "Get anchor text for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of anchor texts to return"
+            }
+          ]
+        },
+        {
+          "id": "organic_keywords",
+          "name": "organic keywords",
+          "description": "Get organic keywords for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code to filter keywords (e.g., us, uk, de)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of keywords to return"
+            }
+          ]
+        },
+        {
+          "id": "organic_competitors",
+          "name": "organic competitors",
+          "description": "Get organic competitors for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code to filter results (e.g., us, uk, de)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of competitors to return"
+            }
+          ]
+        },
+        {
+          "id": "top_pages",
+          "name": "top pages",
+          "description": "Get top organic pages for a domain",
+          "inputs": [
+            {
+              "name": "domain",
+              "type": "string",
+              "required": true,
+              "description": "Domain to analyze"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code to filter results (e.g., us, uk, de)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of pages to return"
+            }
+          ]
+        },
+        {
+          "id": "paid_pages",
+          "name": "paid pages",
+          "description": "Get paid pages for a domain or URL",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code to filter results (e.g., us, uk, de)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of pages to return"
+            }
+          ]
+        },
+        {
+          "id": "best_by_external_links",
+          "name": "best by external links",
+          "description": "Get pages with the most external links",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain to analyze"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of pages to return"
+            },
+            {
+              "name": "order_by",
+              "type": "string",
+              "required": false,
+              "description": "Sort order (dofollow_links, referring_domains, traffic)"
+            }
+          ]
+        },
+        {
+          "id": "best_by_internal_links",
+          "name": "best by internal links",
+          "description": "Get pages with the most internal links",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain to analyze"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of pages to return"
+            }
+          ]
+        },
+        {
+          "id": "linked_domains",
+          "name": "linked domains",
+          "description": "Get domains that are linked from the target",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of domains to return"
+            }
+          ]
+        },
+        {
+          "id": "outgoing_external_anchors",
+          "name": "outgoing external anchors",
+          "description": "Get external anchor texts used in outgoing links",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of anchor texts to return"
+            }
+          ]
+        },
+        {
+          "id": "outgoing_internal_anchors",
+          "name": "outgoing internal anchors",
+          "description": "Get internal anchor texts used in outgoing links",
+          "inputs": [
+            {
+              "name": "target",
+              "type": "string",
+              "required": true,
+              "description": "Domain or URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (domain, url, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of anchor texts to return"
+            }
+          ]
+        },
+        {
+          "id": "keywords_overview",
+          "name": "keywords overview",
+          "description": "Get metrics for keywords from Keywords Explorer",
+          "inputs": [
+            {
+              "name": "keywords",
+              "type": "array",
+              "required": true,
+              "description": "List of keywords to analyze"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code for the search engine (e.g., us, uk, de)"
+            }
+          ]
+        },
+        {
+          "id": "volume_history",
+          "name": "volume history",
+          "description": "Get search volume history for a keyword",
+          "inputs": [
+            {
+              "name": "keyword",
+              "type": "string",
+              "required": true,
+              "description": "Keyword to analyze"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code for the search engine (e.g., us, uk, de)"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date for history (YYYY-MM-DD)"
+            }
+          ]
+        },
+        {
+          "id": "volume_by_country",
+          "name": "volume by country",
+          "description": "Get search volume by country for a keyword",
+          "inputs": [
+            {
+              "name": "keyword",
+              "type": "string",
+              "required": true,
+              "description": "Keyword to analyze"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of countries to return"
+            }
+          ]
+        },
+        {
+          "id": "matching_terms",
+          "name": "matching terms",
+          "description": "Get matching terms for keywords",
+          "inputs": [
+            {
+              "name": "keyword",
+              "type": "string",
+              "required": true,
+              "description": "Seed keyword to find matches for"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code for the search engine (e.g., us, uk, de)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of terms to return"
+            }
+          ]
+        },
+        {
+          "id": "related_terms",
+          "name": "related terms",
+          "description": "Get related terms for keywords",
+          "inputs": [
+            {
+              "name": "keyword",
+              "type": "string",
+              "required": true,
+              "description": "Seed keyword to find related terms for"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code for the search engine (e.g., us, uk, de)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of related terms to return"
+            }
+          ]
+        },
+        {
+          "id": "search_suggestions",
+          "name": "search suggestions",
+          "description": "Get search suggestions for keywords",
+          "inputs": [
+            {
+              "name": "keyword",
+              "type": "string",
+              "required": true,
+              "description": "Keyword to get suggestions for"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code for the search engine (e.g., us, uk, de)"
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Maximum number of suggestions to return"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "composio",
+      "tools": [
+        {
+          "id": "stats_retrieval",
+          "name": "Stats retrieval",
+          "description": "Retrieves comprehensive backlink statistics for a specified website or url using ahrefs' site explor",
+          "inputs": [
+            {
+              "name": "url",
+              "type": "string",
+              "required": true,
+              "description": "Website URL to analyze"
+            },
+            {
+              "name": "detailed",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to include additional detailed metrics"
+            },
+            {
+              "name": "include_subdomains",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to include subdomains in analysis"
+            }
+          ]
+        },
+        {
+          "id": "all_backlinks",
+          "name": "All backlinks",
+          "description": "Retrieves a comprehensive list of backlinks for a specified website or url using ahrefs' site explor",
+          "inputs": [
+            {
+              "name": "url",
+              "type": "string",
+              "required": true,
+              "description": "Website URL to analyze"
+            },
+            {
+              "name": "limit",
+              "type": "integer",
+              "required": false,
+              "description": "Maximum number of backlinks to return (max: 1000)"
+            },
+            {
+              "name": "order_by",
+              "type": "string",
+              "required": false,
+              "description": "Sort order (url_rating, domain_rating, date)"
+            },
+            {
+              "name": "filter",
+              "type": "string",
+              "required": false,
+              "description": "Filter results (dofollow, nofollow, etc.)"
+            }
+          ]
+        },
+        {
+          "id": "competitors_overview",
+          "name": "Competitors overview",
+          "description": "Retrieves a comprehensive overview of competitor data in relation to keyword rankings and organic se",
+          "inputs": [
+            {
+              "name": "domain",
+              "type": "string",
+              "required": true,
+              "description": "Domain to find competitors for"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code to filter results (e.g., us, gb, de)"
+            },
+            {
+              "name": "limit",
+              "type": "integer",
+              "required": false,
+              "description": "Maximum number of competitors to return"
+            }
+          ]
+        },
+        {
+          "id": "rank_tracker_overview",
+          "name": "Rank tracker overview",
+          "description": "The getranktrackeroverview endpoint retrieves a comprehensive summary of keyword rankings and seo pe",
+          "inputs": [
+            {
+              "name": "project_id",
+              "type": "string",
+              "required": true,
+              "description": "Rank tracker project identifier"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date in YYYY-MM-DD format"
+            },
+            {
+              "name": "date_to",
+              "type": "string",
+              "required": false,
+              "description": "End date in YYYY-MM-DD format"
+            }
+          ]
+        },
+        {
+          "id": "serp_overview",
+          "name": "Serp overview",
+          "description": "Retrieves a comprehensive overview of search engine results pages (serp) data for specified keywords",
+          "inputs": [
+            {
+              "name": "keyword",
+              "type": "string",
+              "required": true,
+              "description": "Keyword to analyze SERP for"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": true,
+              "description": "Country code for the search engine (e.g., us, gb, de)"
+            },
+            {
+              "name": "include_features",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to include SERP features data"
+            }
+          ]
+        },
+        {
+          "id": "anchor_data",
+          "name": "Anchor data",
+          "description": "Retrieves anchor text data for a specified website or url using ahrefs' site explorer tool",
+          "inputs": [
+            {
+              "name": "url",
+              "type": "string",
+              "required": true,
+              "description": "Website URL to analyze"
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "required": false,
+              "description": "Analysis mode (exact, domain, prefix)"
+            },
+            {
+              "name": "limit",
+              "type": "integer",
+              "required": false,
+              "description": "Maximum number of anchor texts to return"
+            }
+          ]
+        },
+        {
+          "id": "crawler_ip_ranges",
+          "name": "Crawler ip ranges",
+          "description": "Retrieves the list of ip address ranges used by ahrefs' web crawler (ahrefsbot)",
+          "inputs": [
+            {
+              "name": "format",
+              "type": "string",
+              "required": false,
+              "description": "Response format (json, txt, cidr)"
+            }
+          ]
+        },
+        {
+          "id": "outlinks_stats_composio",
+          "name": "Outlinks stats",
+          "description": "Retrieves comprehensive statistics about outgoing links (outlinks) from a specified website using ah",
+          "inputs": [
+            {
+              "name": "url",
+              "type": "string",
+              "required": true,
+              "description": "Website URL to analyze"
+            },
+            {
+              "name": "include_internal",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to include internal links"
+            },
+            {
+              "name": "group_by_domain",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to group results by domain"
+            }
+          ]
+        },
+        {
+          "id": "site_explorer_keywords_history",
+          "name": "Site explorer keywords history",
+          "description": "Retrieves historical keyword performance data for a specified website or domain using ahrefs' site e",
+          "inputs": [
+            {
+              "name": "domain",
+              "type": "string",
+              "required": true,
+              "description": "Domain to analyze"
+            },
+            {
+              "name": "date_from",
+              "type": "string",
+              "required": false,
+              "description": "Start date in YYYY-MM-DD format"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code to filter results (e.g., us, gb, de)"
+            }
+          ]
+        },
+        {
+          "id": "suggestions_explorer",
+          "name": "Suggestions explorer",
+          "description": "Retrieves search suggestions for a given keyword or phrase using ahrefs' keywords explorer tool",
+          "inputs": [
+            {
+              "name": "keyword",
+              "type": "string",
+              "required": true,
+              "description": "Keyword to get suggestions for"
+            },
+            {
+              "name": "country",
+              "type": "string",
+              "required": false,
+              "description": "Country code for search engine (e.g., us, gb, de)"
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "required": false,
+              "description": "Source of suggestions (google, youtube, amazon, etc.)"
+            },
+            {
+              "name": "limit",
+              "type": "integer",
+              "required": false,
+              "description": "Maximum number of suggestions to return"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "total_tools": [
+    {
+      "id": "domain_rating",
+      "name": "Domain Rating",
+      "description": "Get domain rating for a domain",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "domain",
+            "type": "string",
+            "required": true,
+            "description": "Domain name to check"
+          },
+          {
+            "name": "history",
+            "type": "boolean",
+            "required": false,
+            "description": "Include historic data if true"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "How AI Agents Can Assess Website Authority (Domain Rating)",
+        "description": "Unlock Ahrefs' Domain Rating for your AI agents using the MCP. This allows AI agents to programmatically evaluate website authority, enabling data-driven decisions for SEO strategies and competitor analysis. Integrating this via MCP gives your AI agent a clear view of domain strength."
+      }
+    },
+    {
+      "id": "backlinks_stats",
+      "name": "Backlinks Statistics",
+      "description": "Retrieves comprehensive backlink statistics for a specified website or url",
+      "providers": ["gumloop", "composio"],
+      "equivalents": {
+        "composio": { "id": "stats_retrieval" }
+      },
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "required": false,
+            "description": "Maximum number of results to return"
+          }
+        ],
+        "composio": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Website URL to analyze"
+          },
+          {
+            "name": "detailed",
+            "type": "boolean",
+            "required": false,
+            "description": "Whether to include additional detailed metrics"
+          },
+          {
+            "name": "include_subdomains",
+            "type": "boolean",
+            "required": false,
+            "description": "Whether to include subdomains in analysis"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Retrieve Comprehensive Backlink Statistics for Your AI Agent",
+        "description": "Equip your AI agents with detailed backlink statistics from Ahrefs, accessible via the MCP. AI agents can analyze referring domains, anchor texts, and link velocity, automating the discovery of link-building opportunities and assessing backlink profile health through this standardized MCP interface."
+      }
+    },
+    {
+      "id": "outlinks_stats",
+      "name": "Outlinks Statistics",
+      "description": "Retrieves comprehensive statistics about outgoing links (outlinks) from a specified website",
+      "providers": ["gumloop", "composio"],
+      "equivalents": {
+        "composio": { "id": "outlinks_stats_composio" }
+      },
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "include_internal",
+            "type": "boolean",
+            "required": false,
+            "description": "Include internal links in analysis"
+          }
+        ],
+        "composio": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Website URL to analyze"
+          },
+          {
+            "name": "include_internal",
+            "type": "boolean",
+            "required": false,
+            "description": "Whether to include internal links"
+          },
+          {
+            "name": "group_by_domain",
+            "type": "boolean",
+            "required": false,
+            "description": "Whether to group results by domain"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Analyze Outgoing Link Health to Ensure Profile Quality",
+        "description": "Leverage the MCP to allow your AI agents to scrutinize outgoing link profiles using Ahrefs data. This enables AI agents to identify potentially harmful links, understand external linking patterns, and ensure a healthy, authoritative presence, all automated via the MCP."
+      }
+    },
+    {
+      "id": "metrics",
+      "name": "Comprehensive Metrics",
+      "description": "Get comprehensive metrics for a domain or URL",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "metrics",
+            "type": "array",
+            "required": false,
+            "description": "Array of specific metrics to return"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Utilize Comprehensive SEO Metrics for Holistic Analysis",
+        "description": "Provide your AI agents with a full spectrum of Ahrefs' SEO metrics through the MCP. From organic traffic estimates to keyword positions, AI agents can access a wealth of data to perform in-depth site audits and formulate robust, AI-powered SEO campaigns."
+      }
+    },
+    {
+      "id": "domain_rating_history",
+      "name": "Domain Rating History",
+      "description": "Get domain rating history for a domain",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "domain",
+            "type": "string",
+            "required": true,
+            "description": "Domain name to analyze"
+          },
+          {
+            "name": "date_from",
+            "type": "string",
+            "required": false,
+            "description": "Start date for history (YYYY-MM-DD)"
+          },
+          {
+            "name": "date_to",
+            "type": "string",
+            "required": false,
+            "description": "End date for history (YYYY-MM-DD)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Track Domain Authority Trends Over Time",
+        "description": "Enable your AI agents to monitor Domain Rating trends with Ahrefs' historical data, seamlessly integrated via the MCP. This allows AI agents to track SEO progress, assess the impact of campaigns, and understand competitor authority dynamics over time using the MCP."
+      }
+    },
+    {
+      "id": "url_rating_history",
+      "name": "URL Rating History",
+      "description": "Get URL rating history for a URL",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "URL to analyze"
+          },
+          {
+            "name": "date_from",
+            "type": "string",
+            "required": false,
+            "description": "Start date for history (YYYY-MM-DD)"
+          },
+          {
+            "name": "date_to",
+            "type": "string",
+            "required": false,
+            "description": "End date for history (YYYY-MM-DD)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Monitor URL Rating Evolution for Specific Pages",
+        "description": "Through the MCP, your AI agents can access Ahrefs' URL Rating history. This empowers them to track the authority changes of specific pages, evaluate content performance, and refine SEO tactics for individual URLs based on historical data provided by the MCP."
+      }
+    },
+    {
+      "id": "refdomains_history",
+      "name": "Referring Domains History",
+      "description": "Get referring domains history for a domain or URL",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "date_from",
+            "type": "string",
+            "required": false,
+            "description": "Start date for history (YYYY-MM-DD)"
+          },
+          {
+            "name": "date_to",
+            "type": "string",
+            "required": false,
+            "description": "End date for history (YYYY-MM-DD)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Analyze Historical Referring Domain Changes",
+        "description": "Grant your AI agents access to Ahrefs' referring domains history through the MCP. This capability allows AI agents to understand how backlink profiles have evolved, identify lost or gained referring domains, and track the long-term impact of link-building efforts, all managed by the MCP."
+      }
+    },
+    {
+      "id": "pages_history",
+      "name": "Pages History",
+      "description": "Get pages history for a domain or URL",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "date_from",
+            "type": "string",
+            "required": false,
+            "description": "Start date for history (YYYY-MM-DD)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Track Website Page Evolution and Content Changes",
+        "description": "Utilize the Ahrefs MCP to enable your AI agents to analyze historical data on website pages. AI agents can monitor changes in page count, identify new or removed content, and understand how a site's structure has evolved, providing crucial context for AI-driven SEO strategies."
+      }
+    },
+    {
+      "id": "metrics_history",
+      "name": "Metrics History",
+      "description": "Get metrics history for a domain or URL",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "metrics",
+            "type": "array",
+            "required": false,
+            "description": "Array of specific metrics to include"
+          },
+          {
+            "name": "interval",
+            "type": "string",
+            "required": false,
+            "description": "Time interval between data points (daily, weekly, monthly)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "How Your AI Agent Can Leverage Historical SEO Metrics",
+        "description": "Empower your AI agents to analyze trends in key SEO metrics over time using Ahrefs data accessed through the MCP. This historical perspective allows AI agents to better understand performance trajectories and refine their strategies for optimal results."
+      }
+    },
+    {
+      "id": "keywords_history",
+      "name": "Keywords History",
+      "description": "Retrieves historical keyword performance data for a specified website or domain",
+      "providers": ["gumloop", "composio"],
+      "equivalents": {
+        "composio": { "id": "site_explorer_keywords_history" }
+      },
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "country",
+            "type": "string",
+            "required": false,
+            "description": "Country code to filter keywords (e.g., us, uk, de)"
+          }
+        ],
+        "composio": [
+          {
+            "name": "domain",
+            "type": "string",
+            "required": true,
+            "description": "Domain to analyze"
+          },
+          {
+            "name": "date_from",
+            "type": "string",
+            "required": false,
+            "description": "Start date in YYYY-MM-DD format"
+          },
+          {
+            "name": "country",
+            "type": "string",
+            "required": false,
+            "description": "Country code to filter results (e.g., us, gb, de)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Uncover Historical Keyword Ranking Trends",
+        "description": "With the Ahrefs MCP, AI agents can delve into historical keyword performance. This allows them to track ranking changes, identify emerging keyword opportunities, and understand the historical SEO footprint of a domain or URL, all accessible for your AI agent."
+      }
+    },
+    {
+      "id": "total_search_volume_history",
+      "name": "Total Search Volume History",
+      "description": "Get total search volume history for a domain or URL",
+      "providers": ["gumloop"],
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "date_from",
+            "type": "string",
+            "required": false,
+            "description": "Start date for history (YYYY-MM-DD)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "Analyze Search Demand Trends and Seasonality",
+        "description": "Enable your AI agents to tap into Ahrefs' total search volume history through the MCP. This feature allows AI agents to understand evolving market interest, identify seasonal trends for keywords, and make informed decisions for content creation and SEO targeting."
+      }
+    },
+    {
+      "id": "backlinks",
+      "name": "Backlinks",
+      "description": "Retrieves a comprehensive list of backlinks for a specified website or URL",
+      "providers": ["gumloop", "composio"],
+      "equivalents": {
+        "composio": { "id": "all_backlinks" }
+      },
+      "provider_inputs": {
+        "gumloop": [
+          {
+            "name": "target",
+            "type": "string",
+            "required": true,
+            "description": "Domain or URL to analyze"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Analysis mode (domain, url, prefix)"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "required": false,
+            "description": "Maximum number of backlinks to return"
+          },
+          {
+            "name": "order_by",
+            "type": "string",
+            "required": false,
+            "description": "Sort order for results (domain_rating, url_rating, date)"
+          }
+        ],
+        "composio": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Website URL to analyze"
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "required": false,
+            "description": "Maximum number of backlinks to return (max: 1000)"
+          },
+          {
+            "name": "order_by",
+            "type": "string",
+            "required": false,
+            "description": "Sort order (url_rating, domain_rating, date)"
+          },
+          {
+            "name": "filter",
+            "type": "string",
+            "required": false,
+            "description": "Filter results (dofollow, nofollow, etc.)"
+          }
+        ]
+      },
+      "mcp_content": {
+        "heading": "How to Retrieve Full Backlink Profiles for Analysis",
+        "description": "The Ahrefs MCP provides your AI agents with comprehensive access to backlink data. AI agents can programmatically fetch and analyze all backlinks for a given domain or URL, crucial for competitive analysis and identifying link-building opportunities for your AI agent strategies."
+      }
+    },
+    {
+      "id": "broken_backlinks",
+      "name": "Broken Backlinks",
+      "description": "Get broken backlinks for a domain or URL",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of broken backlinks to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Identify and Manage Broken Backlinks for SEO Health",
+        "description": "Streamline SEO maintenance by enabling your AI agents to detect broken backlinks using Ahrefs data through the MCP. AI agents can proactively find link reclamation opportunities and help maintain a healthy link profile, an essential task for AI-driven SEO management."
+      }
+    },
+    {
+      "id": "refdomains",
+      "name": "Referring Domains",
+      "description": "Get referring domains for a domain or URL",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of referring domains to return"
+        },
+        {
+          "name": "order_by",
+          "type": "string",
+          "required": false,
+          "description": "Sort order (domain_rating, referring_pages, first_seen, last_seen)"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Analyze Referring Domains for Link Building Intelligence",
+        "description": "Equip your AI agents with the ability to dissect referring domains data from Ahrefs via the MCP. This allows AI agents to assess the quality and quantity of linking websites, a key factor in understanding and improving a site's authority for your AI agent initiatives."
+      }
+    },
+    {
+      "id": "anchors",
+      "name": "Anchors",
+      "description": "Retrieves anchor text data for a specified website or URL",
+      "providers": ["gumloop", "composio"],
+      "equivalents": {
+        "composio": { "id": "anchor_data" }
+      },
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of anchor texts to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "How Your AI Agent Can Decode Anchor Text Profiles",
+        "description": "The Ahrefs MCP integration allows your AI agents to retrieve and analyze anchor text data. This insight helps AI agents understand how other sites are linking, optimize anchor text strategies, and ensure a natural, effective backlink profile, guided by your AI agent."
+      }
+    },
+    {
+      "id": "organic_keywords",
+      "name": "Organic Keywords",
+      "description": "Get organic keywords for a domain or URL",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code to filter keywords (e.g., us, uk, de)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of keywords to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Discover a Website's Organic Keyword Rankings",
+        "description": "Empower your AI agents to uncover the organic keywords a domain or URL ranks for, using Ahrefs data accessed via the MCP. This is fundamental for AI agents in competitor research, content gap analysis, and optimizing content for better search visibility."
+      }
+    },
+    {
+      "id": "organic_competitors",
+      "name": "Organic Competitors",
+      "description": "Retrieves a comprehensive overview of competitor data in relation to keyword rankings and organic search",
+      "providers": ["gumloop", "composio"],
+      "equivalents": {
+        "composio": { "id": "competitors_overview" }
+      },
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code to filter results (e.g., us, uk, de)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of competitors to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "How to Identify and Analyze Organic Search Competitors",
+        "description": "Leverage the Ahrefs MCP to enable your AI agents to automatically identify and analyze organic search competitors. This allows AI agents to understand the competitive landscape and refine SEO strategies to outperform rivals, enhancing your AI agent's strategic capabilities."
+      }
+    },
+    {
+      "id": "top_pages",
+      "name": "Top Pages",
+      "description": "Get top organic pages for a domain",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "domain",
+          "type": "string",
+          "required": true,
+          "description": "Domain to analyze"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code to filter results (e.g., us, uk, de)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of pages to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Pinpoint a Domain's Top Performing Organic Pages",
+        "description": "Through the Ahrefs MCP, your AI agents can identify the top organic pages of a domain. This helps AI agents understand what content resonates, drives traffic, and can inform AI-driven content strategies and internal linking optimizations."
+      }
+    },
+    {
+      "id": "paid_pages",
+      "name": "Paid Pages",
+      "description": "Get paid pages for a domain or URL",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code to filter results (e.g., us, uk, de)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of pages to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Analyze Paid Search Performance and Competitor PPC Strategies",
+        "description": "Integrate Ahrefs data via the MCP to allow your AI agents to investigate pages driving traffic through paid search. This provides AI agents with insights into competitor PPC strategies and can inform your own paid advertising efforts with AI agent assistance."
+      }
+    },
+    {
+      "id": "best_by_external_links",
+      "name": "Best Pages by External Links",
+      "description": "Get pages with the most external links",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain to analyze"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of pages to return"
+        },
+        {
+          "name": "order_by",
+          "type": "string",
+          "required": false,
+          "description": "Sort order (dofollow_links, referring_domains, traffic)"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Find a Site's Most Linked-To Content (By External Links)",
+        "description": "Equip your AI agents to discover pages with the most external links (link equity) using Ahrefs via the MCP. This helps AI agents identify authoritative content, link-building targets, and understand what makes content link-worthy in your AI agent's analysis."
+      }
+    },
+    {
+      "id": "best_by_internal_links",
+      "name": "Best Pages by Internal Links",
+      "description": "Get pages with the most internal links",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain to analyze"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of pages to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Optimize Site Structure: Analyze Internal Linking Patterns",
+        "description": "Enable your AI agents to analyze pages with the most internal links using Ahrefs data through the MCP. This functionality helps AI agents understand site architecture and optimize internal linking for better SEO performance and link equity distribution."
+      }
+    },
+    {
+      "id": "linked_domains",
+      "name": "Linked Domains",
+      "description": "Get domains that are linked from the target",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of domains to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Explore a Website's Outbound Link Network",
+        "description": "Using the Ahrefs MCP, AI agents can identify domains linked *from* a target website or URL. This helps AI agents assess outbound link quality and understand a site's external linking neighborhood as part of your AI agent's comprehensive SEO audit."
+      }
+    },
+    {
+      "id": "outgoing_external_anchors",
+      "name": "Outgoing External Anchors",
+      "description": "Get external anchor texts used in outgoing links",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of anchor texts to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "How to Analyze External Outgoing Anchor Texts for Relevancy",
+        "description": "The MCP allows your AI agents to examine the anchor texts used in outgoing external links from a target, using Ahrefs. This helps AI agents ensure that outbound links are relevant and use appropriate anchor text, maintaining the SEO integrity of the site."
+      }
+    },
+    {
+      "id": "outgoing_internal_anchors",
+      "name": "Outgoing Internal Anchors",
+      "description": "Get internal anchor texts used in outgoing links",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Domain or URL to analyze"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Analysis mode (domain, url, prefix)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of anchor texts to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Refine Internal Linking: Analyze Outgoing Internal Anchors",
+        "description": "Grant your AI agents the capability to analyze anchor texts of outgoing *internal* links using Ahrefs through the MCP. This is key for AI agents optimizing site navigation, user experience, and keyword targeting within the site's own content structure."
+      }
+    },
+    {
+      "id": "keywords_overview",
+      "name": "Keywords Overview",
+      "description": "Get metrics for keywords from Keywords Explorer",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "keywords",
+          "type": "array",
+          "required": true,
+          "description": "List of keywords to analyze"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code for the search engine (e.g., us, uk, de)"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Get In-Depth Keyword Metrics (Volume, Difficulty, Clicks)",
+        "description": "Access Ahrefs' Keywords Explorer metrics directly for your AI agents via the MCP. AI agents can retrieve search volume, keyword difficulty, clicks, and more, forming the bedrock of AI-driven keyword research and content strategy."
+      }
+    },
+    {
+      "id": "volume_history",
+      "name": "Volume History",
+      "description": "Get search volume history for a keyword",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "description": "Keyword to analyze"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code for the search engine (e.g., us, uk, de)"
+        },
+        {
+          "name": "date_from",
+          "type": "string",
+          "required": false,
+          "description": "Start date for history (YYYY-MM-DD)"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Track Historical Keyword Search Volume Trends",
+        "description": "Enable your AI agents to chart the historical search volume for specific keywords using Ahrefs, integrated through the MCP. This allows AI agents to spot trends, seasonality, and anticipate shifts in searcher behavior for more effective AI agent planning."
+      }
+    },
+    {
+      "id": "volume_by_country",
+      "name": "Volume by Country",
+      "description": "Get search volume by country for a keyword",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "description": "Keyword to analyze"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of countries to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Analyze Keyword Search Volume by Country for Global SEO",
+        "description": "Equip your AI agents with Ahrefs' keyword search volume data broken down by country, accessible via the MCP. This is invaluable for AI agents tailoring international SEO strategies and understanding geographic search demand."
+      }
+    },
+    {
+      "id": "matching_terms",
+      "name": "Matching Terms",
+      "description": "Get matching terms for keywords",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "description": "Seed keyword to find matches for"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code for the search engine (e.g., us, uk, de)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of terms to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Expand Keyword Lists with Matching Term Variations",
+        "description": "Leverage the Ahrefs MCP to empower your AI agents to find various keyword variations like phrase match, having same terms, etc. This helps AI agents in comprehensive keyword discovery and broadening content reach."
+      }
+    },
+    {
+      "id": "related_terms",
+      "name": "Related Terms",
+      "description": "Get related terms for keywords",
+      "providers": ["gumloop"],
+      "inputs": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "description": "Seed keyword to find related terms for"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code for the search engine (e.g., us, uk, de)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of related terms to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Discover Semantically Related Keywords for Content Ideas",
+        "description": "Through the Ahrefs MCP, AI agents can find terms that are semantically related to seed keywords. This feature aids AI agents in topic ideation, LSI keyword integration, and creating more comprehensive, contextually rich content."
+      }
+    },
+    {
+      "id": "search_suggestions",
+      "name": "Search Suggestions",
+      "description": "Retrieves search suggestions for a given keyword or phrase",
+      "providers": ["gumloop", "composio"],
+      "equivalents": {
+        "composio": { "id": "suggestions_explorer" }
+      },
+      "inputs": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "description": "Keyword to get suggestions for"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Country code for the search engine (e.g., us, uk, de)"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Maximum number of suggestions to return"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Uncover User Intent with Keyword Search Suggestions",
+        "description": "Allow your AI agents to tap into Ahrefs' search suggestions (like Google Suggest) using the MCP. This helps AI agents understand what users are actively searching for, generate long-tail keywords, and create highly relevant content."
+      }
+    },
+    {
+      "id": "rank_tracker_overview",
+      "name": "Rank Tracker Overview",
+      "description": "Retrieves a comprehensive summary of keyword rankings and SEO performance",
+      "providers": ["composio"],
+      "inputs": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "Rank tracker project ID"
+        },
+        {
+          "name": "date_from",
+          "type": "string",
+          "required": false,
+          "description": "Start date for tracking data (YYYY-MM-DD)"
+        },
+        {
+          "name": "date_to",
+          "type": "string",
+          "required": false,
+          "description": "End date for tracking data (YYYY-MM-DD)"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Monitor Keyword Rankings and SEO Performance Over Time",
+        "description": "Integrate Ahrefs Rank Tracker data via the MCP so your AI agents can get a comprehensive summary of keyword rankings. This enables AI agents to automate SEO performance monitoring and report on ranking progress."
+      }
+    },
+    {
+      "id": "serp_overview",
+      "name": "SERP Overview",
+      "description": "Retrieves a comprehensive overview of search engine results pages (SERP) data for specified keywords",
+      "providers": ["composio"],
+      "inputs": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "description": "Keyword to analyze SERP for"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": true,
+          "description": "Country code for the search engine (e.g., us, gb, de)"
+        },
+        {
+          "name": "include_features",
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to include SERP features in results"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Analyze SERP Features and Competitive Dynamics",
+        "description": "Provide your AI agents with Ahrefs' SERP overview data through the MCP. AI agents can analyze ranking URLs, SERP features (e.g., featured snippets), and understand the competitive landscape for target keywords to inform AI-driven optimization."
+      }
+    },
+    {
+      "id": "crawler_ip_ranges",
+      "name": "Crawler IP Ranges",
+      "description": "Retrieves the list of IP address ranges used by Ahrefs' web crawler (AhrefsBot)",
+      "providers": ["composio"],
+      "inputs": [
+        {
+          "name": "format",
+          "type": "string",
+          "required": false,
+          "description": "Response format (json, txt, csv)"
+        }
+      ],
+      "mcp_content": {
+        "heading": "Access AhrefsBot IP Ranges for Crawler Whitelisting",
+        "description": "The Ahrefs MCP allows your AI agents to retrieve the list of IP address ranges used by Ahrefs' web crawler (AhrefsBot). This is a technical utility for AI agents managing server configurations or ensuring crawler access for site audits."
+      }
+    }
+  ]
+}

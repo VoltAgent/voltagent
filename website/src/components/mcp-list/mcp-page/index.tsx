@@ -1,17 +1,16 @@
-import type React from "react";
+import type * as React from "react";
 import { useState } from "react";
-import { BoltIcon } from "@heroicons/react/24/solid";
 import {
   ArrowLeftIcon,
   StarIcon,
   ServerIcon,
   WrenchScrewdriverIcon,
-  ServerStackIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../ui/dot-pattern";
 import mcpDataJson from "../mcpData.json";
+import ahrefToolsData from "./ahref-tools.json";
 import { motion, AnimatePresence } from "framer-motion";
 import { Claude37Logo } from "../../../../static/img/logos/claudie";
 import { CursorLogo } from "../../../../static/img/logos/cursor";
@@ -22,16 +21,21 @@ import { AnthropicLogo } from "../../../../static/img/logos/integrations/anthrop
 import { AsanaLogo } from "../../../../static/img/logos/integrations/asana";
 import { ZapierLogo } from "../../../../static/img/logos/integrations/zapier";
 import { GumloopLogo } from "../../../../static/img/logos/integrations/gumloop";
+import ExpandableTool, {
+  InputsList,
+  ProviderFallbackInputs,
+} from "./tool-input";
+import SidebarInfoSection from "./mcp-info";
 import {
   claudeTabContent,
   cursorTabContent,
   type TabContentItem,
   type TabOption,
   tabOptions,
-} from "./serverConfigContent"; // Import tabOptions
+} from "./serverConfigContent";
 
 // Map logo components by key - only including the ones we need for now
-const logoMap = {
+const logoMap: any = {
   ahref: AhrefLogo,
   airtable: AirtableLogo,
   anthropic: AnthropicLogo,
@@ -129,19 +133,24 @@ export const MCPDetailPage = () => {
 
   // Track which tools are expanded
   const [expandedTools, setExpandedTools] = useState(() => {
-    // Initialize with first two tool items expanded if they exist
-    const initialState = {};
-    if (mcp.tools && mcp.tools.length > 0) {
-      initialState[mcp.tools[0].id] = true;
-      if (mcp.tools.length > 1) {
-        initialState[mcp.tools[1].id] = true;
+    // Initialize based on the default activeTab's provider tools or total_tools as a fallback
+    const initialProvider = ahrefToolsData.providers.find(
+      (p) => p.name === activeTab,
+    );
+    const toolsToExpand = initialProvider?.tools || ahrefToolsData.total_tools;
+    if (toolsToExpand && toolsToExpand.length > 0) {
+      const initialState = {};
+      initialState[toolsToExpand[0].id] = true;
+      if (toolsToExpand.length > 1) {
+        initialState[toolsToExpand[1].id] = true;
       }
+      return initialState;
     }
-    return initialState;
+    return {};
   });
 
   // Toggle tool expansion
-  const toggleTool = (toolId) => {
+  const toggleTool = (toolId: string) => {
     setExpandedTools((prev) => ({
       ...prev,
       [toolId]: !prev[toolId],
@@ -225,53 +234,19 @@ export const MCPDetailPage = () => {
   const defaultMessage =
     "Select a tab to view the configuration or usage example.";
 
-  // Recommended servers data
-  const recommendedServers = [
-    {
-      id: "aws",
-      name: "AWS Kb Retrieval Server",
-      description: "An MCP server implementation for retrieving",
-      icon: {
-        type: "text",
-        value: "AWS",
-        bgColor: "bg-yellow-100",
-        textColor: "text-yellow-800",
-      },
-    },
-    {
-      id: "cursor",
-      name: "Cursor",
-      description: "The AI Code Editor",
-      icon: {
-        type: "component",
-        component: BoltIcon,
-        bgColor: "bg-gray-700",
-        textColor: "text-white",
-      },
-    },
-    {
-      id: "minimax",
-      name: "MiniMax MCP",
-      description: "Official MiniMax Model Context Protocol (MCP)",
-      icon: {
-        type: "text",
-        value: "MM",
-        bgColor: "bg-pink-600",
-        textColor: "text-white",
-      },
-    },
-    {
-      id: "playwright",
-      name: "Playwright MCP",
-      description: "Playwright MCP server",
-      icon: {
-        type: "text",
-        value: "PW",
-        bgColor: "bg-gradient-to-br from-blue-500 via-green-500 to-red-500",
-        textColor: "text-white",
-      },
-    },
-  ];
+  // Determine tools for the "Tools Section" based on the activeTab
+  const currentProviderId = currentTab.id; // e.g., "gumloop", "composio"
+  const providerData = ahrefToolsData.providers.find(
+    (p) => p.name === currentProviderId,
+  );
+  const toolsForProviderSection =
+    providerData?.tools?.map((providerTool) => ({
+      ...providerTool, // id, name, description, inputs
+      providers: [currentProviderId], // Simulate providers array for ExpandableTool
+      provider_inputs: { [currentProviderId]: providerTool.inputs }, // Map inputs to expected structure
+      ahrefData: ahrefToolsData, // Pass full ahrefData for fallback if needed
+      // mcp_content is intentionally omitted as showMcpContentDescription will be false
+    })) || [];
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 flex flex-col">
@@ -396,150 +371,41 @@ export const MCPDetailPage = () => {
             </div>
           </div>
 
-          {/* What is section - Hardcoded Ahrefs content */}
+          {/* What is section */}
           <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
             <div className="flex justify-center mb-8">
               <div className="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center">
                 <AhrefLogo className="w-12 h-12 text-white" />
               </div>
             </div>
-
-            <p className="text-lg font-bold text-white text-center mb-6">
-              Ahrefs MCP: Supercharge Your AI Agents with SEO Intelligence
+            <p className="text-2xl font-bold text-white text-center mb-4">
+              How Can Your AI Agents Leverage the Ahrefs MCP Server?
             </p>
-
             <p className="text-gray-300 mb-8 text-center">
-              Empower your Voltagent AI agents with Ahrefs' leading SEO
-              analytics through the Model Context Protocol (MCP). Automate
-              competitor research, keyword analysis, and backlink audits to
-              elevate your AI-driven SEO strategies.
+              The Ahrefs Model Context Protocol (MCP) server empowers your AI
+              agents with direct access to Ahrefs' powerful SEO toolkit.
+              Discover how your AI agents can automate complex SEO tasks, from
+              in-depth backlink analysis and keyword research to competitor
+              tracking and site audits. Below, explore the specific capabilities
+              and how you can integrate them into your AI agent workflows via
+              MCP for enhanced SEO automation and intelligence.
             </p>
-
-            <h3 className="text-xl font-bold text-white mb-4">
-              What is Ahrefs MCP for AI Agents?
-            </h3>
-            <p className="text-gray-300 mb-4">
-              Ahrefs is a premier SEO and content research platform. The Ahrefs
-              Model Context Protocol (MCP) integration for Voltagent acts as a
-              direct data pipeline, allowing your AI agents to programmatically
-              access and utilize Ahrefs' vast database. This means your AI
-              agents can autonomously perform SEO tasks, uncover insights, and
-              help you dominate search rankings by leveraging a standardized MCP
-              interface.
-            </p>
-
-            <h3 className="text-xl font-bold text-white mb-4">
-              How to Use Ahrefs MCP with Your Voltagent AI Agents for SEO Wins
-            </h3>
-            <div className="text-gray-300 mb-4 space-y-3">
-              <p>
-                Integrating the Ahrefs MCP allows your Voltagent AI agents to
-                execute powerful SEO tasks. Here's how your agents can leverage
-                this for an edge:
-              </p>
-              <ul className="list-disc pl-5 space-y-2">
-                <li>
-                  <span className="font-medium text-white">
-                    How AI Agents Conduct Backlink Analysis via MCP:
-                  </span>{" "}
-                  Train your AI agents to dive deep into backlink profiles using
-                  Ahrefs data fetched through the MCP. They can analyze link
-                  quality, anchor text, and track changes over time, identifying
-                  new link-building opportunities for your AI-driven campaigns.
-                </li>
-                <li>
-                  <span className="font-medium text-white">
-                    AI-Powered Keyword Research with Ahrefs MCP:
-                  </span>{" "}
-                  Enable your AI agents to discover what your audience searches
-                  for. Using the Ahrefs MCP, agents can retrieve search volumes,
-                  keyword difficulty, and ranking data, helping you build an
-                  AI-optimized content strategy.
-                </li>
-                <li>
-                  <span className="font-medium text-white">
-                    Automating Competitor SEO Analysis with AI Agents & MCP:
-                  </span>{" "}
-                  Configure your AI agents to continuously monitor competitor
-                  SEO strategies via the Ahrefs MCP. They can analyze ranking
-                  keywords, top content, and backlink tactics, providing
-                  actionable intelligence for your AI to adapt.
-                </li>
-                <li>
-                  <span className="font-medium text-white">
-                    How AI Agents Monitor Site Health using Ahrefs MCP:
-                  </span>{" "}
-                  Your Voltagent agents can regularly assess domain SEO health
-                  (like Domain Rating) and URL performance using Ahrefs data via
-                  MCP, tracking history and metrics to flag issues for your AI
-                  to address.
-                </li>
-                <li>
-                  <span className="font-medium text-white">
-                    AI Agents Auditing Outgoing Links via MCP:
-                  </span>{" "}
-                  Instruct your AI agents to analyze outgoing links from your
-                  site using Ahrefs MCP data, evaluating their quality and SEO
-                  impact to ensure your AI maintains a healthy link profile.
-                </li>
-                <li>
-                  <span className="font-medium text-white">
-                    AI Agents Gaining SERP Insights through Ahrefs MCP:
-                  </span>{" "}
-                  Your AI agents can retrieve and analyze SERP data for target
-                  keywords via Ahrefs MCP, understanding ranking dynamics and
-                  identifying opportunities for your AI to optimize for.
-                </li>
-              </ul>
+            <div className="grid grid-cols-1 gap-4">
+              {ahrefToolsData.total_tools.map((tool) => (
+                <ExpandableTool
+                  key={tool.id}
+                  tool={{ ...tool, ahrefData: ahrefToolsData }}
+                  toggleTool={toggleTool}
+                  expanded={!!expandedTools[tool.id]}
+                  logoMap={logoMap}
+                  showMcpContentDescription={true}
+                />
+              ))}
             </div>
-
-            <h3 className="text-xl font-bold text-white mb-4">Key features</h3>
-            <ul className="list-disc pl-5 space-y-2 text-gray-300">
-              <li>
-                <span className="font-medium text-white">
-                  Use Ahrefs MCP for Smarter SEO Decisions:
-                </span>{" "}
-                Empower your Voltagent AI agents to make superior SEO choices by
-                leveraging real-time Ahrefs data and insights accessed via the
-                Model Context Protocol.
-              </li>
-              <li>
-                <span className="font-medium text-white">
-                  Automate SEO Analysis with AI Agents and MCP:
-                </span>{" "}
-                Streamline your workflow by having your AI agents conduct
-                repetitive SEO analysis and reporting using Ahrefs data through
-                the MCP.
-              </li>
-              <li>
-                <span className="font-medium text-white">
-                  How AI Agents Understand Competitor SEO via MCP:
-                </span>{" "}
-                Enable your AI agents to learn from and adapt to competitor SEO
-                strategies by continuously analyzing Ahrefs data obtained
-                through the Model Context Protocol.
-              </li>
-              <li>
-                <span className="font-medium text-white">
-                  Build MCP-Driven Content Strategies:
-                </span>{" "}
-                Guide your AI agents to develop content strategies that rank,
-                using Ahrefs MCP data to identify high-potential topics and
-                optimize content.
-              </li>
-              <li>
-                <span className="font-medium text-white">
-                  How AI Agents Proactively Monitor SEO with Ahrefs MCP:
-                </span>{" "}
-                Set up your AI agents to use Ahrefs MCP for automated SEO
-                performance monitoring, swiftly identifying issues and
-                opportunities.
-              </li>
-            </ul>
           </div>
 
           {/* Tools Section */}
-          {mcp.tools && mcp.tools.length > 0 && (
+          {toolsForProviderSection.length > 0 && (
             <div className="rounded-lg backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
               <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
                 <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
@@ -547,205 +413,47 @@ export const MCPDetailPage = () => {
                 </div>
                 <div>
                   <span className="text-md font-semibold text-white mb-1">
-                    Tools
+                    Tools for {currentTab.name}
                   </span>
                   <div className="text-gray-400 text-sm">
-                    Available tools for the {mcp.name} Model Context Provider.
+                    Available tools for the {currentTab.name} provider.
                   </div>
                 </div>
               </div>
 
               <div className="p-6 overflow-x-auto">
                 <div className="grid grid-cols-1 gap-4">
-                  {mcp.tools.map((tool) => (
-                    <div
+                  {toolsForProviderSection.map((tool) => (
+                    <ExpandableTool
                       key={tool.id}
-                      className="border rounded-lg bg-slate-800/50 overflow-hidden border-solid hover:border-[#00d992] transition-all duration-300"
-                    >
-                      {/* Tool header */}
-                      <div
-                        className="bg-slate-700/50 outline-none shadow-none focus:outline-none px-4 py-3 border-b cursor-pointer w-full text-left"
-                        onClick={() => toggleTool(tool.id)}
-                        onKeyUp={(e) =>
-                          e.key === "Enter" && toggleTool(tool.id)
-                        }
-                        aria-expanded={!!expandedTools[tool.id]}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <code className="text-[#00d992] font-mono text-sm font-medium">
-                                {tool.name}
-                              </code>
-                            </div>
-                            <div className="text-sm text-gray-300">
-                              {tool.description}
-                            </div>
-                          </div>
-                          <ChevronDownIcon
-                            className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${
-                              expandedTools[tool.id]
-                                ? "transform rotate-180"
-                                : ""
-                            }`}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Tool content - only visible when expanded */}
-                      {expandedTools[tool.id] && (
-                        <div className="p-4">
-                          {/* Inputs */}
-                          {tool.inputs && tool.inputs.length > 0 && (
-                            <div>
-                              <div className="text-sm text-gray-400 mb-2">
-                                Inputs
-                              </div>
-                              <div className="flex flex-wrap gap-3">
-                                {tool.inputs.map((input) => (
-                                  <div
-                                    key={input.name}
-                                    className="bg-slate-700/30 border border-slate-700/70 rounded-md p-3 flex-grow basis-[250px]"
-                                  >
-                                    <div className="flex items-center mb-1">
-                                      <code className="text-blue-400 font-mono text-sm">
-                                        {input.name}
-                                      </code>
-                                      {input.required && (
-                                        <span className="text-red-400 ml-1 text-xs">
-                                          *
-                                        </span>
-                                      )}
-                                      <span className="ml-2 font-mono text-xs text-gray-500 bg-slate-800/50 px-2 py-0.5 rounded">
-                                        {input.type}
-                                      </span>
-                                    </div>
-                                    <div className="text-gray-400 text-sm">
-                                      {input.description}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                      tool={tool}
+                      toggleTool={toggleTool}
+                      expanded={!!expandedTools[tool.id]}
+                      logoMap={logoMap}
+                      showMcpContentDescription={false}
+                    />
                   ))}
                 </div>
               </div>
             </div>
           )}
+          {toolsForProviderSection.length === 0 &&
+            currentProviderId !== "community" && (
+              <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
+                <p className="text-gray-400 text-center">
+                  No specific tools listed for the {currentTab.name} provider in
+                  ahref-tools.json.
+                </p>
+              </div>
+            )}
         </div>
 
-        {/* Sidebar - Right side */}
-        <div className="space-y-6">
-          {/* MCP Metadata - Similar to GitLab style */}
-          <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
-            <div className="flex items-center mb-5">
-              <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
-                {mcp.logo && <mcp.logo className="w-5 h-5" />}
-              </div>
-              <span className="text-xl font-semibold text-white">
-                {mcp.name} MCP
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <div className="flex items-center">
-                <span className="text-gray-400 text-sm mr-2">Created By</span>
-                <div className="flex items-center">
-                  <span
-                    className={`inline-block w-4 h-4 mr-2 ${currentMetadata.creatorIcon} rounded-md`}
-                  />
-                  <span className="text-gray-200">
-                    {currentMetadata.creator}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-gray-300 mb-5 text-xs">
-              Official {currentTab.name} Model Context Protocol (MCP) server for
-              AI agents
-            </p>
-
-            {/* Add link to the provider website */}
-            <a
-              href={currentMetadata.link}
-              className="mt-4 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#00d992]/20 hover:bg-[#00d992]/30 transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="View MCP Documentation"
-            >
-              View MCP Documentation
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 ml-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <title>External link icon</title>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-            </a>
-          </div>
-
-          {/* Recommended Servers */}
-          <div className="rounded-lg backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
-            <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
-              <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
-                <ServerStackIcon className="w-5 h-5 text-[#00d992]" />
-              </div>
-              <div>
-                <span className="text-md font-semibold text-white mb-1">
-                  Recommended Servers
-                </span>
-                <div className="text-gray-400 text-sm">
-                  Other MCP servers you might find useful.
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 space-y-3">
-              {recommendedServers.map((server) => (
-                <div
-                  key={server.id}
-                  className="rounded-md border border-gray-700 hover:border-[#00d992] transition-all duration-300 flex items-start"
-                >
-                  <div
-                    className={`w-7 h-7 mr-2.5 flex-shrink-0 flex items-center justify-center ${server.icon.bgColor} rounded-md`}
-                  >
-                    {server.icon.type === "component" ? (
-                      <server.icon.component className="w-4 h-4 text-white" />
-                    ) : (
-                      <span
-                        className={`text-xs font-bold ${server.icon.textColor}`}
-                      >
-                        {server.icon.value}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-white font-medium text-sm mb-0.5">
-                      {server.name}
-                    </h4>
-                    <span className="text-xs text-gray-400">
-                      {server.description}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* Sidebar - Right side - Replaced with component */}
+        <SidebarInfoSection
+          mcp={mcp}
+          currentMetadata={currentMetadata}
+          currentTab={currentTab}
+        />
       </div>
     </div>
   );
