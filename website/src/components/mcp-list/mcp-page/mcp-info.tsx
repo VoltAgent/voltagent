@@ -1,0 +1,95 @@
+import type * as React from "react";
+import RecommendedServersSection from "./recommended-servers";
+
+// Define types for the props
+interface McpProps {
+  logo?: React.ElementType; // Logo component
+  name?: string;
+}
+
+interface CurrentMetadataProps {
+  creatorIcon?: string;
+  creator?: string;
+  link?: string;
+}
+
+interface CurrentTabProps {
+  name?: string;
+}
+
+interface SidebarInfoSectionProps {
+  mcp: McpProps;
+  currentMetadata: CurrentMetadataProps;
+  currentTab: CurrentTabProps;
+}
+
+export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
+  mcp,
+  currentMetadata,
+  currentTab,
+}) => {
+  return (
+    <div className="space-y-6">
+      {/* MCP Metadata - Similar to GitLab style */}
+      <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
+        <div className="flex items-center mb-5">
+          <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
+            {mcp.logo && <mcp.logo className="w-5 h-5" />}
+          </div>
+          <span className="text-xl font-semibold text-white">
+            {mcp.name} MCP
+          </span>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex items-center">
+            <span className="text-gray-400 text-sm mr-2">Created By</span>
+            <div className="flex items-center">
+              <span
+                className={`inline-block w-4 h-4 mr-2 ${currentMetadata.creatorIcon} rounded-md`}
+              />
+              <span className="text-gray-200">{currentMetadata.creator}</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-gray-300 mb-5 text-xs">
+          Official {currentTab.name} Model Context Protocol (MCP) server for AI
+          agents
+        </p>
+
+        {/* Add link to the provider website */}
+        <a
+          href={currentMetadata.link}
+          className="mt-4 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#00d992]/20 hover:bg-[#00d992]/30 transition-colors"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View MCP Documentation"
+        >
+          View MCP Documentation
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 ml-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <title>External link icon</title>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
+          </svg>
+        </a>
+      </div>
+
+      {/* Recommended Servers - Imported and used here */}
+      <RecommendedServersSection />
+    </div>
+  );
+};
+
+export default SidebarInfoSection;
