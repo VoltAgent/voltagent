@@ -1,61 +1,345 @@
-export interface TabContentItem {
-  type: "text" | "code";
-  value: string;
+import type { SVGProps } from "react";
+
+// Defines the structure for individual pieces of content (text, code, heading)
+export interface ServerConfigContentItem {
+  type: "text" | "code" | "heading";
+  value: string; // Main content (text, code string, or paragraph for heading)
+  title?: string; // Optional title for a step or heading text
+  language?: string; // Optional language for code blocks (e.g., 'json', 'python', 'bash')
 }
 
-export const cursorTabContent: TabContentItem[] = [
-  { type: "text", value: "Authenticating guMCP with Cursor" },
-  {
-    type: "text",
-    value:
-      'Step 1: Setup MCP in Cursor\\nTo setup this new MCP server in Cursor go to Settings > Cursor Settings. From there go to MCP and click "Add a new global MCP Server".',
-  },
-  {
-    type: "text",
-    value:
-      "This will open your mcp.json file. Add your configuration in the following format:",
-  },
-  {
-    type: "code",
-    value:
-      '{\\n  "mcpServers": {\\n    "name-of-connection": {\\n      "url": "your-guMCP-url"\\n    }\\n  }\\n}',
-  },
-  {
-    type: "text",
-    value:
-      "Step 2: Validate Connection\\nAfter having saved mcp.json, you should see a live connection in the MCP section of your Cursor settings.",
-  },
-  {
-    type: "text",
-    value:
-      "Step 3: Use Agent Mode\\nYou can now interact with your tool from Cursor chat in Agent mode!",
-  },
-];
+// Defines the configuration structure for a specific nested tab (Voltagent, Cursor, Claude)
+// Voltagent can be a simple string (JSON config) or structured content.
+export type NestedTabConfig = string | ServerConfigContentItem[];
 
-export const claudeTabContent: TabContentItem[] = [
-  { type: "text", value: "Authenticating guMCP with Claude" },
-  {
-    type: "text",
-    value:
-      "Step 1: Authenticate with Local Server\\nFirst, you\\'ll need to authenticate with your local server. Here\\'s an example using the Perplexity server:",
+// New interface for server generation instructions
+export interface ServerGenerationInfo {
+  urlTemplate?: string; // e.g., "https://www.gumloop.com/mcp/{mcpname}" - Now optional
+  mcpNameValue?: string; // The actual value for {mcpname}, defaults to "ahrefs"
+  promptTextBeforeLink?: string; // Text before the link
+  linkText?: string; // Text for the hyperlink itself, defaults to "Generate your server URL" - Now optional
+  promptTextAfterLink?: string; // Text after the link
+}
+
+// Defines the server configurations for a single main provider (e.g., Gumloop)
+export interface ProviderServerConfig {
+  voltagent?: NestedTabConfig; // Optional: if not present, main page's default config for Voltagent may be used
+  cursor: ServerConfigContentItem[];
+  claude: ServerConfigContentItem[];
+  serverGenerationInfo?: ServerGenerationInfo; // Added new field
+}
+
+// Main object holding configurations for all providers
+export const providerServerConfigs: {
+  [providerId: string]: ProviderServerConfig;
+} = {
+  zapier: {
+    // Voltagent: (Defaults to currentTab.serverConfig from tabOptions if not specified here)
+    cursor: [
+      {
+        type: "heading",
+        title: "Authenticating Zapier MCP with Cursor",
+        value: "",
+      },
+      {
+        type: "text",
+        value:
+          "To use the Zapier MCP with Cursor, ensure your Zapier server is running and accessible. Then, configure Cursor to point to your Zapier MCP endpoint.",
+      },
+      {
+        type: "text",
+        title: "Step 1: Add MCP Server in Cursor",
+        value:
+          "Go to Cursor Settings > MCP > Add a new global MCP Server. Add your Zapier MCP server details, typically the URL where your Zapier MCP is hosted.",
+      },
+      {
+        type: "code",
+        language: "json",
+        value: JSON.stringify(
+          {
+            mcpServers: {
+              "zapier-mcp": {
+                url: "<YOUR_ZAPIER_MCP_SERVER_URL>",
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      },
+      {
+        type: "text",
+        title: "Step 2: Use in Agent Mode",
+        value:
+          "Once connected, you can interact with your Zapier actions via Cursor in Agent mode.",
+      },
+    ],
+    claude: [
+      {
+        type: "heading",
+        title: "Authenticating Zapier MCP with Claude",
+        value: "",
+      },
+      {
+        type: "text",
+        value:
+          "To use the Zapier MCP with Claude, you will typically expose your Zapier actions as tools that Claude can call.",
+      },
+      {
+        type: "text",
+        title: "Step 1: Define Zapier Actions as Claude Tools",
+        value:
+          "Refer to Claude's documentation on how to define custom tools. Each tool would correspond to a Zapier action accessible via your Zapier MCP server.",
+      },
+      {
+        type: "text",
+        title: "Step 2: Configure Claude to Use the Tools",
+        value:
+          "Ensure Claude is configured with the necessary API keys and permissions to call these tools.",
+      },
+      {
+        type: "code",
+        language: "json",
+        value: JSON.stringify(
+          {
+            tool_name: "example_zapier_action",
+            description: "Triggers a specific Zapier action.",
+            input_schema: {
+              /* ...schema for inputs... */
+            },
+          },
+          null,
+          2,
+        ),
+      },
+    ],
+    serverGenerationInfo: {
+      urlTemplate: "https://zapier.com/platform/mcp-setup/{mcpname}", // Example, adjust if Zapier has a specific page
+      promptTextBeforeLink: "To get your Zapier MCP server details:",
+      linkText: "Visit Zapier MCP Setup",
+      promptTextAfterLink:
+        "and then follow the configuration steps provided in the tabs below for your chosen client.",
+    },
   },
-  { type: "code", value: "python src/servers/perplexity/main.py auth" },
-  {
-    type: "text",
-    value:
-      "Step 2: Setup MCP in Claude\\nConfigure your MCP server in Claude by adding the following configuration. Here\\'s an example using the Perplexity server:",
+  gumloop: {
+    // Voltagent: (Defaults to currentTab.serverConfig from tabOptions if not specified here)
+    // The general Gumloop server config might be the one from mcpData.json.
+    // If GuMCP is used for Voltagent as well, this section would be similar to Claude/Cursor.
+    cursor: [
+      { type: "heading", title: "Authenticating guMCP with Cursor", value: "" },
+      {
+        type: "text",
+        title: "Step 1: Setup MCP in Cursor",
+        value:
+          'To setup this new MCP server in Cursor go to Settings > Cursor Settings. From there go to MCP and click "Add a new global MCP Server".\n\nThis will open your mcp.json file. Add your configuration in the following format:',
+      },
+      {
+        type: "code",
+        language: "json",
+        value: JSON.stringify(
+          {
+            mcpServers: {
+              "name-of-connection": {
+                url: "your-guMCP-url", // e.g., http://localhost:8000/gumloop/v1 if guMCP serves it there
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      },
+      {
+        type: "text",
+        title: "Step 2: Validate Connection",
+        value:
+          "After having saved mcp.json, you should see a live connection in the MCP section of your Cursor settings.",
+      },
+      {
+        type: "text",
+        title: "Step 3: Use Agent Mode",
+        value:
+          "You can now interact with your tool from Cursor chat in Agent mode!",
+      },
+    ],
+    claude: [
+      { type: "heading", title: "Authenticating guMCP with Claude", value: "" },
+      {
+        type: "text",
+        title: "Step 1: Authenticate with Local Server",
+        value:
+          "First, you'll need to authenticate with your local server. Here's an example using the {{SERVER_NAME}} server:",
+      },
+      {
+        type: "code",
+        language: "bash",
+        value: "python src/servers/{{SERVER_NAME}}/main.py auth",
+      }, // Placeholder for server name
+      {
+        type: "text",
+        title: "Step 2: Setup MCP in Claude",
+        value:
+          "Configure your MCP server in Claude by adding the following configuration. Here's an example using the {{SERVER_NAME}} server:",
+      },
+      {
+        type: "code",
+        language: "json",
+        value: JSON.stringify(
+          {
+            mcpServers: {
+              "{{SERVER_NAME}}-gumcp": {
+                // Placeholder for server name
+                command: "/bin/bash",
+                args: [
+                  "-c",
+                  "cd /[where you installed guMCP]/guMCP && source ./venv/bin/activate && python src/servers/local.py --server={{AHREFS_SERVER_FOR_GUMCP}}", // Placeholder for Ahrefs server
+                ],
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      },
+      {
+        type: "text",
+        title: "Step 3: Restart Claude",
+        value:
+          "After saving your configuration, restart Claude to apply the changes.",
+      },
+    ],
+    serverGenerationInfo: {
+      urlTemplate: "https://www.gumloop.com/mcp/{mcpname}",
+      mcpNameValue: "ahrefs", // As per user request context
+      promptTextBeforeLink: "To get started with Gumloop:",
+      linkText: "Generate your Gumloop MCP server URL",
+      promptTextAfterLink:
+        "and then follow the setup instructions in the tabs below for your preferred client (Cursor or Claude).",
+    },
   },
-  {
-    type: "code",
-    value:
-      '{\\n  "mcpServers": {\\n    "[server-name]-gumcp": {\\n      "command": "/bin/bash",\\n      "args": [\\n        "-c",\\n        "cd /[where you installed guMCP]/guMCP && source ./venv/bin/activate && python src/servers/local.py --server=[server you\\\'re using]"\\n      ]\\n    }\\n  }\\n}',
+  composio: {
+    // Voltagent: (Defaults to currentTab.serverConfig from tabOptions)
+    cursor: [
+      {
+        type: "heading",
+        title: "Authenticating Composio MCP with Cursor",
+        value: "",
+      },
+      { type: "text", value: "Placeholder content for Composio with Cursor." },
+      {
+        type: "code",
+        language: "json",
+        value: JSON.stringify(
+          {
+            mcpServers: { "composio-mcp": { url: "<YOUR_COMPOSIO_MCP_URL>" } },
+          },
+          null,
+          2,
+        ),
+      },
+    ],
+    claude: [
+      {
+        type: "heading",
+        title: "Authenticating Composio MCP with Claude",
+        value: "",
+      },
+      { type: "text", value: "Placeholder content for Composio with Claude." },
+    ],
+    serverGenerationInfo: {
+      urlTemplate: "https://mcp.composio.dev/{mcpname}",
+      mcpNameValue: "ahrefs", // As per user request context
+      promptTextBeforeLink: "For Composio:",
+      linkText: "Generate your Composio MCP URL",
+      promptTextAfterLink:
+        "and then use the configuration details shown in the tabs below.",
+    },
   },
-  {
-    type: "text",
-    value:
-      "Step 3: Restart Claude\\nAfter saving your configuration, restart Claude to apply the changes.",
+  community: {
+    // Voltagent: (Defaults to currentTab.serverConfig from tabOptions)
+    cursor: [
+      {
+        type: "heading",
+        title: "Using Community Ahrefs MCP with Cursor",
+        value: "",
+      },
+      {
+        type: "text",
+        value:
+          "The Community Ahrefs MCP server provides a direct API. You would typically call its endpoints from your Cursor extensions or custom code or via another MCP server that proxies to it. Refer to the Community Ahrefs MCP documentation for API details.",
+      },
+      {
+        type: "text",
+        title: "Example: If guMCP is proxying this server",
+        value:
+          "If you have GuMCP setup to proxy the Community Ahrefs server (e.g., named `ahrefs-community` in GuMCP config), you can add it to Cursor like any other GuMCP connection:",
+      },
+      {
+        type: "code",
+        language: "json",
+        value: JSON.stringify(
+          {
+            mcpServers: {
+              "community-ahrefs-via-gumcp": {
+                url: "http://localhost:8000/ahrefs-community/v1", // Example if GuMCP proxies it
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      },
+    ],
+    claude: [
+      {
+        type: "heading",
+        title: "Using Community Ahrefs MCP with Claude",
+        value: "",
+      },
+      {
+        type: "text",
+        value:
+          "The Community Ahrefs MCP server provides a direct API. You would typically make HTTPS calls to its endpoints from your Claude tools or custom integrations. Define a Claude tool that makes requests to the Community Ahrefs MCP API endpoints.",
+      },
+      {
+        type: "text",
+        title: "Example Tool Definition Snippet (Conceptual)",
+        value:
+          "Your tool definition would specify how to call the Community Ahrefs API.",
+      },
+      {
+        type: "code",
+        language: "json",
+        value: JSON.stringify(
+          {
+            tool_name: "fetch_ahrefs_community_data",
+            description: "Calls the Community Ahrefs MCP server.",
+            input_schema: {
+              type: "object",
+              properties: {
+                endpoint: { type: "string" },
+                params: { type: "object" },
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      },
+    ],
+    serverGenerationInfo: {
+      // Community server is typically self-hosted or a direct API, no generation link usually.
+      // We can provide a text prompt if needed.
+      promptTextBeforeLink:
+        "The Community Ahrefs MCP server is typically self-hosted or accessed via a direct API endpoint specified in its documentation.",
+      promptTextAfterLink:
+        "Please refer to its documentation for setup and then use the example configurations below.",
+    },
   },
-];
+};
+
+// These are no longer needed as static exports if all content is in providerServerConfigs
+// export const claudeTabContent: ServerConfigContentItem[] = [...];
+// export const cursorTabContent: ServerConfigContentItem[] = [...];
 
 // Tab options for filtering
 export interface TabOption {

@@ -2,10 +2,8 @@ import type * as React from "react";
 import { useState } from "react";
 import {
   ArrowLeftIcon,
-  StarIcon,
   ServerIcon,
   WrenchScrewdriverIcon,
-  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../ui/dot-pattern";
@@ -21,15 +19,14 @@ import { AnthropicLogo } from "../../../../static/img/logos/integrations/anthrop
 import { AsanaLogo } from "../../../../static/img/logos/integrations/asana";
 import { ZapierLogo } from "../../../../static/img/logos/integrations/zapier";
 import { GumloopLogo } from "../../../../static/img/logos/integrations/gumloop";
-import ExpandableTool, {
-  InputsList,
-  ProviderFallbackInputs,
-} from "./tool-input";
+import ExpandableTool from "./tool-input";
 import SidebarInfoSection from "./mcp-info";
+import CodeBlock from "./CodeBlock";
+import DynamicServerConfigContentRenderer, {
+  type ServerConfigContentItem,
+} from "./DynamicServerConfigContentRenderer";
 import {
-  claudeTabContent,
-  cursorTabContent,
-  type TabContentItem,
+  providerServerConfigs,
   type TabOption,
   tabOptions,
 } from "./serverConfigContent";
@@ -43,54 +40,6 @@ const logoMap: any = {
   zapier: ZapierLogo,
   gumloop: GumloopLogo,
   composio: ComposioLogo,
-};
-
-// Animation variants for code block
-const codeBlockVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.2 } },
-  exit: { opacity: 0, transition: { duration: 0.2 } },
-};
-
-// Code display component
-const CodeBlock = ({ code }) => {
-  return (
-    <div className="relative max-w-4xl overflow-hidden transition-all duration-300">
-      {/* Code content with line numbers */}
-      <pre className="text-left bg-white/5 rounded-none overflow-x-auto p-0 text-[10px] sm:text-sm font-mono m-0">
-        <div className="flex">
-          <div className="py-3 px-3 text-right text-gray-500 leading-[1.4] select-none border-r border-gray-700 min-w-[30px] landing-xs:text-[9px] landing-md:text-xs">
-            {Array.from({ length: code.split("\n").length || 1 }, (_, i) => (
-              <div key={`line-${i + 1}`}>{i + 1}</div>
-            ))}
-          </div>
-          <div className="py-3 px-3 block landing-xs:text-[9px] landing-md:text-xs w-full relative">
-            <motion.div
-              className="absolute inset-0 "
-              layoutId="codeHighlight"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            />
-            <AnimatePresence mode="wait">
-              <motion.code
-                key="code-block"
-                id="code-content"
-                className="block relative z-10 text-gray-300"
-                variants={codeBlockVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                {code}
-              </motion.code>
-            </AnimatePresence>
-          </div>
-        </div>
-      </pre>
-    </div>
-  );
 };
 
 // Tab component
@@ -164,8 +113,8 @@ export const MCPDetailPage = () => {
   const currentTab =
     tabOptions.find((tab) => tab.id === activeTab) || tabOptions[0];
 
-  // Get config code based on active tab
-  const configCode = currentTab.serverConfig;
+  // Get config code for Voltagent tab
+  const voltagentConfigCode = currentTab.serverConfig;
 
   // State for the server config nested tabs
   const [activeServerConfigTab, setActiveServerConfigTab] =
@@ -198,44 +147,63 @@ export const MCPDetailPage = () => {
   // Get metadata for current tab
   const currentMetadata = tabMetadata[activeTab] || tabMetadata.zapier;
 
-  // Define content for the new server config tabs
-  // Content can be a string (for a single code block) or an array of objects for mixed content
+  // --- Dynamic Server Config Content Logic ---
+  const currentProviderId = currentTab.id; // e.g., "zapier", "gumloop"
+  const providerConfig = providerServerConfigs[currentProviderId];
+
+  const placeholders: Record<string, string> = {
+    "{{SERVER_NAME}}": currentTab.name, // e.g., "Gumloop", "Zapier"
+    // This is specific to Gumloop's Claude config.
+    // A more robust solution might be needed if other providers use similar, uniquely named placeholders.
+    "{{AHREFS_SERVER_FOR_GUMCP}}": "ahrefs_community_server_name", // Example value
+  };
+
+  let cursorContent: ServerConfigContentItem[] = [];
+  let claudeContent: ServerConfigContentItem[] = [];
+
+  if (providerConfig) {
+    cursorContent = providerConfig.cursor || [];
+    claudeContent = providerConfig.claude || [];
+    // Voltagent content can also be dynamic if defined in providerConfig.voltagent
+    // For now, we are keeping the main currentTab.serverConfig for the "voltagent" tab's primary display
+  }
+  // --- End Dynamic Server Config Content Logic ---
 
   const serverConfigTabsData: {
     id: string;
     name: string;
-    content: string | TabContentItem[]; // Updated type for content
+    // content type will be resolved by the renderer or CodeBlock
+    content: string | ServerConfigContentItem[];
     iconComponent: React.ReactNode | null;
   }[] = [
     {
       id: "voltagent",
       name: "Voltagent",
-      content: configCode, // This is the main server config for the selected MCP
+      content: voltagentConfigCode, // Remains the primary JSON config for the selected MCP
       iconComponent: null,
     },
     {
       id: "cursor",
       name: "Cursor",
-      content: cursorTabContent, // Use imported content
+      content: cursorContent, // Dynamically set from providerServerConfigs
       iconComponent: <CursorLogo className="h-4 w-4 mr-2 text-white" />,
     },
     {
       id: "claude",
       name: "Claude",
-      content: claudeTabContent, // Use imported content
+      content: claudeContent, // Dynamically set from providerServerConfigs
       iconComponent: <Claude37Logo className="h-4 w-4 mr-2" />,
     },
   ];
 
-  const selectedTabData = serverConfigTabsData.find(
+  const selectedNestedTabData = serverConfigTabsData.find(
     (tab) => tab.id === activeServerConfigTab,
   );
-  const activeContentToRender = selectedTabData?.content;
+  const activeContentToRender = selectedNestedTabData?.content;
   const defaultMessage =
     "Select a tab to view the configuration or usage example.";
 
   // Determine tools for the "Tools Section" based on the activeTab
-  const currentProviderId = currentTab.id; // e.g., "gumloop", "composio"
   const providerData = ahrefToolsData.providers.find(
     (p) => p.name === currentProviderId,
   );
@@ -307,6 +275,39 @@ export const MCPDetailPage = () => {
                 </div>
               </div>
             </div>
+            {/* New section for Server Generation Info */}
+            {providerConfig?.serverGenerationInfo && (
+              <div className="px-6 py-4 border-b border-gray-700 bg-[#222735]/20 text-sm">
+                {providerConfig.serverGenerationInfo.promptTextBeforeLink && (
+                  <p className="text-gray-300 mb-2">
+                    {providerConfig.serverGenerationInfo.promptTextBeforeLink}
+                  </p>
+                )}
+                {providerConfig.serverGenerationInfo.urlTemplate && (
+                  <p className="mb-2">
+                    <Link
+                      href={providerConfig.serverGenerationInfo.urlTemplate.replace(
+                        /{mcpname}/g,
+                        providerConfig.serverGenerationInfo.mcpNameValue ||
+                          "ahrefs",
+                      )}
+                      className="text-[#00d992] hover:text-[#00b37a] font-medium underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {providerConfig.serverGenerationInfo.linkText ||
+                        "Click here to get your server URL"}
+                    </Link>
+                  </p>
+                )}
+                {providerConfig.serverGenerationInfo.promptTextAfterLink && (
+                  <p className="text-gray-300">
+                    {providerConfig.serverGenerationInfo.promptTextAfterLink}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* New Nested Tab Navigation for Server Config */}
             <div
               className="flex border-b border-gray-700 bg-[#222735]/50"
@@ -343,27 +344,32 @@ export const MCPDetailPage = () => {
               ))}
             </div>
             <div className="p-4">
-              {" "}
-              {/* Wrapper for content area below tabs */}
               {activeContentToRender ? (
+                activeServerConfigTab === "voltagent" &&
                 typeof activeContentToRender === "string" ? (
                   <CodeBlock code={activeContentToRender} />
+                ) : activeServerConfigTab === "voltagent" &&
+                  typeof activeContentToRender !== "string" ? (
+                  // Handle if Voltagent content is ServerConfigContentItem[] from providerServerConfigs
+                  // For now, this example assumes providerConfig.voltagent is not the primary source for the 'voltagent' tab display here.
+                  // If it were, we'd use DynamicServerConfigContentRenderer here too.
+                  // This part can be enhanced if providerConfig.voltagent becomes the primary source.
+                  <DynamicServerConfigContentRenderer
+                    content={activeContentToRender as ServerConfigContentItem[]}
+                    placeholders={placeholders}
+                  />
+                ) : (activeServerConfigTab === "cursor" ||
+                    activeServerConfigTab === "claude") &&
+                  Array.isArray(activeContentToRender) ? (
+                  <DynamicServerConfigContentRenderer
+                    content={activeContentToRender}
+                    placeholders={placeholders}
+                  />
                 ) : (
-                  activeContentToRender.map((item, index) =>
-                    item.type === "code" ? (
-                      <CodeBlock
-                        key={`${item.type}-${index}-${item.value.slice(0, 10)}`}
-                        code={item.value}
-                      />
-                    ) : (
-                      <p
-                        key={`${item.type}-${index}-${item.value.slice(0, 10)}`}
-                        className="text-gray-300 my-2 whitespace-pre-line text-sm leading-relaxed"
-                      >
-                        {item.value}
-                      </p>
-                    ),
-                  )
+                  // Fallback for unexpected content types, though ideally covered by above
+                  <p className="text-gray-400 text-sm my-2">
+                    Invalid content format for this tab.
+                  </p>
                 )
               ) : (
                 <p className="text-gray-400 text-sm my-2">{defaultMessage}</p>
@@ -371,38 +377,34 @@ export const MCPDetailPage = () => {
             </div>
           </div>
 
-          {/* What is section */}
-          <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
-            <div className="flex justify-center mb-8">
-              <div className="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center">
-                <AhrefLogo className="w-12 h-12 text-white" />
+          {/* What is section - Now uses content from ahref-tools.json */}
+          {ahrefToolsData.mcp_page_content && (
+            <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
+              <div className="flex justify-center mb-8">
+                <div className="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center">
+                  <AhrefLogo className="w-12 h-12 text-white" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-white text-center mb-4">
+                {ahrefToolsData.mcp_page_content.title}
+              </p>
+              <p className="text-gray-300 mb-8 text-center">
+                {ahrefToolsData.mcp_page_content.description}
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                {ahrefToolsData.total_tools.map((tool) => (
+                  <ExpandableTool
+                    key={tool.id}
+                    tool={{ ...tool, ahrefData: ahrefToolsData }}
+                    toggleTool={toggleTool}
+                    expanded={!!expandedTools[tool.id]}
+                    logoMap={logoMap}
+                    showMcpContentDescription={true}
+                  />
+                ))}
               </div>
             </div>
-            <p className="text-2xl font-bold text-white text-center mb-4">
-              How Can Your AI Agents Leverage the Ahrefs MCP Server?
-            </p>
-            <p className="text-gray-300 mb-8 text-center">
-              The Ahrefs Model Context Protocol (MCP) server empowers your AI
-              agents with direct access to Ahrefs' powerful SEO toolkit.
-              Discover how your AI agents can automate complex SEO tasks, from
-              in-depth backlink analysis and keyword research to competitor
-              tracking and site audits. Below, explore the specific capabilities
-              and how you can integrate them into your AI agent workflows via
-              MCP for enhanced SEO automation and intelligence.
-            </p>
-            <div className="grid grid-cols-1 gap-4">
-              {ahrefToolsData.total_tools.map((tool) => (
-                <ExpandableTool
-                  key={tool.id}
-                  tool={{ ...tool, ahrefData: ahrefToolsData }}
-                  toggleTool={toggleTool}
-                  expanded={!!expandedTools[tool.id]}
-                  logoMap={logoMap}
-                  showMcpContentDescription={true}
-                />
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Tools Section */}
           {toolsForProviderSection.length > 0 && (
