@@ -77,7 +77,8 @@ export const RecommendedServersSection: React.FC = () => {
             Recommended Servers
           </span>
           <div className="text-gray-400 text-sm">
-            Other MCP servers you might find useful.
+            {" "}
+            MCP servers you might find useful.
           </div>
         </div>
       </div>
