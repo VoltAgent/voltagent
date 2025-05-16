@@ -1,6 +1,6 @@
 ---
 title: What is Multimodal RAG
-description: With Multimodal RAG, pictures, sounds, it's all in the mix.
+description: With Multimodal RAG, pictures, sounds, videos, and data visualizations, it's all in the mix for enhanced AI understanding.
 tags: [rag]
 slug: multimodal-rag
 image: https://cdn.voltagent.dev/2025-05-16-multimodal-rag/social.png
