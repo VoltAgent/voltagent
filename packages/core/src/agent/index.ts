@@ -43,6 +43,8 @@ import { NodeType, createNodeId } from "../utils/node-utils";
 import type { StandardEventData } from "../events/types";
 import type { Voice } from "../voice";
 import { serializeValueForDebug } from "../utils/serialization";
+import { AgentRegistry } from "../server/registry";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 
 import { startOperationSpan, endOperationSpan, startToolSpan, endToolSpan } from "./open-telemetry";
 import type { Span } from "@opentelemetry/api";
@@ -62,9 +64,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   readonly name: string;
 
   /**
-   * Agent description
+   * @deprecated Use `instructions` instead. Will be removed in a future version.
    */
   readonly description: string;
+
+  /**
+   * Agent instructions. This is the preferred field over `description`.
+   */
+  readonly instructions: string;
 
   /**
    * The LLM provider to use
@@ -120,20 +127,22 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Create a new agent
    */
   constructor(
-    options: Omit<AgentOptions, "provider" | "model"> &
+    options: AgentOptions &
       TProvider & {
         model: ModelType<TProvider>;
-        subAgents?: Agent<any>[]; // Keep any for now
+        subAgents?: Agent<any>[]; // Reverted to Agent<any>[] temporarily
         maxHistoryEntries?: number;
         hooks?: AgentHooks;
         retriever?: BaseRetriever;
         voice?: Voice;
         markdown?: boolean;
+        telemetryExporter?: VoltAgentExporter;
       },
   ) {
     this.id = options.id || options.name;
     this.name = options.name;
-    this.description = options.description || "A helpful AI assistant";
+    this.instructions = options.instructions ?? options.description ?? "A helpful AI assistant";
+    this.description = this.instructions;
     this.llm = options.llm as ProviderInstance<TProvider>;
     this.model = options.model;
     this.retriever = options.retriever;
@@ -157,10 +166,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.subAgentManager = new SubAgentManager(this.name, options.subAgents || []);
 
     // Initialize history manager
+    const chosenExporter =
+      options.telemetryExporter || AgentRegistry.getInstance().getGlobalVoltAgentExporter();
     this.historyManager = new HistoryManager(
-      options.maxHistoryEntries || 0,
       this.id,
       this.memoryManager,
+      options.maxHistoryEntries || 0,
+      chosenExporter,
     );
   }
 
@@ -176,7 +188,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     historyEntryId: string;
     contextMessages: BaseMessage[];
   }): Promise<BaseMessage> {
-    let baseDescription = this.description || ""; // Ensure baseDescription is a string
+    let baseInstructions = this.instructions || ""; // Ensure baseInstructions is a string
 
     // --- Add Instructions from Toolkits --- (Simplified Logic)
     let toolInstructions = "";
@@ -191,16 +203,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       }
     }
     if (toolInstructions) {
-      baseDescription = `${baseDescription}${toolInstructions}`;
+      baseInstructions = `${baseInstructions}${toolInstructions}`;
     }
     // --- End Add Instructions from Toolkits ---
 
     // Add Markdown Instruction if Enabled
     if (this.markdown) {
-      baseDescription = `${baseDescription}\n\nUse markdown to format your answers.`;
+      baseInstructions = `${baseInstructions}\n\nUse markdown to format your answers.`;
     }
 
-    let description = baseDescription;
+    let finalInstructions = baseInstructions;
 
     // If retriever exists and we have input, get context
     if (this.retriever && input && historyEntryId) {
@@ -226,7 +238,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       try {
         const context = await this.retriever.retrieve(input);
         if (context?.trim()) {
-          description = `${description}\n\nRelevant Context:\n${context}`;
+          finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
 
           // Update the event
           eventUpdater({
@@ -256,17 +268,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const agentsMemory = await this.prepareAgentsMemory(contextMessages);
 
       // Generate the supervisor message with the agents memory inserted
-      description = this.subAgentManager.generateSupervisorSystemMessage(description, agentsMemory);
+      finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
+        finalInstructions,
+        agentsMemory,
+      );
 
       return {
         role: "system",
-        content: description,
+        content: finalInstructions,
       };
     }
 
     return {
       role: "system",
-      content: `You are ${this.name}. ${description}`,
+      content: `You are ${this.name}. ${finalInstructions}`,
     };
   }
 
@@ -429,6 +444,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId?: string;
       parentHistoryEntryId?: string;
       operationName: string;
+      userContext?: Map<string | symbol, unknown>;
+      userId?: string;
+      conversationId?: string;
     } = {
       operationName: "unknown",
     },
@@ -442,21 +460,30 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       modelName: this.getModelName(),
     });
 
-    // Create a new history entry
-    const historyEntry = await this.historyManager.addEntry(input, "", initialStatus, [], {
-      events: [],
-    });
+    const historyEntry = await this.historyManager.addEntry(
+      input,
+      "",
+      initialStatus,
+      [],
+      {
+        events: [],
+      },
+      this.getFullState(),
+      options.userId,
+      options.conversationId,
+    );
 
-    // Create operation context
     const opContext: OperationContext = {
       operationId: historyEntry.id,
-      userContext: new Map<string | symbol, unknown>(),
+      userContext: options.userContext
+        ? new Map(options.userContext)
+        : new Map<string | symbol, unknown>(),
       historyEntry,
       eventUpdaters: new Map<string, EventUpdater>(),
       isActive: true,
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
-      otelSpan: otelSpan, // Assign the span from the helper
+      otelSpan: otelSpan,
     };
 
     // Standardized message event
@@ -484,6 +511,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       id: this.id,
       name: this.name,
       description: this.description,
+      instructions: this.instructions,
       status: "idle",
       model: this.getModelName(),
       // Create a node representing this agent
@@ -579,7 +607,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       timestamp: new Date().toISOString(),
       sourceAgentId: this.id,
       ...data,
-      ...(userContextData && { userContext: userContextData }), // Add userContext if available
+      ...(userContextData && { userContext: userContextData }),
     };
 
     // Create the event payload
@@ -587,7 +615,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       agentId: this.id,
       historyId,
       eventName,
-      status: status as AgentStatus,
+      status: status as any,
       additionalData: eventData,
       type,
     };
@@ -667,7 +695,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       toolId?: string;
     } = {
       affectedNodeId: toolNodeId,
-      status: status as any, // Keep cast for internal system
+      status: status as any,
       timestamp: new Date().toISOString(),
       input: data.input,
       output: data.output,
@@ -688,7 +716,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       agentId: this.id,
       historyId: context.historyEntry.id,
       name: eventName,
-      status: status as AgentStatus,
+      status: status as any,
       data: internalEventData,
       type: "tool",
     });
@@ -698,7 +726,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         agentId: context.parentAgentId,
         historyId: context.parentHistoryEntryId,
         name: eventName,
-        status: status as AgentStatus,
+        status: status as any,
         data: { ...internalEventData, sourceAgentId: this.id },
         type: "tool",
       });
@@ -721,14 +749,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private addAgentEvent = (
     context: OperationContext,
     eventName: string,
-    status: EventStatus,
+    status: AgentStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
   ): void => {
     // Retrieve the OpenTelemetry span from the context
     const otelSpan = context.otelSpan;
 
     if (otelSpan) {
-      endOperationSpan({ span: otelSpan, status: status as any, data });
+      endOperationSpan({
+        span: otelSpan,
+        status: status as any,
+        data,
+      });
     } else {
       console.warn(
         `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
@@ -800,12 +832,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "generateText",
+      userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -940,14 +976,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.updateHistoryEntry(operationContext, {
         output: response.text,
         usage: response.usage,
-        status: "completed",
+        status: "completed" as any,
       });
-      this.addAgentEvent(operationContext, "finished", "completed", {
+      this.addAgentEvent(operationContext, "finished", "completed" as any, {
         input: messages,
         output: response.text,
         usage: response.usage,
         affectedNodeId: `agent_${this.id}`,
-        status: "completed",
+        status: "completed" as any,
       });
       operationContext.isActive = false;
       const standardizedOutput: StandardizedTextResult = {
@@ -967,12 +1003,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     } catch (error) {
       const voltagentError = error as VoltAgentError;
       operationContext.eventUpdaters.clear();
-      this.addAgentEvent(operationContext, "finished", "error", {
+      this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
         affectedNodeId: `agent_${this.id}`,
-        status: "error",
+        status: "error" as any,
         metadata: {
           code: voltagentError.code,
           originalError: voltagentError.originalError,
@@ -983,7 +1019,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
       this.updateHistoryEntry(operationContext, {
         output: voltagentError.message,
-        status: "error",
+        status: "error" as any,
       });
       operationContext.isActive = false;
       await this.hooks.onEnd?.({
@@ -1010,12 +1046,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "streamText",
+      userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1156,14 +1196,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.updateHistoryEntry(operationContext, {
           output: result.text,
           usage: result.usage,
-          status: "completed",
+          status: "completed" as any,
         });
-        this.addAgentEvent(operationContext, "finished", "completed", {
+        this.addAgentEvent(operationContext, "finished", "completed" as any, {
           input: messages,
           output: result.text,
           usage: result.usage,
           affectedNodeId: `agent_${this.id}`,
-          status: "completed",
+          status: "completed" as any,
           metadata: {
             finishReason: result.finishReason,
             warnings: result.warnings,
@@ -1193,7 +1233,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   affectedNodeId: toolNodeId,
                   error: error.message,
                   errorMessage: error.message,
-                  status: "error",
+                  status: "error" as any,
                   updatedAt: new Date().toISOString(),
                   output: error.message,
                 },
@@ -1218,12 +1258,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           }
         }
         operationContext.eventUpdaters.clear();
-        this.addAgentEvent(operationContext, "finished", "error", {
+        this.addAgentEvent(operationContext, "finished", "error" as any, {
           input: messages,
           error: error,
           errorMessage: error.message,
           affectedNodeId: `agent_${this.id}`,
-          status: "error",
+          status: "error" as any,
           metadata: {
             code: error.code,
             originalError: error.originalError,
@@ -1234,7 +1274,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
         this.updateHistoryEntry(operationContext, {
           output: error.message,
-          status: "error",
+          status: "error" as any,
         });
         operationContext.isActive = false;
         if (internalOptions.provider?.onError) {
@@ -1267,12 +1307,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId,
       parentHistoryEntryId,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "generateObject",
+      userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1343,17 +1387,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       const responseStr =
         typeof response === "string" ? response : JSON.stringify(response?.object);
-      this.addAgentEvent(operationContext, "finished", "completed", {
+      this.addAgentEvent(operationContext, "finished", "completed" as any, {
         output: responseStr,
         usage: response.usage,
         affectedNodeId: `agent_${this.id}`,
-        status: "completed",
+        status: "completed" as any,
         input: messages,
       });
       this.updateHistoryEntry(operationContext, {
         output: responseStr,
         usage: response.usage,
-        status: "completed",
+        status: "completed" as any,
       });
       operationContext.isActive = false;
       const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
@@ -1372,12 +1416,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       return typedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
-      this.addAgentEvent(operationContext, "finished", "error", {
+      this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
         affectedNodeId: `agent_${this.id}`,
-        status: "error",
+        status: "error" as any,
         metadata: {
           code: voltagentError.code,
           originalError: voltagentError.originalError,
@@ -1388,7 +1432,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
       this.updateHistoryEntry(operationContext, {
         output: voltagentError.message,
-        status: "error",
+        status: "error" as any,
       });
       operationContext.isActive = false;
       await this.hooks.onEnd?.({
@@ -1417,12 +1461,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentHistoryEntryId,
       provider,
       contextLimit = 10,
+      userContext,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
       operationName: "streamObject",
+      userContext,
+      userId,
+      conversationId: initialConversationId,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1492,12 +1540,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             return;
           }
           const responseStr = JSON.stringify(result.object);
-          this.addAgentEvent(operationContext, "finished", "completed", {
+          this.addAgentEvent(operationContext, "finished", "completed" as any, {
             input: messages,
             output: responseStr,
             usage: result.usage,
             affectedNodeId: `agent_${this.id}`,
-            status: "completed",
+            status: "completed" as any,
             metadata: {
               finishReason: result.finishReason,
               warnings: result.warnings,
@@ -1507,7 +1555,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           this.updateHistoryEntry(operationContext, {
             output: responseStr,
             usage: result.usage,
-            status: "completed",
+            status: "completed" as any,
           });
           operationContext.isActive = false;
           await this.hooks.onEnd?.({
@@ -1532,7 +1580,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                     affectedNodeId: toolNodeId,
                     error: error.message,
                     errorMessage: error.message,
-                    status: "error",
+                    status: "error" as any,
                     updatedAt: new Date().toISOString(),
                     output: error.message,
                   },
@@ -1557,12 +1605,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             }
           }
           operationContext.eventUpdaters.clear();
-          this.addAgentEvent(operationContext, "finished", "error", {
+          this.addAgentEvent(operationContext, "finished", "error" as any, {
             input: messages,
             error: error,
             errorMessage: error.message,
             affectedNodeId: `agent_${this.id}`,
-            status: "error",
+            status: "error" as any,
             metadata: {
               code: error.code,
               originalError: error.originalError,
@@ -1573,7 +1621,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           });
           this.updateHistoryEntry(operationContext, {
             output: error.message,
-            status: "error",
+            status: "error" as any,
           });
           operationContext.isActive = false;
           if (provider?.onError) {
@@ -1590,16 +1638,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const typedResponse = response as InferStreamObjectResponse<TProvider>;
       return typedResponse;
     } catch (error) {
-      this.addAgentEvent(operationContext, "finished", "error", {
+      this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
         error,
         errorMessage: error instanceof Error ? error.message : "Unknown error",
         affectedNodeId: `agent_${this.id}`,
-        status: "error",
+        status: "error" as any,
       });
       this.updateHistoryEntry(operationContext, {
         output: error instanceof Error ? error.message : "Unknown error",
-        status: "error",
+        status: "error" as any,
       });
       operationContext.isActive = false;
       await this.hooks.onEnd?.({
@@ -1688,6 +1736,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Checks if telemetry (VoltAgentExporter) is configured for this agent.
+   * @returns True if telemetry is configured, false otherwise.
+   */
+  public isTelemetryConfigured(): boolean {
+    return this.historyManager.isExporterConfigured();
+  }
+
+  /**
    * Add one or more tools or toolkits to the agent.
    * Delegates to ToolManager's addItems method.
    * @returns Object containing added items (difficult to track precisely here, maybe simplify return)
@@ -1702,5 +1758,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     return {
       added: items,
     };
+  }
+
+  /**
+   * @internal
+   * Internal method to set the VoltAgentExporter on the agent's HistoryManager.
+   * This is typically called by the main VoltAgent instance after it has initialized its exporter.
+   */
+  public _INTERNAL_setVoltAgentExporter(exporter: VoltAgentExporter): void {
+    if (this.historyManager) {
+      this.historyManager.setExporter(exporter);
+    }
   }
 }

@@ -86,13 +86,13 @@ export class SubAgentManager {
    * @param baseDescription - The base description of the agent
    * @param agentsMemory - Optional string containing formatted memory from previous agent interactions
    */
-  public generateSupervisorSystemMessage(baseDescription: string, agentsMemory = ""): string {
+  public generateSupervisorSystemMessage(baseInstructions: string, agentsMemory = ""): string {
     if (this.subAgents.length === 0) {
-      return baseDescription;
+      return baseInstructions;
     }
 
     const subAgentList = this.subAgents
-      .map((agent) => `- ${agent.name}: ${agent.description}`)
+      .map((agent) => `- ${agent.name}: ${agent.instructions}`)
       .join("\n");
 
     return `
@@ -103,7 +103,7 @@ ${subAgentList}
 </specialized_agents>
 
 <instructions>
-${baseDescription}
+${baseInstructions}
 </instructions>
 
 <guidelines>
@@ -153,6 +153,7 @@ ${agentsMemory || "No previous agent interactions available."}
       sourceAgent,
       parentAgentId,
       parentHistoryEntryId,
+      userContext,
     } = options;
 
     // Use the provided conversationId or generate a new one
@@ -175,12 +176,13 @@ ${task}
 Context: ${JSON.stringify(context)}`,
       };
 
-      // Send the handoff to the target agent, INCLUDING PARENT CONTEXT
+      // Send the handoff to the target agent, INCLUDING PARENT CONTEXT and USERCONTEXT
       const response = await targetAgent.generateText([handoffMessage, ...sharedContext], {
         conversationId: handoffConversationId,
         userId,
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
+        userContext,
       });
 
       return {
@@ -217,10 +219,17 @@ Context: ${JSON.stringify(context)}`,
   public async handoffToMultiple(
     options: Omit<AgentHandoffOptions, "targetAgent"> & {
       targetAgents: Agent<any>[];
+      userContext?: Map<string | symbol, unknown>;
     },
   ): Promise<AgentHandoffResult[]> {
-    const { targetAgents, conversationId, parentAgentId, parentHistoryEntryId, ...restOptions } =
-      options;
+    const {
+      targetAgents,
+      conversationId,
+      parentAgentId,
+      parentHistoryEntryId,
+      userContext,
+      ...restOptions
+    } = options;
 
     // Use the same conversationId for all handoffs to maintain context
     const handoffConversationId = conversationId || crypto.randomUUID();
@@ -235,6 +244,7 @@ Context: ${JSON.stringify(context)}`,
             conversationId: handoffConversationId,
             parentAgentId,
             parentHistoryEntryId,
+            userContext,
           });
         } catch (error) {
           console.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
@@ -305,8 +315,10 @@ Context: ${JSON.stringify(context)}`,
             );
           }
 
-          // Get the source agent from options if available
-          const sourceAgent = options.sourceAgent;
+          // Get the source agent and its operationContext from options
+          const sourceAgent = options.sourceAgent as Agent<any> | undefined;
+          const operationContext = options.operationContext;
+          const supervisorUserContext = operationContext?.userContext;
 
           // Get current history entry ID for parent context
           // This is passed from the Agent class via options when the tool is called
@@ -321,6 +333,8 @@ Context: ${JSON.stringify(context)}`,
             // Pass parent context for event propagation
             parentAgentId: sourceAgent?.id,
             parentHistoryEntryId: currentHistoryEntryId,
+            // Pass the supervisor's userContext to the handoff options
+            userContext: supervisorUserContext,
             ...options,
           });
 

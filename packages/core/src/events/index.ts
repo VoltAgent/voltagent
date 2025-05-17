@@ -120,7 +120,7 @@ export class AgentEventEmitter extends EventEmitter {
     // Create timeline event
     const event: TimelineEvent = {
       id: uuidv4(), // Add unique ID for the event
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       name: eventName,
       data: additionalData,
       type,
@@ -138,19 +138,15 @@ export class AgentEventEmitter extends EventEmitter {
     }
     updatedEntry.events.push(event);
 
-    try {
-      // Use the new method to access historyManager from agent
-      const historyManager = agent.getHistoryManager();
+    // Use the new method to access historyManager from agent
+    const historyManager = agent.getHistoryManager();
 
-      // Directly save the event to the database
-      await historyManager.addEventToEntry(historyEntry.id, event);
+    // Directly save the event to the database
+    await historyManager.addEventToEntry(historyEntry.id, event);
 
-      // If the status has changed, update the history entry too
-      if (status) {
-        await historyManager.updateEntry(historyEntry.id, { status });
-      }
-    } catch (error) {
-      console.error(`[AgentEventEmitter] Failed to persist event:`, error);
+    // If the status has changed, update the history entry too
+    if (status) {
+      await historyManager.updateEntry(historyEntry.id, { status });
     }
 
     // Emit history update event

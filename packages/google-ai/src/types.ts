@@ -1,4 +1,12 @@
-import type { GenerateContentConfig, GenerateContentResponse } from "@google/genai";
+import type {
+  GenerateContentConfig,
+  GenerateContentResponse,
+  ToolConfig,
+  Tool,
+  FunctionCall,
+  FunctionResponse,
+} from "@google/genai";
+import type { BaseMessage, BaseTool, ProviderTextResponse, StepWithContent } from "@voltagent/core";
 
 // Define explicit runtime options to avoid deep generic instantiation
 export interface GoogleProviderRuntimeOptions
@@ -10,24 +18,34 @@ export interface GoogleProviderRuntimeOptions
   [key: string]: any;
 }
 
+// Tool configuration types based on Google's GenAI SDK
+export interface GoogleToolConfig extends ToolConfig {}
+export interface GoogleTool extends Tool {}
+
 // Define concrete types instead of using Omit with generics since it was causing
 // "Type instantiation is excessively deep and possibly infinite".
 type BaseGoogleTextOptions = {
-  messages: any[];
+  messages: BaseMessage[];
   model: string;
   provider?: GoogleProviderRuntimeOptions;
-  tools?: any[];
+  tools?: BaseTool[];
   maxSteps?: number;
-  onStepFinish?: (step: any) => void | Promise<void>;
+  onStepFinish?: (step: StepWithContent) => void | Promise<void>;
   signal?: AbortSignal;
 };
 
 export type GoogleGenerateTextOptions = BaseGoogleTextOptions;
 
 export type GoogleStreamTextOptions = BaseGoogleTextOptions & {
+  tools?: BaseTool[];
   onChunk?: (chunk: any) => void | Promise<void>;
   onFinish?: (result: { text: string }) => void | Promise<void>;
   onError?: (error: any) => void | Promise<void>;
+};
+
+export type GoogleProviderTextResponse = ProviderTextResponse<GenerateContentResponse> & {
+  toolCalls?: FunctionCall[];
+  toolResults?: FunctionResponse[];
 };
 
 export type GoogleGenerateContentStreamResult = AsyncGenerator<

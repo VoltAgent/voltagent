@@ -140,7 +140,7 @@ const config: Config = {
       ],
     },
     footer: {
-      copyright: ` `,
+      copyright: " ",
     },
     algolia: {
       appId: "C1TWP51DBB",
@@ -234,6 +234,13 @@ const config: Config = {
       },
 
       additionalLanguages: ["diff", "diff-ts", "diff-yml", "bash"],
+    },
+    announcementBar: {
+      id: "product_hunt_support",
+      content:
+        ' <a target="_blank" rel="noopener noreferrer" href="https://github.com/VoltAgent/voltagent/tree/main/examples/">🚀 Refer to 20+ AI Agent Examples with Source Code</a>',
+      backgroundColor: "#10b981",
+      isCloseable: true,
     },
   } satisfies Preset.ThemeConfig,
 };

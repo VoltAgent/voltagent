@@ -1,15 +1,20 @@
 {
   "name": "@voltagent/groq-ai",
-  "version": "0.1.3",
+  "version": "0.1.7",
   "description": "VoltAgent Groq AI - Groq provider integration for VoltAgent",
   "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
-    "dist",
-    "src",
-    "dist/*.map"
+    "dist"
   ],
   "scripts": {
     "build": "tsup",
@@ -18,7 +23,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.10",
+    "@voltagent/core": "^0.1.16",
     "groq-sdk": "^0.20.0",
     "zod": "^3.24.2"
   },

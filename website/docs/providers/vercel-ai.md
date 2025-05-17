@@ -62,7 +62,7 @@ const vercelProvider = new VercelProvider();
 
 const agent = new Agent({
   name: "Vercel Chat Agent",
-  description: "An agent powered by models via Vercel AI SDK",
+  instructions: "An agent powered by models via Vercel AI SDK",
   llm: vercelProvider,
   model: openai("gpt-4o"),
 });
@@ -119,7 +119,7 @@ const openAIAgent = new Agent({
   id: "openai-agent",
   llm: new VercelProvider(),
   model: openai("gpt-4o"),
-  description: "Uses OpenAI",
+  instructions: "Uses OpenAI",
 });
 
 // Example: Agent configured with Anthropic model
@@ -127,7 +127,7 @@ const anthropicAgent = new Agent({
   id: "anthropic-agent",
   llm: new VercelProvider(),
   model: anthropic("claude-3-sonnet-20240229"),
-  description: "Uses Anthropic",
+  instructions: "Uses Anthropic",
 });
 
 // Example: Using generateText with the configured agent
@@ -157,7 +157,7 @@ async function main() {
 
   const agent = new Agent({
     name: "Simple Vercel Agent",
-    description: "A simple agent powered by Vercel AI SDK",
+    instructions: "A simple agent powered by Vercel AI SDK",
     llm: vercelProvider,
     model: openai("gpt-4o-mini"),
   });
@@ -188,7 +188,7 @@ async function main() {
 
   const agent = new Agent({
     name: "Vercel Streaming Agent",
-    description: "A streaming agent powered by Vercel AI SDK",
+    instructions: "A streaming agent powered by Vercel AI SDK",
     llm: vercelProvider,
     model: anthropic("claude-3-haiku-20240307"),
   });
@@ -232,7 +232,7 @@ async function main() {
   // Ensure the model supports object generation (e.g., gpt-4o)
   const agent = new Agent({
     name: "Vercel Object Agent",
-    description: "An agent that generates structured data via Vercel AI SDK",
+    instructions: "An agent that generates structured data via Vercel AI SDK",
     llm: vercelProvider,
     model: openai("gpt-4o"),
   });
@@ -278,7 +278,7 @@ async function main() {
   // Ensure the model supports object streaming (e.g., gpt-4o)
   const agent = new Agent({
     name: "Vercel Object Streaming Agent",
-    description: "An agent that streams structured data via Vercel AI SDK",
+    instructions: "An agent that streams structured data via Vercel AI SDK",
     llm: vercelProvider,
     model: openai("gpt-4o"),
   });

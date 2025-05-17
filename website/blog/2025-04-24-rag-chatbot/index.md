@@ -176,11 +176,11 @@ class KnowledgeBaseRetriever extends BaseRetriever {
 const knowledgeRetriever = new KnowledgeBaseRetriever();
 
 // Define the agent that uses the retriever directly
-const ragAgent = new Agent({
-  name: "RAG Chatbot",
-  description: "A chatbot that answers questions based on its internal knowledge base.",
-  llm: new VercelAIProvider(), // Using Vercel AI SDK Provider
-  model: openai("gpt-4o-mini"), // Using OpenAI model via Vercel
+const simpleAgent = new Agent({
+  name: "Simple Assistant",
+  instructions: "A chatbot that answers questions based on its internal knowledge base.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
   // Attach the retriever directly
   retriever: knowledgeRetriever,
 });
@@ -189,8 +189,8 @@ const ragAgent = new Agent({
 
 new VoltAgent({
   agents: {
-    // Make the agent available under the key 'ragAgent'
-    ragAgent,
+    // Make the agent available under the key 'simpleAgent'
+    simpleAgent,
   },
 });
 ```
@@ -198,12 +198,12 @@ new VoltAgent({
 **Code Breakdown:**
 
 - **`KnowledgeBaseRetriever`:** Extends `BaseRetriever`. It holds a small array of `documents`. The `retrieve` method performs a simple case-insensitive search. If it finds matches, it formats them into a string prefixed with "Relevant Information Found:"; otherwise, it returns a "not found" message.
-- **`ragAgent`:** An `Agent` instance.
-  - We give it a name and description.
+- **`simpleAgent`:** An `Agent` instance.
+  - We give it a name and instructions.
   - We configure the `llm` provider and `model`.
   - Crucially, we set `retriever: knowledgeRetriever`. This tells VoltAgent to automatically run our retriever before calling the LLM.
-  - The `systemPrompt` is important here. It explicitly tells the LLM to base its answers _only_ on the "Relevant Information Found" (which our retriever provides) and what to do if no information is found. This helps prevent the LLM from falling back on its general knowledge.
-- **`new VoltAgent(...)`:** Initializes the VoltAgent server and registers our `ragAgent`.
+  - The `instructions` is important here. It explicitly tells the LLM to base its answers _only_ on the "Relevant Information Found" (which our retriever provides) and what to do if no information is found. This helps prevent the LLM from falling back on its general knowledge.
+- **`new VoltAgent(...)`:** Initializes the VoltAgent server and registers our `simpleAgent`.
 
 ### Running the Agent
 
@@ -284,7 +284,7 @@ You should see the VoltAgent server startup message, including a link to the Dev
 Now for the fun part!
 
 1.  **Open Console:** Go to [`https://console.voltagent.dev`](https://console.voltagent.dev) in your browser.
-2.  **Find Agent:** You should see your "RAG Chatbot" listed. Click on it.
+2.  **Find Agent:** You should see your "Simple Assistant" listed. Click on it.
 3.  **Chat:** Click the chat icon (usually bottom-right) to open the chat window.
 4.  **Ask Questions:** Try asking questions related to the `documents` in our retriever:
     - `What is VoltAgent?` (Should use doc1)

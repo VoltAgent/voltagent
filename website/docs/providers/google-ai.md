@@ -97,7 +97,7 @@ const googleProvider = new GoogleGenAIProvider({ apiKey: "YOUR_GEMINI_API_KEY" }
 
 const agent = new Agent({
   name: "Google Gemini Agent",
-  description: "An agent powered by Google Gemini",
+  instructions: "An agent powered by Google Gemini",
   llm: googleProvider,
   model: "gemini-1.5-flash", // Specify the desired Google model ID
 });
@@ -128,13 +128,13 @@ Currently, the provider only processes the `text` parts of `BaseMessage` content
 
 ## Tool Calling Support
 
-⚠️ **Not Supported (Yet).**
+✅ **Supported!**
 
-The `@voltagent/google-ai` provider does not currently support native tool calling or function calling features directly through VoltAgent's `generateText` or `streamText` methods with tool definitions.
+The `@voltagent/google-ai` provider now supports native tool calling and function calling features directly through VoltAgent's `generateText` or `streamText` methods with tool definitions. This allows you to define tools (functions) that the Google AI models can invoke as part of their response generation.
 
-If you need to use tool calling with Google models (like Gemini), we recommend using the [`@voltagent/vercel-ai`](/docs/providers/vercel-ai) provider. The Vercel AI SDK provides a unified interface for tool calling across various models, including Google's. You can find more details in the [Vercel AI SDK Google Provider documentation](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai).
+This functionality was added in [PR #99](https://github.com/VoltAgent/voltagent/pull/99) by [@luixaviles](https://github.com/luixaviles). Thanks for the contribution!
 
-We welcome community contributions to add direct tool calling support to this provider!
+For examples and further details on how to define and use tools with VoltAgent, please refer to the general VoltAgent documentation on [Tool Calling](../tools/overview.md).
 
 ## Model Selection & Options
 
@@ -170,7 +170,7 @@ async function main() {
 
   const agent = new Agent({
     name: "Google Text Agent",
-    description: "Generates text using Google AI",
+    instructions: "Generates text using Google AI",
     llm: googleProvider,
     model: "gemini-1.5-flash",
   });
@@ -203,7 +203,7 @@ async function main() {
 
   const agent = new Agent({
     name: 'Google Streaming Agent',
-    description: 'Streams text using Google AI',
+    instructions: 'Streams text using Google AI',
     llm: googleProvider,
     model: 'gemini-1.5-flash',
   });
@@ -253,7 +253,7 @@ async function main() {
   // Ensure the model supports function calling/JSON mode
   const agent = new Agent({
     name: "Google Object Agent",
-    description: "Generates structured data using Google AI",
+    instructions: "Generates structured data using Google AI",
     llm: googleProvider,
     model: "gemini-1.5-pro", // Models like Pro are generally better for structured output
   });

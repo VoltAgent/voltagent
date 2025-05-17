@@ -14,21 +14,6 @@ const voltageGradient = gradient([
   { color: "#FF00FF", pos: 1 },
 ]);
 
-// AI Startup Sequence Animation
-export const showAIStartupSequence = async (): Promise<void> => {
-  const sequences = [
-    { text: "> Initializing VoltAgent Core v0.1.0", delay: 100 },
-    { text: "> Loading neural modules...", delay: 800, status: "DONE" },
-    { text: "> Calibrating language processors...", delay: 600, status: "DONE" },
-    { text: "> Loading agent capabilities...", delay: 700, status: "DONE" },
-    { text: "> Establishing secure environment...", delay: 500, status: "DONE" },
-    { text: "> AI Agent ready for deployment", delay: 300 },
-    { text: "> All systems operational!", delay: 200 },
-  ];
-
-  // ... existing code ...
-};
-
 // Logo animation
 export const showLogo = async (): Promise<void> => {
   return new Promise((resolve) => {

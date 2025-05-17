@@ -1,5 +1,96 @@
 # @voltagent/core
 
+## 0.1.19
+
+### Patch Changes
+
+- [#128](https://github.com/VoltAgent/voltagent/pull/128) [`d6cf2e1`](https://github.com/VoltAgent/voltagent/commit/d6cf2e194d47352565314c93f1a4e477701563c1) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add VoltAgentExporter for production observability 🚀
+
+  VoltAgentExporter enables persistent storage and monitoring of AI agents in production environments:
+
+  - Send agent telemetry data to the VoltAgent cloud platform
+  - Access historical execution data through your project dashboard
+  - Monitor deployed agents over time
+  - Debug production issues with comprehensive tracing
+
+  To configure your project with VoltAgentExporter, visit the new tracing setup page at [`https://console.voltagent.dev/tracing-setup`](https://console.voltagent.dev/tracing-setup).
+
+  For more information about production tracing with VoltAgentExporter, see our [developer documentation](https://voltagent.dev/docs/observability/developer-console/#production-tracing-with-voltagentexporter).
+
+## 0.1.18
+
+### Patch Changes
+
+- [#113](https://github.com/VoltAgent/voltagent/pull/113) [`0a120f4`](https://github.com/VoltAgent/voltagent/commit/0a120f4bf1b71575a4b6c67c94104633c58e1410) Thanks [@nhc](https://github.com/nhc)! - export createTool from toolkit
+
+## 0.1.17
+
+### Patch Changes
+
+- [#106](https://github.com/VoltAgent/voltagent/pull/106) [`b31c8f2`](https://github.com/VoltAgent/voltagent/commit/b31c8f2ad1b4bf242b197a094300cb3397109a94) Thanks [@omeraplak](https://github.com/omeraplak)! - Enabled `userContext` to be passed from supervisor agents to their sub-agents, allowing for consistent contextual data across delegated tasks. This ensures that sub-agents can operate with the necessary shared information provided by their parent agent.
+
+  ```typescript
+  // Supervisor Agent initiates an operation with userContext:
+  const supervisorContext = new Map<string | symbol, unknown>();
+  supervisorContext.set("globalTransactionId", "tx-supervisor-12345");
+
+  await supervisorAgent.generateText(
+    "Delegate analysis of transaction tx-supervisor-12345 to the financial sub-agent.",
+    { userContext: supervisorContext }
+  );
+
+  // In your sub-agent's hook definition (e.g., within createHooks):
+  onStart: ({ agent, context }: OnStartHookArgs) => {
+    const inheritedUserContext = context.userContext; // Access the OperationContext's userContext
+    const transactionId = inheritedUserContext.get("globalTransactionId");
+    console.log(`[${agent.name}] Hook: Operating with Transaction ID: ${transactionId}`);
+    // Expected log: [FinancialSubAgent] Hook: Operating with Transaction ID: tx-supervisor-12345
+  };
+
+  // Example: Inside a Tool executed by the Sub-Agent
+  // In your sub-agent tool's execute function:
+  execute: async (params: { someParam: string }, options?: ToolExecutionContext) => {
+    if (options?.operationContext?.userContext) {
+      const inheritedUserContext = options.operationContext.userContext;
+      const transactionId = inheritedUserContext.get("globalTransactionId");
+      console.log(`[SubAgentTool] Tool: Processing with Transaction ID: ${transactionId}`);
+      // Expected log: [SubAgentTool] Tool: Processing with Transaction ID: tx-supervisor-12345
+      return `Processed ${params.someParam} for transaction ${transactionId}`;
+    }
+    return "Error: OperationContext not available for tool";
+  };
+  ```
+
+## 0.1.14
+
+### Patch Changes
+
+- [#102](https://github.com/VoltAgent/voltagent/pull/102) [`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: use 'instructions' field for Agent definitions in examples - #88
+
+  Updated documentation examples (READMEs, docs, blogs) and relevant package code examples to use the `instructions` field instead of `description` when defining `Agent` instances.
+
+  This change aligns the examples with the preferred API usage for the `Agent` class, where `instructions` provides behavioral guidance to the agent/LLM. This prepares for the eventual deprecation of the `description` field specifically for `Agent` class definitions.
+
+  **Example Change for Agent Definition:**
+
+  ```diff
+    const agent = new Agent({
+      name: "My Assistant",
+  -   description: "A helpful assistant.",
+  +   instructions: "A helpful assistant.",
+      llm: new VercelAIProvider(),
+      model: openai("gpt-4o-mini"),
+    });
+  ```
+
+## 0.1.13
+
+### Patch Changes
+
+- [`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add `toolName` to event metadata to ensure `delegate_task` name is visible in Voltagent console
+
+- [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
+
 ## 0.1.12
 
 ### Patch Changes
@@ -34,7 +125,7 @@
   // Define your agent(s)
   const agent = new Agent({
     name: "my-voltagent-app",
-    description: "A helpful assistant that answers questions without using tools",
+    instructions: "A helpful assistant that answers questions without using tools",
     llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
   });
@@ -453,7 +544,6 @@
   const webInfoToolkit = createToolkit({
     name: "web_information",
     description: "Tools for getting information from the web.",
-    instructions: "Use these tools to find current information online.",
     addInstructions: true, // Add the instructions to the system prompt
     tools: [getWeather, searchWeb],
   });
@@ -516,7 +606,7 @@
 
   const agent = new Agent({
     name: "MyThinkingAgent",
-    description: "An agent equipped with reasoning tools.",
+    instructions: "An agent equipped with reasoning tools.",
     llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
     tools: [reasoningToolkit], // Pass the toolkit

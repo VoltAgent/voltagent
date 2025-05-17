@@ -102,7 +102,7 @@ import { openai } from "@ai-sdk/openai"; // Example model
 // Define a simple agent
 const agent = new Agent({
   name: "my-agent",
-  description: "A helpful assistant that answers questions without using tools",
+  instructions: "A helpful assistant that answers questions without using tools",
   // Note: You can swap VercelAIProvider and openai with other supported providers/models
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
@@ -183,7 +183,13 @@ VoltAgent is versatile and can power a wide range of AI-driven applications:
 
 We welcome contributions! Please refer to the contribution guidelines (link needed if available). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
 
-## Community ♥️ Thanks
+## Contributor ♥️ Thanks
+
+Big thanks to everyone who’s been part of the VoltAgent journey, whether you’ve built a plugin, opened an issue, dropped a pull request, or just helped someone out on Discord or GitHub Discussions.
+
+VoltAgent is a community effort, and it keeps getting better because of people like you.
+
+![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent)
 
 Your stars help us reach more developers! If you find VoltAgent useful, please consider giving us a star on GitHub to support the project and help others discover it.
 

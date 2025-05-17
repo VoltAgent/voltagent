@@ -89,6 +89,7 @@ Replace `process.env.OPENAI_API_KEY` with your actual OpenAI API key.
    Replace the values with your actual Zapier MCP URL and AWS credentials.
 
 2. **Get Your Zapier MCP URL:**
+
    - Set up a Zapier MCP server as described in the [Zapier MCP documentation](https://zapier.com/mcp).
    - Copy the MCP server URL for use in your `.env` file.
 

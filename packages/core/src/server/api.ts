@@ -133,36 +133,45 @@ app.use(
 // Get all agents
 app.openapi(getAgentsRoute, (c) => {
   const registry = AgentRegistry.getInstance();
-  const agents = registry.getAllAgents();
-
   try {
-    const responseData = agents.map((agent) => {
+    const agents = registry.getAllAgents();
+    const agentDataArray = agents.map((agent) => {
       const fullState = agent.getFullState();
-
-      // Ensure subAgents conform to the AgentResponse type
+      const isTelemetryEnabled = agent.isTelemetryConfigured();
       return {
-        ...fullState,
-        status: fullState.status as AgentStatus, // Cast status
-        tools: agent.getToolsForApi(),
+        // Explicitly list all properties expected by AgentResponseSchema
+        id: fullState.id,
+        name: fullState.name,
+        description: fullState.description,
+        status: fullState.status as AgentStatus,
+        model: fullState.model,
+        tools: agent.getToolsForApi() as any, // Cast to any as per schema
         subAgents:
           fullState.subAgents?.map((subAgent: any) => ({
             id: subAgent.id || "",
             name: subAgent.name || "",
             description: subAgent.description || "",
-            status: (subAgent.status as AgentStatus) || "idle", // Cast status
+            status: (subAgent.status as AgentStatus) || "idle",
             model: subAgent.model || "",
             tools: subAgent.tools || [],
             memory: subAgent.memory,
           })) || [],
-      } as z.infer<typeof AgentResponseSchema>; // Assert type conformance
+        memory: fullState.memory as any, // Cast to any as per schema
+        isTelemetryEnabled,
+        // Include other passthrough properties from fullState if necessary
+        // For now, focusing on schema-defined properties.
+      };
     });
 
-    const response = {
-      success: true,
-      data: responseData,
-    } satisfies z.infer<
+    // Define the exact success response type based on the route schema
+    type SuccessResponse = z.infer<
       (typeof getAgentsRoute.responses)[200]["content"]["application/json"]["schema"]
-    >; // Use satisfies
+    >;
+
+    const response: SuccessResponse = {
+      success: true,
+      data: agentDataArray as SuccessResponse["data"], // Ensure data array matches schema
+    };
 
     return c.json(response);
   } catch (error) {
@@ -188,13 +197,17 @@ app.get("/agents/:id", (c: ApiContext) => {
     return c.json(response, 404);
   }
 
+  const agentState = agent.getFullState();
+  const isTelemetryEnabled = agent.isTelemetryConfigured();
+
   const response: ApiResponse<AgentResponse> = {
     success: true,
     data: {
-      ...agent.getFullState(),
-      status: agent.getFullState().status as AgentStatus,
-      tools: agent.getToolsForApi() as any,
-      subAgents: agent.getFullState().subAgents as any,
+      ...agentState,
+      status: agentState.status as AgentStatus, // Cast status from fullState
+      tools: agent.getToolsForApi() as any, // Assuming getToolsForApi is correctly typed or cast
+      subAgents: agentState.subAgents as any, // Assuming subAgents from fullState are correctly typed or cast
+      isTelemetryEnabled,
     },
   };
 

@@ -20,6 +20,8 @@ import type {
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
 import { createHooks } from "./hooks";
+import { HistoryManager } from "./history";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: any };
@@ -323,6 +325,70 @@ class TestAgent<TProvider extends { llm: LLMProvider<any> }> extends Agent<TProv
   }
 }
 
+// Mock HistoryManager
+jest.mock("./history", () => ({
+  HistoryManager: jest.fn().mockImplementation(() => {
+    // createMockHistoryEntry test dosyasının global kapsamında tanımlıdır.
+    // Çağrıldığında AgentHistoryEntry'ye benzeyen bir nesne döndürür.
+    return {
+      addEntry: jest.fn().mockImplementation(async (input, _output, status, _steps, _options) => {
+        let entryInputString = "default_mock_input";
+        if (typeof input === "string") {
+          entryInputString = input;
+        } else if (
+          Array.isArray(input) &&
+          input.length > 0 &&
+          input[0] &&
+          typeof input[0].content === "string"
+        ) {
+          entryInputString = input[0].content;
+        } else if (input && typeof input === "object" && !Array.isArray(input)) {
+          entryInputString = JSON.stringify(input);
+        }
+        // createMockHistoryEntry, bu test dosyasında daha önce tanımlanmıştır.
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        return Promise.resolve(createMockHistoryEntry(entryInputString, status || "working"));
+      }),
+      getEntries: jest.fn().mockResolvedValue([]),
+      updateEntry: jest.fn().mockImplementation(async (id: string, updates: any) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry("updated_input_for_mock");
+        return Promise.resolve({ ...baseEntry, id, ...updates });
+      }),
+      addStepsToEntry: jest.fn().mockImplementation(async (id: string, newSteps: any[]) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry("steps_added_input_for_mock");
+        return Promise.resolve({
+          ...baseEntry,
+          id,
+          steps: [...(baseEntry.steps || []), ...newSteps],
+        });
+      }),
+      // Agent tarafından kullanılan diğer HistoryManager metodları buraya eklenebilir.
+      // Örneğin: getEntryById, addEventToEntry
+      getEntryById: jest.fn().mockImplementation(async (id: string) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        return Promise.resolve(createMockHistoryEntry(`entry_for_${id}`));
+      }),
+      addEventToEntry: jest.fn().mockImplementation(async (id: string, event: any) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
+        return Promise.resolve({ ...baseEntry, id, events: [...(baseEntry.events || []), event] });
+      }),
+    };
+  }),
+}));
+
+// Mock VoltAgentExporter
+const mockTelemetryExporter = {
+  publicKey: "mock-telemetry-public-key",
+  exportHistoryEntry: jest.fn(),
+  exportTimelineEvent: jest.fn(),
+  exportHistorySteps: jest.fn(),
+  updateHistoryEntry: jest.fn(),
+  updateTimelineEvent: jest.fn(),
+} as unknown as VoltAgentExporter;
+
 describe("Agent", () => {
   let agent: TestAgent<{ llm: MockProvider }>;
   let mockModel: MockModelType;
@@ -358,6 +424,7 @@ describe("Agent", () => {
       memory: mockMemory,
       memoryOptions: {},
       tools: [],
+      instructions: "A helpful AI assistant",
     });
   });
 
@@ -367,11 +434,12 @@ describe("Agent", () => {
         name: "Default Agent",
         model: mockModel,
         llm: mockProvider,
+        instructions: "A helpful AI assistant",
       });
 
       expect(defaultAgent.id).toBeDefined();
       expect(defaultAgent.name).toBe("Default Agent");
-      expect(defaultAgent.description).toBe("A helpful AI assistant");
+      expect(defaultAgent.instructions).toBe("A helpful AI assistant");
       expect(defaultAgent.model).toBe(mockModel);
       expect(defaultAgent.llm).toBe(mockProvider);
     });
@@ -380,16 +448,80 @@ describe("Agent", () => {
       const customAgent = new TestAgent({
         id: "custom-id",
         name: "Custom Agent",
-        description: "Custom description",
+        instructions: "Custom description",
         model: mockModel,
         llm: mockProvider,
       });
 
       expect(customAgent.id).toBe("custom-id");
       expect(customAgent.name).toBe("Custom Agent");
-      expect(customAgent.description).toBe("Custom description");
+      expect(customAgent.instructions).toBe("Custom description");
       expect(customAgent.llm).toBe(mockProvider);
     });
+
+    it("should use description for instructions if instructions property is not provided", () => {
+      const agentWithDesc = new TestAgent({
+        name: "Agent With Description Only",
+        description: "Uses provided description",
+        model: mockModel,
+        llm: mockProvider,
+        // instructions property is intentionally omitted
+      });
+      expect(agentWithDesc.instructions).toBe("Uses provided description");
+      expect(agentWithDesc.description).toBe("Uses provided description"); // Verifying this.description is also updated
+    });
+
+    it("should use instructions if both instructions and description are provided", () => {
+      const agentWithBoth = new TestAgent({
+        name: "Agent With Both Properties",
+        instructions: "Uses provided instructions",
+        description: "This description should be ignored",
+        model: mockModel,
+        llm: mockProvider,
+      });
+      expect(agentWithBoth.instructions).toBe("Uses provided instructions");
+      expect(agentWithBoth.description).toBe("Uses provided instructions");
+    });
+
+    // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
+    it("should pass telemetryExporter to HistoryManager if provided", () => {
+      (HistoryManager as jest.Mock).mockClear();
+
+      new Agent({
+        name: "TelemetryAgent",
+        instructions: "Telemetry agent instructions",
+        model: mockModel,
+        llm: mockProvider,
+        telemetryExporter: mockTelemetryExporter,
+        memory: mockMemory as any,
+      });
+
+      expect(HistoryManager).toHaveBeenCalledTimes(1);
+      expect(HistoryManager).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.anything(),
+        expect.any(Number),
+        mockTelemetryExporter,
+      );
+    });
+
+    it("should instantiate HistoryManager without telemetryExporter if not provided", () => {
+      (HistoryManager as jest.Mock).mockClear();
+
+      new Agent({
+        name: "NoTelemetryAgent",
+        instructions: "No telemetry agent instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: mockMemory as any,
+      });
+
+      expect(HistoryManager).toHaveBeenCalledTimes(1);
+      const historyManagerArgs = (HistoryManager as jest.Mock).mock.calls[0];
+      expect(historyManagerArgs.length).toBeGreaterThanOrEqual(3);
+      expect(historyManagerArgs[3]).toBeUndefined();
+    });
+    // --- END NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
   });
 
   describe("generate", () => {
@@ -633,7 +765,7 @@ describe("Agent", () => {
       // Check basic properties
       expect(state.id).toBe(agent.id);
       expect(state.name).toBe(agent.name);
-      expect(state.description).toBe(agent.description);
+      expect(state.description).toBe(agent.instructions);
       expect(state.node_id).toBe(`agent_${agent.id}`);
 
       // Check tools property
@@ -709,6 +841,7 @@ describe("Agent", () => {
         name: "New Agent",
         model: mockModel,
         llm: mockProvider,
+        instructions: "A helpful AI assistant",
       });
 
       // Register the agent through AgentRegistry
@@ -722,6 +855,7 @@ describe("Agent", () => {
         name: "New Agent",
         model: mockModel,
         llm: mockProvider,
+        instructions: "A helpful AI assistant",
       });
 
       newAgent.unregister();
@@ -792,6 +926,7 @@ describe("Agent", () => {
         name: "Error Stream Agent",
         model: mockModel,
         llm: errorProvider,
+        instructions: "Error Stream Agent instructions",
       });
 
       await expect(errorAgent.streamText("Hello")).rejects.toThrow("Stream error");
@@ -805,6 +940,7 @@ describe("Agent", () => {
         name: "Error Object Stream Agent",
         model: mockModel,
         llm: errorProvider,
+        instructions: "Error Object Stream Agent instructions",
       });
 
       const schema = z.object({
@@ -851,6 +987,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Use any type to bypass type checking for the mock retriever
         retriever: mockRetriever as any,
+        instructions: "Retriever Test Agent instructions",
       });
 
       // Generate text to trigger retriever
@@ -879,6 +1016,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Use any type to bypass type checking for the mock retriever
         retriever: errorRetriever as any,
+        instructions: "Error Retriever Test Agent instructions",
       });
 
       // Generate text should still work despite retriever error
@@ -904,6 +1042,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Use any type to bypass type checking for the mock retriever
         retriever: mockRetriever as any,
+        instructions: "State Retriever Test Agent instructions",
       });
 
       // Get full state
@@ -928,6 +1067,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         hooks: createHooks({ onStart: onStartSpy }),
+        instructions: "Context Test Agent instructions",
       });
 
       await agentWithHook.generateText("test initialization");
@@ -944,7 +1084,35 @@ describe("Agent", () => {
       expect(operationContext.userContext.size).toBe(0); // Should be empty initially
     });
 
-    it("should pass userContext to onStart and onEnd hooks", async () => {
+    it("should initialize OperationContext with userContext from options", async () => {
+      const initialUserContext = new Map<string | symbol, unknown>();
+      initialUserContext.set("initialKey", "initialValue");
+
+      const onStartSpy = jest.fn();
+      const agentWithInitialContext = new TestAgent({
+        name: "Initial Context Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onStart: onStartSpy }),
+        instructions: "Initial Context Agent instructions",
+      });
+
+      await agentWithInitialContext.generateText("test with initial context", {
+        userContext: initialUserContext,
+      });
+
+      expect(onStartSpy).toHaveBeenCalled();
+      const operationContext: OperationContext = onStartSpy.mock.calls[0][0].context;
+      expect(operationContext.userContext).toBeInstanceOf(Map);
+      expect(operationContext.userContext.get("initialKey")).toBe("initialValue");
+      // Ensure it's a clone, not the same instance
+      expect(operationContext.userContext).not.toBe(initialUserContext);
+      // Modify the original to ensure the clone is not affected
+      initialUserContext.set("anotherKey", "anotherValue");
+      expect(operationContext.userContext.has("anotherKey")).toBe(false);
+    });
+
+    it("should pass userContext to onStart and onEnd hooks when provided in options", async () => {
       const onStartSpy = jest.fn();
       const onEndSpy = jest.fn();
       const agentWithHooks = new TestAgent({
@@ -952,23 +1120,26 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         hooks: createHooks({ onStart: onStartSpy, onEnd: onEndSpy }),
+        instructions: "Hook Context Agent instructions",
       });
 
-      await agentWithHooks.generateText("test hooks");
+      const providedUserContext = new Map<string | symbol, unknown>();
+      providedUserContext.set("hookKey", "hookValue");
+
+      await agentWithHooks.generateText("test hooks with context", {
+        userContext: providedUserContext,
+      });
 
       expect(onStartSpy).toHaveBeenCalled();
       expect(onEndSpy).toHaveBeenCalled();
 
-      // Access context from the single argument object (index 0)
       const startContext: OperationContext = onStartSpy.mock.calls[0][0].context;
       const endContext: OperationContext = onEndSpy.mock.calls[0][0].context;
 
-      expect(startContext).toHaveProperty("userContext");
-      expect(startContext.userContext).toBeInstanceOf(Map);
-      expect(endContext).toHaveProperty("userContext");
-      expect(endContext.userContext).toBeInstanceOf(Map);
-      // Verify it's the same context object passed to both
+      expect(startContext.userContext.get("hookKey")).toBe("hookValue");
+      expect(endContext.userContext.get("hookKey")).toBe("hookValue");
       expect(startContext.userContext).toBe(endContext.userContext);
+      expect(startContext.userContext).not.toBe(providedUserContext); // Should be a clone
     });
 
     it("should allow modifying userContext in onStart and reading in onEnd", async () => {
@@ -990,6 +1161,7 @@ describe("Agent", () => {
         llm: mockProvider,
         // Pass the updated hooks
         hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
+        instructions: "Modify Context Agent instructions",
       });
 
       await agentWithModifyHooks.generateText("test modification");
@@ -998,112 +1170,92 @@ describe("Agent", () => {
       expect(onEndHook).toHaveBeenCalled();
     });
 
-    it("should pass userContext to tool execution context", async () => {
-      const testValue = "data from start";
-      const testKey = Symbol("toolTestKey");
+    it("should pass userContext to tool execution context when provided in options", async () => {
+      const testValue = "data from start via options";
+      const testKey = Symbol("toolTestKeyWithOptions");
 
-      // Mock tool execute function to check context
       const toolExecuteSpy = jest.fn();
       const mockTool = createTool({
-        id: "context-tool",
-        name: "context-tool",
-        description: "A tool to test context",
+        id: "context-tool-options",
+        name: "context-tool-options",
+        description: "A tool to test context from options",
         parameters: z.object({}),
         execute: toolExecuteSpy,
       });
 
-      // Hook to add data to context before tool execution
-      // Update onStartHook to accept a single object argument
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
-        context.userContext.set(testKey, testValue);
-      });
-
-      const agentWithToolAndHook = new TestAgent({
-        name: "Tool Context Agent",
+      const agentWithToolAndOptions = new TestAgent({
+        name: "Tool Context Options Agent",
         model: mockModel,
         llm: mockProvider,
         tools: [mockTool],
-        // Pass the updated hook
-        hooks: createHooks({ onStart: onStartHook }),
+        instructions: "Tool Context Options Agent instructions",
       });
 
-      // Need to trigger the tool
-      await agentWithToolAndHook.generateText("Use the context-tool");
+      const providedUserContext = new Map<string | symbol, unknown>();
+      providedUserContext.set(testKey, testValue);
 
-      // Verify the tool's execute method was called
-      // The mock provider simulates the call, so we check the spy
-      // The exact number of calls depends on the mock provider logic
-      // For this test, we only need to ensure it was called at least once
-      // and check the context passed during one of those calls.
-      // However, the current mock provider logic doesn't actually call the tool's execute.
-      // We need to adjust the mock provider or the test setup.
-
-      // Let's spy on the provider's generateText and check the toolExecutionContext passed
       const generateTextSpy = jest.spyOn(mockProvider, "generateText");
 
-      await agentWithToolAndHook.generateText("Use the context-tool again");
-
-      expect(generateTextSpy).toHaveBeenCalled();
-      const generateTextOptions = generateTextSpy.mock.calls[0][0]; // First argument to generateText
-
-      // The provider receives toolExecutionContext
-      expect(generateTextOptions.toolExecutionContext).toBeDefined();
-      expect(generateTextOptions.toolExecutionContext?.operationContext).toBeDefined();
-      expect(
-        generateTextOptions.toolExecutionContext?.operationContext?.userContext,
-      ).toBeInstanceOf(Map);
-      expect(
-        generateTextOptions.toolExecutionContext?.operationContext?.userContext?.get(testKey),
-      ).toBe(testValue); // Verify data from onStart is there
-
-      generateTextSpy.mockRestore(); // Clean up spy
-    });
-
-    it("should keep userContext isolated between operations", async () => {
-      const key1 = "op1Key";
-      const value1 = "op1Value";
-      const key2 = "op2Key";
-      const value2 = "op2Value";
-
-      // Update onStartHook to accept a single object argument
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
-        if (context.historyEntry.input === "Operation 1") {
-          context.userContext.set(key1, value1);
-          // Check that op2 data is not present
-          expect(context.userContext.has(key2)).toBe(false);
-        } else if (context.historyEntry.input === "Operation 2") {
-          context.userContext.set(key2, value2);
-          // Check that op1 data is not present
-          expect(context.userContext.has(key1)).toBe(false);
-        }
+      await agentWithToolAndOptions.generateText("Use the context-tool-options", {
+        userContext: providedUserContext,
       });
 
-      // Update onEndHook to accept a single object argument
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
-        if (context.historyEntry.input === "Operation 1") {
+      expect(generateTextSpy).toHaveBeenCalled();
+      const generateTextOptions = generateTextSpy.mock.calls[0][0];
+
+      expect(generateTextOptions.toolExecutionContext).toBeDefined();
+      expect(generateTextOptions.toolExecutionContext?.operationContext).toBeDefined();
+
+      // Use if condition for safer access to nested properties
+      if (generateTextOptions.toolExecutionContext?.operationContext?.userContext) {
+        const toolOpContext = generateTextOptions.toolExecutionContext.operationContext;
+        expect(toolOpContext.userContext).toBeInstanceOf(Map);
+        expect(toolOpContext.userContext.get(testKey)).toBe(testValue);
+        expect(toolOpContext.userContext).not.toBe(providedUserContext); // Should be a clone
+      } else {
+        // Fail the test if the structure is not as expected
+        throw new Error(
+          "toolExecutionContext.operationContext.userContext was not defined as expected",
+        );
+      }
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should keep userContext isolated between operations even when passed via options", async () => {
+      const key1 = "op1KeyWithOptions";
+      const value1 = "op1ValueWithOptions";
+      const key2 = "op2KeyWithOptions";
+      const value2 = "op2ValueWithOptions";
+
+      const userContext1 = new Map<string | symbol, unknown>([[key1, value1]]);
+      const userContext2 = new Map<string | symbol, unknown>([[key2, value2]]);
+
+      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
+        if (context.historyEntry.input === "Operation 1 with options") {
           expect(context.userContext.get(key1)).toBe(value1);
           expect(context.userContext.has(key2)).toBe(false);
-        } else if (context.historyEntry.input === "Operation 2") {
+          // Modify context to ensure it doesn't leak to the next operation
+          context.userContext.set("leakTest", "shouldNotLeak");
+        } else if (context.historyEntry.input === "Operation 2 with options") {
           expect(context.userContext.get(key2)).toBe(value2);
           expect(context.userContext.has(key1)).toBe(false);
+          expect(context.userContext.has("leakTest")).toBe(false);
         }
       });
 
       const isolationAgent = new TestAgent({
-        name: "Isolation Test Agent",
+        name: "Isolation Options Agent",
         model: mockModel,
         llm: mockProvider,
-        // Pass the updated hooks
-        hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
+        hooks: createHooks({ onStart: onStartHook }),
+        instructions: "Isolation Options Agent instructions",
       });
 
-      // Run operations sequentially to ensure isolation
-      await isolationAgent.generateText("Operation 1");
-      await isolationAgent.generateText("Operation 2");
+      await isolationAgent.generateText("Operation 1 with options", { userContext: userContext1 });
+      await isolationAgent.generateText("Operation 2 with options", { userContext: userContext2 });
 
-      // Check calls
       expect(onStartHook).toHaveBeenCalledTimes(2);
-      expect(onEndHook).toHaveBeenCalledTimes(2);
     });
   });
 });

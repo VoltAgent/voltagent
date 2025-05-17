@@ -1,6 +1,6 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="VoltAgent Supabase Provider Banner" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
+<img width="1800" alt="VoltAgent Langfuse Exporter Banner" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
 </a>
 
 <br/>
@@ -144,7 +144,7 @@ import { openai } from "@ai-sdk/openai"; // Example model
 // Define a simple agent
 const agent = new Agent({
   name: "my-agent",
-  description: "A helpful assistant that answers questions without using tools",
+  instructions: "A helpful assistant that answers questions without using tools",
   // Note: You can swap VercelAIProvider and openai with other supported providers/models
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),

@@ -1,5 +1,49 @@
 # @voltagent/groq-ai
 
+## 0.1.7
+
+### Patch Changes
+
+- [`3fdef67`](https://github.com/VoltAgent/voltagent/commit/3fdef675bfac9d227592805f337396eae15f03ca) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: only the `dist` directory is included in the published npm package.
+
+## 0.1.5
+
+### Patch Changes
+
+- [#102](https://github.com/VoltAgent/voltagent/pull/102) [`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: use 'instructions' field for Agent definitions in examples - #88
+
+  Updated documentation examples (READMEs, docs, blogs) and relevant package code examples to use the `instructions` field instead of `description` when defining `Agent` instances.
+
+  This change aligns the examples with the preferred API usage for the `Agent` class, where `instructions` provides behavioral guidance to the agent/LLM. This prepares for the eventual deprecation of the `description` field specifically for `Agent` class definitions.
+
+  **Example Change for Agent Definition:**
+
+  ```diff
+    const agent = new Agent({
+      name: "My Assistant",
+  -   description: "A helpful assistant.",
+  +   instructions: "A helpful assistant.",
+      llm: new VercelAIProvider(),
+      model: openai("gpt-4o-mini"),
+    });
+  ```
+
+- Updated dependencies [[`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3)]:
+  - @voltagent/core@0.1.14
+
+## 0.1.4
+
+### Patch Changes
+
+- [#83](https://github.com/VoltAgent/voltagent/pull/83) [`5edf79d`](https://github.com/VoltAgent/voltagent/commit/5edf79d73b7f114c2e894cc532ce7fc8b3354a10) Thanks [@TheEmi](https://github.com/TheEmi)! - Added tool handling by manually calling the desired functions for generateText and streamText
+  Fixed some type issues.
+  Added streamObject support
+
+- [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
+
+- Updated dependencies [[`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107), [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925)]:
+  - @voltagent/core@0.1.13
+
 ## 0.1.3
 
 ### Patch Changes

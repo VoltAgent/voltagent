@@ -48,7 +48,7 @@ const memoryStorage = new LibSQLStorage({
 
 const agent = new Agent({
   name: "LibSQL Memory Agent",
-  description: "An agent using LibSQL for memory.",
+  instructions: "An agent using LibSQL for memory.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   memory: memoryStorage,

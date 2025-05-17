@@ -420,15 +420,134 @@ describe("GroqProvider", () => {
   });
 
   describe("streamObject", () => {
-    it("should throw not implemented error", async () => {
-      const testSchema = z.object({});
-      await expect(
-        provider.streamObject({
-          messages: [],
-          model: "any-model",
-          schema: testSchema,
+    it("should stream object successfully and call callbacks", async () => {
+      const testSchema = z.object({
+        query: z.string(),
+        count: z.number(),
+        details: z.object({ nested: z.boolean() }),
+      });
+
+      const expectedObject = {
+        query: "streaming test",
+        count: 42,
+        details: { nested: true },
+      };
+      const jsonString = JSON.stringify(expectedObject);
+      const chunksContent = [
+        jsonString.slice(0, 15),
+        jsonString.slice(15, 30),
+        jsonString.slice(30),
+      ];
+
+      async function* mockObjectStream() {
+        for (const content of chunksContent) {
+          yield { choices: [{ delta: { content } }] };
+        }
+        yield {
+          choices: [{ delta: null, finish_reason: "stop" }],
+          x_groq: {
+            usage: { prompt_tokens: 10, completion_tokens: 25, total_tokens: 35 },
+          },
+        };
+      }
+
+      mockCreate.mockResolvedValueOnce(mockObjectStream());
+
+      const onFinishMock = jest.fn();
+      const onStepFinishMock = jest.fn();
+      // onChunk is not a standard callback for streamObject in core, so we won't test it explicitly here,
+      // but the raw stream consumption covers the chunking aspect.
+
+      const result = await provider.streamObject({
+        messages: [{ role: "user", content: "Stream an object" }],
+        model: "llama3-8b-8192",
+        schema: testSchema,
+        onFinish: onFinishMock,
+        onStepFinish: onStepFinishMock,
+      });
+
+      expect(result.objectStream).toBeInstanceOf(ReadableStream);
+
+      // Consume the stream to verify its content
+      const reader = result.objectStream.getReader();
+      let accumulatedStreamData = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulatedStreamData += value;
+      }
+
+      expect(accumulatedStreamData).toBe(jsonString);
+
+      // Verify mockCreate call
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: "llama3-8b-8192",
+          messages: expect.arrayContaining([
+            expect.objectContaining({ role: "system" }), // System message for JSON mode
+            { role: "user", content: "Stream an object" },
+          ]),
+          response_format: { type: "json_object" },
+          stream: true,
         }),
-      ).rejects.toThrow("streamObject is not implemented for GroqProvider yet.");
+      );
+
+      // Verify onFinish callback
+      expect(onFinishMock).toHaveBeenCalledTimes(1);
+      expect(onFinishMock).toHaveBeenCalledWith({
+        object: expectedObject,
+        usage: { promptTokens: 10, completionTokens: 25, totalTokens: 35 },
+      });
+
+      // Verify onStepFinish callback (for the final text accumulation)
+      expect(onStepFinishMock).toHaveBeenCalledTimes(1);
+      expect(onStepFinishMock).toHaveBeenCalledWith({
+        id: "",
+        type: "text",
+        content: jsonString, // onStepFinish gets the full string
+        role: "assistant",
+        usage: { promptTokens: 10, completionTokens: 25, totalTokens: 35 },
+      });
+    });
+
+    it("should handle parsing errors in onFinish gracefully", async () => {
+      const testSchema = z.object({ name: z.string() });
+      const invalidJsonChunk = '{"name": "test" Oops}'; // Invalid JSON
+
+      async function* mockErrorStream() {
+        yield { choices: [{ delta: { content: invalidJsonChunk } }] };
+        yield {
+          choices: [{ delta: null, finish_reason: "stop" }],
+          x_groq: { usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } },
+        };
+      }
+      mockCreate.mockResolvedValueOnce(mockErrorStream());
+      const onErrorMock = jest.fn();
+      const onFinishMock = jest.fn();
+
+      const result = await provider.streamObject({
+        messages: [{ role: "user", content: "stream invalid object" }],
+        model: "llama3-70b-8192",
+        schema: testSchema,
+        onFinish: onFinishMock,
+        onError: onErrorMock,
+      });
+
+      // Try to consume the stream, which should trigger the error in onFinish logic
+      const reader = result.objectStream.getReader();
+      try {
+        // eslint-disable-next-line no-empty
+        while (!(await reader.read()).done) {}
+      } catch (_e) {
+        // Error is expected due to parsing failure propagated to the stream controller
+      }
+
+      // onFinish should not be called if parsing fails and throws
+      expect(onFinishMock).not.toHaveBeenCalled();
+      // onError should be called by the stream processing logic
+      expect(onErrorMock).toHaveBeenCalledTimes(1);
+      expect(onErrorMock).toHaveBeenCalledWith(expect.any(Error));
+      expect(onErrorMock.mock.calls[0][0].message).toMatch(/Failed to parse streamed JSON/);
     });
   });
 });
