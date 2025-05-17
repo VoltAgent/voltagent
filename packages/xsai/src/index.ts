@@ -17,10 +17,12 @@ import type {
   GenerateObjectResult,
   GenerateTextResult,
   GenerateTextStepResult,
+  ImagePart,
   Message,
   StreamObjectResult,
   StreamTextResult,
   StreamTextStep,
+  TextPart,
   ToolResult,
 } from "xsai";
 import type { z } from "zod";
@@ -55,7 +57,35 @@ export class XsAIProvider implements LLMProvider<string> {
   };
 
   toMessage = (message: BaseMessage): Message => {
-    return message as Message;
+    if (typeof message.content === "string")
+      return message as Message
+    else if (Array.isArray(message.content)) {
+      const content: (TextPart | ImagePart)[] = []
+
+      for (const part of message.content) {
+        if (part.type === "text") {
+          content.push(part as TextPart)
+        } else if (part.type === "image") {
+          if (typeof part.image === "string" || part.image instanceof URL) {
+            content.push({ type: "image_url", image_url: { url: part.image.toString() } } satisfies ImagePart)
+          } else {
+            console.warn(`[XsAIProvider] Message (role: ${message.role}) contained unsupported image part format...`);
+          }
+        } else {
+          console.warn(`[XsAIProvider] Message (role: ${message.role}) contained unsupported content parts...`);
+        }
+      }
+
+      return { role: message.role, content } as Message
+    } else {
+      // Handle unexpected content types (null, undefined, etc.)
+      console.warn(
+        `[XsAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
+        message.content,
+      );
+
+      return { role: message.role, content: "" } as Message // Fallback to empty string
+    }
   };
 
   convertTools = async (tools: BaseTool[]): Promise<ToolResult[] | undefined> => {
