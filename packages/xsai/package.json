@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/xsai",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "VoltAgent xsAI - xsAI provider integration for VoltAgent",
   "license": "MIT",
   "exports": {

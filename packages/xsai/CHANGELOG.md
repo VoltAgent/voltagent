@@ -1,5 +1,11 @@
 # @voltagent/xsai
 
+## 0.1.8
+
+### Patch Changes
+
+- [#100](https://github.com/VoltAgent/voltagent/pull/100) [`0bdcf94`](https://github.com/VoltAgent/voltagent/commit/0bdcf9441cc79cf6321b377c303123d28daddda4) Thanks [@kwaa](https://github.com/kwaa)! - feat: Add multi-modal support (see [docs](https://voltagent.dev/docs/providers/xsai/#multi-modal-support)) - [#79](https://github.com/VoltAgent/voltagent/issues/79)
+
 ## 0.1.6
 
 ### Patch Changes
