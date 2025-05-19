@@ -1,8 +1,9 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
 import type { AgentHistoryEntry, TimelineEvent } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import { AgentRegistry } from "../server/registry";
 import { v4 as uuidv4 } from "uuid";
+import type { NewTimelineEvent } from "./types";
 
 // New type exports
 export type EventStatus = AgentStatus;
@@ -79,6 +80,59 @@ export class AgentEventEmitter extends EventEmitter {
       AgentEventEmitter.instance = new AgentEventEmitter();
     }
     return AgentEventEmitter.instance;
+  }
+
+  /**
+   * [NEW METHOD - IMMUTABLE EVENTS]
+   * Publishes a new timeline event. This event will be persisted and cannot be updated later.
+   *
+   * @param agentId - Agent ID
+   * @param historyId - History entry ID
+   * @param event - The NewTimelineEvent object to publish. Must conform to the new BaseTimelineEvent structure.
+   * @returns The updated AgentHistoryEntry or undefined if an error occurs.
+   */
+  public async publishTimelineEvent(params: {
+    agentId: string;
+    historyId: string;
+    event: NewTimelineEvent; // This now uses NewTimelineEvent type
+  }): Promise<AgentHistoryEntry | undefined> {
+    const { agentId, historyId, event } = params;
+
+    // Ensure event has an id and startTime
+    if (!event.id) {
+      event.id = uuidv4();
+    }
+
+    // Ensure event has a startTime
+    if (!event.startTime) {
+      event.startTime = new Date().toISOString();
+    }
+
+    const agent = AgentRegistry.getInstance().getAgent(agentId);
+    if (!agent) {
+      console.warn("[AgentEventEmitter.publishTimelineEvent] Agent not found: ", agentId);
+      return undefined;
+    }
+
+    const historyManager = agent.getHistoryManager();
+
+    try {
+      // Call the new method in HistoryManager to persist this new event type
+      const updatedEntry = await historyManager.persistTimelineEvent(historyId, event);
+
+      if (updatedEntry) {
+        this.emitHistoryUpdate(agentId, updatedEntry);
+        return updatedEntry;
+      }
+      console.warn(
+        "[AgentEventEmitter.publishTimelineEvent] Failed to persist event for history: ",
+        historyId,
+      );
+      return undefined;
+    } catch (error) {
+      console.error("[AgentEventEmitter.publishTimelineEvent] Error persisting event:", error);
+      return undefined;
+    }
   }
 
   /**
@@ -192,7 +246,10 @@ export class AgentEventEmitter extends EventEmitter {
     this.trackedEvents.set(eventId, timelineEvent);
 
     // Return the updater function
-    return async (updateOptions: { status?: AgentStatus; data?: Record<string, any> }) => {
+    return async (updateOptions: {
+      status?: AgentStatus;
+      data?: Record<string, any>;
+    }) => {
       return await this.updateTrackedEvent(agentId, historyId, eventId, updateOptions.status, {
         ...updateOptions.data,
       });

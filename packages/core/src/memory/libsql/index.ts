@@ -4,6 +4,7 @@ import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
 import fs from "node:fs";
 import type { BaseMessage } from "../../agent/providers/base/types";
+import type { NewTimelineEvent } from "../../events/types";
 import type {
   Conversation,
   CreateConversationInput,
@@ -213,6 +214,32 @@ export class LibSQLStorage implements Memory {
         )
       `);
 
+      // Create timeline events table
+      const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
+      await this.client.execute(`
+        CREATE TABLE IF NOT EXISTS ${timelineEventsTableName} (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          history_id TEXT NOT NULL,
+          agent_id TEXT,
+          event_type TEXT NOT NULL,
+          event_name TEXT NOT NULL,
+          start_time TEXT NOT NULL,
+          end_time TEXT,
+          status TEXT,
+          status_message TEXT,
+          level TEXT,
+          version TEXT,
+          affected_node_id TEXT,
+          parent_event_id TEXT,
+          tags TEXT,
+          has_input BOOLEAN DEFAULT 0,
+          has_output BOOLEAN DEFAULT 0,
+          has_error BOOLEAN DEFAULT 0,
+          has_metadata BOOLEAN DEFAULT 0
+        )
+      `);
+
       // Create index for faster queries
       await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${messagesTableName}_lookup
@@ -250,6 +277,42 @@ export class LibSQLStorage implements Memory {
       await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${historyStepsTableName}_agent_id 
         ON ${historyStepsTableName}(agent_id)
+      `);
+
+      // Create indexes for timeline events table
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_history_id 
+        ON ${timelineEventsTableName}(history_id)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_agent_id 
+        ON ${timelineEventsTableName}(agent_id)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_event_type 
+        ON ${timelineEventsTableName}(event_type)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_event_name 
+        ON ${timelineEventsTableName}(event_name)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_parent_event_id 
+        ON ${timelineEventsTableName}(parent_event_id)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_status 
+        ON ${timelineEventsTableName}(status)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_affected_node_id 
+        ON ${timelineEventsTableName}(affected_node_id)
       `);
 
       this.debug("Database initialized successfully");
@@ -597,6 +660,74 @@ export class LibSQLStorage implements Memory {
   }
 
   /**
+   * Add a timeline event
+   * @param key Event ID (UUID)
+   * @param value Timeline event data
+   * @param historyId Related history entry ID
+   * @param agentId Agent ID for filtering
+   */
+  async addTimelineEvent(
+    key: string,
+    value: NewTimelineEvent,
+    historyId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.initialized;
+
+    try {
+      const tableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
+
+      // Serialize value to JSON
+      const serializedValue = JSON.stringify(value);
+
+      // JSON dizisini dizeye dönüştürme
+      const tagsString = value.tags ? JSON.stringify(value.tags) : null;
+
+      // Boolean flag'ler
+      const hasInput = value.input ? 1 : 0;
+      const hasOutput = value.output ? 1 : 0;
+      const hasError = value.error ? 1 : 0;
+      const hasMetadata = value.metadata ? 1 : 0;
+
+      // Insert with all the indexed fields
+      await this.client.execute({
+        sql: `INSERT OR REPLACE INTO ${tableName} 
+              (key, value, history_id, agent_id, event_type, event_name, 
+               start_time, end_time, status, status_message, level, 
+               version, affected_node_id, parent_event_id, tags,
+               has_input, has_output, has_error, has_metadata) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          key,
+          serializedValue,
+          historyId,
+          agentId,
+          value.type,
+          value.name,
+          value.startTime,
+          value.endTime || null,
+          value.status || null,
+          value.statusMessage || null,
+          value.level || "INFO",
+          value.version || null,
+          value.affectedNodeId || null,
+          value.parentEventId || null,
+          tagsString,
+          hasInput,
+          hasOutput,
+          hasError,
+          hasMetadata,
+        ],
+      });
+
+      this.debug(`Added timeline event ${key} for history ${historyId}`);
+    } catch (error) {
+      this.debug(`Error adding timeline event: ${key}`, error);
+      throw new Error(`Failed to add timeline event`);
+    }
+  }
+
+  /**
    * Get a history entry by ID
    * @param key Entry ID
    * @returns The history entry or undefined if not found
@@ -669,9 +800,22 @@ export class LibSQLStorage implements Memory {
         };
       });
 
-      // Add events and steps to the entry
+      // Get timeline events
+      const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
+      const timelineEventsResult = await this.client.execute({
+        sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ? ORDER BY start_time ASC`,
+        args: [key, value._agentId],
+      });
+
+      // Parse timeline events
+      const newEvents = timelineEventsResult.rows.map((row) => {
+        return JSON.parse(row.value as string);
+      });
+
+      // Add events, steps and newEvents to the entry
       value.events = events;
       value.steps = steps;
+      value.newEvents = newEvents;
 
       return value;
     } catch (error) {
@@ -994,9 +1138,22 @@ export class LibSQLStorage implements Memory {
             };
           });
 
-          // Add events and steps to the entry
+          // Get timeline events for this entry
+          const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
+          const timelineEventsResult = await this.client.execute({
+            sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ? ORDER BY start_time ASC`,
+            args: [entry.id, agentId],
+          });
+
+          // Parse timeline events
+          const newEvents = timelineEventsResult.rows.map((row) => {
+            return JSON.parse(row.value as string);
+          });
+
+          // Add events, steps and newEvents to the entry
           entry.events = events;
           entry.steps = steps;
+          entry.newEvents = newEvents;
 
           return entry;
         }),

@@ -1,3 +1,5 @@
+import { BaseMessage } from "../agent/providers";
+
 /**
  * Event statuses
  */
@@ -49,3 +51,200 @@ export interface StandardTimelineEvent {
   agentId: string;
   historyId: string;
 }
+
+// --- NEW TIMELINE EVENT DEFINITIONS ---
+
+/**
+ * Defines the main category of a TimelineEvent.
+ */
+export type TimelineEventCoreType = "agent" | "tool" | "memory" | "retriever";
+
+/**
+ * Defines the operational status of a TimelineEvent.
+ * 'idle' is added for consistency with frontend initial states.
+ */
+export type TimelineEventCoreStatus = "idle" | "running" | "completed" | "error";
+
+/**
+ * Defines the severity level of a TimelineEvent.
+ */
+export type TimelineEventCoreLevel = "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL";
+
+/**
+ * Usage information for tracking resource consumption
+ */
+export interface Usage {
+  // OpenAI compatible fields
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+
+  // Generic measurement fields
+  input?: number;
+  output?: number;
+  total?: number;
+  unit?: "TOKENS" | "CHARACTERS" | "MILLISECONDS" | "SECONDS" | "IMAGES";
+
+  // Cost tracking
+  inputCost?: number;
+  outputCost?: number;
+  totalCost?: number;
+
+  // Allow for additional custom fields
+  [key: string]: any;
+}
+
+// --- Metadata Interface ---
+
+/**
+ * Base metadata interface with common fields for all timeline events
+ */
+export interface BaseEventMetadata {
+  displayName?: string;
+}
+
+/**
+ * Base interface for all Timeline Events.
+ * The `metadata` field will be typed more specifically using a discriminated union based on `type` and `name`.
+ */
+export interface BaseTimelineEvent<M = BaseEventMetadata | null> {
+  id: string; // UUID, zorunlu
+  name: string; // Event name, e.g., "agent:definition_loaded", "tool:call_start"
+  type: TimelineEventCoreType;
+  startTime: string; // ISO 8601 Date string
+  endTime?: string | null; // ISO 8601 Date string
+  status?: TimelineEventCoreStatus;
+  statusMessage?: string | null;
+  level?: TimelineEventCoreLevel; // Default: 'INFO'
+  input?: Record<string, any> | null;
+  output?: Record<string, any> | null;
+  metadata: M; // Strongly-typed based on 'type' and 'name'
+  error?: {
+    message: string;
+    stack?: string;
+    code?: string | number;
+    [key: string]: any; // For additional error details
+  } | null;
+  version?: string | null; // Version of this event's schema/structure
+  affectedNodeId?: string | null; // UI Flow Node ID
+  parentEventId?: string | null; // For hiyerarşik eventler
+  traceId: string; // Corresponds to AgentHistoryEntry.id
+  tags?: string[] | null;
+}
+
+// --- Discriminated Union for TimelineEvent ---
+// This will be a union of more specific event types.
+
+// Example specific event types:
+export type ToolStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "tool:start";
+  type: "tool";
+};
+
+export type ToolSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "tool:success";
+  type: "tool";
+};
+
+export type ToolErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "tool:error";
+  type: "tool";
+  status: "error";
+  level: "ERROR" | "CRITICAL";
+};
+
+// --- Agent Event Types ---
+export type AgentStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "agent:start";
+  type: "agent";
+  input: { input: string | BaseMessage[] };
+};
+
+export type AgentSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "agent:success";
+  type: "agent";
+  status: "completed";
+  usage?: Usage;
+};
+
+export type AgentErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "agent:error";
+  type: "agent";
+  status: "error";
+  level: "ERROR" | "CRITICAL";
+};
+
+// --- Memory Event Types ---
+export type MemoryReadStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "memory:read_start";
+  type: "memory";
+};
+
+export type MemoryReadSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "memory:read_success";
+  type: "memory";
+  status: "completed";
+};
+
+export type MemoryReadErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "memory:read_error";
+  type: "memory";
+  status: "error";
+  level: "ERROR" | "CRITICAL";
+};
+
+export type MemoryWriteStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "memory:write_start";
+  type: "memory";
+};
+
+export type MemoryWriteSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "memory:write_success";
+  type: "memory";
+  status: "completed";
+};
+
+export type MemoryWriteErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "memory:write_error";
+  type: "memory";
+  status: "error";
+  level: "ERROR" | "CRITICAL";
+};
+
+// --- Retriever Event Types ---
+export type RetrieverStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "retriever:start";
+  type: "retriever";
+};
+
+export type RetrieverSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "retriever:success";
+  type: "retriever";
+  status: "completed";
+};
+
+export type RetrieverErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
+  name: "retriever:error";
+  type: "retriever";
+  status: "error";
+  level: "ERROR" | "CRITICAL";
+};
+
+// The main TimelineEvent type
+export type NewTimelineEvent =
+  | ToolStartEvent
+  | ToolSuccessEvent
+  | ToolErrorEvent
+  | AgentStartEvent
+  | AgentSuccessEvent
+  | AgentErrorEvent
+  | MemoryReadStartEvent
+  | MemoryReadSuccessEvent
+  | MemoryReadErrorEvent
+  | MemoryWriteStartEvent
+  | MemoryWriteSuccessEvent
+  | MemoryWriteErrorEvent
+  | RetrieverStartEvent
+  | RetrieverSuccessEvent
+  | RetrieverErrorEvent;
+// ... other specific event types will be added here (if any more emerge)

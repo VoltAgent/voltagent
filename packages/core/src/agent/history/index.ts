@@ -9,6 +9,7 @@ import type {
   ExportTimelineEventPayload,
   AgentHistoryUpdatableFields,
 } from "../../telemetry/client";
+import type { NewTimelineEvent } from "../../events/types";
 
 /**
  * Step information for history
@@ -104,8 +105,15 @@ export interface AgentHistoryEntry {
 
   /**
    * Timeline events for detailed agent state history
+   * Legacy format for backward compatibility
    */
   events?: TimelineEvent[];
+
+  /**
+   * New format timeline events for detailed agent state history
+   * This is part of the new immutable event approach
+   */
+  newEvents?: NewTimelineEvent[];
 
   /**
    * Sequence number for the history entry
@@ -487,7 +495,7 @@ export class HistoryManager {
   }
 
   /**
-   * Update a tracked event by ID
+   * Updates a tracked event by ID
    *
    * @param historyId - ID of the history entry
    * @param eventId - ID of the event or _trackedEventId
@@ -572,6 +580,82 @@ export class HistoryManager {
       return result;
     } catch (error) {
       console.error(`[HistoryManager] Failed to update tracked event: ${eventId}`, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Persists a timeline event to a history entry.
+   * This is the main method for adding immutable events to history.
+   * Implementation follows the new immutable event approach from the refactor plan.
+   *
+   * @param historyId - ID of the history entry
+   * @param event - The NewTimelineEvent to persist
+   * @returns The updated history entry or undefined if not found
+   */
+  public async persistTimelineEvent(
+    historyId: string,
+    event: NewTimelineEvent,
+  ): Promise<AgentHistoryEntry | undefined> {
+    if (!this.agentId) return undefined;
+
+    try {
+      // Get the current history entry
+      const entry = await this.getEntryById(historyId);
+      if (!entry) {
+        console.warn(`[HistoryManager] History entry not found: ${historyId}`);
+        return undefined;
+      }
+
+      // Ensure event has an ID
+      if (!event.id) {
+        event.id = uuidv4();
+      }
+
+      // Add the timeline event directly to the separate table
+      await this.memoryManager.addTimelineEvent(this.agentId, historyId, event.id, event);
+
+      // Get the updated entry with the new timeline events included
+      const updatedEntry = await this.getEntryById(historyId);
+      if (!updatedEntry) {
+        console.warn(`[HistoryManager] Failed to retrieve updated history entry: ${historyId}`);
+        return undefined;
+      }
+
+      // Export the timeline event if exporter is configured
+      if (this.voltAgentExporter && event.id) {
+        try {
+          // For telemetry, we need to create a compatible format
+          // This only affects what's sent to telemetry, not what's stored locally
+          const compatEvent: TimelineEvent = {
+            id: event.id,
+            timestamp: event.startTime,
+            name: event.name,
+            type: event.type,
+            data: {
+              status: event.status || "idle",
+              input: event.input,
+              output: event.output,
+              error: event.error,
+            },
+          };
+
+          const payload = {
+            history_id: historyId,
+            event_id: event.id,
+            event: compatEvent, // Use compatible event just for telemetry
+          };
+          await this.voltAgentExporter.exportTimelineEvent(payload);
+        } catch (exportError) {
+          console.warn(
+            `[HistoryManager] Failed to export timeline event to telemetry service: ${exportError}`,
+          );
+        }
+      }
+
+      return updatedEntry;
+    } catch (error) {
+      console.error(`[HistoryManager] Failed to persist timeline event: ${error}`);
       return undefined;
     }
   }

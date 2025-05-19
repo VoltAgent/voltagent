@@ -41,6 +41,17 @@ import type {
 import type { BaseRetriever } from "../retriever/retriever";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import type { StandardEventData } from "../events/types";
+import type {
+  AgentStartEvent,
+  AgentSuccessEvent,
+  AgentErrorEvent,
+  ToolStartEvent,
+  ToolSuccessEvent,
+  ToolErrorEvent,
+  RetrieverStartEvent,
+  RetrieverSuccessEvent,
+  RetrieverErrorEvent,
+} from "../events/types";
 import type { Voice } from "../voice";
 import { serializeValueForDebug } from "../utils/serialization";
 import { AgentRegistry } from "../server/registry";
@@ -219,7 +230,30 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Create retriever node ID
       const retrieverNodeId = createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id);
 
-      // Create tracked event
+      // [NEW EVENT SYSTEM] Create a retriever:start event
+      const retrieverStartTime = new Date().toISOString(); // Capture start time
+      const retrieverStartEvent: RetrieverStartEvent = {
+        id: crypto.randomUUID(),
+        name: "retriever:start",
+        type: "retriever",
+        startTime: retrieverStartTime,
+        status: "running",
+        input: { query: input },
+        output: null,
+        error: null,
+        metadata: { displayName: this.retriever?.tool.name || "Retriever" },
+        traceId: historyEntryId,
+        affectedNodeId: retrieverNodeId,
+      };
+
+      // Publish the retriever:start event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: historyEntryId,
+        event: retrieverStartEvent,
+      });
+
+      // Legacy event system - for backward compatibility
       const eventEmitter = AgentEventEmitter.getInstance();
       const eventUpdater = await eventEmitter.createTrackedEvent({
         agentId: this.id,
@@ -240,16 +274,101 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (context?.trim()) {
           finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
 
-          // Update the event
+          // [NEW EVENT SYSTEM] Create a retriever:success event
+          const retrieverSuccessEvent: RetrieverSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "retriever:success",
+            type: "retriever",
+            startTime: retrieverStartTime, // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { context },
+            error: null,
+            metadata: { displayName: this.retriever?.tool.name || "Retriever" },
+            traceId: historyEntryId,
+            affectedNodeId: retrieverNodeId,
+            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+          };
+
+          // Publish the retriever:success event
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: historyEntryId,
+            event: retrieverSuccessEvent,
+          });
+
+          // Legacy event update - for backward compatibility
           eventUpdater({
             data: {
               status: "completed" as EventStatus,
               output: context,
             },
           });
+        } else {
+          // If there was no context returned, still create a success event
+          // but with a note that no context was found
+          const retrieverSuccessEvent: RetrieverSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "retriever:success",
+            type: "retriever",
+            startTime: retrieverStartTime, // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { context: "No relevant context found" },
+            error: null,
+            metadata: { displayName: this.retriever?.tool.name || "Retriever" },
+            traceId: historyEntryId,
+            affectedNodeId: retrieverNodeId,
+            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+          };
+
+          // Publish the retriever:success event (empty result)
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: historyEntryId,
+            event: retrieverSuccessEvent,
+          });
+
+          // Legacy event update - for backward compatibility
+          eventUpdater({
+            data: {
+              status: "completed" as EventStatus,
+              output: "No relevant context found",
+            },
+          });
         }
       } catch (error) {
-        // Update the event as error
+        // [NEW EVENT SYSTEM] Create a retriever:error event
+        const retrieverErrorEvent: RetrieverErrorEvent = {
+          id: crypto.randomUUID(),
+          name: "retriever:error",
+          type: "retriever",
+          startTime: retrieverStartTime, // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "error",
+          level: "ERROR",
+          input: null,
+          output: null,
+          error: {
+            message: error instanceof Error ? error.message : "Unknown retriever error",
+            ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
+          },
+          metadata: { displayName: this.retriever?.tool.name || "Retriever" },
+          traceId: historyEntryId,
+          affectedNodeId: retrieverNodeId,
+          parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+        };
+
+        // Publish the retriever:error event
+        await AgentEventEmitter.getInstance().publishTimelineEvent({
+          agentId: this.id,
+          historyId: historyEntryId,
+          event: retrieverErrorEvent,
+        });
+
+        // Legacy event update - for backward compatibility
         eventUpdater({
           status: "error" as AgentStatus,
           data: {
@@ -872,6 +991,34 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
+      // [NEW EVENT SYSTEM] Create an agent:start event
+      const agentStartTime = new Date().toISOString(); // Capture agent start time once
+      const agentStartEvent: AgentStartEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:start",
+        type: "agent",
+        startTime: agentStartTime, // Use captured time
+        status: "running",
+        input: { input },
+        output: null,
+        error: null,
+        metadata: { displayName: this.name },
+        traceId: operationContext.historyEntry.id,
+        affectedNodeId: createNodeId(NodeType.AGENT, this.id),
+      };
+
+      // Store agent start time in the operation context for later reference
+      operationContext.userContext.set("agent_start_time", agentStartTime);
+      operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+      // Publish the new event through AgentEventEmitter
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentStartEvent,
+      });
+
+      // Original event emission for backward compatibility
       this.createStandardTimelineEvent(
         operationContext.historyEntry.id,
         "start",
@@ -912,6 +1059,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (step.type === "tool_call") {
             if (step.name && step.id) {
               const tool = this.toolManager.getToolByName(step.name);
+
+              // [NEW EVENT SYSTEM] Create a tool:start event
+              const toolStartTime = new Date().toISOString(); // Capture start time once
+              const toolStartEvent: ToolStartEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:start",
+                type: "tool",
+                startTime: toolStartTime, // Use captured time
+                status: "running",
+                input: step.arguments || {},
+                output: null,
+                error: null,
+                metadata: { displayName: step.name },
+                traceId: operationContext.historyEntry.id,
+                affectedNodeId: createNodeId(NodeType.TOOL, step.name, this.id),
+                parentEventId: agentStartEvent.id, // Link to the agent:start event
+              };
+
+              // Store tool ID and start time in user context for later reference
+              operationContext.userContext.set(`tool_${step.id}`, {
+                eventId: toolStartEvent.id,
+                startTime: toolStartTime, // Store the start time for later
+              });
+
+              // Publish the tool:start event
+              await AgentEventEmitter.getInstance().publishTimelineEvent({
+                agentId: this.id,
+                historyId: operationContext.historyEntry.id,
+                event: toolStartEvent,
+              });
+
+              // Original tool event for backward compatibility
               const eventUpdater = await this.addToolEvent(
                 operationContext,
                 "tool_working",
@@ -932,9 +1111,75 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             if (step.name && step.id) {
               const toolCallId = step.id;
               const toolName = step.name;
+              const isError = Boolean(step.result?.error);
+
+              // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
+              // Get the associated tool:start event ID and time from context
+              const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+                eventId: string;
+                startTime: string;
+              }) || { eventId: undefined, startTime: new Date().toISOString() };
+
+              if (isError) {
+                // Create tool:error event
+                const toolErrorEvent: ToolErrorEvent = {
+                  id: crypto.randomUUID(),
+                  name: "tool:error",
+                  type: "tool",
+                  startTime: toolStartInfo.startTime, // Use the original start time
+                  endTime: new Date().toISOString(), // Current time as end time
+                  status: "error",
+                  level: "ERROR",
+                  input: null,
+                  output: null,
+                  error: step.result?.error || {
+                    message: "Unknown tool error",
+                  },
+                  metadata: {
+                    displayName: toolName,
+                  },
+                  traceId: operationContext.historyEntry.id,
+                  affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
+                  parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+                };
+
+                // Publish the tool:error event
+                await AgentEventEmitter.getInstance().publishTimelineEvent({
+                  agentId: this.id,
+                  historyId: operationContext.historyEntry.id,
+                  event: toolErrorEvent,
+                });
+              } else {
+                // Create tool:success event
+                const toolSuccessEvent: ToolSuccessEvent = {
+                  id: crypto.randomUUID(),
+                  name: "tool:success",
+                  type: "tool",
+                  startTime: toolStartInfo.startTime, // Use the original start time
+                  endTime: new Date().toISOString(), // Current time as end time
+                  status: "completed",
+                  input: null,
+                  output: step.result ?? step.content,
+                  error: null,
+                  metadata: {
+                    displayName: toolName,
+                  },
+                  traceId: operationContext.historyEntry.id,
+                  affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
+                  parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+                };
+
+                // Publish the tool:success event
+                await AgentEventEmitter.getInstance().publishTimelineEvent({
+                  agentId: this.id,
+                  historyId: operationContext.historyEntry.id,
+                  event: toolSuccessEvent,
+                });
+              }
+
+              // Original tool result event for backward compatibility
               const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
               if (eventUpdater) {
-                const isError = Boolean(step.result?.error);
                 const statusForEvent: any = isError ? "error" : "completed";
                 await eventUpdater({
                   data: {
@@ -978,6 +1223,41 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         usage: response.usage,
         status: "completed" as any,
       });
+
+      // [NEW EVENT SYSTEM] Create an agent:success event
+      const agentStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+        eventId:
+          (operationContext.userContext.get("agent_start_event_id") as string) ||
+          agentStartEvent.id,
+      };
+
+      const agentSuccessEvent: AgentSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:success",
+        type: "agent",
+        startTime: agentStartInfo.startTime, // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "completed",
+        input: null,
+        output: { text: response.text },
+        error: null,
+        metadata: {},
+        usage: response.usage,
+        traceId: operationContext.historyEntry.id,
+        affectedNodeId: createNodeId(NodeType.AGENT, this.id),
+        parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:success event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentSuccessEvent,
+      });
+
+      // Original agent completion event for backward compatibility
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
         input: messages,
         output: response.text,
@@ -985,6 +1265,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         affectedNodeId: `agent_${this.id}`,
         status: "completed" as any,
       });
+
       operationContext.isActive = false;
       const standardizedOutput: StandardizedTextResult = {
         text: response.text,
@@ -1003,6 +1284,47 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     } catch (error) {
       const voltagentError = error as VoltAgentError;
       operationContext.eventUpdaters.clear();
+
+      // [NEW EVENT SYSTEM] Create an agent:error event
+      const agentErrorStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) ||
+          new Date().toISOString(),
+        eventId: operationContext.userContext.get("agent_start_event_id") as string,
+      };
+
+      const agentErrorEvent: AgentErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:error",
+        type: "agent",
+        startTime: agentErrorStartInfo.startTime, // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        error: {
+          message: voltagentError.message,
+          code: voltagentError.code,
+          stage: voltagentError.stage,
+          ...(voltagentError.originalError
+            ? { originalError: String(voltagentError.originalError) }
+            : {}),
+        },
+        metadata: {},
+        traceId: operationContext.historyEntry.id,
+        affectedNodeId: createNodeId(NodeType.AGENT, this.id),
+        parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:error event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentErrorEvent,
+      });
+
+      // Original error event for backward compatibility
       this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
         error: voltagentError,
@@ -1017,6 +1339,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ...voltagentError.metadata,
         },
       });
+
       this.updateHistoryEntry(operationContext, {
         output: voltagentError.message,
         status: "error" as any,
@@ -1083,6 +1406,34 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     let messages = [systemMessage, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
 
+    // [NEW EVENT SYSTEM] Create an agent:start event
+    const agentStartTime = new Date().toISOString(); // Capture agent start time once
+    const agentStartEvent: AgentStartEvent = {
+      id: crypto.randomUUID(),
+      name: "agent:start",
+      type: "agent",
+      startTime: agentStartTime, // Use captured time
+      status: "running",
+      input: { input },
+      output: null,
+      error: null,
+      metadata: { displayName: this.name },
+      traceId: operationContext.historyEntry.id,
+      affectedNodeId: createNodeId(NodeType.AGENT, this.id),
+    };
+
+    // Store agent start time in the operation context for later reference
+    operationContext.userContext.set("agent_start_time", agentStartTime);
+    operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+    // Publish the new event through AgentEventEmitter
+    await AgentEventEmitter.getInstance().publishTimelineEvent({
+      agentId: this.id,
+      historyId: operationContext.historyEntry.id,
+      event: agentStartEvent,
+    });
+
+    // Original event emission for backward compatibility
     this.createStandardTimelineEvent(
       operationContext.historyEntry.id,
       "start",
@@ -1122,6 +1473,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (chunk.type === "tool_call") {
           if (chunk.name && chunk.id) {
             const tool = this.toolManager.getToolByName(chunk.name);
+
+            // [NEW EVENT SYSTEM] Create a tool:start event
+            const toolStartTime = new Date().toISOString(); // Capture start time once
+            const toolStartEvent: ToolStartEvent = {
+              id: crypto.randomUUID(),
+              name: "tool:start",
+              type: "tool",
+              startTime: toolStartTime, // Use captured time
+              status: "running",
+              input: chunk.arguments || {},
+              output: null,
+              error: null,
+              metadata: { displayName: chunk.name },
+              traceId: operationContext.historyEntry.id,
+              affectedNodeId: createNodeId(NodeType.TOOL, chunk.name, this.id),
+              parentEventId: agentStartEvent.id, // Link to the agent:start event
+            };
+
+            // Store tool ID and start time in user context for later reference
+            operationContext.userContext.set(`tool_${chunk.id}`, {
+              eventId: toolStartEvent.id,
+              startTime: toolStartTime, // Store the start time for later
+            });
+
+            // Publish the tool:start event
+            await AgentEventEmitter.getInstance().publishTimelineEvent({
+              agentId: this.id,
+              historyId: operationContext.historyEntry.id,
+              event: toolStartEvent,
+            });
+
+            // Original tool event for backward compatibility
             const eventUpdater = await this.addToolEvent(
               operationContext,
               "tool_working",
@@ -1142,9 +1525,69 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (chunk.name && chunk.id) {
             const toolCallId = chunk.id;
             const toolName = chunk.name;
+            const isError = Boolean(chunk.result?.error);
+
+            // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
+            // Get the associated tool:start event ID and time from context
+            const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+              eventId: string;
+              startTime: string;
+            }) || { eventId: undefined, startTime: new Date().toISOString() };
+
+            if (isError) {
+              // Create tool:error event
+              const toolErrorEvent: ToolErrorEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:error",
+                type: "tool",
+                startTime: toolStartInfo.startTime, // Use the original start time
+                endTime: new Date().toISOString(), // Current time as end time
+                status: "error",
+                level: "ERROR",
+                input: null,
+                output: null,
+                error: chunk.result?.error || { message: "Unknown tool error" },
+                metadata: { displayName: toolName },
+                traceId: operationContext.historyEntry.id,
+                affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
+                parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+              };
+
+              // Publish the tool:error event
+              await AgentEventEmitter.getInstance().publishTimelineEvent({
+                agentId: this.id,
+                historyId: operationContext.historyEntry.id,
+                event: toolErrorEvent,
+              });
+            } else {
+              // Create tool:success event
+              const toolSuccessEvent: ToolSuccessEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:success",
+                type: "tool",
+                startTime: toolStartInfo.startTime, // Use the original start time
+                endTime: new Date().toISOString(), // Current time as end time
+                status: "completed",
+                input: null,
+                output: chunk.result ?? chunk.content,
+                error: null,
+                metadata: { displayName: toolName },
+                traceId: operationContext.historyEntry.id,
+                affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
+                parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+              };
+
+              // Publish the tool:success event
+              await AgentEventEmitter.getInstance().publishTimelineEvent({
+                agentId: this.id,
+                historyId: operationContext.historyEntry.id,
+                event: toolSuccessEvent,
+              });
+            }
+
+            // Original tool result event for backward compatibility
             const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
             if (eventUpdater) {
-              const isError = Boolean(chunk.result?.error);
               const statusForEvent: any = isError ? "error" : "completed";
               await eventUpdater({
                 data: {
@@ -1198,6 +1641,41 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           usage: result.usage,
           status: "completed" as any,
         });
+
+        // [NEW EVENT SYSTEM] Create an agent:success event
+        const agentStartInfo = {
+          startTime:
+            (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+          eventId:
+            (operationContext.userContext.get("agent_start_event_id") as string) ||
+            agentStartEvent.id,
+        };
+
+        const agentSuccessEvent: AgentSuccessEvent = {
+          id: crypto.randomUUID(),
+          name: "agent:success",
+          type: "agent",
+          startTime: agentStartInfo.startTime, // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "completed",
+          input: null,
+          output: { text: result.text },
+          error: null,
+          metadata: {},
+          usage: result.usage,
+          traceId: operationContext.historyEntry.id,
+          affectedNodeId: createNodeId(NodeType.AGENT, this.id),
+          parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+        };
+
+        // Publish the agent:success event
+        await AgentEventEmitter.getInstance().publishTimelineEvent({
+          agentId: this.id,
+          historyId: operationContext.historyEntry.id,
+          event: agentSuccessEvent,
+        });
+
+        // Original agent completion event for backward compatibility
         this.addAgentEvent(operationContext, "finished", "completed" as any, {
           input: messages,
           output: result.text,
@@ -1228,6 +1706,42 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (eventUpdater) {
             try {
               const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
+
+              // [NEW EVENT SYSTEM] Create a tool:error event for tool error during streaming
+              const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+                eventId: string;
+                startTime: string;
+              }) || { eventId: undefined, startTime: new Date().toISOString() };
+
+              const toolErrorEvent: ToolErrorEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:error",
+                type: "tool",
+                startTime: toolStartInfo.startTime,
+                endTime: new Date().toISOString(),
+                status: "error",
+                level: "ERROR",
+                input: null,
+                output: null,
+                error: {
+                  message: error.message,
+                  code: error.code,
+                  ...(error.toolError && { toolError: error.toolError }),
+                },
+                metadata: { displayName: toolName },
+                traceId: operationContext.historyEntry.id,
+                affectedNodeId: toolNodeId,
+                parentEventId: toolStartInfo.eventId,
+              };
+
+              // Publish the tool:error event
+              await AgentEventEmitter.getInstance().publishTimelineEvent({
+                agentId: this.id,
+                historyId: operationContext.historyEntry.id,
+                event: toolErrorEvent,
+              });
+
+              // Legacy event updater
               await eventUpdater({
                 data: {
                   affectedNodeId: toolNodeId,
@@ -1258,6 +1772,45 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           }
         }
         operationContext.eventUpdaters.clear();
+
+        // [NEW EVENT SYSTEM] Create an agent:error event
+        const agentErrorStartInfo = {
+          startTime:
+            (operationContext.userContext.get("agent_start_time") as string) ||
+            new Date().toISOString(),
+          eventId: operationContext.userContext.get("agent_start_event_id") as string,
+        };
+
+        const agentErrorEvent: AgentErrorEvent = {
+          id: crypto.randomUUID(),
+          name: "agent:error",
+          type: "agent",
+          startTime: agentErrorStartInfo.startTime, // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "error",
+          level: "ERROR",
+          input: null,
+          output: null,
+          error: {
+            message: error.message,
+            code: error.code,
+            stage: error.stage,
+            ...(error.originalError ? { originalError: String(error.originalError) } : {}),
+          },
+          metadata: {},
+          traceId: operationContext.historyEntry.id,
+          affectedNodeId: createNodeId(NodeType.AGENT, this.id),
+          parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+        };
+
+        // Publish the agent:error event
+        await AgentEventEmitter.getInstance().publishTimelineEvent({
+          agentId: this.id,
+          historyId: operationContext.historyEntry.id,
+          event: agentErrorEvent,
+        });
+
+        // Original error event for backward compatibility
         this.addAgentEvent(operationContext, "finished", "error" as any, {
           input: messages,
           error: error,

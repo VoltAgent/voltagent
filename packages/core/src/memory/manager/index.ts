@@ -6,7 +6,16 @@ import { LibSQLStorage } from "../index";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import type { OperationContext } from "../../agent/types";
-import { StandardEventData } from "../../events/types";
+import type { StandardEventData } from "../../events/types";
+import type {
+  NewTimelineEvent,
+  MemoryReadStartEvent,
+  MemoryReadSuccessEvent,
+  MemoryReadErrorEvent,
+  MemoryWriteStartEvent,
+  MemoryWriteSuccessEvent,
+  MemoryWriteErrorEvent,
+} from "../../events/types";
 
 /**
  * Convert BaseMessage to MemoryMessage for memory storage
@@ -68,6 +77,31 @@ export class MemoryManager {
   }
 
   /**
+   * Create and publish a timeline event for memory operations
+   *
+   * @param context - Operation context with history entry info
+   * @param event - Timeline event to publish
+   * @returns A promise that resolves when the event is published
+   */
+  private async publishTimelineEvent(
+    context: OperationContext,
+    event: NewTimelineEvent,
+  ): Promise<void> {
+    const historyId = context.historyEntry.id;
+    if (!historyId) return;
+
+    try {
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.resourceId,
+        historyId: historyId,
+        event: event,
+      });
+    } catch (error) {
+      console.error("[Memory] Failed to publish timeline event:", error);
+    }
+  }
+
+  /**
    * Create a tracked event for a memory operation
    *
    * @param context - Operation context with history entry info
@@ -124,7 +158,30 @@ export class MemoryManager {
   ): Promise<void> {
     if (!this.memory || !userId) return;
 
-    // Create a tracked event for this operation
+    // Create memory write start event for new timeline
+    const memoryWriteStartEvent: MemoryWriteStartEvent = {
+      id: crypto.randomUUID(),
+      name: "memory:write_start",
+      type: "memory",
+      startTime: new Date().toISOString(),
+      status: "running",
+      input: {
+        message,
+        userId,
+        conversationId,
+        type,
+      },
+      output: null,
+      error: null,
+      metadata: { displayName: "Memory" },
+      traceId: context.historyEntry.id,
+      affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+    };
+
+    // Publish the memory write start event
+    await this.publishTimelineEvent(context, memoryWriteStartEvent);
+
+    // Create a tracked event for this operation (legacy)
     const eventUpdater = await this.createMemoryEvent(context, "saveMessage", "working", {
       messageType: type,
       userId,
@@ -140,7 +197,31 @@ export class MemoryManager {
       const memoryMessage = convertToMemoryMessage(message, type);
       await this.memory.addMessage(memoryMessage, userId, conversationId);
 
-      // Update event with success
+      // Create memory write success event for new timeline
+      const memoryWriteSuccessEvent: MemoryWriteSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:write_success",
+        type: "memory",
+        startTime: memoryWriteStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        status: "completed",
+        input: null,
+        output: {
+          success: true,
+          messageId: memoryMessage.id,
+          timestamp: memoryMessage.createdAt,
+        },
+        error: null,
+        metadata: { displayName: "Memory" },
+        traceId: context.historyEntry.id,
+        affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+        parentEventId: memoryWriteStartEvent.id,
+      };
+
+      // Publish the memory write success event
+      await this.publishTimelineEvent(context, memoryWriteSuccessEvent);
+
+      // Update event with success (legacy)
       eventUpdater({
         data: {
           status: "completed" as EventStatus,
@@ -153,7 +234,31 @@ export class MemoryManager {
         },
       });
     } catch (error) {
-      // Update event with error
+      // Create memory write error event for new timeline
+      const memoryWriteErrorEvent: MemoryWriteErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:write_error",
+        type: "memory",
+        startTime: memoryWriteStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+        metadata: { displayName: "Memory" },
+        traceId: context.historyEntry.id,
+        affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+        parentEventId: memoryWriteStartEvent.id,
+      };
+
+      // Publish the memory write error event
+      await this.publishTimelineEvent(context, memoryWriteErrorEvent);
+
+      // Update event with error (legacy)
       eventUpdater({
         status: "error" as EventStatus,
         data: {
@@ -182,7 +287,29 @@ export class MemoryManager {
   ): Promise<BaseMessage[]> {
     if (!this.memory || !userId || !conversationId) return [];
 
-    // Create a tracked event for this operation
+    // Create memory read start event for new timeline
+    const memoryReadStartEvent: MemoryReadStartEvent = {
+      id: crypto.randomUUID(),
+      name: "memory:read_start",
+      type: "memory",
+      startTime: new Date().toISOString(),
+      status: "running",
+      input: {
+        userId,
+        conversationId,
+        limit,
+      },
+      output: null,
+      error: null,
+      metadata: { displayName: "Memory" },
+      traceId: context.historyEntry.id,
+      affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+    };
+
+    // Publish the memory read start event
+    await this.publishTimelineEvent(context, memoryReadStartEvent);
+
+    // Create a tracked event for this operation (legacy)
     const eventUpdater = await this.createMemoryEvent(context, "getMessages", "working", {
       userId,
       conversationId,
@@ -205,7 +332,31 @@ export class MemoryManager {
           ? (memoryMessages[memoryMessages.length - 1] as MemoryMessage).id
           : null;
 
-      // Update event with success
+      // Create memory read success event for new timeline
+      const memoryReadSuccessEvent: MemoryReadSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:read_success",
+        type: "memory",
+        startTime: memoryReadStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        status: "completed",
+        input: null,
+        output: {
+          count: memoryMessages.length,
+          firstMessageId: firstId,
+          lastMessageId: lastId,
+        },
+        error: null,
+        metadata: { displayName: "Memory" },
+        traceId: context.historyEntry.id,
+        affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+        parentEventId: memoryReadStartEvent.id,
+      };
+
+      // Publish the memory read success event
+      await this.publishTimelineEvent(context, memoryReadSuccessEvent);
+
+      // Update event with success (legacy)
       eventUpdater({
         data: {
           status: "completed" as EventStatus,
@@ -223,7 +374,31 @@ export class MemoryManager {
         content: m.content,
       }));
     } catch (error) {
-      // Update event with error
+      // Create memory read error event for new timeline
+      const memoryReadErrorEvent: MemoryReadErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:read_error",
+        type: "memory",
+        startTime: memoryReadStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+        metadata: { displayName: "Memory" },
+        traceId: context.historyEntry.id,
+        affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+        parentEventId: memoryReadStartEvent.id,
+      };
+
+      // Publish the memory read error event
+      await this.publishTimelineEvent(context, memoryReadErrorEvent);
+
+      // Update event with error (legacy)
       eventUpdater({
         status: "error" as EventStatus,
         data: {
@@ -567,6 +742,7 @@ export class MemoryManager {
         status: updates.status !== undefined ? updates.status : entry.status,
         output: updates.output !== undefined ? updates.output : entry.output,
         usage: updates.usage !== undefined ? updates.usage : entry.usage,
+        newEvents: updates.newEvents !== undefined ? updates.newEvents : entry.newEvents,
         _agentId: agentId, // Always preserve the agentId
       };
 
@@ -597,6 +773,17 @@ export class MemoryManager {
       if (updates.steps) {
         // Update with all steps
         await this.addStepsToHistoryEntry(agentId, entryId, updates.steps);
+      }
+
+      // If there are newEvents updates
+      if (updates.newEvents && Array.isArray(updates.newEvents)) {
+        // Just update the whole newEvents array, they are immutable by design
+        const updatedEntryWithNewEvents = {
+          ...updatedMainEntry,
+          newEvents: updates.newEvents,
+        };
+
+        await this.memory.updateHistoryEntry(entryId, updatedEntryWithNewEvents, agentId);
       }
 
       // Return the updated record with all relationships
@@ -747,6 +934,38 @@ export class MemoryManager {
       return await this.getHistoryEntryById(agentId, entryId);
     } catch (error) {
       console.error(`[Memory] Failed to add event to history entry:`, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Add a timeline event to a history entry
+   * This method is part of the new immutable event system
+   *
+   * @param agentId - The ID of the agent
+   * @param historyId - The ID of the history entry
+   * @param eventId - The ID of the timeline event
+   * @param event - The NewTimelineEvent object
+   * @returns A promise that resolves to the updated entry or undefined
+   */
+  async addTimelineEvent(
+    agentId: string,
+    historyId: string,
+    eventId: string,
+    event: NewTimelineEvent,
+  ): Promise<any | undefined> {
+    if (!this.memory) return undefined;
+
+    try {
+      const entry = await this.memory.getHistoryEntry(historyId);
+      if (!entry || entry._agentId !== agentId) return undefined;
+
+      // Save the timeline event directly to the new table
+      await this.memory.addTimelineEvent(eventId, event, historyId, agentId);
+
+      return await this.getHistoryEntryById(agentId, historyId);
+    } catch (error) {
+      console.error(`[Memory] Failed to add timeline event to history entry:`, error);
       return undefined;
     }
   }

@@ -1,3 +1,4 @@
+import { NewTimelineEvent } from "../../events/types";
 import type {
   Conversation,
   CreateConversationInput,
@@ -41,6 +42,14 @@ export class InMemoryStorage implements Memory {
       storageLimit: options.storageLimit || 100,
       debug: options.debug || false,
     };
+  }
+  addTimelineEvent(
+    _key: string,
+    _value: NewTimelineEvent,
+    _historyId: string,
+    _agentId: string,
+  ): Promise<void> {
+    throw new Error("Method not implemented.");
   }
 
   /**
