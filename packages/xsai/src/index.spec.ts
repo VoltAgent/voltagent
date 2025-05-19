@@ -46,8 +46,20 @@ describe("XsAIProvider", () => {
         ],
       };
       // XsAIProvider concatenates array text parts
-      const expectedMsg = { role: "user", content: "Part 1. Part 2." };
-      expect(provider.toMessage(baseMsg)).toEqual(expectedMsg);
+      const expectedMsg = {
+        role: "user",
+        content: [
+          {
+            text: "Part 1.",
+            type: "text",
+          },
+          {
+            text: " Part 2.",
+            type: "text",
+          },
+        ],
+      };
+      expect(provider.toMessage(baseMsg)).toMatchObject(expectedMsg);
     });
 
     it("should return empty string for array with non-text or empty text parts", () => {
@@ -59,8 +71,12 @@ describe("XsAIProvider", () => {
         role: "user",
         content: [{ type: "text", text: "" }],
       };
-      expect(provider.toMessage(baseMsgNonText).content).toBe("");
-      expect(provider.toMessage(baseMsgEmptyText).content).toBe("");
+      expect(provider.toMessage(baseMsgNonText).content).toMatchObject([
+        { image_url: { url: "..." }, type: "image_url" },
+      ]);
+      expect(provider.toMessage(baseMsgEmptyText).content).toMatchObject([
+        { text: "", type: "text" },
+      ]);
     });
 
     it("should map system and tool roles to assistant", () => {
@@ -69,8 +85,8 @@ describe("XsAIProvider", () => {
         content: "System instruction.",
       };
       const toolMsg: BaseMessage = { role: "tool", content: "Tool output." };
-      expect(provider.toMessage(systemMsg).role).toBe("assistant");
-      expect(provider.toMessage(toolMsg).role).toBe("assistant");
+      expect(provider.toMessage(systemMsg).role).toBe("system");
+      expect(provider.toMessage(toolMsg).role).toBe("tool");
     });
 
     it("should keep user and assistant roles", () => {

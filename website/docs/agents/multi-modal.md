@@ -146,7 +146,7 @@ Here's a summary of the official VoltAgent providers:
 
 - **`@voltagent/vercel-ai`**: ⚠️ **Conditional Support.** This provider passes the `BaseMessage` structure (including image parts) to the Vercel AI SDK functions (`streamText`, `generateText`). Actual multi-modal support depends entirely on whether the underlying model configured _within your Vercel AI SDK setup_ (e.g., GPT-4 Vision, Claude 3 Haiku/Sonnet/Opus) accepts image input. Check the Vercel AI SDK documentation and your model provider's capabilities.
 
-- **`@voltagent/xsai`**: ❌ **Does NOT Support Image Input (currently).** This provider's `toMessage` function currently only processes `TextPart` items from the `content` array and ignores image or file parts.
+- **`@voltagent/xsai`**: ⚠️ **Conditional Support.** This provider passes the `BaseMessage` structure (including image parts) to the xsAI functions (`streamText`, `generateText`). Actual multi-modal support depends entirely on whether the underlying model configured _within your xsAI setup_ (e.g., GPT-4 Vision, Claude 3 Haiku/Sonnet/Opus) accepts image input. Check your model provider's capabilities.
 
 See the [Providers](../providers/overview.md) documentation for more general details on individual providers.
 

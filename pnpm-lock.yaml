@@ -914,7 +914,7 @@ importers:
         specifier: ^0.1.19
         version: link:../../packages/core
       '@voltagent/xsai':
-        specifier: ^0.1.7
+        specifier: ^0.1.8
         version: link:../../packages/xsai
       zod:
         specifier: ^3.24.2
