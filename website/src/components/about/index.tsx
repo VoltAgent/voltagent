@@ -4,6 +4,18 @@ import confetti from "canvas-confetti";
 import { LinkedInLogo } from "../../../static/img/logos/linkedin";
 import { XLogo } from "../../../static/img/logos/x";
 
+interface Contributor {
+  login: string;
+  avatar_url: string;
+  html_url: string;
+  contributions: number;
+}
+
+interface Stargazer {
+  login: string;
+  avatar_url: string;
+}
+
 const SUDO_CODE = ["s", "u", "d", "o"];
 
 // Remove inline SVG components since we're now importing them
@@ -13,6 +25,9 @@ const SUDO_CODE = ["s", "u", "d", "o"];
 export function Manifesto() {
   const [_, setKeys] = useState<string[]>([]);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
+  const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [stars, setStars] = useState<number>(0);
+  const [recentStargazers, setRecentStargazers] = useState<Stargazer[]>([]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -35,6 +50,26 @@ export function Manifesto() {
       });
     };
 
+    // Fetch contributors and stargazers data
+    const fetchData = async () => {
+      try {
+        const [contributorsResponse, loveResponse] = await Promise.all([
+          fetch("https://api.voltagent.dev/api/contributors"),
+          fetch("https://api.voltagent.dev/api/love"),
+        ]);
+
+        const contributorsData = await contributorsResponse.json();
+        const loveData = await loveResponse.json();
+
+        setContributors(contributorsData.contributors);
+        setStars(loveData.stars);
+        setRecentStargazers(loveData.recent_stargazers);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
@@ -44,7 +79,7 @@ export function Manifesto() {
   };
 
   return (
-    <div className="relative max-w-4xl mx-auto px-4">
+    <div className="relative max-w-4xl mx-auto px-4 [&_a]:no-underline">
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="mb-6">
         <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
@@ -104,13 +139,79 @@ export function Manifesto() {
         </p>
       </div>
 
+      {/* GitHub Contributors Section */}
+      <div className="mt-16 border-t border-white/10 pt-12">
+        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+          GitHub Contributors
+        </h2>
+        <p className="text-center max-w-2xl mx-auto landing-md:text-sm landing-xs:text-xs text-[#dcdcdc] mb-6">
+          Thanks to all the community developers who help us to improve
+          VoltAgent!
+        </p>
+
+        <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-7 gap-4 max-w-4xl mx-auto mt-6">
+          {contributors.slice(3).map((contributor) => (
+            <a
+              key={contributor.login}
+              href={contributor.html_url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="group flex flex-col items-center no-underline text-decoration-none"
+            >
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/40 mb-2 group-hover:border-main-emerald transition-all">
+                <img
+                  src={contributor.avatar_url}
+                  alt={contributor.login}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-[#dcdcdc] text-xs group-hover:text-main-emerald transition-colors no-underline">
+                {contributor.login}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Contribute CTA */}
+      <div className="flex justify-center mt-8">
+        <a
+          href="https://voltagent.dev/docs/community/contributing/"
+          className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
+          border-solid border border-emerald-400/20 text-sm font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20"
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          style={{
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+          }}
+        >
+          <div className="flex items-center justify-center px-6 py-2">
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>How to Contribute?</span>
+          </div>
+        </a>
+      </div>
+
       {/* Team Section */}
       <div className="mt-16 border-t border-white/10 pt-12">
         <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
           Team
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6">
+        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
               <img
@@ -125,7 +226,7 @@ export function Manifesto() {
               <a
                 href="https://www.linkedin.com/in/omer-aplak-14b87099/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="LinkedIn Profile"
               >
@@ -134,7 +235,7 @@ export function Manifesto() {
               <a
                 href="https://x.com/omerfarukaplak/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="Twitter Profile"
               >
@@ -157,7 +258,7 @@ export function Manifesto() {
               <a
                 href="https://www.linkedin.com/in/necatiozmen/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="LinkedIn Profile"
               >
@@ -166,7 +267,7 @@ export function Manifesto() {
               <a
                 href="https://x.com/necatiozmen3/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="Twitter Profile"
               >
@@ -183,7 +284,7 @@ export function Manifesto() {
           Angel Investors
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6">
+        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
               <img
@@ -194,13 +295,13 @@ export function Manifesto() {
             </div>
             <span className="text-white font-medium text-lg">Emre Baran</span>
             <p className="text-main-emerald text-sm mt-1">
-              Co-Founder & CE0 at Cerbos
+              Co-Founder & CEO at Cerbos
             </p>
             <div className="flex space-x-3 mt-0">
               <a
                 href="https://www.linkedin.com/in/emrebaran/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="LinkedIn Profile"
               >
@@ -209,7 +310,7 @@ export function Manifesto() {
               <a
                 href="https://x.com/emre/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="Twitter Profile"
               >
@@ -236,7 +337,7 @@ export function Manifesto() {
               <a
                 href="https://www.linkedin.com/in/umurc/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="LinkedIn Profile"
               >
@@ -245,7 +346,7 @@ export function Manifesto() {
               <a
                 href="https://x.com/umurc/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-400 hover:text-main-emerald transition-colors"
                 aria-label="Twitter Profile"
               >
@@ -253,6 +354,81 @@ export function Manifesto() {
               </a>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* GitHub Stargazers Section */}
+      <div className="mt-16 border-t border-white/10 pt-12">
+        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+          Supporters
+        </h2>
+        <p className="text-center max-w-2xl mx-auto landing-md:text-sm landing-xs:text-xs text-[#dcdcdc] mb-6">
+          <span className="text-main-emerald font-semibold">{stars}</span>{" "}
+          GitHub stars and growing! Recent supporters:
+        </p>
+
+        <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-10 gap-4 max-w-4xl mx-auto mt-6">
+          {recentStargazers.slice(0, 9).map((stargazer) => (
+            <a
+              key={stargazer.login}
+              href={`https://github.com/${stargazer.login}`}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="group no-underline text-decoration-none"
+            >
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/30 group-hover:border-main-emerald transition-all">
+                <img
+                  src={stargazer.avatar_url}
+                  alt={stargazer.login}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </a>
+          ))}
+          {/* Last cell showing remaining count */}
+          <a
+            href="https://github.com/VoltAgent/voltagent/stargazers"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            className="group no-underline text-decoration-none"
+          >
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/30 group-hover:border-main-emerald transition-all bg-emerald-400/20 flex items-center justify-center">
+              <div className="text-main-emerald font-semibold text-xs">
+                +{stars - 9}
+              </div>
+            </div>
+          </a>
+        </div>
+
+        {/* Contribute CTA */}
+        <div className="flex justify-center mt-8">
+          <a
+            href="https://github.com/VoltAgent/voltagent/"
+            className="inline-flex items-center  w-[205px] no-underline bg-emerald-400/10 text-emerald-400 
+            border-solid border border-emerald-400/20 text-sm  font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 group"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            style={{
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+            }}
+          >
+            <div className="flex items-center  w-full justify-center px-3 py-2">
+              <svg
+                className="w-5 h-5 mr-2 text-emerald-400 group-hover:text-yellow-400 transition-colors"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span className="block group-hover:hidden">How to Support?</span>
+              <span className="hidden group-hover:block">
+                Star us on GitHub
+              </span>
+            </div>
+          </a>
         </div>
       </div>
 
