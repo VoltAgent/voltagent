@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { DotPattern } from "../ui/dot-pattern";
 import confetti from "canvas-confetti";
+import { LinkedInLogo } from "../../../static/img/logos/linkedin";
+import { XLogo } from "../../../static/img/logos/x";
 
 const SUDO_CODE = ["s", "u", "d", "o"];
+
+// Remove inline SVG components since we're now importing them
+// const TwitterIcon = () => (...)
+// const LinkedInIcon = () => (...)
 
 export function Manifesto() {
   const [_, setKeys] = useState<string[]>([]);
@@ -100,86 +106,152 @@ export function Manifesto() {
 
       {/* Team Section */}
       <div className="mt-16 border-t border-white/10 pt-12">
-        <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
-          Our Team
+        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+          Team
         </h2>
-        <p className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-6 landing-md:mb-8 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
-          The Folks Building VoltAgent
-        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6">
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
               <img
-                src="https://xsgames.co/randomusers/avatar.php?g=male&id=1"
-                alt="John Doe"
+                src="https://cdn.voltagent.dev/website/team/omer.jpeg"
+                alt="Omer Aplak"
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-white font-medium text-lg">John Doe</span>
-            <p className="text-main-emerald text-sm mt-1">Co-Founder & CTO</p>
+            <span className="text-white font-medium text-lg">Omer Aplak</span>
+            <p className="text-main-emerald text-sm mt-1"> CEO</p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/omer-aplak-14b87099/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/omerfarukaplak/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
           </div>
 
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
               <img
-                src="https://xsgames.co/randomusers/avatar.php?g=male&id=2"
-                alt="Jane Smith"
+                src="https://cdn.voltagent.dev/website/team/necati.jpeg"
+                alt="Necati Ozmen"
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-white font-medium text-lg">Jane Smith</span>
-            <p className="text-main-emerald text-sm mt-1">Co-Founder & CEO</p>
+            <span className="text-white font-medium text-lg">Necati Ozmen</span>
+            <p className="text-main-emerald text-sm mt-1">CMO</p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/necatiozmen/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/necatiozmen3/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Angel Investors Section */}
       <div className="mt-16 border-t border-white/10 pt-12">
-        <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
           Angel Investors
         </h2>
-        <p className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-6 landing-md:mb-8 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
-          People Who Believed in Us
-        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6">
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
               <img
-                src="https://xsgames.co/randomusers/avatar.php?g=male&id=4"
-                alt="Michael Chen"
+                src="https://cdn.voltagent.dev/website/team/emre.jpeg"
+                alt="Emre Baran"
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-white font-medium text-lg">Michael Chen</span>
+            <span className="text-white font-medium text-lg">Emre Baran</span>
             <p className="text-main-emerald text-sm mt-1">
-              Serial Entrepreneur & Tech Investor
+              Co-Founder & CE0 at Cerbos
             </p>
-            <p className="text-[#dcdcdc] text-sm  max-w-xs">
-              Former CTO of TechGiant Inc., Michael brings 15+ years of
-              experience in scaling technology startups and AI innovations.
-            </p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/emrebaran/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/emre/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
           </div>
 
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
               <img
-                src="https://xsgames.co/randomusers/avatar.php?g=male&id=5"
-                alt="Sarah Williams"
+                src="https://cdn.voltagent.dev/website/team/umur.jpeg"
+                alt="Umur Cubukcu"
                 className="w-full h-full object-cover"
               />
             </div>
             <span className="text-white font-medium text-lg">
-              Sarah Williams
+              Umur Cubukcu{" "}
             </span>
             <p className="text-main-emerald text-sm mt-1">
-              AI Venture Capital Partner
+              Co-Founder at Ubicloud
             </p>
-            <p className="text-[#dcdcdc] text-sm  max-w-xs">
-              A pioneer in funding early-stage AI companies with notable exits
-              in developer tools and enterprise software solutions.
-            </p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/umurc/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/umurc/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
