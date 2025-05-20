@@ -48,7 +48,7 @@ export function Manifesto() {
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="mb-6">
         <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
-          Manifesto
+          About us
         </h2>
         <p className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-2 landing-md:mb-3 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
           Why We Built VoltAgent
@@ -146,7 +146,7 @@ export function Manifesto() {
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
               <img
-                src="https://cdn.voltagent.dev/website/team/necati.jpeg"
+                src="https://cdn.voltagent.dev/website/team/necatiozmen.jpg"
                 alt="Necati Ozmen"
                 className="w-full h-full object-cover"
               />
