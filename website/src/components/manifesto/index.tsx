@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { DotPattern } from "../ui/dot-pattern";
 import confetti from "canvas-confetti";
 
 const SUDO_CODE = ["s", "u", "d", "o"];
@@ -38,6 +39,7 @@ export function Manifesto() {
 
   return (
     <div className="relative max-w-4xl mx-auto px-4">
+      <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="mb-6">
         <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
           Manifesto
@@ -94,6 +96,92 @@ export function Manifesto() {
           Thanks to all the amazing tools in the AI development and
           observability ecosystem that inspired us.
         </p>
+      </div>
+
+      {/* Team Section */}
+      <div className="mt-16 border-t border-white/10 pt-12">
+        <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+          Our Team
+        </h2>
+        <p className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-6 landing-md:mb-8 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
+          The Folks Building VoltAgent
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-24 h-24 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
+              <img
+                src="https://xsgames.co/randomusers/avatar.php?g=male&id=1"
+                alt="John Doe"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">John Doe</span>
+            <p className="text-main-emerald text-sm mt-1">Co-Founder & CTO</p>
+          </div>
+
+          <div className="flex flex-col items-center text-center">
+            <div className="w-24 h-24 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
+              <img
+                src="https://xsgames.co/randomusers/avatar.php?g=male&id=2"
+                alt="Jane Smith"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">Jane Smith</span>
+            <p className="text-main-emerald text-sm mt-1">Co-Founder & CEO</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Angel Investors Section */}
+      <div className="mt-16 border-t border-white/10 pt-12">
+        <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+          Angel Investors
+        </h2>
+        <p className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-6 landing-md:mb-8 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
+          People Who Believed in Us
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+              <img
+                src="https://xsgames.co/randomusers/avatar.php?g=male&id=4"
+                alt="Michael Chen"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">Michael Chen</span>
+            <p className="text-main-emerald text-sm mt-1">
+              Serial Entrepreneur & Tech Investor
+            </p>
+            <p className="text-[#dcdcdc] text-sm  max-w-xs">
+              Former CTO of TechGiant Inc., Michael brings 15+ years of
+              experience in scaling technology startups and AI innovations.
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center text-center">
+            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+              <img
+                src="https://xsgames.co/randomusers/avatar.php?g=male&id=5"
+                alt="Sarah Williams"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">
+              Sarah Williams
+            </span>
+            <p className="text-main-emerald text-sm mt-1">
+              AI Venture Capital Partner
+            </p>
+            <p className="text-[#dcdcdc] text-sm  max-w-xs">
+              A pioneer in funding early-stage AI companies with notable exits
+              in developer tools and enterprise software solutions.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
