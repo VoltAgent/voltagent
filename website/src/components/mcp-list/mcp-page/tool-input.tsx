@@ -58,6 +58,7 @@ interface ExpandableToolProps {
   expanded: boolean;
   logoMap: LogoMapType;
   showMcpContentDescription?: boolean;
+  showParameters?: boolean;
   ahrefData?: any;
 }
 
@@ -68,7 +69,11 @@ export const ExpandableTool = ({
   expanded,
   logoMap,
   showMcpContentDescription = true,
+  showParameters = true,
 }: ExpandableToolProps) => {
+  // Get provider names as an array from the providers object
+  const providerNames = tool.providers ? Object.keys(tool.providers) : [];
+
   return (
     <div key={tool.id} className="mb-6">
       {showMcpContentDescription && (
@@ -84,8 +89,10 @@ export const ExpandableTool = ({
       <div className="border rounded-lg bg-slate-800/50 overflow-hidden border-solid hover:border-[#00d992] transition-all duration-300">
         <div
           className="bg-[#222735]/70 px-4 py-3 flex items-center justify-between cursor-pointer"
-          onClick={() => toggleTool(tool.id)}
-          onKeyUp={(e) => e.key === "Enter" && toggleTool(tool.id)}
+          onClick={() => showParameters && toggleTool(tool.id)}
+          onKeyUp={(e) =>
+            showParameters && e.key === "Enter" && toggleTool(tool.id)
+          }
           aria-expanded={expanded}
         >
           <div>
@@ -93,14 +100,14 @@ export const ExpandableTool = ({
               {tool.name}
             </code>
             <div className="text-gray-400 mt-1 text-sm flex gap-2 flex-wrap">
-              {tool.providers?.map((provider: string) => {
-                // Check if this tool has an equivalent for this provider
-                const equivalentId = tool.equivalents?.[provider]?.id;
+              {providerNames.map((provider: string) => {
+                // Get the tool ID for this provider from the providers object
+                const providerId = tool.providers[provider]?.id;
                 return (
                   <span key={provider}>
                     {provider}:{" "}
                     <code className="text-blue-400">
-                      {equivalentId || tool.id}
+                      {providerId || tool.id}
                     </code>
                   </span>
                 );
@@ -110,19 +117,21 @@ export const ExpandableTool = ({
               {tool.description}
             </span>
           </div>
-          <ChevronDownIcon
-            className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${
-              expanded ? "transform rotate-180" : ""
-            }`}
-          />
+          {showParameters && (
+            <ChevronDownIcon
+              className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${
+                expanded ? "transform rotate-180" : ""
+              }`}
+            />
+          )}
         </div>
 
-        {/* Tool content - only visible when expanded */}
-        {expanded && (
+        {/* Tool content - only visible when expanded and showParameters is true */}
+        {expanded && showParameters && (
           <div className="p-4 border-t border-gray-700">
-            {tool.providers && tool.providers.length > 0 && (
+            {providerNames.length > 0 && (
               <div className="space-y-4">
-                {tool.providers.map((provider: string) => (
+                {providerNames.map((provider: string) => (
                   <div
                     key={provider}
                     className="bg-slate-700/20 rounded-md p-4"
@@ -161,7 +170,7 @@ export const ExpandableTool = ({
                       // Look up in the providers section as fallback
                       <ProviderFallbackInputs
                         provider={provider}
-                        toolId={tool.equivalents?.[provider]?.id || tool.id}
+                        toolId={tool.providers[provider]?.id || tool.id}
                         ahrefData={tool.ahrefData}
                       />
                     )}

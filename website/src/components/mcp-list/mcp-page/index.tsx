@@ -1,15 +1,10 @@
 import type * as React from "react";
 import { useState } from "react";
-import {
-  ArrowLeftIcon,
-  ServerIcon,
-  WrenchScrewdriverIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ServerIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../ui/dot-pattern";
 import mcpDataJson from "../mcpData.json";
-import ahrefToolsData from "./ahref-tools.json";
-import { motion, AnimatePresence } from "framer-motion";
+import ahrefToolsData from "./google-sheets.json";
 import { Claude37Logo } from "../../../../static/img/logos/claudie";
 import { CursorLogo } from "../../../../static/img/logos/cursor";
 import { ComposioLogo } from "../../../../static/img/logos/composio";
@@ -82,11 +77,8 @@ export const MCPDetailPage = () => {
 
   // Track which tools are expanded
   const [expandedTools, setExpandedTools] = useState(() => {
-    // Initialize based on the default activeTab's provider tools or total_tools as a fallback
-    const initialProvider = ahrefToolsData.providers.find(
-      (p) => p.name === activeTab,
-    );
-    const toolsToExpand = initialProvider?.tools || ahrefToolsData.total_tools;
+    // Initialize tools to expand based on total_tools
+    const toolsToExpand = ahrefToolsData.total_tools;
     if (toolsToExpand && toolsToExpand.length > 0) {
       const initialState = {};
       initialState[toolsToExpand[0].id] = true;
@@ -136,11 +128,6 @@ export const MCPDetailPage = () => {
       creator: "Composio Team",
       creatorIcon: "bg-green-500",
       link: "https://composio.dev",
-    },
-    community: {
-      creator: "MCP Community",
-      creatorIcon: "bg-purple-500",
-      link: "https://modelcontextprotocol.github.io/community",
     },
   };
 
@@ -202,19 +189,6 @@ export const MCPDetailPage = () => {
   const activeContentToRender = selectedNestedTabData?.content;
   const defaultMessage =
     "Select a tab to view the configuration or usage example.";
-
-  // Determine tools for the "Tools Section" based on the activeTab
-  const providerData = ahrefToolsData.providers.find(
-    (p) => p.name === currentProviderId,
-  );
-  const toolsForProviderSection =
-    providerData?.tools?.map((providerTool) => ({
-      ...providerTool, // id, name, description, inputs
-      providers: [currentProviderId], // Simulate providers array for ExpandableTool
-      provider_inputs: { [currentProviderId]: providerTool.inputs }, // Map inputs to expected structure
-      ahrefData: ahrefToolsData, // Pass full ahrefData for fallback if needed
-      // mcp_content is intentionally omitted as showMcpContentDescription will be false
-    })) || [];
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 flex flex-col">
@@ -400,54 +374,12 @@ export const MCPDetailPage = () => {
                     expanded={!!expandedTools[tool.id]}
                     logoMap={logoMap}
                     showMcpContentDescription={true}
+                    showParameters={false}
                   />
                 ))}
               </div>
             </div>
           )}
-
-          {/* Tools Section */}
-          {toolsForProviderSection.length > 0 && (
-            <div className="rounded-lg backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
-              <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
-                <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
-                  <WrenchScrewdriverIcon className="w-5 h-5 text-[#00d992]" />
-                </div>
-                <div>
-                  <span className="text-md font-semibold text-white mb-1">
-                    Tools for {currentTab.name}
-                  </span>
-                  <div className="text-gray-400 text-sm">
-                    Available tools for the {currentTab.name} provider.
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 overflow-x-auto">
-                <div className="grid grid-cols-1 gap-4">
-                  {toolsForProviderSection.map((tool) => (
-                    <ExpandableTool
-                      key={tool.id}
-                      tool={tool}
-                      toggleTool={toggleTool}
-                      expanded={!!expandedTools[tool.id]}
-                      logoMap={logoMap}
-                      showMcpContentDescription={false}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          {toolsForProviderSection.length === 0 &&
-            currentProviderId !== "community" && (
-              <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
-                <p className="text-gray-400 text-center">
-                  No specific tools listed for the {currentTab.name} provider in
-                  ahref-tools.json.
-                </p>
-              </div>
-            )}
         </div>
 
         {/* Sidebar - Right side - Replaced with component */}

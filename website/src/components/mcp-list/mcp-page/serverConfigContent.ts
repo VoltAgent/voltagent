@@ -77,49 +77,32 @@ export const providerServerConfigs: {
     claude: [
       {
         type: "heading",
-        title: "Authenticating Zapier MCP with Claude",
+        title: "Using Zapier MCP with Claude",
         value: "",
       },
       {
         type: "text",
         value:
-          "To use the Zapier MCP with Claude, you will typically expose your Zapier actions as tools that Claude can call.",
+          "To use Zapier integrations with Claude, you'll need to reference your Zapier MCP server in your prompts. Here's how to do it:",
       },
       {
         type: "text",
-        title: "Step 1: Define Zapier Actions as Claude Tools",
-        value:
-          "Refer to Claude's documentation on how to define custom tools. Each tool would correspond to a Zapier action accessible via your Zapier MCP server.",
+        title: "Step 1: Find your Zapier MCP server URL",
+        value: "Make sure your Zapier MCP server is running and note its URL.",
       },
       {
         type: "text",
-        title: "Step 2: Configure Claude to Use the Tools",
+        title: "Step 2: Reference the Zapier MCP in your Claude prompt",
         value:
-          "Ensure Claude is configured with the necessary API keys and permissions to call these tools.",
+          "In your prompt to Claude, include information about your Zapier server like this:",
       },
       {
         type: "code",
-        language: "json",
-        value: JSON.stringify(
-          {
-            tool_name: "example_zapier_action",
-            description: "Triggers a specific Zapier action.",
-            input_schema: {
-              /* ...schema for inputs... */
-            },
-          },
-          null,
-          2,
-        ),
+        language: "markdown",
+        value:
+          "I'd like to use my Zapier integrations. My Zapier MCP server is running at: <YOUR_ZAPIER_MCP_SERVER_URL>.\n\nPlease help me use this to [describe what you want Claude to do with Zapier].",
       },
     ],
-    serverGenerationInfo: {
-      urlTemplate: "https://zapier.com/platform/mcp-setup/{mcpname}", // Example, adjust if Zapier has a specific page
-      promptTextBeforeLink: "To get your Zapier MCP server details:",
-      linkText: "Visit Zapier MCP Setup",
-      promptTextAfterLink:
-        "and then follow the configuration steps provided in the tabs below for your chosen client.",
-    },
   },
   gumloop: {
     // Voltagent: (Defaults to currentTab.serverConfig from tabOptions if not specified here)
@@ -162,49 +145,37 @@ export const providerServerConfigs: {
       },
     ],
     claude: [
-      { type: "heading", title: "Authenticating guMCP with Claude", value: "" },
+      {
+        type: "heading",
+        title: "Claude Integration with GuMCP",
+        value: "",
+      },
       {
         type: "text",
-        title: "Step 1: Authenticate with Local Server",
         value:
-          "First, you'll need to authenticate with your local server. Here's an example using the {{SERVER_NAME}} server:",
+          "To configure Claude to use the Ahrefs MCP server, you need to reference it in your prompts. Here is how you can do that.",
+      },
+      {
+        type: "text",
+        title: "Step 1: Find your GuMCP server URL",
+        value:
+          "Ensure your GuMCP server is running. For this example, let's say it's at http://localhost:8000.",
+      },
+      {
+        type: "text",
+        title: "Step 2: Include in Claude prompt",
+        value:
+          "In your prompt to Claude, include information about your server like this:",
       },
       {
         type: "code",
-        language: "bash",
-        value: "python src/servers/{{SERVER_NAME}}/main.py auth",
-      }, // Placeholder for server name
-      {
-        type: "text",
-        title: "Step 2: Setup MCP in Claude",
-        value:
-          "Configure your MCP server in Claude by adding the following configuration. Here's an example using the {{SERVER_NAME}} server:",
-      },
-      {
-        type: "code",
-        language: "json",
-        value: JSON.stringify(
-          {
-            mcpServers: {
-              "{{SERVER_NAME}}-gumcp": {
-                // Placeholder for server name
-                command: "/bin/bash",
-                args: [
-                  "-c",
-                  "cd /[where you installed guMCP]/guMCP && source ./venv/bin/activate && python src/servers/local.py --server={{AHREFS_SERVER_FOR_GUMCP}}", // Placeholder for Ahrefs server
-                ],
-              },
-            },
-          },
-          null,
-          2,
-        ),
-      },
-      {
-        type: "text",
-        title: "Step 3: Restart Claude",
-        value:
-          "After saving your configuration, restart Claude to apply the changes.",
+        language: "markdown",
+        value: `Human: I'd like to use Ahrefs tools through my GuMCP server. My server details are:
+
+Server URL: http://localhost:8000/{{AHREFS_SERVER_FOR_GUMCP}}/v1
+
+Can you help me analyze the SEO profile of example.com using this MCP server?
+`,
       },
     ],
     serverGenerationInfo: {
@@ -275,87 +246,6 @@ export const providerServerConfigs: {
       linkText: "Generate your Composio MCP URL",
       promptTextAfterLink:
         "and then use the configuration details shown in the tabs below.",
-    },
-  },
-  community: {
-    // Voltagent: (Defaults to currentTab.serverConfig from tabOptions)
-    cursor: [
-      {
-        type: "heading",
-        title: "Using Community Ahrefs MCP with Cursor",
-        value: "",
-      },
-      {
-        type: "text",
-        value:
-          "The Community Ahrefs MCP server provides a direct API. You would typically call its endpoints from your Cursor extensions or custom code or via another MCP server that proxies to it. Refer to the Community Ahrefs MCP documentation for API details.",
-      },
-      {
-        type: "text",
-        title: "Example: If guMCP is proxying this server",
-        value:
-          "If you have GuMCP setup to proxy the Community Ahrefs server (e.g., named `ahrefs-community` in GuMCP config), you can add it to Cursor like any other GuMCP connection:",
-      },
-      {
-        type: "code",
-        language: "json",
-        value: JSON.stringify(
-          {
-            mcpServers: {
-              "community-ahrefs-via-gumcp": {
-                url: "http://localhost:8000/ahrefs-community/v1", // Example if GuMCP proxies it
-              },
-            },
-          },
-          null,
-          2,
-        ),
-      },
-    ],
-    claude: [
-      {
-        type: "heading",
-        title: "Using Community Ahrefs MCP with Claude",
-        value: "",
-      },
-      {
-        type: "text",
-        value:
-          "The Community Ahrefs MCP server provides a direct API. You would typically make HTTPS calls to its endpoints from your Claude tools or custom integrations. Define a Claude tool that makes requests to the Community Ahrefs MCP API endpoints.",
-      },
-      {
-        type: "text",
-        title: "Example Tool Definition Snippet (Conceptual)",
-        value:
-          "Your tool definition would specify how to call the Community Ahrefs API.",
-      },
-      {
-        type: "code",
-        language: "json",
-        value: JSON.stringify(
-          {
-            tool_name: "fetch_ahrefs_community_data",
-            description: "Calls the Community Ahrefs MCP server.",
-            input_schema: {
-              type: "object",
-              properties: {
-                endpoint: { type: "string" },
-                params: { type: "object" },
-              },
-            },
-          },
-          null,
-          2,
-        ),
-      },
-    ],
-    serverGenerationInfo: {
-      // Community server is typically self-hosted or a direct API, no generation link usually.
-      // We can provide a text prompt if needed.
-      promptTextBeforeLink:
-        "The Community Ahrefs MCP server is typically self-hosted or accessed via a direct API endpoint specified in its documentation.",
-      promptTextAfterLink:
-        "Please refer to its documentation for setup and then use the example configurations below.",
     },
   },
 };
@@ -502,26 +392,6 @@ export const tabOptions: TabOption[] = [
       ],
       "env": {
         "COMPOSIO_API_KEY": "<YOUR_COMPOSIO_API_KEY>"
-      }
-    }
-  }
-}`,
-    tools: [],
-  },
-  {
-    id: "community",
-    name: "Community",
-    serverConfig: `{
-  "mcpServers": {
-    "custom_integration": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-custom"
-      ],
-      "env": {
-        "CUSTOM_ACCESS_TOKEN": "<YOUR_TOKEN>",
-        "CUSTOM_API_URL": "https://api.your-service.com/v1"
       }
     }
   }
