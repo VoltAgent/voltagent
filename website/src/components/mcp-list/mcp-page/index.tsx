@@ -4,7 +4,7 @@ import { ArrowLeftIcon, ServerIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../ui/dot-pattern";
 import mcpDataJson from "../mcpData.json";
-import ahrefToolsData from "./google-sheets.json";
+import ahrefToolsData from "./notion.json";
 import { Claude37Logo } from "../../../../static/img/logos/claudie";
 import { CursorLogo } from "../../../../static/img/logos/cursor";
 import { ComposioLogo } from "../../../../static/img/logos/composio";

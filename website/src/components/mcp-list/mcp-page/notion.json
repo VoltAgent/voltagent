@@ -1,0 +1,281 @@
+{
+  "total_tools": [
+    {
+      "id": "create_page",
+      "name": "Create Page",
+      "description": "Creates a new page in Notion",
+      "providers": {
+        "zapier": { "id": "create_page" },
+        "composio": { "id": "notion_page" }
+      },
+      "mcp_content": {
+        "heading": "Create New Digital Workspaces",
+        "description": "Enable your AI agents to create new pages in Notion. This fundamental capability allows AI agents to establish organized workspaces for documenting information, tracking projects, and maintaining knowledge bases."
+      }
+    },
+    {
+      "id": "add_comment",
+      "name": "Add Comment",
+      "description": "Adds a new comment to a page",
+      "providers": {
+        "zapier": { "id": "add_comment" },
+        "composio": { "id": "comment" }
+      },
+      "mcp_content": {
+        "heading": "Enable Collaborative Discussion",
+        "description": "Allow your AI agents to add comments to Notion pages. This facilitates collaborative discussions, provides feedback on content, and enables communication within the context of specific documents."
+      }
+    },
+    {
+      "id": "create_database_item",
+      "name": "Create Database Item",
+      "description": "Creates a new item in a Notion database",
+      "providers": {
+        "zapier": { "id": "create_database_item" },
+        "composio": { "id": "row_database" }
+      },
+      "mcp_content": {
+        "heading": "Add New Records to Structured Databases",
+        "description": "Empower your AI agents to create new entries in Notion databases. This capability enables automated data collection, record keeping, and maintaining up-to-date information in structured formats."
+      }
+    },
+    {
+      "id": "archive_item",
+      "name": "Archive Item",
+      "description": "Archives an item or block in Notion",
+      "providers": {
+        "zapier": { "id": "archive_database_item" },
+        "composio": { "id": "block" }
+      },
+      "mcp_content": {
+        "heading": "Maintain Clean Workspaces While Preserving Data",
+        "description": "Enable your AI agents to archive items that are no longer needed while still preserving them for future reference. This helps maintain tidy workspaces without permanently deleting valuable information."
+      }
+    },
+    {
+      "id": "add_content",
+      "name": "Add Content to Page",
+      "description": "Adds content blocks to a Notion page",
+      "providers": {
+        "zapier": { "id": "add_content_to_page" },
+        "composio": { "id": "page_content" }
+      },
+      "mcp_content": {
+        "heading": "Enrich Pages with Dynamic Content",
+        "description": "Allow your AI agents to add rich content blocks to Notion pages. This enables creating comprehensive documents with varied media types, structured information, and dynamic elements."
+      }
+    },
+    {
+      "id": "get_comments",
+      "name": "Get Page Comments",
+      "description": "Retrieves comments from a Notion page",
+      "providers": {
+        "zapier": { "id": "get_page_comments" },
+        "composio": { "id": "comments" }
+      },
+      "mcp_content": {
+        "heading": "Access Discussion Threads and Feedback",
+        "description": "Empower your AI agents to retrieve and analyze comments on Notion pages. This allows for understanding feedback, tracking discussions, and incorporating collaborative input into AI processes."
+      }
+    },
+    {
+      "id": "retrieve_database",
+      "name": "Retrieve Database",
+      "description": "Gets information about a Notion database structure",
+      "providers": {
+        "zapier": { "id": "retrieve_database" },
+        "composio": { "id": "database" }
+      },
+      "mcp_content": {
+        "heading": "Understand Database Structures and Schemas",
+        "description": "Give your AI agents the ability to retrieve and analyze database structures in Notion. This enables intelligent interaction with complex data models, understanding available fields, and working within existing data frameworks."
+      }
+    },
+    {
+      "id": "query_database",
+      "name": "Query Database",
+      "description": "Retrieves filtered and sorted data from a Notion database",
+      "providers": {
+        "zapier": { "id": "find_database_item" },
+        "composio": { "id": "database" }
+      },
+      "mcp_content": {
+        "heading": "Extract Relevant Data with Powerful Queries",
+        "description": "Enable your AI agents to search, filter, and sort database entries in Notion. This powerful querying capability allows for extracting specific information, generating reports, and identifying patterns within structured data."
+      }
+    },
+    {
+      "id": "update_database_item",
+      "name": "Update Database Item",
+      "description": "Updates an existing item in a Notion database",
+      "providers": {
+        "zapier": { "id": "update_database_item" },
+        "composio": { "id": "row_database" }
+      },
+      "mcp_content": {
+        "heading": "Modify Existing Records with Precision",
+        "description": "Allow your AI agents to update existing database entries in Notion. This enables maintaining accurate information, reflecting changing statuses, and ensuring data remains current across your knowledge systems."
+      }
+    },
+    {
+      "id": "restore_database_item",
+      "name": "Restore Database Item",
+      "description": "Restores a previously archived database item",
+      "providers": {
+        "zapier": { "id": "restore_database_item" }
+      },
+      "mcp_content": {
+        "heading": "Recover Archived Information When Needed",
+        "description": "Enable your AI agents to restore previously archived items in Notion databases. This provides flexibility in information management, allowing for recovery of historical data when it becomes relevant again."
+      }
+    },
+    {
+      "id": "retrieve_page",
+      "name": "Retrieve Page",
+      "description": "Gets information about a specific Notion page",
+      "providers": {
+        "zapier": { "id": "retrieve_a_page" }
+      },
+      "mcp_content": {
+        "heading": "Access Complete Page Details and Content",
+        "description": "Empower your AI agents to retrieve all information from specific Notion pages. This enables comprehensive analysis of document content, understanding page structure, and working with existing information."
+      }
+    },
+    {
+      "id": "retrieve_block_children",
+      "name": "Retrieve Block Children",
+      "description": "Gets all child blocks of a parent block",
+      "providers": {
+        "zapier": { "id": "retrieve_block_children" }
+      },
+      "mcp_content": {
+        "heading": "Explore Nested Content Structures",
+        "description": "Give your AI agents the ability to retrieve nested content blocks within Notion pages. This allows for navigating complex document structures, accessing specific sections, and understanding hierarchical relationships between content elements."
+      }
+    },
+    {
+      "id": "find_page",
+      "name": "Find Page by Title",
+      "description": "Searches for a page by its title",
+      "providers": {
+        "zapier": { "id": "find_page_by_title" }
+      },
+      "mcp_content": {
+        "heading": "Locate Specific Documents by Name",
+        "description": "Allow your AI agents to search for and find Notion pages based on their titles. This search capability enables quick access to specific documents without knowing their IDs, supporting efficient information retrieval."
+      }
+    },
+    {
+      "id": "find_or_create_database_item",
+      "name": "Find or Create Database Item",
+      "description": "Finds a database item or creates it if it doesn't exist",
+      "providers": {
+        "zapier": { "id": "find_or_create_database_item" }
+      },
+      "mcp_content": {
+        "heading": "Ensure Records Exist Without Duplication",
+        "description": "Empower your AI agents with an idempotent approach to database management. This tool checks if a record exists and creates it if not, preventing duplicates while ensuring necessary information is always available."
+      }
+    },
+    {
+      "id": "find_or_create_comment",
+      "name": "Find or Create Comment",
+      "description": "Finds existing comments or creates a new one",
+      "providers": {
+        "zapier": { "id": "find_or_create_comment" }
+      },
+      "mcp_content": {
+        "heading": "Add Context-Aware Comments Without Duplication",
+        "description": "Give your AI agents the ability to check for existing comments before creating new ones. This prevents duplicate feedback while ensuring important information is always communicated in the appropriate context."
+      }
+    },
+    {
+      "id": "get_page_and_children",
+      "name": "Get Page and Children",
+      "description": "Retrieves a page and all its child blocks",
+      "providers": {
+        "zapier": { "id": "get_page_and_children" }
+      },
+      "mcp_content": {
+        "heading": "Access Complete Document Hierarchies",
+        "description": "Enable your AI agents to retrieve entire page structures including all nested content. This comprehensive access allows for complete document analysis, content migration, and working with complex nested information."
+      }
+    },
+    {
+      "id": "api_request",
+      "name": "API Request",
+      "description": "Makes a raw HTTP request with Notion authentication",
+      "providers": {
+        "zapier": { "id": "api_request_beta" }
+      },
+      "mcp_content": {
+        "heading": "Access Advanced Notion API Features",
+        "description": "Empower your AI agents to make direct API calls to Notion with proper authentication. This advanced capability unlocks the full Notion API for custom operations, extensions, and specialized functionality beyond standard actions."
+      }
+    },
+    {
+      "id": "get_user_info",
+      "name": "Get User Info",
+      "description": "Retrieves information about the authenticated user",
+      "providers": {
+        "composio": { "id": "about_me" }
+      },
+      "mcp_content": {
+        "heading": "Access User Identity and Permissions",
+        "description": "Allow your AI agents to retrieve information about the authenticated Notion user. This provides context about who is performing actions, available permissions, and workspace access levels."
+      }
+    },
+    {
+      "id": "get_account_info",
+      "name": "Get Account Info",
+      "description": "Retrieves detailed information about a user account",
+      "providers": {
+        "composio": { "id": "about_user" }
+      },
+      "mcp_content": {
+        "heading": "Understand User Account Details",
+        "description": "Enable your AI agents to access detailed information about Notion user accounts. This helps personalize interactions, understand user capabilities, and tailor operations to specific user contexts."
+      }
+    },
+    {
+      "id": "list_users",
+      "name": "List Workspace Users",
+      "description": "Lists all users in a Notion workspace",
+      "providers": {
+        "composio": { "id": "users" }
+      },
+      "mcp_content": {
+        "heading": "Identify All Workspace Collaborators",
+        "description": "Empower your AI agents to retrieve a list of all users in a Notion workspace. This enables understanding collaboration contexts, identifying potential assignees, and managing permissions across teams."
+      }
+    },
+    {
+      "id": "get_row_info",
+      "name": "Get Database Row Info",
+      "description": "Retrieves detailed information about a database row",
+      "providers": {
+        "composio": { "id": "row" }
+      },
+      "mcp_content": {
+        "heading": "Access Single Record Details",
+        "description": "Give your AI agents the ability to retrieve comprehensive information about specific database rows in Notion. This enables detailed analysis of individual records, understanding relationships, and working with specific data points."
+      }
+    },
+    {
+      "id": "update_database_schema",
+      "name": "Update Database Schema",
+      "description": "Updates the schema of a Notion database",
+      "providers": {
+        "composio": { "id": "schema_database" }
+      },
+      "mcp_content": {
+        "heading": "Modify Database Structures Dynamically",
+        "description": "Allow your AI agents to update and evolve database schemas in Notion. This powerful capability enables creating new properties, modifying data types, and adapting data structures to changing needs."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How Can Your AI Agents Leverage the Notion MCP Server?",
+    "description": "The Notion Model Context Protocol (MCP) server empowers your AI agents with direct access to Notion's powerful document and database capabilities. Discover how your AI agents can automate workspace management, from creating and updating pages to querying databases and managing collaborative feedback. Below, explore the specific capabilities and how you can integrate them into your AI agent workflows via MCP for enhanced knowledge management and team collaboration."
+  }
+}
