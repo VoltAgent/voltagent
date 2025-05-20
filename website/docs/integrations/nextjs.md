@@ -12,7 +12,7 @@ This guide walks you through setting up VoltAgent in a Next.js application. We'l
 If you prefer to start directly with the completed example project, you can create it using the following command:
 
 ```bash
-npm create voltagent-app@latest -- --example with-nextjs
+npm create voltagent-app@latest --example with-nextjs voltagent
 ```
 
 This command will scaffold the entire Next.js example project described in this guide.
