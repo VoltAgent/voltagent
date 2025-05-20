@@ -1,9 +1,11 @@
 import { EventEmitter } from "node:events";
-import type { AgentHistoryEntry, TimelineEvent } from "../agent/history";
+import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import { AgentRegistry } from "../server/registry";
 import { v4 as uuidv4 } from "uuid";
 import type { NewTimelineEvent } from "./types";
+import crypto from "node:crypto";
+import { createNodeId, NodeType } from "../utils/node-utils";
 
 // New type exports
 export type EventStatus = AgentStatus;
@@ -66,7 +68,6 @@ export interface AgentEvents {
  */
 export class AgentEventEmitter extends EventEmitter {
   private static instance: AgentEventEmitter | null = null;
-  private trackedEvents: Map<string, TimelineEvent> = new Map();
 
   private constructor() {
     super();
@@ -89,14 +90,16 @@ export class AgentEventEmitter extends EventEmitter {
    * @param agentId - Agent ID
    * @param historyId - History entry ID
    * @param event - The NewTimelineEvent object to publish. Must conform to the new BaseTimelineEvent structure.
+   * @param skipPropagation - Optional flag to skip propagating this event to parent agents (to prevent cycles)
    * @returns The updated AgentHistoryEntry or undefined if an error occurs.
    */
   public async publishTimelineEvent(params: {
     agentId: string;
     historyId: string;
     event: NewTimelineEvent; // This now uses NewTimelineEvent type
+    skipPropagation?: boolean;
   }): Promise<AgentHistoryEntry | undefined> {
-    const { agentId, historyId, event } = params;
+    const { agentId, historyId, event, skipPropagation = false } = params;
 
     // Ensure event has an id and startTime
     if (!event.id) {
@@ -122,6 +125,12 @@ export class AgentEventEmitter extends EventEmitter {
 
       if (updatedEntry) {
         this.emitHistoryUpdate(agentId, updatedEntry);
+
+        // Propagate the event to parent agents if not explicitly skipped
+        if (!skipPropagation) {
+          await this.propagateEventToParentAgents(agentId, historyId, event);
+        }
+
         return updatedEntry;
       }
       console.warn(
@@ -136,224 +145,72 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * Add a timeline event to an agent's history entry
-   * This is the central method for adding events to history
+   * Propagates a timeline event from a subagent to all its parent agents
+   * This ensures all events from subagents appear in parent agent timelines
    *
-   * @param agentId - Agent ID
-   * @param historyId - History entry ID
-   * @param eventName - Name of the event
-   * @param status - Updated agent status (optional)
-   * @param additionalData - Additional data to include in the event
-   * @returns Updated history entry or undefined if not found
+   * @param agentId - The source agent ID (subagent)
+   * @param historyId - The history entry ID of the source (not used directly but needed for context)
+   * @param event - The event to propagate
+   * @param visited - Set of already visited agents (to prevent cycles)
    */
-  public async addHistoryEvent(params: {
-    agentId: string;
-    historyId: string;
-    eventName: string;
-    status?: AgentStatus;
-    additionalData: Record<string, any>;
-    type: "memory" | "tool" | "agent" | "retriever";
-  }): Promise<AgentHistoryEntry | undefined> {
-    // For backward compatibility: use name if eventName is not provided
-    const { agentId, historyId, status, additionalData, type, eventName } = params;
-
-    // Get agent from registry
-    const agent = AgentRegistry.getInstance().getAgent(agentId);
-    if (!agent) {
-      console.debug(`[AgentEventEmitter] Agent not found: ${agentId}`);
-      return undefined;
-    }
-
-    // Get history entry from agent
-    const historyEntry = (await agent.getHistory()).find((entry) => entry.id === historyId);
-    if (!historyEntry) {
-      console.debug(`[AgentEventEmitter] History entry not found: ${historyId}`);
-      return undefined;
-    }
-
-    // Create timeline event
-    const event: TimelineEvent = {
-      id: uuidv4(), // Add unique ID for the event
-      timestamp: new Date().toISOString(),
-      name: eventName,
-      data: additionalData,
-      type,
-    };
-
-    // Update status if provided
-    const updatedEntry = { ...historyEntry };
-    if (status) {
-      updatedEntry.status = status;
-    }
-
-    // Add event to history entry
-    if (!updatedEntry.events) {
-      updatedEntry.events = [];
-    }
-    updatedEntry.events.push(event);
-
-    // Use the new method to access historyManager from agent
-    const historyManager = agent.getHistoryManager();
-
-    // Directly save the event to the database
-    await historyManager.addEventToEntry(historyEntry.id, event);
-
-    // If the status has changed, update the history entry too
-    if (status) {
-      await historyManager.updateEntry(historyEntry.id, { status });
-    }
-
-    // Emit history update event
-    this.emitHistoryUpdate(agentId, updatedEntry);
-
-    return updatedEntry;
-  }
-
-  /**
-   * Create a tracked event that can be updated over time
-   * Returns an updater function that can be called to update the event
-   *
-   * @param options - Options for creating the tracked event
-   * @returns An updater function to update the event
-   */
-  public async createTrackedEvent(options: TrackedEventOptions): Promise<EventUpdater> {
-    const { agentId, historyId, name, status, data = {}, type } = options;
-
-    // Generate a unique ID for this tracked event
-    const eventId = uuidv4();
-
-    // Create initial event
-    const historyEntry = await this.addHistoryEvent({
-      agentId,
-      historyId,
-      eventName: name,
-      status,
-      additionalData: {
-        ...data,
-        _trackedEventId: eventId,
-      },
-      type,
-    });
-
-    if (!historyEntry) {
-      console.debug(`[AgentEventEmitter] Failed to create tracked event: ${name}`);
-      return () => Promise.resolve(undefined);
-    }
-
-    // Store the timeline event reference
-    const events = historyEntry.events || [];
-    const timelineEvent = events[events.length - 1];
-    this.trackedEvents.set(eventId, timelineEvent);
-
-    // Return the updater function
-    return async (updateOptions: {
-      status?: AgentStatus;
-      data?: Record<string, any>;
-    }) => {
-      return await this.updateTrackedEvent(agentId, historyId, eventId, updateOptions.status, {
-        ...updateOptions.data,
-      });
-    };
-  }
-
-  /**
-   * Update a tracked event by its ID
-   *
-   * @param agentId - Agent ID
-   * @param historyId - History entry ID
-   * @param eventId - Tracked event ID
-   * @param status - Updated agent status (optional)
-   * @param additionalData - Additional data to include in the event
-   * @returns Updated history entry or undefined if not found
-   */
-  public async updateTrackedEvent(
+  private async propagateEventToParentAgents(
     agentId: string,
-    historyId: string,
-    eventId: string,
-    status?: AgentStatus,
-    additionalData: Record<string, any> = {},
-  ): Promise<AgentHistoryEntry | undefined> {
-    // Get agent from registry
-    const agent = AgentRegistry.getInstance().getAgent(agentId);
-    if (!agent) {
-      console.debug(`[AgentEventEmitter] Agent not found: ${agentId}`);
-      return undefined;
-    }
+    _historyId: string,
+    event: NewTimelineEvent,
+    visited: Set<string> = new Set(),
+  ): Promise<void> {
+    // Prevent infinite loops in cyclic agent relationships by tracking visited agents
+    if (visited.has(agentId)) return;
+    visited.add(agentId);
 
-    try {
-      // Use the new method to access historyManager from agent
-      const historyManager = agent.getHistoryManager();
+    // Get parent agent IDs for this agent
+    const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
+    if (parentIds.length === 0) return; // No parents, nothing to propagate to
 
-      // Use the new updateTrackedEvent method of HistoryManager
-      const updatedEntry = await historyManager.updateTrackedEvent(historyId, eventId, {
-        status,
-        data: additionalData,
-      });
+    // Get source agent details to enrich the propagated event
+    const sourceAgent = AgentRegistry.getInstance().getAgent(agentId);
+    const sourceAgentName = sourceAgent?.name || agentId;
 
-      if (!updatedEntry) {
-        console.debug(`[AgentEventEmitter] Failed to update tracked event: ${eventId}`);
-        return undefined;
-      }
+    // Propagate to each parent agent
+    for (const parentId of parentIds) {
+      const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
+      if (!parentAgent) continue;
 
-      // Tracked event update is complete, no need to track anymore
-      // Remove from the Map to prevent memory leaks
-      this.trackedEvents.delete(eventId);
+      // Find active history entry for the parent agent
+      const parentHistory = await parentAgent.getHistory();
+      const activeParentEntry =
+        parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
 
-      // Log the removal for debugging purposes
+      if (!activeParentEntry) continue;
 
-      return updatedEntry;
-    } catch (_error) {
-      // Tracked event update failed, but still remove from the Map to prevent memory leaks
-      // We shouldn't continue tracking even if it failed
-      this.trackedEvents.delete(eventId);
-
-      return undefined;
-    }
-  }
-
-  /**
-   * Track an operation with automatic start and completion updates
-   * This is a higher-level utility that handles the event lifecycle
-   *
-   * @param options - Options for tracking the event
-   * @returns The result of the operation
-   */
-  public async trackEvent<T>(options: TrackEventOptions): Promise<T> {
-    const { agentId, historyId, name, initialData = {}, initialStatus, operation, type } = options;
-
-    // Create the initial tracked event
-    const eventUpdater = await this.createTrackedEvent({
-      agentId,
-      historyId,
-      name,
-      status: initialStatus,
-      data: {
-        ...initialData,
-      },
-      type,
-    });
-
-    try {
-      // Execute the operation with the updater
-      const result = await operation(eventUpdater);
-
-      // Final update with completed status and result
-      eventUpdater({
-        data: {
-          ...result,
+      // Create an enriched version of the event with subagent metadata
+      const enrichedEvent: NewTimelineEvent = {
+        ...event,
+        metadata: {
+          ...event.metadata,
+          isSubagent: true,
+          sourceAgentId: agentId,
+          sourceAgentName: sourceAgentName,
+          parentAgentId: parentId,
         },
+      };
+
+      // Publish the enriched event to the parent, but skip further propagation
+      // to avoid propagation cycles (skipPropagation=true)
+      await this.publishTimelineEvent({
+        agentId: parentId,
+        historyId: activeParentEntry.id,
+        event: enrichedEvent,
+        skipPropagation: true, // Prevent cycles
       });
 
-      return result;
-    } catch (error) {
-      // Update with error status
-      eventUpdater({
-        data: {
-          error,
-        },
-      });
-
-      throw error;
+      // Recursively propagate to higher level ancestors (grandparents)
+      await this.propagateEventToParentAgents(
+        parentId,
+        activeParentEntry.id,
+        enrichedEvent,
+        visited,
+      );
     }
   }
 
@@ -373,42 +230,167 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * Emit hierarchical history updates to parent agents
+   * Emit hierarchical history entry created events to parent agents
+   * This ensures that parent agents are aware of new subagent history entries
+   */
+  public async emitHierarchicalHistoryEntryCreated(
+    agentId: string,
+    historyEntry: AgentHistoryEntry,
+    visited: Set<string> = new Set(),
+  ): Promise<void> {
+    // Prevent infinite loops by tracking visited agents
+    if (visited.has(agentId)) return;
+    visited.add(agentId);
+
+    // Get parent agent IDs for this agent
+    const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
+
+    // Get agent information for better naming
+    const agent = AgentRegistry.getInstance().getAgent(agentId);
+    const agentName = agent ? agent.name : agentId;
+
+    // Propagate history creation to each parent agent
+    for (const parentId of parentIds) {
+      const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
+      if (!parentAgent) continue;
+
+      // Find active history entry for the parent
+      const parentHistory = await parentAgent.getHistory();
+      const activeParentHistoryEntry =
+        parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
+
+      if (activeParentHistoryEntry) {
+        // Create agent:start event in parent's history for the subagent
+        await this.publishTimelineEvent({
+          agentId: parentId,
+          historyId: activeParentHistoryEntry.id,
+          event: {
+            id: crypto.randomUUID(),
+            name: "agent:start",
+            type: "agent",
+            startTime: new Date().toISOString(),
+            status: "running",
+            input: {
+              input:
+                typeof historyEntry.input === "string" || Array.isArray(historyEntry.input)
+                  ? historyEntry.input
+                  : String(historyEntry.input),
+            },
+            output: null,
+            error: null,
+            metadata: {
+              displayName: agentName,
+              agentId: agentId,
+              isSubagent: true,
+              parentAgentId: parentId,
+            },
+            traceId: activeParentHistoryEntry.id,
+            affectedNodeId: createNodeId(NodeType.AGENT, agentId),
+          },
+        });
+      }
+
+      // Recursively propagate to higher-level ancestors
+      await this.emitHierarchicalHistoryEntryCreated(parentId, historyEntry, visited);
+    }
+  }
+
+  /**
+   * Emit hierarchical history update events to parent agents
    * This ensures that parent agents are aware of subagent history changes
    */
   public async emitHierarchicalHistoryUpdate(
     agentId: string,
     historyEntry: AgentHistoryEntry,
+    visited: Set<string> = new Set(),
   ): Promise<void> {
+    // Prevent infinite loops by tracking visited agents
+    if (visited.has(agentId)) return;
+    visited.add(agentId);
+
     // Get parent agent IDs for this agent
     const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
 
-    // Propagate history update to each parent agent
-    parentIds.forEach(async (parentId) => {
-      const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
-      if (parentAgent) {
-        // Find active history entry for the parent
-        const parentHistory = await parentAgent.getHistory();
-        const activeParentHistoryEntry =
-          parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
+    // Get agent information for better naming
+    const agent = AgentRegistry.getInstance().getAgent(agentId);
+    const agentName = agent ? agent.name : agentId;
 
-        if (activeParentHistoryEntry) {
-          // Create a special timeline event in parent's history about subagent update
-          this.addHistoryEvent({
+    // Propagate history update to each parent agent
+    for (const parentId of parentIds) {
+      const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
+      if (!parentAgent) continue;
+
+      // Find active history entry for the parent
+      const parentHistory = await parentAgent.getHistory();
+      const activeParentHistoryEntry =
+        parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
+
+      if (activeParentHistoryEntry) {
+        // Create appropriate event based on history entry status
+        if (historyEntry.status === "completed") {
+          // Create agent:success event
+          await this.publishTimelineEvent({
             agentId: parentId,
             historyId: activeParentHistoryEntry.id,
-            eventName: `subagent:${agentId}`,
-            status: undefined, // Don't change parent status
-            additionalData: {
-              subagentId: agentId,
-              data: historyEntry,
-              affectedNodeId: `agent_${agentId}`,
+            event: {
+              id: crypto.randomUUID(),
+              name: "agent:success",
+              type: "agent",
+              startTime:
+                typeof historyEntry.timestamp === "string"
+                  ? historyEntry.timestamp
+                  : new Date().toISOString(),
+              endTime: new Date().toISOString(),
+              status: "completed",
+              input: null,
+              output: { content: historyEntry.output },
+              error: null,
+              metadata: {
+                displayName: agentName,
+                agentId: agentId,
+                isSubagent: true,
+                parentAgentId: parentId,
+              },
+              traceId: activeParentHistoryEntry.id,
+              affectedNodeId: createNodeId(NodeType.AGENT, agentId),
             },
-            type: "agent",
+          });
+        } else if (historyEntry.status === "error") {
+          // Create agent:error event
+          await this.publishTimelineEvent({
+            agentId: parentId,
+            historyId: activeParentHistoryEntry.id,
+            event: {
+              id: crypto.randomUUID(),
+              name: "agent:error",
+              type: "agent",
+              startTime:
+                typeof historyEntry.timestamp === "string"
+                  ? historyEntry.timestamp
+                  : new Date().toISOString(),
+              endTime: new Date().toISOString(),
+              status: "error",
+              level: "ERROR",
+              input: null,
+              output: null,
+              error: { message: historyEntry.output || "Subagent error" },
+              metadata: {
+                displayName: agentName,
+                agentId: agentId,
+                isSubagent: true,
+                parentAgentId: parentId,
+              },
+              traceId: activeParentHistoryEntry.id,
+              affectedNodeId: createNodeId(NodeType.AGENT, agentId),
+            },
           });
         }
+        // Other statuses can be handled here if needed (e.g., "working", "cancelled", etc.)
+
+        // Recursively propagate to higher-level ancestors
+        await this.emitHierarchicalHistoryUpdate(parentId, historyEntry, visited);
       }
-    });
+    }
   }
 
   /**
@@ -418,46 +400,6 @@ export class AgentEventEmitter extends EventEmitter {
     this.emit("historyEntryCreated", agentId, historyEntry);
     // After emitting the direct creation, propagate to parent agents
     this.emitHierarchicalHistoryEntryCreated(agentId, historyEntry);
-  }
-
-  /**
-   * Emit hierarchical history entry created events to parent agents
-   * This ensures that parent agents are aware of new subagent history entries
-   */
-  public async emitHierarchicalHistoryEntryCreated(
-    _agentId: string,
-    _historyEntry: AgentHistoryEntry,
-  ): Promise<void> {
-    return Promise.resolve();
-    // Get parent agent IDs for this agent
-    /*    const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
-
-    // Propagate history creation to each parent agent
-    parentIds.forEach(async (parentId) => {
-      const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
-      if (parentAgent) {
-        // Find active history entry for the parent
-        const parentHistory = await parentAgent.getHistory();
-        const activeParentHistoryEntry =
-          parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
-
-        if (activeParentHistoryEntry) {
-          // Create a special timeline event in parent's history about subagent history creation
-          this.addHistoryEvent({
-            agentId: parentId,
-            historyId: activeParentHistoryEntry.id,
-            eventName: `subagent:${agentId}`,
-            status: undefined, // Don't change parent status
-            additionalData: {
-              subagentId: agentId,
-              data: historyEntry,
-              affectedNodeId: `subagent_${agentId}`,
-            },
-            type: "agent",
-          });
-        }
-      }
-    }); */
   }
 
   /**

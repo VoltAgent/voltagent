@@ -136,24 +136,6 @@ export type Memory = {
   updateHistoryEntry(key: string, value: any, agentId: string): Promise<void>;
 
   /**
-   * Add a history event
-   * @param key Event ID
-   * @param value Event data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  addHistoryEvent(key: string, value: any, historyId: string, agentId: string): Promise<void>;
-
-  /**
-   * Update a history event
-   * @param key Event ID
-   * @param value Updated event data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  updateHistoryEvent(key: string, value: any, historyId: string, agentId: string): Promise<void>;
-
-  /**
    * Add a history step
    * @param key Step ID
    * @param value Step data
@@ -177,13 +159,6 @@ export type Memory = {
    * @returns The history entry or undefined if not found
    */
   getHistoryEntry(key: string): Promise<any | undefined>;
-
-  /**
-   * Get a history event by ID
-   * @param key Event ID
-   * @returns The history event or undefined if not found
-   */
-  getHistoryEvent(key: string): Promise<any | undefined>;
 
   /**
    * Get a history step by ID

@@ -101,6 +101,15 @@ export interface Usage {
  */
 export interface BaseEventMetadata {
   displayName?: string;
+  agentId?: string;
+  isSubagent?: boolean;
+  parentAgentId?: string;
+  sourceAgentId?: string;
+  sourceAgentName?: string;
+}
+
+export interface AgentStartEventMetadata extends BaseEventMetadata {
+  instructions?: string;
 }
 
 /**
@@ -154,7 +163,7 @@ export type ToolErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
 };
 
 // --- Agent Event Types ---
-export type AgentStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type AgentStartEvent = BaseTimelineEvent<AgentStartEventMetadata> & {
   name: "agent:start";
   type: "agent";
   input: { input: string | BaseMessage[] };

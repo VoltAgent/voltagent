@@ -192,17 +192,6 @@ export class LibSQLStorage implements Memory {
         )
       `);
 
-      // Create agent_history_events table
-      const historyEventsTableName = `${this.options.tablePrefix}_agent_history_events`;
-      await this.client.execute(`
-        CREATE TABLE IF NOT EXISTS ${historyEventsTableName} (
-          key TEXT PRIMARY KEY,
-          value TEXT NOT NULL,
-          history_id TEXT NOT NULL,
-          agent_id TEXT
-        )
-      `);
-
       // Create agent_history_steps table
       const historyStepsTableName = `${this.options.tablePrefix}_agent_history_steps`;
       await this.client.execute(`
@@ -253,10 +242,6 @@ export class LibSQLStorage implements Memory {
       `);
 
       // Create indexes for history tables
-      await this.client.execute(`
-        CREATE INDEX IF NOT EXISTS idx_${historyEventsTableName}_history_id 
-        ON ${historyEventsTableName}(history_id)
-      `);
 
       await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${historyStepsTableName}_history_id 
@@ -267,11 +252,6 @@ export class LibSQLStorage implements Memory {
       await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${historyTableName}_agent_id 
         ON ${historyTableName}(agent_id)
-      `);
-
-      await this.client.execute(`
-        CREATE INDEX IF NOT EXISTS idx_${historyEventsTableName}_agent_id 
-        ON ${historyEventsTableName}(agent_id)
       `);
 
       await this.client.execute(`
@@ -563,57 +543,6 @@ export class LibSQLStorage implements Memory {
   }
 
   /**
-   * Add a history event
-   * @param key Event ID
-   * @param value Event data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  async addHistoryEvent(
-    key: string,
-    value: any,
-    historyId: string,
-    agentId: string,
-  ): Promise<void> {
-    await this.initialized;
-
-    try {
-      const tableName = `${this.options.tablePrefix}_agent_history_events`;
-
-      // Serialize value to JSON
-      const serializedValue = JSON.stringify(value);
-
-      // Insert or replace with history_id and agent_id columns
-      await this.client.execute({
-        sql: `INSERT OR REPLACE INTO ${tableName} (key, value, history_id, agent_id) VALUES (?, ?, ?, ?)`,
-        args: [key, serializedValue, historyId, agentId],
-      });
-
-      this.debug(`Set agent_history_events:${key} for history ${historyId} and agent ${agentId}`);
-    } catch (error) {
-      this.debug(`Error setting agent_history_events:${key}`, error);
-      throw new Error(`Failed to set value in agent_history_events`);
-    }
-  }
-
-  /**
-   * Update a history event
-   * @param key Event ID
-   * @param value Updated event data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  async updateHistoryEvent(
-    key: string,
-    value: any,
-    historyId: string,
-    agentId: string,
-  ): Promise<void> {
-    // Just call addHistoryEvent as the behavior is the same
-    return this.addHistoryEvent(key, value, historyId, agentId);
-  }
-
-  /**
    * Add a history step
    * @param key Step ID
    * @param value Step data
@@ -753,35 +682,6 @@ export class LibSQLStorage implements Memory {
       const value = JSON.parse(result.rows[0].value as string);
       this.debug(`Got history entry with ID ${key}`);
 
-      // Now also get related events
-      const eventsTableName = `${this.options.tablePrefix}_agent_history_events`;
-      const eventsResult = await this.client.execute({
-        sql: `SELECT value FROM ${eventsTableName} WHERE history_id = ? AND agent_id = ?`,
-        args: [key, value._agentId],
-      });
-
-      // Parse and transform events
-      const events = eventsResult.rows
-        .map((row) => {
-          const event = JSON.parse(row.value as string);
-          return {
-            id: event.id,
-            timestamp: event.timestamp,
-            name: event.name,
-            type: event.type,
-            affectedNodeId: event.affectedNodeId,
-            data: {
-              ...event.metadata,
-              _trackedEventId: event._trackedEventId,
-              affectedNodeId: event.affectedNodeId,
-            },
-            updatedAt: event.updated_at,
-          };
-        })
-        .sort((a, b) => {
-          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-        });
-
       // Now also get related steps
       const stepsTableName = `${this.options.tablePrefix}_agent_history_steps`;
       const stepsResult = await this.client.execute({
@@ -803,7 +703,7 @@ export class LibSQLStorage implements Memory {
       // Get timeline events
       const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
       const timelineEventsResult = await this.client.execute({
-        sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ? ORDER BY start_time ASC`,
+        sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ?`,
         args: [key, value._agentId],
       });
 
@@ -813,45 +713,12 @@ export class LibSQLStorage implements Memory {
       });
 
       // Add events, steps and newEvents to the entry
-      value.events = events;
       value.steps = steps;
       value.newEvents = newEvents;
 
       return value;
     } catch (error) {
       this.debug(`Error getting history entry with ID ${key}`, error);
-      return undefined;
-    }
-  }
-
-  /**
-   * Get a history event by ID
-   * @param key Event ID
-   * @returns The history event or undefined if not found
-   */
-  async getHistoryEvent(key: string): Promise<any | undefined> {
-    await this.initialized;
-
-    try {
-      const tableName = `${this.options.tablePrefix}_agent_history_events`;
-
-      // Get the value
-      const result = await this.client.execute({
-        sql: `SELECT value FROM ${tableName} WHERE key = ?`,
-        args: [key],
-      });
-
-      if (result.rows.length === 0) {
-        this.debug(`History event with ID ${key} not found`);
-        return undefined;
-      }
-
-      // Parse the JSON value
-      const value = JSON.parse(result.rows[0].value as string);
-      this.debug(`Got history event with ID ${key}`);
-      return value;
-    } catch (error) {
-      this.debug(`Error getting history event with ID ${key}`, error);
       return undefined;
     }
   }
@@ -1091,35 +958,6 @@ export class LibSQLStorage implements Memory {
       // Now fetch events and steps for each entry
       const completeEntries = await Promise.all(
         entries.map(async (entry) => {
-          // Get events for this entry
-          const eventsTableName = `${this.options.tablePrefix}_agent_history_events`;
-          const eventsResult = await this.client.execute({
-            sql: `SELECT value FROM ${eventsTableName} WHERE history_id = ? AND agent_id = ?`,
-            args: [entry.id, agentId],
-          });
-
-          // Parse and transform events
-          const events = eventsResult.rows
-            .map((row) => {
-              const event = JSON.parse(row.value as string);
-              return {
-                id: event.id,
-                timestamp: event.timestamp,
-                name: event.name,
-                type: event.type,
-                affectedNodeId: event.affectedNodeId,
-                data: {
-                  ...event.metadata,
-                  _trackedEventId: event._trackedEventId,
-                  affectedNodeId: event.affectedNodeId,
-                },
-                updatedAt: event.updated_at,
-              };
-            })
-            .sort((a, b) => {
-              return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-            });
-
           // Get steps for this entry
           const stepsTableName = `${this.options.tablePrefix}_agent_history_steps`;
           const stepsResult = await this.client.execute({
@@ -1141,7 +979,7 @@ export class LibSQLStorage implements Memory {
           // Get timeline events for this entry
           const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
           const timelineEventsResult = await this.client.execute({
-            sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ? ORDER BY start_time ASC`,
+            sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ?`,
             args: [entry.id, agentId],
           });
 
@@ -1151,7 +989,6 @@ export class LibSQLStorage implements Memory {
           });
 
           // Add events, steps and newEvents to the entry
-          entry.events = events;
           entry.steps = steps;
           entry.newEvents = newEvents;
 

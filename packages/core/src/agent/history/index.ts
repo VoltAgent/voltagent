@@ -4,11 +4,7 @@ import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/
 import type { AgentStatus } from "../types";
 import type { MemoryManager } from "../../memory";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
-import type {
-  ExportAgentHistoryPayload,
-  ExportTimelineEventPayload,
-  AgentHistoryUpdatableFields,
-} from "../../telemetry/client";
+import type { ExportAgentHistoryPayload } from "../../telemetry/client";
 import type { NewTimelineEvent } from "../../events/types";
 
 /**
@@ -286,46 +282,6 @@ export class HistoryManager {
   }
 
   /**
-   * Add a timeline event to an existing history entry
-   *
-   * @param entryId - ID of the entry to update
-   * @param event - Timeline event to add
-   * @returns The updated entry or undefined if not found
-   */
-  public async addEventToEntry(
-    entryId: string,
-    event: TimelineEvent,
-  ): Promise<AgentHistoryEntry | undefined> {
-    if (!this.agentId) return undefined;
-
-    try {
-      const updatedEntry = await this.memoryManager.addEventToHistoryEntry(
-        this.agentId,
-        entryId,
-        event,
-      );
-
-      if (this.voltAgentExporter && updatedEntry && event.id) {
-        // The backend now expects the entire event object nested, likely under a 'value' key
-        // or as the main event payload itself depending on the exporter implementation.
-        // Assuming the exporter expects the event object directly:
-        const payload: ExportTimelineEventPayload = {
-          history_id: entryId,
-          event_id: event.id,
-          event,
-        };
-
-        // We need to ensure the type ExportTimelineEventPayload matches this structure
-        await this.voltAgentExporter.exportTimelineEvent(payload);
-      }
-
-      return updatedEntry;
-    } catch (_error) {
-      return undefined;
-    }
-  }
-
-  /**
    * Add steps to an existing history entry
    *
    * @param entryId - ID of the entry to update
@@ -411,58 +367,6 @@ export class HistoryManager {
   }
 
   /**
-   * Update an existing history entry
-   *
-   * @param id - ID of the entry to update
-   * @param updates - Partial entry with fields to update
-   * @returns The updated entry or undefined if not found
-   */
-  public async updateEntry(
-    id: string,
-    updates: Partial<
-      Omit<AgentHistoryEntry, "id" | "timestamp"> & {
-        agent_snapshot?: Record<string, unknown>;
-      }
-    >,
-  ): Promise<AgentHistoryEntry | undefined> {
-    if (!this.agentId) return undefined;
-
-    const updatedEntry = await this.memoryManager.updateHistoryEntry(
-      this.agentId,
-      id,
-      updates as Partial<AgentHistoryEntry>,
-    );
-
-    if (updatedEntry) {
-      AgentEventEmitter.getInstance().emitHistoryUpdate(this.agentId, updatedEntry);
-
-      if (this.voltAgentExporter) {
-        const finalUpdates: Partial<AgentHistoryUpdatableFields> = {};
-
-        if (updates.input !== undefined) {
-          if (typeof updates.input === "string") finalUpdates.input = { text: updates.input };
-          else finalUpdates.input = updates.input as Record<string, unknown> | BaseMessage[];
-        }
-        if (updates.output !== undefined) finalUpdates.output = updates.output;
-        if (updates.status !== undefined) finalUpdates.status = updates.status;
-        if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
-        if (updates.agent_snapshot !== undefined)
-          finalUpdates.agent_snapshot = updates.agent_snapshot;
-
-        if (Object.keys(finalUpdates).length > 0) {
-          await this.voltAgentExporter.updateHistoryEntry(
-            this.voltAgentExporter.publicKey,
-            id,
-            finalUpdates as AgentHistoryUpdatableFields,
-          );
-        }
-      }
-    }
-
-    return updatedEntry;
-  }
-
-  /**
    * Get a tracked event by ID
    *
    * @param historyId - ID of the history entry
@@ -490,96 +394,6 @@ export class HistoryManager {
       return timelineEvent;
     } catch (error) {
       console.error(`[HistoryManager] Failed to get tracked event: ${eventId}`, error);
-      return undefined;
-    }
-  }
-
-  /**
-   * Updates a tracked event by ID
-   *
-   * @param historyId - ID of the history entry
-   * @param eventId - ID of the event or _trackedEventId
-   * @param updates - Updates to apply to the event
-   * @returns The updated history entry or undefined if not found
-   */
-  public async updateTrackedEvent(
-    historyId: string,
-    eventId: string,
-    updates: {
-      status?: AgentStatus;
-      data?: Record<string, unknown>;
-    },
-  ): Promise<AgentHistoryEntry | undefined> {
-    if (!this.agentId) return undefined;
-
-    try {
-      const entry = await this.getEntryById(historyId);
-      if (!entry || !entry.events) return undefined;
-
-      let eventIndex = entry.events.findIndex((event) => event.id === eventId);
-
-      if (eventIndex === -1) {
-        eventIndex = entry.events.findIndex(
-          (event) => event.data && event.data._trackedEventId === eventId,
-        );
-      }
-
-      // If event is not found, show error message and return undefined
-      if (eventIndex === -1) {
-        console.debug(`[HistoryManager] Tracked event not found: ${eventId}`);
-        return undefined;
-      }
-
-      // Copy the entry to be updated
-      const updatedEntry = { ...entry };
-
-      // Define the events array definitively
-      if (!updatedEntry.events) {
-        updatedEntry.events = [];
-        return undefined;
-      }
-
-      const originalEvent = updatedEntry.events[eventIndex];
-
-      // Update the event
-      updatedEntry.events[eventIndex] = {
-        ...originalEvent,
-        updatedAt: new Date().toISOString(),
-        data: {
-          ...originalEvent.data,
-          ...(updates.data || {}),
-        },
-      };
-
-      // Save the updated entry to the database
-      const result = await this.updateEntry(historyId, {
-        events: updatedEntry.events,
-        status: updates.status,
-      });
-
-      const updatedEvent = updatedEntry.events[eventIndex]; // This is the complete, updated event
-
-      // Export the specific timeline event update if exporter is configured
-      if (this.voltAgentExporter && originalEvent.id) {
-        // Use originalEvent.id as it's guaranteed
-        // Timestamps in updatedEvent are already strings (timestamp from original, updatedAt just set to ISOString)
-        const serializedEvent = {
-          ...updatedEvent,
-          // timestamp: updatedEvent.timestamp, // No longer needed, already string
-          // updatedAt: updatedEvent.updatedAt, // No longer needed, already string
-        };
-
-        // Standardize: Send the serialized event object with string timestamps
-        await this.voltAgentExporter.updateTimelineEvent(
-          historyId, // history_id (maps to history_entry_id in the backend via lookup)
-          originalEvent.id, // event_id
-          serializedEvent, // Send the serialized event object with string timestamps
-        );
-      }
-
-      return result;
-    } catch (error) {
-      console.error(`[HistoryManager] Failed to update tracked event: ${eventId}`, error);
       return undefined;
     }
   }
