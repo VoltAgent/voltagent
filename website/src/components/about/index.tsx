@@ -22,12 +22,25 @@ const SUDO_CODE = ["s", "u", "d", "o"];
 // const TwitterIcon = () => (...)
 // const LinkedInIcon = () => (...)
 
+// Skeleton loaders for different content types
+const SkeletonText = ({ width = "100%", height = "1rem" }) => (
+  <div
+    className="animate-pulse bg-gray-600/30 rounded"
+    style={{ width, height }}
+  />
+);
+
+const SkeletonAvatar = ({ size = "w-12 h-12" }) => (
+  <div className={`${size} rounded-full animate-pulse bg-gray-600/30 mb-2`} />
+);
+
 export function Manifesto() {
   const [_, setKeys] = useState<string[]>([]);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [stars, setStars] = useState<number>(0);
   const [recentStargazers, setRecentStargazers] = useState<Stargazer[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -52,6 +65,7 @@ export function Manifesto() {
 
     // Fetch contributors and stargazers data
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [contributorsResponse, loveResponse] = await Promise.all([
           fetch("https://api.voltagent.dev/api/contributors"),
@@ -66,6 +80,8 @@ export function Manifesto() {
         setRecentStargazers(loveData.recent_stargazers);
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -150,26 +166,39 @@ export function Manifesto() {
         </p>
 
         <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-7 gap-4 max-w-4xl mx-auto mt-6">
-          {contributors.slice(3).map((contributor) => (
-            <a
-              key={contributor.login}
-              href={contributor.html_url}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="group flex flex-col items-center no-underline text-decoration-none"
-            >
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/40 mb-2 group-hover:border-main-emerald transition-all">
-                <img
-                  src={contributor.avatar_url}
-                  alt={contributor.login}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <span className="text-[#dcdcdc] text-xs group-hover:text-main-emerald transition-colors no-underline">
-                {contributor.login}
-              </span>
-            </a>
-          ))}
+          {loading
+            ? // Skeleton loading for contributors
+              Array(13)
+                .fill(0)
+                .map((_, i) => (
+                  <div
+                    key={`skeleton-contributor-${i}-${Date.now()}`}
+                    className="flex flex-col items-center"
+                  >
+                    <SkeletonAvatar />
+                    <SkeletonText width="60%" height="0.75rem" />
+                  </div>
+                ))
+            : contributors.slice(3).map((contributor) => (
+                <a
+                  key={contributor.login}
+                  href={contributor.html_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="group flex flex-col items-center no-underline text-decoration-none"
+                >
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/40 mb-2 group-hover:border-main-emerald transition-all">
+                    <img
+                      src={contributor.avatar_url}
+                      alt={contributor.login}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-[#dcdcdc] text-xs group-hover:text-main-emerald transition-colors no-underline">
+                    {contributor.login}
+                  </span>
+                </a>
+              ))}
         </div>
       </div>
 
@@ -212,69 +241,91 @@ export function Manifesto() {
         </h2>
 
         <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/omer.jpeg"
-                alt="Omer Aplak"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">Omer Aplak</span>
-            <p className="text-main-emerald text-sm mt-1"> CEO</p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/omer-aplak-14b87099/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/omerfarukaplak/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
+          {loading ? (
+            // Skeleton loading for team members
+            Array(2)
+              .fill(0)
+              .map((_, i) => (
+                <div
+                  key={`skeleton-team-${i}-${Date.now()}`}
+                  className="flex flex-col items-center text-center"
+                >
+                  <SkeletonAvatar size="w-24 h-24" />
+                  <SkeletonText width="120px" height="1.125rem" />
+                  <SkeletonText width="80px" height="0.875rem" />
+                </div>
+              ))
+          ) : (
+            <>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-24 h-24 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
+                  <img
+                    src="https://cdn.voltagent.dev/website/team/omer.jpeg"
+                    alt="Omer Aplak"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-white font-medium text-lg">
+                  Omer Aplak
+                </span>
+                <p className="text-main-emerald text-sm mt-1"> CEO</p>
+                <div className="flex space-x-3 mt-0">
+                  <a
+                    href="https://www.linkedin.com/in/omer-aplak-14b87099/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="LinkedIn Profile"
+                  >
+                    <LinkedInLogo className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://x.com/omerfarukaplak/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="Twitter Profile"
+                  >
+                    <XLogo className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
 
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/necatiozmen.jpg"
-                alt="Necati Ozmen"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">Necati Ozmen</span>
-            <p className="text-main-emerald text-sm mt-1">CMO</p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/necatiozmen/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/necatiozmen3/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-24 h-24 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
+                  <img
+                    src="https://cdn.voltagent.dev/website/team/necatiozmen.jpg"
+                    alt="Necati Ozmen"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-white font-medium text-lg">
+                  Necati Ozmen
+                </span>
+                <p className="text-main-emerald text-sm mt-1">CMO</p>
+                <div className="flex space-x-3 mt-0">
+                  <a
+                    href="https://www.linkedin.com/in/necatiozmen/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="LinkedIn Profile"
+                  >
+                    <LinkedInLogo className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://x.com/necatiozmen3/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="Twitter Profile"
+                  >
+                    <XLogo className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -285,75 +336,95 @@ export function Manifesto() {
         </h2>
 
         <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/emre.jpeg"
-                alt="Emre Baran"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">Emre Baran</span>
-            <p className="text-main-emerald text-sm mt-1">
-              Co-Founder & CEO at Cerbos
-            </p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/emrebaran/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/emre/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
+          {loading ? (
+            // Skeleton loading for investors
+            Array(2)
+              .fill(0)
+              .map((_, i) => (
+                <div
+                  key={`skeleton-investor-${i}-${Date.now()}`}
+                  className="flex flex-col items-center text-center"
+                >
+                  <SkeletonAvatar size="w-24 h-24" />
+                  <SkeletonText width="120px" height="1.125rem" />
+                  <SkeletonText width="140px" height="0.875rem" />
+                </div>
+              ))
+          ) : (
+            <>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+                  <img
+                    src="https://cdn.voltagent.dev/website/team/emre.jpeg"
+                    alt="Emre Baran"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-white font-medium text-lg">
+                  Emre Baran
+                </span>
+                <p className="text-main-emerald text-sm mt-1">
+                  Co-Founder & CEO at Cerbos
+                </p>
+                <div className="flex space-x-3 mt-0">
+                  <a
+                    href="https://www.linkedin.com/in/emrebaran/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="LinkedIn Profile"
+                  >
+                    <LinkedInLogo className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://x.com/emre/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="Twitter Profile"
+                  >
+                    <XLogo className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
 
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/umur.jpeg"
-                alt="Umur Cubukcu"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">
-              Umur Cubukcu{" "}
-            </span>
-            <p className="text-main-emerald text-sm mt-1">
-              Co-Founder at Ubicloud
-            </p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/umurc/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/umurc/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+                  <img
+                    src="https://cdn.voltagent.dev/website/team/umur.jpeg"
+                    alt="Umur Cubukcu"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-white font-medium text-lg">
+                  Umur Cubukcu{" "}
+                </span>
+                <p className="text-main-emerald text-sm mt-1">
+                  Co-Founder at Ubicloud
+                </p>
+                <div className="flex space-x-3 mt-0">
+                  <a
+                    href="https://www.linkedin.com/in/umurc/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="LinkedIn Profile"
+                  >
+                    <LinkedInLogo className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://x.com/umurc/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-gray-400 hover:text-main-emerald transition-colors"
+                    aria-label="Twitter Profile"
+                  >
+                    <XLogo className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -363,41 +434,59 @@ export function Manifesto() {
           Supporters
         </h2>
         <p className="text-center max-w-2xl mx-auto landing-md:text-sm landing-xs:text-xs text-[#dcdcdc] mb-6">
-          <span className="text-main-emerald font-semibold">{stars}</span>{" "}
+          <span className="text-main-emerald font-semibold">
+            {loading ? "..." : stars}
+          </span>{" "}
           GitHub stars and growing! Recent supporters:
         </p>
 
         <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-10 gap-4 max-w-4xl mx-auto mt-6">
-          {recentStargazers.slice(0, 9).map((stargazer) => (
-            <a
-              key={stargazer.login}
-              href={`https://github.com/${stargazer.login}`}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="group no-underline text-decoration-none"
-            >
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/30 group-hover:border-main-emerald transition-all">
-                <img
-                  src={stargazer.avatar_url}
-                  alt={stargazer.login}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </a>
-          ))}
-          {/* Last cell showing remaining count */}
-          <a
-            href="https://github.com/VoltAgent/voltagent/stargazers"
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="group no-underline text-decoration-none"
-          >
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/30 group-hover:border-main-emerald transition-all bg-emerald-400/20 flex items-center justify-center">
-              <div className="text-main-emerald font-semibold text-xs">
-                +{stars - 9}
-              </div>
-            </div>
-          </a>
+          {loading ? (
+            // Skeleton loading for stargazers
+            Array(10)
+              .fill(0)
+              .map((_, i) => (
+                <div
+                  key={`skeleton-stargazer-${i}-${Date.now()}`}
+                  className="flex justify-center"
+                >
+                  <SkeletonAvatar />
+                </div>
+              ))
+          ) : (
+            <>
+              {recentStargazers.slice(0, 9).map((stargazer) => (
+                <a
+                  key={stargazer.login}
+                  href={`https://github.com/${stargazer.login}`}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="group no-underline text-decoration-none"
+                >
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/30 group-hover:border-main-emerald transition-all">
+                    <img
+                      src={stargazer.avatar_url}
+                      alt={stargazer.login}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </a>
+              ))}
+              {/* Last cell showing remaining count */}
+              <a
+                href="https://github.com/VoltAgent/voltagent/stargazers"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="group no-underline text-decoration-none"
+              >
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/30 group-hover:border-main-emerald transition-all bg-emerald-400/20 flex items-center justify-center">
+                  <div className="text-main-emerald font-semibold text-xs">
+                    +{stars - 9}
+                  </div>
+                </div>
+              </a>
+            </>
+          )}
         </div>
 
         {/* Contribute CTA */}
