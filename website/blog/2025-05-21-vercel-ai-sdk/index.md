@@ -151,7 +151,7 @@ As you can see in this example, an `Agent` can be easily configured using `Verce
 - Easy access to the wide range of models supported by Vercel AI SDK through VoltAgent.
 - Leveraging Vercel AI SDK's powerful capabilities for text and structured data generation within VoltAgent.
 - Easier integration of features like multi-modal support into VoltAgent agents with Vercel AI SDK's backing.
-- And of course, our documentation at [`website/docs/providers/vercel-ai.md`](../providers/vercel-ai.md) serves as a practical example of this integration.
+- And of course, our documentation at [`Vercel AI Provider docs`](https://voltagent.dev/docs/providers/vercel-ai/) serves as a practical example of this integration.
 
 <IntegrationScenarioSelector />
 
@@ -169,7 +169,7 @@ Let's say you need to extract specific information (like keywords from an articl
 When working with schema validation in `generateObject`, avoid overly complex nested schemas in your initial implementation. Start with simpler structures and gradually build complexity, as deeply nested objects can sometimes cause validation errors that are difficult to debug.
 :::
 
-Also, as we mentioned in our [`website/docs/providers/vercel-ai.md`](../providers/vercel-ai.md) file, it's also possible to pass specific configuration options (provider-specific options) for Vercel AI SDK through VoltAgent if you need to. This gives you flexibility.
+Also, as we mentioned in our Vercel AI Provider file, it's also possible to pass specific configuration options (provider-specific options) for Vercel AI SDK through VoltAgent if you need to. This gives you flexibility.
 
 ### A General Assessment
 
@@ -188,11 +188,3 @@ Why the change? Simply put, the LLM landscape has evolved dramatically. Modern m
 :::warning Migration Considerations
 If you're already using Vercel AI SDK v3/v4 and planning to upgrade to v5, be prepared for breaking changes. The protocol has been completely redesigned, so you'll need to update your integration code. Consider creating a migration plan and testing thoroughly before deploying to production.
 :::
-
-### So, What Should Be the Next Steps?
-
-If these topics have sparked your interest and you'd like to dive a bit deeper, I can suggest the following:
-
-- Check out the [Vercel AI SDK documentation](https://sdk.vercel.ai/docs) to get detailed information about all the tool's capabilities.
-- To start developing your own AI agents with VoltAgent, you can use the information on our [`website/docs/agents/overview.md`](../agents/overview.md) page and, especially, the [`website/docs/providers/vercel-ai.md`](../providers/vercel-ai.md) page, which we've referred to frequently in this post.
-- Reviewing sample projects and participating in relevant community forums will also speed up your learning process.
