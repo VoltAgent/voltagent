@@ -78,9 +78,10 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
         </p>
 
         {/* Add link to the provider website */}
+
         <a
           href={currentMetadata.link}
-          className="mt-4 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#00d992]/20 hover:bg-[#00d992]/30 transition-colors"
+          className="w-full flex items-center justify-center px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="View MCP Documentation"

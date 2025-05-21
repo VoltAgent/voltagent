@@ -2,7 +2,7 @@
   "id": 1,
   "name": "Ahrefs",
   "slug": "mcp-ahrefs",
-  "short_description": "Access Ahrefs SEO and backlink analytics data",
+  "short_description": "Access Ahrefs SEO and backlink analytics data for comprehensive insights.",
   "title": "How Can Your AI Agents Leverage the Ahrefs MCP Server?",
   "description": "The Ahrefs Model Context Protocol (MCP) server empowers your AI agents with direct access to Ahrefs' powerful SEO toolkit. Discover how your AI agents can automate complex SEO tasks, from in-depth backlink analysis and keyword research to competitor tracking and site audits. Below, explore the specific capabilities and how you can integrate them into your AI agent workflows via MCP for enhanced SEO automation and intelligence.",
   "category": "Analytics",

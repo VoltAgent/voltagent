@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Layout from "@theme/Layout";
-import { MagnifyingGlassIcon, BoltIcon } from "@heroicons/react/24/outline";
+import {
+  MagnifyingGlassIcon,
+  ArrowTopRightOnSquareIcon,
+} from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../components/ui/dot-pattern";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
@@ -12,58 +16,46 @@ const MCPCard = ({ mcp }) => {
   const LogoComponent = getLogoComponent(mcp.metadata.logoKey);
 
   return (
-    <Link to={`/mcp/${mcp.metadata.slug}`}>
+    <Link to={`/mcp/${mcp.metadata.slug}`} className="no-underline">
       <motion.div
         initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="group border-solid border-[#1e293b]/40 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/60 hover:shadow-[0_0_15px_rgba(0,217,146,0.15)] cursor-pointer"
+        className="group border-solid border-[#1e293b]/40 rounded-md overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/60 hover:shadow-[0_0_15px_rgba(0,217,146,0.15)] cursor-pointer relative"
         style={{
           backdropFilter: "blur(4px)",
           WebkitBackdropFilter: "blur(4px)",
           backgroundColor: "rgba(58, 66, 89, 0.3)",
         }}
       >
-        <div className="p-4 flex flex-col h-full">
+        <div className="p-4 flex flex-col h-full relative">
           {/* Header with category badge */}
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center">
               <div className="w-8 h-8 mr-2 flex items-center justify-center bg-slate-800/50 rounded-full">
                 <LogoComponent className="w-5 h-5" />
               </div>
-              <span className="text-[#00d992] font-bold text-base sm:text-lg truncate">
+              <span className="text-[#00d992] font-bold text-base sm:text-lg truncate no-underline">
                 {mcp.metadata.name}
               </span>
             </div>
 
-            <span className="px-2 py-0.5 text-xs rounded-full bg-[#1e293b] text-gray-300">
+            <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20  no-underline">
               {mcp.metadata.category}
             </span>
           </div>
 
           {/* Description */}
-          <p className="text-gray-400 text-xs sm:text-sm mb-4 flex-grow">
+          <p className="text-gray-400 text-xs sm:text-sm mb-0 flex-grow no-underline">
             {mcp.metadata.short_description}
           </p>
 
-          {/* Try Connection Button */}
-          <div className="w-full flex items-center justify-center px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]">
-            <span>See MCP Details</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200"
+          {/* View Details Icon - Bottom right */}
+          <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <ArrowTopRightOnSquareIcon
+              className="w-4 h-4 text-emerald-400"
               aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-              />
-            </svg>
+            />
           </div>
         </div>
       </motion.div>
@@ -98,21 +90,24 @@ export default function McpListPage(props) {
 
         {/* Header Section - Mobile optimized */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 landing-md:mb-16 sm:landing-md:mb-24 mb-8 items-center w-full">
-          <div className="flex flex-col items-center sm:items-center relative">
+          <div className="flex  flex-col items-center  relative">
             <div className="flex items-baseline justify-start">
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
               </div>
-              <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#00d992]">
-                {siteConfig.title || "voltagent"}
+              <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
+                voltagent
               </span>
               <div className="relative">
-                <span className="ml-2 text-xl sm:text-xl md:text-2xl font-medium text-gray-400">
+                <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
                   MCP
+                </span>
+                <span className="absolute -top-6 -right-4 sm:-right-16 px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-md font-medium border border-emerald-400/30">
+                  Providers
                 </span>
               </div>
             </div>
-            <p className="mt-2 text-center self-center text-gray-400 text-xs sm:text-sm">
+            <p className="mt-2 text-center self-center text-gray-400 text-sm">
               Enhance your agents with popular services
             </p>
           </div>
@@ -140,13 +135,16 @@ export default function McpListPage(props) {
 
         {/* Search Bar */}
         <div className="w-full mb-6">
-          <div className="relative">
+          <div className="relative ">
             <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
             </div>
             <input
+              style={{
+                backgroundColor: "rgba(23,30,40)",
+              }}
               type="search"
-              className="block w-full p-4 ps-10 text-sm rounded-lg bg-[#222735] border-gray-700 placeholder-gray-400 text-white focus:ring-[#00d992] focus:border-[#00d992]"
+              className="appearance-none block w-full lg:w-2/5 px-10 py-4    text-sm rounded-md  border-none placeholder-gray-400 text-white outline-none focus:ring-[#00d992] focus:border-[#00d992]"
               placeholder="Search MCPs by name, category, or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

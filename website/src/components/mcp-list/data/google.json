@@ -2,7 +2,7 @@
   "id": 2,
   "slug": "mcp-google-sheets",
   "name": "Google Sheets",
-  "short_description": "Access Google Sheets data",
+  "short_description": "Access Google Sheets data and perform operations on it.",
   "title": "How Can Your AI Agents Leverage the Google Sheets MCP Server?",
   "description": "The Google Sheets Model Context Protocol (MCP) server empowers your AI agents with direct access to Google's powerful spreadsheet capabilities. Discover how your AI agents can automate spreadsheet operations, from creating and updating sheets to performing lookups and formatting data. Below, explore the specific capabilities and how you can integrate them into your AI agent workflows via MCP for enhanced data management and analysis.",
   "category": "Spreadsheets",
