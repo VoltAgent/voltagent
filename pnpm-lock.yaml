@@ -181,7 +181,7 @@ importers:
         specifier: ^0.1.19
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.8
+        specifier: ^0.3.9
         version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
@@ -307,7 +307,7 @@ importers:
         specifier: ^0.1.19
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.3.8
+        specifier: ^0.3.9
         version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2

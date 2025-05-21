@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/google-ai",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "VoltAgent Google AI - Google Generative AI provider integration for VoltAgent",
   "license": "MIT",
   "exports": {
