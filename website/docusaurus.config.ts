@@ -110,6 +110,14 @@ const config: Config = {
       },
     ],
     "./plugins/gurubase/index.js",
+    [
+      "./plugins/docusaurus-plugin-content-mcp",
+      {
+        id: "mcp",
+        routeBasePath: "mcp",
+        path: "./src/components/mcp-list/data",
+      },
+    ],
   ],
   themeConfig: {
     image: "img/social.png",
@@ -135,6 +143,11 @@ const config: Config = {
         {
           to: "/blog",
           label: "Blog",
+          position: "left",
+        },
+        {
+          to: "/mcp",
+          label: "MCP",
           position: "left",
         },
       ],

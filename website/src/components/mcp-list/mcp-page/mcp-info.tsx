@@ -1,10 +1,12 @@
 import type * as React from "react";
 import RecommendedServersSection from "./recommended-servers";
+import { getLogoComponent } from "../../../utils/logo-helper";
 
 // Define types for the props
 interface McpProps {
   logo?: React.ElementType; // Logo component
   name?: string;
+  logoKey?: string; // Added logoKey for using with the helper
 }
 
 interface CurrentMetadataProps {
@@ -14,27 +16,44 @@ interface CurrentMetadataProps {
 }
 
 interface CurrentTabProps {
+  id?: string;
   name?: string;
+}
+
+// Similar MCP type - Updated to match the one in recommended-servers.tsx
+interface SimilarMcp {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  short_description: string;
+  category: string;
+  logoKey?: string;
 }
 
 interface SidebarInfoSectionProps {
   mcp: McpProps;
   currentMetadata: CurrentMetadataProps;
   currentTab: CurrentTabProps;
+  similarMcps?: SimilarMcp[];
 }
 
 export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
   mcp,
   currentMetadata,
   currentTab,
+  similarMcps,
 }) => {
+  // Get logo component using the helper if logoKey is available
+  const LogoComponent = mcp.logoKey ? getLogoComponent(mcp.logoKey) : mcp.logo;
+
   return (
     <div className="space-y-6">
       {/* MCP Metadata - Similar to GitLab style */}
       <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
         <div className="flex items-center mb-5">
           <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
-            {mcp.logo && <mcp.logo className="w-5 h-5" />}
+            {LogoComponent && <LogoComponent className="w-5 h-5" />}
           </div>
           <span className="text-xl font-semibold text-white">
             {mcp.name} MCP
@@ -75,7 +94,6 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
             stroke="currentColor"
             aria-hidden="true"
           >
-            <title>External link icon</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -87,7 +105,7 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
       </div>
 
       {/* Recommended Servers - Imported and used here */}
-      <RecommendedServersSection />
+      <RecommendedServersSection similarMcps={similarMcps} />
     </div>
   );
 };
