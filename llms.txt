@@ -18,79 +18,6 @@ VoltAgent exists because building robust AI agents in JS/TS was harder than it n
 
 ---
 
-## Documentation
-
-- [AI Agent Framework](https://voltagent.dev/): Build and customize AI agents with VoltAgent framework.
-- [AI Agent Marketplace](https://voltagent.dev/ai-agent-marketplace/): Explore a marketplace for sharing and renting AI agents.
-- [AI Agent Monitoring](https://voltagent.dev/ai-agent-monitoring/): Monitor and improve AI agents with real-time insights and tools.
-- [AI Engineering Blog](https://voltagent.dev/blog/): Explore AI engineering with guides on building autonomous agents.
-- [Top AI Agent Frameworks](https://voltagent.dev/blog/ai-agent-frameworks/): Explore top AI agent frameworks for developers in 2025.
-- [AI Agent Marketplace](https://voltagent.dev/blog/ai-agent-marketplace/): Explore a community marketplace for sharing and monetizing AI agents.
-- [Necati Ozmen's AI Insights](https://voltagent.dev/blog/author/necatiozmen/): Explore Necati Ozmen's insights on AI agent frameworks and tools.
-- [Omer Aplak's AI Insights](https://voltagent.dev/blog/author/omeraplak/): Explore Omer Aplak's insights on AI and chatbots.
-- [VoltAgent Team Blog](https://voltagent.dev/blog/author/voltagentteam/): Explore VoltAgent's AI development insights and resources.
-- [GitHub Repo Analyzer](https://voltagent.dev/blog/building-first-agent-github-analyzer/): Step-by-step guide to building a GitHub repo analyzer agent.
-- [Google Drive Chatbot Guide](https://voltagent.dev/blog/building-google-drive-chatbot-with-composio-mcp/): Learn to build a Google Drive chatbot using VoltAgent.
-- [Building VoltAgent Framework](https://voltagent.dev/blog/building-voltagent/): Exploring AI agent frameworks and the need for observability.
-- [Data-Aware Chatbot Guide](https://voltagent.dev/blog/data-aware-chatbot-voltagent-peaka/): Learn to build a data-aware chatbot using VoltAgent.
-- [VoltAgent AI Framework](https://voltagent.dev/blog/introducing-voltagent/): VoltAgent simplifies AI agent development for JavaScript/TypeScript.
-- [LLM Observability Guide](https://voltagent.dev/blog/llm-observability/): Explore LLM observability to enhance AI application reliability.
-- [Multi-Agent LLM Systems](https://voltagent.dev/blog/multi-agent-llm/): Explore multi-agent LLM systems for complex tasks and AI.
-- [Understanding Multimodal RAG](https://voltagent.dev/blog/multimodal-rag/): Explore Multimodal RAG, integrating text, images, and audio for AI.
-- [RAG Chatbot Guide](https://voltagent.dev/blog/rag-chatbot/): Learn to build a RAG chatbot using VoltAgent framework.
-- [AI Agent Blog](https://voltagent.dev/blog/tags/): Explore technical articles on building autonomous AI agents.
-- [AI Agent Announcements](https://voltagent.dev/blog/tags/announcement/): Explore announcements on AI agents and development updates.
-- [AI Agent Development](https://voltagent.dev/blog/tags/developer-console/): Explore AI agent frameworks and best practices for development.
-- [AI Agent Resources](https://voltagent.dev/blog/tags/example/): Explore technical articles on building AI agents effectively.
-- [AI Agent Frameworks](https://voltagent.dev/blog/tags/frameworks/): Explore top AI agent frameworks for smart app development.
-- [AI Agents and LLMs](https://voltagent.dev/blog/tags/llm/): Explore AI agent design and LLM integration best practices.
-- [AI Agents and MCP](https://voltagent.dev/blog/tags/mcp/): Explore technical articles on building AI agents with MCP.
-- [Multi-Agent AI Insights](https://voltagent.dev/blog/tags/multi-agent/): Explore multi-agent AI systems and best practices for development.
-- [AI Agent Observability](https://voltagent.dev/blog/tags/observability/): Explore technical articles on AI agent observability practices.
-- [AI Agent Blog](https://voltagent.dev/blog/tags/rag/): Explore technical articles on building autonomous AI agents.
-- [AI Agent Tutorials](https://voltagent.dev/blog/tags/tutorial/): Explore comprehensive tutorials on building AI agents effectively.
-- [VoltAgent Developer Console](https://voltagent.dev/blog/voltagent-developer-console/): VoltAgent Developer Console simplifies AI debugging and development.
-- [Understanding Model Context Protocol](https://voltagent.dev/blog/what-is-mcp/): Explore the Model Context Protocol for AI agents' integration.
-- [VoltAgent Manifesto](https://voltagent.dev/manifesto/): VoltAgent simplifies AI development for JavaScript developers.
-- [Privacy Policy Overview](https://voltagent.dev/privacy/): Comprehensive privacy policy detailing data collection and usage.
-- [AI Agent Search](https://voltagent.dev/search/): Explore AI agent examples and documentation search features.
-- [VoltAgent Terms of Service](https://voltagent.dev/terms/): Comprehensive terms governing use of VoltAgent services and policies.
-- [AI Development Toolkit](https://voltagent.dev/docs/): VoltAgent is a toolkit for building AI applications easily.
-- [Agent Operation Context](https://voltagent.dev/docs/agents/context/): Learn how to use userContext for agent operations.
-- [Agent Hooks Overview](https://voltagent.dev/docs/agents/hooks/): Learn how to create and use hooks in agents.
-- [Model Context Protocol](https://voltagent.dev/docs/agents/mcp/): Standardized protocol for AI agents to access tools.
-- [In-Memory Storage](https://voltagent.dev/docs/agents/memory/in-memory/): In-memory storage for temporary conversation history management.
-- [LibSQL Memory Storage](https://voltagent.dev/docs/agents/memory/libsql/): LibSQLStorage for persistent memory in VoltAgent applications.
-- [Memory Management Overview](https://voltagent.dev/docs/agents/memory/overview/): Explore memory management for conversational AI agents.
-- [Supabase Memory Integration](https://voltagent.dev/docs/agents/memory/supabase/): Integrate Supabase for persistent agent memory storage.
-- [Multi-modal Agent Features](https://voltagent.dev/docs/agents/multi-modal/): Explore VoltAgent's multi-modal capabilities for text and images.
-- [VoltAgent Agent Overview](https://voltagent.dev/docs/agents/overview/): Overview of VoltAgent's Agent class for creating AI agents.
-- [LLM Providers Overview](https://voltagent.dev/docs/agents/providers/): Learn to connect agents with various LLM providers.
-- [Custom Retrievers Guide](https://voltagent.dev/docs/agents/retriever/): Learn to create and use custom retrievers for agents.
-- [Subagents in AI Workflows](https://voltagent.dev/docs/agents/sub-agents/): Learn about subagents and their roles in AI workflows.
-- [VoltAgent Tools Overview](https://voltagent.dev/docs/agents/tools/): Explore VoltAgent tools for creating and managing AI agents.
-- [Voice Agent Features](https://voltagent.dev/docs/agents/voice/): Explore text-to-speech and speech-to-text capabilities with VoltAgent.
-- [VoltAgent Core API](https://voltagent.dev/docs/api/overview/): Manage and interact with VoltAgents using the Core API.
-- [Contributing to VoltAgent](https://voltagent.dev/docs/community/contributing/): Learn how to contribute to VoltAgent's development community.
-- [VoltAgent License Overview](https://voltagent.dev/docs/community/licence/): VoltAgent's MIT License details, permissions, and limitations.
-- [Join Our Community](https://voltagent.dev/docs/community/overview/): Connect with VoltAgent developers, share projects, and ask questions.
-- [VoltAgent Next.js Integration](https://voltagent.dev/docs/integrations/nextjs/): Guide to integrate VoltAgent with Next.js for AI applications.
-- [VoltAgent Integration Overview](https://voltagent.dev/docs/integrations/overview/): Easily integrate VoltAgent into JavaScript and TypeScript apps.
-- [VoltAgent Developer Console](https://voltagent.dev/docs/observability/developer-console/): Web tool for observing and debugging AI agents effectively.
-- [VoltAgent and Langfuse Integration](https://voltagent.dev/docs/observability/langfuse/): Integrate VoltAgent with Langfuse for observability.
-- [AI Agent Observability](https://voltagent.dev/docs/observability/overview/): Understand and improve AI agents with observability tools.
-- [Anthropic AI Provider](https://voltagent.dev/docs/providers/anthropic-ai/): Integrate VoltAgent with Anthropic's Claude models for AI.
-- [Google AI Provider](https://voltagent.dev/docs/providers/google-ai/): Integrate VoltAgent with Google AI's Gemini and Vertex APIs.
-- [Groq AI Provider](https://voltagent.dev/docs/providers/groq-ai/): Connects VoltAgent to Groq API for AI models.
-- [Vercel AI Provider](https://voltagent.dev/docs/providers/vercel-ai/): Vercel AI Provider for VoltAgent enables text generation and streaming.
-- [xsAI Provider Overview](https://voltagent.dev/docs/providers/xsai/): Versatile connector for OpenAI-compatible APIs with xsAI.
-- [VoltAgent Quick Start](https://voltagent.dev/docs/quick-start/): Quickly set up and run a VoltAgent application.
-- [AI Tools Overview](https://voltagent.dev/docs/tools/overview/): Explore VoltAgent's tools and toolkits for AI agents.
-- [AI Reasoning Tools](https://voltagent.dev/docs/tools/reasoning-tool/): VoltAgent's reasoning tools enhance AI agents' problem-solving abilities.
-- [Dynamic Prompt Generator](https://voltagent.dev/docs/utils/create-prompt/): Type-safe utility for generating dynamic prompt strings easily.
-- [AI Agent Marketplace](https://voltagent.dev/ai-agent-marketplace/): Explore a marketplace for sharing and renting AI agents.
-
-
 ## 1. Project Setup & Quick Start
 
 ### 1.1. `create-voltagent-app` (Recommended)
@@ -569,3 +496,77 @@ VoltAgent includes helper functions for common tasks.
 *   **Code of Conduct:** Follows the Contributor Covenant v2.0. `[View Code of Conduct](/CODE_OF_CONDUCT.md)`
 *   **Monorepo Management:** Uses `pnpm workspaces` (defined in `/pnpm-workspace.yaml`) and potentially `lerna`/`nx` (check `lerna.json`, `nx.json`) for managing packages.
 *   **`.gitignore`:** Specifies files and directories excluded from version control (build outputs, dependencies, environment files, logs, etc.)
+
+---
+
+## Documentation
+
+- [AI Agent Framework](https://voltagent.dev/): Build and customize AI agents with VoltAgent framework.
+- [AI Agent Marketplace](https://voltagent.dev/ai-agent-marketplace/): Explore a marketplace for sharing and renting AI agents.
+- [AI Agent Monitoring](https://voltagent.dev/ai-agent-monitoring/): Monitor and improve AI agents with real-time insights and tools.
+- [AI Engineering Blog](https://voltagent.dev/blog/): Explore AI engineering with guides on building autonomous agents.
+- [Top AI Agent Frameworks](https://voltagent.dev/blog/ai-agent-frameworks/): Explore top AI agent frameworks for developers in 2025.
+- [AI Agent Marketplace](https://voltagent.dev/blog/ai-agent-marketplace/): Explore a community marketplace for sharing and monetizing AI agents.
+- [Necati Ozmen's AI Insights](https://voltagent.dev/blog/author/necatiozmen/): Explore Necati Ozmen's insights on AI agent frameworks and tools.
+- [Omer Aplak's AI Insights](https://voltagent.dev/blog/author/omeraplak/): Explore Omer Aplak's insights on AI and chatbots.
+- [VoltAgent Team Blog](https://voltagent.dev/blog/author/voltagentteam/): Explore VoltAgent's AI development insights and resources.
+- [GitHub Repo Analyzer](https://voltagent.dev/blog/building-first-agent-github-analyzer/): Step-by-step guide to building a GitHub repo analyzer agent.
+- [Google Drive Chatbot Guide](https://voltagent.dev/blog/building-google-drive-chatbot-with-composio-mcp/): Learn to build a Google Drive chatbot using VoltAgent.
+- [Building VoltAgent Framework](https://voltagent.dev/blog/building-voltagent/): Exploring AI agent frameworks and the need for observability.
+- [Data-Aware Chatbot Guide](https://voltagent.dev/blog/data-aware-chatbot-voltagent-peaka/): Learn to build a data-aware chatbot using VoltAgent.
+- [VoltAgent AI Framework](https://voltagent.dev/blog/introducing-voltagent/): VoltAgent simplifies AI agent development for JavaScript/TypeScript.
+- [LLM Observability Guide](https://voltagent.dev/blog/llm-observability/): Explore LLM observability to enhance AI application reliability.
+- [Multi-Agent LLM Systems](https://voltagent.dev/blog/multi-agent-llm/): Explore multi-agent LLM systems for complex tasks and AI.
+- [Understanding Multimodal RAG](https://voltagent.dev/blog/multimodal-rag/): Explore Multimodal RAG, integrating text, images, and audio for AI.
+- [RAG Chatbot Guide](https://voltagent.dev/blog/rag-chatbot/): Learn to build a RAG chatbot using VoltAgent framework.
+- [AI Agent Blog](https://voltagent.dev/blog/tags/): Explore technical articles on building autonomous AI agents.
+- [AI Agent Announcements](https://voltagent.dev/blog/tags/announcement/): Explore announcements on AI agents and development updates.
+- [AI Agent Development](https://voltagent.dev/blog/tags/developer-console/): Explore AI agent frameworks and best practices for development.
+- [AI Agent Resources](https://voltagent.dev/blog/tags/example/): Explore technical articles on building AI agents effectively.
+- [AI Agent Frameworks](https://voltagent.dev/blog/tags/frameworks/): Explore top AI agent frameworks for smart app development.
+- [AI Agents and LLMs](https://voltagent.dev/blog/tags/llm/): Explore AI agent design and LLM integration best practices.
+- [AI Agents and MCP](https://voltagent.dev/blog/tags/mcp/): Explore technical articles on building AI agents with MCP.
+- [Multi-Agent AI Insights](https://voltagent.dev/blog/tags/multi-agent/): Explore multi-agent AI systems and best practices for development.
+- [AI Agent Observability](https://voltagent.dev/blog/tags/observability/): Explore technical articles on AI agent observability practices.
+- [AI Agent Blog](https://voltagent.dev/blog/tags/rag/): Explore technical articles on building autonomous AI agents.
+- [AI Agent Tutorials](https://voltagent.dev/blog/tags/tutorial/): Explore comprehensive tutorials on building AI agents effectively.
+- [VoltAgent Developer Console](https://voltagent.dev/blog/voltagent-developer-console/): VoltAgent Developer Console simplifies AI debugging and development.
+- [Understanding Model Context Protocol](https://voltagent.dev/blog/what-is-mcp/): Explore the Model Context Protocol for AI agents' integration.
+- [VoltAgent Manifesto](https://voltagent.dev/manifesto/): VoltAgent simplifies AI development for JavaScript developers.
+- [Privacy Policy Overview](https://voltagent.dev/privacy/): Comprehensive privacy policy detailing data collection and usage.
+- [AI Agent Search](https://voltagent.dev/search/): Explore AI agent examples and documentation search features.
+- [VoltAgent Terms of Service](https://voltagent.dev/terms/): Comprehensive terms governing use of VoltAgent services and policies.
+- [AI Development Toolkit](https://voltagent.dev/docs/): VoltAgent is a toolkit for building AI applications easily.
+- [Agent Operation Context](https://voltagent.dev/docs/agents/context/): Learn how to use userContext for agent operations.
+- [Agent Hooks Overview](https://voltagent.dev/docs/agents/hooks/): Learn how to create and use hooks in agents.
+- [Model Context Protocol](https://voltagent.dev/docs/agents/mcp/): Standardized protocol for AI agents to access tools.
+- [In-Memory Storage](https://voltagent.dev/docs/agents/memory/in-memory/): In-memory storage for temporary conversation history management.
+- [LibSQL Memory Storage](https://voltagent.dev/docs/agents/memory/libsql/): LibSQLStorage for persistent memory in VoltAgent applications.
+- [Memory Management Overview](https://voltagent.dev/docs/agents/memory/overview/): Explore memory management for conversational AI agents.
+- [Supabase Memory Integration](https://voltagent.dev/docs/agents/memory/supabase/): Integrate Supabase for persistent agent memory storage.
+- [Multi-modal Agent Features](https://voltagent.dev/docs/agents/multi-modal/): Explore VoltAgent's multi-modal capabilities for text and images.
+- [VoltAgent Agent Overview](https://voltagent.dev/docs/agents/overview/): Overview of VoltAgent's Agent class for creating AI agents.
+- [LLM Providers Overview](https://voltagent.dev/docs/agents/providers/): Learn to connect agents with various LLM providers.
+- [Custom Retrievers Guide](https://voltagent.dev/docs/agents/retriever/): Learn to create and use custom retrievers for agents.
+- [Subagents in AI Workflows](https://voltagent.dev/docs/agents/sub-agents/): Learn about subagents and their roles in AI workflows.
+- [VoltAgent Tools Overview](https://voltagent.dev/docs/agents/tools/): Explore VoltAgent tools for creating and managing AI agents.
+- [Voice Agent Features](https://voltagent.dev/docs/agents/voice/): Explore text-to-speech and speech-to-text capabilities with VoltAgent.
+- [VoltAgent Core API](https://voltagent.dev/docs/api/overview/): Manage and interact with VoltAgents using the Core API.
+- [Contributing to VoltAgent](https://voltagent.dev/docs/community/contributing/): Learn how to contribute to VoltAgent's development community.
+- [VoltAgent License Overview](https://voltagent.dev/docs/community/licence/): VoltAgent's MIT License details, permissions, and limitations.
+- [Join Our Community](https://voltagent.dev/docs/community/overview/): Connect with VoltAgent developers, share projects, and ask questions.
+- [VoltAgent Next.js Integration](https://voltagent.dev/docs/integrations/nextjs/): Guide to integrate VoltAgent with Next.js for AI applications.
+- [VoltAgent Integration Overview](https://voltagent.dev/docs/integrations/overview/): Easily integrate VoltAgent into JavaScript and TypeScript apps.
+- [VoltAgent Developer Console](https://voltagent.dev/docs/observability/developer-console/): Web tool for observing and debugging AI agents effectively.
+- [VoltAgent and Langfuse Integration](https://voltagent.dev/docs/observability/langfuse/): Integrate VoltAgent with Langfuse for observability.
+- [AI Agent Observability](https://voltagent.dev/docs/observability/overview/): Understand and improve AI agents with observability tools.
+- [Anthropic AI Provider](https://voltagent.dev/docs/providers/anthropic-ai/): Integrate VoltAgent with Anthropic's Claude models for AI.
+- [Google AI Provider](https://voltagent.dev/docs/providers/google-ai/): Integrate VoltAgent with Google AI's Gemini and Vertex APIs.
+- [Groq AI Provider](https://voltagent.dev/docs/providers/groq-ai/): Connects VoltAgent to Groq API for AI models.
+- [Vercel AI Provider](https://voltagent.dev/docs/providers/vercel-ai/): Vercel AI Provider for VoltAgent enables text generation and streaming.
+- [xsAI Provider Overview](https://voltagent.dev/docs/providers/xsai/): Versatile connector for OpenAI-compatible APIs with xsAI.
+- [VoltAgent Quick Start](https://voltagent.dev/docs/quick-start/): Quickly set up and run a VoltAgent application.
+- [AI Tools Overview](https://voltagent.dev/docs/tools/overview/): Explore VoltAgent's tools and toolkits for AI agents.
+- [AI Reasoning Tools](https://voltagent.dev/docs/tools/reasoning-tool/): VoltAgent's reasoning tools enhance AI agents' problem-solving abilities.
+- [Dynamic Prompt Generator](https://voltagent.dev/docs/utils/create-prompt/): Type-safe utility for generating dynamic prompt strings easily.
+- [AI Agent Marketplace](https://voltagent.dev/ai-agent-marketplace/): Explore a marketplace for sharing and renting AI agents.
