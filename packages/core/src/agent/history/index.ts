@@ -4,8 +4,10 @@ import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/
 import type { AgentStatus } from "../types";
 import type { MemoryManager } from "../../memory";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
-import type { ExportAgentHistoryPayload } from "../../telemetry/client";
-import type { NewTimelineEvent } from "../../events/types";
+import type {
+  ExportAgentHistoryPayload,
+  AgentHistoryUpdatableFields,
+} from "../../telemetry/client";
 
 /**
  * Step information for history
@@ -44,15 +46,11 @@ export interface TimelineEvent {
   affectedNodeId?: string;
 
   /**
-   * Optional additional data specific to the event type
-   * In the new format: { status, input, output, updatedAt etc. }
-   */
-  data?: Record<string, unknown>;
-
-  /**
    * Optional timestamp for when the event was last updated
    */
   updatedAt?: string;
+
+  data?: Record<string, unknown>;
 
   /**
    * Type of the event
@@ -101,15 +99,8 @@ export interface AgentHistoryEntry {
 
   /**
    * Timeline events for detailed agent state history
-   * Legacy format for backward compatibility
    */
   events?: TimelineEvent[];
-
-  /**
-   * New format timeline events for detailed agent state history
-   * This is part of the new immutable event approach
-   */
-  newEvents?: NewTimelineEvent[];
 
   /**
    * Sequence number for the history entry
@@ -252,7 +243,6 @@ export class HistoryManager {
           project_id: this.voltAgentExporter.publicKey,
           history_id: entry.id,
           timestamp: entry.timestamp.toISOString(),
-          type: "agent_run",
           status: entry.status,
           input: sanitizedInput,
           output: { text: entry.output },
@@ -308,11 +298,7 @@ export class HistoryManager {
     );
 
     if (this.voltAgentExporter && updatedEntry) {
-      await this.voltAgentExporter.exportHistorySteps(
-        this.voltAgentExporter.publicKey,
-        entryId,
-        historySteps,
-      );
+      await this.voltAgentExporter.exportHistorySteps(entryId, historySteps);
     }
 
     if (updatedEntry) {
@@ -367,6 +353,57 @@ export class HistoryManager {
   }
 
   /**
+   * Update an existing history entry
+   *
+   * @param id - ID of the entry to update
+   * @param updates - Partial entry with fields to update
+   * @returns The updated entry or undefined if not found
+   */
+  public async updateEntry(
+    id: string,
+    updates: Partial<
+      Omit<AgentHistoryEntry, "id" | "timestamp"> & {
+        agent_snapshot?: Record<string, unknown>;
+      }
+    >,
+  ): Promise<AgentHistoryEntry | undefined> {
+    if (!this.agentId) return undefined;
+
+    const updatedEntry = await this.memoryManager.updateHistoryEntry(
+      this.agentId,
+      id,
+      updates as Partial<AgentHistoryEntry>,
+    );
+
+    if (updatedEntry) {
+      AgentEventEmitter.getInstance().emitHistoryUpdate(this.agentId, updatedEntry);
+
+      if (this.voltAgentExporter) {
+        const finalUpdates: Partial<AgentHistoryUpdatableFields> = {};
+
+        if (updates.input !== undefined) {
+          if (typeof updates.input === "string") finalUpdates.input = { text: updates.input };
+          else finalUpdates.input = updates.input as Record<string, unknown> | BaseMessage[];
+        }
+        if (updates.output !== undefined) finalUpdates.output = updates.output;
+        if (updates.status !== undefined) finalUpdates.status = updates.status;
+        if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
+        if (updates.agent_snapshot !== undefined)
+          finalUpdates.agent_snapshot = updates.agent_snapshot;
+
+        if (Object.keys(finalUpdates).length > 0) {
+          await this.voltAgentExporter.updateHistoryEntry(
+            id,
+            finalUpdates as AgentHistoryUpdatableFields,
+          );
+        }
+      }
+    }
+
+    return updatedEntry;
+  }
+
+  /**
    * Get a tracked event by ID
    *
    * @param historyId - ID of the history entry
@@ -399,77 +436,71 @@ export class HistoryManager {
   }
 
   /**
-   * Persists a timeline event to a history entry.
-   * This is the main method for adding immutable events to history.
-   * Implementation follows the new immutable event approach from the refactor plan.
+   * Update a tracked event by ID
    *
    * @param historyId - ID of the history entry
-   * @param event - The NewTimelineEvent to persist
+   * @param eventId - ID of the event or _trackedEventId
+   * @param updates - Updates to apply to the event
    * @returns The updated history entry or undefined if not found
    */
-  public async persistTimelineEvent(
+  public async updateTrackedEvent(
     historyId: string,
-    event: NewTimelineEvent,
+    eventId: string,
+    updates: {
+      status?: AgentStatus;
+      data?: Record<string, unknown>;
+    },
   ): Promise<AgentHistoryEntry | undefined> {
     if (!this.agentId) return undefined;
 
     try {
-      // Get the current history entry
       const entry = await this.getEntryById(historyId);
-      if (!entry) {
-        console.warn(`[HistoryManager] History entry not found: ${historyId}`);
+      if (!entry || !entry.events) return undefined;
+
+      let eventIndex = entry.events.findIndex((event) => event.id === eventId);
+
+      if (eventIndex === -1) {
+        eventIndex = entry.events.findIndex(
+          (event) => event.data && event.data._trackedEventId === eventId,
+        );
+      }
+
+      // If event is not found, show error message and return undefined
+      if (eventIndex === -1) {
+        console.debug(`[HistoryManager] Tracked event not found: ${eventId}`);
         return undefined;
       }
 
-      // Ensure event has an ID
-      if (!event.id) {
-        event.id = uuidv4();
-      }
+      // Copy the entry to be updated
+      const updatedEntry = { ...entry };
 
-      // Add the timeline event directly to the separate table
-      await this.memoryManager.addTimelineEvent(this.agentId, historyId, event.id, event);
-
-      // Get the updated entry with the new timeline events included
-      const updatedEntry = await this.getEntryById(historyId);
-      if (!updatedEntry) {
-        console.warn(`[HistoryManager] Failed to retrieve updated history entry: ${historyId}`);
+      // Define the events array definitively
+      if (!updatedEntry.events) {
+        updatedEntry.events = [];
         return undefined;
       }
 
-      // Export the timeline event if exporter is configured
-      if (this.voltAgentExporter && event.id) {
-        try {
-          // For telemetry, we need to create a compatible format
-          // This only affects what's sent to telemetry, not what's stored locally
-          const compatEvent: TimelineEvent = {
-            id: event.id,
-            timestamp: event.startTime,
-            name: event.name,
-            type: event.type,
-            data: {
-              status: event.status || "idle",
-              input: event.input,
-              output: event.output,
-              error: event.error,
-            },
-          };
+      const originalEvent = updatedEntry.events[eventIndex];
 
-          const payload = {
-            history_id: historyId,
-            event_id: event.id,
-            event: compatEvent, // Use compatible event just for telemetry
-          };
-          await this.voltAgentExporter.exportTimelineEvent(payload);
-        } catch (exportError) {
-          console.warn(
-            `[HistoryManager] Failed to export timeline event to telemetry service: ${exportError}`,
-          );
-        }
-      }
+      // Update the event
+      updatedEntry.events[eventIndex] = {
+        ...originalEvent,
+        updatedAt: new Date().toISOString(),
+        data: {
+          ...originalEvent.data,
+          ...(updates.data || {}),
+        },
+      };
 
-      return updatedEntry;
+      // Save the updated entry to the database
+      const result = await this.updateEntry(historyId, {
+        events: updatedEntry.events,
+        status: updates.status,
+      });
+
+      return result;
     } catch (error) {
-      console.error(`[HistoryManager] Failed to persist timeline event: ${error}`);
+      console.error(`[HistoryManager] Failed to update tracked event: ${eventId}`, error);
       return undefined;
     }
   }
