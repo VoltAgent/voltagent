@@ -57,6 +57,38 @@ async function run() {
 run();
 ```
 
+### `@voltagent/zhipu-ai` (Zhipu AI Provider)
+
+Provides integration with Zhipu AI's powerful language modelsr. This provider offers a robust interface for Chinese language models and supports advanced features like streaming responses and tool integration.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { ZhipuProvider } from "@voltagent/zhipu-ai";
+
+// Instantiate the provider with your API key
+const zhipuProvider = new ZhipuProvider({
+  apiKey: process.env.ZHIPU_API_KEY,
+  // Optional configuration
+  temperature: 0.7,
+  top_p: 0.9,
+  max_tokens: 2000,
+});
+
+// Create an agent using Zhipu AI's GLM-4-Air model
+const agent = new Agent({
+  name: "Zhipu AI Assistant",
+  description: "A helpful assistant powered by Zhipu AI",
+  llm: zhipuProvider,
+  model: {
+    id: "glm-4-air",
+    provider: "zhipu",
+    modelId: "glm-4-air",
+  },
+});
+```
+
+**Choose `@voltagent/zhipu-ai` when:** You need to work with Chinese language models
+
 ## The `model` Parameter
 
 It's important to understand that the value you provide for the `model` parameter is interpreted _by the specific `llm` provider_ you have configured for the agent.
