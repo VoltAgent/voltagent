@@ -15,6 +15,7 @@ import { getLogoComponent, logoMap } from "../../utils/logo-helper";
 
 // Import server config helper
 import { providerServerConfigs } from "../../components/mcp-list/mcp-page/serverConfigContent";
+import { BoltIcon } from "@heroicons/react/20/solid";
 
 // Server Config Content Renderer Component
 const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
@@ -235,7 +236,11 @@ export default function McpItemPage(props) {
 
   // Server config tabs (nested tabs)
   const serverConfigTabs = [
-    { id: "voltagent", name: "Voltagent", component: null },
+    {
+      id: "voltagent",
+      name: "Voltagent",
+      component: <BoltIcon className="w-4 h-4 mr-2 text-main-emerald" />,
+    },
     {
       id: "cursor",
       name: "Cursor",
