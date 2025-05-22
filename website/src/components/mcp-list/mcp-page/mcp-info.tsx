@@ -48,45 +48,42 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
   const LogoComponent = mcp.logoKey ? getLogoComponent(mcp.logoKey) : mcp.logo;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sticky top-20 self-start z-10 max-h-[calc(100vh-5rem)] overflow-y-auto">
       {/* MCP Metadata - Similar to GitLab style */}
-      <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
-        <div className="flex items-center mb-5">
-          <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
-            {LogoComponent && <LogoComponent className="w-5 h-5" />}
-          </div>
-          <span className="text-xl font-semibold text-white">
-            {mcp.name} MCP
-          </span>
-        </div>
-
-        <div className="mb-4">
+      <div className="p-4 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
+        <div className="flex justify-between items-center mb-3">
           <div className="flex items-center">
-            <span className="text-gray-400 text-sm mr-2">Created By</span>
+            <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
+              {LogoComponent && <LogoComponent className="w-5 h-5" />}
+            </div>
+            <span className="text-lg font-semibold text-white">
+              {mcp.name} MCP
+            </span>
+          </div>
+          <div className="flex items-center">
+            <span className="text-gray-400 text-xs mr-2">Created By</span>
             <div className="flex items-center">
-              <span
-                className={`inline-block w-4 h-4 mr-2 ${currentMetadata.creatorIcon} rounded-md`}
-              />
-              <span className="text-gray-200">{currentMetadata.creator}</span>
+              <span className="text-gray-200 text-xs">
+                {currentMetadata.creator}
+              </span>
             </div>
           </div>
         </div>
 
         <p className="text-gray-300 mb-5 text-xs">
-          Official {currentTab.name} Model Context Protocol (MCP) server for AI
-          agents
+          {currentTab.name} {mcp.name} MCP server for AI agents
         </p>
 
         {/* Add link to the provider website */}
 
         <a
           href={currentMetadata.link}
-          className="w-full flex items-center justify-center px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]"
+          className="w-full flex items-center justify-center px-3 no-underline py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="View MCP Documentation"
         >
-          View MCP Documentation
+          Visit {mcp.name} {currentTab.name} Docs
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-4 w-4 ml-2"
