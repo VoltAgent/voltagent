@@ -391,9 +391,9 @@ export default function McpItemPage(props) {
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-white text-center mb-4">
-                  {mcp.name} Tools
+                  {mcp.name} MCP Tools
                 </p>
-                <p className="text-gray-300 mb-8 text-center landing-md:text-sm text-xs ">
+                <p className="text-gray-300 mb-8 text-center landing-md:text-base text-xs ">
                   {mcp.description}
                 </p>
                 <div className="grid grid-cols-1 gap-4">

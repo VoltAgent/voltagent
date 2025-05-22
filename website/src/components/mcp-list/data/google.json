@@ -1,12 +1,12 @@
 {
   "id": 2,
-  "slug": "mcp-google-sheets",
+  "slug": "google-sheets",
   "name": "Google Sheets",
   "short_description": "Access Google Sheets data and perform operations on it.",
-  "title": "How Can Your AI Agents Leverage the Google Sheets MCP Server?",
-  "description": "The Google Sheets Model Context Protocol (MCP) server empowers your AI agents with direct access to Google's powerful spreadsheet capabilities. Discover how your AI agents can automate spreadsheet operations, from creating and updating sheets to performing lookups and formatting data. Below, explore the specific capabilities and how you can integrate them into your AI agent workflows via MCP for enhanced data management and analysis.",
+  "title": "Google Sheets MCP Server",
+  "description": "The Google Sheets MCP server connects your AI agents to Google's spreadsheet applications directly. Your agents can add sheets, update data, perform lookups, and even format cells - all automatically. Review the features listed below to see how you can harness these capabilities to speed up your data management and analysis processes.",
   "category": "Spreadsheets",
-  "logoKey": "google",
+  "logoKey": "googleSheets",
   "total_tools": [
     {
       "id": "create_spreadsheet",
@@ -21,8 +21,8 @@
         }
       },
       "mcp_content": {
-        "heading": "Create New Google Spreadsheets",
-        "description": "Enable your AI agents to create new spreadsheets in Google Sheets. This allows AI agents to establish organized data repositories for collecting, analyzing, and storing information in a structured tabular format."
+        "heading": "How to Create New Google Spreadsheets with MCP?",
+        "description": "Let your AI assistants prepare new spreadsheets for you whenever you need them. They will set up neat tables to receive and interpret your data, saving you the hassle of manual preparation."
       }
     },
     {
@@ -39,7 +39,7 @@
       },
       "mcp_content": {
         "heading": "Update Spreadsheet Data in Batch Operations",
-        "description": "Empower your AI agents to update multiple rows or cells in Google Sheets with a single operation. This allows for efficient data maintenance, real-time updates, and automated record keeping by your AI assistant."
+        "description": "Your AI can update hundreds of pieces of information at a time! Instead of painstakingly entering cells one by one, your assistant can update rows or cells in bulk. Perfect for maintaining your sheets without the tedium."
       }
     },
     {
@@ -53,12 +53,12 @@
       },
       "mcp_content": {
         "heading": "Update Individual Spreadsheet Rows",
-        "description": "Allow your AI agents to update a single row in a Google Sheets spreadsheet. This targeted update capability is perfect for modifying specific records without affecting other data, enabling precise data management and maintenance."
+        "description": "Need to make a minor tweak to just one record? Your AI will precisely update a single row without ever laying a finger on anything else in your sheet. It's having an assistant that knows the exact line to edit without ruining your other data."
       }
     },
     {
       "id": "lookup_row",
-      "name": "Lookup Spreadsheet Row",
+      "name": "Lookup Google Spreadsheet Row",
       "description": "Find a specific spreadsheet row based on a column and value",
       "providers": {
         "zapier": {
@@ -69,8 +69,8 @@
         }
       },
       "mcp_content": {
-        "heading": "Find Specific Data Rows in Spreadsheets",
-        "description": "Enable your AI agents to search for and retrieve specific rows from Google Sheets based on column values. This capability is essential for data querying, information retrieval, and creating conditional workflows based on spreadsheet content."
+        "heading": "How to Find Specific Data Rows in Google Sheets with MCP?",
+        "description": "Let your AI do the searching for you! It can instantly find just what you're looking for within your spreadsheets by any value. No more CTRL+F and scrolling through rows and rows - just ask and get the exact data you need."
       }
     },
     {
@@ -83,13 +83,13 @@
         }
       },
       "mcp_content": {
-        "heading": "Search and Retrieve Multiple Matching Records",
-        "description": "Empower your AI agents to find multiple rows that match specific criteria in Google Sheets. This advanced search capability allows for retrieving up to 500 matching records, enabling comprehensive data analysis and batch processing of related information."
+        "heading": "How to Search and Retrieve Multiple Matching Records in Google Sheets?",
+        "description": "Your AI can capture all the corresponding entries at once - 500 rows at a time that fit your criteria! It's like having a research aide who can gather all analogous information so that you can spot trends or batch process identical objects."
       }
     },
     {
       "id": "clear_values",
-      "name": "Clear Spreadsheet Values",
+      "name": "Clear Google Sheets Values",
       "description": "Clear values from a specified range or rows in a spreadsheet",
       "providers": {
         "zapier": {
@@ -101,7 +101,7 @@
       },
       "mcp_content": {
         "heading": "Clear Data While Preserving Structure",
-        "description": "Allow your AI agents to remove content from spreadsheets while maintaining the structure. This helps in data refresh operations, creating clean templates, and preparing sheets for new data inputs while preserving formatting and formulas."
+        "description": "Your AI can restart clean without breaking your sheet's foundation. It'll clear out outdated data without touching your carefully crafted formulas and formatting - perfect for month-end cleanups or preparing templates for fresh inputs."
       }
     },
     {
@@ -117,8 +117,8 @@
         }
       },
       "mcp_content": {
-        "heading": "Apply Professional Formatting to Spreadsheet Data",
-        "description": "Give your AI agents the ability to apply formatting to spreadsheet cells, enhancing readability and visual organization. This allows for conditional formatting, styling of data based on values, and creation of visually intuitive reports."
+        "heading": "How to Apply Professional Formatting to Spreadsheet Data with MCP?",
+        "description": "Your AI can make your data beautiful! It'll take care of all the formatting - colors, fonts, borders - to produce visually appealing reports that bring attention where it counts. No more headaches from manual formatting, just professional-looking clean sheets."
       }
     },
     {
@@ -134,8 +134,8 @@
         }
       },
       "mcp_content": {
-        "heading": "Retrieve Batch Data from Spreadsheets",
-        "description": "Empower your AI agents to extract large amounts of data from Google Sheets. This capability enables data analysis, reporting, and using spreadsheet information to power other AI workflows and decision-making processes."
+        "heading": "Retrieve Batch Data from Google Spreadsheets",
+        "description": "Give your AI agents the ability to pull huge amounts of data out of Google Sheets. This feature allows for data analysis, reporting, and leveraging spreadsheet data to drive other AI workflows and decision-making processes."
       }
     },
     {
@@ -190,7 +190,7 @@
         }
       },
       "mcp_content": {
-        "heading": "Add New Data Columns to Spreadsheets",
+        "heading": "How to Add New Data Columns to Google Sheets with MCP?",
         "description": "Enable your AI agents to expand spreadsheet structures by adding new columns. This allows for dynamic data model expansion, adding calculated fields, or introducing new categories of information to existing datasets."
       }
     },
@@ -218,13 +218,13 @@
         }
       },
       "mcp_content": {
-        "heading": "Insert Multiple Data Records Efficiently",
+        "heading": "How to Insert Multiple Data Records Efficiently with MCP?",
         "description": "Empower your AI agents to add multiple rows of data in a single operation. This batch insertion capability allows for efficient data imports, logging multiple events, and creating initial datasets with line item support for complex data."
       }
     },
     {
       "id": "create_row_at_top",
-      "name": "Create Spreadsheet Row at Top",
+      "name": "Create Google sheet Row at Top",
       "description": "Creates a new spreadsheet row at the top of a spreadsheet after the header row",
       "providers": {
         "zapier": {
@@ -260,7 +260,7 @@
         }
       },
       "mcp_content": {
-        "heading": "Add New Worksheet Tabs to Spreadsheets",
+        "heading": "How to Add New Worksheet Tabs to Google Sheets with MCP?",
         "description": "Allow your AI agents to create new worksheets within existing spreadsheets. This helps organize data into logical sections, separate different data categories, and maintain clean information architecture in complex documents."
       }
     },
@@ -289,7 +289,7 @@
       },
       "mcp_content": {
         "heading": "Access Advanced Google Sheets API Features",
-        "description": "Enable your AI agents to make direct API calls to Google Sheets with proper authentication. This advanced capability unlocks the full Google Sheets API for custom operations, extensions, and specialized functionality beyond standard actions."
+        "description": "Make it possible for your AI agents to directly invoke APIs on Google Sheets with full authentication. This advanced feature unleashes the entire Google Sheets API to customizations, add-ons, and specialized operations beyond standard actions."
       }
     },
     {
@@ -303,7 +303,7 @@
       },
       "mcp_content": {
         "heading": "Locate Specific Worksheets by Name",
-        "description": "Give your AI agents the ability to find specific worksheets within spreadsheets. This search capability ensures operations are performed on the correct data tabs and supports navigation in complex multi-sheet documents."
+        "description": "Give your AI agents the ability to find a specific worksheet within spreadsheets. This find feature ensures there are operations being done on the correct data tabs and helps in navigation with complex multi-sheet documents."
       }
     },
     {
@@ -316,8 +316,8 @@
         }
       },
       "mcp_content": {
-        "heading": "Ensure Worksheets Exist Before Operations",
-        "description": "Empower your AI agents with an idempotent approach to worksheet management. This tool checks if a worksheet exists and creates it if not, preventing errors and ensuring a smooth workflow regardless of pre-existing structure."
+        "heading": "Ensure Google Sheets Worksheets Exist Before Operations",
+        "description": "Give your AI agents a reliable way to manage spreadsheets without repeating the same actions. This tool checks for the existence of a worksheet and creates it otherwise, preventing errors and a smooth flow despite pre-existing structure."
       }
     },
     {
@@ -330,13 +330,13 @@
         }
       },
       "mcp_content": {
-        "heading": "Ensure Data Records Exist or Create Them",
-        "description": "Allow your AI agents to check if specific data exists and add it if missing. This upsert-like functionality ensures data integrity, prevents duplicates, and streamlines workflows that depend on certain records being present."
+        "heading": "How to Ensure Data Records Exist or Create Them",
+        "description": "Allow your AI agents to check for the existence of certain data and add it where not present. This upsert-like functionality ensures data integrity, prevents duplicates, and streamlines processes that depend on certain records being present."
       }
     }
   ],
   "mcp_page_content": {
     "title": "How Can Your AI Agents Leverage the Google Sheets MCP Server?",
-    "description": "The Google Sheets Model Context Protocol (MCP) server empowers your AI agents with direct access to Google's powerful spreadsheet capabilities. Discover how your AI agents can automate spreadsheet operations, from creating and updating sheets to performing lookups and formatting data. Below, explore the specific capabilities and how you can integrate them into your AI agent workflows via MCP for enhanced data management and analysis."
+    "description": "Imagine having an always-working assistant that handles all your spreadsheet tasks! Our Google Sheets MCP server gives your AI agents unfettered access to all the capabilities of Google Sheets. They'll insert new sheets, update information, look for data, and even handle formatting - automatically. See below to learn how your AI can handle spreadsheet busy work so you can focus on what's important."
   }
 }

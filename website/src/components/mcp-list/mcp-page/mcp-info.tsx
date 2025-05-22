@@ -52,16 +52,16 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
     <div className="space-y-6 lg:sticky lg:top-20 lg:self-start lg:z-10 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
       {/* MCP Metadata - Similar to GitLab style */}
       <div className="p-4 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
-        <div className="flex landing-sm:flex-row flex-col justify-between landing-sm:items-center items-start mb-3">
+        <div className="flex flex-col justify-between  items-start mb-3">
           <div className="flex items-center">
             <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
               {LogoComponent && <LogoComponent className="w-5 h-5" />}
             </div>
-            <span className="text-lg font-semibold text-white">
+            <span className="text-lg font-semibold text-emerald-400">
               {mcp.name} MCP
             </span>
           </div>
-          <div className="flex items-center landing-sm:mt-0 mt-2">
+          <div className="flex items-center mt-3">
             <span className="text-gray-400 text-xs mr-2">Created By</span>
             <div className="flex items-center">
               <span className="text-gray-200 text-xs">
@@ -71,8 +71,8 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
           </div>
         </div>
 
-        <p className="text-gray-300 mb-5 text-xs">
-          {currentTab.name} {mcp.name} MCP server for AI agents
+        <p className="text-gray-300 mb-5 text-sm font-medium">
+          {mcp.name} MCP server for AI agents
         </p>
 
         {/* Add link to the provider website */}

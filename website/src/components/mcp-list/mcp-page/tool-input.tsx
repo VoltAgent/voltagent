@@ -81,7 +81,7 @@ export const ExpandableTool = ({
           <h4 className=" landing-md:text-xl text-md font-bold text-white mb-2">
             {tool.mcp_content.heading}
           </h4>
-          <p className="text-gray-300 landing-md:text-sm text-xs mb-4">
+          <p className="text-gray-300 landing-md:text-base text-xs mb-4">
             {tool.mcp_content.description}
           </p>
         </>
@@ -101,7 +101,7 @@ export const ExpandableTool = ({
             <code className="text-[#00d992] font-mono landing-md:text-sm text-xs font-medium">
               {tool.name}
             </code>
-            <div className="text-gray-400 mt-1 landing-md:text-sm text-xs flex gap-2 flex-wrap">
+            <div className="text-gray-400 my-1 landing-md:text-sm text-xs flex gap-2 flex-wrap">
               {providerNames.map((provider: string) => {
                 // Get the tool ID for this provider from the providers object
                 const providerId = tool.providers[provider]?.id;

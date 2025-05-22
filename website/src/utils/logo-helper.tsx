@@ -26,6 +26,7 @@ import { CursorLogo } from "../../static/img/logos/cursor";
 import { ComposioLogo } from "../../static/img/logos/composio";
 import { ZapierLogo } from "../../static/img/logos/integrations/zapier";
 import { GumloopLogo } from "../../static/img/logos/integrations/gumloop";
+import { ServerIcon } from "@heroicons/react/20/solid";
 
 // Map logo components by key
 export const logoMap = {
@@ -54,6 +55,7 @@ export const logoMap = {
   composio: ComposioLogo,
   claude: Claude37Logo,
   cursor: CursorLogo,
+  server: ServerIcon,
 };
 
 /**
@@ -62,5 +64,5 @@ export const logoMap = {
  * @returns The logo component or NotionLogo as fallback
  */
 export const getLogoComponent = (logoKey: string) => {
-  return logoMap[logoKey] || logoMap.notion;
+  return logoMap[logoKey] || logoMap.server;
 };
