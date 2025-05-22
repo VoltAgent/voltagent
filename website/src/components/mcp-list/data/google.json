@@ -7,6 +7,7 @@
   "description": "The Google Sheets MCP server connects your AI agents to Google's spreadsheet applications directly. Your agents can add sheets, update data, perform lookups, and even format cells - all automatically. Review the features listed below to see how you can harness these capabilities to speed up your data management and analysis processes.",
   "category": "Spreadsheets",
   "logoKey": "googleSheets",
+  "avaliable_providers": ["composio", "zapier"],
   "total_tools": [
     {
       "id": "create_spreadsheet",

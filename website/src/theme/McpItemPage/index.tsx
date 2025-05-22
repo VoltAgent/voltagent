@@ -112,8 +112,23 @@ export default function McpItemPage(props) {
   // Extract tools from the data - moved up before use
   const tools = mcpData.data?.total_tools || [];
 
+  // Define all possible providers
+  const allProviders = [
+    { id: "zapier", name: "Zapier" },
+    { id: "composio", name: "Composio" },
+  ];
+
+  // Filter providers based on available_providers in MCP data
+  const tabOptions = mcpData.data?.avaliable_providers
+    ? allProviders.filter((provider) =>
+        mcpData.data.avaliable_providers.includes(provider.id),
+      )
+    : allProviders;
+
   // State for main provider tabs (upper level)
-  const [activeProviderTab, setActiveProviderTab] = useState("zapier");
+  const [activeProviderTab, setActiveProviderTab] = useState(
+    tabOptions.length > 0 ? tabOptions[0].id : "zapier",
+  );
 
   // State for server config tabs (nested tabs)
   const [activeServerConfigTab, setActiveServerConfigTab] =
@@ -129,12 +144,6 @@ export default function McpItemPage(props) {
       [toolId]: !prev[toolId],
     }));
   };
-
-  // Main provider tab options
-  const tabOptions = [
-    { id: "zapier", name: "Zapier" },
-    { id: "composio", name: "Composio" },
-  ];
 
   // Get current tab data
   const currentTab =
@@ -287,19 +296,24 @@ export default function McpItemPage(props) {
         </div>
 
         {/* Tab Navigation - Upper level provider tabs */}
-        <div className="mb-8 w-full">
-          <div className="flex border-b border-gray-800 w-full" role="tablist">
-            {tabOptions.map((tab) => (
-              <Tab
-                key={tab.id}
-                active={activeProviderTab === tab.id}
-                onClick={() => setActiveProviderTab(tab.id)}
-              >
-                {tab.name}
-              </Tab>
-            ))}
+        {tabOptions.length > 1 && (
+          <div className="mb-8 w-full">
+            <div
+              className="flex border-b border-gray-800 w-full"
+              role="tablist"
+            >
+              {tabOptions.map((tab) => (
+                <Tab
+                  key={tab.id}
+                  active={activeProviderTab === tab.id}
+                  onClick={() => setActiveProviderTab(tab.id)}
+                >
+                  {tab.name}
+                </Tab>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Mobile layout - MCP Info appears before Tools section */}
         <div className="block lg:hidden mb-8">
