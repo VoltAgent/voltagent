@@ -328,8 +328,7 @@ export default function McpItemPage(props) {
                     Server Config & Usage Examples
                   </span>
                   <div className="text-gray-400 landing-md:text-sm text-xs">
-                    Configure your {currentTab.name} MCP server for {mcp.name}{" "}
-                    and see how to call it.
+                    Configure your {currentTab.name} MCP server for {mcp.name}.
                   </div>
                 </div>
               </div>
