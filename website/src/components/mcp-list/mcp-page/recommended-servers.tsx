@@ -63,10 +63,10 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
                   </span>
                 )}
               </div>
-              <div className="flex-1">
-                <h4 className="text-white font-medium text-sm mb-0.5">
+              <div className="flex flex-col">
+                <div className="text-white font-medium text-sm mb-0.5">
                   {mcp.name}
-                </h4>
+                </div>
                 <span className="text-xs text-gray-400">
                   {mcp.short_description || mcp.category}
                 </span>
