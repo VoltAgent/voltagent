@@ -238,13 +238,12 @@ export default function McpItemPage(props) {
     zapier: {
       creator: "Zapier",
       creatorIcon: "bg-red-500",
-      link: `https://zapier.com/mcp/${mcp.name.toLowerCase()}`,
+      link: `https://zapier.com/apps/${mcp.slug.toLowerCase()}/integrations`,
     },
-
     composio: {
       creator: "Composio",
       creatorIcon: "bg-green-500",
-      link: `https://composio.dev/${mcp.name.toLowerCase()}`,
+      link: `https://mcp.composio.dev/${mcp.name.toLowerCase()}`,
     },
   };
 
