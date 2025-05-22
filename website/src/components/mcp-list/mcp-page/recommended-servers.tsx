@@ -23,8 +23,8 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
 }) => {
   console.log({ similarMcps });
   return (
-    <div className="rounded-lg backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
-      <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
+    <div className="rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
+      <div className="flex items-center px-4 py-4  rounded-tl-md rounded-tr-md bg-[#222735] ">
         <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
           <ServerStackIcon className="w-5 h-5 text-[#00d992]" />
         </div>
@@ -52,7 +52,7 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
             <Link
               key={mcp.id}
               to={`/mcp/${mcp.slug}`}
-              className="rounded-md border border-gray-700 hover:border-[#00d992] transition-all duration-300 flex items-start p-3 block"
+              className="rounded-md border border-gray-700 no-underline hover:border-[#00d992] transition-all duration-300 flex items-start p-1 block"
             >
               <div className="w-7 h-7 mr-2.5 flex-shrink-0 flex items-center justify-center bg-slate-700 rounded-md">
                 {LogoComponent ? (

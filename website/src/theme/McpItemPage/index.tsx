@@ -14,6 +14,82 @@ import CodeBlock from "../../components/mcp-list/mcp-page/CodeBlock";
 // Import logo helper
 import { getLogoComponent, logoMap } from "../../utils/logo-helper";
 
+// Import server config helper
+import {
+  providerServerConfigs,
+  tabOptions,
+  ServerConfigContentItem,
+} from "../../components/mcp-list/mcp-page/serverConfigContent";
+
+// CSS for sticky sidebar
+const sidebarStyles = `
+.sidebar-container {
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .sidebar-container {
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+}
+`;
+
+// Server Config Content Renderer Component
+const ServerConfigContentRenderer = ({ contentItems }) => {
+  if (!contentItems || !Array.isArray(contentItems)) {
+    return <CodeBlock code={JSON.stringify(contentItems, null, 2)} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      {contentItems.map((item, index) => {
+        // Create a stable key using type, title, and index
+        const key = `${item.type}-${item.title || ""}-${index}`;
+
+        if (item.type === "heading") {
+          return (
+            <div key={key} className="mt-3 mb-2">
+              <p className="text-md font-semibold text-white">
+                {item.title || ""}
+              </p>
+              {item.value && (
+                <p className="text-gray-300 text-sm mt-1">{item.value}</p>
+              )}
+            </div>
+          );
+        }
+
+        if (item.type === "text") {
+          return (
+            <div key={key} className="mb-4">
+              {item.title && (
+                <p className="text-md font-medium text-white mb-1">
+                  {item.title}
+                </p>
+              )}
+              <p className="text-gray-300 text-sm">{item.value}</p>
+            </div>
+          );
+        }
+
+        if (item.type === "code") {
+          return (
+            <div key={key} className="mb-4">
+              <CodeBlock code={item.value} />
+            </div>
+          );
+        }
+
+        return null;
+      })}
+    </div>
+  );
+};
+
 // Tab Component for provider tabs
 const Tab = ({ active, onClick, children }) => {
   return (
@@ -75,7 +151,6 @@ export default function McpItemPage(props) {
   // Main provider tab options
   const tabOptions = [
     { id: "zapier", name: "Zapier" },
-    { id: "gumloop", name: "Gumloop" },
     { id: "composio", name: "Composio" },
   ];
 
@@ -83,84 +158,73 @@ export default function McpItemPage(props) {
   const currentTab =
     tabOptions.find((tab) => tab.id === activeProviderTab) || tabOptions[0];
 
-  // Create server configs for each tab
+  // Get server configuration based on provider and type
   const getServerConfig = (type) => {
-    switch (type) {
-      case "voltagent":
-        return JSON.stringify(
-          {
-            serverName: mcp.name,
-            serverType: "mcp",
-            provider: currentTab.name,
-            configuration: {
-              baseURL: `https://api.${mcp.name
-                .toLowerCase()
-                .replace(/\s/g, "")}.com/`,
-              apiKey: "YOUR_API_KEY_HERE",
-              maxTokens: 4096,
-              temperature: 0.7,
-            },
-          },
-          null,
-          2,
-        );
-      case "cursor":
-        return `// Cursor MCP Configuration for ${mcp.name} via ${
-          currentTab.name
-        }
-const server = voltagent.createServer({
-  name: "${mcp.name}",
-  type: "mcp",
-  provider: "${currentTab.name}",
-  config: {
-    apiKey: "YOUR_API_KEY_HERE",
-    baseURL: "https://api.${mcp.name.toLowerCase().replace(/\s/g, "")}.com/",
-  }
-});
+    // Get provider config if available
+    const providerConfig = providerServerConfigs[activeProviderTab];
 
-// Example usage
-const result = await server.query({
-  prompt: "Tell me about ${mcp.name}",
-  maxTokens: 1024
-});`;
-      case "claude":
-        return `// Claude MCP Configuration for ${mcp.name} via ${
-          currentTab.name
+    // For voltagent type, check if provider has specific config or use default
+    if (type === "voltagent") {
+      if (providerConfig?.voltagent) {
+        // Return provider-specific voltagent config
+        if (typeof providerConfig.voltagent === "string") {
+          return providerConfig.voltagent;
         }
-const assistant = claude.setup({
-  server: {
-    name: "${mcp.name}",
-    type: "mcp",
-    provider: "${currentTab.name}",
-    apiKey: process.env.${mcp.name.toUpperCase()}_API_KEY,
-    endpoint: "https://api.${mcp.name.toLowerCase().replace(/\s/g, "")}.com/v1/"
-  }
-});
 
-// Query the ${mcp.name} service
-const response = await assistant.complete({
-  prompt: "What is ${mcp.name}?",
-  max_tokens: 1000,
-  temperature: 0.7
-});`;
-      default:
-        return JSON.stringify(
-          {
-            serverName: mcp.name,
-            serverType: "mcp",
-            configuration: {
-              baseURL: `https://api.${mcp.name
-                .toLowerCase()
-                .replace(/\s/g, "")}.com/`,
-              apiKey: "YOUR_API_KEY_HERE",
-              maxTokens: 4096,
-              temperature: 0.7,
-            },
+        if (Array.isArray(providerConfig.voltagent)) {
+          // Return the structured content items directly
+          return providerConfig.voltagent;
+        }
+      }
+
+      // Default voltagent config if no provider-specific one exists
+      return JSON.stringify(
+        {
+          serverName: mcp.name,
+          serverType: "mcp",
+          provider: currentTab.name,
+          configuration: {
+            baseURL: `https://api.${mcp.name
+              .toLowerCase()
+              .replace(/\s/g, "")}.com/`,
+            apiKey: "YOUR_API_KEY_HERE",
+            maxTokens: 4096,
+            temperature: 0.7,
           },
-          null,
-          2,
-        );
+        },
+        null,
+        2,
+      );
     }
+
+    // For cursor and claude types, check if provider has specific config
+    if (type === "cursor" || type === "claude") {
+      if (providerConfig?.[type]) {
+        // Return the structured content items directly
+        return providerConfig[type];
+      }
+
+      // Just return empty array if no specific config exists
+      return [];
+    }
+
+    // Fallback for any other type
+    return JSON.stringify(
+      {
+        serverName: mcp.name,
+        serverType: "mcp",
+        configuration: {
+          baseURL: `https://api.${mcp.name
+            .toLowerCase()
+            .replace(/\s/g, "")}.com/`,
+          apiKey: "YOUR_API_KEY_HERE",
+          maxTokens: 4096,
+          temperature: 0.7,
+        },
+      },
+      null,
+      2,
+    );
   };
 
   // Server config tabs (nested tabs)
@@ -181,17 +245,13 @@ const response = await assistant.complete({
   // Provider metadata for each main provider tab
   const tabMetadata = {
     zapier: {
-      creator: "Zapier Inc.",
+      creator: "Zapier",
       creatorIcon: "bg-red-500",
       link: `https://zapier.com/mcp/${mcp.name.toLowerCase()}`,
     },
-    gumloop: {
-      creator: "Gumloop",
-      creatorIcon: "bg-blue-500",
-      link: `https://gumloop.com/mcp/${mcp.name.toLowerCase()}`,
-    },
+
     composio: {
-      creator: "Composio Team",
+      creator: "Composio",
       creatorIcon: "bg-green-500",
       link: `https://composio.dev/${mcp.name.toLowerCase()}`,
     },
@@ -220,7 +280,7 @@ const response = await assistant.complete({
       title={`${mcp.name} MCP - ${siteConfig.title}`}
       description={mcp.description}
     >
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 flex flex-col">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 flex flex-col relative">
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
 
         {/* Back to MCPs button */}
@@ -259,11 +319,11 @@ const response = await assistant.complete({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:min-h-[800px]">
           {/* Main content area - Left side */}
           <div className="lg:col-span-2">
             {/* Server Config section */}
-            <div className="rounded-lg backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
+            <div className="rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
               <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
                 <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
                   <ServerIcon className="w-5 h-5 text-[#00d992]" />
@@ -317,7 +377,13 @@ const response = await assistant.complete({
 
               {/* Server config content */}
               <div className="p-4">
-                <CodeBlock code={getServerConfig(activeServerConfigTab)} />
+                {Array.isArray(getServerConfig(activeServerConfigTab)) ? (
+                  <ServerConfigContentRenderer
+                    contentItems={getServerConfig(activeServerConfigTab)}
+                  />
+                ) : (
+                  <CodeBlock code={getServerConfig(activeServerConfigTab)} />
+                )}
               </div>
             </div>
 
@@ -353,15 +419,20 @@ const response = await assistant.complete({
           </div>
 
           {/* Sidebar - Right side */}
-          <SidebarInfoSection
-            mcp={{
-              ...mcp,
-              logoKey: mcpData.logoKey,
-            }}
-            currentMetadata={currentMetadata}
-            currentTab={currentTab}
-            similarMcps={mcpData.similarMcps}
-          />
+          <div
+            className="lg:sticky lg:top-20 lg:self-start"
+            style={{ maxHeight: "calc(100vh - 80px)", overflowY: "auto" }}
+          >
+            <SidebarInfoSection
+              mcp={{
+                ...mcp,
+                logoKey: mcpData.logoKey,
+              }}
+              currentMetadata={currentMetadata}
+              currentTab={currentTab}
+              similarMcps={mcpData.similarMcps}
+            />
+          </div>
         </div>
       </div>
     </Layout>
