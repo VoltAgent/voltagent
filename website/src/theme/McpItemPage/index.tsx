@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import Layout from "@theme/Layout";
 import { ArrowLeftIcon, ServerIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
@@ -15,28 +14,7 @@ import CodeBlock from "../../components/mcp-list/mcp-page/CodeBlock";
 import { getLogoComponent, logoMap } from "../../utils/logo-helper";
 
 // Import server config helper
-import {
-  providerServerConfigs,
-  tabOptions,
-  ServerConfigContentItem,
-} from "../../components/mcp-list/mcp-page/serverConfigContent";
-
-// CSS for sticky sidebar
-const sidebarStyles = `
-.sidebar-container {
-  position: relative;
-}
-
-@media (min-width: 1024px) {
-  .sidebar-container {
-    position: sticky;
-    top: 80px;
-    align-self: flex-start;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-  }
-}
-`;
+import { providerServerConfigs } from "../../components/mcp-list/mcp-page/serverConfigContent";
 
 // Server Config Content Renderer Component
 const ServerConfigContentRenderer = ({ contentItems }) => {
@@ -286,7 +264,7 @@ export default function McpItemPage(props) {
         {/* Back to MCPs button */}
         <Link
           to="/mcp"
-          className="flex items-center text-gray-400 hover:text-[#00d992] mb-6 group"
+          className="flex items-center text-[#00d992] hover:text-[#00d992] mb-6 group no-underline"
         >
           <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
           Back to MCPs
