@@ -31,11 +31,13 @@ const ServerConfigContentRenderer = ({ contentItems }) => {
         if (item.type === "heading") {
           return (
             <div key={key} className="mt-3 mb-2">
-              <p className="text-md font-semibold text-white">
+              <p className="landing-sm:text-md text-sm font-semibold text-white mb-2">
                 {item.title || ""}
               </p>
               {item.value && (
-                <p className="text-gray-300 text-sm mt-1">{item.value}</p>
+                <p className="text-gray-300 landing-sm:text-sm text-xs mt-1">
+                  {item.value}
+                </p>
               )}
             </div>
           );
@@ -45,11 +47,13 @@ const ServerConfigContentRenderer = ({ contentItems }) => {
           return (
             <div key={key} className="mb-4">
               {item.title && (
-                <p className="text-md font-medium text-white mb-1">
+                <p className="landing-sm:text-md text-sm font-medium text-white mb-1">
                   {item.title}
                 </p>
               )}
-              <p className="text-gray-300 text-sm">{item.value}</p>
+              <p className="text-gray-300 landing-sm:text-sm text-xs">
+                {item.value}
+              </p>
             </div>
           );
         }
@@ -272,10 +276,10 @@ export default function McpItemPage(props) {
 
         {/* Main title and description */}
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+          <h1 className="landing-sm:text-3xl text-2xl font-bold text-white mb-2">
             {mcp.title}
           </h1>
-          <div className="text-gray-400 flex items-center">
+          <div className="text-gray-400 flex items-center landing-sm:text-sm text-xs">
             <span className="font-mono">{mcp.name}</span>
             <span className="mx-2">-</span>
             <span>Model Context Provider</span>
@@ -297,20 +301,33 @@ export default function McpItemPage(props) {
           </div>
         </div>
 
+        {/* Mobile layout - MCP Info appears before Tools section */}
+        <div className="block lg:hidden mb-8">
+          <SidebarInfoSection
+            mcp={{
+              ...mcp,
+              logoKey: mcpData.logoKey,
+            }}
+            currentMetadata={currentMetadata}
+            currentTab={currentTab}
+            similarMcps={mcpData.similarMcps}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:min-h-[800px]">
           {/* Main content area - Left side */}
           <div className="lg:col-span-2">
             {/* Server Config section */}
             <div className="rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
-              <div className="flex items-center px-6 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
-                <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
+              <div className="flex items-center  landing-md:px-6 px-4 py-4 border-l-0 border-r-0 border-t-0 rounded-tl-md rounded-tr-md bg-[#222735] border-white/10 border-solid">
+                <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md hidden landing-sm:flex items-center justify-center shrink-0 mr-4">
                   <ServerIcon className="w-5 h-5 text-[#00d992]" />
                 </div>
                 <div>
                   <span className="text-md font-semibold text-white mb-1">
                     Server Config & Usage Examples
                   </span>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-gray-400 landing-md:text-sm text-xs">
                     Configure your {currentTab.name} MCP server for {mcp.name}{" "}
                     and see how to call it.
                   </div>
@@ -325,7 +342,7 @@ export default function McpItemPage(props) {
                 {serverConfigTabs.map((tab) => (
                   <div
                     key={tab.id}
-                    className={`flex items-center relative px-3 py-2 text-sm font-medium cursor-pointer transition-all duration-300 text-center ${
+                    className={`flex items-center relative px-3 py-2 landing-md:text-sm text-xs font-medium cursor-pointer transition-all duration-300 text-center ${
                       activeServerConfigTab === tab.id
                         ? "text-[#00d992]"
                         : "text-gray-500 hover:text-gray-300"
@@ -367,7 +384,7 @@ export default function McpItemPage(props) {
 
             {/* Tools section */}
             {tools.length > 0 && (
-              <div className="p-6 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
+              <div className="landing-md:p-6 p-4 rounded-lg border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)] mb-8">
                 <div className="flex justify-center mb-8">
                   <div className="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center">
                     {mcp.logo && <mcp.logo className="w-12 h-12 text-white" />}
@@ -376,7 +393,7 @@ export default function McpItemPage(props) {
                 <p className="text-2xl font-bold text-white text-center mb-4">
                   {mcp.name} Tools
                 </p>
-                <p className="text-gray-300 mb-8 text-center">
+                <p className="text-gray-300 mb-8 text-center landing-md:text-sm text-xs ">
                   {mcp.description}
                 </p>
                 <div className="grid grid-cols-1 gap-4">
@@ -396,9 +413,9 @@ export default function McpItemPage(props) {
             )}
           </div>
 
-          {/* Sidebar - Right side */}
+          {/* Sidebar - Right side - Desktop only */}
           <div
-            className="lg:sticky lg:top-20 lg:self-start"
+            className="hidden lg:block lg:sticky lg:top-20 lg:self-start"
             style={{ maxHeight: "calc(100vh - 80px)", overflowY: "auto" }}
           >
             <SidebarInfoSection

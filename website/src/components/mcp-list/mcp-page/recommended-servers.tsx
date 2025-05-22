@@ -23,7 +23,7 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
 }) => {
   console.log({ similarMcps });
   return (
-    <div className="rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
+    <div className="hidden lg:block rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
       <div className="flex items-center px-4 py-4  rounded-tl-md rounded-tr-md bg-[#222735] ">
         <div className="bg-[#00d992]/10 w-8 h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0 mr-4">
           <ServerStackIcon className="w-5 h-5 text-[#00d992]" />

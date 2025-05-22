@@ -31,7 +31,7 @@ export const InputsList = ({ inputs }) => {
                 {input.type}
               </span>
             </div>
-            <div className="text-gray-400 text-sm">{input.description}</div>
+            <div className="text-gray-400 text-sm ">{input.description}</div>
           </div>
         ))}
       </div>
@@ -78,17 +78,19 @@ export const ExpandableTool = ({
     <div key={tool.id} className="mb-6">
       {showMcpContentDescription && (
         <>
-          <h4 className="text-xl font-bold text-white mb-2">
+          <h4 className=" landing-md:text-xl text-md font-bold text-white mb-2">
             {tool.mcp_content.heading}
           </h4>
-          <p className="text-gray-300 mb-4">{tool.mcp_content.description}</p>
+          <p className="text-gray-300 landing-md:text-sm text-xs mb-4">
+            {tool.mcp_content.description}
+          </p>
         </>
       )}
 
       {/* Tool card with expandable inputs */}
       <div className="border rounded-lg bg-slate-800/50 overflow-hidden border-solid hover:border-[#00d992] transition-all duration-300">
         <div
-          className="bg-[#222735]/70 px-4 py-3 flex items-center justify-between cursor-pointer"
+          className="bg-[#222735]/70 px-3 py-3 flex items-center justify-between cursor-pointer"
           onClick={() => showParameters && toggleTool(tool.id)}
           onKeyUp={(e) =>
             showParameters && e.key === "Enter" && toggleTool(tool.id)
@@ -96,10 +98,10 @@ export const ExpandableTool = ({
           aria-expanded={expanded}
         >
           <div>
-            <code className="text-[#00d992] font-mono text-sm font-medium">
+            <code className="text-[#00d992] font-mono landing-md:text-sm text-xs font-medium">
               {tool.name}
             </code>
-            <div className="text-gray-400 mt-1 text-sm flex gap-2 flex-wrap">
+            <div className="text-gray-400 mt-1 landing-md:text-sm text-xs flex gap-2 flex-wrap">
               {providerNames.map((provider: string) => {
                 // Get the tool ID for this provider from the providers object
                 const providerId = tool.providers[provider]?.id;
@@ -113,7 +115,7 @@ export const ExpandableTool = ({
                 );
               })}
             </div>
-            <span className="text-gray-300 text-sm mt-1">
+            <span className="text-gray-300 landing-md:text-sm text-xs mt-1">
               {tool.description}
             </span>
           </div>
@@ -155,7 +157,7 @@ export const ExpandableTool = ({
                         )}
                       </div>
                       <div className="flex items-center">
-                        <span className="text-md font-medium text-white capitalize">
+                        <span className="landing-md:text-md text-xs font-medium text-white capitalize">
                           {provider}
                         </span>
                       </div>
