@@ -117,21 +117,29 @@ export const providerServerConfigs: {
 
   composio: {
     // Provide a specific Voltagent config for Composio that matches the screenshot
-    voltagent: JSON.stringify(
-      {
-        serverName: "Ahrefs",
-        serverType: "mcp",
-        provider: "Composio",
-        configuration: {
-          baseURL: "https://api.ahrefs.com/",
-          apiKey: "YOUR_API_KEY_HERE",
-          maxTokens: 4096,
-          temperature: 0.7,
-        },
-      },
-      null,
-      2,
-    ),
+    voltagent: `const mcpConfig = new MCPConfiguration({
+  servers: {
+    // Example 1: HTTP-based server (e.g., external web service or API gateway)
+    server: {
+      type: "http",
+      url: "https://mcp.composio.dev/{mcpName}/your-api-key-here", // URL of the MCP endpoint
+    },
+  },
+});
+
+// Fetch all tools from all configured MCP servers into a flat array
+const allTools = await mcpConfig.getTools();
+
+const agent = new Agent({
+  name: "MCP Agent",
+  instructions: "An assistant that can use MCP tools configured at startup",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: allTools, // Add MCP tools during initialization
+});
+
+// Remember to disconnect later
+// await mcpConfig.disconnect();`,
     cursor: [
       {
         type: "heading",
@@ -141,7 +149,8 @@ export const providerServerConfigs: {
       {
         type: "text",
         title: "Generate Configuration",
-        value: "Go to mcp.composio.dev to create your own Composio MCP setup.",
+        value:
+          "Go to https://mcp.composio.dev/{mcpName} to create your own Composio MCP setup.",
       },
       {
         type: "text",
@@ -165,7 +174,8 @@ export const providerServerConfigs: {
       {
         type: "text",
         title: "Setup Steps",
-        value: "Go to mcp.composio.dev to create your own Composio MCP setup.",
+        value:
+          "Go to https://mcp.composio.dev/{mcpName} to create your own Composio MCP setup.",
       },
       {
         type: "text",
@@ -179,7 +189,7 @@ export const providerServerConfigs: {
     ],
     serverGenerationInfo: {
       urlTemplate: "https://mcp.composio.dev/{mcpname}",
-      mcpNameValue: "ahrefs", // As per user request context
+      mcpNameValue: "{mcpName}", // This will be replaced dynamically with mcp.name.toLowerCase()
       promptTextBeforeLink: "For Composio:",
       linkText: "Generate your Composio MCP URL",
       promptTextAfterLink: "and then follow the setup steps shown below.",

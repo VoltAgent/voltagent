@@ -17,10 +17,19 @@ import { getLogoComponent, logoMap } from "../../utils/logo-helper";
 import { providerServerConfigs } from "../../components/mcp-list/mcp-page/serverConfigContent";
 
 // Server Config Content Renderer Component
-const ServerConfigContentRenderer = ({ contentItems }) => {
+const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
   if (!contentItems || !Array.isArray(contentItems)) {
     return <CodeBlock code={JSON.stringify(contentItems, null, 2)} />;
   }
+
+  // Function to replace placeholders in text
+  const replacePlaceholders = (text) => {
+    if (typeof text !== "string") return text;
+    return text.replace(
+      /{mcpName}/g,
+      mcp.name.toLowerCase().replace(/\s/g, ""),
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -28,15 +37,21 @@ const ServerConfigContentRenderer = ({ contentItems }) => {
         // Create a stable key using type, title, and index
         const key = `${item.type}-${item.title || ""}-${index}`;
 
+        // Replace placeholders in value and title
+        const processedValue = replacePlaceholders(item.value);
+        const processedTitle = item.title
+          ? replacePlaceholders(item.title)
+          : undefined;
+
         if (item.type === "heading") {
           return (
             <div key={key} className="mt-3 mb-2">
               <p className="landing-sm:text-md text-sm font-semibold text-white mb-2">
-                {item.title || ""}
+                {processedTitle || ""}
               </p>
-              {item.value && (
+              {processedValue && (
                 <p className="text-gray-300 landing-sm:text-sm text-xs mt-1">
-                  {item.value}
+                  {processedValue}
                 </p>
               )}
             </div>
@@ -46,13 +61,13 @@ const ServerConfigContentRenderer = ({ contentItems }) => {
         if (item.type === "text") {
           return (
             <div key={key} className="mb-4">
-              {item.title && (
+              {processedTitle && (
                 <p className="landing-sm:text-md text-sm font-medium text-white mb-1">
-                  {item.title}
+                  {processedTitle}
                 </p>
               )}
               <p className="text-gray-300 landing-sm:text-sm text-xs">
-                {item.value}
+                {processedValue}
               </p>
             </div>
           );
@@ -61,7 +76,7 @@ const ServerConfigContentRenderer = ({ contentItems }) => {
         if (item.type === "code") {
           return (
             <div key={key} className="mb-4">
-              <CodeBlock code={item.value} />
+              <CodeBlock code={processedValue} />
             </div>
           );
         }
@@ -243,7 +258,9 @@ export default function McpItemPage(props) {
     composio: {
       creator: "Composio",
       creatorIcon: "bg-green-500",
-      link: `https://mcp.composio.dev/${mcp.name.toLowerCase()}`,
+      link: `https://mcp.composio.dev/${mcp.name
+        .toLowerCase()
+        .replace(/\s/g, "")}`,
     },
   };
 
@@ -387,9 +404,19 @@ export default function McpItemPage(props) {
                 {Array.isArray(getServerConfig(activeServerConfigTab)) ? (
                   <ServerConfigContentRenderer
                     contentItems={getServerConfig(activeServerConfigTab)}
+                    mcp={mcp}
                   />
                 ) : (
-                  <CodeBlock code={getServerConfig(activeServerConfigTab)} />
+                  <CodeBlock
+                    code={
+                      typeof getServerConfig(activeServerConfigTab) === "string"
+                        ? getServerConfig(activeServerConfigTab).replace(
+                            /{mcpName}/g,
+                            mcp.name.toLowerCase().replace(/\s/g, ""),
+                          )
+                        : getServerConfig(activeServerConfigTab)
+                    }
+                  />
                 )}
               </div>
             </div>
