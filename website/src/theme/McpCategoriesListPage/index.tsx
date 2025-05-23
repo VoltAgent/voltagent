@@ -1,13 +1,12 @@
 import React from "react";
 import Layout from "@theme/Layout";
 import Link from "@docusaurus/Link";
-import { BoltIcon, TagIcon } from "@heroicons/react/24/outline";
+import { TagIcon } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import { DotPattern } from "../../components/ui/dot-pattern";
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
 export default function McpCategoriesListPage(props) {
   const { categories } = props;
-  const { siteConfig } = useDocusaurusContext();
 
   return (
     <Layout
@@ -18,22 +17,26 @@ export default function McpCategoriesListPage(props) {
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
 
         {/* Header */}
-        <div className="w-full mb-12 text-center">
-          <div className="flex items-center justify-center mb-4">
+
+        <div className="flex  mb-12 flex-col items-center  relative">
+          <div className="flex items-baseline justify-start">
             <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
-              <BoltIcon className="w-6 h-6 text-[#00d992]" />
+              <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
             </div>
-            <span className="text-3xl md:text-4xl font-bold text-[#00d992]">
-              {siteConfig.title || "voltagent"}
+            <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
+              voltagent
             </span>
             <div className="relative">
-              <span className="ml-2 text-xl md:text-2xl font-medium text-gray-400">
+              <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
+                MCP
+              </span>
+              <span className="absolute -top-7 -right-16 px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-md font-medium border border-emerald-400/30">
                 Categories
               </span>
             </div>
           </div>
-          <p className="text-gray-400 text-lg">
-            Browse Model Context Providers by category
+          <p className="mt-2 text-center self-center text-gray-400 text-sm">
+            Browse Model Context Providers by Category
           </p>
         </div>
 
@@ -43,50 +46,46 @@ export default function McpCategoriesListPage(props) {
             <Link
               key={category.name}
               to={category.permalink}
-              className="group border-solid border-[#1e293b]/40 rounded-lg overflow-hidden transition-all duration-300 hover:border-[#00d992]/60 hover:shadow-[0_0_15px_rgba(0,217,146,0.15)]"
-              style={{
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-                backgroundColor: "rgba(58, 66, 89, 0.3)",
-              }}
+              className="group p-4 sm:p-5 rounded-lg border border-solid border-white/10 no-underline hover:border-[#00d992]/70 transition-colors flex flex-col  bg-white/5 hover:shadow-lg hover:shadow-[#00d992]/5"
             >
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-[#222735] rounded-full flex items-center justify-center mr-3">
-                    <TagIcon className="w-6 h-6 text-[#00d992]" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white">
-                    {category.name}
-                  </h3>
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center mr-3">
+                  <TagIcon className="w-4 h-4 text-[#00d992]" />
                 </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">
-                    {category.count}{" "}
-                    {category.count === 1 ? "provider" : "providers"}
-                  </span>
-
-                  <div className="px-3 py-1 bg-[#1e293b] text-gray-300 rounded-full text-sm">
-                    Browse
-                  </div>
-                </div>
-
-                {/* Preview items */}
-                {category.items && category.items.length > 0 && (
-                  <div className="mt-5 space-y-2">
-                    <div className="w-full h-px bg-gray-700 mb-3"></div>
-                    <p className="text-xs text-gray-500 mb-2">Top providers:</p>
-                    {category.items.slice(0, 3).map((item) => (
-                      <div
-                        key={item.metadata.id}
-                        className="text-sm text-gray-300 truncate"
-                      >
-                        • {item.metadata.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <span className="text-lg font-bold text-emerald-400">
+                  {category.name}
+                </span>
               </div>
+
+              <div className="flex justify-between items-center mt-3">
+                <span className="text-sm text-gray-400">
+                  {category.count}{" "}
+                  {category.count === 1 ? "provider" : "providers"}
+                </span>
+
+                <div className="px-2.5 py-1 bg-white/5 text-gray-300 rounded-full text-xs">
+                  Browse
+                </div>
+              </div>
+
+              {/* Preview items */}
+              {category.items && category.items.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  <div className="w-full h-px bg-white/10" />
+                  <p className="text-xs text-gray-500 mt-1.5 mb-1">
+                    Top providers:
+                  </p>
+                  {category.items.slice(0, 3).map((item) => (
+                    <div
+                      key={item.metadata.id}
+                      className="text-xs text-gray-300 truncate flex items-center"
+                    >
+                      <span className="inline-block w-1 h-1 bg-[#00d992] rounded-full mr-2" />
+                      {item.metadata.name}
+                    </div>
+                  ))}
+                </div>
+              )}
             </Link>
           ))}
         </div>

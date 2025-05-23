@@ -17,7 +17,6 @@ import Unlisted from "@theme/Unlisted";
 import clsx from "clsx";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import { Footer } from "@site/src/components/footer";
-
 function BlogPostPageContent({ children }) {
   const { metadata, toc } = useBlogPost();
   const { nextItem, prevItem, frontMatter, unlisted } = metadata;
