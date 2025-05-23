@@ -9,6 +9,7 @@ authors: omeraplak
 
 import AgentFeaturePrioritizer from '@site/src/components/blog-widgets/AgentFeaturePrioritizer';
 import CostOptimizationCalculator from '@site/src/components/blog-widgets/CostOptimizationCalculator';
+import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 
 _"ChatGPT is amazing, but how do I integrate this into my own app?"_ - How many developers have heard this question...
 
@@ -57,6 +58,39 @@ Those who choose **no-code/low-code platforms** start fast but then hit walls. V
 **Agent frameworks** find a place between the two. They give you ready-made building blocks but don't compromise on flexibility. Production-ready, best practices built-in but you can customize however you want.
 
 When deciding which option to go with, think about these: How's the programming language support? Is switching between LLM providers easy? What's the performance and scalability situation? How's the documentation quality? Is there community support? Are error handling, monitoring, security features good?
+
+<ZoomableMermaid chart={`
+graph TD
+A[AI Development Approach] --> B[DIY Approach]
+A --> C[Agent Frameworks]
+A --> D[No-Code Platforms]
+
+    B --> B1[Full Control]
+    B --> B2[Custom Code]
+    B --> B3[High Complexity]
+    B --> B4[Slow Development]
+
+    C --> C1[Ready Components]
+    C --> C2[Best Practices]
+    C --> C3[Flexible]
+    C --> C4[Fast Development]
+
+    D --> D1[Visual Interface]
+    D --> D2[No Coding]
+    D --> D3[Quick Start]
+    D --> D4[Limited Features]
+
+    classDef root fill:#ecfdf5
+    classDef framework fill:#10b981
+    classDef diy fill:#6ee7b7
+    classDef nocode fill:#a7f3d0
+
+    class A root
+    class C,C1,C2,C3,C4 framework
+    class B,B1,B2,B3,B4 diy
+    class D,D1,D2,D3,D4 nocode
+
+`} />
 
 :::tip
 Start with a framework if you're building your first AI application. You can always migrate to custom solutions later when you understand your specific needs better.
@@ -115,6 +149,91 @@ console.log(response.text);
 ```
 
 But the beautiful thing is, you can do much more complex stuff with the same API. For example **structured data generation**:
+
+```typescript
+// Define schema for data extraction
+const personSchema = z.object({
+  name: z.string().describe("Full name"),
+  age: z.number(),
+  occupation: z.string(),
+  skills: z.array(z.string()),
+});
+
+// Ask agent for structured data
+const result = await agent.generateObject(
+  "Create a profile for a software developer named Alex.",
+  personSchema
+);
+
+console.log(result.object); // Type-safe JSON object
+```
+
+This feature is especially useful for **data extraction** and **API responses**. You're not saying "give it in JSON format" and then trying to parse it anymore.
+
+### Tool Integration: Real World Connection
+
+We added MCP (Model Context Protocol) support in the tool integration part. This really became a game-changing feature:
+
+```typescript
+// Define local tool
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get the current weather for a specific location",
+  parameters: z.object({
+    location: z.string().describe("City and state"),
+  }),
+  execute: async ({ location }) => {
+    // Real API call would be here
+    return { temperature: 72, conditions: "sunny" };
+  },
+});
+
+// Connect to external MCP server
+const mcpTools = await connectMCPServer("stdio://weather-server");
+
+const agent = new Agent({
+  name: "Weather Assistant",
+  instructions: "Can check weather using available tools",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: [weatherTool, ...mcpTools], // Combine both
+});
+```
+
+The agent decides which tool to use when by itself. You just say "How's the weather in London?", it calls its own tool and brings you the result.
+
+### Memory: Context Management
+
+We also carefully designed the memory system. It's critical for agents to remember past conversations:
+
+```typescript
+import { LibSQLStorage } from "@voltagent/core";
+
+const memoryStorage = new LibSQLStorage({
+  url: "file:local.db",
+});
+
+const agent = new Agent({
+  name: "Assistant with Memory",
+  instructions: "Remember our conversation history",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  memory: memoryStorage, // Automatic context management
+});
+
+// First conversation
+await agent.generateText("My name is John and I love pizza");
+
+// Next conversation - will remember the previous one
+await agent.generateText("What's my favorite food?");
+// "Based on our previous conversation, you love pizza!"
+```
+
+The framework automatically fetches relevant context and saves new interactions.
+
+### Multi-Agent Systems
+
+One of my favorite features is the sub-agent system. You can break complex tasks into small pieces and distribute them to expert agents:
 
 ```typescript
 // Define schema for data extraction
