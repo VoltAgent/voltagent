@@ -368,24 +368,19 @@ export default function McpItemPage(props) {
         </div>
 
         {/* Tab Navigation - Upper level provider tabs */}
-        {tabOptions.length > 1 && (
-          <div className="mb-8 w-full">
-            <div
-              className="flex border-b border-gray-800 w-full"
-              role="tablist"
-            >
-              {tabOptions.map((tab) => (
-                <Tab
-                  key={tab.id}
-                  active={activeProviderTab === tab.id}
-                  onClick={() => setActiveProviderTab(tab.id)}
-                >
-                  {tab.name}
-                </Tab>
-              ))}
-            </div>
+        <div className="mb-8 w-full">
+          <div className="flex border-b border-gray-800 w-full" role="tablist">
+            {tabOptions.map((tab) => (
+              <Tab
+                key={tab.id}
+                active={activeProviderTab === tab.id}
+                onClick={() => setActiveProviderTab(tab.id)}
+              >
+                {tab.name}
+              </Tab>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Mobile layout - MCP Info appears before Tools section */}
         <div className="block lg:hidden mb-8">
