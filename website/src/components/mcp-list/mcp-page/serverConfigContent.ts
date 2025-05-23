@@ -35,6 +35,29 @@ export const providerServerConfigs: {
 } = {
   zapier: {
     // Voltagent: (Defaults to currentTab.serverConfig from tabOptions if not specified here)
+    voltagent: `const mcpConfig = new MCPConfiguration({
+  servers: {
+    // Example 1: HTTP-based server (e.g., external web service or API gateway)
+    server: {
+      type: "http",
+      url: "https://actions.zapier.com/mcp/YOUR_MCP_KEY/sse",
+    },
+  },
+});
+
+// Fetch all tools from all configured MCP servers into a flat array
+const allTools = await mcpConfig.getTools();
+
+const agent = new Agent({
+  name: "MCP Agent",
+  instructions: "An assistant that can use MCP tools configured at startup",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: allTools, // Add MCP tools during initialization
+});
+
+// Remember to disconnect later
+// await mcpConfig.disconnect();`,
     cursor: [
       {
         type: "heading",

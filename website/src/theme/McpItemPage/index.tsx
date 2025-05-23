@@ -63,6 +63,7 @@ const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
           key={`link-${match[0]}`}
           to={match[0]}
           className="text-[#00d992] hover:underline"
+          rel="nofollow"
         >
           {match[0]}
         </Link>,

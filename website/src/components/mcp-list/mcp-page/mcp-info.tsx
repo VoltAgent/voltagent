@@ -81,7 +81,7 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
           href={currentMetadata.link}
           className="w-full flex items-center justify-center px-3 no-underline py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm font-medium rounded transition-all duration-200 hover:bg-emerald-400/30 hover:scale-[1.02] group-hover:bg-emerald-400/30 group-hover:scale-[1.01]"
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener noreferrer nofollow"
           aria-label="View MCP Documentation"
         >
           Visit {mcp.name} {currentTab.name} Docs
