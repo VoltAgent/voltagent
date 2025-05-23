@@ -20,8 +20,8 @@ new VoltAgent({
     agent,
   },
   telemetryExporter: new VoltAgentExporter({
-    publicKey: "pk_3078221058f9ba8ce79d28095038a01a",
-    secretKey: "sk_live_aab8c9b476201f1d52a55a6e379e0107ba84fe8b4bbc7c50028b880b0a6549d2",
-    baseUrl: "https://server.voltagent.dev",
+    publicKey: "pk_99684d8896d389bffd0fa6c864136f66",
+    secretKey: "sk_live_f0bcb67326ec1093c8e1b0454b99db4e2167150f2e7e15464b4ea6b54ddf5743",
+    baseUrl: "http://localhost:3003",
   }),
 });

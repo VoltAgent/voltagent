@@ -18,6 +18,7 @@ export interface ExportAgentHistoryPayload {
   steps?: HistoryStep[];
   userId?: string;
   conversationId?: string;
+  model?: string;
 }
 
 export interface ExportTimelineEventPayload {
@@ -106,7 +107,6 @@ export class TelemetryServiceApiClient {
   public async exportAgentHistory(
     historyEntryData: ExportAgentHistoryPayload,
   ): Promise<{ id: string }> {
-    // Yeni API ile uyumlu olacak şekilde history girdisi oluştur
     const payload = {
       id: historyEntryData.history_id,
       agent_id: historyEntryData.agent_id,
@@ -116,14 +116,13 @@ export class TelemetryServiceApiClient {
       usage: historyEntryData.usage,
       userId: historyEntryData.userId,
       conversationId: historyEntryData.conversationId,
-      // Şu an doğrudan karşılığı olmayan alanları metadata'ya ekle
       metadata: {
         error: historyEntryData.error,
         agent_snapshot: historyEntryData.agent_snapshot,
         steps: historyEntryData.steps,
         history_id: historyEntryData.history_id,
       },
-      model: "model-name-here",
+      model: historyEntryData.model,
       timestamp: new Date(historyEntryData.timestamp).toISOString(),
     };
 
@@ -150,6 +149,8 @@ export class TelemetryServiceApiClient {
       affected_node_id: event.affectedNodeId,
       parent_event_id: event.parentEventId,
       tags: event.tags,
+      input: event.input,
+      output: event.output,
       metadata: {
         ...event.metadata,
       },

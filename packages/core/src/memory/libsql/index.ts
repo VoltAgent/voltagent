@@ -151,11 +151,10 @@ export class LibSQLStorage implements Memory {
    * @returns Promise that resolves when initialization is complete
    */
   private async initializeDatabase(): Promise<void> {
-    try {
-      // Create conversations table if it doesn't exist
-      const conversationsTableName = `${this.options.tablePrefix}_conversations`;
+    // Create conversations table if it doesn't exist
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE TABLE IF NOT EXISTS ${conversationsTableName} (
           id TEXT PRIMARY KEY,
           resource_id TEXT NOT NULL,
@@ -166,10 +165,10 @@ export class LibSQLStorage implements Memory {
         )
       `);
 
-      // Create messages table if it doesn't exist
-      const messagesTableName = `${this.options.tablePrefix}_messages`;
+    // Create messages table if it doesn't exist
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE TABLE IF NOT EXISTS ${messagesTableName} (
           user_id TEXT NOT NULL,
           conversation_id TEXT NOT NULL,
@@ -182,19 +181,24 @@ export class LibSQLStorage implements Memory {
         )
       `);
 
-      // Create agent_history table
-      const historyTableName = `${this.options.tablePrefix}_agent_history`;
-      await this.client.execute(`
+    // Create agent_history table
+    const historyTableName = `${this.options.tablePrefix}_agent_history`;
+    await this.client.execute(`
         CREATE TABLE IF NOT EXISTS ${historyTableName} (
-          key TEXT PRIMARY KEY,
-          value TEXT NOT NULL,
-          agent_id TEXT
+          id TEXT PRIMARY KEY,
+          agent_id TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
+          status TEXT,
+          input TEXT,
+          output TEXT,
+          usage TEXT,
+          metadata TEXT
         )
       `);
 
-      // Create agent_history_steps table
-      const historyStepsTableName = `${this.options.tablePrefix}_agent_history_steps`;
-      await this.client.execute(`
+    // Create agent_history_steps table
+    const historyStepsTableName = `${this.options.tablePrefix}_agent_history_steps`;
+    await this.client.execute(`
         CREATE TABLE IF NOT EXISTS ${historyStepsTableName} (
           key TEXT PRIMARY KEY,
           value TEXT NOT NULL,
@@ -203,12 +207,11 @@ export class LibSQLStorage implements Memory {
         )
       `);
 
-      // Create timeline events table
-      const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
-      await this.client.execute(`
+    // Create timeline events table
+    const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
+    await this.client.execute(`
         CREATE TABLE IF NOT EXISTS ${timelineEventsTableName} (
-          key TEXT PRIMARY KEY,
-          value TEXT NOT NULL,
+          id TEXT PRIMARY KEY,
           history_id TEXT NOT NULL,
           agent_id TEXT,
           event_type TEXT NOT NULL,
@@ -222,80 +225,100 @@ export class LibSQLStorage implements Memory {
           affected_node_id TEXT,
           parent_event_id TEXT,
           tags TEXT,
-          has_input BOOLEAN DEFAULT 0,
-          has_output BOOLEAN DEFAULT 0,
-          has_error BOOLEAN DEFAULT 0,
-          has_metadata BOOLEAN DEFAULT 0
+          input TEXT,
+          output TEXT,
+          error TEXT,
+          metadata TEXT
         )
       `);
 
-      // Create index for faster queries
-      await this.client.execute(`
+    // Create index for faster queries
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${messagesTableName}_lookup
         ON ${messagesTableName}(user_id, conversation_id, created_at)
       `);
 
-      // Create index for conversations
-      await this.client.execute(`
+    // Create index for conversations
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${conversationsTableName}_resource
         ON ${conversationsTableName}(resource_id)
       `);
 
-      // Create indexes for history tables
+    // Create indexes for history tables
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${historyStepsTableName}_history_id 
         ON ${historyStepsTableName}(history_id)
       `);
 
-      // Create indexes for agent_id for more efficient querying
-      await this.client.execute(`
+    // Create indexes for agent_id for more efficient querying
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${historyTableName}_agent_id 
         ON ${historyTableName}(agent_id)
       `);
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${historyStepsTableName}_agent_id 
         ON ${historyStepsTableName}(agent_id)
       `);
 
-      // Create indexes for timeline events table
-      await this.client.execute(`
+    // Create indexes for timeline events table
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_history_id 
         ON ${timelineEventsTableName}(history_id)
       `);
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_agent_id 
         ON ${timelineEventsTableName}(agent_id)
       `);
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_event_type 
         ON ${timelineEventsTableName}(event_type)
       `);
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_event_name 
         ON ${timelineEventsTableName}(event_name)
       `);
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_parent_event_id 
         ON ${timelineEventsTableName}(parent_event_id)
       `);
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_status 
         ON ${timelineEventsTableName}(status)
       `);
 
-      await this.client.execute(`
+    await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_affected_node_id 
         ON ${timelineEventsTableName}(affected_node_id)
       `);
 
-      this.debug("Database initialized successfully");
+    this.debug("Database initialized successfully");
+
+    try {
+      const result = await this.migrateAgentHistoryData({
+        restoreFromBackup: false,
+      });
+
+      if (result.success) {
+        if ((result.migratedCount || 0) > 0) {
+          console.log(`${result.migratedCount} records successfully migrated`);
+        }
+      } else {
+        console.error("Migration error:", result.error);
+
+        // Restore from backup in case of error
+        const restoreResult = await this.migrateAgentHistoryData({});
+
+        if (restoreResult.success) {
+          console.log("Successfully restored from backup");
+        }
+      }
     } catch (error) {
       this.debug("Error initializing database:", error);
       throw new Error("Failed to initialize LibSQL database");
@@ -473,7 +496,10 @@ export class LibSQLStorage implements Memory {
   /**
    * Clear messages from memory
    */
-  async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
+  async clearMessages(options: {
+    userId: string;
+    conversationId?: string;
+  }): Promise<void> {
     // Wait for database initialization
     await this.initialized;
 
@@ -515,19 +541,33 @@ export class LibSQLStorage implements Memory {
     try {
       const tableName = `${this.options.tablePrefix}_agent_history`;
 
-      // Serialize value to JSON
-      const serializedValue = JSON.stringify(value);
+      // Normalize the data for storage
+      const inputJSON = value.input ? JSON.stringify(value.input) : null;
+      const outputJSON = value.output ? JSON.stringify(value.output) : null;
+      const usageJSON = value.usage ? JSON.stringify(value.usage) : null;
+      const metadataJSON = null; // Initially empty for backwards compatibility
 
-      // Insert or replace the value with agent_id
+      // Insert or replace with the structured format
       await this.client.execute({
-        sql: `INSERT OR REPLACE INTO ${tableName} (key, value, agent_id) VALUES (?, ?, ?)`,
-        args: [key, serializedValue, agentId],
+        sql: `INSERT OR REPLACE INTO ${tableName} 
+					(id, agent_id, timestamp, status, input, output, usage, metadata) 
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          key, // id
+          agentId, // agent_id
+          value.timestamp ? value.timestamp.toISOString() : new Date().toISOString(), // timestamp
+          value.status || null, // status
+          inputJSON, // input
+          outputJSON, // output
+          usageJSON, // usage
+          metadataJSON, // metadata
+        ],
       });
 
-      this.debug(`Set agent_history:${key} for agent ${agentId}`);
+      this.debug(`Set agent_history entry with ID ${key} for agent ${agentId}`);
     } catch (error) {
-      this.debug(`Error setting agent_history:${key}`, error);
-      throw new Error(`Failed to set value in agent_history`);
+      this.debug("Error setting agent_history entry:", error);
+      throw new Error("Failed to set value in agent_history");
     }
   }
 
@@ -606,29 +646,23 @@ export class LibSQLStorage implements Memory {
     try {
       const tableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
 
-      // Serialize value to JSON
-      const serializedValue = JSON.stringify(value);
-
-      // JSON dizisini dizeye dönüştürme
-      const tagsString = value.tags ? JSON.stringify(value.tags) : null;
-
-      // Boolean flag'ler
-      const hasInput = value.input ? 1 : 0;
-      const hasOutput = value.output ? 1 : 0;
-      const hasError = value.error ? 1 : 0;
-      const hasMetadata = value.metadata ? 1 : 0;
+      // Serialize JSON fields
+      const inputJSON = value.input ? JSON.stringify(value.input) : null;
+      const outputJSON = value.output ? JSON.stringify(value.output) : null;
+      const errorJSON = value.error ? JSON.stringify(value.error) : null;
+      const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
+      const tagsJSON = value.tags ? JSON.stringify(value.tags) : null;
 
       // Insert with all the indexed fields
       await this.client.execute({
         sql: `INSERT OR REPLACE INTO ${tableName} 
-              (key, value, history_id, agent_id, event_type, event_name, 
+              (id, history_id, agent_id, event_type, event_name, 
                start_time, end_time, status, status_message, level, 
                version, affected_node_id, parent_event_id, tags,
-               has_input, has_output, has_error, has_metadata) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+               input, output, error, metadata) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           key,
-          serializedValue,
           historyId,
           agentId,
           value.type,
@@ -641,18 +675,18 @@ export class LibSQLStorage implements Memory {
           value.version || null,
           value.affectedNodeId || null,
           value.parentEventId || null,
-          tagsString,
-          hasInput,
-          hasOutput,
-          hasError,
-          hasMetadata,
+          tagsJSON,
+          inputJSON,
+          outputJSON,
+          errorJSON,
+          metadataJSON,
         ],
       });
 
       this.debug(`Added timeline event ${key} for history ${historyId}`);
     } catch (error) {
-      this.debug(`Error adding timeline event: ${key}`, error);
-      throw new Error(`Failed to add timeline event`);
+      this.debug("Error adding timeline event:", error);
+      throw new Error("Failed to add timeline event");
     }
   }
 
@@ -667,9 +701,10 @@ export class LibSQLStorage implements Memory {
     try {
       const tableName = `${this.options.tablePrefix}_agent_history`;
 
-      // Get the value
+      // Get the entry from the database
       const result = await this.client.execute({
-        sql: `SELECT value FROM ${tableName} WHERE key = ?`,
+        sql: `SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
+				FROM ${tableName} WHERE id = ?`,
         args: [key],
       });
 
@@ -678,15 +713,26 @@ export class LibSQLStorage implements Memory {
         return undefined;
       }
 
-      // Parse the JSON value
-      const value = JSON.parse(result.rows[0].value as string);
+      const row = result.rows[0];
+
+      // Construct the entry object
+      const entry = {
+        id: row.id as string,
+        _agentId: row.agent_id as string, // Keep _agentId for compatibility
+        timestamp: new Date(row.timestamp as string),
+        status: row.status as string,
+        input: row.input ? JSON.parse(row.input as string) : null,
+        output: row.output ? JSON.parse(row.output as string) : null,
+        usage: row.usage ? JSON.parse(row.usage as string) : null,
+      };
+
       this.debug(`Got history entry with ID ${key}`);
 
       // Now also get related steps
       const stepsTableName = `${this.options.tablePrefix}_agent_history_steps`;
       const stepsResult = await this.client.execute({
         sql: `SELECT value FROM ${stepsTableName} WHERE history_id = ? AND agent_id = ?`,
-        args: [key, value._agentId],
+        args: [key, entry._agentId],
       });
 
       // Parse and transform steps
@@ -703,20 +749,50 @@ export class LibSQLStorage implements Memory {
       // Get timeline events
       const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
       const timelineEventsResult = await this.client.execute({
-        sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ?`,
-        args: [key, value._agentId],
+        sql: `SELECT id, event_type, event_name, start_time, end_time, 
+					status, status_message, level, version, affected_node_id, 
+					parent_event_id, tags, input, output, error, metadata 
+					FROM ${timelineEventsTableName} 
+					WHERE history_id = ? AND agent_id = ?`,
+        args: [key, entry._agentId],
       });
 
-      // Parse timeline events
+      // Parse timeline events and construct NewTimelineEvent objects
       const newEvents = timelineEventsResult.rows.map((row) => {
-        return JSON.parse(row.value as string);
+        // Parse JSON fields
+        const input = row.input ? JSON.parse(row.input as string) : undefined;
+        const output = row.output ? JSON.parse(row.output as string) : undefined;
+        const error = row.error ? JSON.parse(row.error as string) : undefined;
+        const metadata = row.metadata ? JSON.parse(row.metadata as string) : undefined;
+        const tags = row.tags ? JSON.parse(row.tags as string) : undefined;
+
+        // Construct NewTimelineEvent object
+        return {
+          id: row.id as string,
+          type: row.event_type as string,
+          name: row.event_name as string,
+          startTime: row.start_time as string,
+          endTime: row.end_time as string,
+          status: row.status as string,
+          statusMessage: row.status_message as string,
+          level: row.level as string,
+          version: row.version as string,
+          affectedNodeId: row.affected_node_id as string,
+          parentEventId: row.parent_event_id as string,
+          tags,
+          input,
+          output,
+          error,
+          metadata,
+        };
       });
 
-      // Add events, steps and newEvents to the entry
-      value.steps = steps;
-      value.newEvents = newEvents;
+      // @ts-ignore
+      entry.steps = steps;
+      // @ts-ignore
+      entry.newEvents = newEvents;
 
-      return value;
+      return entry;
     } catch (error) {
       this.debug(`Error getting history entry with ID ${key}`, error);
       return undefined;
@@ -945,14 +1021,24 @@ export class LibSQLStorage implements Memory {
     try {
       const tableName = `${this.options.tablePrefix}_agent_history`;
 
-      // Get all entries for the specified agent ID
+      // Get all entries for the specified agent ID using the new schema
       const result = await this.client.execute({
-        sql: `SELECT value FROM ${tableName} WHERE agent_id = ?`,
+        sql: `SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
+					FROM ${tableName} WHERE agent_id = ?`,
         args: [agentId],
       });
 
-      // Parse all JSON values
-      const entries = result.rows.map((row) => JSON.parse(row.value as string));
+      // Construct entry objects from rows
+      const entries = result.rows.map((row) => ({
+        id: row.id as string,
+        _agentId: row.agent_id as string, // Keep _agentId for compatibility
+        timestamp: new Date(row.timestamp as string),
+        status: row.status as string,
+        input: row.input ? JSON.parse(row.input as string) : null,
+        output: row.output ? JSON.parse(row.output as string) : null,
+        usage: row.usage ? JSON.parse(row.usage as string) : null,
+      }));
+
       this.debug(`Got all history entries for agent ${agentId} (${entries.length} items)`);
 
       // Now fetch events and steps for each entry
@@ -979,28 +1065,641 @@ export class LibSQLStorage implements Memory {
           // Get timeline events for this entry
           const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
           const timelineEventsResult = await this.client.execute({
-            sql: `SELECT value FROM ${timelineEventsTableName} WHERE history_id = ? AND agent_id = ?`,
+            sql: `SELECT id, event_type, event_name, start_time, end_time, 
+							status, status_message, level, version, affected_node_id, 
+							parent_event_id, tags, input, output, error, metadata 
+							FROM ${timelineEventsTableName} 
+							WHERE history_id = ? AND agent_id = ?`,
             args: [entry.id, agentId],
           });
 
-          // Parse timeline events
+          // Parse timeline events and construct NewTimelineEvent objects
           const newEvents = timelineEventsResult.rows.map((row) => {
-            return JSON.parse(row.value as string);
+            // Parse JSON fields
+            const input = row.input ? JSON.parse(row.input as string) : undefined;
+            const output = row.output ? JSON.parse(row.output as string) : undefined;
+            const error = row.error ? JSON.parse(row.error as string) : undefined;
+            const metadata = row.metadata ? JSON.parse(row.metadata as string) : undefined;
+            const tags = row.tags ? JSON.parse(row.tags as string) : undefined;
+
+            // Construct NewTimelineEvent object
+            return {
+              id: row.id as string,
+              type: row.event_type as string,
+              name: row.event_name as string,
+              startTime: row.start_time as string,
+              endTime: row.end_time as string,
+              status: row.status as string,
+              statusMessage: row.status_message as string,
+              level: row.level as string,
+              version: row.version as string,
+              affectedNodeId: row.affected_node_id as string,
+              parentEventId: row.parent_event_id as string,
+              tags,
+              input,
+              output,
+              error,
+              metadata,
+            };
           });
 
           // Add events, steps and newEvents to the entry
+          // @ts-ignore
           entry.steps = steps;
+          // @ts-ignore
           entry.newEvents = newEvents;
 
           return entry;
         }),
       );
 
-      // Sort by timestamp (newest first)
+      // Return completed entries
       return completeEntries;
     } catch (error) {
       this.debug(`Error getting history entries for agent ${agentId}`, error);
       return [];
+    }
+  }
+
+  /**
+   * Migrates agent history data from old structure to new structure.
+   * If migration fails, it can be rolled back using the backup mechanism.
+   *
+   * Old database structure:
+   * CREATE TABLE voltagent_memory_agent_history (
+   *   key TEXT PRIMARY KEY,
+   *   value TEXT NOT NULL,
+   *   agent_id TEXT
+   * );
+   */
+  async migrateAgentHistoryData(
+    options: {
+      createBackup?: boolean;
+      restoreFromBackup?: boolean;
+      deleteBackupAfterSuccess?: boolean;
+    } = {},
+  ): Promise<{
+    success: boolean;
+    migratedCount?: number;
+    error?: Error;
+    backupCreated?: boolean;
+  }> {
+    //await this.initialized;
+
+    const {
+      createBackup = true,
+      restoreFromBackup = false,
+      deleteBackupAfterSuccess = false,
+    } = options;
+
+    // Eski tablo ismi
+    const oldTableName = `${this.options.tablePrefix}_agent_history`;
+    // Eski tablo yedeği
+    const oldTableBackup = `${oldTableName}_backup`;
+    // Yeni tablo isimleri
+    const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
+
+    try {
+      this.debug("Starting agent history migration...");
+
+      // If restoreFromBackup option is active, restore from backup
+      if (restoreFromBackup) {
+        this.debug("Starting restoration from backup...");
+
+        // Check if backup table exists
+        const backupCheck = await this.client.execute({
+          sql: "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+          args: [oldTableBackup],
+        });
+
+        if (backupCheck.rows.length === 0) {
+          throw new Error("No backup found to restore");
+        }
+
+        // Start transaction
+        await this.client.execute("BEGIN TRANSACTION;");
+
+        // Delete current table
+        await this.client.execute(`DROP TABLE IF EXISTS ${oldTableName};`);
+
+        // Restore from backup
+        await this.client.execute(`ALTER TABLE ${oldTableBackup} RENAME TO ${oldTableName};`);
+
+        // Complete transaction
+        await this.client.execute("COMMIT;");
+
+        this.debug("Restoration from backup completed successfully");
+
+        return {
+          success: true,
+          backupCreated: false,
+        };
+      }
+
+      // First check the structure of the old table
+      const tableInfoQuery = await this.client.execute({
+        sql: "PRAGMA table_info('voltagent_memory_agent_history')",
+        args: [oldTableName],
+      });
+
+      // If the table is empty or doesn't exist, migration is not needed
+      if (tableInfoQuery.rows.length === 0) {
+        this.debug(`${oldTableName} table not found, migration not needed`);
+        return {
+          success: true,
+          migratedCount: 0,
+        };
+      }
+
+      // Check if it's an old format table or new format table
+      // Old format: key, value, agent_id
+      // New format: id, agent_id, timestamp, status, input, output, usage, metadata
+      const hasValueColumn = tableInfoQuery.rows.some((row) => row.name === "value");
+
+      if (!hasValueColumn) {
+        this.debug("Table is already in new format, migration not needed");
+        return {
+          success: true,
+          migratedCount: 0,
+        };
+      }
+
+      // Create backup
+      if (createBackup) {
+        this.debug("Creating backup...");
+
+        // Check previous backup and delete if exists
+        const backupCheck = await this.client.execute({
+          sql: "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+          args: [oldTableBackup],
+        });
+
+        if (backupCheck.rows.length > 0) {
+          await this.client.execute(`DROP TABLE IF EXISTS ${oldTableBackup};`);
+        }
+
+        // Create backup
+        await this.client.execute(
+          `CREATE TABLE ${oldTableBackup} AS SELECT * FROM ${oldTableName};`,
+        );
+
+        this.debug("Backup created successfully");
+      }
+
+      // Get all data in old format
+      const oldFormatData = await this.client.execute({
+        sql: `SELECT key, value, agent_id FROM ${oldTableName}`,
+      });
+
+      if (oldFormatData.rows.length === 0) {
+        this.debug("No data found to migrate");
+        return {
+          success: true,
+          migratedCount: 0,
+          backupCreated: createBackup,
+        };
+      }
+
+      // Create temporary table
+      const tempTableName = `${oldTableName}_temp`;
+
+      await this.client.execute(`
+        CREATE TABLE ${tempTableName} (
+          id TEXT PRIMARY KEY,
+          agent_id TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
+          status TEXT,
+          input TEXT,
+          output TEXT,
+          usage TEXT,
+          metadata TEXT
+        )
+      `);
+
+      // Start transaction
+      await this.client.execute("BEGIN TRANSACTION;");
+
+      let migratedCount = 0;
+      const migratedIds = new Set<string>();
+
+      for (const row of oldFormatData.rows) {
+        const key = row.key as string;
+        const agentId = row.agent_id as string;
+        const valueStr = row.value as string;
+
+        try {
+          // JSON verisini parse et
+          const valueObj = JSON.parse(valueStr);
+
+          // ID check
+          const id = valueObj.id || key;
+
+          // Skip if this ID has already been migrated
+          if (migratedIds.has(id)) {
+            continue;
+          }
+
+          migratedIds.add(id);
+          migratedCount++;
+
+          // Add main history record
+          const inputJSON = valueObj.input ? JSON.stringify(valueObj.input) : null;
+          const outputJSON = valueObj.output ? JSON.stringify(valueObj.output) : null;
+          const usageJSON = valueObj.usage ? JSON.stringify(valueObj.usage) : null;
+
+          await this.client.execute({
+            sql: `INSERT INTO ${tempTableName} 
+                    (id, agent_id, timestamp, status, input, output, usage, metadata) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+              id,
+              valueObj._agentId || agentId,
+              valueObj.timestamp || new Date().toISOString(),
+              valueObj.status || null,
+              inputJSON,
+              outputJSON,
+              usageJSON,
+              null,
+            ],
+          });
+          let input = "";
+
+          // Transfer events to timeline_events table
+          if (Array.isArray(valueObj.events)) {
+            for (const event of valueObj.events) {
+              try {
+                // Skip events with affectedNodeId starting with message_
+                if (event.affectedNodeId && event.affectedNodeId.startsWith("message_")) {
+                  input = event.data.input;
+                  continue;
+                }
+
+                // Convert to new timeline event format
+                const eventId = event.id || this.generateId();
+                const eventType = event.type || "unknown";
+                let eventName = event.name || "unknown";
+                const startTime = event.timestamp || event.startTime || new Date().toISOString();
+                const endTime = event.updatedAt || event.endTime || startTime;
+                let status = event.status || event.data?.status || null;
+                let inputData = null;
+
+                // Set input data correctly
+                if (event.input) {
+                  inputData = JSON.stringify(event.input);
+                } else if (event.data?.input) {
+                  inputData = JSON.stringify(event.data.input);
+                } else if (input) {
+                  inputData = JSON.stringify({ input: input });
+                }
+
+                input = "";
+
+                // Set metadata
+                let metadata = null;
+                if (event.metadata) {
+                  metadata = JSON.stringify(event.metadata);
+                } else if (event.data) {
+                  metadata = JSON.stringify(event.data);
+                }
+
+                // Special event transformations
+                if (eventType === "agent") {
+                  if (eventName === "start") {
+                    eventName = "agent:start";
+                    // @ts-ignore
+                    status = "running";
+                  } else if (eventName === "finished") {
+                    if (event.data.status === "error") {
+                      eventName = "agent:error";
+                    } else {
+                      eventName = "agent:success";
+                    }
+                  }
+
+                  // Add to timeline events table
+                  await this.client.execute({
+                    sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+                          (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+                          status, status_message, level, version, affected_node_id, parent_event_id, 
+                          tags, input, output, error, metadata)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    args: [
+                      eventId,
+                      id,
+                      valueObj._agentId || agentId,
+                      eventType,
+                      eventName,
+                      startTime,
+                      endTime,
+                      // @ts-ignore
+                      status,
+                      eventName === "agent:error" ? event.data.error.message : null,
+                      event.level || "INFO",
+                      event.version || null,
+                      event.affectedNodeId || null,
+                      event.parentEventId || null,
+                      null, // tags
+                      inputData,
+                      event.data.output ? JSON.stringify({ text: event.data.output }) : null,
+                      eventName === "agent:error" ? JSON.stringify(event.data.error) : null,
+                      metadata,
+                    ],
+                  });
+                } else if (eventType === "memory") {
+                  // memory:saveMessage -> memory:write_start and memory:write_success
+                  if (eventName === "memory:saveMessage") {
+                    // First event: memory:write_start
+                    await this.client.execute({
+                      sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+                            (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            tags, input, output, error, metadata)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      args: [
+                        eventId,
+                        id,
+                        valueObj._agentId || agentId,
+                        eventType,
+                        "memory:write_start",
+                        startTime,
+                        null, // no endTime
+                        "running",
+                        event.statusMessage || null,
+                        event.level || "INFO",
+                        event.version || null,
+                        event.affectedNodeId || null,
+                        event.parentEventId || null,
+                        null, // tags
+                        inputData,
+                        null, // no output
+                        null, // no error
+                        metadata,
+                      ],
+                    });
+
+                    // Second event: tool:success
+                    await this.client.execute({
+                      sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+                            (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            tags, input, output, error, metadata)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      args: [
+                        this.generateId(), // New ID
+                        id,
+                        valueObj._agentId || agentId,
+                        eventType,
+                        "memory:write_success",
+                        endTime, // End time
+                        endTime,
+                        "completed",
+                        event.statusMessage || null,
+                        event.level || "INFO",
+                        event.version || null,
+                        event.affectedNodeId || null,
+                        eventId, // Parent event ID
+                        null, // tags
+                        inputData,
+                        event.data.output ? JSON.stringify(event.data.output) : null,
+                        event.error ? JSON.stringify(event.error) : null,
+                        metadata,
+                      ],
+                    });
+                  }
+                  // memory:getMessages -> memory:read_start and memory:read_success
+                  else if (eventName === "memory:getMessages") {
+                    // First event: memory:read_start
+                    await this.client.execute({
+                      sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+                            (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            tags, input, output, error, metadata)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      args: [
+                        eventId,
+                        id,
+                        valueObj._agentId || agentId,
+                        eventType,
+                        "memory:read_start",
+                        startTime,
+                        null, // no endTime
+                        "running",
+                        event.statusMessage || null,
+                        event.level || "INFO",
+                        event.version || null,
+                        event.affectedNodeId || null,
+                        event.parentEventId || null,
+                        null, // tags
+                        inputData,
+                        null, // no output
+                        null, // no error
+                        metadata,
+                      ],
+                    });
+
+                    // Second event: memory:read_success
+                    await this.client.execute({
+                      sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+                            (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            tags, input, output, error, metadata)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      args: [
+                        this.generateId(), // New ID
+                        id,
+                        valueObj._agentId || agentId,
+                        eventType,
+                        "memory:read_success",
+                        endTime, // End time
+                        endTime,
+                        status,
+                        event.statusMessage || null,
+                        event.level || "INFO",
+                        event.version || null,
+                        event.affectedNodeId || null,
+                        eventId, // Parent event ID
+                        null, // tags
+                        inputData,
+                        event.data.output ? JSON.stringify(event.data.output) : null,
+                        event.error ? JSON.stringify(event.error) : null,
+                        metadata,
+                      ],
+                    });
+                  } else {
+                    // Normal addition for other memory events
+                    await this.client.execute({
+                      sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+                            (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            tags, input, output, error, metadata)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      args: [
+                        eventId,
+                        id,
+                        valueObj._agentId || agentId,
+                        eventType,
+                        eventName,
+                        startTime,
+                        endTime,
+                        status,
+                        event.statusMessage || null,
+                        event.level || "INFO",
+                        event.version || null,
+                        event.affectedNodeId || null,
+                        event.parentEventId || null,
+                        null, // tags
+                        inputData,
+                        event.output ? JSON.stringify(event.output) : null,
+                        event.error ? JSON.stringify(event.error) : null,
+                        metadata,
+                      ],
+                    });
+                  }
+                } else if (eventType === "tool") {
+                  if (eventName === "tool_working") {
+                    // First event: tool:start
+                    await this.client.execute({
+                      sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+								(id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+								status, status_message, level, version, affected_node_id, parent_event_id, 
+								tags, input, output, error, metadata)
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      args: [
+                        eventId,
+                        id,
+                        valueObj._agentId || agentId,
+                        eventType,
+                        "tool:start",
+                        startTime,
+                        null, // no endTime
+                        "running",
+                        event.statusMessage || null,
+                        event.level || "INFO",
+                        event.version || null,
+                        event.affectedNodeId || null,
+                        event.parentEventId || null,
+                        null, // tags
+                        inputData,
+                        null, // no output
+                        null, // no error
+                        JSON.stringify({
+                          displayName: event.data.metadata.toolName,
+                        }),
+                      ],
+                    });
+
+                    // Second event: tool:success
+                    await this.client.execute({
+                      sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+								(id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+								status, status_message, level, version, affected_node_id, parent_event_id, 
+								tags, input, output, error, metadata)
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      args: [
+                        this.generateId(), // New ID
+                        id,
+                        valueObj._agentId || agentId,
+                        eventType,
+                        "tool:success",
+                        endTime, // End time
+                        endTime,
+                        "completed",
+                        event.statusMessage || null,
+                        event.level || "INFO",
+                        event.version || null,
+                        event.affectedNodeId || null,
+                        eventId, // Parent event ID
+                        null, // tags
+                        inputData,
+                        event.data.output ? JSON.stringify(event.data.output) : null,
+                        event.error ? JSON.stringify(event.error) : null,
+                        JSON.stringify({
+                          displayName: event.data.metadata.toolName,
+                        }),
+                      ],
+                    });
+                  }
+                } else {
+                  // Normal addition for other event types
+                  await this.client.execute({
+                    sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
+                          (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
+                          status, status_message, level, version, affected_node_id, parent_event_id, 
+                          tags, input, output, error, metadata)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    args: [
+                      eventId,
+                      id,
+                      valueObj._agentId || agentId,
+                      eventType,
+                      eventName,
+                      startTime,
+                      endTime,
+                      status,
+                      event.statusMessage || null,
+                      event.level || "INFO",
+                      event.version || null,
+                      event.affectedNodeId || null,
+                      event.parentEventId || null,
+                      null, // tags
+                      inputData,
+                      event.output ? JSON.stringify(event.output) : null,
+                      event.error ? JSON.stringify(event.error) : null,
+                      metadata,
+                    ],
+                  });
+                }
+              } catch (error) {
+                this.debug("Error processing event:", error);
+                // Skip problematic event but continue migration
+              }
+            }
+          }
+
+          // Note: steps field is removed so it won't be processed here
+        } catch (error) {
+          this.debug(`Error processing record with ID ${key}:`, error);
+          continue; // Skip problematic records and continue
+        }
+      }
+
+      // Delete original table and rename temp table as original table
+      await this.client.execute(`DROP TABLE ${oldTableName};`);
+      await this.client.execute(`ALTER TABLE ${tempTableName} RENAME TO ${oldTableName};`);
+
+      // Recreate indexes
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${oldTableName}_agent_id 
+        ON ${oldTableName}(agent_id)
+      `);
+
+      // Complete transaction
+      await this.client.execute("COMMIT;");
+
+      this.debug(`Total ${migratedCount} records successfully migrated`);
+
+      // Should we delete the backup after success?
+      if (createBackup && deleteBackupAfterSuccess) {
+        await this.client.execute(`DROP TABLE IF EXISTS ${oldTableBackup};`);
+        this.debug("Unnecessary backup deleted");
+      }
+
+      return {
+        success: true,
+        migratedCount,
+        backupCreated: createBackup && !deleteBackupAfterSuccess,
+      };
+    } catch (error) {
+      // Rollback in case of error
+      await this.client.execute("ROLLBACK;");
+
+      this.debug("Error occurred while migrating agent history data:", error);
+
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+        backupCreated: options.createBackup,
+      };
     }
   }
 }

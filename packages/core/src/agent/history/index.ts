@@ -7,7 +7,9 @@ import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type {
   ExportAgentHistoryPayload,
   AgentHistoryUpdatableFields,
+  ExportTimelineEventPayload,
 } from "../../telemetry/client";
+import type { NewTimelineEvent } from "../../events/types";
 
 /**
  * Step information for history
@@ -56,6 +58,58 @@ export interface TimelineEvent {
    * Type of the event
    */
   type: "memory" | "tool" | "agent" | "retriever";
+}
+
+/**
+ * Parameters for adding a history entry
+ */
+export interface AddEntryParams {
+  /**
+   * Input to the agent
+   */
+  input: string | Record<string, unknown> | BaseMessage[];
+
+  /**
+   * Output from the agent
+   */
+  output: string;
+
+  /**
+   * Status of the entry
+   */
+  status: AgentStatus;
+
+  /**
+   * Steps taken during generation
+   */
+  steps?: HistoryStep[];
+
+  /**
+   * Additional options for the entry
+   */
+  options?: Partial<
+    Omit<AgentHistoryEntry, "id" | "timestamp" | "input" | "output" | "status" | "steps">
+  >;
+
+  /**
+   * Optional agent snapshot for telemetry
+   */
+  agentSnapshot?: Record<string, unknown>;
+
+  /**
+   * Optional userId for telemetry
+   */
+  userId?: string;
+
+  /**
+   * Optional conversationId for telemetry
+   */
+  conversationId?: string;
+
+  /**
+   * Optional model name for telemetry
+   */
+  model?: string;
 }
 
 /**
@@ -179,28 +233,10 @@ export class HistoryManager {
   /**
    * Add a new history entry
    *
-   * @param input - Input to the agent
-   * @param output - Output from the agent
-   * @param status - Status of the entry
-   * @param steps - Steps taken during generation
-   * @param options - Additional options for the entry
-   * @param agentSnapshot - Optional agent snapshot for telemetry
-   * @param userId - Optional userId for telemetry
-   * @param conversationId - Optional conversationId for telemetry
+   * @param params - Parameters for adding a history entry
    * @returns The new history entry
    */
-  public async addEntry(
-    input: string | Record<string, unknown> | BaseMessage[],
-    output: string,
-    status: AgentStatus,
-    steps: HistoryStep[] = [],
-    options: Partial<
-      Omit<AgentHistoryEntry, "id" | "timestamp" | "input" | "output" | "status" | "steps">
-    > = {},
-    agentSnapshot?: Record<string, unknown>,
-    userId?: string,
-    conversationId?: string,
-  ): Promise<AgentHistoryEntry> {
+  public async addEntry(params: AddEntryParams): Promise<AgentHistoryEntry> {
     if (!this.agentId) {
       throw new Error("Agent ID must be set to manage history");
     }
@@ -216,11 +252,11 @@ export class HistoryManager {
     const entry: AgentHistoryEntry = {
       id: uuidv4(),
       timestamp: entryTimestamp,
-      input,
-      output,
-      status,
-      steps,
-      ...options,
+      input: params.input,
+      output: params.output,
+      status: params.status,
+      steps: params.steps || [],
+      ...(params.options || {}),
     };
 
     await this.memoryManager.storeHistoryEntry(this.agentId, entry);
@@ -248,9 +284,10 @@ export class HistoryManager {
           output: { text: entry.output },
           steps: entry.steps,
           usage: entry.usage,
-          agent_snapshot: agentSnapshot,
-          userId: userId,
-          conversationId: conversationId,
+          agent_snapshot: params.agentSnapshot,
+          userId: params.userId,
+          conversationId: params.conversationId,
+          model: params.model,
         };
         await this.voltAgentExporter.exportHistoryEntry(historyPayload);
       } catch (telemetryError: any) {
@@ -269,6 +306,44 @@ export class HistoryManager {
     }
 
     return entry;
+  }
+
+  /**
+   * Add a new history entry
+   *
+   * @param input - Input to the agent
+   * @param output - Output from the agent
+   * @param status - Status of the entry
+   * @param steps - Steps taken during generation
+   * @param options - Additional options for the entry
+   * @param agentSnapshot - Optional agent snapshot for telemetry
+   * @param userId - Optional userId for telemetry
+   * @param conversationId - Optional conversationId for telemetry
+   * @returns The new history entry
+   * @deprecated Use addEntry with AddEntryParams object instead
+   */
+  public async addEntryLegacy(
+    input: string | Record<string, unknown> | BaseMessage[],
+    output: string,
+    status: AgentStatus,
+    steps: HistoryStep[] = [],
+    options: Partial<
+      Omit<AgentHistoryEntry, "id" | "timestamp" | "input" | "output" | "status" | "steps">
+    > = {},
+    agentSnapshot?: Record<string, unknown>,
+    userId?: string,
+    conversationId?: string,
+  ): Promise<AgentHistoryEntry> {
+    return this.addEntry({
+      input,
+      output,
+      status,
+      steps,
+      options,
+      agentSnapshot,
+      userId,
+      conversationId,
+    });
   }
 
   /**
@@ -330,22 +405,6 @@ export class HistoryManager {
   }
 
   /**
-   * Get the latest history entry
-   *
-   * @returns The latest history entry or undefined if no entries
-   */
-  public async getLatestEntry(): Promise<AgentHistoryEntry | undefined> {
-    if (!this.agentId) return undefined;
-
-    const entries = await this.getEntries();
-    if (entries.length === 0) {
-      return undefined;
-    }
-
-    return entries[0];
-  }
-
-  /**
    * Clear all history entries
    */
   public async clear(): Promise<void> {
@@ -404,103 +463,52 @@ export class HistoryManager {
   }
 
   /**
-   * Get a tracked event by ID
+   * Persists a timeline event for a history entry.
+   * This is used by the new immutable event system.
    *
    * @param historyId - ID of the history entry
-   * @param eventId - ID of the event or _trackedEventId
-   * @returns The tracked event or undefined if not found
+   * @param event - The NewTimelineEvent object to persist
+   * @returns A promise that resolves to the updated entry or undefined if an error occurs
    */
-  public async getTrackedEvent(
+  public async persistTimelineEvent(
     historyId: string,
-    eventId: string,
-  ): Promise<TimelineEvent | undefined> {
-    if (!this.agentId) return undefined;
-
-    try {
-      const entry = await this.getEntryById(historyId);
-      if (!entry || !entry.events) return undefined;
-
-      let timelineEvent = entry.events.find((event) => event.id === eventId);
-
-      if (!timelineEvent) {
-        timelineEvent = entry.events.find(
-          (event) => event.data && event.data._trackedEventId === eventId,
-        );
-      }
-
-      return timelineEvent;
-    } catch (error) {
-      console.error(`[HistoryManager] Failed to get tracked event: ${eventId}`, error);
-      return undefined;
-    }
-  }
-
-  /**
-   * Update a tracked event by ID
-   *
-   * @param historyId - ID of the history entry
-   * @param eventId - ID of the event or _trackedEventId
-   * @param updates - Updates to apply to the event
-   * @returns The updated history entry or undefined if not found
-   */
-  public async updateTrackedEvent(
-    historyId: string,
-    eventId: string,
-    updates: {
-      status?: AgentStatus;
-      data?: Record<string, unknown>;
-    },
+    event: NewTimelineEvent,
   ): Promise<AgentHistoryEntry | undefined> {
     if (!this.agentId) return undefined;
 
     try {
-      const entry = await this.getEntryById(historyId);
-      if (!entry || !entry.events) return undefined;
+      // Ensure the event has an ID
+      const eventId = event.id || crypto.randomUUID();
 
-      let eventIndex = entry.events.findIndex((event) => event.id === eventId);
+      // Ensure event has ID set for any future references
+      event.id = eventId;
 
-      if (eventIndex === -1) {
-        eventIndex = entry.events.findIndex(
-          (event) => event.data && event.data._trackedEventId === eventId,
-        );
+      // Use the memory manager to add the timeline event
+      const updatedEntry = await this.memoryManager.addTimelineEvent(
+        this.agentId,
+        historyId,
+        eventId,
+        event,
+      );
+
+      if (this.voltAgentExporter && updatedEntry && event.id) {
+        // The backend now expects the entire event object nested, likely under a 'value' key
+        // or as the main event payload itself depending on the exporter implementation.
+        // Assuming the exporter expects the event object directly:
+        const payload: ExportTimelineEventPayload = {
+          history_id: historyId,
+          event_id: eventId,
+          agent_id: this.agentId,
+          event,
+        };
+
+        // We need to ensure the type ExportTimelineEventPayload matches this structure
+        await this.voltAgentExporter.exportTimelineEvent(payload);
       }
 
-      // If event is not found, show error message and return undefined
-      if (eventIndex === -1) {
-        console.debug(`[HistoryManager] Tracked event not found: ${eventId}`);
-        return undefined;
-      }
-
-      // Copy the entry to be updated
-      const updatedEntry = { ...entry };
-
-      // Define the events array definitively
-      if (!updatedEntry.events) {
-        updatedEntry.events = [];
-        return undefined;
-      }
-
-      const originalEvent = updatedEntry.events[eventIndex];
-
-      // Update the event
-      updatedEntry.events[eventIndex] = {
-        ...originalEvent,
-        updatedAt: new Date().toISOString(),
-        data: {
-          ...originalEvent.data,
-          ...(updates.data || {}),
-        },
-      };
-
-      // Save the updated entry to the database
-      const result = await this.updateEntry(historyId, {
-        events: updatedEntry.events,
-        status: updates.status,
-      });
-
-      return result;
+      return updatedEntry;
     } catch (error) {
-      console.error(`[HistoryManager] Failed to update tracked event: ${eventId}`, error);
+      console.error("[HistoryManager] Failed to persist timeline event:", error);
       return undefined;
     }
   }

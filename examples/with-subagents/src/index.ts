@@ -33,7 +33,11 @@ const formatterAgent = new Agent({
 // Create a simple supervisor agent
 const supervisorAgent = new Agent({
   name: "Supervisor",
-  description: "Coordinates between content creation and formatting agents",
+  description: `Coordinates between content creation and formatting agents.
+  1. First ContentCreator agent will create the content.
+  2. Then Formatter agent will format the content.
+  3. Finally, the Supervisor agent will return the formatted content.
+  `,
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [contentCreatorAgent, formatterAgent],

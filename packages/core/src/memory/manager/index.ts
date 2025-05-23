@@ -9,7 +9,6 @@ import type {
   NewTimelineEvent,
   MemoryReadStartEvent,
   MemoryReadSuccessEvent,
-  MemoryReadErrorEvent,
   MemoryWriteStartEvent,
   MemoryWriteSuccessEvent,
   MemoryWriteErrorEvent,
@@ -144,7 +143,7 @@ export class MemoryManager {
         id: crypto.randomUUID(),
         name: "memory:write_success",
         type: "memory",
-        startTime: memoryWriteStartEvent.startTime,
+        startTime: new Date().toISOString(),
         endTime: new Date().toISOString(),
         status: "completed",
         input: null,
@@ -188,113 +187,6 @@ export class MemoryManager {
       await this.publishTimelineEvent(context, memoryWriteErrorEvent);
 
       console.error(`[Memory] Failed to save message:`, error);
-    }
-  }
-
-  /**
-   * Get messages from memory
-   */
-  async getMessages(
-    context: OperationContext,
-    userId?: string,
-    conversationId?: string,
-    limit = 10,
-  ): Promise<BaseMessage[]> {
-    if (!this.memory || !userId || !conversationId) return [];
-
-    // Create memory read start event for new timeline
-    const memoryReadStartEvent: MemoryReadStartEvent = {
-      id: crypto.randomUUID(),
-      name: "memory:read_start",
-      type: "memory",
-      startTime: new Date().toISOString(),
-      status: "running",
-      input: {
-        userId,
-        conversationId,
-        limit,
-      },
-      output: null,
-      error: null,
-      metadata: { displayName: "Memory", agentId: this.resourceId },
-      traceId: context.historyEntry.id,
-      affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
-    };
-
-    // Publish the memory read start event
-    await this.publishTimelineEvent(context, memoryReadStartEvent);
-
-    // Create a tracked event for this operation (legacy)
-
-    try {
-      const memoryMessages = await this.memory.getMessages({
-        userId,
-        conversationId,
-        limit,
-      });
-
-      // Let's properly define message IDs with type safety
-      const firstId = memoryMessages.length > 0 ? (memoryMessages[0] as MemoryMessage).id : null;
-      const lastId =
-        memoryMessages.length > 0
-          ? (memoryMessages[memoryMessages.length - 1] as MemoryMessage).id
-          : null;
-
-      // Create memory read success event for new timeline
-      const memoryReadSuccessEvent: MemoryReadSuccessEvent = {
-        id: crypto.randomUUID(),
-        name: "memory:read_success",
-        type: "memory",
-        startTime: memoryReadStartEvent.startTime,
-        endTime: new Date().toISOString(),
-        status: "completed",
-        input: null,
-        output: {
-          count: memoryMessages.length,
-          firstMessageId: firstId,
-          lastMessageId: lastId,
-        },
-        error: null,
-        metadata: { displayName: "Memory", agentId: this.resourceId },
-        traceId: context.historyEntry.id,
-        affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
-        parentEventId: memoryReadStartEvent.id,
-      };
-
-      // Publish the memory read success event
-      await this.publishTimelineEvent(context, memoryReadSuccessEvent);
-
-      return memoryMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-    } catch (error) {
-      // Create memory read error event for new timeline
-      const memoryReadErrorEvent: MemoryReadErrorEvent = {
-        id: crypto.randomUUID(),
-        name: "memory:read_error",
-        type: "memory",
-        startTime: memoryReadStartEvent.startTime,
-        endTime: new Date().toISOString(),
-        status: "error",
-        level: "ERROR",
-        input: null,
-        output: null,
-        error: {
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-        },
-        metadata: { displayName: "Memory", agentId: this.resourceId },
-        traceId: context.historyEntry.id,
-        affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
-        parentEventId: memoryReadStartEvent.id,
-      };
-
-      // Publish the memory read error event
-      await this.publishTimelineEvent(context, memoryReadErrorEvent);
-
-      console.error(`[Memory] Failed to get messages:`, error);
-      return [];
     }
   }
 
@@ -367,6 +259,26 @@ export class MemoryManager {
 
       // TODO: add new event for getMessages
       try {
+        const memoryReadStartEvent: MemoryReadStartEvent = {
+          id: crypto.randomUUID(),
+          name: "memory:read_start",
+          type: "memory",
+          startTime: new Date().toISOString(),
+          status: "running",
+          input: {
+            userId,
+            conversationId,
+          },
+          output: null,
+          error: null,
+          metadata: { displayName: "Memory", agentId: this.resourceId },
+          traceId: context.historyEntry.id,
+          affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+        };
+
+        // Publish the memory read start event
+        await this.publishTimelineEvent(context, memoryReadStartEvent);
+
         const memoryMessages = await this.memory.getMessages({
           userId,
           conversationId,
@@ -377,6 +289,26 @@ export class MemoryManager {
           role: m.role,
           content: m.content,
         }));
+
+        const memoryReadSuccessEvent: MemoryReadSuccessEvent = {
+          id: crypto.randomUUID(),
+          name: "memory:read_success",
+          type: "memory",
+          startTime: new Date().toISOString(),
+          endTime: new Date().toISOString(),
+          status: "completed",
+          input: {
+            userId,
+            conversationId,
+          },
+          output: messages,
+          error: null,
+          metadata: { displayName: "Memory", agentId: this.resourceId },
+          traceId: context.historyEntry.id,
+          affectedNodeId: createNodeId(NodeType.MEMORY, this.resourceId),
+        };
+
+        await this.publishTimelineEvent(context, memoryReadSuccessEvent);
       } catch (error) {
         // TODO: add new event for getMessages
         console.error(`[Memory] Failed to get messages:`, error);
@@ -665,7 +597,7 @@ export class MemoryManager {
 
       return await this.getHistoryEntryById(agentId, historyId);
     } catch (error) {
-      console.error(`[Memory] Failed to add timeline event to history entry:`, error);
+      console.error("Memory: Failed to add timeline event to history entry:", error);
       return undefined;
     }
   }

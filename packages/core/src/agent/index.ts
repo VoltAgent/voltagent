@@ -265,7 +265,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             id: crypto.randomUUID(),
             name: "retriever:success",
             type: "retriever",
-            startTime: retrieverStartTime, // Use the original start time
+            startTime: new Date().toISOString(), // Use the original start time
             endTime: new Date().toISOString(), // Current time as end time
             status: "completed",
             input: null,
@@ -293,7 +293,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             id: crypto.randomUUID(),
             name: "retriever:success",
             type: "retriever",
-            startTime: retrieverStartTime, // Use the original start time
+            startTime: new Date().toISOString(), // Use the original start time
             endTime: new Date().toISOString(), // Current time as end time
             status: "completed",
             input: null,
@@ -321,7 +321,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           id: crypto.randomUUID(),
           name: "retriever:error",
           type: "retriever",
-          startTime: retrieverStartTime, // Use the original start time
+          startTime: new Date().toISOString(), // Use the original start time
           endTime: new Date().toISOString(), // Current time as end time
           status: "error",
           level: "ERROR",
@@ -549,18 +549,19 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       modelName: this.getModelName(),
     });
 
-    const historyEntry = await this.historyManager.addEntry(
+    const historyEntry = await this.historyManager.addEntry({
       input,
-      "",
-      initialStatus,
-      [],
-      {
+      output: "",
+      status: initialStatus,
+      steps: [],
+      options: {
         events: [],
       },
-      this.getFullState(),
-      options.userId,
-      options.conversationId,
-    );
+      agentSnapshot: this.getFullState(),
+      userId: options.userId,
+      conversationId: options.conversationId,
+      model: this.getModelName(),
+    });
 
     const opContext: OperationContext = {
       operationId: historyEntry.id,
@@ -630,6 +631,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    */
   private addStepToHistory(step: StepWithContent, context: OperationContext): void {
     this.historyManager.addStepsToEntry(context.historyEntry.id, [step]);
+  }
+
+  /**
+   * Update history entry
+   */
+  private updateHistoryEntry(context: OperationContext, updates: Partial<AgentHistoryEntry>): void {
+    this.historyManager.updateEntry(context.historyEntry.id, updates);
   }
 
   /**
@@ -919,7 +927,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   id: crypto.randomUUID(),
                   name: "tool:success",
                   type: "tool",
-                  startTime: toolStartInfo.startTime, // Use the original start time
+                  startTime: new Date().toISOString(), // Use the original start time
                   endTime: new Date().toISOString(), // Current time as end time
                   status: "completed",
                   input: null,
@@ -976,7 +984,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         id: crypto.randomUUID(),
         name: "agent:success",
         type: "agent",
-        startTime: agentStartInfo.startTime, // Use the original start time
+        startTime: new Date().toISOString(), // Use the original start time
         endTime: new Date().toISOString(), // Current time as end time
         status: "completed",
         input: null,
@@ -1035,7 +1043,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         id: crypto.randomUUID(),
         name: "agent:error",
         type: "agent",
-        startTime: agentErrorStartInfo.startTime, // Use the original start time
+        startTime: new Date().toISOString(), // Use the original start time
         endTime: new Date().toISOString(), // Current time as end time
         status: "error",
         level: "ERROR",
@@ -1262,7 +1270,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 id: crypto.randomUUID(),
                 name: "tool:error",
                 type: "tool",
-                startTime: toolStartInfo.startTime, // Use the original start time
+                startTime: new Date().toISOString(), // Use the original start time
                 endTime: new Date().toISOString(), // Current time as end time
                 status: "error",
                 level: "ERROR",
@@ -1287,7 +1295,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 id: crypto.randomUUID(),
                 name: "tool:success",
                 type: "tool",
-                startTime: toolStartInfo.startTime, // Use the original start time
+                startTime: new Date().toISOString(), // Use the original start time
                 endTime: new Date().toISOString(), // Current time as end time
                 status: "completed",
                 input: null,
@@ -1348,11 +1356,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             agentStartEvent.id,
         };
 
+        this.updateHistoryEntry(operationContext, {
+          output: result.text,
+          usage: result.usage,
+          status: "completed" as any,
+        });
+
         const agentSuccessEvent: AgentSuccessEvent = {
           id: crypto.randomUUID(),
           name: "agent:success",
           type: "agent",
-          startTime: agentStartInfo.startTime, // Use the original start time
+          startTime: new Date().toISOString(), // Use the original start time
           endTime: new Date().toISOString(), // Current time as end time
           status: "completed",
           input: null,
@@ -1412,7 +1426,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               id: crypto.randomUUID(),
               name: "tool:error",
               type: "tool",
-              startTime: toolStartInfo.startTime,
+              startTime: new Date().toISOString(),
               endTime: new Date().toISOString(),
               status: "error",
               level: "ERROR",
@@ -1461,11 +1475,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           eventId: operationContext.userContext.get("agent_start_event_id") as string,
         };
 
+        this.updateHistoryEntry(operationContext, {
+          status: "error",
+        });
+
         const agentErrorEvent: AgentErrorEvent = {
           id: crypto.randomUUID(),
           name: "agent:error",
           type: "agent",
-          startTime: agentErrorStartInfo.startTime, // Use the original start time
+          startTime: new Date().toISOString(), // Use the original start time
           endTime: new Date().toISOString(), // Current time as end time
           status: "error",
           level: "ERROR",
