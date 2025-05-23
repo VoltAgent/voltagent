@@ -167,10 +167,6 @@ export class AgentEventEmitter extends EventEmitter {
     const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
     if (parentIds.length === 0) return; // No parents, nothing to propagate to
 
-    // Get source agent details to enrich the propagated event
-    const sourceAgent = AgentRegistry.getInstance().getAgent(agentId);
-    const sourceAgentName = sourceAgent?.name || agentId;
-
     // Propagate to each parent agent
     for (const parentId of parentIds) {
       const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
@@ -183,34 +179,17 @@ export class AgentEventEmitter extends EventEmitter {
 
       if (!activeParentEntry) continue;
 
-      // Create an enriched version of the event with subagent metadata
-      const enrichedEvent: NewTimelineEvent = {
-        ...event,
-        metadata: {
-          ...event.metadata,
-          isSubagent: true,
-          sourceAgentId: agentId,
-          sourceAgentName: sourceAgentName,
-          parentAgentId: parentId,
-        },
-      };
-
       // Publish the enriched event to the parent, but skip further propagation
       // to avoid propagation cycles (skipPropagation=true)
       await this.publishTimelineEvent({
         agentId: parentId,
         historyId: activeParentEntry.id,
-        event: enrichedEvent,
+        event: event,
         skipPropagation: true, // Prevent cycles
       });
 
       // Recursively propagate to higher level ancestors (grandparents)
-      await this.propagateEventToParentAgents(
-        parentId,
-        activeParentEntry.id,
-        enrichedEvent,
-        visited,
-      );
+      await this.propagateEventToParentAgents(parentId, activeParentEntry.id, event, visited);
     }
   }
 
@@ -280,12 +259,10 @@ export class AgentEventEmitter extends EventEmitter {
             error: null,
             metadata: {
               displayName: agentName,
-              agentId: agentId,
-              isSubagent: true,
-              parentAgentId: parentId,
+              id: agentId,
+              agentId: parentId,
             },
             traceId: activeParentHistoryEntry.id,
-            affectedNodeId: createNodeId(NodeType.AGENT, agentId),
           },
         });
       }
@@ -337,8 +314,8 @@ export class AgentEventEmitter extends EventEmitter {
               name: "agent:success",
               type: "agent",
               startTime:
-                typeof historyEntry.timestamp === "string"
-                  ? historyEntry.timestamp
+                typeof historyEntry.startTime === "string"
+                  ? historyEntry.startTime
                   : new Date().toISOString(),
               endTime: new Date().toISOString(),
               status: "completed",
@@ -347,12 +324,10 @@ export class AgentEventEmitter extends EventEmitter {
               error: null,
               metadata: {
                 displayName: agentName,
-                agentId: agentId,
-                isSubagent: true,
-                parentAgentId: parentId,
+                id: agentId,
+                agentId: parentId,
               },
               traceId: activeParentHistoryEntry.id,
-              affectedNodeId: createNodeId(NodeType.AGENT, agentId),
             },
           });
         } else if (historyEntry.status === "error") {
@@ -365,8 +340,8 @@ export class AgentEventEmitter extends EventEmitter {
               name: "agent:error",
               type: "agent",
               startTime:
-                typeof historyEntry.timestamp === "string"
-                  ? historyEntry.timestamp
+                typeof historyEntry.startTime === "string"
+                  ? historyEntry.startTime
                   : new Date().toISOString(),
               endTime: new Date().toISOString(),
               status: "error",
@@ -376,12 +351,10 @@ export class AgentEventEmitter extends EventEmitter {
               error: { message: historyEntry.output || "Subagent error" },
               metadata: {
                 displayName: agentName,
-                agentId: agentId,
-                isSubagent: true,
-                parentAgentId: parentId,
+                id: agentId,
+                agentId: parentId,
               },
               traceId: activeParentHistoryEntry.id,
-              affectedNodeId: createNodeId(NodeType.AGENT, agentId),
             },
           });
         }

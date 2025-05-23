@@ -431,11 +431,9 @@ export class SupabaseMemory implements Memory {
             timestamp: event.timestamp,
             name: event.name,
             type: event.type,
-            affectedNodeId: event.affectedNodeId,
             data: {
               ...event.metadata,
               _trackedEventId: event._trackedEventId,
-              affectedNodeId: event.affectedNodeId,
             },
             updatedAt: event.updated_at,
           };
@@ -544,11 +542,9 @@ export class SupabaseMemory implements Memory {
                 timestamp: event.timestamp,
                 name: event.name,
                 type: event.type,
-                affectedNodeId: event.affectedNodeId,
                 data: {
                   ...event.metadata,
                   _trackedEventId: event._trackedEventId,
-                  affectedNodeId: event.affectedNodeId,
                 },
                 updatedAt: event.updated_at,
               };

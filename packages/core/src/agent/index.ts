@@ -226,9 +226,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // If retriever exists and we have input, get context
     if (this.retriever && input && historyEntryId) {
-      // Create retriever node ID
-      const retrieverNodeId = createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id);
-
       // [NEW EVENT SYSTEM] Create a retriever:start event
       const retrieverStartTime = new Date().toISOString(); // Capture start time
       const retrieverStartEvent: RetrieverStartEvent = {
@@ -242,10 +239,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         error: null,
         metadata: {
           displayName: this.retriever?.tool.name || "Retriever",
+          id: this.retriever?.tool.name,
           agentId: this.id,
         },
         traceId: historyEntryId,
-        affectedNodeId: retrieverNodeId,
       };
 
       // Publish the retriever:start event
@@ -272,11 +269,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             output: { context },
             error: null,
             metadata: {
-              displayName: this.retriever?.tool.name || "Retriever",
+              displayName: this.retriever.tool.name || "Retriever",
+              id: this.retriever.tool.name,
               agentId: this.id,
             },
             traceId: historyEntryId,
-            affectedNodeId: retrieverNodeId,
             parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
           };
 
@@ -300,11 +297,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             output: { context: "No relevant context found" },
             error: null,
             metadata: {
-              displayName: this.retriever?.tool.name || "Retriever",
+              displayName: this.retriever.tool.name || "Retriever",
+              id: this.retriever.tool.name,
               agentId: this.id,
             },
             traceId: historyEntryId,
-            affectedNodeId: retrieverNodeId,
             parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
           };
 
@@ -332,11 +329,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
           },
           metadata: {
-            displayName: this.retriever?.tool.name || "Retriever",
+            displayName: this.retriever.tool.name || "Retriever",
+            id: this.retriever.tool.name,
             agentId: this.id,
           },
           traceId: historyEntryId,
-          affectedNodeId: retrieverNodeId,
           parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
         };
 
@@ -787,11 +784,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         error: null,
         metadata: {
           displayName: this.name,
-          agentId: this.id,
+          id: this.id,
           instructions: this.instructions,
         },
         traceId: operationContext.historyEntry.id,
-        affectedNodeId: createNodeId(NodeType.AGENT, this.id),
       };
 
       // Store agent start time in the operation context for later reference
@@ -846,9 +842,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 input: step.arguments || {},
                 output: null,
                 error: null,
-                metadata: { displayName: step.name, agentId: this.id },
+                metadata: {
+                  displayName: step.name,
+                  id: step.name,
+                  agentId: this.id,
+                },
                 traceId: operationContext.historyEntry.id,
-                affectedNodeId: createNodeId(NodeType.TOOL, step.name, this.id),
                 parentEventId: agentStartEvent.id, // Link to the agent:start event
               };
 
@@ -908,10 +907,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   },
                   metadata: {
                     displayName: toolName,
+                    id: toolName,
                     agentId: this.id,
                   },
                   traceId: operationContext.historyEntry.id,
-                  affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
                   parentEventId: toolStartInfo.eventId, // Link to the tool:start event
                 };
 
@@ -935,10 +934,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   error: null,
                   metadata: {
                     displayName: toolName,
+                    id: toolName,
                     agentId: this.id,
                   },
                   traceId: operationContext.historyEntry.id,
-                  affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
                   parentEventId: toolStartInfo.eventId, // Link to the tool:start event
                 };
 
@@ -990,10 +989,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: null,
         output: { text: response.text },
         error: null,
-        metadata: { displayName: this.name, agentId: this.id },
+        metadata: { displayName: this.name, id: this.id },
         usage: response.usage,
         traceId: operationContext.historyEntry.id,
-        affectedNodeId: createNodeId(NodeType.AGENT, this.id),
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
       };
 
@@ -1009,7 +1007,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: messages,
         output: response.text,
         usage: response.usage,
-        affectedNodeId: `agent_${this.id}`,
         status: "completed" as any,
       });
 
@@ -1057,9 +1054,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ? { originalError: String(voltagentError.originalError) }
             : {}),
         },
-        metadata: { displayName: this.name, agentId: this.id },
+        metadata: { displayName: this.name, id: this.id },
         traceId: operationContext.historyEntry.id,
-        affectedNodeId: createNodeId(NodeType.AGENT, this.id),
         parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
       };
 
@@ -1075,7 +1071,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
-        affectedNodeId: `agent_${this.id}`,
         status: "error" as any,
         metadata: {
           code: voltagentError.code,
@@ -1161,11 +1156,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       error: null,
       metadata: {
         displayName: this.name,
-        agentId: this.id,
+        id: this.id,
         instructions: this.instructions,
       },
       traceId: operationContext.historyEntry.id,
-      affectedNodeId: createNodeId(NodeType.AGENT, this.id),
     };
 
     // Store agent start time in the operation context for later reference
@@ -1219,9 +1213,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               input: chunk.arguments || {},
               output: null,
               error: null,
-              metadata: { displayName: chunk.name, agentId: this.id },
+              metadata: {
+                displayName: chunk.name,
+                id: chunk.name,
+                agentId: this.id,
+              },
               traceId: operationContext.historyEntry.id,
-              affectedNodeId: createNodeId(NodeType.TOOL, chunk.name, this.id),
               parentEventId: agentStartEvent.id, // Link to the agent:start event
             };
 
@@ -1277,9 +1274,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 input: null,
                 output: null,
                 error: chunk.result?.error || { message: "Unknown tool error" },
-                metadata: { displayName: toolName, agentId: this.id },
+                metadata: {
+                  displayName: toolName,
+                  id: toolName,
+                  agentId: this.id,
+                },
                 traceId: operationContext.historyEntry.id,
-                affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
                 parentEventId: toolStartInfo.eventId, // Link to the tool:start event
               };
 
@@ -1301,9 +1301,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 input: null,
                 output: chunk.result ?? chunk.content,
                 error: null,
-                metadata: { displayName: toolName, agentId: this.id },
+                metadata: {
+                  displayName: toolName,
+                  id: toolName,
+                  agentId: this.id,
+                },
                 traceId: operationContext.historyEntry.id,
-                affectedNodeId: createNodeId(NodeType.TOOL, toolName, this.id),
                 parentEventId: toolStartInfo.eventId, // Link to the tool:start event
               };
 
@@ -1372,10 +1375,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           input: null,
           output: { text: result.text },
           error: null,
-          metadata: { displayName: this.name, agentId: this.id },
+          metadata: { displayName: this.name, id: this.id },
           usage: result.usage,
           traceId: operationContext.historyEntry.id,
-          affectedNodeId: createNodeId(NodeType.AGENT, this.id),
           parentEventId: agentStartInfo.eventId, // Link to the agent:start event
         };
 
@@ -1391,7 +1393,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           input: messages,
           output: result.text,
           usage: result.usage,
-          affectedNodeId: `agent_${this.id}`,
           status: "completed" as any,
           metadata: {
             finishReason: result.finishReason,
@@ -1414,8 +1415,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (error.toolError) {
           const { toolCallId, toolName } = error.toolError;
           try {
-            const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
-
             // [NEW EVENT SYSTEM] Create a tool:error event for tool error during streaming
             const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
               eventId: string;
@@ -1437,9 +1436,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 code: error.code,
                 ...(error.toolError && { toolError: error.toolError }),
               },
-              metadata: { displayName: toolName, agentId: this.id },
+              metadata: {
+                displayName: toolName,
+                id: toolName,
+                agentId: this.id,
+              },
               traceId: operationContext.historyEntry.id,
-              affectedNodeId: toolNodeId,
               parentEventId: toolStartInfo.eventId,
             };
 
@@ -1495,9 +1497,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             stage: error.stage,
             ...(error.originalError ? { originalError: String(error.originalError) } : {}),
           },
-          metadata: { displayName: this.name, agentId: this.id },
+          metadata: { displayName: this.name, id: this.id },
           traceId: operationContext.historyEntry.id,
-          affectedNodeId: createNodeId(NodeType.AGENT, this.id),
           parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
         };
 
@@ -1513,7 +1514,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           input: messages,
           error: error,
           errorMessage: error.message,
-          affectedNodeId: `agent_${this.id}`,
           status: "error" as any,
           metadata: {
             code: error.code,
@@ -1627,7 +1627,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
         output: responseStr,
         usage: response.usage,
-        affectedNodeId: `agent_${this.id}`,
         status: "completed" as any,
         input: messages,
       });
@@ -1652,7 +1651,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
-        affectedNodeId: `agent_${this.id}`,
         status: "error" as any,
         metadata: {
           code: voltagentError.code,
@@ -1761,7 +1759,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             input: messages,
             output: responseStr,
             usage: result.usage,
-            affectedNodeId: `agent_${this.id}`,
             status: "completed" as any,
             metadata: {
               finishReason: result.finishReason,
@@ -1799,7 +1796,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             input: messages,
             error: error,
             errorMessage: error.message,
-            affectedNodeId: `agent_${this.id}`,
             status: "error" as any,
             metadata: {
               code: error.code,

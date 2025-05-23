@@ -274,7 +274,6 @@ describe("HistoryManager", () => {
         type: "agent" as const,
         data: {
           status: "completed",
-          affectedNodeId: "agent_test-agent",
         },
       };
 

@@ -222,7 +222,6 @@ export class LibSQLStorage implements Memory {
           status_message TEXT,
           level TEXT,
           version TEXT,
-          affected_node_id TEXT,
           parent_event_id TEXT,
           tags TEXT,
           input TEXT,
@@ -293,17 +292,10 @@ export class LibSQLStorage implements Memory {
         ON ${timelineEventsTableName}(status)
       `);
 
-    await this.client.execute(`
-        CREATE INDEX IF NOT EXISTS idx_${timelineEventsTableName}_affected_node_id 
-        ON ${timelineEventsTableName}(affected_node_id)
-      `);
-
     this.debug("Database initialized successfully");
 
     try {
-      const result = await this.migrateAgentHistoryData({
-        restoreFromBackup: false,
-      });
+      const result = await this.migrateAgentHistoryData({});
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
@@ -658,9 +650,9 @@ export class LibSQLStorage implements Memory {
         sql: `INSERT OR REPLACE INTO ${tableName} 
               (id, history_id, agent_id, event_type, event_name, 
                start_time, end_time, status, status_message, level, 
-               version, affected_node_id, parent_event_id, tags,
+               version, parent_event_id, tags,
                input, output, error, metadata) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           key,
           historyId,
@@ -673,7 +665,6 @@ export class LibSQLStorage implements Memory {
           value.statusMessage || null,
           value.level || "INFO",
           value.version || null,
-          value.affectedNodeId || null,
           value.parentEventId || null,
           tagsJSON,
           inputJSON,
@@ -750,7 +741,7 @@ export class LibSQLStorage implements Memory {
       const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
       const timelineEventsResult = await this.client.execute({
         sql: `SELECT id, event_type, event_name, start_time, end_time, 
-					status, status_message, level, version, affected_node_id, 
+					status, status_message, level, version, 
 					parent_event_id, tags, input, output, error, metadata 
 					FROM ${timelineEventsTableName} 
 					WHERE history_id = ? AND agent_id = ?`,
@@ -777,7 +768,6 @@ export class LibSQLStorage implements Memory {
           statusMessage: row.status_message as string,
           level: row.level as string,
           version: row.version as string,
-          affectedNodeId: row.affected_node_id as string,
           parentEventId: row.parent_event_id as string,
           tags,
           input,
@@ -1066,7 +1056,7 @@ export class LibSQLStorage implements Memory {
           const timelineEventsTableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
           const timelineEventsResult = await this.client.execute({
             sql: `SELECT id, event_type, event_name, start_time, end_time, 
-							status, status_message, level, version, affected_node_id, 
+							status, status_message, level, version, 
 							parent_event_id, tags, input, output, error, metadata 
 							FROM ${timelineEventsTableName} 
 							WHERE history_id = ? AND agent_id = ?`,
@@ -1093,7 +1083,6 @@ export class LibSQLStorage implements Memory {
               statusMessage: row.status_message as string,
               level: row.level as string,
               version: row.version as string,
-              affectedNodeId: row.affected_node_id as string,
               parentEventId: row.parent_event_id as string,
               tags,
               input,
@@ -1329,7 +1318,8 @@ export class LibSQLStorage implements Memory {
             for (const event of valueObj.events) {
               try {
                 // Skip events with affectedNodeId starting with message_
-                if (event.affectedNodeId && event.affectedNodeId.startsWith("message_")) {
+                // @ts-ignore
+                if (event.affectedNodeId?.startsWith("message_")) {
                   input = event.data.input;
                   continue;
                 }
@@ -1380,9 +1370,9 @@ export class LibSQLStorage implements Memory {
                   await this.client.execute({
                     sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
                           (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-                          status, status_message, level, version, affected_node_id, parent_event_id, 
+                          status, status_message, level, version, parent_event_id, 
                           tags, input, output, error, metadata)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     args: [
                       eventId,
                       id,
@@ -1396,7 +1386,6 @@ export class LibSQLStorage implements Memory {
                       eventName === "agent:error" ? event.data.error.message : null,
                       event.level || "INFO",
                       event.version || null,
-                      event.affectedNodeId || null,
                       event.parentEventId || null,
                       null, // tags
                       inputData,
@@ -1412,9 +1401,9 @@ export class LibSQLStorage implements Memory {
                     await this.client.execute({
                       sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
                             (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            status, status_message, level, version, parent_event_id, 
                             tags, input, output, error, metadata)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                       args: [
                         eventId,
                         id,
@@ -1427,7 +1416,6 @@ export class LibSQLStorage implements Memory {
                         event.statusMessage || null,
                         event.level || "INFO",
                         event.version || null,
-                        event.affectedNodeId || null,
                         event.parentEventId || null,
                         null, // tags
                         inputData,
@@ -1441,9 +1429,9 @@ export class LibSQLStorage implements Memory {
                     await this.client.execute({
                       sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
                             (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            status, status_message, level, version, parent_event_id, 
                             tags, input, output, error, metadata)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                       args: [
                         this.generateId(), // New ID
                         id,
@@ -1456,7 +1444,6 @@ export class LibSQLStorage implements Memory {
                         event.statusMessage || null,
                         event.level || "INFO",
                         event.version || null,
-                        event.affectedNodeId || null,
                         eventId, // Parent event ID
                         null, // tags
                         inputData,
@@ -1472,9 +1459,9 @@ export class LibSQLStorage implements Memory {
                     await this.client.execute({
                       sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
                             (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            status, status_message, level, version, parent_event_id, 
                             tags, input, output, error, metadata)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                       args: [
                         eventId,
                         id,
@@ -1487,7 +1474,6 @@ export class LibSQLStorage implements Memory {
                         event.statusMessage || null,
                         event.level || "INFO",
                         event.version || null,
-                        event.affectedNodeId || null,
                         event.parentEventId || null,
                         null, // tags
                         inputData,
@@ -1501,9 +1487,9 @@ export class LibSQLStorage implements Memory {
                     await this.client.execute({
                       sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
                             (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            status, status_message, level, version, parent_event_id, 
                             tags, input, output, error, metadata)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                       args: [
                         this.generateId(), // New ID
                         id,
@@ -1516,7 +1502,6 @@ export class LibSQLStorage implements Memory {
                         event.statusMessage || null,
                         event.level || "INFO",
                         event.version || null,
-                        event.affectedNodeId || null,
                         eventId, // Parent event ID
                         null, // tags
                         inputData,
@@ -1530,9 +1515,9 @@ export class LibSQLStorage implements Memory {
                     await this.client.execute({
                       sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
                             (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-                            status, status_message, level, version, affected_node_id, parent_event_id, 
+                            status, status_message, level, version, parent_event_id, 
                             tags, input, output, error, metadata)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                       args: [
                         eventId,
                         id,
@@ -1545,7 +1530,6 @@ export class LibSQLStorage implements Memory {
                         event.statusMessage || null,
                         event.level || "INFO",
                         event.version || null,
-                        event.affectedNodeId || null,
                         event.parentEventId || null,
                         null, // tags
                         inputData,
@@ -1561,9 +1545,9 @@ export class LibSQLStorage implements Memory {
                     await this.client.execute({
                       sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
 								(id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-								status, status_message, level, version, affected_node_id, parent_event_id, 
+								status, status_message, level, version, parent_event_id, 
 								tags, input, output, error, metadata)
-								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                       args: [
                         eventId,
                         id,
@@ -1576,7 +1560,6 @@ export class LibSQLStorage implements Memory {
                         event.statusMessage || null,
                         event.level || "INFO",
                         event.version || null,
-                        event.affectedNodeId || null,
                         event.parentEventId || null,
                         null, // tags
                         inputData,
@@ -1592,9 +1575,9 @@ export class LibSQLStorage implements Memory {
                     await this.client.execute({
                       sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
 								(id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-								status, status_message, level, version, affected_node_id, parent_event_id, 
+								status, status_message, level, version, parent_event_id, 
 								tags, input, output, error, metadata)
-								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                       args: [
                         this.generateId(), // New ID
                         id,
@@ -1607,7 +1590,6 @@ export class LibSQLStorage implements Memory {
                         event.statusMessage || null,
                         event.level || "INFO",
                         event.version || null,
-                        event.affectedNodeId || null,
                         eventId, // Parent event ID
                         null, // tags
                         inputData,
@@ -1624,9 +1606,9 @@ export class LibSQLStorage implements Memory {
                   await this.client.execute({
                     sql: `INSERT OR REPLACE INTO ${timelineEventsTableName}
                           (id, history_id, agent_id, event_type, event_name, start_time, end_time, 
-                          status, status_message, level, version, affected_node_id, parent_event_id, 
+                          status, status_message, level, version, parent_event_id, 
                           tags, input, output, error, metadata)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     args: [
                       eventId,
                       id,
@@ -1639,7 +1621,6 @@ export class LibSQLStorage implements Memory {
                       event.statusMessage || null,
                       event.level || "INFO",
                       event.version || null,
-                      event.affectedNodeId || null,
                       event.parentEventId || null,
                       null, // tags
                       inputData,

@@ -8,7 +8,8 @@ export interface ExportAgentHistoryPayload {
   agent_id: string;
   project_id: string;
   history_id: string;
-  timestamp: string;
+  startTime: string;
+  endTime?: string;
   status: string;
   input: Record<string, unknown>;
   output?: Record<string, unknown>;
@@ -123,7 +124,10 @@ export class TelemetryServiceApiClient {
         history_id: historyEntryData.history_id,
       },
       model: historyEntryData.model,
-      timestamp: new Date(historyEntryData.timestamp).toISOString(),
+      startTime: new Date(historyEntryData.startTime).toISOString(),
+      endTime: historyEntryData.endTime
+        ? new Date(historyEntryData.endTime).toISOString()
+        : undefined,
     };
 
     return this.request<{ id: string }>("POST", "/history", payload);
@@ -146,7 +150,6 @@ export class TelemetryServiceApiClient {
       status_message: event.statusMessage,
       level: event.level,
       version: event.version,
-      affected_node_id: event.affectedNodeId,
       parent_event_id: event.parentEventId,
       tags: event.tags,
       input: event.input,

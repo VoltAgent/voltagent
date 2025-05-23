@@ -1,4 +1,4 @@
-import { BaseMessage } from "../agent/providers";
+import type { BaseMessage } from "../agent/providers";
 
 /**
  * Event statuses
@@ -9,9 +9,6 @@ export type EventStatus = "idle" | "working" | "completed" | "error";
  * Standard event data interface
  */
 export interface StandardEventData {
-  // ID indicating which node is affected
-  affectedNodeId: string;
-
   // Event status
   status: EventStatus;
 
@@ -91,7 +88,7 @@ export interface Usage {
   totalCost?: number;
 
   // Allow for additional custom fields
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // --- Metadata Interface ---
@@ -101,11 +98,8 @@ export interface Usage {
  */
 export interface BaseEventMetadata {
   displayName?: string;
+  id: string;
   agentId?: string;
-  isSubagent?: boolean;
-  parentAgentId?: string;
-  sourceAgentId?: string;
-  sourceAgentName?: string;
 }
 
 export interface AgentStartEventMetadata extends BaseEventMetadata {
@@ -125,17 +119,16 @@ export interface BaseTimelineEvent<M = BaseEventMetadata | null> {
   status?: TimelineEventCoreStatus;
   statusMessage?: string | null;
   level?: TimelineEventCoreLevel; // Default: 'INFO'
-  input?: Record<string, any> | null;
-  output?: Record<string, any> | null;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
   metadata: M; // Strongly-typed based on 'type' and 'name'
   error?: {
     message: string;
     stack?: string;
     code?: string | number;
-    [key: string]: any; // For additional error details
+    [key: string]: unknown; // For additional error details
   } | null;
   version?: string | null; // Version of this event's schema/structure
-  affectedNodeId?: string | null; // UI Flow Node ID
   parentEventId?: string | null; // For hiyerarşik eventler
   traceId: string; // Corresponds to AgentHistoryEntry.id
   tags?: string[] | null;

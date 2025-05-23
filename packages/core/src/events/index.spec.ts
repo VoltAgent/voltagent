@@ -138,7 +138,6 @@ describe("AgentEventEmitter", () => {
           agentId: "child-agent",
         },
         traceId: "test-history-id",
-        affectedNodeId: "node-123",
       };
 
       it("should propagate events to parent agents automatically", async () => {

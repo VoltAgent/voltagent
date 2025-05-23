@@ -42,12 +42,6 @@ export interface TimelineEvent {
   name: string;
 
   /**
-   * ID of the affected Flow node
-   * Added with the new format
-   */
-  affectedNodeId?: string;
-
-  /**
    * Optional timestamp for when the event was last updated
    */
   updatedAt?: string;
@@ -124,7 +118,8 @@ export interface AgentHistoryEntry {
   /**
    * Timestamp of the entry
    */
-  timestamp: Date;
+  startTime: Date;
+  endTime?: Date;
 
   /**
    * Original input to the agent
@@ -251,7 +246,7 @@ export class HistoryManager {
     const entryTimestamp = new Date();
     const entry: AgentHistoryEntry = {
       id: uuidv4(),
-      timestamp: entryTimestamp,
+      startTime: entryTimestamp,
       input: params.input,
       output: params.output,
       status: params.status,
@@ -278,7 +273,8 @@ export class HistoryManager {
           agent_id: this.agentId,
           project_id: this.voltAgentExporter.publicKey,
           history_id: entry.id,
-          timestamp: entry.timestamp.toISOString(),
+          startTime: entry.startTime.toISOString(),
+          endTime: entry.endTime?.toISOString(),
           status: entry.status,
           input: sanitizedInput,
           output: { text: entry.output },
@@ -306,44 +302,6 @@ export class HistoryManager {
     }
 
     return entry;
-  }
-
-  /**
-   * Add a new history entry
-   *
-   * @param input - Input to the agent
-   * @param output - Output from the agent
-   * @param status - Status of the entry
-   * @param steps - Steps taken during generation
-   * @param options - Additional options for the entry
-   * @param agentSnapshot - Optional agent snapshot for telemetry
-   * @param userId - Optional userId for telemetry
-   * @param conversationId - Optional conversationId for telemetry
-   * @returns The new history entry
-   * @deprecated Use addEntry with AddEntryParams object instead
-   */
-  public async addEntryLegacy(
-    input: string | Record<string, unknown> | BaseMessage[],
-    output: string,
-    status: AgentStatus,
-    steps: HistoryStep[] = [],
-    options: Partial<
-      Omit<AgentHistoryEntry, "id" | "timestamp" | "input" | "output" | "status" | "steps">
-    > = {},
-    agentSnapshot?: Record<string, unknown>,
-    userId?: string,
-    conversationId?: string,
-  ): Promise<AgentHistoryEntry> {
-    return this.addEntry({
-      input,
-      output,
-      status,
-      steps,
-      options,
-      agentSnapshot,
-      userId,
-      conversationId,
-    });
   }
 
   /**

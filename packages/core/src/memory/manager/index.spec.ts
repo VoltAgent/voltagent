@@ -681,7 +681,6 @@ describe("MemoryManager - History Management", () => {
       name: "test-event",
       type: "agent",
       data: {
-        affectedNodeId: "agent_test-agent",
         status: "completed",
       },
     };
