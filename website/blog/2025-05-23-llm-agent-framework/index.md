@@ -1,5 +1,5 @@
 ---
-title: What LLM Agent Framework Look Like in 2025
+title: What an LLM Agent Framework Looks Like in 2025
 description: Why is building real AI applications from LLMs so hard? Discover how agent frameworks solve this problem and explore the future of modern AI development.
 tags: [llm, frameworks]
 slug: llm-agent-framework
