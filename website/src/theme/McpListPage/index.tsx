@@ -8,7 +8,6 @@ import {
 import { BoltIcon } from "@heroicons/react/24/solid";
 import Link from "@docusaurus/Link";
 import { DotPattern } from "../../components/ui/dot-pattern";
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { getLogoComponent } from "../../utils/logo-helper";
 
 // MCP Card Component
@@ -65,7 +64,6 @@ const MCPCard = ({ mcp }) => {
 
 export default function McpListPage(props) {
   const { items } = props;
-  const { siteConfig } = useDocusaurusContext();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Filter MCPs based on search term
@@ -102,13 +100,13 @@ export default function McpListPage(props) {
                 <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
                   MCP
                 </span>
-                <span className="absolute -top-6 -right-4 sm:-right-16 px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-md font-medium border border-emerald-400/30">
-                  Providers
+                <span className="absolute -top-6 -right-12 landing-sm:-right-16 px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-md font-medium border border-emerald-400/30">
+                  Directory
                 </span>
               </div>
             </div>
             <p className="mt-2 text-center self-center text-gray-400 text-sm">
-              Enhance your agents with popular services
+              Connect your agents to popular services
             </p>
           </div>
 
@@ -120,12 +118,12 @@ export default function McpListPage(props) {
               className="text-center sm:text-left md:ml-8"
             >
               <p className="text-sm sm:text-base md:text-lg text-[#dcdcdc] mb-3 sm:mb-4">
-                Model Context Providers are the most popular integration servers
-                in the AI ecosystem.
+                A curated directory of the most widely-used Model Context
+                Providers (MCPs) in the AI ecosystem.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-gray-400">
                 <span className="text-[#00d992] font-bold text-base sm:text-lg">
-                  Choose a provider
+                  Choose a server
                 </span>{" "}
                 to see usage guide and documentation.
               </p>
