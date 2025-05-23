@@ -82,6 +82,9 @@ export function Footer() {
               <li>
                 <FooterLink href="/docs/">Docs</FooterLink>
               </li>
+              <li>
+                <FooterLink href="/mcp/">MCP Directory</FooterLink>
+              </li>
             </ul>
           </div>
 
