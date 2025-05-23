@@ -32,6 +32,56 @@ const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
     );
   };
 
+  // Function to make URLs clickable in text
+  const makeLinksClickable = (text) => {
+    if (typeof text !== "string") return text;
+
+    // URL regex pattern to identify links
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+
+    // Use regex match with indices to properly replace URLs with link components
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    // Create a new regex for each execution to maintain lastIndex state
+    const regex = new RegExp(urlPattern);
+
+    // Execute regex and store result in match
+    match = regex.exec(text);
+
+    // Continue while we have matches
+    while (match !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      // Add the link component
+      parts.push(
+        <Link
+          key={`link-${match[0]}`}
+          to={match[0]}
+          className="text-[#00d992] hover:underline"
+        >
+          {match[0]}
+        </Link>,
+      );
+
+      lastIndex = regex.lastIndex;
+
+      // Get next match
+      match = regex.exec(text);
+    }
+
+    // Add remaining text after the last match
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts;
+  };
+
   return (
     <div className="space-y-4">
       {contentItems.map((item, index) => {
@@ -52,7 +102,7 @@ const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
               </p>
               {processedValue && (
                 <p className="text-gray-300 landing-sm:text-sm text-xs mt-1">
-                  {processedValue}
+                  {makeLinksClickable(processedValue)}
                 </p>
               )}
             </div>
@@ -68,7 +118,7 @@ const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
                 </p>
               )}
               <p className="text-gray-300 landing-sm:text-sm text-xs">
-                {processedValue}
+                {makeLinksClickable(processedValue)}
               </p>
             </div>
           );
