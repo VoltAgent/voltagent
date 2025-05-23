@@ -140,6 +140,14 @@ export default function Navbar() {
             >
               BLOG
             </Link>
+            <Link
+              to="/showcase/"
+              className={`${styles.navLink} ${
+                isActive("/blog/") ? styles.active : ""
+              }`}
+            >
+              SHOWCASE
+            </Link>
           </div>
         </div>
         <div className={styles.navbarRight}>
