@@ -47,7 +47,7 @@ This visual-first approach to observability isn't just a nice-to-have; it fundam
 
 ## Why VoltAgent?
 
-As outlined in our [Manifesto](/manifesto), VoltAgent was born from our own experiences. We wanted the flexibility of code combined with the insightful visualization often found in visual tools, but without the lock-in. We believe the JavaScript ecosystem deserves dedicated, powerful AI tooling.
+As outlined in our [Manifesto](/about), VoltAgent was born from our own experiences. We wanted the flexibility of code combined with the insightful visualization often found in visual tools, but without the lock-in. We believe the JavaScript ecosystem deserves dedicated, powerful AI tooling.
 
 VoltAgent is our answer – a tool built _by_ JS developers, _for_ JS developers, aiming to make AI development less daunting and more productive.
 

@@ -108,12 +108,12 @@ export default function Navbar() {
               </div>
             </div>
             <Link
-              to="/manifesto/"
+              to="/about/"
               className={`${styles.navLink} ${
-                isActive("/manifesto/") ? styles.active : ""
+                isActive("/about/") ? styles.active : ""
               }`}
             >
-              MANIFESTO
+              ABOUT US
             </Link>
             <Link
               to="/docs/"
@@ -298,12 +298,12 @@ export default function Navbar() {
             </div>
           </div>
           <Link
-            to="/manifesto/"
+            to="/about/"
             className={`${styles.mobileNavLink} ${
-              isActive("/manifesto/") ? styles.active : ""
+              isActive("/about/") ? styles.active : ""
             }`}
           >
-            MANIFESTO
+            ABOUT US
           </Link>
           <Link
             to="/docs/"
