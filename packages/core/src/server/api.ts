@@ -1,8 +1,7 @@
-import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
-import { z } from "zod";
+import type { z } from "zod";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import type { AgentHistoryEntry } from "../agent/history";
@@ -25,10 +24,10 @@ import {
   type ErrorSchema,
   type TextResponseSchema,
   type ObjectResponseSchema,
-  type AgentResponseSchema,
   type TextRequestSchema,
   type ObjectRequestSchema,
 } from "./api.routes";
+import { jsonSchemaToZod } from "@n8n/json-schema-to-zod";
 
 const app = new OpenAPIHono();
 
@@ -393,7 +392,8 @@ app.openapi(objectRoute, async (c) => {
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
-    const response = await agent.generateObject(input, schema, options);
+    const schemaInZodObject = jsonSchemaToZod(schema);
+    const response = await agent.generateObject(input, schemaInZodObject, options);
     return c.json({ success: true, data: response } satisfies z.infer<typeof ObjectResponseSchema>);
   } catch (error) {
     return c.json(
@@ -426,12 +426,12 @@ app.openapi(streamObjectRoute, async (c) => {
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
-    const agentStream = await agent.streamObject(input, schema, options);
+    const schemaInZodObject = jsonSchemaToZod(schema);
+    const agentStream = await agent.streamObject(input, schemaInZodObject, options);
 
     const sseStream = new ReadableStream({
       async start(controller) {
-        const reader = agentStream.getReader();
-        const decoder = new TextDecoder();
+        const reader = agentStream.objectStream.getReader();
 
         try {
           while (true) {
@@ -445,8 +445,8 @@ app.openapi(streamObjectRoute, async (c) => {
               controller.enqueue(`data: ${JSON.stringify(completionData)}\n\n`);
               break;
             }
-            const chunkString = decoder.decode(value, { stream: true });
-            controller.enqueue(`data: ${chunkString}\n\n`);
+            // Since value is already a JavaScript object, we can stringify it directly
+            controller.enqueue(`data: ${JSON.stringify(value)}\n\n`);
           }
           controller.close();
         } catch (error) {

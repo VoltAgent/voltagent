@@ -81,8 +81,6 @@ While the Swagger UI (`/ui`) provides the most comprehensive details, here's a b
 
 :::warning[Object Generation Schema Mismatch]
 Please note that while the API documentation for `/object` and `/stream-object` specifies that the `schema` parameter should be a standard JSON Schema object, the current backend implementation (`Agent.generateObject`, `Agent.streamObject`) still expects a Zod schema instance.
-
-Sending a JSON Schema object via the API will currently result in a runtime error on the backend. This is a known issue tracked for a future backend update. Until then, generating objects via the raw API requires careful handling or using the agent directly within your TypeScript code where you can pass a Zod schema.
 :::
 
 ## Authentication

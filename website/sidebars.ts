@@ -71,6 +71,7 @@ const sidebars: SidebarsConfig = {
         "providers/google-ai",
         "providers/groq-ai",
         "providers/xsai",
+        "providers/anthropic-ai",
       ],
     },
     {
