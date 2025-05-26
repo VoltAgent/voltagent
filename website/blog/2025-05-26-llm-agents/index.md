@@ -8,6 +8,8 @@ authors: omeraplak
 ---
 
 import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
+import AgentArchitectureExplorer from '@site/src/components/blog-widgets/AgentArchitectureExplorer';
+import AgentCapabilitiesMatrix from '@site/src/components/blog-widgets/AgentCapabilitiesMatrix';
 
 "This ChatGPT thing is nice and all, but how do I make something I can actually use in real life?"
 
@@ -80,6 +82,8 @@ participant M as Memory
 
 As you can see, even such a simple question goes through a lot of steps in the agent. Dealing with this orchestration process is really tough.
 
+<AgentArchitectureExplorer />
+
 ## Modern Agents' Superpowers
 
 **Multi-Step Reasoning**
@@ -97,6 +101,8 @@ Not only text, they can process voice, pictures, even video.
 **Structured Output**
 
 JSON, XML, custom formats. Anything you desire, they can spit it out.
+
+<AgentCapabilitiesMatrix />
 
 ## Here's the Problem: Why Is Building Agents So Hard?
 
@@ -123,15 +129,9 @@ Fortunately, there is something better today.
 
 ## VoltAgent: A Framework Built for Developers
 
-When I initially came across VoltAgent, I cried out "Finally!" Because I found exactly what I was looking for: a solution that is _flexible but not complex_.
+That's exactly why we built [VoltAgent](https://github.com/VoltAgent/voltagent/). After struggling with these challenges for months, we realized developers needed something different: a solution that is _flexible but not complex_.
 
-:::info VoltAgent's Mission
-VoltAgent is an innovative AI agent platform for software developers that keeps the flexibility of building from scratch while maintaining the velocity of out-of-the-box solutions.
-:::
-
-### What Is VoltAgent?
-
-In short, VoltAgent is a developer-focused AI agent toolkit. It provides the freedom of coding from scratch along with productivity by using pre-existing solutions.
+VoltAgent is our developer-focused AI agent toolkit. We designed it to provide the freedom of coding from scratch along with productivity by using pre-existing solutions.
 
 ### Why Is It Different?
 
@@ -172,7 +172,7 @@ const response = await agent.generateText("How's the weather today?");
 
 ### Tool System
 
-VoltAgent's tool system is genuinely _awesome_. Example:
+Our tool system is designed to be intuitive and powerful. Here's how it works:
 
 ```tsx
 import { createTool } from "@voltagent/core";
@@ -220,7 +220,7 @@ participant API as WeatherAPI
 `}
 />
 
-This flow shows you how VoltAgent's tool system works. Quite simple and self-explanatory, isn't it?
+This flow demonstrates how our tool system orchestrates different components. We designed it to be simple and self-explanatory.
 
 ### Memory Management
 
@@ -275,7 +275,7 @@ Without memory, each conversation must start all over again. Even if the user sa
 
 ### VoltAgent Console: Game Changer
 
-This is actually fantastic. With VoltAgent Console, you can visually inspect your agents:
+We built VoltAgent Console to solve a critical problem in agent development. With it, you can visually inspect your agents:
 
 - Preview conversation flows
 - Debug calls to tools
