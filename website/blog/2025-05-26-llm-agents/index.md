@@ -3,7 +3,7 @@ title: What are LLM Agents?
 description: How to develop real AI applications with LLM agents? We'll be looking at how agent frameworks work.
 tags: [llm]
 slug: llm-agents
-image: https://cdn.voltagent.dev/2025-05-23-llm-agent-framework/social.png
+image: https://cdn.voltagent.dev/2025-05-26-llm-agents/social.png
 authors: omeraplak
 ---
 
