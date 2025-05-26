@@ -60,6 +60,85 @@ async function main() {
 main().catch(console.error);
 ```
 
+## Multi-Agent Tracking
+
+Track multiple AI agents working together in the same workflow using a shared `historyId`:
+
+```typescript
+import { randomUUID } from "node:crypto";
+
+async function multiAgentWorkflow() {
+  // Generate a shared history ID for all agents
+  const sharedHistoryId = randomUUID();
+
+  // Marketing Agent
+  const { text: copy } = await generateText({
+    model: openai("gpt-4o-mini"),
+    prompt: "Write marketing copy for a new product",
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        historyId: sharedHistoryId, // Shared history
+        agentId: "marketing-agent",
+        userId: "user-123",
+      },
+    },
+  });
+
+  // Quality Check Agent
+  const { object: qualityCheck } = await generateObject({
+    model: openai("gpt-4o-mini"),
+    schema: z.object({
+      score: z.number(),
+      recommendation: z.string(),
+    }),
+    prompt: `Evaluate this marketing copy: ${copy}`,
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        historyId: sharedHistoryId, // Same shared history
+        agentId: "quality-checker",
+        parentAgentId: "marketing-agent", // Hierarchy
+        userId: "user-123",
+      },
+    },
+  });
+
+  // Improvement Agent (if needed)
+  if (qualityCheck.score < 7) {
+    const { text: improvedCopy } = await generateText({
+      model: openai("gpt-4o-mini"),
+      prompt: `Improve this copy: ${copy}. ${qualityCheck.recommendation}`,
+      experimental_telemetry: {
+        isEnabled: true,
+        metadata: {
+          historyId: sharedHistoryId, // Same shared history
+          agentId: "improvement-agent",
+          parentAgentId: "marketing-agent", // Hierarchy
+          userId: "user-123",
+        },
+      },
+    });
+  }
+}
+```
+
+### Agent Hierarchy
+
+Use `parentAgentId` to create agent hierarchies in VoltAgent dashboard:
+
+```typescript
+experimental_telemetry: {
+  isEnabled: true,
+  metadata: {
+    historyId: "shared-workflow-id",
+    agentId: "child-agent",
+    parentAgentId: "parent-agent", // Creates hierarchy
+    agentDisplayName: "Custom Agent Name", // Optional display name
+  },
+}
+```
+
 ## Configuration Options
 
 ```typescript
@@ -107,10 +186,16 @@ const result = await generateText({
   experimental_telemetry: {
     isEnabled: true,
     metadata: {
-      // Custom metadata that will appear in VoltAgent
-      "agent.id": "my-custom-agent",
-      "user.id": "user-123",
-      "session.id": "session-456",
+      // Standard VoltAgent metadata
+      historyId: "my-workflow-123",
+      agentId: "my-custom-agent",
+      parentAgentId: "parent-agent", // Optional hierarchy
+      agentDisplayName: "My Custom Agent", // Optional display name
+      userId: "user-123",
+      conversationId: "session-456",
+      tags: ["marketing", "automation"], // Custom tags
+
+      // Any custom metadata
       "custom.feature": "experimental",
     },
   },
@@ -132,6 +217,8 @@ const exporter = new VoltAgentExporter({
 ## Features
 
 - ✅ **Type-safe**: Full TypeScript support with proper event types
+- ✅ **Multi-agent support**: Track multiple agents in the same workflow
+- ✅ **Agent hierarchies**: Create parent-child agent relationships
 - ✅ **Framework-agnostic**: Uses OpenTelemetry standard for compatibility
 - ✅ **Automatic mapping**: Converts Vercel AI spans to VoltAgent events
 - ✅ **Batch processing**: Efficient event batching and flushing
@@ -148,6 +235,7 @@ const exporter = new VoltAgentExporter({
 - Embedding generations
 - Multi-step conversations
 - Custom metadata injection
+- Multi-agent workflows
 
 ## Advanced Usage
 

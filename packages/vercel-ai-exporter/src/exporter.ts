@@ -42,6 +42,17 @@ interface TraceMetadata {
 }
 
 /**
+ * Agent information structure for multi-agent tracking
+ */
+interface AgentInfo {
+  agentId: string;
+  parentAgentId?: string;
+  displayName?: string;
+  startTime: string;
+  spans: ReadableSpan[];
+}
+
+/**
  * VoltAgent OpenTelemetry Exporter for Vercel AI SDK
  *
  * This exporter converts OpenTelemetry spans from Vercel AI SDK into VoltAgent timeline events.
@@ -51,8 +62,11 @@ export class VoltAgentExporter implements SpanExporter {
   private readonly sdk: VoltAgentSDK;
   private readonly debug: boolean;
 
-  // Track active histories by traceId
+  // Track active histories by historyId (from telemetry metadata)
   private activeHistories = new Map<string, VoltAgentHistoryWrapper>();
+
+  // Track agents within each trace for multi-agent support
+  private traceAgents = new Map<string, Map<string, AgentInfo>>();
 
   constructor(options: VoltAgentExporterOptions) {
     this.debug = options.debug ?? false;
@@ -103,6 +117,9 @@ export class VoltAgentExporter implements SpanExporter {
 
       this.logDebug(`Processed ${traceSpanMap.size} traces.`);
 
+      // Force flush after processing all spans (like Langfuse does)
+      await this.sdk.flush();
+
       resultCallback({ code: ExportResultCode.SUCCESS });
     } catch (err) {
       this.logDebug("Error exporting spans:", err);
@@ -115,15 +132,23 @@ export class VoltAgentExporter implements SpanExporter {
 
   private async processTraceSpans(traceId: string, spans: ReadableSpan[]): Promise<void> {
     try {
-      // Find or create history for this trace
-      let history = this.activeHistories.get(traceId);
-
       // Extract trace metadata once for the entire trace
       const traceMetadata = this.extractTraceMetadata(spans);
+
+      // Get historyId from metadata, fallback to traceId
+      const historyId = (traceMetadata.metadata?.historyId as string) || traceId;
+
+      // Discover and organize agents within this trace
+      const agentsInTrace = this.discoverAgentsInTrace(spans);
+      this.traceAgents.set(traceId, agentsInTrace);
+
+      // Find or create history for this historyId
+      let history = this.activeHistories.get(historyId);
 
       if (!history) {
         // Find root span
         const rootSpan = this.findRootSpan(spans);
+        const rootAgent = this.findRootAgent(agentsInTrace);
 
         // Parse model parameters and completion start time from root span
         const modelParameters = rootSpan ? this.parseModelParameters(rootSpan.attributes) : {};
@@ -141,9 +166,10 @@ export class VoltAgentExporter implements SpanExporter {
           ...(completionStartTime && { completionStartTime }),
         };
 
-        // Create new history
+        // Create new history with historyId as key
         history = await this.sdk.createHistory({
-          agent_id: traceMetadata.agentId ?? "no-named-ai-agent",
+          id: historyId,
+          agent_id: rootAgent?.agentId ?? traceMetadata.agentId ?? "no-named-ai-agent",
           input: this.parseSpanInput(rootSpan),
           metadata: combinedMetadata,
           userId: traceMetadata.userId,
@@ -158,31 +184,51 @@ export class VoltAgentExporter implements SpanExporter {
           version: "1.0.0",
         });
 
-        this.activeHistories.set(traceId, history);
-        this.logDebug(`Created new history for trace ${traceId}`);
+        this.activeHistories.set(historyId, history);
+        this.logDebug(
+          `Created new history ${historyId} for trace ${traceId} with ${agentsInTrace.size} agents`,
+        );
+      } else {
+        this.logDebug(
+          `Using existing history ${historyId} for trace ${traceId} with ${agentsInTrace.size} agents`,
+        );
       }
 
-      // Find root span for agent events
-      const rootSpan = this.findRootSpan(spans);
-
-      // Process each span as VoltAgent events, passing trace metadata
+      // Process each span as VoltAgent events
       for (const span of spans) {
-        await this.processSpanAsVoltAgentEvents(history, span, traceMetadata, span === rootSpan);
+        const spanAgentId = this.extractAgentIdFromSpan(span, spans);
+        const agentInfo = agentsInTrace.get(spanAgentId);
+        const isRootSpan = this.findRootSpan(spans) === span;
+
+        await this.processSpanAsVoltAgentEvents(
+          history,
+          span,
+          traceMetadata,
+          agentInfo,
+          isRootSpan,
+        );
       }
 
-      // Check if trace is complete
+      // Check if this trace is complete and update history accordingly
       if (this.isTraceComplete(spans)) {
+        const rootSpan = this.findRootSpan(spans);
         const finalOutput = rootSpan ? this.parseSpanOutput(rootSpan) : undefined;
+        const finalUsage = this.parseUsage(rootSpan?.attributes ?? {});
+        const endTime = rootSpan?.endTime ? this.hrTimeToISOString(rootSpan.endTime) : undefined;
 
+        // Complete the history for this trace
         history.end({
           output: finalOutput,
-          usage: this.parseUsage(rootSpan?.attributes ?? {}),
-          endTime: rootSpan?.endTime ? this.hrTimeToISOString(rootSpan.endTime) : undefined,
+          usage: finalUsage,
+          endTime: endTime,
+          status: "completed",
         });
 
-        this.activeHistories.delete(traceId);
-        this.logDebug(`Completed trace ${traceId}`);
+        this.logDebug(`Trace ${traceId} completed and history ${historyId} ended`);
       }
+
+      // Clean up trace agents after processing
+      this.traceAgents.delete(traceId);
     } catch (error) {
       this.logDebug(`Error processing trace ${traceId}:`, error);
     }
@@ -192,6 +238,7 @@ export class VoltAgentExporter implements SpanExporter {
     history: VoltAgentHistoryWrapper,
     span: ReadableSpan,
     traceMetadata: TraceMetadata,
+    agentInfo?: AgentInfo,
     isRootSpan = false,
   ): Promise<void> {
     const spanType = this.getSpanType(span);
@@ -204,22 +251,22 @@ export class VoltAgentExporter implements SpanExporter {
 
     switch (spanType) {
       case "generation":
-        // Only create agent events for root generation span
-        if (isRootSpan) {
-          await this.processGenerationSpan(
-            history,
-            span,
-            {
-              startTime,
-              endTime,
-              spanId,
-              input,
-              output,
-              metadata,
-            },
-            traceMetadata,
-          );
-        }
+        // Create agent events for each agent's generation spans
+        await this.processGenerationSpan(
+          history,
+          span,
+          {
+            startTime,
+            endTime,
+            spanId,
+            input,
+            output,
+            metadata,
+          },
+          traceMetadata,
+          agentInfo,
+          isRootSpan,
+        );
         break;
 
       case "tool":
@@ -236,12 +283,8 @@ export class VoltAgentExporter implements SpanExporter {
             metadata,
           },
           traceMetadata,
+          agentInfo,
         );
-        break;
-
-      case "embedding":
-        // Map to retriever events (if we had this case)
-        this.logDebug(`Embedding span not implemented: ${span.name}`);
         break;
 
       default:
@@ -254,36 +297,42 @@ export class VoltAgentExporter implements SpanExporter {
     span: ReadableSpan,
     data: SpanData,
     traceMetadata: TraceMetadata,
+    agentInfo?: AgentInfo,
+    _isRootSpan = false,
   ): Promise<void> {
-    // Use trace metadata agentId first, then fall back to span metadata, then default
-    const agentId = traceMetadata.agentId ?? "vercel-ai-agent";
-    const displayName = (data.metadata.displayName as string) ?? span.name;
+    // Use agent info first, then trace metadata, then defaults
+    const agentId = agentInfo?.agentId ?? traceMetadata.agentId ?? "vercel-ai-agent";
+    const displayName =
+      agentInfo?.displayName ?? (data.metadata.displayName as string) ?? span.name;
     const usage = this.parseUsage(span.attributes);
     const modelParameters = this.parseModelParameters(span.attributes);
     const completionStartTime = this.parseCompletionStartTime(span, data.startTime);
 
-    // Agent start event
-    const startEvent = {
-      name: "agent:start" as const,
-      type: "agent" as const,
-      startTime: data.startTime,
-      status: "running" as const,
-      input: {
-        input: Array.isArray(data.input)
-          ? data.input
-          : JSON.stringify(JSON.parse(data.input as string).messages) || "",
-      },
-      metadata: {
-        displayName,
-        id: agentId,
-        instructions: data.metadata.instructions as string,
-        usage,
-        modelParameters,
-        completionStartTime,
-      },
-    };
+    // For multi-agent scenarios, create agent:start event for each new agent
+    // Check if this is the first generation span for this agent
+    if (agentInfo && this.isFirstGenerationSpanForAgent(span, agentInfo)) {
+      const agentStartEvent = {
+        name: "agent:start" as const,
+        type: "agent" as const,
+        startTime: agentInfo.startTime,
+        status: "running" as const,
+        input: {
+          input: data.input,
+        },
+        metadata: {
+          displayName,
+          id: agentId,
+          ...(agentInfo.parentAgentId && { agentId: agentInfo.parentAgentId }),
+          instructions: data.metadata.instructions as string,
+          usage,
+          modelParameters,
+          completionStartTime,
+        },
+      };
 
-    history.addEvent(startEvent);
+      history.addEvent(agentStartEvent);
+      this.logDebug(`Added agent:start event for agent: ${agentId}`);
+    }
 
     // Agent completion event (if span is finished)
     if (data.endTime) {
@@ -300,6 +349,9 @@ export class VoltAgentExporter implements SpanExporter {
           metadata: {
             displayName,
             id: agentId,
+            ...(agentInfo?.parentAgentId && {
+              agentId: agentInfo.parentAgentId,
+            }),
             usage,
             modelParameters,
             completionStartTime,
@@ -311,23 +363,30 @@ export class VoltAgentExporter implements SpanExporter {
 
         history.addEvent(errorEvent);
       } else {
-        const successEvent = {
-          name: "agent:success" as const,
-          type: "agent" as const,
-          startTime: data.endTime,
-          endTime: data.endTime,
-          status: "completed" as const,
-          output: data.output as Record<string, unknown> | null,
-          metadata: {
-            displayName,
-            id: agentId,
-            usage,
-            modelParameters,
-            completionStartTime,
-          },
-        };
+        // Only add success event if this is the last generation span for this agent
+        if (agentInfo && this.isLastGenerationSpanForAgent(span, agentInfo)) {
+          const successEvent = {
+            name: "agent:success" as const,
+            type: "agent" as const,
+            startTime: data.endTime,
+            endTime: data.endTime,
+            status: "completed" as const,
+            output: data.output as Record<string, unknown> | null,
+            metadata: {
+              displayName,
+              id: agentId,
+              ...(agentInfo.parentAgentId && {
+                agentId: agentInfo.parentAgentId,
+              }),
+              usage,
+              modelParameters,
+              completionStartTime,
+            },
+          };
 
-        history.addEvent(successEvent);
+          history.addEvent(successEvent);
+          this.logDebug(`Added agent:success event for agent: ${agentId}`);
+        }
       }
     }
   }
@@ -337,10 +396,15 @@ export class VoltAgentExporter implements SpanExporter {
     span: ReadableSpan,
     data: SpanData,
     traceMetadata: TraceMetadata,
+    agentInfo?: AgentInfo,
   ): Promise<void> {
     const toolName = (data.metadata.toolName as string) ?? span.name;
-    // Use trace metadata agentId first, then fall back to span metadata, then default
-    const agentId = traceMetadata.agentId ?? "vercel-ai-agent";
+    // Use agent info first, then trace metadata, then defaults
+    const agentId = agentInfo?.agentId ?? traceMetadata.agentId ?? "vercel-ai-agent";
+
+    this.logDebug(
+      `Processing tool span: ${toolName}, agentId: ${agentId}, agentInfo: ${agentInfo ? "found" : "not found"}, span agentId: ${span.attributes["ai.telemetry.metadata.agentId"] ?? "not found"}`,
+    );
 
     // Tool start event
     const startEvent = {
@@ -423,7 +487,7 @@ export class VoltAgentExporter implements SpanExporter {
     return spans[0]; // Fallback to first span
   }
 
-  private getSpanType(span: ReadableSpan): "generation" | "tool" | "embedding" | "unknown" {
+  private getSpanType(span: ReadableSpan): "generation" | "tool" | "unknown" {
     const spanName = span.name.toLowerCase();
 
     if (spanName.includes("generate") || spanName.includes("stream")) {
@@ -434,16 +498,7 @@ export class VoltAgentExporter implements SpanExporter {
       return "tool";
     }
 
-    if (spanName.includes("embed") || spanName.includes("embedding")) {
-      return "embedding";
-    }
-
     return "unknown";
-  }
-
-  private isTraceComplete(spans: ReadableSpan[]): boolean {
-    // Check if all spans in the trace are completed
-    return spans.every((span) => span.endTime && span.endTime[0] > 0);
   }
 
   private extractTraceMetadata(spans: ReadableSpan[]): {
@@ -462,22 +517,14 @@ export class VoltAgentExporter implements SpanExporter {
       const attrs = span.attributes;
 
       // Extract standard metadata
-      if (attrs["ai.telemetry.metadata.agent.id"]) {
-        agentId = String(attrs["ai.telemetry.metadata.agent.id"]);
+      if (attrs["ai.telemetry.metadata.agentId"]) {
+        agentId = String(attrs["ai.telemetry.metadata.agentId"]);
       }
-      if (attrs["ai.telemetry.metadata.user.id"] || attrs["ai.telemetry.metadata.enduser.id"]) {
-        userId = String(
-          attrs["ai.telemetry.metadata.user.id"] || attrs["ai.telemetry.metadata.enduser.id"],
-        );
+      if (attrs["ai.telemetry.metadata.userId"]) {
+        userId = String(attrs["ai.telemetry.metadata.userId"]);
       }
-      if (
-        attrs["ai.telemetry.metadata.session.id"] ||
-        attrs["ai.telemetry.metadata.conversation.id"]
-      ) {
-        conversationId = String(
-          attrs["ai.telemetry.metadata.session.id"] ||
-            attrs["ai.telemetry.metadata.conversation.id"],
-        );
+      if (attrs["ai.telemetry.metadata.conversationId"]) {
+        conversationId = String(attrs["ai.telemetry.metadata.conversationId"]);
       }
 
       // Extract custom metadata with prefix
@@ -566,8 +613,8 @@ export class VoltAgentExporter implements SpanExporter {
     if (attrs["ai.telemetry.metadata.agent.name"]) {
       metadata.displayName = attrs["ai.telemetry.metadata.agent.name"];
     }
-    if (attrs["ai.telemetry.metadata.agent.id"]) {
-      metadata.agentId = attrs["ai.telemetry.metadata.agent.id"];
+    if (attrs["ai.telemetry.metadata.agentId"]) {
+      metadata.agentId = attrs["ai.telemetry.metadata.agentId"];
     }
 
     // Extract custom metadata
@@ -700,13 +747,16 @@ export class VoltAgentExporter implements SpanExporter {
   async forceFlush(): Promise<void> {
     this.logDebug("Force flushing VoltAgent SDK...");
 
-    // End any remaining active histories
-    for (const [traceId, history] of this.activeHistories) {
+    // End any remaining active histories (only on force flush/shutdown)
+    for (const [historyId, history] of this.activeHistories) {
       try {
-        history.end({});
-        this.logDebug(`Force completed trace ${traceId}`);
+        history.end({
+          status: "completed",
+          endTime: new Date().toISOString(),
+        });
+        this.logDebug(`Force completed history ${historyId}`);
       } catch (error) {
-        this.logDebug(`Error force completing trace ${traceId}:`, error);
+        this.logDebug(`Error force completing history ${historyId}:`, error);
       }
     }
 
@@ -719,5 +769,151 @@ export class VoltAgentExporter implements SpanExporter {
   async shutdown(): Promise<void> {
     this.logDebug("Shutting down VoltAgent exporter...");
     await this.forceFlush();
+  }
+
+  // New utility methods for multi-agent support
+
+  private discoverAgentsInTrace(spans: ReadableSpan[]): Map<string, AgentInfo> {
+    const agents = new Map<string, AgentInfo>();
+
+    for (const span of spans) {
+      const agentId = this.extractAgentIdFromSpan(span, spans);
+      const parentAgentId = this.extractParentAgentIdFromSpan(span);
+      const displayName = this.extractAgentDisplayNameFromSpan(span);
+
+      if (!agents.has(agentId)) {
+        agents.set(agentId, {
+          agentId,
+          parentAgentId,
+          displayName,
+          startTime: this.hrTimeToISOString(span.startTime),
+          spans: [],
+        });
+      }
+
+      const agent = agents.get(agentId);
+      if (agent) {
+        agent.spans.push(span);
+      }
+    }
+
+    this.logDebug(`Discovered ${agents.size} agents in trace:`, Array.from(agents.keys()));
+    return agents;
+  }
+
+  private findRootAgent(agents: Map<string, AgentInfo>): AgentInfo | undefined {
+    // Find agent with no parentAgentId (root agent)
+    for (const agent of agents.values()) {
+      if (!agent.parentAgentId) {
+        return agent;
+      }
+    }
+
+    // Fallback to first agent
+    return agents.values().next().value;
+  }
+
+  private extractAgentIdFromSpan(span: ReadableSpan, allSpans?: ReadableSpan[]): string {
+    const attrs = span.attributes;
+    const spanType = this.getSpanType(span);
+
+    // Try to get agentId from telemetry metadata
+    if (attrs["ai.telemetry.metadata.agentId"]) {
+      const agentId = String(attrs["ai.telemetry.metadata.agentId"]);
+      this.logDebug(`Found agentId in span attributes for ${spanType} span: ${agentId}`);
+      return agentId;
+    }
+
+    // For tool calls, try to get agentId from parent span
+    if (allSpans && spanType === "tool") {
+      const parentSpanId = this.getParentSpanId(span);
+      if (parentSpanId) {
+        const parentSpan = allSpans.find((s) => s.spanContext().spanId === parentSpanId);
+        if (parentSpan?.attributes["ai.telemetry.metadata.agentId"]) {
+          const agentId = String(parentSpan.attributes["ai.telemetry.metadata.agentId"]);
+          this.logDebug(`Found agentId from parent span for tool span: ${agentId}`);
+          return agentId;
+        }
+      }
+
+      // If no parent agentId found, try to find agentId from any generation span in the same trace
+      for (const otherSpan of allSpans) {
+        if (
+          this.getSpanType(otherSpan) === "generation" &&
+          otherSpan.attributes["ai.telemetry.metadata.agentId"]
+        ) {
+          const agentId = String(otherSpan.attributes["ai.telemetry.metadata.agentId"]);
+          this.logDebug(`Found agentId from generation span for tool span: ${agentId}`);
+          return agentId;
+        }
+      }
+
+      this.logDebug("No agentId found for tool span, using default");
+    }
+
+    // Fallback to default agent id
+    this.logDebug(`Using default agentId for ${spanType} span`);
+    return "vercel-ai-agent";
+  }
+
+  private extractParentAgentIdFromSpan(span: ReadableSpan): string | undefined {
+    const attrs = span.attributes;
+
+    // Try to get parentAgentId from telemetry metadata
+    if (attrs["ai.telemetry.metadata.parentAgentId"]) {
+      return String(attrs["ai.telemetry.metadata.parentAgentId"]);
+    }
+
+    return undefined;
+  }
+
+  private extractAgentDisplayNameFromSpan(span: ReadableSpan): string | undefined {
+    const attrs = span.attributes;
+
+    // Try to get display name from telemetry metadata
+    if (attrs["ai.telemetry.metadata.agentDisplayName"]) {
+      return String(attrs["ai.telemetry.metadata.agentDisplayName"]);
+    }
+
+    if (attrs["ai.telemetry.metadata.agentName"]) {
+      return String(attrs["ai.telemetry.metadata.agentName"]);
+    }
+
+    return undefined;
+  }
+
+  private isFirstGenerationSpanForAgent(span: ReadableSpan, agentInfo: AgentInfo): boolean {
+    // Check if this is the first generation span for this agent
+    const generationSpans = agentInfo.spans.filter((s) => this.getSpanType(s) === "generation");
+    const sortedSpans = generationSpans.sort((a, b) => {
+      const aTime = a.startTime[0] * 1e9 + a.startTime[1];
+      const bTime = b.startTime[0] * 1e9 + b.startTime[1];
+      return aTime - bTime;
+    });
+
+    return sortedSpans[0] === span;
+  }
+
+  private isLastGenerationSpanForAgent(span: ReadableSpan, agentInfo: AgentInfo): boolean {
+    // Check if this is the last completed generation span for this agent
+    const generationSpans = agentInfo.spans.filter(
+      (s) => this.getSpanType(s) === "generation" && s.endTime,
+    );
+    const sortedSpans = generationSpans.sort((a, b) => {
+      const aEndTime = a.endTime;
+      const bEndTime = b.endTime;
+      if (!aEndTime || !bEndTime) return 0;
+
+      const aTime = aEndTime[0] * 1e9 + aEndTime[1];
+      const bTime = bEndTime[0] * 1e9 + bEndTime[1];
+      return bTime - aTime; // Sort by end time descending
+    });
+
+    return sortedSpans[0] === span;
+  }
+
+  private isTraceComplete(spans: ReadableSpan[]): boolean {
+    // Check if all spans in the trace are completed
+    return spans.every((span) => span.endTime && span.endTime[0] > 0);
   }
 }

@@ -13,6 +13,7 @@ export interface VoltAgentClientOptions {
 
 // History ile ilgili tipler
 export interface CreateHistoryRequest {
+  id?: string;
   agent_id: string;
   userId?: string;
   conversationId?: string;
