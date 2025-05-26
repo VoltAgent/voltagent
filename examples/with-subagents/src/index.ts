@@ -15,25 +15,17 @@ const uppercaseTool = createTool({
   },
 });
 
-// Create two simple specialized subagents
+/* // Create two simple specialized subagents
 const contentCreatorAgent = new Agent({
   name: "ContentCreator",
   description: "Creates short text content on requested topics",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
-
+ */
 const formatterAgent = new Agent({
   name: "Formatter",
-  description: "Formats and styles text content",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  tools: [uppercaseTool],
-});
-
-const formatterAgent2 = new Agent({
-  name: "Formatter2",
-  description: "Formats and styles text content",
+  description: "write story and uppercases the text",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [uppercaseTool],
@@ -42,15 +34,14 @@ const formatterAgent2 = new Agent({
 // Create a simple supervisor agent
 const supervisorAgent = new Agent({
   name: "Supervisor",
-  description: `Coordinates between content creation and formatting agents.
-  1. First ContentCreator agent will create the content.
+  description: `
+  1. create content
   2. Then Formatter agent will format the content.
-  3. Finally, the Supervisor agent will return the formatted content.
   `,
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  subAgents: [contentCreatorAgent, formatterAgent, formatterAgent2],
-  tools: [uppercaseTool],
+  subAgents: [/* contentCreatorAgent, */ formatterAgent],
+  tools: [],
 });
 
 // Initialize the VoltAgent with the agent hierarchy
@@ -130,32 +121,6 @@ new VoltAgent({
     metadata: {
       displayName: "db-call",
       id: "db-call_id",
-      agentId: "my-agent",
-    },
-  });
-
-  history.addEvent({
-    name: "tool:start",
-    type: "tool",
-    startTime: new Date().toISOString(),
-    status: "running",
-    input: { test: "rag sql" },
-    metadata: {
-      displayName: "rag-call",
-      id: "rag-call_id",
-      agentId: "my-agent",
-    },
-  });
-
-  history.addEvent({
-    name: "tool:start",
-    type: "tool",
-    startTime: new Date().toISOString(),
-    status: "running",
-    input: { test: "rag sql 2" },
-    metadata: {
-      displayName: "rag-call-2",
-      id: "rag-call-2_id",
       agentId: "my-agent",
     },
   });
@@ -272,6 +237,32 @@ new VoltAgent({
   });
 
   history.addEvent({
+    name: "tool:start",
+    type: "tool",
+    startTime: new Date().toISOString(),
+    status: "running",
+    input: { test: "rag sql 2" },
+    metadata: {
+      displayName: "rag-call-2",
+      id: "rag-call-2_id",
+      agentId: "my-agent",
+    },
+  });
+
+  history.addEvent({
+    name: "tool:start",
+    type: "tool",
+    startTime: new Date().toISOString(),
+    status: "running",
+    input: { test: "rag sql" },
+    metadata: {
+      displayName: "rag-call",
+      id: "rag-call_id",
+      agentId: "my-agent",
+    },
+  });
+
+  history.addEvent({
     name: "agent:success",
     type: "agent",
     startTime: new Date().toISOString(),
@@ -281,6 +272,11 @@ new VoltAgent({
       displayName: "My Agent",
       id: "my-agent",
       instructions: "instructions",
+      usage: {
+        promptTokens: 100,
+        completionTokens: 100,
+        totalTokens: 200,
+      },
     },
     output: {
       text: "Hello, how are you?",

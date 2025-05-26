@@ -1,6 +1,6 @@
 // SDK için tip tanımları
 // Core'dan gelen tipleri yeniden export ediyoruz
-import type { NewTimelineEvent } from "@voltagent/core/src/events/types";
+import type { NewTimelineEvent } from "@voltagent/core";
 
 // SDK Options
 export interface VoltAgentClientOptions {
@@ -29,6 +29,7 @@ export interface CreateHistoryRequest {
   level?: string;
   statusMessage?: string;
   version?: string;
+  tags?: string[];
 }
 
 export interface UpdateHistoryRequest {
@@ -151,4 +152,4 @@ export type {
   RetrieverStartEvent,
   RetrieverSuccessEvent,
   RetrieverErrorEvent,
-} from "@voltagent/core/src/events/types";
+} from "@voltagent/core";

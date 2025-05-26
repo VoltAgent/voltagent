@@ -100,6 +100,7 @@ export interface BaseEventMetadata {
   displayName?: string;
   id: string;
   agentId?: string;
+  usage?: Usage;
 }
 
 export interface AgentStartEventMetadata extends BaseEventMetadata {
@@ -166,7 +167,6 @@ export type AgentSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
   name: "agent:success";
   type: "agent";
   status: "completed";
-  usage?: Usage;
 };
 
 export type AgentErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {

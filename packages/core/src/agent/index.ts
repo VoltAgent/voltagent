@@ -989,8 +989,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: null,
         output: { text: response.text },
         error: null,
-        metadata: { displayName: this.name, id: this.id },
-        usage: response.usage,
+        metadata: { displayName: this.name, id: this.id, usage: response.usage },
+
         traceId: operationContext.historyEntry.id,
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
       };
@@ -1375,8 +1375,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           input: null,
           output: { text: result.text },
           error: null,
-          metadata: { displayName: this.name, id: this.id },
-          usage: result.usage,
+          metadata: { displayName: this.name, id: this.id, usage: result.usage },
           traceId: operationContext.historyEntry.id,
           parentEventId: agentStartInfo.eventId, // Link to the agent:start event
         };

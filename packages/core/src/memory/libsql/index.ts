@@ -295,7 +295,7 @@ export class LibSQLStorage implements Memory {
     this.debug("Database initialized successfully");
 
     try {
-      const result = await this.migrateAgentHistoryData({});
+      const result = await this.migrateAgentHistoryData();
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {

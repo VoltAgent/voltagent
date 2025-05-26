@@ -5,7 +5,7 @@ import { AgentRegistry } from "../server/registry";
 import { v4 as uuidv4 } from "uuid";
 import type { NewTimelineEvent } from "./types";
 import crypto from "node:crypto";
-import { createNodeId, NodeType } from "../utils/node-utils";
+import type { BaseMessage } from "..";
 
 // New type exports
 export type EventStatus = AgentStatus;
@@ -184,7 +184,13 @@ export class AgentEventEmitter extends EventEmitter {
       await this.publishTimelineEvent({
         agentId: parentId,
         historyId: activeParentEntry.id,
-        event: event,
+        event: {
+          ...event,
+          metadata: {
+            ...event.metadata,
+            agentId: event.metadata.agentId || parentId,
+          },
+        },
         skipPropagation: true, // Prevent cycles
       });
 
@@ -250,10 +256,7 @@ export class AgentEventEmitter extends EventEmitter {
             startTime: new Date().toISOString(),
             status: "running",
             input: {
-              input:
-                typeof historyEntry.input === "string" || Array.isArray(historyEntry.input)
-                  ? historyEntry.input
-                  : String(historyEntry.input),
+              input: historyEntry.input as string | BaseMessage[],
             },
             output: null,
             error: null,
@@ -372,7 +375,7 @@ export class AgentEventEmitter extends EventEmitter {
   public emitHistoryEntryCreated(agentId: string, historyEntry: AgentHistoryEntry): void {
     this.emit("historyEntryCreated", agentId, historyEntry);
     // After emitting the direct creation, propagate to parent agents
-    this.emitHierarchicalHistoryEntryCreated(agentId, historyEntry);
+    //this.emitHierarchicalHistoryEntryCreated(agentId, historyEntry);
   }
 
   /**

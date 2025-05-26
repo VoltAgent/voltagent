@@ -54,7 +54,7 @@ export class VoltAgentHistoryWrapper {
       startTime: new Date().toISOString(), // Default startTime
       ...event,
       traceId: this.historyData.id,
-    } as TimelineEventCore;
+    } as unknown as TimelineEventCore;
 
     return this.coreClient.addEvent({
       historyId: this.historyData.id,
@@ -123,7 +123,7 @@ export class VoltAgentSDK {
       startTime: new Date().toISOString(), // Default startTime
       ...event,
       traceId: historyId,
-    } as TimelineEventCore;
+    } as unknown as TimelineEventCore;
 
     this.eventQueue.push({ historyId, event: eventWithTraceId });
   }
