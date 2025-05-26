@@ -1,7 +1,7 @@
 ---
-title: LLM Agents in 2025 - The New Era of AI Applications
-description: How to develop real AI applications with LLM agents? Discover how agent frameworks work and why modern solutions like VoltAgent are game-changers.
-tags: [llm, agents, ai, voltagent, frameworks]
+title: What are LLM Agents?
+description: How to develop real AI applications with LLM agents? We'll be looking at how agent frameworks work.
+tags: [llm]
 slug: llm-agents
 image: https://cdn.voltagent.dev/2025-05-23-llm-agent-framework/social.png
 authors: omeraplak
@@ -18,42 +18,6 @@ That's what's circulating in the heads of almost every developer these days. Bui
 In this article, we will cover what LLM agents are, why they're popular in 2025, and most importantly, how you can build them. A full guide supplemented by real-world examples and code snippets.
 
 ## What is LLM Agent and Why Do They Matter So Much?
-
-What is the main difference between a regular chatbot and an LLM agent?
-
-**Chatbot:** "Hello, I can help you with that." gives you an answer, done.
-
-**LLM Agent:** "Ah, to answer this question I need to make that API call first, then retrieve some data from this database, perform some computation. Okay, now I can give you an answer."
-
-See the difference? Agents can _think_, reason, and most importantly, communicate with the outside world.
-
-:::note Key Difference
-Chatbots are reactive (responsive), but agents are proactive (planned action systems). Agents are capable of making decisions independently and retrieving information from outside the system.
-:::
-
-### Real-World Examples
-
-I just created a customer service agent. This agent:
-
-- Reads customer questions
-- Retrieves customer data from the CRM system
-- Opens tickets with the tech team when necessary
-- Sends emails
-- Even does simple tasks independently
-
-Result? Customer satisfaction improved, our workload reduced. Win-win situation.
-
-## LLM Agent Architecture: How Does This Thing Work?
-
-So what's going on inside an LLM agent? As it happens, it's very similar to the way the human brain operates.
-
-First, there's the **LLM brain** — GPT, Claude, Gemini, whatever. That's the core of the agent. The part that thinks, gets it, makes decisions. But on its own, it's really not very useful because it can only generate text.
-
-That is where **tools** come in. These are the feet and hands of the agent. API calls, database calls, file access, web scraping, computation. The agent interacts with the real world through these tools. "Let me call this API to see the weather" for example.
-
-And then there's the **memory system** that's _super critical_. It wouldn't have anything to remember without it, so the agent starts fresh every time. "Who was it again, what was I discussing?" Memory enables it to remember previous conversations and track context.
-
-And finally, there's the **planning and orchestration** mechanism. "In order to do this job, I need to do this first, then that, and if I make an error I need to deal with it this way." This is the chunk that enables this sort of thinking. This is actually the most complex chunk.
 
 <ZoomableMermaid
 chart={`
@@ -80,9 +44,45 @@ participant M as Memory
 `}
 />
 
-As you can see, even such a simple question goes through a lot of steps in the agent. Dealing with this orchestration process is really tough.
+What is the main difference between a regular chatbot and an LLM agent?
+
+**Chatbot:** "Hello, I can help you with that." gives you an answer, done.
+
+**LLM Agent:** "Ah, to answer this question I need to make that API call first, then retrieve some data from this database, perform some computation. Okay, now I can give you an answer."
+
+See the difference? Agents can _think_, reason, and most importantly, communicate with the outside world.
+
+:::note Key Difference
+Chatbots are reactive (responsive), but agents are proactive (planned action systems). Agents are capable of making decisions independently and retrieving information from outside the system.
+:::
 
 <AgentArchitectureExplorer />
+
+### Real-World Examples
+
+I just created a customer service agent. This agent:
+
+- Reads customer questions
+- Retrieves customer data from the CRM system
+- Opens tickets with the tech team when necessary
+- Sends emails
+- Even does simple tasks independently
+
+Result? Customer satisfaction improved, our workload reduced. Win-win situation.
+
+## LLM Agent Architecture: How Does This Thing Work?
+
+So what's going on inside an LLM agent? As it happens, it's very similar to the way the human brain operates.
+
+First, there's the **LLM brain** — GPT, Claude, Gemini, whatever. That's the core of the agent. The part that thinks, gets it, makes decisions. But on its own, it's really not very useful because it can only generate text.
+
+That is where **tools** come in. These are the feet and hands of the agent. API calls, database calls, file access, web scraping, computation. The agent interacts with the real world through these tools. "Let me call this API to see the weather" for example.
+
+And then there's the **memory system** that's _super critical_. It wouldn't have anything to remember without it, so the agent starts fresh every time. "Who was it again, what was I discussing?" Memory enables it to remember previous conversations and track context.
+
+And finally, there's the **planning and orchestration** mechanism. "In order to do this job, I need to do this first, then that, and if I make an error I need to deal with it this way." This is the chunk that enables this sort of thinking. This is actually the most complex chunk.
+
+As you can see, even such a simple question goes through a lot of steps in the agent. Dealing with this orchestration process is really tough.
 
 ## Modern Agents' Superpowers
 
