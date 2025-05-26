@@ -5,7 +5,7 @@
   "short_description": "Manage emails, drafts, labels, and contacts in Gmail.",
   "title": "Gmail MCP Server",
   "description": "The Gmail MCP server connects your AI agents to Gmail's complete email management features. Your agents can deliver messages, collaborate with drafts, organize with labels, collaborate with contacts, and perform sophisticated email operations all on automatic pilot. Navigate through the features described below to discover how you can leverage these features to make your email process and communication workflows more efficient.",
-  "category": "Email",
+  "category": ["Communication", "Google"],
   "logoKey": "gmail",
   "avaliable_providers": ["composio", "zapier"],
   "total_tools": [
