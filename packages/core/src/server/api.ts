@@ -1,8 +1,7 @@
-import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
-import { z } from "zod";
+import type * as xsschema from "xsschema";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import type { AgentHistoryEntry } from "../agent/history";
@@ -25,7 +24,6 @@ import {
   type ErrorSchema,
   type TextResponseSchema,
   type ObjectResponseSchema,
-  type AgentResponseSchema,
   type TextRequestSchema,
   type ObjectRequestSchema,
 } from "./api.routes";
@@ -164,7 +162,7 @@ app.openapi(getAgentsRoute, (c) => {
     });
 
     // Define the exact success response type based on the route schema
-    type SuccessResponse = z.infer<
+    type SuccessResponse = xsschema.Infer<
       (typeof getAgentsRoute.responses)[200]["content"]["application/json"]["schema"]
     >;
 
@@ -177,7 +175,9 @@ app.openapi(getAgentsRoute, (c) => {
   } catch (error) {
     console.error("Failed to get agents:", error);
     return c.json(
-      { success: false, error: "Failed to retrieve agents" } satisfies z.infer<typeof ErrorSchema>,
+      { success: false, error: "Failed to retrieve agents" } satisfies xsschema.Infer<
+        typeof ErrorSchema
+      >,
       500,
     );
   }
@@ -259,22 +259,24 @@ app.openapi(textRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
       404,
     );
   }
 
   try {
-    const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    const { input, options = {} } = c.req.valid("json") as xsschema.Infer<typeof TextRequestSchema>;
 
     const response = await agent.generateText(input, options);
-    return c.json({ success: true, data: response } satisfies z.infer<typeof TextResponseSchema>);
+    return c.json({ success: true, data: response } satisfies xsschema.Infer<
+      typeof TextResponseSchema
+    >);
   } catch (error) {
     return c.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to generate text",
-      } satisfies z.infer<typeof ErrorSchema>,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
       500,
     );
   }
@@ -288,7 +290,7 @@ app.openapi(streamRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
       404,
     );
   }
@@ -300,7 +302,7 @@ app.openapi(streamRoute, async (c) => {
         maxTokens: 4000,
         temperature: 0.7,
       },
-    } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    } = c.req.valid("json") as xsschema.Infer<typeof TextRequestSchema>;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -367,7 +369,7 @@ app.openapi(streamRoute, async (c) => {
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to initiate text stream",
-      } satisfies z.infer<typeof ErrorSchema>,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
       500,
     );
   }
@@ -381,7 +383,7 @@ app.openapi(objectRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
       404,
     );
   }
@@ -391,16 +393,18 @@ app.openapi(objectRoute, async (c) => {
       input,
       schema,
       options = {},
-    } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
+    } = c.req.valid("json") as xsschema.Infer<typeof ObjectRequestSchema>;
 
     const response = await agent.generateObject(input, schema, options);
-    return c.json({ success: true, data: response } satisfies z.infer<typeof ObjectResponseSchema>);
+    return c.json({ success: true, data: response } satisfies xsschema.Infer<
+      typeof ObjectResponseSchema
+    >);
   } catch (error) {
     return c.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to generate object",
-      } satisfies z.infer<typeof ErrorSchema>,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
       500,
     );
   }
@@ -414,7 +418,7 @@ app.openapi(streamObjectRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
       404,
     );
   }
@@ -424,7 +428,7 @@ app.openapi(streamObjectRoute, async (c) => {
       input,
       schema,
       options = {},
-    } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
+    } = c.req.valid("json") as xsschema.Infer<typeof ObjectRequestSchema>;
 
     const agentStream = await agent.streamObject(input, schema, options);
 
@@ -487,7 +491,7 @@ app.openapi(streamObjectRoute, async (c) => {
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to initiate object stream",
-      } satisfies z.infer<typeof ErrorSchema>,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
       500,
     );
   }
