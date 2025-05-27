@@ -1,5 +1,6 @@
 // @ts-ignore - To prevent errors when loading Jest mocks
 import { z } from "zod";
+import type * as xsschema from "xsschema";
 import { AgentEventEmitter } from "../events";
 import type { MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
@@ -232,11 +233,13 @@ class MockProvider implements LLMProvider<MockModelType> {
     };
   }
 
-  async generateObject<T extends z.ZodType>(options: {
+  async generateObject<T extends xsschema.Schema>(options: {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
-  }): Promise<ProviderObjectResponse<MockGenerateObjectResult<z.infer<T>>, z.infer<T>>> {
+  }): Promise<
+    ProviderObjectResponse<MockGenerateObjectResult<xsschema.Infer<T>>, xsschema.Infer<T>>
+  > {
     this.generateObjectCalls++;
     this.lastMessages = options.messages;
 
@@ -245,7 +248,7 @@ class MockProvider implements LLMProvider<MockModelType> {
         name: "John Doe",
         age: 30,
         hobbies: ["reading", "gaming"],
-      } as z.infer<T>,
+      } as xsschema.Infer<T>,
     };
 
     return {
@@ -260,11 +263,13 @@ class MockProvider implements LLMProvider<MockModelType> {
     };
   }
 
-  async streamObject<T extends z.ZodType>(options: {
+  async streamObject<T extends xsschema.Schema>(options: {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
-  }): Promise<ProviderObjectStreamResponse<MockStreamObjectResult<z.infer<T>>, z.infer<T>>> {
+  }): Promise<
+    ProviderObjectStreamResponse<MockStreamObjectResult<xsschema.Infer<T>>, xsschema.Infer<T>>
+  > {
     this.streamObjectCalls++;
     this.lastMessages = options.messages;
 
@@ -278,9 +283,9 @@ class MockProvider implements LLMProvider<MockModelType> {
       },
     });
 
-    const partialObjectStream = new ReadableStream<Partial<z.infer<T>>>({
+    const partialObjectStream = new ReadableStream<Partial<xsschema.Infer<T>>>({
       start(controller) {
-        controller.enqueue({ name: "John" } as Partial<z.infer<T>>);
+        controller.enqueue({ name: "John" } as Partial<xsschema.Infer<T>>);
         controller.close();
       },
     });

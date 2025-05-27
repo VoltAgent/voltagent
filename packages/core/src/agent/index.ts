@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type * as xsschema from "xsschema";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus, EventUpdater } from "../events";
 import { MemoryManager } from "../memory";
@@ -1295,7 +1295,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a structured object response
    */
-  async generateObject<T extends z.ZodType>(
+  async generateObject<T extends xsschema.Schema>(
     input: string | BaseMessage[],
     schema: T,
     options: PublicGenerateOptions = {},
@@ -1400,7 +1400,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed" as any,
       });
       operationContext.isActive = false;
-      const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
+      const standardizedOutput: StandardizedObjectResult<xsschema.Infer<T>> = {
         object: response.object,
         usage: response.usage,
         finishReason: response.finishReason,
@@ -1448,7 +1448,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<T extends z.ZodType>(
+  async streamObject<T extends xsschema.Schema>(
     input: string | BaseMessage[],
     schema: T,
     options: PublicGenerateOptions = {},
@@ -1535,7 +1535,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
           }
         },
-        onFinish: async (result: StreamObjectFinishResult<z.infer<T>>) => {
+        onFinish: async (result: StreamObjectFinishResult<xsschema.Infer<T>>) => {
           if (!operationContext.isActive) {
             return;
           }
@@ -1565,7 +1565,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             context: operationContext,
           });
           if (provider?.onFinish) {
-            await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<T>>)(result);
+            await (provider.onFinish as StreamObjectOnFinishCallback<xsschema.Infer<T>>)(result);
           }
         },
         onError: async (error: VoltAgentError) => {

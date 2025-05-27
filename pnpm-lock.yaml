@@ -1078,7 +1078,7 @@ importers:
         version: 0.5.1(hono@4.7.7)
       '@hono/zod-openapi':
         specifier: ^0.19.6
-        version: 0.19.6(hono@4.7.7)(zod@3.24.2)
+        version: 0.19.6(hono@4.7.7)(zod@3.25.30)
       '@libsql/client':
         specifier: ^0.15.0
         version: 0.15.0
@@ -1087,7 +1087,7 @@ importers:
         version: 1.10.1
       '@n8n/json-schema-to-zod':
         specifier: ^1.1.0
-        version: 1.1.0(zod@3.24.2)
+        version: 1.1.0(zod@3.25.30)
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -1112,9 +1112,15 @@ importers:
       ws:
         specifier: ^8.18.1
         version: 8.18.1
+      xsschema:
+        specifier: 0.3.0-beta.2
+        version: 0.3.0-beta.2(effect@3.12.7)(zod@3.25.30)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.30
+        version: 3.25.30
+      zod-to-openapi:
+        specifier: ^0.2.1
+        version: 0.2.1(zod@3.25.30)
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -1678,13 +1684,13 @@ packages:
       validate-npm-package-name: 5.0.0
     dev: true
 
-  /@asteasolutions/zod-to-openapi@7.3.0(zod@3.24.2):
+  /@asteasolutions/zod-to-openapi@7.3.0(zod@3.25.30):
     resolution: {integrity: sha512-7tE/r1gXwMIvGnXVUdIqUhCU1RevEFC4Jk6Bussa0fk1ecbnnINkZzj1EOAJyE/M3AI25DnHT/zKQL1/FPFi8Q==}
     peerDependencies:
       zod: ^3.20.2
     dependencies:
       openapi3-ts: 4.4.0
-      zod: 3.24.2
+      zod: 3.25.30
     dev: false
 
   /@aws-crypto/crc32@5.2.0:
@@ -3558,8 +3564,8 @@ packages:
     dependencies:
       google-auth-library: 9.15.1
       ws: 8.18.1
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.5(zod@3.24.2)
+      zod: 3.25.30
+      zod-to-json-schema: 3.24.5(zod@3.25.30)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -3615,27 +3621,27 @@ packages:
       hono: 4.7.7
     dev: false
 
-  /@hono/zod-openapi@0.19.6(hono@4.7.7)(zod@3.24.2):
+  /@hono/zod-openapi@0.19.6(hono@4.7.7)(zod@3.25.30):
     resolution: {integrity: sha512-qD2I0i5Ksry8gf47rXR6tuUAfv5S/wRZPRUNn+y8vOkgArDtIs30Ha3KGHeuGhcMk773D197IlPUppSCbHt6iQ==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       hono: '>=4.3.6'
       zod: 3.*
     dependencies:
-      '@asteasolutions/zod-to-openapi': 7.3.0(zod@3.24.2)
-      '@hono/zod-validator': 0.5.0(hono@4.7.7)(zod@3.24.2)
+      '@asteasolutions/zod-to-openapi': 7.3.0(zod@3.25.30)
+      '@hono/zod-validator': 0.5.0(hono@4.7.7)(zod@3.25.30)
       hono: 4.7.7
-      zod: 3.24.2
+      zod: 3.25.30
     dev: false
 
-  /@hono/zod-validator@0.5.0(hono@4.7.7)(zod@3.24.2):
+  /@hono/zod-validator@0.5.0(hono@4.7.7)(zod@3.25.30):
     resolution: {integrity: sha512-ds5bW6DCgAnNHP33E3ieSbaZFd5dkV52ZjyaXtGoR06APFrCtzAsKZxTHwOrJNBdXsi0e5wNwo5L4nVEVnJUdg==}
     peerDependencies:
       hono: '>=3.9.0'
       zod: ^3.19.1
     dependencies:
       hono: 4.7.7
-      zod: 3.24.2
+      zod: 3.25.30
     dev: false
 
   /@humanfs/core@0.19.1:
@@ -4307,8 +4313,8 @@ packages:
       p-queue: 6.6.2
       p-retry: 4.6.2
       uuid: 10.0.0
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.5(zod@3.24.2)
+      zod: 3.25.30
+      zod-to-json-schema: 3.24.5(zod@3.25.30)
     transitivePeerDependencies:
       - openai
     dev: false
@@ -4321,9 +4327,9 @@ packages:
     dependencies:
       '@langchain/core': 0.3.53(openai@4.97.0)
       js-tiktoken: 1.0.20
-      openai: 4.97.0(zod@3.24.2)
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.5(zod@3.24.2)
+      openai: 4.97.0(zod@3.25.30)
+      zod: 3.25.30
+      zod-to-json-schema: 3.24.5(zod@3.25.30)
     transitivePeerDependencies:
       - encoding
       - ws
@@ -4642,8 +4648,8 @@ packages:
       express-rate-limit: 7.5.0(express@5.0.1)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.3(zod@3.24.2)
+      zod: 3.25.30
+      zod-to-json-schema: 3.24.3(zod@3.25.30)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -4654,6 +4660,14 @@ packages:
       zod: ^3.0.0
     dependencies:
       zod: 3.24.2
+    dev: false
+
+  /@n8n/json-schema-to-zod@1.1.0(zod@3.25.30):
+    resolution: {integrity: sha512-HfL3jq5NSb0Mng56QCfUnzD09F4wxWR543jYJZ+XBQpb0f9B102r6K3qEtdXVTs1mwHVnxz5KBaesqipFYPjww==}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      zod: 3.25.30
     dev: false
 
   /@napi-rs/wasm-runtime@0.2.4:
@@ -6728,12 +6742,12 @@ packages:
     resolution: {integrity: sha512-mXezX18gebJsFObBR4D2undF4PqA+GdraiffejIOL7SRWfJEyBCBYXMtL8CqbA/ESU2DuPQUFChusJA4dF1+ig==}
     dependencies:
       '@xsai/generate-text': 0.2.0
-      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
+      xsschema: 0.3.0-beta.2(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
@@ -6777,12 +6791,12 @@ packages:
     resolution: {integrity: sha512-Uanx1CVeYEL8Au/T1VK9viNJWj11pIHuK1bPte3P0XcJKyztI+h07LFWqXeanPMxRe57XSUvV1gOc3ynPYTO/g==}
     dependencies:
       '@xsai/stream-text': 0.2.0
-      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
+      xsschema: 0.3.0-beta.2(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
@@ -6798,12 +6812,12 @@ packages:
     dependencies:
       '@xsai/shared': 0.2.0
       '@xsai/shared-chat': 0.2.0
-      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
+      xsschema: 0.3.0-beta.2(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
@@ -11295,9 +11309,9 @@ packages:
         optional: true
     dependencies:
       dotenv: 16.4.7
-      openai: 4.97.0(zod@3.24.2)
-      zod: 3.24.2
-      zod-validation-error: 3.4.0(zod@3.24.2)
+      openai: 4.97.0(zod@3.25.30)
+      zod: 3.25.30
+      zod-validation-error: 3.4.0(zod@3.25.30)
     transitivePeerDependencies:
       - encoding
       - ws
@@ -11373,8 +11387,8 @@ packages:
       p-retry: 4.6.2
       uuid: 10.0.0
       yaml: 2.7.1
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.5(zod@3.24.2)
+      zod: 3.25.30
+      zod-to-json-schema: 3.24.5(zod@3.25.30)
     transitivePeerDependencies:
       - encoding
       - openai
@@ -13165,8 +13179,38 @@ packages:
       - encoding
     dev: false
 
+  /openai@4.97.0(zod@3.25.30):
+    resolution: {integrity: sha512-LRoiy0zvEf819ZUEJhgfV8PfsE8G5WpQi4AwA1uCV8SKvvtXQkoWUFkepD6plqyJQRghy2+AEPQ07FrJFKHZ9Q==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.23.8
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      '@types/node': 18.19.97
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+      zod: 3.25.30
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /openapi-types@12.1.3:
     resolution: {integrity: sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==}
+    dev: false
+
+  /openapi3-ts@2.0.2:
+    resolution: {integrity: sha512-TxhYBMoqx9frXyOgnRHufjQfPXomTIHYKhSKJ6jHfj13kS8OEIhvmE8CTuQyKtjjWttAjX5DPxM1vmalEpo8Qw==}
+    dependencies:
+      yaml: 1.10.2
     dev: false
 
   /openapi3-ts@4.4.0:
@@ -15483,6 +15527,12 @@ packages:
       - supports-color
     dev: true
 
+  /typescript@4.9.5:
+    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: false
+
   /typescript@5.6.1-rc:
     resolution: {integrity: sha512-E3b2+1zEFu84jB0YQi9BORDjz9+jGbwwy1Zi3G0LUNw7a7cePUrHMRNy8aPh53nXpkFGVHSxIZo5vKTfYaFiBQ==}
     engines: {node: '>=14.17'}
@@ -16055,30 +16105,30 @@ packages:
       '@xsai/utils-stream': 0.2.0
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
 
-  /xsschema@0.2.0(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-UPPI+jP6pn/49q8w7Faz4CYRn33VvG7ngfNQ79nwqTauFP4/m3VusB095a4d5uZ4/TNip5GDxASpzKDoEouN5Q==}
+  /xsschema@0.3.0-beta.2(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-J3DZQuitaGtYqikylm+cJvlI/aatbWvPj2GIzjeUO03opEG/+nIQMLVdZhUjFFE6eEWYDjgtrBLevkqewVcjqQ==}
     peerDependencies:
       '@valibot/to-json-schema': ^1.0.0
-      '@zod/mini': ^4.0.0-beta
       arktype: ^2.1.16
       effect: ^3.14.5
-      zod: ^3.24.3 || ^4.0.0-beta
+      sury: ^10.0.0-rc
+      zod: ^3.25.0
       zod-to-json-schema: ^3.24.5
     peerDependenciesMeta:
       '@valibot/to-json-schema':
         optional: true
-      '@zod/mini':
-        optional: true
       arktype:
         optional: true
       effect:
+        optional: true
+      sury:
         optional: true
       zod:
         optional: true
@@ -16087,6 +16137,33 @@ packages:
     dependencies:
       effect: 3.12.7
       zod: 3.24.2
+    dev: false
+
+  /xsschema@0.3.0-beta.2(effect@3.12.7)(zod@3.25.30):
+    resolution: {integrity: sha512-J3DZQuitaGtYqikylm+cJvlI/aatbWvPj2GIzjeUO03opEG/+nIQMLVdZhUjFFE6eEWYDjgtrBLevkqewVcjqQ==}
+    peerDependencies:
+      '@valibot/to-json-schema': ^1.0.0
+      arktype: ^2.1.16
+      effect: ^3.14.5
+      sury: ^10.0.0-rc
+      zod: ^3.25.0
+      zod-to-json-schema: ^3.24.5
+    peerDependenciesMeta:
+      '@valibot/to-json-schema':
+        optional: true
+      arktype:
+        optional: true
+      effect:
+        optional: true
+      sury:
+        optional: true
+      zod:
+        optional: true
+      zod-to-json-schema:
+        optional: true
+    dependencies:
+      effect: 3.12.7
+      zod: 3.25.30
     dev: false
 
   /xtend@4.0.2:
@@ -16109,7 +16186,6 @@ packages:
   /yaml@1.10.2:
     resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
     engines: {node: '>= 6'}
-    dev: true
 
   /yaml@2.7.0:
     resolution: {integrity: sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA==}
@@ -16169,12 +16245,12 @@ packages:
     engines: {node: '>=18'}
     dev: false
 
-  /zod-to-json-schema@3.24.3(zod@3.24.2):
+  /zod-to-json-schema@3.24.3(zod@3.25.30):
     resolution: {integrity: sha512-HIAfWdYIt1sssHfYZFCXp4rU1w2r8hVVXYIlmoa0r0gABLs5di3RCqPU5DDROogVz1pAdYBaz7HK5n9pSUNs3A==}
     peerDependencies:
       zod: ^3.24.1
     dependencies:
-      zod: 3.24.2
+      zod: 3.25.30
     dev: false
 
   /zod-to-json-schema@3.24.5(zod@3.24.2):
@@ -16185,17 +16261,41 @@ packages:
       zod: 3.24.2
     dev: false
 
-  /zod-validation-error@3.4.0(zod@3.24.2):
+  /zod-to-json-schema@3.24.5(zod@3.25.30):
+    resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
+    peerDependencies:
+      zod: ^3.24.1
+    dependencies:
+      zod: 3.25.30
+    dev: false
+
+  /zod-to-openapi@0.2.1(zod@3.25.30):
+    resolution: {integrity: sha512-F+3aAYcWcboNYXCmu4qqiZA1Cwwgxp06VF4DOeGE7l4cWdyxSABNBH8QSRGbC4ajSKU1h/prF+yQh7bQkYGVpw==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+    peerDependencies:
+      zod: ~3.5.1
+    dependencies:
+      lodash: 4.17.21
+      openapi3-ts: 2.0.2
+      typescript: 4.9.5
+      zod: 3.25.30
+    dev: false
+
+  /zod-validation-error@3.4.0(zod@3.25.30):
     resolution: {integrity: sha512-ZOPR9SVY6Pb2qqO5XHt+MkkTRxGXb4EVtnjc9JpXUOtUB1T9Ru7mZOT361AN3MsetVe7R0a1KZshJDZdgp9miQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       zod: ^3.18.0
     dependencies:
-      zod: 3.24.2
+      zod: 3.25.30
     dev: false
 
   /zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
+    dev: false
+
+  /zod@3.25.30:
+    resolution: {integrity: sha512-VolhdEtu6TJr/fzGuHA/SZ5ixvXqA6ADOG9VRcQ3rdOKmF5hkmcJbyaQjUH5BgmpA9gej++zYRX7zjSmdReIwA==}
     dev: false
 
   /zwitch@2.0.4:

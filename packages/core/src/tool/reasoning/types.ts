@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type * as xsschema from "xsschema";
 import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 
 /**
@@ -30,7 +31,7 @@ export const ReasoningStepSchema = z.object({
 /**
  * TypeScript type inferred from the ReasoningStepSchema.
  */
-export type ReasoningStep = z.infer<typeof ReasoningStepSchema>;
+export type ReasoningStep = xsschema.Infer<typeof ReasoningStepSchema>;
 
 /**
  * Options specific to reasoning tool execution, extending base ToolExecuteOptions.
