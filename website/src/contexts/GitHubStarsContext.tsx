@@ -24,7 +24,7 @@ type GitHubStarsState = GitHubStarsData & {
 };
 
 // API Endpoint
-const API_ENDPOINT = "https://api.voltagent.dev/api/love";
+const API_ENDPOINT = "https://love.voltagent.dev/api/love";
 
 // Create the context with a default value
 const GitHubStarsContext = createContext<GitHubStarsState | undefined>(

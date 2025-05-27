@@ -5,7 +5,7 @@
   "short_description": "Access Google Sheets data and perform operations on it.",
   "title": "Google Sheets MCP Server",
   "description": "The Google Sheets MCP server connects your AI agents to Google's spreadsheet applications directly. Your agents can add sheets, update data, perform lookups, and even format cells - all automatically. Review the features listed below to see how you can harness these capabilities to speed up your data management and analysis processes.",
-  "category": "Spreadsheets",
+  "category": ["Spreadsheets", "Google"],
   "logoKey": "googleSheets",
   "avaliable_providers": ["composio", "zapier"],
   "total_tools": [

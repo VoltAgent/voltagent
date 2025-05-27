@@ -172,7 +172,7 @@ app.openapi(getAgentsRoute, (c) => {
       data: agentDataArray as SuccessResponse["data"], // Ensure data array matches schema
     };
 
-    return c.json(response);
+    return c.json(response, 200);
   } catch (error) {
     console.error("Failed to get agents:", error);
     return c.json(
@@ -267,7 +267,10 @@ app.openapi(textRoute, async (c) => {
     const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
     const response = await agent.generateText(input, options);
-    return c.json({ success: true, data: response } satisfies z.infer<typeof TextResponseSchema>);
+    return c.json(
+      { success: true, data: response } satisfies z.infer<typeof TextResponseSchema>,
+      200,
+    );
   } catch (error) {
     return c.json(
       {
@@ -392,9 +395,11 @@ app.openapi(objectRoute, async (c) => {
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
-    const schemaInZodObject = jsonSchemaToZod(schema);
-    const response = await agent.generateObject(input, schemaInZodObject, options);
-    return c.json({ success: true, data: response } satisfies z.infer<typeof ObjectResponseSchema>);
+    const response = await agent.generateObject(input, schema, options);
+    return c.json(
+      { success: true, data: response } satisfies z.infer<typeof ObjectResponseSchema>,
+      200,
+    );
   } catch (error) {
     return c.json(
       {

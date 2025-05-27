@@ -28,7 +28,7 @@ const MCPCard = ({ mcp }) => {
         }}
       >
         <div className="p-4 flex flex-col h-full relative">
-          {/* Header with category badge */}
+          {/* Header with category badges */}
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center">
               <div className="w-8 h-8 mr-2 flex items-center justify-center bg-slate-800/50 rounded-full">
@@ -39,9 +39,13 @@ const MCPCard = ({ mcp }) => {
               </span>
             </div>
 
-            <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20  no-underline">
-              {mcp.metadata.category}
-            </span>
+            {/* View Details Icon - Bottom right */}
+            <div className=" p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <ArrowTopRightOnSquareIcon
+                className="w-5 h-5 text-emerald-400"
+                aria-hidden="true"
+              />
+            </div>
           </div>
 
           {/* Description */}
@@ -49,12 +53,21 @@ const MCPCard = ({ mcp }) => {
             {mcp.metadata.short_description}
           </p>
 
-          {/* View Details Icon - Bottom right */}
-          <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <ArrowTopRightOnSquareIcon
-              className="w-4 h-4 text-emerald-400"
-              aria-hidden="true"
-            />
+          <div className="flex flex-wrap gap-1 mt-3">
+            {Array.isArray(mcp.metadata.category) ? (
+              mcp.metadata.category.map((cat) => (
+                <span
+                  key={cat}
+                  className="px-2 py-0.5 text-xs rounded-full bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 no-underline"
+                >
+                  {cat}
+                </span>
+              ))
+            ) : (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 no-underline">
+                {mcp.metadata.category}
+              </span>
+            )}
           </div>
         </div>
       </motion.div>
@@ -71,10 +84,16 @@ export default function McpListPage(props) {
     if (!searchTerm) return true;
 
     const searchTermLower = searchTerm.toLowerCase();
+    const categoryMatch = Array.isArray(item.metadata.category)
+      ? item.metadata.category.some((cat) =>
+          cat.toLowerCase().includes(searchTermLower),
+        )
+      : item.metadata.category?.toLowerCase().includes(searchTermLower);
+
     return (
       item.metadata.name.toLowerCase().includes(searchTermLower) ||
       item.metadata.description?.toLowerCase().includes(searchTermLower) ||
-      item.metadata.category?.toLowerCase().includes(searchTermLower)
+      categoryMatch
     );
   });
 

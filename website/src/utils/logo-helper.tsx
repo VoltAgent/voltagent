@@ -26,6 +26,7 @@ import { CursorLogo } from "../../static/img/logos/cursor";
 import { ComposioLogo } from "../../static/img/logos/composio";
 import { ZapierLogo } from "../../static/img/logos/integrations/zapier";
 import { GumloopLogo } from "../../static/img/logos/integrations/gumloop";
+import { SlackLogo } from "../../static/img/logos/integrations/slack";
 import { ServerIcon } from "@heroicons/react/20/solid";
 
 // Map logo components by key
@@ -56,6 +57,7 @@ export const logoMap = {
   claude: Claude37Logo,
   cursor: CursorLogo,
   server: ServerIcon,
+  slack: SlackLogo,
 };
 
 /**
