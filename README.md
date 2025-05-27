@@ -25,12 +25,12 @@ Escape the limitations of no-code builders and the complexity of starting from s
 </div>
 
 <div align="center">
-    
+
 [![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
 [![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
-    
+
 </div>
 
 <br/>
@@ -108,11 +108,26 @@ const agent = new Agent({
   model: openai("gpt-4o-mini"),
 });
 
-// Initialize VoltAgent with your agent(s)
+// Define custom API endpoints (optional)
+const customEndpoints = [
+  {
+    path: "/custom/hello",
+    method: "get",
+    handler: (c) => {
+      return c.json({
+        success: true,
+        message: "Hello from custom endpoint!",
+      });
+    },
+  },
+];
+
+// Initialize VoltAgent with your agent(s) and custom endpoints
 new VoltAgent({
   agents: {
     agent,
   },
+  customEndpoints, // Optional: Add custom endpoints to the API server
 });
 ```
 
@@ -152,6 +167,7 @@ Your agent is now running! To interact with it:
 - **Flexible LLM Support:** Integrate seamlessly with various LLM providers (OpenAI, Anthropic, Google, etc.) and easily switch between models.
 - **Memory Management:** Enable agents to retain context across interactions using different configurable memory providers.
 - **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltAgent Console](https://console.voltagent.dev).
+- **Custom API Endpoints:** Extend the VoltAgent API server with your own custom endpoints to build specialized functionality on top of the core framework.
 - **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package.
 - **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources.
 - **Model Context Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities.

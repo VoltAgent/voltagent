@@ -29,6 +29,12 @@ import {
   type TextRequestSchema,
   type ObjectRequestSchema,
 } from "./api.routes";
+import {
+  CustomEndpointDefinition,
+  CustomEndpointError,
+  validateCustomEndpoint,
+  validateCustomEndpoints,
+} from "./custom-endpoints";
 
 const app = new OpenAPIHono();
 
@@ -592,6 +598,80 @@ app.doc("/doc", {
 
 // Swagger UI endpoint
 app.get("/ui", swaggerUI({ url: "/doc" }));
+
+/**
+ * Register a single custom endpoint with the API server
+ * @param endpoint The custom endpoint definition
+ * @throws CustomEndpointError if the endpoint definition is invalid or registration fails
+ */
+export function registerCustomEndpoint(endpoint: CustomEndpointDefinition): void {
+  try {
+    // Validate the endpoint
+    const validatedEndpoint = validateCustomEndpoint(endpoint);
+    const { path, method, handler } = validatedEndpoint;
+
+    // Log the registration
+    console.log(`Registering custom endpoint: ${method.toUpperCase()} ${path}`);
+
+    // Register the endpoint with the app
+    switch (method) {
+      case "get":
+        app.get(path, handler);
+        break;
+      case "post":
+        app.post(path, handler);
+        break;
+      case "put":
+        app.put(path, handler);
+        break;
+      case "patch":
+        app.patch(path, handler);
+        break;
+      case "delete":
+        app.delete(path, handler);
+        break;
+      case "options":
+        app.options(path, handler);
+        break;
+      case "head":
+        app.head(path, handler);
+        break;
+      default:
+        throw new CustomEndpointError(`Unsupported HTTP method: ${method}`);
+    }
+  } catch (error) {
+    if (error instanceof CustomEndpointError) {
+      throw error;
+    }
+    throw new CustomEndpointError(
+      `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+/**
+ * Register multiple custom endpoints with the API server
+ * @param endpoints Array of custom endpoint definitions
+ * @throws CustomEndpointError if any endpoint definition is invalid or registration fails
+ */
+export function registerCustomEndpoints(endpoints: CustomEndpointDefinition[]): void {
+  try {
+    // Validate all endpoints first
+    const validatedEndpoints = validateCustomEndpoints(endpoints);
+
+    // Register each endpoint
+    for (const endpoint of validatedEndpoints) {
+      registerCustomEndpoint(endpoint);
+    }
+  } catch (error) {
+    if (error instanceof CustomEndpointError) {
+      throw error;
+    }
+    throw new CustomEndpointError(
+      `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
 
 export { app as default };
 
