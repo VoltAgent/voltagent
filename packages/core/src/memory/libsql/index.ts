@@ -601,7 +601,7 @@ export class LibSQLStorage implements Memory {
       this.debug(`Set agent_history_steps:${key} for history ${historyId} and agent ${agentId}`);
     } catch (error) {
       this.debug(`Error setting agent_history_steps:${key}`, error);
-      throw new Error(`Failed to set value in agent_history_steps`);
+      throw new Error("Failed to set value in agent_history_steps");
     }
   }
 
@@ -1666,7 +1666,7 @@ export class LibSQLStorage implements Memory {
           // Note: steps field is removed so it won't be processed here
         } catch (error) {
           this.debug(`Error processing record with ID ${key}:`, error);
-          continue; // Skip problematic records and continue
+          // Skip problematic records and continue
         }
       }
 
