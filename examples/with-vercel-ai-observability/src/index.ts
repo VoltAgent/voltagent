@@ -6,7 +6,6 @@ import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentation
 import { z } from "zod";
 import * as readline from "node:readline";
 import { randomUUID } from "node:crypto";
-// import { LangfuseExporter } from "langfuse-vercel";
 
 // Initialize VoltAgent exporter
 const voltAgentExporter = new VoltAgentExporter({
@@ -21,16 +20,6 @@ const sdk = new NodeSDK({
   traceExporter: voltAgentExporter,
   instrumentations: [getNodeAutoInstrumentations()],
 });
-
-// Alternative: Use LangfuseExporter instead
-/* const sdk = new NodeSDK({
-  traceExporter: new LangfuseExporter({
-    secretKey: "sk-lf-bbb37ba1-451f-4e12-a5b1-2b8255cb2d8a",
-    publicKey: "pk-lf-c63c246b-88f6-456e-92b2-41b19d8088a2",
-    baseUrl: "https://cloud.langfuse.com",
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
-}); */
 
 sdk.start();
 
