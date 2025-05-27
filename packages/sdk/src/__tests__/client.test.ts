@@ -1,4 +1,4 @@
-import { VoltAgentClient } from "../client";
+import { VoltAgentCoreAPI } from "../client";
 
 // Mock global fetch
 globalThis.fetch = jest.fn() as jest.Mock;
@@ -25,13 +25,13 @@ afterEach(() => {
   globalThis.AbortController = originalAbortController;
 });
 
-describe("VoltAgentClient", () => {
-  let client: VoltAgentClient;
+describe("VoltAgentCoreAPI", () => {
+  let client: VoltAgentCoreAPI;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    client = new VoltAgentClient({
+    client = new VoltAgentCoreAPI({
       baseUrl: "https://api.example.com",
       publicKey: "test-public-key",
       secretKey: "test-secret-key",
@@ -68,7 +68,7 @@ describe("VoltAgentClient", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.example.com/api/history",
+        "https://api.example.com/history",
         expect.objectContaining({
           method: "POST",
           headers: expect.objectContaining({
@@ -120,9 +120,9 @@ describe("VoltAgentClient", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.example.com/api/history/123",
+        "https://api.example.com/history/123",
         expect.objectContaining({
-          method: "PUT",
+          method: "PATCH",
           headers: expect.objectContaining({
             "Content-Type": "application/json",
             "x-public-key": "test-public-key",
@@ -164,9 +164,14 @@ describe("VoltAgentClient", () => {
       const result = await client.addEvent({
         historyId: "history-123",
         event: {
-          name: "test:event",
+          id: "event-123",
+          name: "tool:start",
           type: "tool",
           startTime: "2023-01-01T00:00:00Z",
+          traceId: "history-123",
+          metadata: {
+            id: "event-metadata-123",
+          },
         },
       });
 

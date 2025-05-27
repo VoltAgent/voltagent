@@ -125,7 +125,11 @@ export class MemoryManager {
       },
       output: null,
       error: null,
-      metadata: { displayName: "Memory", id: "memory", agentId: this.resourceId },
+      metadata: {
+        displayName: "Memory",
+        id: "memory",
+        agentId: this.resourceId,
+      },
       traceId: context.historyEntry.id,
     };
 
@@ -152,7 +156,11 @@ export class MemoryManager {
           timestamp: memoryMessage.createdAt,
         },
         error: null,
-        metadata: { displayName: "Memory", id: "memory", agentId: this.resourceId },
+        metadata: {
+          displayName: "Memory",
+          id: "memory",
+          agentId: this.resourceId,
+        },
         traceId: context.historyEntry.id,
         parentEventId: memoryWriteStartEvent.id,
       };
@@ -175,7 +183,11 @@ export class MemoryManager {
           message: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
         },
-        metadata: { displayName: "Memory", id: "memory", agentId: this.resourceId },
+        metadata: {
+          displayName: "Memory",
+          id: "memory",
+          agentId: this.resourceId,
+        },
         traceId: context.historyEntry.id,
         parentEventId: memoryWriteStartEvent.id,
       };
@@ -268,7 +280,11 @@ export class MemoryManager {
           },
           output: null,
           error: null,
-          metadata: { displayName: "Memory", id: "memory", agentId: this.resourceId },
+          metadata: {
+            displayName: "Memory",
+            id: "memory",
+            agentId: this.resourceId,
+          },
           traceId: context.historyEntry.id,
         };
 
@@ -301,7 +317,11 @@ export class MemoryManager {
             messages,
           },
           error: null,
-          metadata: { displayName: "Memory", id: "memory", agentId: this.resourceId },
+          metadata: {
+            displayName: "Memory",
+            id: "memory",
+            agentId: this.resourceId,
+          },
           traceId: context.historyEntry.id,
         };
 
@@ -402,6 +422,7 @@ export class MemoryManager {
         input: entry.input,
         output: entry.output,
         usage: entry.usage,
+        metadata: entry.metadata,
       };
 
       // Save the main record (using addHistoryEntry and passing agentId)
@@ -486,7 +507,8 @@ export class MemoryManager {
         status: updates.status !== undefined ? updates.status : entry.status,
         output: updates.output !== undefined ? updates.output : entry.output,
         usage: updates.usage !== undefined ? updates.usage : entry.usage,
-        newEvents: updates.newEvents !== undefined ? updates.newEvents : entry.newEvents,
+        events: updates.events !== undefined ? updates.events : entry.events,
+        metadata: updates.metadata !== undefined ? updates.metadata : entry.metadata,
         _agentId: agentId, // Always preserve the agentId
       };
 
@@ -497,17 +519,6 @@ export class MemoryManager {
       if (updates.steps) {
         // Update with all steps
         await this.addStepsToHistoryEntry(agentId, entryId, updates.steps);
-      }
-
-      // If there are newEvents updates
-      if (updates.newEvents && Array.isArray(updates.newEvents)) {
-        // Just update the whole newEvents array, they are immutable by design
-        const updatedEntryWithNewEvents = {
-          ...updatedMainEntry,
-          newEvents: updates.newEvents,
-        };
-
-        await this.memory.updateHistoryEntry(entryId, updatedEntryWithNewEvents, agentId);
       }
 
       // Return the updated record with all relationships

@@ -1,7 +1,7 @@
 // @ts-ignore - To prevent errors when loading Jest mocks
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
-import type { MemoryMessage } from "../memory/types";
+import type { MemoryMessage, Memory } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
 import { createTool } from "../tool";
 import { Agent } from "./index";
@@ -22,12 +22,14 @@ import type { AgentStatus, OperationContext, ToolExecutionContext } from "./type
 import { createHooks } from "./hooks";
 import { HistoryManager } from "./history";
 import type { VoltAgentExporter } from "../telemetry/exporter";
+import type { NewTimelineEvent } from "../events/types";
+import type { BaseRetriever } from "../retriever/retriever";
 
 // Define a generic mock model type locally
-type MockModelType = { modelId: string; [key: string]: any };
+type MockModelType = { modelId: string; [key: string]: unknown };
 
 // Helper function to extract string content from MessageContent
-function getStringContent(content: any): string {
+function getStringContent(content: unknown): string {
   if (typeof content === "string") {
     return content;
   }
@@ -72,7 +74,7 @@ type MockStreamObjectResult<T> = {
   textStream: ReadableStream<string>;
 };
 
-// A simplified History object
+// A simplified History object - updated to match new AgentHistoryEntry structure
 // @ts-ignore - Simplified AgentHistoryEntry for testing
 const createMockHistoryEntry = (
   input: string,
@@ -83,8 +85,9 @@ const createMockHistoryEntry = (
     input,
     output: `Response to ${input}`,
     status: status as AgentStatus,
-    timestamp: new Date(),
-    events: [],
+    startTime: new Date(), // Updated from timestamp to startTime
+    endTime: new Date(), // Added endTime
+    steps: [], // Added steps array
   };
 };
 
@@ -111,6 +114,16 @@ const mockMemory = {
   updateHistoryStep: jest.fn(),
   getHistoryStep: jest.fn(),
   getAllHistoryEntriesByAgent: jest.fn(),
+
+  // Added missing addTimelineEvent method
+  addTimelineEvent: jest
+    .fn()
+    .mockImplementation(
+      async (_key: string, _value: NewTimelineEvent, _historyId: string, _agentId: string) => {
+        // Mock implementation - just resolve
+        return Promise.resolve();
+      },
+    ),
 
   // Special test requirements
   getHistoryEntries: jest.fn().mockImplementation(async () => {
@@ -306,7 +319,7 @@ class MockProvider implements LLMProvider<MockModelType> {
 }
 
 // Test Agent class to access protected properties
-class TestAgent<TProvider extends { llm: LLMProvider<any> }> extends Agent<TProvider> {
+class TestAgent<TProvider extends { llm: LLMProvider<unknown> }> extends Agent<TProvider> {
   getTools() {
     return this.toolManager.getTools();
   }
@@ -350,31 +363,38 @@ jest.mock("./history", () => ({
         return Promise.resolve(createMockHistoryEntry(entryInputString, status || "working"));
       }),
       getEntries: jest.fn().mockResolvedValue([]),
-      updateEntry: jest.fn().mockImplementation(async (id: string, updates: any) => {
-        // @ts-ignore createMockHistoryEntry is defined in the outer scope
-        const baseEntry = createMockHistoryEntry("updated_input_for_mock");
-        return Promise.resolve({ ...baseEntry, id, ...updates });
-      }),
-      addStepsToEntry: jest.fn().mockImplementation(async (id: string, newSteps: any[]) => {
-        // @ts-ignore createMockHistoryEntry is defined in the outer scope
-        const baseEntry = createMockHistoryEntry("steps_added_input_for_mock");
-        return Promise.resolve({
-          ...baseEntry,
-          id,
-          steps: [...(baseEntry.steps || []), ...newSteps],
-        });
-      }),
+      updateEntry: jest
+        .fn()
+        .mockImplementation(async (id: string, updates: Partial<AgentHistoryEntry>) => {
+          // @ts-ignore createMockHistoryEntry is defined in the outer scope
+          const baseEntry = createMockHistoryEntry("updated_input_for_mock");
+          return Promise.resolve({ ...baseEntry, id, ...updates });
+        }),
+      addStepsToEntry: jest
+        .fn()
+        .mockImplementation(async (id: string, newSteps: StepWithContent[]) => {
+          // @ts-ignore createMockHistoryEntry is defined in the outer scope
+          const baseEntry = createMockHistoryEntry("steps_added_input_for_mock");
+          return Promise.resolve({
+            ...baseEntry,
+            id,
+            steps: [...(baseEntry.steps || []), ...newSteps],
+          });
+        }),
       // Agent tarafından kullanılan diğer HistoryManager metodları buraya eklenebilir.
       // Örneğin: getEntryById, addEventToEntry
       getEntryById: jest.fn().mockImplementation(async (id: string) => {
         // @ts-ignore createMockHistoryEntry is defined in the outer scope
         return Promise.resolve(createMockHistoryEntry(`entry_for_${id}`));
       }),
-      addEventToEntry: jest.fn().mockImplementation(async (id: string, event: any) => {
-        // @ts-ignore createMockHistoryEntry is defined in the outer scope
-        const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
-        return Promise.resolve({ ...baseEntry, id, events: [...(baseEntry.events || []), event] });
-      }),
+      addEventToEntry: jest
+        .fn()
+        .mockImplementation(async (id: string, _event: NewTimelineEvent) => {
+          // @ts-ignore createMockHistoryEntry is defined in the outer scope
+          const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
+          // Remove events property since it doesn't exist in AgentHistoryEntry
+          return Promise.resolve({ ...baseEntry, id });
+        }),
     };
   }),
 }));
@@ -388,6 +408,24 @@ const mockTelemetryExporter = {
   updateHistoryEntry: jest.fn(),
   updateTimelineEvent: jest.fn(),
 } as unknown as VoltAgentExporter;
+
+// Mock AgentEventEmitter globally
+const mockEventEmitter = {
+  getInstance: jest.fn().mockReturnThis(),
+  addHistoryEvent: jest.fn(),
+  emitHistoryEntryCreated: jest.fn(),
+  emitHistoryUpdate: jest.fn(),
+  emitAgentRegistered: jest.fn(),
+  emitAgentUnregistered: jest.fn(),
+  onAgentRegistered: jest.fn(),
+  onAgentUnregistered: jest.fn(),
+  onHistoryEntryCreated: jest.fn(),
+  onHistoryUpdate: jest.fn(),
+  publishTimelineEvent: jest.fn().mockResolvedValue(createMockHistoryEntry("mock_timeline_event")),
+} as unknown as jest.Mocked<AgentEventEmitter>;
+
+// Mock AgentEventEmitter.getInstance globally
+jest.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
 
 describe("Agent", () => {
   let agent: TestAgent<{ llm: MockProvider }>;
@@ -493,7 +531,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         telemetryExporter: mockTelemetryExporter,
-        memory: mockMemory as any,
+        memory: mockMemory as Memory,
       });
 
       expect(HistoryManager).toHaveBeenCalledTimes(1);
@@ -513,7 +551,7 @@ describe("Agent", () => {
         instructions: "No telemetry agent instructions",
         model: mockModel,
         llm: mockProvider,
-        memory: mockMemory as any,
+        memory: mockMemory as Memory,
       });
 
       expect(HistoryManager).toHaveBeenCalledTimes(1);
@@ -739,6 +777,21 @@ describe("Agent", () => {
       // Clean up the spy
       emitAgentUnregisteredSpy.mockRestore();
     });
+
+    it("should use HistoryManager to store history entries", async () => {
+      const historyManager = agent.getHistoryManager();
+
+      // Mock emitHistoryEntryCreated once more to ensure fresh mocks
+      const emitHistoryEntryCreatedMock = jest.fn();
+      mockEventEmitter.emitHistoryEntryCreated = emitHistoryEntryCreatedMock;
+
+      const historyManagerAddEntrySpy = jest.spyOn(historyManager, "addEntry");
+
+      await agent.generateText("Test input");
+
+      expect(historyManagerAddEntrySpy).toHaveBeenCalled();
+      expect(historyManagerAddEntrySpy.mock.calls[0][0].input).toBe("Test input");
+    });
   });
 
   describe("additional core functionality", () => {
@@ -783,59 +836,6 @@ describe("Agent", () => {
   });
 
   describe("events", () => {
-    // Mock AgentEventEmitter with createTrackedEvent method
-    let mockEventEmitter: jest.Mocked<AgentEventEmitter>;
-
-    beforeEach(() => {
-      mockEventEmitter = {
-        getInstance: jest.fn().mockReturnThis(),
-        createTrackedEvent: jest.fn().mockReturnValue(() => {}),
-        addHistoryEvent: jest.fn(),
-        emitHistoryEntryCreated: jest.fn(),
-        emitHistoryUpdate: jest.fn(),
-        emitAgentRegistered: jest.fn(),
-        emitAgentUnregistered: jest.fn(),
-        onAgentRegistered: jest.fn(),
-        onAgentUnregistered: jest.fn(),
-        onHistoryEntryCreated: jest.fn(),
-        onHistoryUpdate: jest.fn(),
-      } as unknown as jest.Mocked<AgentEventEmitter>;
-
-      // Mock AgentEventEmitter.getInstance to return our mock
-      jest.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
-    });
-
-    // Skip these two failing tests, since they require more complex setup
-    it.skip("should create tracked events during text generation", async () => {
-      // Not testing this functionality directly since it would require
-      // registering the agent with the registry first
-      const spy = jest.spyOn(AgentEventEmitter.getInstance(), "createTrackedEvent");
-
-      await agent.generateText("Hello!");
-
-      // Test skipped because registry integration is required
-      spy.mockRestore();
-    });
-
-    it.skip("should create tracked events when using tools", async () => {
-      // Not testing this functionality directly since it would require
-      // registering the agent with the registry first
-      const spy = jest.spyOn(AgentEventEmitter.getInstance(), "createTrackedEvent");
-
-      const mockTool = createTool({
-        name: "test-tool",
-        description: "A test tool",
-        parameters: z.object({}),
-        execute: async () => "tool result",
-      });
-
-      agent.addItems([mockTool]);
-      await agent.generateText("Use the test tool");
-
-      // Test skipped because registry integration is required
-      spy.mockRestore();
-    });
-
     it("should register agent when created", () => {
       const newAgent = new TestAgent({
         name: "New Agent",
@@ -866,27 +866,6 @@ describe("Agent", () => {
   });
 
   describe("manager classes", () => {
-    let mockEventEmitter: jest.Mocked<AgentEventEmitter>;
-
-    beforeEach(() => {
-      mockEventEmitter = {
-        getInstance: jest.fn().mockReturnThis(),
-        createTrackedEvent: jest.fn().mockReturnValue(() => {}),
-        addHistoryEvent: jest.fn(),
-        emitHistoryEntryCreated: jest.fn(),
-        emitHistoryUpdate: jest.fn(),
-        emitAgentRegistered: jest.fn(),
-        emitAgentUnregistered: jest.fn(),
-        onAgentRegistered: jest.fn(),
-        onAgentUnregistered: jest.fn(),
-        onHistoryEntryCreated: jest.fn(),
-        onHistoryUpdate: jest.fn(),
-      } as unknown as jest.Mocked<AgentEventEmitter>;
-
-      // Mock AgentEventEmitter.getInstance to return our mock
-      jest.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
-    });
-
     it("should initialize managers in constructor", () => {
       expect(agent.getToolManager()).toBeDefined();
       expect(agent.getHistoryManager()).toBeDefined();
@@ -913,7 +892,7 @@ describe("Agent", () => {
       await agent.generateText("Test input");
 
       expect(historyManagerAddEntrySpy).toHaveBeenCalled();
-      expect(historyManagerAddEntrySpy.mock.calls[0][0]).toBe("Test input");
+      expect(historyManagerAddEntrySpy.mock.calls[0][0].input).toBe("Test input");
     });
   });
 
@@ -958,6 +937,9 @@ describe("Agent", () => {
         retrieveCalls: 0,
         expectedContext: "This is retrieved context",
 
+        // Add required BaseRetriever properties
+        options: {},
+
         tool: {
           name: "mock-retriever",
           description: "A mock retriever for testing",
@@ -985,8 +967,8 @@ describe("Agent", () => {
         description: "A test agent with retriever",
         model: mockModel,
         llm: mockProvider,
-        // Use any type to bypass type checking for the mock retriever
-        retriever: mockRetriever as any,
+        // Cast through unknown to BaseRetriever for type compatibility
+        retriever: mockRetriever as unknown as BaseRetriever,
         instructions: "Retriever Test Agent instructions",
       });
 
@@ -1014,8 +996,8 @@ describe("Agent", () => {
         description: "A test agent with error retriever",
         model: mockModel,
         llm: mockProvider,
-        // Use any type to bypass type checking for the mock retriever
-        retriever: errorRetriever as any,
+        // Cast through unknown to BaseRetriever for type compatibility
+        retriever: errorRetriever as unknown as BaseRetriever,
         instructions: "Error Retriever Test Agent instructions",
       });
 
@@ -1040,8 +1022,8 @@ describe("Agent", () => {
         description: "A test agent with retriever for state testing",
         model: mockModel,
         llm: mockProvider,
-        // Use any type to bypass type checking for the mock retriever
-        retriever: mockRetriever as any,
+        // Cast through unknown to BaseRetriever for type compatibility
+        retriever: mockRetriever as unknown as BaseRetriever,
         instructions: "State Retriever Test Agent instructions",
       });
 
@@ -1081,7 +1063,10 @@ describe("Agent", () => {
       // Check if userContext exists and is a Map
       expect(operationContext).toHaveProperty("userContext");
       expect(operationContext.userContext).toBeInstanceOf(Map);
-      expect(operationContext.userContext.size).toBe(0); // Should be empty initially
+      // userContext contains agent_start_time and agent_start_event_id by default
+      expect(operationContext.userContext.size).toBe(2);
+      expect(operationContext.userContext.has("agent_start_time")).toBe(true);
+      expect(operationContext.userContext.has("agent_start_event_id")).toBe(true);
     });
 
     it("should initialize OperationContext with userContext from options", async () => {
@@ -1252,8 +1237,12 @@ describe("Agent", () => {
         instructions: "Isolation Options Agent instructions",
       });
 
-      await isolationAgent.generateText("Operation 1 with options", { userContext: userContext1 });
-      await isolationAgent.generateText("Operation 2 with options", { userContext: userContext2 });
+      await isolationAgent.generateText("Operation 1 with options", {
+        userContext: userContext1,
+      });
+      await isolationAgent.generateText("Operation 2 with options", {
+        userContext: userContext2,
+      });
 
       expect(onStartHook).toHaveBeenCalledTimes(2);
     });

@@ -78,10 +78,9 @@ describe("AgentEventEmitter", () => {
     // Test history entry
     const historyEntry: Partial<AgentHistoryEntry> = {
       id: "test-history-id",
-      timestamp: new Date("2023-01-01T00:00:00Z"),
+      startTime: new Date("2023-01-01T00:00:00Z"),
       input: "Test input",
       output: "Test output",
-      events: [],
       status: "completed" as AgentStatus,
       steps: [],
     };
@@ -346,8 +345,9 @@ describe("AgentEventEmitter", () => {
               name: "agent:start",
               type: "agent",
               metadata: expect.objectContaining({
-                isSubagent: true,
-                parentAgentId: "parent-agent",
+                displayName: "TestAgent",
+                id: "child-agent",
+                agentId: "parent-agent",
               }),
             }),
           }),
@@ -425,8 +425,9 @@ describe("AgentEventEmitter", () => {
               type: "agent",
               status: "completed",
               metadata: expect.objectContaining({
-                isSubagent: true,
-                parentAgentId: "parent-agent",
+                displayName: "TestAgent",
+                id: "child-agent",
+                agentId: "parent-agent",
               }),
             }),
           }),
@@ -462,8 +463,9 @@ describe("AgentEventEmitter", () => {
                 message: "Error message",
               }),
               metadata: expect.objectContaining({
-                isSubagent: true,
-                parentAgentId: "parent-agent",
+                displayName: "TestAgent",
+                id: "child-agent",
+                agentId: "parent-agent",
               }),
             }),
           }),

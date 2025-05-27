@@ -1,4 +1,4 @@
-import { VoltAgentClient } from "./client";
+import { VoltAgentCoreAPI } from "./client";
 import type {
   VoltAgentClientOptions,
   CreateHistoryRequest,
@@ -10,78 +10,11 @@ import type {
 } from "./types";
 import { randomUUID } from "node:crypto";
 
-export class VoltAgentHistoryWrapper {
-  private coreClient: VoltAgentClient;
-  private historyData: History;
-
-  constructor(coreClient: VoltAgentClient, historyData: History) {
-    this.coreClient = coreClient;
-    this.historyData = historyData;
-  }
-
-  /**
-   * History'yi günceller
-   */
-  async update(data: Omit<UpdateHistoryRequest, "id">): Promise<History> {
-    const updatedHistory = await this.coreClient.updateHistory({
-      id: this.historyData.id,
-      ...data,
-    });
-
-    // Internal state'i güncelle
-    this.historyData = updatedHistory;
-    return updatedHistory;
-  }
-
-  /**
-   * History'yi sonlandırır (status ve endTime setler, diğer alanları da güncelleyebilir)
-   */
-  async end(data?: Omit<UpdateHistoryRequest, "id">): Promise<History> {
-    return this.update({
-      status: "completed",
-      endTime: new Date().toISOString(),
-      ...data, // kullanıcının verdiği data ile override edilebilir
-    });
-  }
-
-  /**
-   * Type-safe event ekleme - discriminated union ile tam tip güvenliği
-   * History'ye event ekler - traceId'yi otomatik olarak historyId olarak ayarlar
-   */
-  async addEvent(event: TimelineEventInput): Promise<Event> {
-    // traceId'yi historyId olarak set et ve diğer eksik alanları doldur
-    const eventWithTraceId: TimelineEventCore = {
-      id: randomUUID(), // ID oluştur
-      startTime: new Date().toISOString(), // Default startTime
-      ...event,
-      traceId: this.historyData.id,
-    } as unknown as TimelineEventCore;
-
-    return this.coreClient.addEvent({
-      historyId: this.historyData.id,
-      event: eventWithTraceId,
-    });
-  }
-
-  /**
-   * Mevcut history verisini döndürür
-   */
-  get data(): History {
-    return this.historyData;
-  }
-
-  /**
-   * History ID'sini döndürür
-   */
-  get id(): string {
-    return this.historyData.id;
-  }
-}
-
-export class VoltAgentSDK {
-  private coreClient: VoltAgentClient;
+export class VoltAgentObservabilitySDK {
+  private coreClient: VoltAgentCoreAPI;
   private eventQueue: Array<{ historyId: string; event: TimelineEventCore }> = [];
   private autoFlushInterval?: NodeJS.Timeout;
+  private histories = new Map<string, History>(); // History state tracking
 
   constructor(
     options: VoltAgentClientOptions & {
@@ -89,7 +22,7 @@ export class VoltAgentSDK {
       flushInterval?: number;
     },
   ) {
-    this.coreClient = new VoltAgentClient(options);
+    this.coreClient = new VoltAgentCoreAPI(options);
 
     // Auto flush özelliği
     if (options.autoFlush !== false) {
@@ -101,18 +34,64 @@ export class VoltAgentSDK {
   }
 
   /**
-   * Yeni bir history oluşturur ve wrapper döndürür
+   * Yeni bir history oluşturur
    */
-  async createHistory(data: CreateHistoryRequest): Promise<VoltAgentHistoryWrapper> {
+  async createHistory(data: CreateHistoryRequest): Promise<History> {
     const history = await this.coreClient.addHistory(data);
-    return new VoltAgentHistoryWrapper(this.coreClient, history);
+    // History'yi internal state'e kaydet
+    this.histories.set(history.id, history);
+    return history;
   }
 
   /**
-   * Direkt history oluşturur (wrapper olmadan)
+   * Var olan bir history'yi günceller
    */
-  async addHistory(data: CreateHistoryRequest): Promise<History> {
-    return this.coreClient.addHistory(data);
+  async updateHistory(historyId: string, data: Omit<UpdateHistoryRequest, "id">): Promise<History> {
+    const updatedHistory = await this.coreClient.updateHistory({
+      id: historyId,
+      ...data,
+    });
+
+    // Internal state'i güncelle
+    this.histories.set(historyId, updatedHistory);
+    return updatedHistory;
+  }
+
+  /**
+   * History'yi sonlandırır (status ve endTime setler, diğer alanları da güncelleyebilir)
+   */
+  async endHistory(historyId: string, data?: Omit<UpdateHistoryRequest, "id">): Promise<History> {
+    return this.updateHistory(historyId, {
+      status: "completed",
+      endTime: new Date().toISOString(),
+      ...data, // kullanıcının verdiği data ile override edilebilir
+    });
+  }
+
+  /**
+   * Type-safe event ekleme - discriminated union ile tam tip güvenliği
+   * History'ye event ekler - traceId'yi otomatik olarak historyId olarak ayarlar
+   */
+  async addEventToHistory(historyId: string, event: TimelineEventInput): Promise<Event> {
+    // traceId'yi historyId olarak set et ve diğer eksik alanları doldur
+    const eventWithTraceId: TimelineEventCore = {
+      id: randomUUID(), // ID oluştur
+      startTime: new Date().toISOString(), // Default startTime
+      ...event,
+      traceId: historyId,
+    } as unknown as TimelineEventCore;
+
+    return this.coreClient.addEvent({
+      historyId,
+      event: eventWithTraceId,
+    });
+  }
+
+  /**
+   * Mevcut history verisini döndürür
+   */
+  getHistory(historyId: string): History | undefined {
+    return this.histories.get(historyId);
   }
 
   /**
@@ -174,7 +153,7 @@ export class VoltAgentSDK {
   /**
    * Core client'a direkt erişim (advanced kullanım için)
    */
-  get client(): VoltAgentClient {
+  get client(): VoltAgentCoreAPI {
     return this.coreClient;
   }
 }

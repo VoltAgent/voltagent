@@ -86,11 +86,6 @@ export interface AddEntryParams {
   >;
 
   /**
-   * Optional agent snapshot for telemetry
-   */
-  agentSnapshot?: Record<string, unknown>;
-
-  /**
    * Optional userId for telemetry
    */
   userId?: string;
@@ -146,10 +141,7 @@ export interface AgentHistoryEntry {
    */
   usage?: UsageInfo;
 
-  /**
-   * Timeline events for detailed agent state history
-   */
-  events?: TimelineEvent[];
+  metadata?: Record<string, unknown>;
 
   /**
    * Sequence number for the history entry
@@ -280,7 +272,9 @@ export class HistoryManager {
           output: { text: entry.output },
           steps: entry.steps,
           usage: entry.usage,
-          agent_snapshot: params.agentSnapshot,
+          metadata: {
+            agentSnapshot: params.options?.metadata?.agentSnapshot,
+          },
           userId: params.userId,
           conversationId: params.conversationId,
           model: params.model,
@@ -380,7 +374,7 @@ export class HistoryManager {
     id: string,
     updates: Partial<
       Omit<AgentHistoryEntry, "id" | "timestamp"> & {
-        agent_snapshot?: Record<string, unknown>;
+        metadata?: Record<string, unknown>;
       }
     >,
   ): Promise<AgentHistoryEntry | undefined> {
@@ -405,8 +399,7 @@ export class HistoryManager {
         if (updates.output !== undefined) finalUpdates.output = updates.output;
         if (updates.status !== undefined) finalUpdates.status = updates.status;
         if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
-        if (updates.agent_snapshot !== undefined)
-          finalUpdates.agent_snapshot = updates.agent_snapshot;
+        if (updates.metadata !== undefined) finalUpdates.metadata = updates.metadata;
 
         if (Object.keys(finalUpdates).length > 0) {
           await this.voltAgentExporter.updateHistoryEntry(

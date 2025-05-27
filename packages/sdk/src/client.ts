@@ -9,7 +9,7 @@ import type {
   ApiError,
 } from "./types";
 
-export class VoltAgentClient {
+export class VoltAgentCoreAPI {
   private baseUrl: string;
   private headers: HeadersInit;
   private timeout: number;
@@ -59,7 +59,7 @@ export class VoltAgentClient {
         throw error;
       }
 
-      return { data } as T;
+      return data as T;
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") {
         throw {

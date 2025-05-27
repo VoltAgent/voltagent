@@ -552,9 +552,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       status: initialStatus,
       steps: [],
       options: {
-        events: [],
+        metadata: {
+          agentSnapshot: this.getFullState(),
+        },
       },
-      agentSnapshot: this.getFullState(),
       userId: options.userId,
       conversationId: options.conversationId,
       model: this.getModelName(),

@@ -15,7 +15,7 @@ export interface ExportAgentHistoryPayload {
   output?: Record<string, unknown>;
   error?: Record<string, unknown>;
   usage?: Record<string, unknown>;
-  agent_snapshot?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   steps?: HistoryStep[];
   userId?: string;
   conversationId?: string;
@@ -40,7 +40,7 @@ export interface AgentHistoryUpdatableFields {
   output?: string;
   status?: AgentStatus;
   usage?: UsageInfo;
-  agent_snapshot?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export class TelemetryServiceApiClient {
@@ -119,7 +119,7 @@ export class TelemetryServiceApiClient {
       conversationId: historyEntryData.conversationId,
       metadata: {
         error: historyEntryData.error,
-        agent_snapshot: historyEntryData.agent_snapshot,
+        agentSnapshot: historyEntryData.metadata?.agentSnapshot,
         steps: historyEntryData.steps,
         history_id: historyEntryData.history_id,
       },
@@ -187,9 +187,9 @@ export class TelemetryServiceApiClient {
     if (updates.usage) payload.usage = updates.usage;
 
     // agent_snapshot'ı metadata olarak ekle
-    if (updates.agent_snapshot) {
+    if (updates.metadata) {
       payload.metadata = {
-        agent_snapshot: updates.agent_snapshot,
+        ...updates.metadata,
       };
     }
 

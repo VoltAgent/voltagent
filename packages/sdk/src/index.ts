@@ -1,10 +1,10 @@
 // VoltAgent SDK - Client for interacting with VoltAgent API
 
 // Core client (low-level HTTP client)
-export { VoltAgentClient } from "./client";
+export { VoltAgentCoreAPI } from "./client";
 
 // High-level wrapper SDK
-export { VoltAgentSDK, VoltAgentHistoryWrapper } from "./wrapper";
+export { VoltAgentObservabilitySDK } from "./wrapper";
 
 // Type tanımlarını da re-export ediyoruz
 export type {

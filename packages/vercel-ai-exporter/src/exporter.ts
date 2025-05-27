@@ -1,6 +1,6 @@
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
-import { VoltAgentSDK, type VoltAgentHistoryWrapper } from "@voltagent/sdk";
+import { VoltAgentObservabilitySDK } from "@voltagent/sdk";
 import type { Usage } from "@voltagent/core";
 
 /**
@@ -59,11 +59,11 @@ interface AgentInfo {
  * It follows the same pattern as LangfuseExporter but targets VoltAgent backend.
  */
 export class VoltAgentExporter implements SpanExporter {
-  private readonly sdk: VoltAgentSDK;
+  private readonly sdk: VoltAgentObservabilitySDK;
   private readonly debug: boolean;
 
   // Track active histories by historyId (from telemetry metadata)
-  private activeHistories = new Map<string, VoltAgentHistoryWrapper>();
+  private activeHistories = new Map<string, string>(); // historyId -> historyId mapping
 
   // Track agents within each trace for multi-agent support
   private traceAgents = new Map<string, Map<string, AgentInfo>>();
@@ -72,7 +72,7 @@ export class VoltAgentExporter implements SpanExporter {
     this.debug = options.debug ?? false;
 
     // Initialize VoltAgent SDK
-    this.sdk = new VoltAgentSDK({
+    this.sdk = new VoltAgentObservabilitySDK({
       publicKey: options.publicKey ?? "",
       secretKey: options.secretKey ?? "",
       baseUrl: options.baseUrl ?? "https://api.voltagent.com",
@@ -143,9 +143,9 @@ export class VoltAgentExporter implements SpanExporter {
       this.traceAgents.set(traceId, agentsInTrace);
 
       // Find or create history for this historyId
-      let history = this.activeHistories.get(historyId);
+      const historyExists = this.activeHistories.has(historyId);
 
-      if (!history) {
+      if (!historyExists) {
         // Find root span
         const rootSpan = this.findRootSpan(spans);
         const rootAgent = this.findRootAgent(agentsInTrace);
@@ -167,7 +167,7 @@ export class VoltAgentExporter implements SpanExporter {
         };
 
         // Create new history with historyId as key
-        history = await this.sdk.createHistory({
+        await this.sdk.createHistory({
           id: historyId,
           agent_id: rootAgent?.agentId ?? traceMetadata.agentId ?? "no-named-ai-agent",
           input: this.parseSpanInput(rootSpan),
@@ -184,7 +184,7 @@ export class VoltAgentExporter implements SpanExporter {
           version: "1.0.0",
         });
 
-        this.activeHistories.set(historyId, history);
+        this.activeHistories.set(historyId, historyId);
         this.logDebug(
           `Created new history ${historyId} for trace ${traceId} with ${agentsInTrace.size} agents`,
         );
@@ -201,7 +201,7 @@ export class VoltAgentExporter implements SpanExporter {
         const isRootSpan = this.findRootSpan(spans) === span;
 
         await this.processSpanAsVoltAgentEvents(
-          history,
+          historyId,
           span,
           traceMetadata,
           agentInfo,
@@ -217,7 +217,7 @@ export class VoltAgentExporter implements SpanExporter {
         const endTime = rootSpan?.endTime ? this.hrTimeToISOString(rootSpan.endTime) : undefined;
 
         // Complete the history for this trace
-        history.end({
+        await this.sdk.endHistory(historyId, {
           output: finalOutput,
           usage: finalUsage,
           endTime: endTime,
@@ -235,7 +235,7 @@ export class VoltAgentExporter implements SpanExporter {
   }
 
   private async processSpanAsVoltAgentEvents(
-    history: VoltAgentHistoryWrapper,
+    historyId: string,
     span: ReadableSpan,
     traceMetadata: TraceMetadata,
     agentInfo?: AgentInfo,
@@ -253,7 +253,7 @@ export class VoltAgentExporter implements SpanExporter {
       case "generation":
         // Create agent events for each agent's generation spans
         await this.processGenerationSpan(
-          history,
+          historyId,
           span,
           {
             startTime,
@@ -272,7 +272,7 @@ export class VoltAgentExporter implements SpanExporter {
       case "tool":
         // Map to tool events
         await this.processToolSpan(
-          history,
+          historyId,
           span,
           {
             startTime,
@@ -293,7 +293,7 @@ export class VoltAgentExporter implements SpanExporter {
   }
 
   private async processGenerationSpan(
-    history: VoltAgentHistoryWrapper,
+    historyId: string,
     span: ReadableSpan,
     data: SpanData,
     traceMetadata: TraceMetadata,
@@ -330,7 +330,7 @@ export class VoltAgentExporter implements SpanExporter {
         },
       };
 
-      history.addEvent(agentStartEvent);
+      await this.sdk.addEventToHistory(historyId, agentStartEvent);
 
       this.logDebug(`Added agent:start event for agent: ${agentId}`);
     }
@@ -362,7 +362,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        history.addEvent(errorEvent);
+        await this.sdk.addEventToHistory(historyId, errorEvent);
       } else {
         // Only add success event if this is the last generation span for this agent
         if (agentInfo && this.isLastGenerationSpanForAgent(span, agentInfo)) {
@@ -385,7 +385,7 @@ export class VoltAgentExporter implements SpanExporter {
             },
           };
 
-          history.addEvent(successEvent);
+          await this.sdk.addEventToHistory(historyId, successEvent);
           this.logDebug(`Added agent:success event for agent: ${agentId}`);
         }
       }
@@ -393,7 +393,7 @@ export class VoltAgentExporter implements SpanExporter {
   }
 
   private async processToolSpan(
-    history: VoltAgentHistoryWrapper,
+    historyId: string,
     span: ReadableSpan,
     data: SpanData,
     traceMetadata: TraceMetadata,
@@ -421,7 +421,7 @@ export class VoltAgentExporter implements SpanExporter {
       },
     };
 
-    history.addEvent(startEvent);
+    await this.sdk.addEventToHistory(historyId, startEvent);
 
     // Tool completion event (if span is finished)
     if (data.endTime) {
@@ -445,7 +445,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        history.addEvent(errorEvent);
+        await this.sdk.addEventToHistory(historyId, errorEvent);
       } else {
         const successEvent = {
           name: "tool:success" as const,
@@ -461,7 +461,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        history.addEvent(successEvent);
+        await this.sdk.addEventToHistory(historyId, successEvent);
       }
     }
   }
@@ -751,10 +751,7 @@ export class VoltAgentExporter implements SpanExporter {
     // End any remaining active histories (only on force flush/shutdown)
     for (const [historyId, history] of this.activeHistories) {
       try {
-        history.end({
-          status: "completed",
-          endTime: new Date().toISOString(),
-        });
+        await this.sdk.endHistory(history);
         this.logDebug(`Force completed history ${historyId}`);
       } catch (error) {
         this.logDebug(`Error force completing history ${historyId}:`, error);

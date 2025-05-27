@@ -539,7 +539,7 @@ export class LibSQLStorage implements Memory {
       const inputJSON = value.input ? JSON.stringify(value.input) : null;
       const outputJSON = value.output ? JSON.stringify(value.output) : null;
       const usageJSON = value.usage ? JSON.stringify(value.usage) : null;
-      const metadataJSON = null; // Initially empty for backwards compatibility
+      const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
 
       // Insert or replace with the structured format
       await this.client.execute({
@@ -717,6 +717,7 @@ export class LibSQLStorage implements Memory {
         input: row.input ? JSON.parse(row.input as string) : null,
         output: row.output ? JSON.parse(row.output as string) : null,
         usage: row.usage ? JSON.parse(row.usage as string) : null,
+        metadata: row.metadata ? JSON.parse(row.metadata as string) : null,
       };
 
       this.debug(`Got history entry with ID ${key}`);
@@ -751,7 +752,7 @@ export class LibSQLStorage implements Memory {
       });
 
       // Parse timeline events and construct NewTimelineEvent objects
-      const newEvents = timelineEventsResult.rows.map((row) => {
+      const events = timelineEventsResult.rows.map((row) => {
         // Parse JSON fields
         const input = row.input ? JSON.parse(row.input as string) : undefined;
         const output = row.output ? JSON.parse(row.output as string) : undefined;
@@ -779,10 +780,10 @@ export class LibSQLStorage implements Memory {
         };
       });
 
-      // @ts-ignore
+      // @ts-ignoreç
       entry.steps = steps;
       // @ts-ignore
-      entry.newEvents = newEvents;
+      entry.events = events;
 
       return entry;
     } catch (error) {
@@ -1029,6 +1030,7 @@ export class LibSQLStorage implements Memory {
         input: row.input ? JSON.parse(row.input as string) : null,
         output: row.output ? JSON.parse(row.output as string) : null,
         usage: row.usage ? JSON.parse(row.usage as string) : null,
+        metadata: row.metadata ? JSON.parse(row.metadata as string) : null,
       }));
 
       this.debug(`Got all history entries for agent ${agentId} (${entries.length} items)`);
@@ -1066,7 +1068,7 @@ export class LibSQLStorage implements Memory {
           });
 
           // Parse timeline events and construct NewTimelineEvent objects
-          const newEvents = timelineEventsResult.rows.map((row) => {
+          const events = timelineEventsResult.rows.map((row) => {
             // Parse JSON fields
             const input = row.input ? JSON.parse(row.input as string) : undefined;
             const output = row.output ? JSON.parse(row.output as string) : undefined;
@@ -1094,11 +1096,10 @@ export class LibSQLStorage implements Memory {
             };
           });
 
-          // Add events, steps and newEvents to the entry
           // @ts-ignore
           entry.steps = steps;
           // @ts-ignore
-          entry.newEvents = newEvents;
+          entry.events = events;
 
           return entry;
         }),
