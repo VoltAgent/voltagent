@@ -295,7 +295,9 @@ export class LibSQLStorage implements Memory {
     this.debug("Database initialized successfully");
 
     try {
-      const result = await this.migrateAgentHistoryData();
+      const result = await this.migrateAgentHistoryData({
+        restoreFromBackup: false,
+      });
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
@@ -313,7 +315,7 @@ export class LibSQLStorage implements Memory {
       }
     } catch (error) {
       this.debug("Error initializing database:", error);
-      throw new Error("Failed to initialize LibSQL database");
+      //throw new Error("Failed to initialize LibSQL database");
     }
   }
 
@@ -1335,9 +1337,9 @@ export class LibSQLStorage implements Memory {
 
                 // Set input data correctly
                 if (event.input) {
-                  inputData = JSON.stringify(event.input);
+                  inputData = JSON.stringify({ input: event.input });
                 } else if (event.data?.input) {
-                  inputData = JSON.stringify(event.data.input);
+                  inputData = JSON.stringify({ input: event.data.input });
                 } else if (input) {
                   inputData = JSON.stringify({ input: input });
                 }
@@ -1349,7 +1351,11 @@ export class LibSQLStorage implements Memory {
                 if (event.metadata) {
                   metadata = JSON.stringify(event.metadata);
                 } else if (event.data) {
-                  metadata = JSON.stringify(event.data);
+                  metadata = JSON.stringify({
+                    id: event.affectedNodeId?.split("_").pop(),
+                    agentId: event.data?.metadata?.sourceAgentId,
+                    ...event.data,
+                  });
                 }
 
                 // Special event transformations
@@ -1421,7 +1427,10 @@ export class LibSQLStorage implements Memory {
                         inputData,
                         null, // no output
                         null, // no error
-                        metadata,
+                        JSON.stringify({
+                          id: "memory",
+                          agentId: event.affectedNodeId?.split("_").pop(),
+                        }),
                       ],
                     });
 
@@ -1449,7 +1458,10 @@ export class LibSQLStorage implements Memory {
                         inputData,
                         event.data.output ? JSON.stringify(event.data.output) : null,
                         event.error ? JSON.stringify(event.error) : null,
-                        metadata,
+                        JSON.stringify({
+                          id: "memory",
+                          agentId: event.affectedNodeId?.split("_").pop(),
+                        }),
                       ],
                     });
                   }
@@ -1479,7 +1491,10 @@ export class LibSQLStorage implements Memory {
                         inputData,
                         null, // no output
                         null, // no error
-                        metadata,
+                        JSON.stringify({
+                          id: "memory",
+                          agentId: event.affectedNodeId?.split("_").pop(),
+                        }),
                       ],
                     });
 
@@ -1507,7 +1522,10 @@ export class LibSQLStorage implements Memory {
                         inputData,
                         event.data.output ? JSON.stringify(event.data.output) : null,
                         event.error ? JSON.stringify(event.error) : null,
-                        metadata,
+                        JSON.stringify({
+                          id: "memory",
+                          agentId: event.affectedNodeId?.split("_").pop(),
+                        }),
                       ],
                     });
                   } else {
@@ -1566,6 +1584,8 @@ export class LibSQLStorage implements Memory {
                         null, // no output
                         null, // no error
                         JSON.stringify({
+                          id: event.affectedNodeId?.split("_").pop(),
+                          agentId: event.data?.metadata?.sourceAgentId,
                           displayName: event.data.metadata.toolName,
                         }),
                       ],
@@ -1596,6 +1616,8 @@ export class LibSQLStorage implements Memory {
                         event.data.output ? JSON.stringify(event.data.output) : null,
                         event.error ? JSON.stringify(event.error) : null,
                         JSON.stringify({
+                          id: event.affectedNodeId?.split("_").pop(),
+                          agentId: event.data?.metadata?.sourceAgentId,
                           displayName: event.data.metadata.toolName,
                         }),
                       ],
@@ -1626,7 +1648,10 @@ export class LibSQLStorage implements Memory {
                       inputData,
                       event.output ? JSON.stringify(event.output) : null,
                       event.error ? JSON.stringify(event.error) : null,
-                      metadata,
+                      JSON.stringify({
+                        id: eventType === "retriever" ? "retriever" : event.type,
+                        agentId: event.affectedNodeId?.split("_").pop(),
+                      }),
                     ],
                   });
                 }

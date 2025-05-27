@@ -1607,6 +1607,36 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
+      // [NEW EVENT SYSTEM] Create an agent:start event
+      const agentStartTime = new Date().toISOString(); // Capture agent start time once
+      const agentStartEvent: AgentStartEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:start",
+        type: "agent",
+        startTime: agentStartTime, // Use captured time
+        status: "running",
+        input: { input },
+        output: null,
+        error: null,
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          instructions: this.instructions,
+        },
+        traceId: operationContext.historyEntry.id,
+      };
+
+      // Store agent start time in the operation context for later reference
+      operationContext.userContext.set("agent_start_time", agentStartTime);
+      operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+      // Publish the new event through AgentEventEmitter
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentStartEvent,
+      });
+
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
         userId,
@@ -1635,6 +1665,37 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         },
       });
 
+      // [NEW EVENT SYSTEM] Create an agent:success event
+      const agentStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+        eventId:
+          (operationContext.userContext.get("agent_start_event_id") as string) ||
+          agentStartEvent.id,
+      };
+
+      const agentSuccessEvent: AgentSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:success",
+        type: "agent",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "completed",
+        input: null,
+        output: { object: response.object },
+        error: null,
+        metadata: { displayName: this.name, id: this.id, usage: response.usage },
+        traceId: operationContext.historyEntry.id,
+        parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:success event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentSuccessEvent,
+      });
+
       const responseStr =
         typeof response === "string" ? response : JSON.stringify(response?.object);
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
@@ -1644,6 +1705,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input: messages,
       });
       operationContext.isActive = false;
+
+      await this.updateHistoryEntry(operationContext, {
+        output: responseStr,
+        usage: response.usage,
+        status: "completed" as any,
+      });
+
       const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
         object: response.object,
         usage: response.usage,
@@ -1660,6 +1728,45 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       return typedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
+
+      // [NEW EVENT SYSTEM] Create an agent:error event
+      const agentErrorStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) ||
+          new Date().toISOString(),
+        eventId: operationContext.userContext.get("agent_start_event_id") as string,
+      };
+
+      const agentErrorEvent: AgentErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:error",
+        type: "agent",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        error: {
+          message: voltagentError.message,
+          code: voltagentError.code,
+          stage: voltagentError.stage,
+          ...(voltagentError.originalError
+            ? { originalError: String(voltagentError.originalError) }
+            : {}),
+        },
+        metadata: { displayName: this.name, id: this.id },
+        traceId: operationContext.historyEntry.id,
+        parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:error event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentErrorEvent,
+      });
+
       this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
         error: voltagentError,
@@ -1674,6 +1781,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         },
       });
       operationContext.isActive = false;
+
+      await this.updateHistoryEntry(operationContext, {
+        status: "error",
+      });
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
@@ -1727,24 +1839,53 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
 
-    let messages: BaseMessage[] = [];
+    await this.hooks.onStart?.({ agent: this, context: operationContext });
+
+    const systemMessage = await this.getSystemMessage({
+      input,
+      historyEntryId: operationContext.historyEntry.id,
+      contextMessages,
+    });
+    let messages = [systemMessage, ...contextMessages];
+    messages = await this.formatInputMessages(messages, input);
+
+    // [NEW EVENT SYSTEM] Create an agent:start event
+    const agentStartTime = new Date().toISOString(); // Capture agent start time once
+    const agentStartEvent: AgentStartEvent = {
+      id: crypto.randomUUID(),
+      name: "agent:start",
+      type: "agent",
+      startTime: agentStartTime, // Use captured time
+      status: "running",
+      input: { input },
+      output: null,
+      error: null,
+      metadata: {
+        displayName: this.name,
+        id: this.id,
+        instructions: this.instructions,
+      },
+      traceId: operationContext.historyEntry.id,
+    };
+
+    // Store agent start time in the operation context for later reference
+    operationContext.userContext.set("agent_start_time", agentStartTime);
+    operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+    // Publish the new event through AgentEventEmitter
+    await AgentEventEmitter.getInstance().publishTimelineEvent({
+      agentId: this.id,
+      historyId: operationContext.historyEntry.id,
+      event: agentStartEvent,
+    });
+
+    const onStepFinish = this.memoryManager.createStepFinishHandler(
+      operationContext,
+      userId,
+      finalConversationId,
+    );
+
     try {
-      await this.hooks.onStart?.({ agent: this, context: operationContext });
-
-      const systemMessage = await this.getSystemMessage({
-        input,
-        historyEntryId: operationContext.historyEntry.id,
-        contextMessages,
-      });
-      messages = [systemMessage, ...contextMessages];
-      messages = await this.formatInputMessages(messages, input);
-
-      const onStepFinish = this.memoryManager.createStepFinishHandler(
-        operationContext,
-        userId,
-        finalConversationId,
-      );
-
       const response = await this.llm.streamObject({
         messages,
         model: this.model,
@@ -1767,6 +1908,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (!operationContext.isActive) {
             return;
           }
+
+          // [NEW EVENT SYSTEM] Create an agent:success event
+          const agentStartInfo = {
+            startTime:
+              (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+            eventId:
+              (operationContext.userContext.get("agent_start_event_id") as string) ||
+              agentStartEvent.id,
+          };
+
+          const agentSuccessEvent: AgentSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "agent:success",
+            type: "agent",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { object: result.object },
+            error: null,
+            metadata: { displayName: this.name, id: this.id, usage: result.usage },
+            traceId: operationContext.historyEntry.id,
+            parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+          };
+
+          // Publish the agent:success event
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: operationContext.historyEntry.id,
+            event: agentSuccessEvent,
+          });
+
           const responseStr = JSON.stringify(result.object);
           this.addAgentEvent(operationContext, "finished", "completed" as any, {
             input: messages,
@@ -1778,6 +1951,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               warnings: result.warnings,
               providerResponse: result.providerResponse,
             },
+          });
+
+          await this.updateHistoryEntry(operationContext, {
+            output: responseStr,
+            usage: result.usage,
+            status: "completed" as any,
           });
 
           operationContext.isActive = false;
@@ -1805,6 +1984,43 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               });
             }
           }
+
+          // [NEW EVENT SYSTEM] Create an agent:error event
+          const agentErrorStartInfo = {
+            startTime:
+              (operationContext.userContext.get("agent_start_time") as string) ||
+              new Date().toISOString(),
+            eventId: operationContext.userContext.get("agent_start_event_id") as string,
+          };
+
+          const agentErrorEvent: AgentErrorEvent = {
+            id: crypto.randomUUID(),
+            name: "agent:error",
+            type: "agent",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "error",
+            level: "ERROR",
+            input: null,
+            output: null,
+            error: {
+              message: error.message,
+              code: error.code,
+              stage: error.stage,
+              ...(error.originalError ? { originalError: String(error.originalError) } : {}),
+            },
+            metadata: { displayName: this.name, id: this.id },
+            traceId: operationContext.historyEntry.id,
+            parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+          };
+
+          // Publish the agent:error event
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: operationContext.historyEntry.id,
+            event: agentErrorEvent,
+          });
+
           this.addAgentEvent(operationContext, "finished", "error" as any, {
             input: messages,
             error: error,
@@ -1818,6 +2034,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               ...error.metadata,
             },
           });
+
+          await this.updateHistoryEntry(operationContext, {
+            status: "error",
+          });
+
           operationContext.isActive = false;
           if (provider?.onError) {
             await (provider.onError as StreamOnErrorCallback)(error);
