@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "ES2022",
     "module": "CommonJS",
     "lib": ["es2020", "dom"],
     "declaration": true,
