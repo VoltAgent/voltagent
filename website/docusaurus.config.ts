@@ -90,6 +90,10 @@ const config: Config = {
             to: "/ai-agent-marketplace/",
             from: "/marketplace/",
           },
+          {
+            to: "/about/",
+            from: "/manifesto/",
+          },
         ],
       },
     ],
@@ -132,8 +136,8 @@ const config: Config = {
       style: "dark",
       items: [
         {
-          to: "/manifesto",
-          label: "Manifesto",
+          to: "/about",
+          label: "About us",
           position: "left",
         },
         {

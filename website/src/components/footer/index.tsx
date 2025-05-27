@@ -99,7 +99,7 @@ export function Footer() {
                 </FooterLink>
               </li>
               <li>
-                <FooterLink href="/manifesto/">Manifesto</FooterLink>
+                <FooterLink href="/about/">About us</FooterLink>
               </li>
             </ul>
           </div>
