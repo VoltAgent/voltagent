@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
-import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 import devLogger from "../utils/internal/dev-logger";
+import type * as xsschema from "xsschema";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
@@ -40,7 +40,7 @@ export type ToolOptions<T extends ToolSchema = ToolSchema> = {
   /**
    * Function to execute when the tool is called
    */
-  execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
+  execute: (args: xsschema.Infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
 };
 
 /**
@@ -70,7 +70,7 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
   /**
    * Function to execute when the tool is called
    */
-  readonly execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
+  readonly execute: (args: xsschema.Infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
 
   /**
    * Create a new tool

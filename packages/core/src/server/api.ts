@@ -1,7 +1,7 @@
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
-import type { z } from "zod";
+import type * as xsschema from "xsschema";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import type { AgentHistoryEntry } from "../agent/history";
@@ -132,7 +132,7 @@ app.use(
     exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
     maxAge: 600,
     credentials: true,
-  }),
+  })
 );
 
 // Get all agents
@@ -169,7 +169,7 @@ app.openapi(getAgentsRoute, (c) => {
     });
 
     // Define the exact success response type based on the route schema
-    type SuccessResponse = z.infer<
+    type SuccessResponse = xsschema.Infer<
       (typeof getAgentsRoute.responses)[200]["content"]["application/json"]["schema"]
     >;
 
@@ -182,8 +182,10 @@ app.openapi(getAgentsRoute, (c) => {
   } catch (error) {
     console.error("Failed to get agents:", error);
     return c.json(
-      { success: false, error: "Failed to retrieve agents" } satisfies z.infer<typeof ErrorSchema>,
-      500,
+      { success: false, error: "Failed to retrieve agents" } satisfies xsschema.Infer<
+        typeof ErrorSchema
+      >,
+      500
     );
   }
 });
@@ -264,26 +266,26 @@ app.openapi(textRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
-      404,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
+      404
     );
   }
 
   try {
-    const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    const { input, options = {} } = c.req.valid("json") as xsschema.Infer<typeof TextRequestSchema>;
 
     const response = await agent.generateText(input, options);
     return c.json(
-      { success: true, data: response } satisfies z.infer<typeof TextResponseSchema>,
-      200,
+      { success: true, data: response } satisfies xsschema.Infer<typeof TextResponseSchema>,
+      200
     );
   } catch (error) {
     return c.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to generate text",
-      } satisfies z.infer<typeof ErrorSchema>,
-      500,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
+      500
     );
   }
 });
@@ -296,8 +298,8 @@ app.openapi(streamRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
-      404,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
+      404
     );
   }
 
@@ -308,7 +310,7 @@ app.openapi(streamRoute, async (c) => {
         maxTokens: 4000,
         temperature: 0.7,
       },
-    } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    } = c.req.valid("json") as xsschema.Infer<typeof TextRequestSchema>;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -437,8 +439,8 @@ app.openapi(streamRoute, async (c) => {
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to initiate text stream",
-      } satisfies z.infer<typeof ErrorSchema>,
-      500,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
+      500
     );
   }
 });
@@ -451,8 +453,8 @@ app.openapi(objectRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
-      404,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
+      404
     );
   }
 
@@ -461,22 +463,22 @@ app.openapi(objectRoute, async (c) => {
       input,
       schema,
       options = {},
-    } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
+    } = c.req.valid("json") as xsschema.Infer<typeof ObjectRequestSchema>;
 
-    const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
+    const schemaInZodObject = convertJsonSchemaToZod(schema);
 
     const response = await agent.generateObject(input, schemaInZodObject, options);
     return c.json(
-      { success: true, data: response } satisfies z.infer<typeof ObjectResponseSchema>,
-      200,
+      { success: true, data: response } satisfies xsschema.Infer<typeof ObjectResponseSchema>,
+      200
     );
   } catch (error) {
     return c.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to generate object",
-      } satisfies z.infer<typeof ErrorSchema>,
-      500,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
+      500
     );
   }
 });
@@ -489,8 +491,8 @@ app.openapi(streamObjectRoute, async (c) => {
 
   if (!agent) {
     return c.json(
-      { success: false, error: "Agent not found" } satisfies z.infer<typeof ErrorSchema>,
-      404,
+      { success: false, error: "Agent not found" } satisfies xsschema.Infer<typeof ErrorSchema>,
+      404
     );
   }
 
@@ -499,9 +501,9 @@ app.openapi(streamObjectRoute, async (c) => {
       input,
       schema,
       options = {},
-    } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
+    } = c.req.valid("json") as xsschema.Infer<typeof ObjectRequestSchema>;
 
-    const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
+    const schemaInZodObject = convertJsonSchemaToZod(schema);
 
     const sseStream = new ReadableStream({
       async start(controller) {
@@ -638,8 +640,8 @@ app.openapi(streamObjectRoute, async (c) => {
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to initiate object stream",
-      } satisfies z.infer<typeof ErrorSchema>,
-      500,
+      } satisfies xsschema.Infer<typeof ErrorSchema>,
+      500
     );
   }
 });
@@ -671,7 +673,7 @@ app.get("/updates", async (c: ApiContext) => {
         success: false,
         error: error instanceof Error ? error.message : "Failed to check for updates",
       },
-      500,
+      500
     );
   }
 });
@@ -696,7 +698,7 @@ app.post("/updates", async (c: ApiContext) => {
         success: false,
         error: error instanceof Error ? error.message : "Failed to perform update",
       },
-      500,
+      500
     );
   }
 });
@@ -723,7 +725,7 @@ app.post("/updates/:packageName", async (c: ApiContext) => {
         success: false,
         error: error instanceof Error ? error.message : "Failed to update package",
       },
-      500,
+      500
     );
   }
 });
@@ -789,7 +791,7 @@ export function registerCustomEndpoint(endpoint: CustomEndpointDefinition): void
       throw error;
     }
     throw new CustomEndpointError(
-      `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -847,7 +849,7 @@ export function registerCustomEndpoints(endpoints: CustomEndpointDefinition[]): 
       throw error;
     }
     throw new CustomEndpointError(
-      `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -915,7 +917,7 @@ export const createWebSocketServer = () => {
             message: "WebSocket test connection successful",
             timestamp: new Date().toISOString(),
           },
-        }),
+        })
       );
 
       ws.on("message", (message) => {
@@ -927,7 +929,7 @@ export const createWebSocketServer = () => {
               type: "ECHO",
               success: true,
               data,
-            }),
+            })
           );
         } catch (error) {
           console.error("[WebSocket] Failed to parse message:", error);
@@ -965,12 +967,12 @@ export const createWebSocketServer = () => {
             type: "HISTORY_LIST",
             success: true,
             data: history,
-          }),
+          })
         );
 
         // Also check if there's an active history entry and send it individually
         const activeHistory = history.find(
-          (entry: AgentHistoryEntry) => entry.status !== "completed" && entry.status !== "error",
+          (entry: AgentHistoryEntry) => entry.status !== "completed" && entry.status !== "error"
         );
 
         if (activeHistory) {
@@ -979,7 +981,7 @@ export const createWebSocketServer = () => {
               type: "HISTORY_UPDATE",
               success: true,
               data: activeHistory,
-            }),
+            })
           );
         }
       }
