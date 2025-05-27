@@ -35,33 +35,19 @@ export const ShowcaseList = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-left md:ml-8"
+              className="text-left md:ml-8 flex flex-col items-center"
             >
-              <h3 className="text-xl font-bold text-[#00d992] mb-3">
+              <h3 className="text-lg font-bold text-[#00d992] mb-3">
                 Built Something Cool?
               </h3>
-              <p className="text-gray-400 mb-4 text-sm">
-                Share your VoltAgent project with the community!
-              </p>
-              <div className="flex gap-3">
-                <a
-                  href="https://github.com/voltagent/voltagent/discussions"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-[#00d992] text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#00d992]/90 transition-colors"
-                >
-                  Submit Project
-                </a>
-                <a
-                  href="https://docs.voltagent.dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="border border-[#00d992]/40 text-[#00d992] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#00d992]/10 transition-colors flex items-center"
-                >
-                  <CodeBracketIcon className="w-4 h-4 mr-1" />
-                  Get Started
-                </a>
-              </div>
+              <a
+                href="https://github.com/orgs/VoltAgent/discussions/154/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className=" items-center no-underline p-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 text-sm font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 justify-center"
+              >
+                Submit Project
+              </a>
             </motion.div>
           </div>
         </div>
