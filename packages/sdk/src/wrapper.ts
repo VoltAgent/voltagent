@@ -45,6 +45,7 @@ export class VoltAgentHistoryWrapper {
   }
 
   /**
+   * Type-safe event ekleme - discriminated union ile tam tip güvenliği
    * History'ye event ekler - traceId'yi otomatik olarak historyId olarak ayarlar
    */
   async addEvent(event: TimelineEventInput): Promise<Event> {
@@ -115,6 +116,7 @@ export class VoltAgentSDK {
   }
 
   /**
+   * Type-safe event kuyruğa ekleme
    * Event'i kuyruğa ekler (batch için) - traceId'yi otomatik olarak historyId olarak ayarlar
    */
   queueEvent(historyId: string, event: TimelineEventInput): void {

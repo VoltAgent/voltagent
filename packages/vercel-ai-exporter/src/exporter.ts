@@ -317,7 +317,7 @@ export class VoltAgentExporter implements SpanExporter {
         startTime: agentInfo.startTime,
         status: "running" as const,
         input: {
-          input: data.input,
+          input: data.input as any[],
         },
         metadata: {
           displayName,
@@ -331,6 +331,7 @@ export class VoltAgentExporter implements SpanExporter {
       };
 
       history.addEvent(agentStartEvent);
+
       this.logDebug(`Added agent:start event for agent: ${agentId}`);
     }
 

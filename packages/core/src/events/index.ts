@@ -186,6 +186,7 @@ export class AgentEventEmitter extends EventEmitter {
         historyId: activeParentEntry.id,
         event: {
           ...event,
+          id: crypto.randomUUID(),
           metadata: {
             ...event.metadata,
             agentId: event.metadata.agentId || parentId,

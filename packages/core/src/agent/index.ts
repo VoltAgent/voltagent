@@ -633,8 +633,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Update history entry
    */
-  private updateHistoryEntry(context: OperationContext, updates: Partial<AgentHistoryEntry>): void {
-    this.historyManager.updateEntry(context.historyEntry.id, updates);
+  private async updateHistoryEntry(
+    context: OperationContext,
+    updates: Partial<AgentHistoryEntry>,
+  ): Promise<void> {
+    await this.historyManager.updateEntry(context.historyEntry.id, updates);
   }
 
   /**
@@ -1023,6 +1026,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         error: undefined,
         context: operationContext,
       });
+
+      await this.updateHistoryEntry(operationContext, {
+        output: response.text,
+        usage: response.usage,
+        status: "completed" as any,
+      });
+
       const typedResponse = response as InferGenerateTextResponse<TProvider>;
       return typedResponse;
     } catch (error) {
@@ -1087,6 +1097,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         output: undefined,
         error: voltagentError,
         context: operationContext,
+      });
+
+      await this.updateHistoryEntry(operationContext, {
+        status: "error",
       });
       throw voltagentError;
     }
@@ -1359,7 +1373,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             agentStartEvent.id,
         };
 
-        this.updateHistoryEntry(operationContext, {
+        await this.updateHistoryEntry(operationContext, {
           output: result.text,
           usage: result.usage,
           status: "completed" as any,
@@ -1476,7 +1490,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           eventId: operationContext.userContext.get("agent_start_event_id") as string,
         };
 
-        this.updateHistoryEntry(operationContext, {
+        await this.updateHistoryEntry(operationContext, {
           status: "error",
         });
 
