@@ -2,6 +2,12 @@
 export { SupabaseLogo } from "./supabase";
 export { GitHubLogo } from "./github";
 
+// Export AI framework logos
+export { LangChainLogo } from "./integrations/langchain";
+export { AutoGenLogo } from "./integrations/autogen";
+export { CrewAILogo } from "./integrations/crewai";
+export { AutoGPTLogo } from "./integrations/autogpt";
+
 // Export all integration logos
 export { NotionLogo } from "./integrations/notion";
 export { StripeLogo } from "./integrations/stripe";
