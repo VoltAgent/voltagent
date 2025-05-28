@@ -19,11 +19,11 @@ That is exactly where Langfuse and similar LLM observability tools fit in.
 
 [Langfuse](https://langfuse.com/) is a live X-ray machine for your LLM work. Think about it; you can observe what your agent performs, which API calls fall through, which responses users detest, where your dollars are spent - you can observe everything.
 
-Bottom line, you are not guessing anymore - you know.
+Bottom line, you are not guessing anymore, you know.
 
 ### Why Does This Matter So Much?
 
-New LLM apps are complex systems. The moment users start complaining: "Bot is too slow", "Gives weird answers", "I asked the same question 3 times" - it's impossible to fix these problems without observability.
+New LLM apps are complex systems. The moment users start complaining: "Bot is too slow", "Gives weird answers", "I asked the same question 3 times". it's impossible to fix these problems without observability.
 
 :::important
 With VoltAgent + Langfuse integration, you can trace everything. Just include the `@voltagent/langfuse-exporter` package and link it to your VoltAgent.
@@ -239,7 +239,7 @@ Export capabilities let you integrate with other systems. CSV/JSON exports, API 
 
 ## VoltAgent + Langfuse Integration
 
-VoltAgent + Langfuse integration is super simple. As described in our docs, you just add the `@voltagent/langfuse-exporter` package and forward it to your VoltAgent.
+[VoltAgent + Langfuse integration](https://voltagent.dev/docs/observability/langfuse/) is super simple. As described in our docs, you just add the `@voltagent/langfuse-exporter` package and forward it to your VoltAgent.
 
 ### Simple Setup
 
