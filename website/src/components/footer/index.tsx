@@ -98,6 +98,9 @@ export function Footer() {
               <li>
                 <FooterLink href="/manifesto/">Manifesto</FooterLink>
               </li>
+              <li>
+                <FooterLink href="/showcase/">Showcase</FooterLink>
+              </li>
             </ul>
           </div>
         </div>

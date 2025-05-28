@@ -69,16 +69,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
             </span>
           </div>
 
-          {/* GitHub Link */}
-          <a
-            href={project.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-gray-400 hover:text-[#00d992] transition-colors flex items-center text-xs"
-          >
-            <GitHubLogo className="w-5 h-5" />
-          </a>
+          <GitHubLogo className="w-5 h-5" />
         </div>
 
         {/* Tech Stack */}
