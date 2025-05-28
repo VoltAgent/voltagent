@@ -16,10 +16,10 @@
     "volt": "volt"
   },
   "dependencies": {
-    "@voltagent/cli": "^0.1.5",
-    "@voltagent/core": "^0.1.19",
-    "@voltagent/google-ai": "^0.3.9",
-    "zod": "^3.24.2"
+    "@voltagent/cli": "^0.1.6",
+    "@voltagent/core": "^0.1.20",
+    "@voltagent/google-ai": "^0.3.10",
+    "zod": "3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

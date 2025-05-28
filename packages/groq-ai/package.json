@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/groq-ai",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "VoltAgent Groq AI - Groq provider integration for VoltAgent",
   "license": "MIT",
   "exports": {
@@ -23,9 +23,9 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.16",
+    "@voltagent/core": "^0.1.20",
     "groq-sdk": "^0.20.0",
-    "zod": "^3.24.2",
+    "zod": "3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {

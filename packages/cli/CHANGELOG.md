@@ -1,5 +1,11 @@
 # @voltagent/cli
 
+## 0.1.6
+
+### Patch Changes
+
+- [#155](https://github.com/VoltAgent/voltagent/pull/155) [`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update `tsconfig.json`'s `target` to `ES2022`
+
 ## 0.1.5
 
 ### Patch Changes
