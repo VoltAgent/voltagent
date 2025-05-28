@@ -159,81 +159,59 @@ VoltConsole.monitor(yourAgent);`}</code>
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           {/* Header Section */}
-          <div className="bg-[#191c24] rounded-t-md py-6 pt-8 text-left px-6">
+          <div className="bg-[#191c24] rounded-t-md py-6  text-left px-6">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xl font-semibold text-white">
-                Launch Dev Console
-              </span>
-              <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
+              <div className="flex  justify-between items-center">
+                <div className="flex  w-[50%] flex-col gap-2">
+                  <span className="text-xl font-semibold text-white">
+                    Launch Dev Console
+                  </span>
+                  <p className="text-gray-400 text-base mb-0">
+                    Start observing your AI agents in real-time. Get full
+                    visibility into every interaction, decision, and execution
+                    step.
+                  </p>
+                </div>
+
+                <Link
+                  to="https://console.voltagent.dev/demo"
+                  className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
+                border-solid border border-emerald-400/20 text-base sm:text-lg font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-6 py-3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    backdropFilter: "blur(4px)",
+                    WebkitBackdropFilter: "blur(4px)",
+                  }}
+                >
+                  <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 mr-2 animate-pulse" />
+                  <span className="text-sm sm:text-base">Try Live Demo</span>
+                  <ArrowTopRightOnSquareIcon
+                    className="w-5 h-5 ml-2 mb-1"
+                    aria-hidden="true"
+                  />
+                </Link>
+              </div>
+
+              <div className="bg-emerald-400/10 self-start text-emerald-400 border border-emerald-400/20 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
                 3
               </div>
             </div>
-
-            <p className="text-gray-400 text-base mb-0">
-              Start observing your AI agents in real-time. Get full visibility
-              into every interaction, decision, and execution step.
-            </p>
           </div>
 
           {/* Content Section */}
-          <div className="py-6">
-            {/* Console Demo iframe */}
-            <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] mb-6">
-              <iframe
-                src="https://console.voltagent.dev/demo"
-                title="Voltage Agent Console"
-                className="w-full h-full"
-                style={{
-                  height: "100%",
-                  border: "2px solid #2c3335",
-                  borderRadius: "6px",
-                  backdropFilter: "blur(4px)",
-                  WebkitBackdropFilter: "blur(4px)",
-                }}
-              />
-            </div>
-
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm px-6">
-              <div className="bg-emerald-400/10 text-emerald-400 px-3 py-2 rounded-md">
-                <div className="font-semibold">Real-time</div>
-                <div className="text-xs text-gray-400">Live monitoring</div>
-              </div>
-              <div className="bg-emerald-400/10 text-emerald-400 px-3 py-2 rounded-md">
-                <div className="font-semibold">Debug</div>
-                <div className="text-xs text-gray-400">Step-by-step</div>
-              </div>
-              <div className="bg-emerald-400/10 text-emerald-400 px-3 py-2 rounded-md">
-                <div className="font-semibold">Monitor</div>
-                <div className="text-xs text-gray-400">Performance</div>
-              </div>
-              <div className="bg-emerald-400/10 text-emerald-400 px-3 py-2 rounded-md">
-                <div className="font-semibold">Optimize</div>
-                <div className="text-xs text-gray-400">Improve agents</div>
-              </div>
-            </div>
-
-            {/* Demo Link */}
-            <div className="mt-6">
-              <Link
-                to="https://console.voltagent.dev/demo"
-                className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
-                border-solid border border-emerald-400/20 text-base sm:text-lg font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-6 py-3"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  backdropFilter: "blur(4px)",
-                  WebkitBackdropFilter: "blur(4px)",
-                }}
-              >
-                <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 mr-2 animate-pulse" />
-                <span className="text-sm sm:text-base">Try Live Demo</span>
-                <ArrowTopRightOnSquareIcon
-                  className="w-5 h-5 ml-2 mb-1"
-                  aria-hidden="true"
-                />
-              </Link>
-            </div>
+          {/* Console Demo iframe */}
+          <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] mb-6">
+            <iframe
+              src="https://console.voltagent.dev/demo"
+              title="Voltage Agent Console"
+              className="w-full h-full"
+              style={{
+                height: "100%",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+              }}
+            />
           </div>
         </motion.div>
       </div>
