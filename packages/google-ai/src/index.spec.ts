@@ -130,6 +130,9 @@ describe("GoogleGenAIProvider", () => {
           extraOptions: {
             customOption: "value",
           } as Record<string, any>,
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
         },
       });
 
@@ -142,6 +145,9 @@ describe("GoogleGenAIProvider", () => {
           stopSequences: ["END"],
           seed: 123456,
           customOption: "value",
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
         },
       });
     });

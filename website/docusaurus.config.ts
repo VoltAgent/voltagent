@@ -81,6 +81,7 @@ const config: Config = {
       };
     },
     "./plugins/clarity/index.js",
+    "./plugins/ahrefs/index.js",
     [
       "@docusaurus/plugin-client-redirects",
       {
@@ -110,6 +111,14 @@ const config: Config = {
       },
     ],
     "./plugins/gurubase/index.js",
+    [
+      "./plugins/docusaurus-plugin-content-mcp",
+      {
+        id: "mcp",
+        routeBasePath: "mcp",
+        path: "./src/components/mcp-list/data",
+      },
+    ],
   ],
   themeConfig: {
     image: "img/social2.png",
@@ -135,6 +144,11 @@ const config: Config = {
         {
           to: "/blog",
           label: "Blog",
+          position: "left",
+        },
+        {
+          to: "/mcp",
+          label: "MCP",
           position: "left",
         },
       ],

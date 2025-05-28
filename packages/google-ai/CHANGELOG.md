@@ -1,5 +1,21 @@
 # @voltagent/google-ai
 
+## 0.3.9
+
+### Patch Changes
+
+- [`85204e2`](https://github.com/VoltAgent/voltagent/commit/85204e24eea3a0aa5ad72038954302a182947fe0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add provider options support including thinkingConfig - #138
+
+  ```typescript
+  const response = await agent.generateText("Write a creative story.", {
+    provider: {
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
+    },
+  });
+  ```
+
 ## 0.3.8
 
 ### Patch Changes

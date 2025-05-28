@@ -151,6 +151,15 @@ const response = await agent.generateText("Write a creative story.", {
     // Any other valid GenerateContentConfig options
   },
 });
+
+// Example: Using thinkingConfig to control thinking budget
+const response = await agent.generateText("Write a creative story.", {
+  provider: {
+    thinkingConfig: {
+      thinkingBudget: 0,
+    },
+  },
+});
 ```
 
 Refer to the [`@google/genai` documentation](https://github.com/googleapis/js-genai) for the full list of available configuration parameters within `GenerateContentConfig`.

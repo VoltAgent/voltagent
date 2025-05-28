@@ -2,7 +2,6 @@ import Link from "@docusaurus/Link";
 import { useBlogPost } from "@docusaurus/theme-common/internal";
 import BlogPostItemContainer from "@theme/BlogPostItem/Container";
 import React from "react";
-import { DateComponent } from "@site/src/components/blog/common";
 import clsx from "clsx";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
 

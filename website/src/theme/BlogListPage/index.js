@@ -10,10 +10,10 @@ import BlogListPaginator from "@theme/BlogListPaginator";
 import BlogPostItems from "@theme/BlogPostItems";
 import SearchMetadata from "@theme/SearchMetadata";
 import clsx from "clsx";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "@docusaurus/Link";
 import { useLocation } from "@docusaurus/router";
-import { ChevronRightIcon } from "@heroicons/react/24/solid";
+import { DotPattern } from "../../components/ui/dot-pattern";
 
 function BlogListPageMetadata(props) {
   const { metadata } = props;
@@ -38,6 +38,7 @@ function BlogListPageContent(props) {
 
   return (
     <BlogLayout>
+      <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="relative w-full overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-24">
           <div className="mb-8">

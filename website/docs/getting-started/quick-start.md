@@ -147,7 +147,7 @@ Create a basic TypeScript configuration file (tsconfig.json):
 ```json
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,

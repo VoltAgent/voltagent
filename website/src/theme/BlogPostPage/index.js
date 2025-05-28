@@ -15,7 +15,6 @@ import BlogPostPaginator from "@theme/BlogPostPaginator";
 import TOC from "@theme/TOC";
 import Unlisted from "@theme/Unlisted";
 import clsx from "clsx";
-import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import { Footer } from "@site/src/components/footer";
 
 function BlogPostPageContent({ children }) {

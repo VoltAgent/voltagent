@@ -165,7 +165,7 @@ const MessageContentSchema = z.union([
 // Define a reusable schema for a single message object
 const MessageObjectSchema = z
   .object({
-    role: z.string().openapi({
+    role: z.enum(["system", "user", "assistant", "tool"]).openapi({
       description: "Role of the sender (e.g., 'user', 'assistant')",
     }),
     content: MessageContentSchema, // Use the reusable content schema

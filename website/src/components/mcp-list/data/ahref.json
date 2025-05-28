@@ -1,0 +1,153 @@
+{
+  "id": 1,
+  "name": "Ahrefs",
+  "slug": "ahrefs",
+  "short_description": "Access Ahrefs SEO and backlink analytics data for comprehensive insights.",
+  "title": "Ahrefs MCP Server",
+  "description": "The Ahrefs Model Context Protocol (MCP) server empowers your AI agents with direct access to Ahrefs' powerful SEO toolkit. Discover how your AI agents can automate complex SEO tasks, from in-depth backlink analysis and keyword research to competitor tracking and site audits. Below, explore the specific capabilities and how you can integrate them into your AI agent workflows via MCP for enhanced SEO automation and intelligence.",
+  "category": ["Analytics"],
+  "logoKey": "ahref",
+  "avaliable_providers": ["composio"],
+  "total_tools": [
+    {
+      "id": "backlinks_stats",
+      "name": "Backlinks Statistics",
+      "description": "Retrieves comprehensive backlink statistics for a specified website or url",
+      "providers": {
+        "composio": {
+          "id": "stats_retrieval"
+        }
+      },
+      "mcp_content": {
+        "heading": "How to Get Comprehensive Backlink Statistics with Ahrefs?",
+        "description": "Get total backlink insight in a matter of clicks. See referring domains, anchor texts, and detect link velocity trends - great for finding new link opportunities and tracking the overall health of your backlink profile."
+      }
+    },
+    {
+      "id": "outlinks_stats",
+      "name": "Outlinks Statistics",
+      "description": "Retrieves comprehensive statistics about outgoing links (outlinks) from a specified website",
+      "providers": {
+        "composio": {
+          "id": "outlinks_stats_composio"
+        }
+      },
+      "mcp_content": {
+        "heading": "Analyze Outgoing Link Health to Ensure Profile Quality",
+        "description": "Check the quality of your outbound links to avoid any potential SEO issues. Detect potentially negative links, understand your external linking behavior, and be authoritative with presence without hours of handbook reference checking."
+      }
+    },
+    {
+      "id": "keywords_history",
+      "name": "Keywords History",
+      "description": "Retrieves historical keyword performance data for a specified website or domain",
+      "providers": {
+        "composio": {
+          "id": "site_explorer_keywords_history"
+        }
+      },
+      "mcp_content": {
+        "heading": "How to Track Historical Keyword Ranking Trends",
+        "description": "Search your site's keyword historical rankings to see trends over time. Observe how positions have changed, locate emerging keyword opportunities, and understand your site's history of SEO with rich historical data."
+      }
+    },
+    {
+      "id": "backlinks",
+      "name": "Backlinks",
+      "description": "Retrieves a comprehensive list of backlinks for a specified website or URL",
+      "providers": {
+        "composio": {
+          "id": "all_backlinks"
+        }
+      },
+      "mcp_content": {
+        "heading": "How to Retrieve Full Backlink Profiles for Analysis",
+        "description": "See your whole backlink profile instantly. Analyze all links pointing to your domain or specific URL, keeping competitive intelligence a breeze and allowing you to find profitable new link building possibilities without the tedium of hand labor."
+      }
+    },
+    {
+      "id": "anchors",
+      "name": "Anchors",
+      "description": "Retrieves anchor text data for a specified website or URL",
+      "providers": {
+        "composio": {
+          "id": "anchor_data"
+        }
+      },
+      "mcp_content": {
+        "heading": "How to Decode Anchor Text Profiles for Better SEO",
+        "description": "Decipher the way other websites are linking to yours by analyzing anchor text trends. Tweak your anchor text strategy on real data and craft a natural, effective backlink profile that performs."
+      }
+    },
+    {
+      "id": "organic_competitors",
+      "name": "Organic Competitors",
+      "description": "Retrieves a comprehensive overview of competitor data in relation to keyword rankings and organic search",
+      "providers": {
+        "composio": {
+          "id": "competitors_overview"
+        }
+      },
+      "mcp_content": {
+        "heading": "How to Identify and Analyze Organic Search Competitors with Ahrefs MCP?",
+        "description": "Discover who you're really competing against in natural search results. Discover competitors you don't even know exist, understand the competitive landscape, and optimize your SEO strategies to outcompete them."
+      }
+    },
+    {
+      "id": "search_suggestions",
+      "name": "Search Suggestions",
+      "description": "Retrieves search suggestions for a given keyword or phrase",
+      "providers": {
+        "composio": {
+          "id": "suggestions_explorer"
+        }
+      },
+      "mcp_content": {
+        "heading": "Uncover User Intent with Keyword Search Suggestions",
+        "description": "Reveal what people are really searching for using keyword suggestions based on real search data. Understand user intent, create helpful long-tail keyword ideas, and create content that is what your audience is searching for."
+      }
+    },
+    {
+      "id": "rank_tracker_overview",
+      "name": "Rank Tracker Overview",
+      "description": "Retrieves a comprehensive summary of keyword rankings and SEO performance",
+      "providers": {
+        "composio": {
+          "id": "rank_tracker_overview"
+        }
+      },
+      "mcp_content": {
+        "heading": "How to Monitor Keyword Rankings and SEO Performance with Ahrefs MCP?",
+        "description": "Track your keyword positions over time with a complete performance dashboard. Automatically monitor position fluctuations and get detailed reports of your SEO performance without the inconvenience of manual tracking."
+      }
+    },
+    {
+      "id": "serp_overview",
+      "name": "SERP Overview",
+      "description": "Retrieves a comprehensive overview of search engine results pages (SERP) data for specified keywords",
+      "providers": {
+        "composio": {
+          "id": "serp_overview"
+        }
+      },
+      "mcp_content": {
+        "heading": "Analyze SERP Features and Competitive Dynamics",
+        "description": "Look at the full SERP landscape for all target keywords. See which URLs are ranking, what SERP features are showing (e.g., featured snippets), and gain insights on the competitive dynamics to maximize your content strategy."
+      }
+    },
+    {
+      "id": "crawler_ip_ranges",
+      "name": "Crawler IP Ranges",
+      "description": "Retrieves the list of IP address ranges used by Ahrefs' web crawler (AhrefsBot)",
+      "providers": {
+        "composio": {
+          "id": "crawler_ip_ranges"
+        }
+      },
+      "mcp_content": {
+        "heading": "Access AhrefsBot IP Ranges for Crawler Whitelisting",
+        "description": "Get the full list of IP ranges used by the AhrefsBot spider. Perfect for server configuration, granting proper crawler permission, and avoiding unnecessary blocking of valid bots that can impact your site's crawling."
+      }
+    }
+  ]
+}

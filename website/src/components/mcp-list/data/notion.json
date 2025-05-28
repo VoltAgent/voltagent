@@ -1,0 +1,290 @@
+{
+  "id": 3,
+  "slug": "notion",
+  "name": "Notion",
+  "short_description": "Create, organize, and access Notion pages and databases.",
+  "title": "Notion MCP Server",
+  "description": "The Notion MCP server connects your AI agents to Notion's document and database capabilities. Your agents can create pages, update databases, add comments, and manage content, all automatically. Review the features listed below to see how you can harness these capabilities to enhance your knowledge management and team collaboration.",
+  "category": ["Task Management"],
+  "logoKey": "notion",
+  "avaliable_providers": ["composio", "zapier"],
+  "total_tools": [
+    {
+      "id": "create_page",
+      "name": "Create Page",
+      "description": "Creates a new page in Notion",
+      "providers": {
+        "zapier": { "id": "create_page" },
+        "composio": { "id": "notion_page" }
+      },
+      "mcp_content": {
+        "heading": "How to Create New Digital Workspaces with Notion MCP?",
+        "description": "Create beautiful, organized workspaces in Notion with an effortless ask. Your AI butler will set up new pages for projects, docs, or whatever you need time saving without things getting messy."
+      }
+    },
+    {
+      "id": "add_comment",
+      "name": "Add Comment",
+      "description": "Adds a new comment to a page",
+      "providers": {
+        "zapier": { "id": "add_comment" },
+        "composio": { "id": "comment" }
+      },
+      "mcp_content": {
+        "heading": "Enable Collaborative Discussion",
+        "description": "Add your thoughts without lifting a finger! Your AI can comment on any Notion page, helping your teams collaborate and comment exactly where they need to in your documents."
+      }
+    },
+    {
+      "id": "create_database_item",
+      "name": "Create Database Item",
+      "description": "Creates a new item in a Notion database",
+      "providers": {
+        "zapier": { "id": "create_database_item" },
+        "composio": { "id": "row_database" }
+      },
+      "mcp_content": {
+        "heading": "How to Add New Records to Structured Databases with Notion MCP?",
+        "description": "Never enter database records manually again. Your AI will take care of adding new entries to your Notion databases for you, keeping your information organized and up-to-date without all the tedious data entry work."
+      }
+    },
+    {
+      "id": "archive_item",
+      "name": "Archive Item",
+      "description": "Archives an item or block in Notion",
+      "providers": {
+        "zapier": { "id": "archive_database_item" },
+        "composio": { "id": "block" }
+      },
+      "mcp_content": {
+        "heading": "Maintain Clean Workspaces While Preserving Data",
+        "description": "Keep your workspace tidy without giving up anything essential. When you're done with something, just tell your AI to stick it in the archives, it'll be safely stored but out of the way until you need it again."
+      }
+    },
+    {
+      "id": "add_content",
+      "name": "Add Content to Page",
+      "description": "Adds content blocks to a Notion page",
+      "providers": {
+        "zapier": { "id": "add_content_to_page" },
+        "composio": { "id": "page_content" }
+      },
+      "mcp_content": {
+        "heading": "How to Enrich Notion Pages with Dynamic Content Using MCP?",
+        "description": "Transform dull pages into rich, stunning documents. Your AI assistant can add any kind of content block - text and images, embeds and callouts - and have your Notion pages come alive with ease."
+      }
+    },
+    {
+      "id": "get_comments",
+      "name": "Get Page Comments",
+      "description": "Retrieves comments from a Notion page",
+      "providers": {
+        "zapier": { "id": "get_page_comments" },
+        "composio": { "id": "comments" }
+      },
+      "mcp_content": {
+        "heading": "Access Discussion Threads and Feedback",
+        "description": "Keep on top of conversations without having to read them all. Your AI can gather and summarize comments from any page, keeping you in the loop about discussions and bringing team feedback together without endless scrolling."
+      }
+    },
+    {
+      "id": "retrieve_database",
+      "name": "Retrieve Database",
+      "description": "Gets information about a Notion database structure",
+      "providers": {
+        "zapier": { "id": "retrieve_database" },
+        "composio": { "id": "database" }
+      },
+      "mcp_content": {
+        "heading": "How to Understand Database Structures in Notion with MCP?",
+        "description": "Take a glance at how your databases are structured. Your AI can break down the schema of any Notion database, and show you what fields there are and how information is structured so you can work with tricky information better."
+      }
+    },
+    {
+      "id": "query_database",
+      "name": "Query Database",
+      "description": "Retrieves filtered and sorted data from a Notion database",
+      "providers": {
+        "zapier": { "id": "find_database_item" },
+        "composio": { "id": "database" }
+      },
+      "mcp_content": {
+        "heading": "Extract Relevant Data with Powerful Queries",
+        "description": "Find exactly what you're looking for in seconds. Your AI can browse through your Notion databases with precision, sort and filter to retrieve only the information you need - having an insomnia-free research assistant at your fingertips."
+      }
+    },
+    {
+      "id": "update_database_item",
+      "name": "Update Database Item",
+      "description": "Updates an existing item in a Notion database",
+      "providers": {
+        "zapier": { "id": "update_database_item" },
+        "composio": { "id": "row_database" }
+      },
+      "mcp_content": {
+        "heading": "How to Modify Existing Records with Precision in Notion MCP?",
+        "description": "Keep your databases current without the hassle. When facts do change, just tell your AI what to update and where. It will do it with accuracy but nothing else."
+      }
+    },
+    {
+      "id": "restore_database_item",
+      "name": "Restore Database Item",
+      "description": "Restores a previously archived database item",
+      "providers": {
+        "zapier": { "id": "restore_database_item" }
+      },
+      "mcp_content": {
+        "heading": "Recover Archived Information When Needed",
+        "description": "Fetch stored things at any time. Had second thoughts on something you've stored? No need to worry! Your AI can retrieve it immediately, flexible information handling without deep deletions."
+      }
+    },
+    {
+      "id": "retrieve_page",
+      "name": "Retrieve Page",
+      "description": "Gets information about a specific Notion page",
+      "providers": {
+        "zapier": { "id": "retrieve_a_page" }
+      },
+      "mcp_content": {
+        "heading": "How to Access Complete Notion Page Details with MCP?",
+        "description": "View the entire picture of any Notion page in one glance. Your AI can extract all the information and content of specific pages, allowing you to study documents or extract info without taking everything through step by step."
+      }
+    },
+    {
+      "id": "retrieve_block_children",
+      "name": "Retrieve Block Children",
+      "description": "Gets all child blocks of a parent block",
+      "providers": {
+        "zapier": { "id": "retrieve_block_children" }
+      },
+      "mcp_content": {
+        "heading": "Explore Nested Content Structures",
+        "description": "Make complicated documents easy to manage. Your AI can have a look inside nested content patterns, identify particular parts, or trace out how information is structured hierarchically - such as having an expert lead the way through your knowledge repository."
+      }
+    },
+    {
+      "id": "find_page",
+      "name": "Find Page by Title",
+      "description": "Searches for a page by its title",
+      "providers": {
+        "zapier": { "id": "find_page_by_title" }
+      },
+      "mcp_content": {
+        "heading": "How to Locate Specific Documents by Name with Notion MCP?",
+        "description": "Find any page in seconds even if you only remember part of the title. Simply say what you want to your AI, and it'll hunt down just what you need without you having to know exact page IDs or making finicky searches."
+      }
+    },
+    {
+      "id": "find_or_create_database_item",
+      "name": "Find or Create Database Item",
+      "description": "Finds a database item or creates it if it doesn't exist",
+      "providers": {
+        "zapier": { "id": "find_or_create_database_item" }
+      },
+      "mcp_content": {
+        "heading": "Ensure Records Exist Without Duplication",
+        "description": "Never duplicate records again. Your AI first looks to see if a new bit of information is already there before adding it - if so, it'll use that; otherwise, it'll create it fresh. It's like having an assistant who is fussy about details and keeps your databases tidy."
+      }
+    },
+    {
+      "id": "find_or_create_comment",
+      "name": "Find or Create Comment",
+      "description": "Finds existing comments or creates a new one",
+      "providers": {
+        "zapier": { "id": "find_or_create_comment" }
+      },
+      "mcp_content": {
+        "heading": "Add Context-Aware Comments Without Duplication",
+        "description": "Add comments that are relevant without filling your pages. Your AI looks for similar existing comments before adding new ones, without duplicating or muddling important messages."
+      }
+    },
+    {
+      "id": "get_page_and_children",
+      "name": "Get Page and Children",
+      "description": "Retrieves a page and all its child blocks",
+      "providers": {
+        "zapier": { "id": "get_page_and_children" }
+      },
+      "mcp_content": {
+        "heading": "How to Access Complete Document Hierarchies in Notion Using MCP?",
+        "description": "See the high-level overview of your documents in a single glance. Your AI can extract full page structures with their nested content, giving you full visibility for analysis, migration, or processing complicated info structures."
+      }
+    },
+    {
+      "id": "api_request",
+      "name": "API Request",
+      "description": "Makes a raw HTTP request with Notion authentication",
+      "providers": {
+        "zapier": { "id": "api_request_beta" }
+      },
+      "mcp_content": {
+        "heading": "Access Advanced Notion API Features",
+        "description": "Tap the full power of Notion's API without writing a line of code. Your AI handles authentication and technicalities for you, allowing you to leverage the advanced features and specialized functions that are outside of the everyday tools."
+      }
+    },
+    {
+      "id": "get_user_info",
+      "name": "Get User Info",
+      "description": "Retrieves information about the authenticated user",
+      "providers": {
+        "composio": { "id": "about_me" }
+      },
+      "mcp_content": {
+        "heading": "Access User Identity and Permissions",
+        "description": "Get total visibility of who is doing what across your workspace. Your AI can check user identity and permission, letting you see who has access to what and ensuring actions are being taken with the right authority."
+      }
+    },
+    {
+      "id": "get_account_info",
+      "name": "Get Account Info",
+      "description": "Retrieves detailed information about a user account",
+      "providers": {
+        "composio": { "id": "about_user" }
+      },
+      "mcp_content": {
+        "heading": "Understand User Account Details",
+        "description": "Get tailored insights on any user in your Notion workspace. Your AI can pull account data to help you tailor interactions, discover individual capabilities, and optimize operations to the requirements of individual users."
+      }
+    },
+    {
+      "id": "list_users",
+      "name": "List Workspace Users",
+      "description": "Lists all users in a Notion workspace",
+      "providers": {
+        "composio": { "id": "users" }
+      },
+      "mcp_content": {
+        "heading": "Identify All Workspace Collaborators",
+        "description": "See an overview of all people in your workspace. Your AI can pull a whole list of team members, making it easy to know collaboration histories, find the right person for a task, or manage permissions between teams."
+      }
+    },
+    {
+      "id": "get_row_info",
+      "name": "Get Database Row Info",
+      "description": "Retrieves detailed information about a database row",
+      "providers": {
+        "composio": { "id": "row" }
+      },
+      "mcp_content": {
+        "heading": "How to Access Single Record Details?",
+        "description": "Zoom in on individual database records with precision. Your AI can pull granular information of individual records, enabling you to observe how data points are interconnected and get only the information you need."
+      }
+    },
+    {
+      "id": "update_database_schema",
+      "name": "Update Database Schema",
+      "description": "Updates the schema of a Notion database",
+      "providers": {
+        "composio": { "id": "schema_database" }
+      },
+      "mcp_content": {
+        "heading": "How to Modify Database Structures Dynamically with MCP?",
+        "description": "Morph your databases in real-time as your needs shift. Your AI can restructure database form, inserting fields or modifying data types without touching your initial information - perfect for reacting to shifting project requirements."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How Can Your AI Agents Leverage the Notion MCP Server?",
+    "description": "Reimagine the way you work with Notion and AI assistance. Streamline your drudgery tasks, work with easily organized workspaces, and get more done with less effort. From page construction to database queries, your AI handles the busywork so you can focus on what matters."
+  }
+}
