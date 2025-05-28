@@ -82,9 +82,9 @@ export default function ProjectDetailPage(): JSX.Element {
                     window.location.href = "/showcase";
                   }
                 }}
-                className="flex items-center cursor-pointer text-gray-400 hover:text-[#00d992] transition-colors bg-transparent border-none"
+                className="flex items-center cursor-pointer text-gray-400 hover:text-[#00d992] transition-colors bg-transparent border-none text-sm sm:text-base"
               >
-                <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                <ArrowLeftIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Back to Showcase
               </button>
             </motion.div>
@@ -96,7 +96,7 @@ export default function ProjectDetailPage(): JSX.Element {
               transition={{ duration: 0.5 }}
               className="mb-8"
             >
-              <h1 className="text-3xl sm:text-4xl font-bold text-[#00d992] mb-4">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#00d992] mb-4">
                 {project.name}
               </h1>
 
@@ -106,11 +106,13 @@ export default function ProjectDetailPage(): JSX.Element {
                   <img
                     src={project.avatar}
                     alt={`${project.creator}'s avatar`}
-                    className="w-12 h-12 rounded-full border-2 border-[#1e293b] mr-4"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-[#1e293b] mr-3 sm:mr-4"
                   />
                   <div>
-                    <span className="text-gray-500 text-sm">Created by</span>
-                    <div className="text-lg font-medium text-gray-300">
+                    <span className="text-gray-500 text-xs sm:text-sm">
+                      Created by
+                    </span>
+                    <div className="text-base sm:text-lg font-medium text-gray-300">
                       {project.creator}
                     </div>
                   </div>
@@ -121,10 +123,12 @@ export default function ProjectDetailPage(): JSX.Element {
                   href={project.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center no-underline px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border-solid border-gray-600 rounded-lg transition-colors"
+                  className="flex items-center no-underline px-3 sm:px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border-solid border-gray-600 rounded-lg transition-colors"
                 >
-                  <GitHubLogo className="w-5 h-5 mr-2" />
-                  <span className="text-gray-300 font-medium">Source Code</span>
+                  <GitHubLogo className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  <span className="text-gray-300 font-medium text-sm sm:text-base">
+                    Source Code
+                  </span>
                 </a>
               </div>
             </motion.div>
@@ -147,13 +151,13 @@ export default function ProjectDetailPage(): JSX.Element {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
-                    className="w-full h-48 sm:h-64 md:h-80 lg:h-96 xl:h-[500px]"
+                    className="w-full h-52 sm:h-64 md:h-80 lg:h-96 xl:h-[500px]"
                   />
                 ) : (
                   <img
                     src={project.screenshot}
                     alt={`${project.name} screenshot`}
-                    className="w-full h-48 sm:h-64 md:h-80 lg:h-96 xl:h-[500px] object-cover"
+                    className="w-full h-52 sm:h-64 md:h-80 lg:h-96 xl:h-[500px] object-cover"
                   />
                 )}
               </div>
@@ -176,10 +180,10 @@ export default function ProjectDetailPage(): JSX.Element {
                     backgroundColor: "rgba(58, 66, 89, 0.3)",
                   }}
                 >
-                  <h2 className="text-xl font-bold text-[#00d992] mb-4">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-4">
                     About This Project
                   </h2>
-                  <p className="text-gray-300 leading-relaxed">
+                  <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
                     {project.description}
                   </p>
                 </div>
@@ -193,14 +197,16 @@ export default function ProjectDetailPage(): JSX.Element {
                     backgroundColor: "rgba(58, 66, 89, 0.3)",
                   }}
                 >
-                  <h2 className="text-xl font-bold text-[#00d992] mb-4">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-4">
                     Use Cases
                   </h2>
                   <ul className="space-y-2 pl-2">
                     {project.useCases.map((useCase) => (
                       <li key={useCase} className="flex items-start">
                         <span className="text-[#00d992] mr-2 ">•</span>
-                        <span className="text-gray-300">{useCase}</span>
+                        <span className="text-sm sm:text-base text-gray-300">
+                          {useCase}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -217,14 +223,14 @@ export default function ProjectDetailPage(): JSX.Element {
                     backgroundColor: "rgba(58, 66, 89, 0.3)",
                   }}
                 >
-                  <h3 className="text-lg font-bold text-[#00d992] mb-4">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-4">
                     Tech Stack
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {project.tech.map((tech) => (
                       <span
                         key={tech}
-                        className={`px-3 py-1.5 text-sm rounded-md font-medium ${
+                        className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md font-medium ${
                           tech === "VoltAgent"
                             ? "bg-[#00d992]/20 text-[#00d992] border-solid border-[#00d992]/30"
                             : "bg-gray-700/50 text-gray-300 border-solid border-gray-600/30"
@@ -245,10 +251,10 @@ export default function ProjectDetailPage(): JSX.Element {
                     backgroundColor: "rgba(58, 66, 89, 0.3)",
                   }}
                 >
-                  <h3 className="text-lg font-bold text-[#00d992] mb-4">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-4">
                     Inspired by this project?
                   </h3>
-                  <p className="text-gray-400 mb-4 text-sm">
+                  <p className="text-gray-400 mb-4 text-xs sm:text-sm">
                     Build your own AI agent with VoltAgent and share it with the
                     community.
                   </p>
@@ -256,7 +262,7 @@ export default function ProjectDetailPage(): JSX.Element {
                     href="https://github.com/orgs/VoltAgent/discussions/154/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full text-center px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 font-semibold rounded-lg transition-colors hover:bg-emerald-400/20 no-underline text-sm"
+                    className="block w-full text-center px-3 sm:px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 font-semibold rounded-lg transition-colors hover:bg-emerald-400/20 no-underline text-xs sm:text-sm"
                   >
                     Submit Your Project
                   </a>
