@@ -12,16 +12,23 @@ interface ProjectCardProps {
     githubUrl: string;
     tech: string[];
     screenshot: string;
+    useCases: string[];
+    video?: string;
   };
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {
+  const handleCardClick = () => {
+    window.location.href = `/showcase-project?id=${project.id}`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="border-solid border-[#1e293b]/40 border-2 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/30 hover:scale-[1.02]"
+      onClick={handleCardClick}
+      className="border-solid border-[#1e293b]/40 border-2 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/30 hover:scale-[1.02] cursor-pointer"
       style={{
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
@@ -67,6 +74,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
             href={project.githubUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="text-gray-400 hover:text-[#00d992] transition-colors flex items-center text-xs"
           >
             <GitHubLogo className="w-5 h-5" />
