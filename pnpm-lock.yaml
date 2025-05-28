@@ -969,9 +969,6 @@ importers:
       zod:
         specifier: 3.24.2
         version: 3.24.2
-      zod-to-json-schema:
-        specifier: ^3.24.5
-        version: 3.24.5(zod@3.24.2)
     devDependencies:
       '@types/jest':
         specifier: ^29.5.12
