@@ -54,7 +54,7 @@ describe("VoltAgentExporter", () => {
       expect(exporter.publicKey).toBe(mockOptions.publicKey);
     });
 
-    it("should append /functions/v1 to baseUrl if it contains https://server.voltagent.dev", () => {
+    it("should replace server.voltagent.dev with api.voltagent.dev", () => {
       const optionsWithSpecificBaseUrl: VoltAgentExporterOptions = {
         ...mockOptions,
         baseUrl: "https://server.voltagent.dev/some/path",
@@ -64,7 +64,7 @@ describe("VoltAgentExporter", () => {
       const MockedTelemetryServiceApiClient = require("../client").TelemetryServiceApiClient;
       expect(MockedTelemetryServiceApiClient).toHaveBeenCalledWith(
         expect.objectContaining({
-          baseUrl: "https://server.voltagent.dev/some/path/functions/v1",
+          baseUrl: "https://api.voltagent.dev",
         }),
       );
     });
