@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "VoltAgent SDK - Client SDK for interacting with VoltAgent API",
   "license": "MIT",
   "exports": {
@@ -13,14 +13,16 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.20"
+    "@voltagent/core": "^0.1.21"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

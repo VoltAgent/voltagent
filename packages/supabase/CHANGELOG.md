@@ -1,5 +1,31 @@
 # @voltagent/supabase
 
+## 0.1.6
+
+### Patch Changes
+
+- [#160](https://github.com/VoltAgent/voltagent/pull/160) [`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enhanced Supabase memory provider with better performance
+
+  We've significantly improved the Supabase memory provider with better schema design and enhanced performance capabilities. The update includes database schema changes that require migration.
+
+  Migration commands will appear in your terminal - follow those instructions to apply the database changes. If you experience any issues with the migration or memory operations, please reach out on [Discord](https://s.voltagent.dev/discord) for assistance.
+
+  **What's Improved:**
+
+  - Better performance for memory operations and large datasets
+  - Enhanced database schema with optimized indexing
+  - Improved error handling and data validation
+  - Better support for timeline events and metadata storage
+
+  **Migration Notes:**
+
+  - Migration commands will be displayed in your terminal
+  - Follow the terminal instructions to update your database schema
+  - Existing memory data will be preserved during the migration
+
+- Updated dependencies [[`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b)]:
+  - @voltagent/core@0.1.21
+
 ## 0.1.5
 
 ### Patch Changes

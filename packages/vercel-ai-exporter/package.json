@@ -1,8 +1,15 @@
 {
   "name": "@voltagent/vercel-ai-exporter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OpenTelemetry exporter for VoltAgent observability with Vercel AI SDK",
-  "keywords": ["voltagent", "vercel-ai", "opentelemetry", "observability", "llm", "ai"],
+  "keywords": [
+    "voltagent",
+    "vercel-ai",
+    "opentelemetry",
+    "observability",
+    "llm",
+    "ai"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/voltagentai/voltagent.git",
@@ -20,7 +27,9 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -31,8 +40,8 @@
   "dependencies": {
     "@opentelemetry/core": "^1.18.0",
     "@opentelemetry/sdk-trace-base": "^1.18.0",
-    "@voltagent/core": "^0.1.20",
-    "@voltagent/sdk": "^0.1.0"
+    "@voltagent/core": "^0.1.21",
+    "@voltagent/sdk": "^0.1.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

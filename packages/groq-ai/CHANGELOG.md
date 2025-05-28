@@ -1,5 +1,18 @@
 # @voltagent/groq-ai
 
+## 0.1.9
+
+### Patch Changes
+
+- [#160](https://github.com/VoltAgent/voltagent/pull/160) [`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: remove peer dependencies and update package configuration
+
+  - Remove `@voltagent/core` peer dependency from Google AI and Groq AI packages
+  - Clean up package.json formatting and configuration
+  - Improve dependency management for better compatibility
+
+- Updated dependencies [[`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b)]:
+  - @voltagent/core@0.1.21
+
 ## 0.1.8
 
 ### Patch Changes
