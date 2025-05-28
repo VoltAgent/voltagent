@@ -795,9 +795,6 @@ importers:
       dotenv:
         specifier: ^16.4.5
         version: 16.4.7
-      langfuse-vercel:
-        specifier: ^3.37.3
-        version: 3.37.3(ai@4.3.14)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -13193,36 +13190,11 @@ packages:
       mustache: 4.2.0
     dev: false
 
-  /langfuse-core@3.37.3:
-    resolution: {integrity: sha512-G4+BNiZLwFYWfrsz2n3k5klRXCpNiOTV9Om1SwJMarqB9yeQiFTGodbmOLimdjygIXnDC7FzZT2d7v2mjt5IDQ==}
-    engines: {node: '>=18'}
-    dependencies:
-      mustache: 4.2.0
-    dev: false
-
-  /langfuse-vercel@3.37.3(ai@4.3.14):
-    resolution: {integrity: sha512-1KUwJaoACN4nZC8U5p2Yn1EV/gekL5ky3CGqPpXigFQcMGQ0YA7YAYUOiGOZ+pPJzRMZ8WQ2ghsowqysWw58FA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      ai: '>=3.2.44'
-    dependencies:
-      ai: 4.3.14(react@19.1.0)(zod@3.24.2)
-      langfuse: 3.37.3
-      langfuse-core: 3.37.3
-    dev: false
-
   /langfuse@3.37.2:
     resolution: {integrity: sha512-C4P56hJDNk8vWNJR102JhgyCYXbt3HG19PY0brurlrU4dh5pq91JPt44jyiT5RzUs+NFew//gCkgFEcQd3RogA==}
     engines: {node: '>=18'}
     dependencies:
       langfuse-core: 3.37.2
-    dev: false
-
-  /langfuse@3.37.3:
-    resolution: {integrity: sha512-xDbw3wRfdzfRfbxh47PpXMFhceNVAcby8LqZ9aRkBJSIgVVyR/INCkU0QpbckV0AI/BAvOgonK/rBrWByN4gZg==}
-    engines: {node: '>=18'}
-    dependencies:
-      langfuse-core: 3.37.3
     dev: false
 
   /langsmith@0.3.25(openai@4.97.0):
