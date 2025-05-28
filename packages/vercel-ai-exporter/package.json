@@ -30,7 +30,9 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.18.0",
-    "@opentelemetry/sdk-trace-base": "^1.18.0"
+    "@opentelemetry/sdk-trace-base": "^1.18.0",
+    "@voltagent/core": "^0.1.20",
+    "@voltagent/sdk": "^0.1.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
@@ -41,8 +43,6 @@
     "typescript": "^5.0.4"
   },
   "peerDependencies": {
-    "@voltagent/core": "^0.1.0",
-    "@voltagent/sdk": "^0.1.0",
     "ai": "^3.0.0 || ^4.0.0"
   },
   "publishConfig": {

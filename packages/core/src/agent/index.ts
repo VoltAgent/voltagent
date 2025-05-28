@@ -1031,6 +1031,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       await this.updateHistoryEntry(operationContext, {
         output: response.text,
         usage: response.usage,
+        endTime: new Date(),
         status: "completed" as any,
       });
 
@@ -1102,6 +1103,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       await this.updateHistoryEntry(operationContext, {
         status: "error",
+        endTime: new Date(),
       });
       throw voltagentError;
     }
@@ -1377,6 +1379,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         await this.updateHistoryEntry(operationContext, {
           output: result.text,
           usage: result.usage,
+          endTime: new Date(),
           status: "completed" as any,
         });
 
@@ -1493,6 +1496,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
         await this.updateHistoryEntry(operationContext, {
           status: "error",
+          endTime: new Date(),
         });
 
         const agentErrorEvent: AgentErrorEvent = {
@@ -1710,6 +1714,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       await this.updateHistoryEntry(operationContext, {
         output: responseStr,
         usage: response.usage,
+        endTime: new Date(),
         status: "completed" as any,
       });
 
@@ -1785,6 +1790,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       await this.updateHistoryEntry(operationContext, {
         status: "error",
+        endTime: new Date(),
       });
 
       await this.hooks.onEnd?.({

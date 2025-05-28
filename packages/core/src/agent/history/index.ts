@@ -400,6 +400,7 @@ export class HistoryManager {
         if (updates.status !== undefined) finalUpdates.status = updates.status;
         if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
         if (updates.metadata !== undefined) finalUpdates.metadata = updates.metadata;
+        if (updates.endTime !== undefined) finalUpdates.endTime = updates.endTime.toISOString();
 
         if (Object.keys(finalUpdates).length > 0) {
           await this.voltAgentExporter.updateHistoryEntry(

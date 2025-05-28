@@ -41,6 +41,7 @@ export interface AgentHistoryUpdatableFields {
   status?: AgentStatus;
   usage?: UsageInfo;
   metadata?: Record<string, unknown>;
+  endTime?: string;
 }
 
 export class TelemetryServiceApiClient {
@@ -185,6 +186,7 @@ export class TelemetryServiceApiClient {
     if (updates.output) payload.output = { content: updates.output };
     if (updates.status) payload.status = updates.status;
     if (updates.usage) payload.usage = updates.usage;
+    if (updates.endTime) payload.endTime = updates.endTime;
 
     // agent_snapshot'ı metadata olarak ekle
     if (updates.metadata) {

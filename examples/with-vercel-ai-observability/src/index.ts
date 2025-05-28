@@ -9,10 +9,9 @@ import { randomUUID } from "node:crypto";
 
 // Initialize VoltAgent exporter
 const voltAgentExporter = new VoltAgentExporter({
-  publicKey: "pk_637e4c899b48bcddd85968766fd7e84b",
-  secretKey: "sk_live_13450b23f364ebeb48543281023942d591e96c284f2aec562f09d2264ca516da",
-  baseUrl: "http://localhost:3003",
-  debug: true,
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
+  baseUrl: "https://api.voltagent.dev",
 });
 
 // Set up OpenTelemetry SDK

@@ -1365,7 +1365,7 @@ importers:
   packages/sdk:
     dependencies:
       '@voltagent/core':
-        specifier: ^0.1.0
+        specifier: ^0.1.20
         version: link:../core
     devDependencies:
       '@types/jest':
@@ -1461,7 +1461,7 @@ importers:
         specifier: ^1.18.0
         version: 1.30.1(@opentelemetry/api@1.9.0)
       '@voltagent/core':
-        specifier: ^0.1.0
+        specifier: ^0.1.20
         version: link:../core
       '@voltagent/sdk':
         specifier: ^0.1.0

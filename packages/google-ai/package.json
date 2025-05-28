@@ -13,9 +13,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -36,8 +34,5 @@
     "ts-jest": "^29.1.0",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4"
-  },
-  "peerDependencies": {
-    "@voltagent/core": "^0.1.0"
   }
 }
