@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-voice-elevenlabs",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "voice",
-    "elevenlabs"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "voice", "elevenlabs"],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -23,7 +17,7 @@
     "@voltagent/core": "^0.1.19",
     "@voltagent/vercel-ai": "^0.1.8",
     "@voltagent/voice": "^0.1.6",
-    "zod": "^3.24.2"
+    "zod": "3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
