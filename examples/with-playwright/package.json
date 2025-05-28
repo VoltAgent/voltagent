@@ -1,7 +1,11 @@
 {
   "name": "voltagent-example-with-playwright",
   "private": true,
-  "keywords": ["voltagent", "ai", "agent"],
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent"
+  ],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -17,9 +21,9 @@
     "@playwright/browser-firefox": "1.51.1",
     "@playwright/browser-webkit": "1.51.1",
     "@playwright/test": "^1.51.1",
-    "@voltagent/cli": "^0.1.5",
-    "@voltagent/core": "^0.1.19",
-    "@voltagent/vercel-ai": "^0.1.8",
+    "@voltagent/cli": "^0.1.6",
+    "@voltagent/core": "^0.1.20",
+    "@voltagent/vercel-ai": "^0.1.9",
     "axios": "^1.5.0",
     "playwright": "1.51.1",
     "uuid": "^9.0.1",

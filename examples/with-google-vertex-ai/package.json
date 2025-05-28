@@ -1,7 +1,11 @@
 {
   "name": "voltagent-example-google-vertex-ai",
   "private": true,
-  "keywords": ["voltagent", "ai", "agent"],
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent"
+  ],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -12,9 +16,9 @@
     "volt": "volt"
   },
   "dependencies": {
-    "@voltagent/cli": "^0.1.5",
-    "@voltagent/core": "^0.1.19",
-    "@voltagent/google-ai": "^0.3.9",
+    "@voltagent/cli": "^0.1.6",
+    "@voltagent/core": "^0.1.20",
+    "@voltagent/google-ai": "^0.3.10",
     "zod": "3.24.2"
   },
   "devDependencies": {

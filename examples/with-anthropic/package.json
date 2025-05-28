@@ -1,7 +1,11 @@
 {
   "name": "with-anthropic",
   "private": true,
-  "keywords": ["voltagent", "ai", "agent"],
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent"
+  ],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -13,9 +17,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
-    "@voltagent/anthropic-ai": "^0.1.6",
-    "@voltagent/cli": "^0.1.5",
-    "@voltagent/core": "^0.1.19",
+    "@voltagent/anthropic-ai": "^0.1.7",
+    "@voltagent/cli": "^0.1.6",
+    "@voltagent/core": "^0.1.20",
     "zod": "3.24.2"
   },
   "devDependencies": {
