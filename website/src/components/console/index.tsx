@@ -16,12 +16,7 @@ import AgentDetailView from "./AgentDetailView";
 import AgentChat from "./AgentChat";
 import FlowOverview from "./FlowOverview";
 import Link from "@docusaurus/Link";
-import {
-  LangChainLogo,
-  AutoGenLogo,
-  CrewAILogo,
-  AutoGPTLogo,
-} from "@site/static/img/logos";
+
 import { OpenAILogo } from "../../../static/img/logos/openai";
 import {
   SupabaseLogo,
