@@ -395,7 +395,9 @@ app.openapi(objectRoute, async (c) => {
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
-    const response = await agent.generateObject(input, schema, options);
+    const schemaInZodObject = jsonSchemaToZod(schema);
+
+    const response = await agent.generateObject(input, schemaInZodObject, options);
     return c.json(
       { success: true, data: response } satisfies z.infer<typeof ObjectResponseSchema>,
       200,
