@@ -2,10 +2,13 @@ import React from "react";
 import { motion } from "framer-motion";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { CodeBracketIcon } from "@heroicons/react/24/outline";
-import showcaseProjects from "./projects.json";
 import { ProjectCard } from "./ProjectCard";
 
-export const ShowcaseList = () => {
+interface ShowcaseListProps {
+  projects?: any[];
+}
+
+export const ShowcaseList = ({ projects = [] }: ShowcaseListProps) => {
   return (
     <section className="relative py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -58,7 +61,7 @@ export const ShowcaseList = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {showcaseProjects.map((project) => (
+          {projects.map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))}
         </motion.div>

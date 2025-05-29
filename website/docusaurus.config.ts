@@ -109,6 +109,13 @@ const config: Config = {
         },
       },
     ],
+    [
+      "./plugins/docusaurus-plugin-content-showcase",
+      {
+        id: "showcase",
+        contentPath: "src/components/showcase",
+      },
+    ],
     "./plugins/gurubase/index.js",
   ],
   themeConfig: {
@@ -130,6 +137,11 @@ const config: Config = {
         {
           to: "/docs",
           label: "Documentation",
+          position: "left",
+        },
+        {
+          to: "/showcase",
+          label: "Showcase",
           position: "left",
         },
         {

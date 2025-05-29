@@ -1,64 +1,89 @@
-import React, { useEffect, useState } from "react";
-import { useLocation } from "@docusaurus/router";
+import React from "react";
 import Head from "@docusaurus/Head";
 import Layout from "@theme/Layout";
+import Link from "@docusaurus/Link";
 import { motion } from "framer-motion";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { GitHubLogo } from "../../static/img/logos/github";
-import { Footer } from "../components/footer";
-import { DotPattern } from "../components/ui/dot-pattern";
-import showcaseProjects from "../components/showcase/projects.json";
+import { GitHubLogo } from "../../../static/img/logos/github";
+import { Footer } from "../../components/footer";
+import { DotPattern } from "../../components/ui/dot-pattern";
 
-export default function ProjectDetailPage(): JSX.Element {
-  const location = useLocation();
-  const [project, setProject] = useState(null);
+interface ShowcaseProjectPageProps {
+  project: any;
+}
 
-  useEffect(() => {
-    // Parse the URL parameters
-    const urlParams = new URLSearchParams(location.search);
-    const id = urlParams.get("id");
-
-    if (id) {
-      const foundProject = showcaseProjects.find(
-        (p) => p.id === Number.parseInt(id),
-      );
-      setProject(foundProject);
-    }
-  }, [location.search]);
-
+export default function ShowcaseProjectPage({
+  project,
+}: ShowcaseProjectPageProps): JSX.Element {
   if (!project) {
     return (
       <Layout>
+        <Head>
+          <title>Project Not Found - VoltAgent Showcase</title>
+          <meta
+            name="description"
+            content="The requested project could not be found in the VoltAgent showcase."
+          />
+        </Head>
         <main className="flex-1 min-h-screen flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-400 mb-4">
               Project Not Found
             </h1>
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = "/showcase";
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  window.location.href = "/showcase";
-                }
-              }}
-              className="text-[#00d992] hover:underline bg-transparent border-none cursor-pointer"
+            <Link
+              to="/showcase"
+              className="text-[#00d992] hover:underline no-underline"
             >
               Back to Showcase
-            </button>
+            </Link>
           </div>
         </main>
       </Layout>
     );
   }
 
+  // Create SEO-optimized title and description
+  const seoTitle = `${project.name} - AI Agent by ${project.creator} | VoltAgent Showcase`;
+  const seoDescription = `${project.description.substring(
+    0,
+    150,
+  )}... Built with VoltAgent by ${
+    project.creator
+  }. Explore source code and implementation details.`;
+  const techStack = project.tech?.join(", ") || "";
+  const keywords = `VoltAgent, ${project.creator}, AI agent, ${techStack}, TypeScript, artificial intelligence, automation, ${project.name}`;
+
   return (
     <Layout>
       <Head>
-        <title>{project.name} - VoltAgent Showcase</title>
-        <meta name="description" content={project.description} />
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <meta name="keywords" content={keywords} />
+        <meta name="author" content={project.creator} />
+
+        {/* Open Graph tags */}
+        <meta
+          property="og:title"
+          content={`${project.name} - AI Agent by ${project.creator}`}
+        />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:type" content="article" />
+        <meta property="og:image" content={project.screenshot} />
+        <meta property="article:author" content={project.creator} />
+        <meta property="article:tag" content="VoltAgent" />
+        <meta property="article:tag" content="AI Agent" />
+        {project.tech?.map((tech) => (
+          <meta key={tech} property="article:tag" content={tech} />
+        ))}
+
+        {/* Twitter Card tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content={`${project.name} - AI Agent by ${project.creator}`}
+        />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={project.screenshot} />
       </Head>
       <main className="flex-1">
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
@@ -72,21 +97,13 @@ export default function ProjectDetailPage(): JSX.Element {
               transition={{ duration: 0.3 }}
               className="mb-8"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = "/showcase";
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    window.location.href = "/showcase";
-                  }
-                }}
-                className="flex items-center cursor-pointer text-gray-400 hover:text-[#00d992] transition-colors bg-transparent border-none text-sm sm:text-base"
+              <Link
+                to="/showcase"
+                className="flex items-center text-gray-400 hover:text-[#00d992] transition-colors no-underline text-sm sm:text-base"
               >
                 <ArrowLeftIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Back to Showcase
-              </button>
+              </Link>
             </motion.div>
 
             {/* Project Header */}
@@ -201,7 +218,7 @@ export default function ProjectDetailPage(): JSX.Element {
                     Use Cases
                   </h2>
                   <ul className="space-y-2 pl-2">
-                    {project.useCases.map((useCase) => (
+                    {project.useCases?.map((useCase) => (
                       <li key={useCase} className="flex items-start">
                         <span className="text-[#00d992] mr-2 ">•</span>
                         <span className="text-sm sm:text-base text-gray-300">
@@ -227,7 +244,7 @@ export default function ProjectDetailPage(): JSX.Element {
                     Tech Stack
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {project.tech.map((tech) => (
+                    {project.tech?.map((tech) => (
                       <span
                         key={tech}
                         className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md font-medium ${
