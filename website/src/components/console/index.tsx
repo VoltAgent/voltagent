@@ -68,6 +68,11 @@ export const Console = () => {
       isComingSoon: false,
     },
     {
+      logo: <OpenTelemetryLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "OpenTelemetry",
+      isComingSoon: false,
+    },
+    {
       logo: <OllamaLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
       tooltip: "Ollama",
       isComingSoon: false,
@@ -80,47 +85,43 @@ export const Console = () => {
     {
       logo: <LangflowLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
       tooltip: "Langflow",
-      isComingSoon: false,
+      isComingSoon: true,
     },
     {
       logo: <DifyLogo className="w-10 h-10 sm:w-10 sm:h-10" />,
       tooltip: "Dify",
-      isComingSoon: false,
+      isComingSoon: true,
     },
     {
       logo: <AutogenLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
       tooltip: "Autogen",
-      isComingSoon: false,
+      isComingSoon: true,
     },
     {
       logo: <CrewAILogo className="w-10 h-10 sm:w-14 sm:h-14" />,
       tooltip: "CrewAI",
-      isComingSoon: false,
+      isComingSoon: true,
     },
     {
       logo: <LangChainLogo className="w-10 h-10 sm:w-14 sm:h-14" />,
       tooltip: "LangChain",
-      isComingSoon: false,
+      isComingSoon: true,
     },
     {
       logo: <LlamaIndexLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
       tooltip: "LlamaIndex",
-      isComingSoon: false,
+      isComingSoon: true,
     },
-    {
-      logo: <OpenTelemetryLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "OpenTelemetry",
-      isComingSoon: false,
-    },
+
     {
       logo: <PydanticLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
       tooltip: "Pydantic",
-      isComingSoon: false,
+      isComingSoon: true,
     },
     {
       logo: <SmoleAgentsLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
       tooltip: "SmoleAgents",
-      isComingSoon: false,
+      isComingSoon: true,
     },
   ];
 
@@ -205,13 +206,11 @@ export const Console = () => {
       {/* Framework Integration Examples */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 sm:mb-24">
         <div className="text-left mb-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl text-orange-500 font-bold mb-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl text-emerald-400 font-bold mb-4">
             Easy Integration with Any Framework & Vanilla JS/Python
           </h2>
           <p className="text-gray-400 max-w-3xl text-sm sm:text-base md:text-lg mb-8">
             Connect your existing AI agents to the console with minimal setup.
-            Universal compatibility means you're never locked into a specific
-            technology stack.
           </p>
         </div>
 
