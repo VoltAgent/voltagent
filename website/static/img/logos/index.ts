@@ -4,9 +4,18 @@ export { GitHubLogo } from "./github";
 
 // Export AI framework logos
 export { LangChainLogo } from "./integrations/langchain";
-export { AutoGenLogo } from "./integrations/autogen";
+export { AutogenLogo } from "./integrations/autogen";
 export { CrewAILogo } from "./integrations/crewai";
 export { AutoGPTLogo } from "./integrations/autogpt";
+export { VercelLogo } from "./integrations/vercel";
+export { OllamaLogo } from "./integrations/ollama";
+export { SemanticKernelLogo } from "./integrations/semantic-kernel";
+export { LangflowLogo } from "./integrations/langflow";
+export { DifyLogo } from "./integrations/dify";
+export { LlamaIndexLogo } from "./integrations/llamaindex";
+export { OpenTelemetryLogo } from "./integrations/opentelemetry";
+export { PydanticLogo } from "./integrations/pydantic";
+export { SmoleAgentsLogo } from "./integrations/smoleagents";
 
 // Export all integration logos
 export { NotionLogo } from "./integrations/notion";
