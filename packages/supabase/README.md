@@ -93,39 +93,34 @@ CREATE TABLE IF NOT EXISTS voltagent_memory_messages (
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_lookup
 ON voltagent_memory_messages(user_id, conversation_id, created_at);
 
--- Agent History Table
+-- Agent History Table (New Structured Format)
 CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history (
-    key TEXT PRIMARY KEY,
-    value JSONB NOT NULL, -- Store the entry object as JSONB
-    agent_id TEXT NOT NULL
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    status TEXT,
+    input JSONB,
+    output JSONB,
+    usage JSONB,
+    metadata JSONB,
+    -- Legacy columns for migration compatibility
+    key TEXT,
+    value JSONB
 );
 
--- Index for faster lookup by agent_id
+-- Indexes for agent history
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_id
+ON voltagent_memory_agent_history(id);
+
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_agent_id
 ON voltagent_memory_agent_history(agent_id);
-
--- Agent History Events Table
-CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_events (
-    key TEXT PRIMARY KEY,
-    value JSONB NOT NULL, -- Store the event object as JSONB
-    -- Foreign key to history entry
-    history_id TEXT NOT NULL REFERENCES voltagent_memory_agent_history(key) ON DELETE CASCADE,
-    agent_id TEXT NOT NULL
-);
-
--- Indexes for faster lookup
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_events_history_id
-ON voltagent_memory_agent_history_events(history_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_events_agent_id
-ON voltagent_memory_agent_history_events(agent_id);
 
 -- Agent History Steps Table
 CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_steps (
     key TEXT PRIMARY KEY,
     value JSONB NOT NULL, -- Store the step object as JSONB
     -- Foreign key to history entry
-    history_id TEXT NOT NULL REFERENCES voltagent_memory_agent_history(key) ON DELETE CASCADE,
+    history_id TEXT NOT NULL,
     agent_id TEXT NOT NULL
 );
 
@@ -135,6 +130,48 @@ ON voltagent_memory_agent_history_steps(history_id);
 
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_steps_agent_id
 ON voltagent_memory_agent_history_steps(agent_id);
+
+-- Timeline Events Table (New)
+CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_timeline_events (
+    id TEXT PRIMARY KEY,
+    history_id TEXT NOT NULL,
+    agent_id TEXT,
+    event_type TEXT NOT NULL,
+    event_name TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT,
+    status TEXT,
+    status_message TEXT,
+    level TEXT DEFAULT 'INFO',
+    version TEXT,
+    parent_event_id TEXT,
+    tags JSONB,
+    input JSONB,
+    output JSONB,
+    error JSONB,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for timeline events
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_history_id
+ON voltagent_memory_agent_history_timeline_events(history_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_agent_id
+ON voltagent_memory_agent_history_timeline_events(agent_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_event_type
+ON voltagent_memory_agent_history_timeline_events(event_type);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_event_name
+ON voltagent_memory_agent_history_timeline_events(event_name);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_parent_event_id
+ON voltagent_memory_agent_history_timeline_events(parent_event_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_status
+ON voltagent_memory_agent_history_timeline_events(status);
 ```
 
 ### Credentials

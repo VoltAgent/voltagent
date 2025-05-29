@@ -90,7 +90,7 @@ new VoltAgent({
   telemetryExporter: new VoltAgentExporter({
     publicKey: voltagentPublicKey,
     secretKey: voltagentSecretKey,
-    baseUrl: "https://server.voltagent.dev", // Default URL for the VoltAgent cloud service
+    baseUrl: "https://api.voltagent.dev", // Default URL for the VoltAgent cloud service
   }),
   // highlight-end
 });

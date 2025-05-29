@@ -8,7 +8,6 @@ export interface TimelineEvent {
   type: "memory" | "tool" | "agent" | "retriever";
   data: Record<string, any>;
   updatedAt?: Date | string;
-  affectedNodeId?: string;
   agentState?: Record<string, any>;
 }
 

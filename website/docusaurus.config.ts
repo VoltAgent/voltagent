@@ -81,6 +81,7 @@ const config: Config = {
       };
     },
     "./plugins/clarity/index.js",
+    "./plugins/ahrefs/index.js",
     [
       "@docusaurus/plugin-client-redirects",
       {

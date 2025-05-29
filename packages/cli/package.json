@@ -1,20 +1,14 @@
 {
   "name": "@voltagent/cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "CLI tool for VoltAgent applications",
-  "keywords": [
-    "voltagent",
-    "cli",
-    "agent"
-  ],
+  "keywords": ["voltagent", "cli", "agent"],
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
     "volt": "dist/index.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -1,4 +1,5 @@
 import type { BaseMessage } from "../agent/providers/base/types";
+import type { NewTimelineEvent } from "../events/types";
 
 /**
  * Memory options
@@ -135,24 +136,6 @@ export type Memory = {
   updateHistoryEntry(key: string, value: any, agentId: string): Promise<void>;
 
   /**
-   * Add a history event
-   * @param key Event ID
-   * @param value Event data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  addHistoryEvent(key: string, value: any, historyId: string, agentId: string): Promise<void>;
-
-  /**
-   * Update a history event
-   * @param key Event ID
-   * @param value Updated event data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  updateHistoryEvent(key: string, value: any, historyId: string, agentId: string): Promise<void>;
-
-  /**
    * Add a history step
    * @param key Step ID
    * @param value Step data
@@ -178,13 +161,6 @@ export type Memory = {
   getHistoryEntry(key: string): Promise<any | undefined>;
 
   /**
-   * Get a history event by ID
-   * @param key Event ID
-   * @returns The history event or undefined if not found
-   */
-  getHistoryEvent(key: string): Promise<any | undefined>;
-
-  /**
    * Get a history step by ID
    * @param key Step ID
    * @returns The history step or undefined if not found
@@ -197,6 +173,21 @@ export type Memory = {
    * @returns Array of all history entries for the agent
    */
   getAllHistoryEntriesByAgent(agentId: string): Promise<any[]>;
+
+  /**
+   * Add a timeline event
+   * This is part of the new immutable event system.
+   * @param key Event ID (UUID)
+   * @param value Timeline event data with immutable structure
+   * @param historyId Related history entry ID
+   * @param agentId Agent ID for filtering
+   */
+  addTimelineEvent(
+    key: string,
+    value: NewTimelineEvent,
+    historyId: string,
+    agentId: string,
+  ): Promise<void>;
 };
 
 /**

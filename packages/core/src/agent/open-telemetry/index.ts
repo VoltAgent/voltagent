@@ -39,8 +39,8 @@ export function startOperationSpan(options: StartOperationSpanOptions): Span {
   const parentContext = apiContext.active();
 
   const attributes: Attributes = {
-    "voltagent.agent.id": agentId,
-    "voltagent.agent.name": agentName,
+    "agent.id": agentId,
+    "agent.name": agentName,
     ...(userId && { "enduser.id": userId }),
     ...(sessionId && { "session.id": sessionId }),
     ...(parentAgentId && { "voltagent.parent.agent.id": parentAgentId }),
@@ -156,7 +156,7 @@ export function startToolSpan(options: StartToolSpanOptions): Span {
         "tool.call.id": toolCallId,
         "tool.name": toolName,
         "tool.arguments": toolInput ? JSON.stringify(toolInput) : undefined,
-        "voltagent.agent.id": agentId,
+        "agent.id": agentId,
       },
     },
     parentOtelContext,

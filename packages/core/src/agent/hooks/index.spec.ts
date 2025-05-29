@@ -33,14 +33,11 @@ const createMockContext = (id = "mock-op-1") => {
   // No explicit type annotation here
   const mockHistoryEntry = {
     id: `history-${id}`,
-    timestamp: new Date(),
+    startTime: new Date(),
     input: "test input",
     output: "",
     status: "working", // Use a valid AgentStatus string literal
     steps: [] as any[],
-    events: [] as any[],
-    agentId: "test-agent",
-    conversationId: "conv-1",
   };
 
   // Cast the return object to OperationContext to satisfy the usage

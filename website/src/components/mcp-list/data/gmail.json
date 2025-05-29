@@ -1,0 +1,225 @@
+{
+  "id": 1,
+  "slug": "gmail",
+  "name": "Gmail",
+  "short_description": "Manage emails, drafts, labels, and contacts in Gmail.",
+  "title": "Gmail MCP Server",
+  "description": "The Gmail MCP server connects your AI agents to Gmail's complete email management features. Your agents can deliver messages, collaborate with drafts, organize with labels, collaborate with contacts, and perform sophisticated email operations all on automatic pilot. Navigate through the features described below to discover how you can leverage these features to make your email process and communication workflows more efficient.",
+  "category": ["Communication", "Google"],
+  "logoKey": "gmail",
+  "avaliable_providers": ["composio", "zapier"],
+  "total_tools": [
+    {
+      "id": "send_email",
+      "name": "Send Email",
+      "description": "Create and send a new email message",
+      "providers": {
+        "zapier": { "id": "send_email" },
+        "composio": { "id": "email" }
+      },
+      "mcp_content": {
+        "heading": "How to Send Professional Emails Automatically with Gmail MCP?",
+        "description": "Writing professional emails takes lots of time on a daily basis. Your AI handles routine mails and maintains your professional tone. It is extremely helpful for customer responses, meeting reminders, and usual notifications where consistency matters the most."
+      }
+    },
+    {
+      "id": "create_draft",
+      "name": "Create Draft",
+      "description": "Create a draft email message",
+      "providers": {
+        "zapier": { "id": "create_draft" }
+      },
+      "mcp_content": {
+        "heading": "Prepare Email Drafts for Later Review",
+        "description": "Draft preparation gives you mastery over important communications. Your AI provides initial drafts you can see and modify before sending. This approach is perfect for sensitive topics or time-sensitive messages where careful consideration is needed."
+      }
+    },
+    {
+      "id": "reply_to_email",
+      "name": "Reply to Email",
+      "description": "Send a reply to an existing email message or thread",
+      "providers": {
+        "zapier": { "id": "reply_to_email" },
+        "composio": { "id": "to_thread" }
+      },
+      "mcp_content": {
+        "heading": "How to Automate Email Responses and Thread Management with Gmail MCP?",
+        "description": "Email response management is a challenge at high volumes. Your AI on Gmail MCP scans mails coming in and maintains conversation context in good order. This enables continued communications without hand-tracking of threads."
+      }
+    },
+    {
+      "id": "find_email",
+      "name": "Find Email",
+      "description": "Search for and retrieve specific email messages",
+      "providers": {
+        "zapier": { "id": "find_email" },
+        "composio": { "id": "emails" }
+      },
+      "mcp_content": {
+        "heading": "Find Specific Emails with Smart Search",
+        "description": "Discovery of specific emails amidst large inboxes can be slow. Your AI searches on multiple factors - sender, content, dates, attachments. It's particularly useful in retrieving project correspondence, client communication, or reference material instantly."
+      }
+    },
+    {
+      "id": "delete_email",
+      "name": "Delete Email",
+      "description": "Delete an email message or move it to trash",
+      "providers": {
+        "zapier": { "id": "delete_email" },
+        "composio": { "id": "message" }
+      },
+      "mcp_content": {
+        "heading": "How to Keep Email Cleanup and Organization?",
+        "description": "Inbox management requires effort that is many professionals cannot sustain. Your AI takes care of spam removal, old message cleanup, and simple organization for you. This frees your main workspace for actionable tasks."
+      }
+    },
+    {
+      "id": "move_to_trash",
+      "name": "Move to Trash",
+      "description": "Move an email message to the trash folder",
+      "providers": {
+        "composio": { "id": "to_trash" }
+      },
+      "mcp_content": {
+        "heading": "Safely Archive Unwanted Emails",
+        "description": "Email deletion is unsafe if you're not certain about future requirements. Your AI is moving messages to trash instead of actual deletion, with retrieval options. This **safety net** approach dispels fear of losing essential data."
+      }
+    },
+    {
+      "id": "archive_email",
+      "name": "Archive Email",
+      "description": "Archive an email message to remove it from inbox while keeping it accessible",
+      "providers": {
+        "zapier": { "id": "archive_email" }
+      },
+      "mcp_content": {
+        "heading": "Keep Clean Inbox Without Throwing Away Useful Emails",
+        "description": "Inbox cleanliness implies striking a balance between ease of access and neatness. Your AI moves non-time-sensitive messages to archive while keeping important ones easily accessible. It's a perfect system for workflow based on projects."
+      }
+    },
+    {
+      "id": "add_label",
+      "name": "Add Label to Email",
+      "description": "Add a label to an email message for organization",
+      "providers": {
+        "zapier": { "id": "add_label_to_email" }
+      },
+      "mcp_content": {
+        "heading": "How to Organize Emails with Smart Labeling?",
+        "description": "Long manual email categorization is no more. Your AI scans message content and applies accurate labels automatically. Categorizations like projects, clients, or departments get categorized without labor of manual sorting."
+      }
+    },
+    {
+      "id": "remove_label",
+      "name": "Remove Label from Email",
+      "description": "Remove a label from an email message",
+      "providers": {
+        "zapier": { "id": "remove_label_from_email" }
+      },
+      "mcp_content": {
+        "heading": "Update Email Organization as Contexts Change",
+        "description": "Modification of project lifecycles and priority shifts demand organizational adjustments. Your AI refreshes email labels when contexts change, keeping the labels current and relevant. This adaptive labeling mechanism prevents obsolete categorization systems."
+      }
+    },
+    {
+      "id": "create_label",
+      "name": "Create Label",
+      "description": "Create a new label for email organization",
+      "providers": {
+        "zapier": { "id": "create_label" }
+      },
+      "mcp_content": {
+        "heading": "How to Build Dynamic Email Organization Systems?",
+        "description": "Static folder systems typically don't correspond to true workflow requirements. Your AI doesn't add new labels as requirements evolve, but scales according to actual use patterns rather than pre-specified buckets. This adjustment improves long-term organization effectiveness."
+      }
+    },
+    {
+      "id": "remove_label_conversation",
+      "name": "Remove Label from Conversation",
+      "description": "Remove a label from all emails within a conversation thread",
+      "providers": {
+        "zapier": { "id": "remove_label_from_conversation" }
+      },
+      "mcp_content": {
+        "heading": "Control Thread-Level Email Organization",
+        "description": "Conversation threads can contain dozens of messages that must be maintained in an organized state persistently. Your AI adds labels across entire email chains in one step, maintaining thread-level continuity without message-by-message processing."
+      }
+    },
+    {
+      "id": "create_draft_reply",
+      "name": "Create Draft Reply",
+      "description": "Create a draft reply to an existing email",
+      "providers": {
+        "zapier": { "id": "create_draft_reply" }
+      },
+      "mcp_content": {
+        "heading": "Set up Contextual Email Responses",
+        "description": "Accuracy of response is based on comprehending full context of conversations. Your AI reads entire email threads prior to generating responses so that answers respond to appropriate points and continue the conversation appropriately."
+      }
+    },
+    {
+      "id": "list_drafts",
+      "name": "List Email Drafts",
+      "description": "Retrieve a list of all email drafts",
+      "providers": {
+        "composio": { "id": "drafts" }
+      },
+      "mcp_content": {
+        "heading": "How to Efficiently Manage and Review Email Drafts with Gmail MCP?",
+        "description": "Multiple simultaneous communications complicate draft management. Your AI with Gmail MCP makes it easier to recognize drafts that should be completed and those that can be archived. This **efficient approach** declutters draft folders successfully."
+      }
+    },
+    {
+      "id": "delete_draft",
+      "name": "Delete Email Draft",
+      "description": "Delete an email draft that is no longer needed",
+      "providers": {
+        "composio": { "id": "draft" }
+      },
+      "mcp_content": {
+        "heading": "Maintain Clean and Organized Draft Folder",
+        "description": "Stacks of old drafts can cause confusion and inefficiency. Your AI deletes old drafts without affecting active ones, keeping your workspace clean for new communications."
+      }
+    },
+    {
+      "id": "get_contacts",
+      "name": "Get Contacts",
+      "description": "Retrieve contact information from Google contacts",
+      "providers": {
+        "composio": { "id": "contacts" }
+      },
+      "mcp_content": {
+        "heading": "Get Contact Information for Better Communication",
+        "description": "Effective communication calls for personalized contact information and preferences. Your AI fetches contextual contact information upon composing emails, allowing for proper salutations, titles, and communications."
+      }
+    },
+    {
+      "id": "search_people",
+      "name": "Search People",
+      "description": "Search for contacts that match specific criteria",
+      "providers": {
+        "composio": { "id": "people" }
+      },
+      "mcp_content": {
+        "heading": "How to discover the correct contacts for effective Targeted Communication using Gmail MCP?",
+        "description": "Contact searches become slow with large address books. Your Gmail MCP AI identifies individual contacts based on various criteria - company, role, previous interactions. This targeting increases communication effectiveness."
+      }
+    },
+    {
+      "id": "find_or_send_email",
+      "name": "Find or Send Email",
+      "description": "Find an existing email or create and send a new one if not found",
+      "providers": {
+        "zapier": { "id": "find_or_send_email" }
+      },
+      "mcp_content": {
+        "heading": "Prevent Duplicate Communication",
+        "description": "Duplicate emails damage professional relationships and waste recipient time. Your AI prevents against recent duplicate communications before sending new emails, eliminating unnecessary outreach and maintaining communication quality."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How May Your AI Agents Leverage the Gmail MCP Server?",
+    "description": "Increasing professional responsibilities result in a rise in email management complexity. Gmail MCP provides full automation for routine work and keeps human intervention for important decision-making. With such balance, you can focus on strategic messages and keep business operations streamlined."
+  }
+}
