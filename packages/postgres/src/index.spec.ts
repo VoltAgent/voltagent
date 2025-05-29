@@ -1,5 +1,5 @@
 import { PostgresStorage } from ".";
-import type { Conversation, MemoryMessage } from "../types";
+import type { Conversation, MemoryMessage } from "@voltagent/core";
 
 // Mock pg Pool
 const mockQuery = jest.fn();
@@ -39,6 +39,20 @@ const createConversation = (overrides: Partial<Conversation> = {}): Conversation
   metadata: {},
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  ...overrides,
+});
+
+const createTimelineEvent = (overrides: any = {}): any => ({
+  id: "test-event-id",
+  type: "agent",
+  name: "agent:start",
+  startTime: new Date().toISOString(),
+  endTime: new Date().toISOString(),
+  status: "running",
+  level: "INFO",
+  input: { message: "test input" },
+  output: { result: "test output" },
+  metadata: { id: "test-agent", agentId: "test-agent" },
   ...overrides,
 });
 
@@ -121,6 +135,11 @@ describe("PostgresStorage", () => {
       // Verify that the tables were created
       expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("CREATE TABLE IF NOT EXISTS"));
       expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("CREATE INDEX IF NOT EXISTS"));
+
+      // Verify new timeline events table was created
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("agent_history_timeline_events"),
+      );
     });
   });
 
@@ -318,6 +337,236 @@ describe("PostgresStorage", () => {
     });
   });
 
+  describe("History Operations", () => {
+    it("should add a history entry with new structure", async () => {
+      const historyData = {
+        id: "history-1",
+        timestamp: new Date(),
+        status: "completed",
+        input: { message: "test input" },
+        output: { result: "test output" },
+        usage: { tokens: 100 },
+        metadata: { source: "test" },
+      };
+
+      await storage.addHistoryEntry("history-1", historyData, "agent-1");
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO"),
+        expect.arrayContaining([
+          "history-1",
+          "agent-1",
+          historyData.timestamp.toISOString(),
+          "completed",
+          JSON.stringify(historyData.input),
+          JSON.stringify(historyData.output),
+          JSON.stringify(historyData.usage),
+          JSON.stringify(historyData.metadata),
+        ]),
+      );
+    });
+
+    it("should get a history entry with events and steps", async () => {
+      const mockHistoryRow = {
+        id: "history-1",
+        agent_id: "agent-1",
+        timestamp: new Date().toISOString(),
+        status: "completed",
+        input: { message: "test input" },
+        output: { result: "test output" },
+        usage: { tokens: 100 },
+        metadata: { source: "test" },
+      };
+
+      const mockSteps = [{ value: { type: "tool", name: "search", content: "searching..." } }];
+
+      const mockEvents = [
+        {
+          id: "event-1",
+          event_type: "agent",
+          event_name: "agent:start",
+          start_time: new Date().toISOString(),
+          end_time: new Date().toISOString(),
+          status: "completed",
+          level: "INFO",
+          input: { message: "test" },
+          output: { result: "done" },
+        },
+      ];
+
+      // Mock the three queries: history entry, steps, and timeline events
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockHistoryRow] })
+        .mockResolvedValueOnce({ rows: mockSteps })
+        .mockResolvedValueOnce({ rows: mockEvents });
+
+      const result = await storage.getHistoryEntry("history-1");
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: "history-1",
+          _agentId: "agent-1",
+          status: "completed",
+          steps: expect.arrayContaining([
+            expect.objectContaining({
+              type: "tool",
+              name: "search",
+            }),
+          ]),
+          events: expect.arrayContaining([
+            expect.objectContaining({
+              id: "event-1",
+              type: "agent",
+              name: "agent:start",
+            }),
+          ]),
+        }),
+      );
+    });
+
+    it("should get all history entries for an agent", async () => {
+      const mockHistoryRows = [
+        {
+          id: "history-1",
+          agent_id: "agent-1",
+          timestamp: new Date().toISOString(),
+          status: "completed",
+          input: { message: "test" },
+          output: { result: "done" },
+          usage: null,
+          metadata: null,
+        },
+      ];
+
+      // Mock queries: history entries, steps for each entry, events for each entry
+      mockQuery
+        .mockResolvedValueOnce({ rows: mockHistoryRows })
+        .mockResolvedValueOnce({ rows: [] }) // steps
+        .mockResolvedValueOnce({ rows: [] }); // events
+
+      const result = await storage.getAllHistoryEntriesByAgent("agent-1");
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: "history-1",
+          _agentId: "agent-1",
+          status: "completed",
+          steps: [],
+          events: [],
+        }),
+      );
+    });
+  });
+
+  describe("Timeline Events Operations", () => {
+    it("should add a timeline event", async () => {
+      const event = createTimelineEvent();
+
+      await storage.addTimelineEvent("event-1", event, "history-1", "agent-1");
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO"),
+        expect.arrayContaining([
+          "event-1",
+          "history-1",
+          "agent-1",
+          event.type,
+          event.name,
+          event.startTime,
+          event.endTime,
+          event.status,
+          null, // status_message
+          event.level,
+          null, // version
+          null, // parent_event_id
+          null, // tags
+          JSON.stringify(event.input),
+          JSON.stringify(event.output),
+          null, // error
+          JSON.stringify(event.metadata),
+        ]),
+      );
+    });
+
+    it("should handle timeline event with all optional fields", async () => {
+      const event = createTimelineEvent({
+        statusMessage: "Event completed successfully",
+        version: "1.0.0",
+        parentEventId: "parent-event-1",
+        tags: ["test", "agent"],
+        error: { message: "Test error" },
+      });
+
+      await storage.addTimelineEvent("event-2", event, "history-1", "agent-1");
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO"),
+        expect.arrayContaining([
+          "event-2",
+          "history-1",
+          "agent-1",
+          event.type,
+          event.name,
+          event.startTime,
+          event.endTime,
+          event.status,
+          event.statusMessage,
+          event.level,
+          event.version,
+          event.parentEventId,
+          JSON.stringify(event.tags),
+          JSON.stringify(event.input),
+          JSON.stringify(event.output),
+          JSON.stringify(event.error),
+          JSON.stringify(event.metadata),
+        ]),
+      );
+    });
+  });
+
+  describe("History Steps Operations", () => {
+    it("should add a history step", async () => {
+      const stepData = {
+        type: "tool",
+        name: "search",
+        content: "Searching for information...",
+        arguments: { query: "test query" },
+      };
+
+      await storage.addHistoryStep("step-1", stepData, "history-1", "agent-1");
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO"),
+        expect.arrayContaining(["step-1", JSON.stringify(stepData), "history-1", "agent-1"]),
+      );
+    });
+
+    it("should get a history step", async () => {
+      const stepData = {
+        type: "tool",
+        name: "search",
+        content: "Searching...",
+      };
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ value: stepData }],
+      });
+
+      const result = await storage.getHistoryStep("step-1");
+
+      expect(result).toEqual(stepData);
+    });
+
+    it("should return undefined for non-existent step", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const result = await storage.getHistoryStep("non-existent");
+
+      expect(result).toBeUndefined();
+    });
+  });
+
   describe("Error Handling", () => {
     it("should handle database errors gracefully", async () => {
       const error = new Error("Database error");
@@ -343,6 +592,25 @@ describe("PostgresStorage", () => {
 
       await expect(storage.addMessage(createMessage(), "user1")).rejects.toThrow(
         "Failed to add message to PostgreSQL database",
+      );
+    });
+
+    it("should handle timeline event errors", async () => {
+      const error = new Error("Timeline event error");
+      mockQuery.mockRejectedValueOnce(error);
+
+      const event = createTimelineEvent();
+      await expect(
+        storage.addTimelineEvent("event-1", event, "history-1", "agent-1"),
+      ).rejects.toThrow("Failed to add timeline event to PostgreSQL database");
+    });
+
+    it("should handle history entry errors", async () => {
+      const error = new Error("History entry error");
+      mockQuery.mockRejectedValueOnce(error);
+
+      await expect(storage.addHistoryEntry("history-1", {}, "agent-1")).rejects.toThrow(
+        "Failed to add history entry to PostgreSQL database",
       );
     });
   });

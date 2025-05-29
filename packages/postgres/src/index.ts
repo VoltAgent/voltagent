@@ -6,7 +6,8 @@ import type {
   MemoryMessage,
   MemoryOptions,
   MessageFilterOptions,
-} from "../types";
+  NewTimelineEvent,
+} from "@voltagent/core";
 
 /**
  * Options for configuring the PostgresStorage
@@ -89,6 +90,87 @@ export class PostgresStorage implements Memory {
   }
 
   /**
+   * Add a timeline event
+   * @param key Event ID (UUID)
+   * @param value Timeline event data
+   * @param historyId Related history entry ID
+   * @param agentId Agent ID for filtering
+   */
+  async addTimelineEvent(
+    key: string,
+    value: NewTimelineEvent,
+    historyId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.initialized;
+
+    const client = await this.pool.connect();
+    try {
+      // Serialize JSON fields
+      const inputJSON = value.input ? JSON.stringify(value.input) : null;
+      const outputJSON = value.output ? JSON.stringify(value.output) : null;
+      const errorJSON = value.error ? JSON.stringify(value.error) : null;
+      const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
+      const tagsJSON = value.tags ? JSON.stringify(value.tags) : null;
+
+      // Insert with all the indexed fields
+      await client.query(
+        `
+        INSERT INTO ${this.options.tablePrefix}_agent_history_timeline_events 
+        (id, history_id, agent_id, event_type, event_name, 
+         start_time, end_time, status, status_message, level, 
+         version, parent_event_id, tags,
+         input, output, error, metadata) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ON CONFLICT (id) DO UPDATE SET
+          history_id = $2,
+          agent_id = $3,
+          event_type = $4,
+          event_name = $5,
+          start_time = $6,
+          end_time = $7,
+          status = $8,
+          status_message = $9,
+          level = $10,
+          version = $11,
+          parent_event_id = $12,
+          tags = $13,
+          input = $14,
+          output = $15,
+          error = $16,
+          metadata = $17
+        `,
+        [
+          key,
+          historyId,
+          agentId,
+          value.type,
+          value.name,
+          value.startTime,
+          value.endTime || null,
+          value.status || null,
+          value.statusMessage || null,
+          value.level || "INFO",
+          value.version || null,
+          value.parentEventId || null,
+          tagsJSON,
+          inputJSON,
+          outputJSON,
+          errorJSON,
+          metadataJSON,
+        ],
+      );
+
+      this.debug(`Added timeline event ${key} for history ${historyId}`);
+    } catch (error) {
+      this.debug("Error adding timeline event:", error);
+      throw new Error("Failed to add timeline event to PostgreSQL database");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Log a debug message if debug is enabled
    * @param message Message to log
    * @param data Additional data to log
@@ -134,22 +216,17 @@ export class PostgresStorage implements Memory {
         )
       `);
 
-      // Create agent history table
+      // Create agent history table with new structure
       await client.query(`
         CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_agent_history (
-          key TEXT PRIMARY KEY,
-          value JSONB NOT NULL,
-          agent_id TEXT NOT NULL
-        )
-      `);
-
-      // Create agent history events table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_agent_history_events (
-          key TEXT PRIMARY KEY,
-          value JSONB NOT NULL,
-          history_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_agent_history(key) ON DELETE CASCADE,
-          agent_id TEXT NOT NULL
+          id TEXT PRIMARY KEY,
+          agent_id TEXT NOT NULL,
+          timestamp TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+          status TEXT,
+          input JSONB,
+          output JSONB,
+          usage JSONB,
+          metadata JSONB
         )
       `);
 
@@ -158,8 +235,31 @@ export class PostgresStorage implements Memory {
         CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_agent_history_steps (
           key TEXT PRIMARY KEY,
           value JSONB NOT NULL,
-          history_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_agent_history(key) ON DELETE CASCADE,
+          history_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_agent_history(id) ON DELETE CASCADE,
           agent_id TEXT NOT NULL
+        )
+      `);
+
+      // Create timeline events table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_agent_history_timeline_events (
+          id TEXT PRIMARY KEY,
+          history_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_agent_history(id) ON DELETE CASCADE,
+          agent_id TEXT NOT NULL,
+          event_type TEXT NOT NULL,
+          event_name TEXT NOT NULL,
+          start_time TIMESTAMPTZ NOT NULL,
+          end_time TIMESTAMPTZ,
+          status TEXT,
+          status_message TEXT,
+          level TEXT DEFAULT 'INFO',
+          version TEXT,
+          parent_event_id TEXT,
+          tags JSONB,
+          input JSONB,
+          output JSONB,
+          error JSONB,
+          metadata JSONB
         )
       `);
 
@@ -180,16 +280,6 @@ export class PostgresStorage implements Memory {
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_events_history_id
-        ON ${this.options.tablePrefix}_agent_history_events(history_id)
-      `);
-
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_events_agent_id
-        ON ${this.options.tablePrefix}_agent_history_events(agent_id)
-      `);
-
-      await client.query(`
         CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_steps_history_id
         ON ${this.options.tablePrefix}_agent_history_steps(history_id)
       `);
@@ -197,6 +287,37 @@ export class PostgresStorage implements Memory {
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_steps_agent_id
         ON ${this.options.tablePrefix}_agent_history_steps(agent_id)
+      `);
+
+      // Create indexes for timeline events table
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_timeline_events_history_id
+        ON ${this.options.tablePrefix}_agent_history_timeline_events(history_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_timeline_events_agent_id
+        ON ${this.options.tablePrefix}_agent_history_timeline_events(agent_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_timeline_events_event_type
+        ON ${this.options.tablePrefix}_agent_history_timeline_events(event_type)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_timeline_events_event_name
+        ON ${this.options.tablePrefix}_agent_history_timeline_events(event_name)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_timeline_events_parent_event_id
+        ON ${this.options.tablePrefix}_agent_history_timeline_events(parent_event_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_timeline_events_status
+        ON ${this.options.tablePrefix}_agent_history_timeline_events(status)
       `);
 
       await client.query("COMMIT");
@@ -324,7 +445,7 @@ export class PostgresStorage implements Memory {
         query += ` AND created_at > $${queryParams.length}`;
       }
 
-      query += ` ORDER BY created_at ASC`;
+      query += " ORDER BY created_at ASC";
 
       if (limit && limit > 0) {
         queryParams.push(limit);
@@ -333,7 +454,7 @@ export class PostgresStorage implements Memory {
 
       const result = await client.query(query, queryParams);
 
-      return result.rows.map((row) => ({
+      return result.rows.map((row: any) => ({
         id: row.message_id,
         role: row.role,
         content: row.content,
@@ -469,7 +590,7 @@ export class PostgresStorage implements Memory {
         [resourceId],
       );
 
-      return result.rows.map((row) => ({
+      return result.rows.map((row: any) => ({
         id: row.id,
         resourceId: row.resource_id,
         title: row.title,
@@ -591,15 +712,39 @@ export class PostgresStorage implements Memory {
 
     const client = await this.pool.connect();
     try {
+      // Normalize the data for storage
+      const inputJSON = value.input ? JSON.stringify(value.input) : null;
+      const outputJSON = value.output ? JSON.stringify(value.output) : null;
+      const usageJSON = value.usage ? JSON.stringify(value.usage) : null;
+      const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
+
+      // Insert or replace with the structured format
       await client.query(
         `
-        INSERT INTO ${this.options.tablePrefix}_agent_history (key, value, agent_id)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (key) DO UPDATE
-        SET value = $2, agent_id = $3
+        INSERT INTO ${this.options.tablePrefix}_agent_history 
+        (id, agent_id, timestamp, status, input, output, usage, metadata) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (id) DO UPDATE SET
+          agent_id = $2,
+          timestamp = $3,
+          status = $4,
+          input = $5,
+          output = $6,
+          usage = $7,
+          metadata = $8
         `,
-        [key, JSON.stringify(value), agentId],
+        [
+          key, // id
+          agentId, // agent_id
+          value.timestamp ? value.timestamp.toISOString() : new Date().toISOString(), // timestamp
+          value.status || null, // status
+          inputJSON, // input
+          outputJSON, // output
+          usageJSON, // usage
+          metadataJSON, // metadata
+        ],
       );
+
       this.debug(`Added/updated history entry ${key} for agent ${agentId}`);
     } catch (error) {
       this.debug("Error adding history entry:", error);
@@ -614,50 +759,6 @@ export class PostgresStorage implements Memory {
    */
   async updateHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
     return this.addHistoryEntry(key, value, agentId);
-  }
-
-  /**
-   * Add a history event
-   */
-  async addHistoryEvent(
-    key: string,
-    value: any,
-    historyId: string,
-    agentId: string,
-  ): Promise<void> {
-    await this.initialized;
-
-    const client = await this.pool.connect();
-    try {
-      await client.query(
-        `
-        INSERT INTO ${this.options.tablePrefix}_agent_history_events
-        (key, value, history_id, agent_id)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (key) DO UPDATE
-        SET value = $2, history_id = $3, agent_id = $4
-        `,
-        [key, JSON.stringify(value), historyId, agentId],
-      );
-      this.debug(`Added/updated history event ${key} for history ${historyId}`);
-    } catch (error) {
-      this.debug("Error adding history event:", error);
-      throw new Error("Failed to add history event to PostgreSQL database");
-    } finally {
-      client.release();
-    }
-  }
-
-  /**
-   * Update a history event
-   */
-  async updateHistoryEvent(
-    key: string,
-    value: any,
-    historyId: string,
-    agentId: string,
-  ): Promise<void> {
-    return this.addHistoryEvent(key, value, historyId, agentId);
   }
 
   /**
@@ -710,9 +811,9 @@ export class PostgresStorage implements Memory {
       this.debug("Getting history entry for key:", key);
       const result = await client.query(
         `
-        SELECT value, agent_id
+        SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
         FROM ${this.options.tablePrefix}_agent_history
-        WHERE key = $1
+        WHERE id = $1
         `,
         [key],
       );
@@ -724,70 +825,89 @@ export class PostgresStorage implements Memory {
         return undefined;
       }
 
-      const entry = result.rows[0];
-      this.debug("Found history entry:", entry);
-      const value = entry.value;
-      this.debug("Entry value:", value);
+      const row = result.rows[0];
+      this.debug("Found history entry:", row);
 
-      // Get related events
-      const eventsResult = await client.query(
-        `
-        SELECT value
-        FROM ${this.options.tablePrefix}_agent_history_events
-        WHERE history_id = $1 AND agent_id = $2
-        ORDER BY (value->>'timestamp')::timestamp ASC
-        `,
-        [key, entry.agent_id],
-      );
-      this.debug("Events query result:", eventsResult.rows);
+      // Construct the entry object
+      const entry = {
+        id: row.id as string,
+        _agentId: row.agent_id as string, // Keep _agentId for compatibility
+        timestamp: new Date(row.timestamp as string),
+        status: row.status as string,
+        input: row.input ? row.input : null,
+        output: row.output ? row.output : null,
+        usage: row.usage ? row.usage : null,
+        metadata: row.metadata ? row.metadata : null,
+      };
 
-      // Get related steps
+      this.debug(`Got history entry with ID ${key}`);
+
+      // Now also get related steps
       const stepsResult = await client.query(
         `
-        SELECT value
-        FROM ${this.options.tablePrefix}_agent_history_steps
+        SELECT value 
+        FROM ${this.options.tablePrefix}_agent_history_steps 
         WHERE history_id = $1 AND agent_id = $2
         ORDER BY (value->>'timestamp')::timestamp ASC
         `,
-        [key, entry.agent_id],
+        [key, entry._agentId],
       );
-      this.debug("Steps query result:", stepsResult.rows);
 
-      // Add events and steps to the entry
-      value.events = eventsResult.rows.map((row) => row.value);
-      value.steps = stepsResult.rows.map((row) => row.value);
-      this.debug("Final value with events and steps:", value);
+      // Parse and transform steps
+      const steps = stepsResult.rows.map((row) => {
+        const step = row.value;
+        return {
+          type: step.type,
+          name: step.name,
+          content: step.content,
+          arguments: step.arguments,
+        };
+      });
 
-      return value;
+      // Get timeline events
+      const timelineEventsResult = await client.query(
+        `
+        SELECT id, event_type, event_name, start_time, end_time, 
+        status, status_message, level, version, 
+        parent_event_id, tags, input, output, error, metadata 
+        FROM ${this.options.tablePrefix}_agent_history_timeline_events 
+        WHERE history_id = $1 AND agent_id = $2
+        ORDER BY start_time ASC
+        `,
+        [key, entry._agentId],
+      );
+
+      // Parse timeline events and construct NewTimelineEvent objects
+      const events = timelineEventsResult.rows.map((row) => {
+        // Construct NewTimelineEvent object
+        return {
+          id: row.id as string,
+          type: row.event_type as string,
+          name: row.event_name as string,
+          startTime: row.start_time as string,
+          endTime: row.end_time as string,
+          status: row.status as string,
+          statusMessage: row.status_message as string,
+          level: row.level as string,
+          version: row.version as string,
+          parentEventId: row.parent_event_id as string,
+          tags: row.tags,
+          input: row.input,
+          output: row.output,
+          error: row.error,
+          metadata: row.metadata,
+        };
+      });
+
+      // @ts-ignore
+      entry.steps = steps;
+      // @ts-ignore
+      entry.events = events;
+
+      return entry;
     } catch (error) {
       this.debug("Error getting history entry:", error);
       throw new Error("Failed to get history entry from PostgreSQL database");
-    } finally {
-      client.release();
-    }
-  }
-
-  /**
-   * Get a history event by ID
-   */
-  async getHistoryEvent(key: string): Promise<any | undefined> {
-    await this.initialized;
-
-    const client = await this.pool.connect();
-    try {
-      const result = await client.query(
-        `
-        SELECT value
-        FROM ${this.options.tablePrefix}_agent_history_events
-        WHERE key = $1
-        `,
-        [key],
-      );
-
-      return result.rows.length > 0 ? result.rows[0].value : undefined;
-    } catch (error) {
-      this.debug("Error getting history event:", error);
-      throw new Error("Failed to get history event from PostgreSQL database");
     } finally {
       client.release();
     }
@@ -829,51 +949,99 @@ export class PostgresStorage implements Memory {
     try {
       const result = await client.query(
         `
-        SELECT key, value
+        SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
         FROM ${this.options.tablePrefix}_agent_history
         WHERE agent_id = $1
-        ORDER BY (value->>'timestamp')::timestamp DESC
+        ORDER BY timestamp DESC
         `,
         [agentId],
       );
 
-      // Get all entries with their events and steps
-      const entries = await Promise.all(
-        result.rows.map(async (row) => {
-          const entry = row.value;
-          const key = row.key;
+      // Construct entry objects from rows
+      const entries = result.rows.map((row) => ({
+        id: row.id as string,
+        _agentId: row.agent_id as string, // Keep _agentId for compatibility
+        timestamp: new Date(row.timestamp as string),
+        status: row.status as string,
+        input: row.input ? row.input : null,
+        output: row.output ? row.output : null,
+        usage: row.usage ? row.usage : null,
+        metadata: row.metadata ? row.metadata : null,
+      }));
 
-          // Get events for this entry
-          const eventsResult = await client.query(
-            `
-            SELECT value
-            FROM ${this.options.tablePrefix}_agent_history_events
-            WHERE history_id = $1 AND agent_id = $2
-            ORDER BY (value->>'timestamp')::timestamp ASC
-            `,
-            [key, agentId],
-          );
+      this.debug(`Got all history entries for agent ${agentId} (${entries.length} items)`);
 
+      // Now fetch events and steps for each entry
+      const completeEntries = await Promise.all(
+        entries.map(async (entry) => {
           // Get steps for this entry
           const stepsResult = await client.query(
             `
-            SELECT value
-            FROM ${this.options.tablePrefix}_agent_history_steps
+            SELECT value 
+            FROM ${this.options.tablePrefix}_agent_history_steps 
             WHERE history_id = $1 AND agent_id = $2
             ORDER BY (value->>'timestamp')::timestamp ASC
             `,
-            [key, agentId],
+            [entry.id, agentId],
           );
 
-          // Add events and steps to the entry
-          entry.events = eventsResult.rows.map((row) => row.value);
-          entry.steps = stepsResult.rows.map((row) => row.value);
+          // Parse and transform steps
+          const steps = stepsResult.rows.map((row) => {
+            const step = row.value;
+            return {
+              type: step.type,
+              name: step.name,
+              content: step.content,
+              arguments: step.arguments,
+            };
+          });
+
+          // Get timeline events for this entry
+          const timelineEventsResult = await client.query(
+            `
+            SELECT id, event_type, event_name, start_time, end_time, 
+            status, status_message, level, version, 
+            parent_event_id, tags, input, output, error, metadata 
+            FROM ${this.options.tablePrefix}_agent_history_timeline_events 
+            WHERE history_id = $1 AND agent_id = $2
+            ORDER BY start_time ASC
+            `,
+            [entry.id, agentId],
+          );
+
+          // Parse timeline events and construct NewTimelineEvent objects
+          const events = timelineEventsResult.rows.map((row) => {
+            // Construct NewTimelineEvent object
+            return {
+              id: row.id as string,
+              type: row.event_type as string,
+              name: row.event_name as string,
+              startTime: row.start_time as string,
+              endTime: row.end_time as string,
+              status: row.status as string,
+              statusMessage: row.status_message as string,
+              level: row.level as string,
+              version: row.version as string,
+              parentEventId: row.parent_event_id as string,
+              tags: row.tags,
+              input: row.input,
+              output: row.output,
+              error: row.error,
+              metadata: row.metadata,
+            };
+          });
+
+          // @ts-ignore
+          entry.steps = steps;
+          // @ts-ignore
+          entry.events = events;
 
           return entry;
         }),
       );
 
-      return entries;
+      // Return completed entries
+      return completeEntries;
     } catch (error) {
       this.debug("Error getting history entries:", error);
       throw new Error("Failed to get history entries from PostgreSQL database");
