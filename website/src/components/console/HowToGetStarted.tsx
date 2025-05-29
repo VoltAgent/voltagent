@@ -7,7 +7,10 @@ import {
   LangChainLogo,
   AutogenLogo,
   CrewAILogo,
-} from "@site/static/img/logos/integrations";
+  PythonLogo,
+  TypeScriptLogo,
+} from "@site/static/img/logos";
+import { VoltAgentLogo } from "@site/static/img/logos/integrations/voltagent";
 
 export const HowToGetStarted = () => {
   return (
@@ -59,7 +62,7 @@ export const HowToGetStarted = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-6">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <BoltIcon className="w-10 h-10 text-emerald-400" />
+                      <VoltAgentLogo className="w-10 h-10 text-emerald-400" />
                       <h4 className="text-white font-semibold text-base">
                         VoltAgent
                       </h4>
@@ -94,9 +97,16 @@ export const HowToGetStarted = () => {
                     </div>
 
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <BoltIcon className="w-10 h-10 text-emerald-400" />
+                      <PythonLogo className="w-10 h-10" />
                       <h4 className="text-white font-semibold text-base">
                         Python
+                      </h4>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <TypeScriptLogo className="w-10 h-10" />
+                      <h4 className="text-white font-semibold text-base">
+                        TypeScript
                       </h4>
                     </div>
                   </div>

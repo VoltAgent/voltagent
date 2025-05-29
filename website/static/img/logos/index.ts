@@ -16,6 +16,8 @@ export { LlamaIndexLogo } from "./integrations/llamaindex";
 export { OpenTelemetryLogo } from "./integrations/opentelemetry";
 export { PydanticLogo } from "./integrations/pydantic";
 export { SmoleAgentsLogo } from "./integrations/smoleagents";
+export { PythonLogo } from "./integrations/python";
+export { TypeScriptLogo } from "./integrations/typescript";
 
 // Export all integration logos
 export { NotionLogo } from "./integrations/notion";

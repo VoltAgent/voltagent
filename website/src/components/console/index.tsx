@@ -5,7 +5,6 @@ import {
   EyeIcon,
   CommandLineIcon,
   ArrowPathIcon,
-  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { DotPattern } from "../ui/dot-pattern";
@@ -31,7 +30,10 @@ import {
   OpenTelemetryLogo,
   PydanticLogo,
   SmoleAgentsLogo,
+  VoltAgentLogo,
 } from "../../../static/img/logos/integrations";
+
+import { PythonLogo, TypeScriptLogo } from "../../../static/img/logos";
 
 export const Console = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -44,8 +46,25 @@ export const Console = () => {
   // Integration logos for sliding animation
   const integrationLogos = [
     {
+      logo: (
+        <VoltAgentLogo className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400" />
+      ),
+      tooltip: "VoltAgent",
+      isComingSoon: false,
+    },
+    {
+      logo: <PythonLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Python SDK",
+      isComingSoon: false,
+    },
+    {
+      logo: <TypeScriptLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "TypeScript SDK",
+      isComingSoon: false,
+    },
+    {
       logo: <VercelLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "Vercel",
+      tooltip: "Vercel AI SDK",
       isComingSoon: false,
     },
     {
@@ -64,7 +83,7 @@ export const Console = () => {
       isComingSoon: false,
     },
     {
-      logo: <DifyLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      logo: <DifyLogo className="w-10 h-10 sm:w-10 sm:h-10" />,
       tooltip: "Dify",
       isComingSoon: false,
     },
@@ -74,12 +93,12 @@ export const Console = () => {
       isComingSoon: false,
     },
     {
-      logo: <CrewAILogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      logo: <CrewAILogo className="w-10 h-10 sm:w-14 sm:h-14" />,
       tooltip: "CrewAI",
       isComingSoon: false,
     },
     {
-      logo: <LangChainLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      logo: <LangChainLogo className="w-10 h-10 sm:w-14 sm:h-14" />,
       tooltip: "LangChain",
       isComingSoon: false,
     },
