@@ -1,7 +1,11 @@
 {
   "name": "voltagent-example-groq-ai",
   "private": true,
-  "keywords": ["voltagent", "ai", "agent"],
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent"
+  ],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -13,8 +17,8 @@
   },
   "dependencies": {
     "@voltagent/cli": "^0.1.6",
-    "@voltagent/core": "^0.1.21",
-    "@voltagent/groq-ai": "^0.1.9",
+    "@voltagent/core": "^0.1.22",
+    "@voltagent/groq-ai": "^0.1.10",
     "zod": "3.24.2"
   },
   "devDependencies": {

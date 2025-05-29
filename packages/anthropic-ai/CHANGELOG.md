@@ -1,5 +1,19 @@
 # @voltagent/anthropic-ai
 
+## 0.1.8
+
+### Patch Changes
+
+- [#149](https://github.com/VoltAgent/voltagent/pull/149) [`0137a4e`](https://github.com/VoltAgent/voltagent/commit/0137a4e67deaa2490b4a07f9de5f13633f2c473c) Thanks [@VenomHare](https://github.com/VenomHare)! - Added JSON schema support for REST API `generateObject` and `streamObject` functions. The system now accepts JSON schemas which are internally converted to Zod schemas for validation. This enables REST API usage where Zod schemas cannot be directly passed. #87
+
+  Additional Changes:
+
+  - Included the JSON schema from `options.schema` in the system message for the `generateObject` and `streamObject` functions in both `anthropic-ai` and `groq-ai` providers.
+  - Enhanced schema handling to convert JSON schemas to Zod internally for seamless REST API compatibility.
+
+- Updated dependencies [[`0137a4e`](https://github.com/VoltAgent/voltagent/commit/0137a4e67deaa2490b4a07f9de5f13633f2c473c), [`4308b85`](https://github.com/VoltAgent/voltagent/commit/4308b857ab2133f6ca60f22271dcf30bad8b4c08)]:
+  - @voltagent/core@0.1.22
+
 ## 0.1.7
 
 ### Patch Changes

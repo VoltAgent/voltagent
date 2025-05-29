@@ -1,7 +1,11 @@
 {
   "name": "voltagent-example-xsai",
   "private": true,
-  "keywords": ["voltagent", "ai", "agent"],
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent"
+  ],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -13,7 +17,7 @@
   },
   "dependencies": {
     "@voltagent/cli": "^0.1.6",
-    "@voltagent/core": "^0.1.21",
+    "@voltagent/core": "^0.1.22",
     "@voltagent/xsai": "^0.1.9",
     "zod": "3.24.2"
   },
