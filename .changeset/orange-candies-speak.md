@@ -4,9 +4,7 @@
 "@voltagent/core": patch
 ---
 
-Fixes Issue [#87]("https://github.com/VoltAgent/voltagent/issues/87")
-
-Added JSON schema support for REST API `generateObject` and `streamObject` functions. The system now accepts JSON schemas which are internally converted to Zod schemas for validation. This enables REST API usage where Zod schemas cannot be directly passed.
+Added JSON schema support for REST API `generateObject` and `streamObject` functions. The system now accepts JSON schemas which are internally converted to Zod schemas for validation. This enables REST API usage where Zod schemas cannot be directly passed. #87
 
 Additional Changes:
 
