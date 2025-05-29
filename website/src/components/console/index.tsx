@@ -17,16 +17,21 @@ import AgentChat from "./AgentChat";
 import FlowOverview from "./FlowOverview";
 import Link from "@docusaurus/Link";
 
-import { OpenAILogo } from "../../../static/img/logos/openai";
-import {
-  SupabaseLogo,
-  NotionLogo,
-  StripeLogo,
-  SlackLogo,
-  DropboxLogo,
-  AnthropicLogo,
-} from "../../../static/img/logos";
 import { HowToGetStarted } from "./HowToGetStarted";
+import {
+  VercelLogo,
+  OllamaLogo,
+  SemanticKernelLogo,
+  LangflowLogo,
+  DifyLogo,
+  AutogenLogo,
+  CrewAILogo,
+  LangChainLogo,
+  LlamaIndexLogo,
+  OpenTelemetryLogo,
+  PydanticLogo,
+  SmoleAgentsLogo,
+} from "../../../static/img/logos/integrations";
 
 export const Console = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -39,39 +44,64 @@ export const Console = () => {
   // Integration logos for sliding animation
   const integrationLogos = [
     {
-      logo: <OpenAILogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "OpenAI",
+      logo: <VercelLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Vercel",
       isComingSoon: false,
     },
     {
-      logo: <AnthropicLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "Anthropic",
+      logo: <OllamaLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Ollama",
       isComingSoon: false,
     },
     {
-      logo: <NotionLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "Notion",
+      logo: <SemanticKernelLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Semantic Kernel",
       isComingSoon: false,
     },
     {
-      logo: <SupabaseLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "Supabase",
-      isComingSoon: true,
+      logo: <LangflowLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Langflow",
+      isComingSoon: false,
     },
     {
-      logo: <StripeLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "Stripe",
-      isComingSoon: true,
+      logo: <DifyLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Dify",
+      isComingSoon: false,
     },
     {
-      logo: <SlackLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "Slack",
-      isComingSoon: true,
+      logo: <AutogenLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Autogen",
+      isComingSoon: false,
     },
     {
-      logo: <DropboxLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
-      tooltip: "Dropbox",
-      isComingSoon: true,
+      logo: <CrewAILogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "CrewAI",
+      isComingSoon: false,
+    },
+    {
+      logo: <LangChainLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "LangChain",
+      isComingSoon: false,
+    },
+    {
+      logo: <LlamaIndexLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "LlamaIndex",
+      isComingSoon: false,
+    },
+    {
+      logo: <OpenTelemetryLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "OpenTelemetry",
+      isComingSoon: false,
+    },
+    {
+      logo: <PydanticLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "Pydantic",
+      isComingSoon: false,
+    },
+    {
+      logo: <SmoleAgentsLogo className="w-10 h-10 sm:w-12 sm:h-12" />,
+      tooltip: "SmoleAgents",
+      isComingSoon: false,
     },
   ];
 

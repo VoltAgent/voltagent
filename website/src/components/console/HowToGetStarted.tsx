@@ -3,7 +3,11 @@ import { motion } from "framer-motion";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
-import { LangChainLogo, AutoGenLogo, CrewAILogo } from "@site/static/img/logos";
+import {
+  LangChainLogo,
+  AutogenLogo,
+  CrewAILogo,
+} from "@site/static/img/logos/integrations";
 
 export const HowToGetStarted = () => {
   return (
@@ -69,7 +73,7 @@ export const HowToGetStarted = () => {
                     </div>
 
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <AutoGenLogo className="w-10 h-10 text-emerald-400" />
+                      <AutogenLogo className="w-10 h-10 text-emerald-400" />
                       <h4 className="text-white font-semibold text-base">
                         AutoGen
                       </h4>
