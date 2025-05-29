@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 # PostgreSQL Memory
 
-The `PostgresStorage` provider in VoltAgent's core package (`@voltagent/core`) implements persistent memory storage using PostgreSQL. This provider is ideal for production environments requiring robust, scalable database storage with full SQL capabilities.
+The `PostgresStorage` provider in VoltAgent's PostgreSQL package (`@voltagent/postgres`) implements persistent memory storage using PostgreSQL. This provider is ideal for production environments requiring robust, scalable database storage with full SQL capabilities.
 
 ## Overview
 
@@ -18,15 +18,15 @@ The `PostgresStorage` provider in VoltAgent's core package (`@voltagent/core`) i
   - Automatic table creation and indexing
   - Connection pooling for performance
   - Support for SSL connections
+  - Timeline events support for detailed agent tracking
 - **Cons:** Requires PostgreSQL server setup and management
-- **Availability:** Included in `@voltagent/core`
+- **Availability:** Available as separate package `@voltagent/postgres`
 
 ## Setup
 
 ### Prerequisites
 
 1. A PostgreSQL server (version 12 or higher recommended)
-2. Node.js environment with `pg` package installed
 
 ### Install Dependencies
 
@@ -34,21 +34,21 @@ The `PostgresStorage` provider in VoltAgent's core package (`@voltagent/core`) i
   <TabItem value="npm" label="npm" default>
 
 ```bash
-npm install pg @types/pg
+npm install @voltagent/postgres @voltagent/core
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```bash
-yarn add pg @types/pg
+yarn add @voltagent/postgres @voltagent/core
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```bash
-pnpm add pg @types/pg
+pnpm add @voltagent/postgres @voltagent/core
 ```
 
   </TabItem>
@@ -59,7 +59,8 @@ pnpm add pg @types/pg
 Initialize `PostgresStorage` and pass it to your `Agent` configuration. The provider supports both connection string and individual parameter configurations:
 
 ```typescript
-import { Agent, PostgresStorage } from "@voltagent/core";
+import { Agent } from "@voltagent/core";
+import { PostgresStorage } from "@voltagent/postgres";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
@@ -134,9 +135,9 @@ For example:
 
 - `{prefix}_conversations`: Stores conversation metadata
 - `{prefix}_messages`: Stores conversation messages
-- `{prefix}_agent_history`: Stores agent history entries
-- `{prefix}_agent_history_events`: Stores agent history events
+- `{prefix}_agent_history`: Stores agent history entries with structured format (id, agent_id, timestamp, status, input, output, usage, metadata)
 - `{prefix}_agent_history_steps`: Stores agent history steps
+- `{prefix}_agent_history_timeline_events`: Stores detailed timeline events for agent operations
 
 The provider also creates appropriate indexes for optimal query performance:
 
@@ -202,7 +203,10 @@ SSL connections can be enabled for secure database communication, especially imp
 ## Example: Advanced Usage
 
 ```typescript
-import { Agent, PostgresStorage } from "@voltagent/core";
+import { Agent } from "@voltagent/core";
+import { PostgresStorage } from "@voltagent/postgres";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 
 // Configure with connection pooling and SSL
 const memory = new PostgresStorage({
