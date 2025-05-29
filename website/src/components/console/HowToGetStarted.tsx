@@ -15,8 +15,7 @@ export const HowToGetStarted = () => {
             How to Get Started
           </h2>
           <p className="text-gray-400 max-w-3xl text-sm sm:text-base md:text-lg">
-            Get up and running with universal AI agent observability in just 3
-            simple steps
+            Using universal AI agent observability in just 3 simple steps
           </p>
         </div>
 
@@ -35,23 +34,23 @@ export const HowToGetStarted = () => {
             >
               {/* Header Section */}
               <div className="bg-[#191c24] rounded-t-md  p-4 pt-8 text-left">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xl font-semibold text-white ">
-                    Build Your LLM App
-                  </span>
-                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
                     1
                   </div>
+                  <span className="text-lg font-semibold text-emerald-400 ">
+                    Build Your LLM App
+                  </span>
                 </div>
 
-                <p className="text-gray-400 text-base mb-0">
+                <p className="text-gray-400 text-sm mb-0">
                   Create your AI agent using any framework you prefer. Universal
                   compatibility means you're never locked in.
                 </p>
               </div>
 
               {/* Content Section */}
-              <div className="p-4">
+              <div className="p-4 ">
                 {/* Framework Showcase - Prominent */}
                 <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-6">
@@ -110,16 +109,16 @@ export const HowToGetStarted = () => {
             >
               {/* Header Section */}
               <div className="bg-[#191c24] rounded-t-md  p-4 pt-8 text-left">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xl font-semibold text-white">
-                    Implement Connector
-                  </span>
-                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
                     2
                   </div>
+                  <span className="text-lg font-semibold text-emerald-400">
+                    Implement Connector
+                  </span>
                 </div>
 
-                <p className="text-gray-400 text-base mb-0 pr-12">
+                <p className="text-gray-400 text-sm mb-0 pr-12">
                   Add just a few lines of code to connect your agent to the
                   console. Simple integration for any framework.
                 </p>
@@ -149,7 +148,6 @@ VoltConsole.monitor(yourAgent);`}</code>
           </div>
         </div>
       </div>
-
       {/* Step 3: Launch Dev Console - Full Width */}
       <div className="w-full mb-12 sm:mb-24">
         <motion.div
@@ -159,60 +157,60 @@ VoltConsole.monitor(yourAgent);`}</code>
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           {/* Header Section */}
-          <div className="bg-[#191c24] rounded-t-md py-6  text-left px-6">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex  justify-between items-center">
-                <div className="flex  w-[50%] flex-col gap-2">
-                  <span className="text-xl font-semibold text-white">
+          <div className="bg-[#191c24] rounded-t-md  text-left ">
+            <div className="flex items-center justify-between px-4">
+              <div className="flex flex-col  justify-between py-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
+                    3
+                  </div>
+                  <span className="text-lg font-semibold text-emerald-400">
                     Launch Dev Console
                   </span>
-                  <p className="text-gray-400 text-base mb-0">
+                </div>
+                <div className="flex  flex-col gap-2">
+                  <p className="text-gray-400 text-sm mb-0">
                     Start observing your AI agents in real-time. Get full
                     visibility into every interaction, decision, and execution
                     step.
                   </p>
                 </div>
-
-                <Link
-                  to="https://console.voltagent.dev/demo"
-                  className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
-                border-solid border border-emerald-400/20 text-base sm:text-lg font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-6 py-3"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                  }}
-                >
-                  <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 mr-2 animate-pulse" />
-                  <span className="text-sm sm:text-base">Try Live Demo</span>
-                  <ArrowTopRightOnSquareIcon
-                    className="w-5 h-5 ml-2 mb-1"
-                    aria-hidden="true"
-                  />
-                </Link>
               </div>
-
-              <div className="bg-emerald-400/10 self-start text-emerald-400 border border-emerald-400/20 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
-                3
-              </div>
+              <Link
+                to="https://console.voltagent.dev/demo"
+                className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
+                border-solid border border-emerald-400/20 text-base sm:text-lg font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-4 py-2"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                }}
+              >
+                <BoltIcon className="w-5 h-5 mr-2 animate-pulse" />
+                <span className="text-sm ">Try Live Demo</span>
+                <ArrowTopRightOnSquareIcon
+                  className="w-4 h-4 ml-2 mb-1"
+                  aria-hidden="true"
+                />
+              </Link>
+            </div>
+            <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] ">
+              <iframe
+                src="https://console.voltagent.dev/demo"
+                title="Voltage Agent Console"
+                className="w-full h-full"
+                style={{
+                  height: "100%",
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                }}
+              />
             </div>
           </div>
 
           {/* Content Section */}
           {/* Console Demo iframe */}
-          <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] mb-6">
-            <iframe
-              src="https://console.voltagent.dev/demo"
-              title="Voltage Agent Console"
-              className="w-full h-full"
-              style={{
-                height: "100%",
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-              }}
-            />
-          </div>
         </motion.div>
       </div>
     </>
