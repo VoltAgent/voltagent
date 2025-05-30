@@ -49,13 +49,13 @@ VoltAgent Observability works with any technology stack through multiple integra
 
 VoltAgent Framework natively supports observability with zero configuration. Simply visit [console.voltagent.dev](https://console.voltagent.dev/) while your VoltAgent app is running:
 
-[VoltAgent Framework Integration →](/docs/observability/voltagent-framework/)
+[VoltAgent Framework Integration →](/docs/observability/developer-console)
 
 ### 2. Vercel AI SDK (Ready Now)
 
 Add observability to your existing Vercel AI SDK applications:
 
-[Vercel AI SDK Integration →](/docs/observability/vercel-ai)
+[Vercel AI SDK Integration →](./vercel-ai.md)
 
 ### 3. Coming Soon
 
