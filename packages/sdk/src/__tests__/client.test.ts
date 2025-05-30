@@ -86,7 +86,7 @@ describe("VoltAgentCoreAPI", () => {
         }),
       );
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockResponse);
     });
   });
 
@@ -136,7 +136,7 @@ describe("VoltAgentCoreAPI", () => {
         }),
       );
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockResponse);
     });
   });
 
@@ -176,7 +176,7 @@ describe("VoltAgentCoreAPI", () => {
       });
 
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockResponse);
     });
   });
 });
