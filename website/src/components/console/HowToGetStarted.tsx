@@ -5,17 +5,8 @@ import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
 import {
   VercelLogo,
-  OllamaLogo,
-  SemanticKernelLogo,
-  LangflowLogo,
-  DifyLogo,
-  AutogenLogo,
   CrewAILogo,
   LangChainLogo,
-  LlamaIndexLogo,
-  OpenTelemetryLogo,
-  PydanticLogo,
-  SmoleAgentsLogo,
   PythonLogo,
   TypeScriptLogo,
 } from "@site/static/img/logos";

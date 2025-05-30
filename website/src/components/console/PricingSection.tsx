@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const PricingSection = () => {
   const pricingTiers = [
@@ -54,6 +54,171 @@ const PricingSection = () => {
     },
   ];
 
+  const comparisonFeatures = [
+    {
+      category: "Core Features",
+      features: [
+        {
+          name: "LLM Traces & Agent Monitoring",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Session & User Tracking",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Token & Cost Analysis",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Multi-modal Support",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+      ],
+    },
+    {
+      category: "Usage & Limits",
+      features: [
+        {
+          name: "Monthly Events",
+          free: "10k events",
+          pro: "100k events",
+          enterprise: "Unlimited",
+        },
+        {
+          name: "Team Members",
+          free: "1 seat",
+          pro: "10 seats",
+          enterprise: "Unlimited",
+        },
+        {
+          name: "Data Retention",
+          free: "30 days",
+          pro: "90 days",
+          enterprise: "Unlimited",
+        },
+        {
+          name: "API Rate Limit",
+          free: "1k req/min",
+          pro: "4k req/min",
+          enterprise: "Custom",
+        },
+      ],
+    },
+    {
+      category: "Integrations",
+      features: [
+        {
+          name: "Python & JavaScript SDKs",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "OpenTelemetry Support",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "LiteLLM Proxy Integration",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Custom API Access",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+      ],
+    },
+    {
+      category: "Advanced Features",
+      features: [
+        {
+          name: "Prompt Management",
+          free: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Priority Support",
+          free: false,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Self-hosted Deployment",
+          free: false,
+          pro: false,
+          enterprise: true,
+        },
+        {
+          name: "Enterprise SSO",
+          free: false,
+          pro: false,
+          enterprise: true,
+        },
+      ],
+    },
+    {
+      category: "Enterprise Features",
+      features: [
+        {
+          name: "SSO & SAML Integration",
+          free: false,
+          pro: false,
+          enterprise: true,
+        },
+        {
+          name: "LDAP & RBAC",
+          free: false,
+          pro: false,
+          enterprise: true,
+        },
+        {
+          name: "Versioning & Audit Logs",
+          free: false,
+          pro: false,
+          enterprise: true,
+        },
+        {
+          name: "Custom SLA",
+          free: false,
+          pro: false,
+          enterprise: true,
+        },
+        {
+          name: "Dedicated Support Team",
+          free: false,
+          pro: false,
+          enterprise: true,
+        },
+      ],
+    },
+  ];
+
+  const renderFeatureValue = (value: boolean | string) => {
+    if (typeof value === "boolean") {
+      return value ? (
+        <CheckCircleIcon className="w-5 h-5 text-emerald-400 mx-auto" />
+      ) : (
+        <XMarkIcon className="w-5 h-5 text-gray-500 mx-auto" />
+      );
+    }
+    return <span className="text-sm text-gray-300">{value}</span>;
+  };
+
   return (
     <section className="relative w-full py-12 sm:py-16 md:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -76,7 +241,7 @@ const PricingSection = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-16">
           {pricingTiers.map((tier, index) => (
             <motion.div
               key={tier.name}
@@ -148,7 +313,73 @@ const PricingSection = () => {
           ))}
         </div>
 
-        {/* Additional Info */}
+        {/* Comparison Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mb-12 w-full -mx-4 sm:-mx-6"
+        >
+          <div className="w-full bg-[#191c24] overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full table-fixed border-collapse border-spacing-0 min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-700/50">
+                    <th className="text-left py-4 px-4 sm:px-8 text-sm font-semibold text-gray-300 bg-[#191c24] w-1/4">
+                      Features
+                    </th>
+                    <th className="text-center py-4 px-4 sm:px-8 text-sm font-semibold text-gray-300 bg-[#191c24] w-1/4">
+                      Free
+                    </th>
+                    <th className="text-center py-4 px-4 sm:px-8 text-sm font-semibold text-emerald-400 bg-[#191c24] w-1/4">
+                      Pro
+                    </th>
+                    <th className="text-center py-4 px-4 sm:px-8 text-sm font-semibold text-gray-300 bg-[#191c24] w-1/4">
+                      Enterprise
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonFeatures.map((category) => (
+                    <React.Fragment key={category.category}>
+                      <tr className="border-b border-gray-700/30">
+                        <td
+                          colSpan={4}
+                          className="py-4 px-4 sm:px-8 text-sm font-semibold text-emerald-400 bg-gray-800/30"
+                        >
+                          {category.category}
+                        </td>
+                      </tr>
+                      {category.features.map((feature) => (
+                        <tr
+                          key={`${category.category}-${feature.name}`}
+                          className="border-b border-gray-700 hover:bg-gray-800/20 transition-colors"
+                        >
+                          <td className="py-4 px-4 sm:px-8 text-sm text-gray-300">
+                            {feature.name}
+                          </td>
+                          <td className="py-4 px-4 sm:px-8 text-center">
+                            {renderFeatureValue(feature.free)}
+                          </td>
+                          <td className="py-4 px-4 sm:px-8 text-center">
+                            {renderFeatureValue(feature.pro)}
+                          </td>
+                          <td className="py-4 px-4 sm:px-8 text-center">
+                            {renderFeatureValue(feature.enterprise)}
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Additional Info */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

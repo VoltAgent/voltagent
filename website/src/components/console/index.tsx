@@ -63,13 +63,10 @@ export const Console = () => {
       </div>
 
       <PricingSection />
-
       {/* Framework Integration Examples */}
       <FrameworkIntegration />
-
       {/* How to Get Started Section */}
       <HowToGetStarted />
-
       {/* Observability Features */}
       <ObservabilityFeatures />
     </section>
