@@ -561,6 +561,6 @@ process.on("SIGINT", async () => {
 
 ## Next Steps
 
-- Explore [Developer Console](./developer-console.md) features
+- Explore [Developer Console](/docs/observability/developer-console) features
 - Check out [Multi-agent examples](https://github.com/voltagent/examples)
 - Learn about production monitoring setup
