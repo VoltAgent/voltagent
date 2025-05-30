@@ -161,7 +161,7 @@ interface VoltAgentExporterOptions {
   enabledEventTypes?: string[]; // Default: all event types
 
   // Default agent configuration
-  defaultAgentId?: string; // Default: "vercel-ai-agent"
+  defaultAgentId?: string; // Default: "ai-assistant"
   defaultUserId?: string;
   defaultConversationId?: string;
 }

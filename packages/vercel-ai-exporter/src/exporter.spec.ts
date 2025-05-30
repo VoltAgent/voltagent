@@ -159,7 +159,7 @@ describe("VoltAgentExporter", () => {
       });
 
       const result = (exporter as any).extractAgentIdFromSpan(toolSpan, [toolSpan]);
-      expect(result).toBe("vercel-ai-agent");
+      expect(result).toBe("ai-assistant");
     });
 
     it("should find agentId from closest generation span when parent not found", () => {
@@ -234,8 +234,8 @@ describe("VoltAgentExporter", () => {
     });
   });
 
-  describe("Deferred Span Mechanism", () => {
-    it("should defer tool spans when agentId cannot be found immediately", async () => {
+  describe("Tool Span Processing", () => {
+    it("should process tool spans immediately with default agent when parent not found", async () => {
       const toolSpan = createMockSpan({
         name: "ai.toolCall",
         parentSpanId: "missing-parent-123",
@@ -246,19 +246,41 @@ describe("VoltAgentExporter", () => {
 
       const callback = jest.fn();
 
-      // This should defer the tool span since parent is not found
+      // This should process the tool span immediately with default agent
       exporter.export([toolSpan], callback);
 
       // Allow async processing to complete
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      // Check that the span was deferred
-      const deferredSpans = (exporter as any).deferredSpans;
-      expect(deferredSpans.size).toBe(1);
+      // Should use default agent and create tool events
+      expect(mockSdk.addEventToHistory).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          name: "tool:start",
+          metadata: expect.objectContaining({
+            displayName: "searchDatabase",
+            agentId: "ai-assistant", // Default agent
+          }),
+        }),
+      );
+
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
     });
 
-    it("should process deferred spans when parent becomes available", async () => {
+    it("should find parent agent and process tool spans correctly", async () => {
+      const parentSpan = createMockSpan({
+        name: "ai.generateText",
+        spanContext: () => ({
+          traceId: "trace-123",
+          spanId: "parent-span-123",
+          traceFlags: 0,
+          isRemote: false,
+        }),
+        attributes: {
+          "ai.telemetry.metadata.agentId": "data-collector",
+        },
+      });
+
       const toolSpan = createMockSpan({
         name: "ai.toolCall",
         parentSpanId: "parent-span-123",
@@ -273,26 +295,9 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const parentSpan = createMockSpan({
-        name: "ai.generateText",
-        spanContext: () => ({
-          traceId: "trace-123",
-          spanId: "parent-span-123",
-          traceFlags: 0,
-          isRemote: false,
-        }),
-        attributes: {
-          "ai.telemetry.metadata.agentId": "data-collector",
-        },
-      });
-
       const callback = jest.fn();
 
-      // First export only tool span (should be deferred)
-      exporter.export([toolSpan], callback);
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      // Then export both spans (should process deferred span)
+      // Export both spans together
       exporter.export([parentSpan, toolSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
 
@@ -471,28 +476,17 @@ describe("VoltAgentExporter", () => {
   });
 
   describe("Memory Management", () => {
-    it("should clear deferred spans on force flush", async () => {
-      const toolSpan = createMockSpan({
-        name: "ai.toolCall",
-        parentSpanId: "missing-parent-123",
-        attributes: {
-          "ai.toolCall.name": "searchDatabase",
-        },
-      });
+    it("should clear all caches on force flush", async () => {
+      // Add some data to caches
+      (exporter as any).activeHistories.set("test-key", "test-value");
+      (exporter as any).toolSpanAgentCache.set("span-123", "agent-123");
+      (exporter as any).globalAgentHistories.set("agent-123", "history-123");
 
-      const callback = jest.fn();
-
-      // Add a deferred span
-      exporter.export([toolSpan], callback);
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      // Verify span was deferred
-      expect((exporter as any).deferredSpans.size).toBe(1);
-
-      // Force flush should clear deferred spans
       await exporter.forceFlush();
 
-      expect((exporter as any).deferredSpans.size).toBe(0);
+      expect((exporter as any).activeHistories.size).toBe(0);
+      expect((exporter as any).toolSpanAgentCache.size).toBe(0);
+      expect((exporter as any).globalAgentHistories.size).toBe(0);
     });
 
     it("should clear all caches on shutdown", async () => {
