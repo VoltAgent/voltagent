@@ -1495,7 +1495,7 @@ importers:
         specifier: ^0.1.22
         version: link:../core
       '@voltagent/sdk':
-        specifier: ^0.1.1
+        specifier: ^0.1.3
         version: link:../sdk
       ai:
         specifier: ^3.0.0 || ^4.0.0
