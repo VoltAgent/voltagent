@@ -1,7 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { CheckCircleIcon } from "@heroicons/react/24/outline";
-import { BoltIcon } from "@heroicons/react/24/solid";
 
 const PricingSection = () => {
   const pricingTiers = [
@@ -46,9 +45,7 @@ const PricingSection = () => {
         "Everything in Pro",
         "Self-hosted deployment",
         "Unlimited users & spans",
-        "SSO & SAML",
-        "LDAP & RBAC",
-        "Versioning & Audit Logs",
+        "Enterprise only features",
         "Dedicated support",
       ],
       buttonText: "Contact Sales",
@@ -86,7 +83,7 @@ const PricingSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative rounded-lg border-solid border-2 bg-gray-900/50 backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 ${
+              className={`relative rounded-lg border-solid border-2 bg-[#191c24] backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 ${
                 tier.popular
                   ? "border-emerald-400 shadow-lg shadow-emerald-400/20"
                   : "border-gray-700/50"
