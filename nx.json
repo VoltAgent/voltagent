@@ -15,12 +15,12 @@
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist/**/*.d.ts", "{projectRoot}/build"],
+      "outputs": ["{projectRoot}/dist"],
       "cache": true
     },
     "dev": {
       "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist/**/*.d.ts"]
+      "outputs": ["{projectRoot}/dist"]
     }
   },
   "workspaceLayout": {

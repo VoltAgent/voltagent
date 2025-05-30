@@ -17,7 +17,7 @@ export default function DocNavbar() {
 
   React.useEffect(() => {
     setIsMenuOpen(false);
-  }, [location.pathname]);
+  }, [location]);
 
   const isActive = (path: string) => {
     const currentPath = location.pathname.endsWith("/")
@@ -46,7 +46,15 @@ export default function DocNavbar() {
                   isActive("/docs/") ? styles.active : ""
                 }`}
               >
-                Docs
+                Framework Docs
+              </Link>
+              <Link
+                to="/docs-observability/"
+                className={`${styles.navLink} ${
+                  isActive("/docs-observability/") ? styles.active : ""
+                }`}
+              >
+                LLM Observability Platform Docs
               </Link>
             </div>
           </div>
@@ -82,6 +90,7 @@ export default function DocNavbar() {
             </Link>
 
             <button
+              type="button"
               className={`${styles.menuButton} ${
                 isMenuOpen ? styles.menuButtonOpen : ""
               }`}
@@ -121,12 +130,21 @@ export default function DocNavbar() {
               }`}
               onClick={() => setIsMenuOpen(false)}
             >
-              Documentation
+              Framework Docs
             </Link>
             <Link
-              to="/docs/"
+              to="/docs-observability/"
+              className={`${styles.mobileNavLink} ${
+                isActive("/docs-observability/") ? styles.active : ""
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              LLM Observability Platform Docs
+            </Link>
+            <Link
+              to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
               className={`${styles.navLink} ${
-                isActive("/docs/") ? styles.active : ""
+                isActive("/changelog/") ? styles.active : ""
               }`}
             >
               Changelog

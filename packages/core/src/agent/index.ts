@@ -1700,7 +1700,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         historyId: operationContext.historyEntry.id,
         event: agentSuccessEvent,
       });
-
       const responseStr =
         typeof response === "string" ? response : JSON.stringify(response?.object);
       this.addAgentEvent(operationContext, "finished", "completed" as any, {

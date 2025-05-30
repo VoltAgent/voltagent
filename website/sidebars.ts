@@ -46,15 +46,6 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Observability",
-      items: [
-        "observability/overview",
-        "observability/developer-console",
-        "observability/langfuse",
-      ],
-    },
-    {
-      type: "category",
       label: "Tools",
       items: ["tools/overview", "tools/reasoning-tool"],
     },
@@ -77,8 +68,21 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Observability",
+      items: [
+        "observability/overview",
+        "observability/developer-console",
+        "observability/langfuse",
+      ],
+    },
+    {
+      type: "category",
       label: "Integrations",
-      items: ["integrations/overview", "integrations/nextjs"],
+      items: [
+        "integrations/overview",
+        "integrations/nextjs",
+        "integrations/vercel-ai",
+      ],
     },
     {
       type: "category",

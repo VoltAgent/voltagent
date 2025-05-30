@@ -59,7 +59,7 @@ export class VoltAgentCoreAPI {
         throw error;
       }
 
-      return data as T;
+      return { data: data } as T;
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") {
         throw {

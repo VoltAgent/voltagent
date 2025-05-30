@@ -170,9 +170,8 @@ const announcementContent: AnnouncementContent = {
 };
 
 export default function DynamicAnnouncement(): JSX.Element | null {
-  const [country, setCountry] = useState<string>("");
+  const [country, setCountry] = useState<string>("default");
   const [isVisible, setIsVisible] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check if announcement was previously closed
@@ -181,21 +180,18 @@ export default function DynamicAnnouncement(): JSX.Element | null {
     );
     if (isAnnouncementClosed === "true") {
       setIsVisible(false);
-      setIsLoading(false);
       return;
     }
 
-    // Fetch user's country
+    // Fetch user's country in background
     fetch("https://love.voltagent.dev/api/country")
       .then((response) => response.json())
       .then((data) => {
         setCountry(data.country || "default");
-        setIsLoading(false);
       })
       .catch((error) => {
         console.error("Failed to fetch country:", error);
         setCountry("default");
-        setIsLoading(false);
       });
   }, []);
 
@@ -204,7 +200,7 @@ export default function DynamicAnnouncement(): JSX.Element | null {
     localStorage.setItem("voltagent-announcement-closed", "true");
   };
 
-  if (!isVisible || isLoading) {
+  if (!isVisible) {
     return null;
   }
 

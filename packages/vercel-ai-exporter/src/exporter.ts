@@ -57,16 +57,65 @@ interface AgentInfo {
  *
  * This exporter converts OpenTelemetry spans from Vercel AI SDK into VoltAgent timeline events.
  * It follows the same pattern as LangfuseExporter but targets VoltAgent backend.
+ *
+ * Enhanced Multi-Agent Support:
+ * - Each agent gets its own history entry
+ * - Parent-child relationships are maintained
+ * - Events are written to both agent's own history and parent's history
  */
 export class VoltAgentExporter implements SpanExporter {
   private readonly sdk: VoltAgentObservabilitySDK;
   private readonly debug: boolean;
 
-  // Track active histories by historyId (from telemetry metadata)
-  private activeHistories = new Map<string, string>(); // historyId -> historyId mapping
+  // 🔧 Constants
+  private static readonly DEFAULT_AGENT_ID = "ai-assistant";
+  private static readonly ERROR_STATUS_CODE = 2;
+
+  // 🔧 Debug message constants
+  private static readonly DEBUG_MESSAGES = {
+    TOOL_SPAN_DEBUG: "=== TOOL SPAN DEBUG ===",
+    PARENT_SPAN_DEBUG: "=== PARENT SPAN DEBUG ===",
+    AGENT_ID_FOUND: "✅ Found agentId from parent span:",
+    USING_DEFAULT_AGENT: "Using default agent for tracking",
+    TOOL_TRACKED_DEFAULT: "Tool execution tracked under default agent",
+    FOUND_ON_RETRY: "✅ Found agentId on retry:",
+    MULTI_AGENT_SCENARIO: "🔄 Multi-agent scenario detected",
+    NO_PARENT_SPAN: "No parent span ID found",
+  } as const;
+
+  // Track active histories by agentId_traceId (each agent gets own history)
+  private activeHistories = new Map<string, string>(); // agentHistoryKey -> UUID historyId mapping
+
+  // Track parent-child relationships for event propagation
+  private parentChildMap = new Map<string, string>(); // childAgentId -> parentAgentId
 
   // Track agents within each trace for multi-agent support
   private traceAgents = new Map<string, Map<string, AgentInfo>>();
+
+  // Track history ID mappings for parent-child relationships
+  private historyIdMap = new Map<string, string>(); // agentId_traceId -> UUID historyId
+
+  // 🔗 Global agent tracking across all traces for parent-child relationships
+  private globalAgentHistories = new Map<string, string>(); // agentId -> latest historyId (cross-trace)
+  private globalParentChildMap = new Map<string, string>(); // childAgentId -> parentAgentId (cross-trace)
+
+  // 🎯 Cache for tool span agentIds to avoid repeated lookups
+  private toolSpanAgentCache = new Map<string, string>(); // spanId -> agentId
+
+  // 🕐 Deferred span mechanism for tool spans that can't find agentId immediately
+  private deferredSpans = new Map<
+    string,
+    {
+      span: ReadableSpan;
+      traceId: string;
+      traceMetadata: TraceMetadata;
+      agentInfo?: AgentInfo;
+      isRootSpan: boolean;
+    }
+  >(); // spanId -> deferred span data
+
+  // Track which traces have already shown the default agent guidance
+  private traceGuidanceShown = new Set<string>();
 
   constructor(options: VoltAgentExporterOptions) {
     this.debug = options.debug ?? false;
@@ -131,111 +180,444 @@ export class VoltAgentExporter implements SpanExporter {
   }
 
   private async processTraceSpans(traceId: string, spans: ReadableSpan[]): Promise<void> {
-    try {
-      // Extract trace metadata once for the entire trace
-      const traceMetadata = this.extractTraceMetadata(spans);
+    // Extract trace metadata once for the entire trace
+    const traceMetadata = this.extractTraceMetadata(spans);
 
-      // Get historyId from metadata, fallback to traceId
-      const historyId = (traceMetadata.metadata?.historyId as string) || traceId;
+    // Discover and organize agents within this trace
+    const agentsInTrace = this.discoverAgentsInTrace(spans);
+    this.traceAgents.set(traceId, agentsInTrace);
 
-      // Discover and organize agents within this trace
-      const agentsInTrace = this.discoverAgentsInTrace(spans);
-      this.traceAgents.set(traceId, agentsInTrace);
+    // Build parent-child relationship map for this trace
+    this.buildParentChildMap(agentsInTrace);
 
-      // Find or create history for this historyId
-      const historyExists = this.activeHistories.has(historyId);
+    // Create histories for each agent in the trace
+    await this.createAgentHistories(traceId, agentsInTrace, traceMetadata, spans);
 
-      if (!historyExists) {
-        // Find root span
-        const rootSpan = this.findRootSpan(spans);
-        const rootAgent = this.findRootAgent(agentsInTrace);
+    // Process each span as VoltAgent events
+    for (const span of spans) {
+      const allSpansInTrace = this.getAllSpansForTrace(traceId);
+      const agentId = this.extractAgentIdFromSpan(
+        span,
+        allSpansInTrace.length > 0 ? allSpansInTrace : [span],
+      );
+      const agentInfo = agentsInTrace.get(agentId);
+      const isRootSpan = this.findRootSpan(spans) === span;
 
-        // Parse model parameters and completion start time from root span
-        const modelParameters = rootSpan ? this.parseModelParameters(rootSpan.attributes) : {};
-        const completionStartTime = rootSpan
-          ? this.parseCompletionStartTime(
-              rootSpan,
-              rootSpan ? this.hrTimeToISOString(rootSpan.startTime) : new Date().toISOString(),
-            )
-          : undefined;
+      await this.processSpanAsVoltAgentEvents(traceId, span, traceMetadata, agentInfo, isRootSpan);
+    }
 
-        // Combine trace metadata with model parameters and timing
-        const combinedMetadata = {
-          ...traceMetadata.metadata,
-          modelParameters,
-          ...(completionStartTime && { completionStartTime }),
-        };
+    // 🕐 Process any deferred spans that might now have their parent spans available
+    await this.processDeferredSpans(traceId, spans, traceMetadata, agentsInTrace);
 
-        // Create new history with historyId as key
-        await this.sdk.createHistory({
-          id: historyId,
-          agent_id: rootAgent?.agentId ?? traceMetadata.agentId ?? "no-named-ai-agent",
-          input: this.parseSpanInput(rootSpan),
-          metadata: combinedMetadata,
-          userId: traceMetadata.userId,
-          conversationId: traceMetadata.conversationId,
-          completionStartTime: completionStartTime,
-          tags:
-            traceMetadata.tags && traceMetadata.tags.length > 0 ? traceMetadata.tags : undefined,
-          status: "running",
-          startTime: rootSpan
-            ? this.hrTimeToISOString(rootSpan.startTime)
-            : new Date().toISOString(),
-          version: "1.0.0",
-        });
+    // Check if this trace is complete and update histories accordingly
+    if (this.isTraceComplete(spans)) {
+      await this.completeAgentHistories(traceId, agentsInTrace, spans);
+    }
 
-        this.activeHistories.set(historyId, historyId);
-        this.logDebug(
-          `Created new history ${historyId} for trace ${traceId} with ${agentsInTrace.size} agents`,
-        );
-      } else {
-        this.logDebug(
-          `Using existing history ${historyId} for trace ${traceId} with ${agentsInTrace.size} agents`,
-        );
+    // Clean up trace agents after processing
+    this.traceAgents.delete(traceId);
+  }
+
+  /**
+   * Build parent-child relationship map for event propagation
+   * Both trace-specific and cross-trace relationships
+   */
+  private buildParentChildMap(agentsInTrace: Map<string, AgentInfo>): void {
+    for (const [agentId, agentInfo] of agentsInTrace) {
+      if (agentInfo.parentAgentId) {
+        // Store trace-specific relationship
+        this.parentChildMap.set(agentId, agentInfo.parentAgentId);
+
+        // 🔗 Store cross-trace relationship for multi-trace scenarios
+        this.globalParentChildMap.set(agentId, agentInfo.parentAgentId);
+
+        this.logDebug(`Parent-child relationship: ${agentId} -> ${agentInfo.parentAgentId}`);
+      }
+    }
+  }
+
+  /**
+   * Create separate history for each agent in the trace
+   * Process agents in dependency order: parents first, then children
+   */
+  private async createAgentHistories(
+    traceId: string,
+    agentsInTrace: Map<string, AgentInfo>,
+    traceMetadata: TraceMetadata,
+    spans: ReadableSpan[],
+  ): Promise<void> {
+    const rootSpan = this.findRootSpan(spans);
+
+    // Sort agents by dependency: parents first, then children
+    const sortedAgents = this.sortAgentsByDependency(agentsInTrace);
+
+    for (const [agentId, agentInfo] of sortedAgents) {
+      const agentHistoryKey = this.getAgentHistoryKey(agentId, traceId);
+
+      // Skip if history already exists for this agent
+      if (this.activeHistories.has(agentHistoryKey)) {
+        this.logDebug(`Using existing history for agent: ${agentId}`);
+        continue;
       }
 
-      // Process each span as VoltAgent events
-      for (const span of spans) {
-        const spanAgentId = this.extractAgentIdFromSpan(span, spans);
-        const agentInfo = agentsInTrace.get(spanAgentId);
-        const isRootSpan = this.findRootSpan(spans) === span;
+      // Find agent's first span for input parsing
+      const agentFirstSpan =
+        agentInfo.spans.sort((a, b) => {
+          const aTime = a.startTime[0] * 1e9 + a.startTime[1];
+          const bTime = b.startTime[0] * 1e9 + b.startTime[1];
+          return aTime - bTime;
+        })[0] || rootSpan;
 
-        await this.processSpanAsVoltAgentEvents(
-          historyId,
-          span,
-          traceMetadata,
-          agentInfo,
-          isRootSpan,
-        );
+      // Parse model parameters and completion start time
+      const modelParameters = agentFirstSpan
+        ? this.parseModelParameters(agentFirstSpan.attributes)
+        : {};
+      const completionStartTime = agentFirstSpan
+        ? this.parseCompletionStartTime(
+            agentFirstSpan,
+            this.hrTimeToISOString(agentFirstSpan.startTime),
+          )
+        : undefined;
+
+      // Combine trace metadata with model parameters and timing
+      const combinedMetadata = {
+        ...traceMetadata.metadata,
+        modelParameters,
+        ...(completionStartTime && { completionStartTime }),
+        // Add parent information for child agents
+        ...(agentInfo.parentAgentId && {
+          agentId: agentInfo.parentAgentId,
+          parentHistoryId: this.getParentHistoryId(agentInfo.parentAgentId, traceId),
+        }),
+      };
+
+      // Create unique history ID for this agent
+      const agentHistoryId = this.generateUUID();
+
+      // Create new history for this agent
+      await this.sdk.createHistory({
+        id: agentHistoryId,
+        agent_id: agentId,
+        input: this.parseSpanInput(agentFirstSpan),
+        metadata: combinedMetadata,
+        userId: traceMetadata.userId,
+        conversationId: traceMetadata.conversationId,
+        completionStartTime: completionStartTime,
+        tags: traceMetadata.tags && traceMetadata.tags.length > 0 ? traceMetadata.tags : undefined,
+        status: "running",
+        startTime: agentFirstSpan
+          ? this.hrTimeToISOString(agentFirstSpan.startTime)
+          : new Date().toISOString(),
+        version: "1.0.0",
+      });
+
+      this.activeHistories.set(agentHistoryKey, agentHistoryId);
+      this.historyIdMap.set(agentHistoryKey, agentHistoryId);
+
+      // 🔗 Store in global map for cross-trace access
+      this.globalAgentHistories.set(agentId, agentHistoryId);
+
+      this.logDebug(
+        `Created new history ${agentHistoryId} for agent ${agentId} (parent: ${agentInfo.parentAgentId || "none"})`,
+      );
+    }
+  }
+
+  /**
+   * Sort agents by dependency order: parents first, then children
+   */
+  private sortAgentsByDependency(
+    agentsInTrace: Map<string, AgentInfo>,
+  ): Array<[string, AgentInfo]> {
+    const result: [string, AgentInfo][] = [];
+    const processed = new Set<string>();
+    const visiting = new Set<string>(); // Track agents currently being processed to detect cycles
+    const agentsArray = Array.from(agentsInTrace.entries());
+
+    const addAgentWithDependencies = (agentId: string, agentInfo: AgentInfo): void => {
+      // Skip if already processed
+      if (processed.has(agentId)) {
+        return;
       }
 
-      // Check if this trace is complete and update history accordingly
-      if (this.isTraceComplete(spans)) {
-        const rootSpan = this.findRootSpan(spans);
-        const finalOutput = rootSpan ? this.parseSpanOutput(rootSpan) : undefined;
-        const finalUsage = this.parseUsage(rootSpan?.attributes ?? {});
-        const endTime = rootSpan?.endTime ? this.hrTimeToISOString(rootSpan.endTime) : undefined;
+      // 🔄 CIRCULAR REFERENCE DETECTION: Check if we're already visiting this agent
+      if (visiting.has(agentId)) {
+        this.logDebug(
+          `Circular dependency detected: ${agentId}, skipping to prevent infinite loop`,
+        );
+        return;
+      }
 
-        // Complete the history for this trace
-        await this.sdk.endHistory(historyId, {
+      // Mark as currently visiting
+      visiting.add(agentId);
+
+      // If this agent has a parent, add parent first
+      if (agentInfo.parentAgentId) {
+        const parentEntry = agentsArray.find(([id]) => id === agentInfo.parentAgentId);
+        if (parentEntry && !processed.has(agentInfo.parentAgentId)) {
+          addAgentWithDependencies(parentEntry[0], parentEntry[1]);
+        }
+      }
+
+      // Now add this agent
+      if (!processed.has(agentId)) {
+        result.push([agentId, agentInfo]);
+        processed.add(agentId);
+      }
+
+      // Remove from visiting set when done
+      visiting.delete(agentId);
+    };
+
+    // Process all agents, starting with root agents
+    const rootAgents = agentsArray.filter(([, agentInfo]) => !agentInfo.parentAgentId);
+    const childAgents = agentsArray.filter(([, agentInfo]) => agentInfo.parentAgentId);
+
+    // First add all root agents
+    for (const [agentId, agentInfo] of rootAgents) {
+      addAgentWithDependencies(agentId, agentInfo);
+    }
+
+    // Then add remaining child agents (in case some parents weren't found)
+    for (const [agentId, agentInfo] of childAgents) {
+      addAgentWithDependencies(agentId, agentInfo);
+    }
+
+    this.logDebug(
+      "Sorted agents by dependency:",
+      result.map(
+        ([id, info]) =>
+          `${id}${info.parentAgentId ? ` (parent: ${info.parentAgentId})` : " (root)"}`,
+      ),
+    );
+
+    return result;
+  }
+
+  /**
+   * Get parent history ID if parent agent exists
+   * Checks both trace-specific and cross-trace relationships
+   */
+  private getParentHistoryId(parentAgentId: string, traceId: string): string | undefined {
+    // First try to find parent in the same trace
+    const parentHistoryKey = this.getAgentHistoryKey(parentAgentId, traceId);
+    let parentHistoryId = this.historyIdMap.get(parentHistoryKey);
+
+    if (parentHistoryId) {
+      this.logDebug(`Found parent ${parentAgentId} history in same trace: ${parentHistoryId}`);
+      return parentHistoryId;
+    }
+
+    // 🔗 If not found in same trace, check global histories (cross-trace)
+    parentHistoryId = this.globalAgentHistories.get(parentAgentId);
+    if (parentHistoryId) {
+      this.logDebug(
+        `Found parent ${parentAgentId} history in global map (cross-trace): ${parentHistoryId}`,
+      );
+      return parentHistoryId;
+    }
+
+    this.logDebug(`Parent ${parentAgentId} history not found in trace ${traceId} or globally`);
+    return undefined;
+  }
+
+  /**
+   * Complete all agent histories when trace is done
+   */
+  private async completeAgentHistories(
+    traceId: string,
+    agentsInTrace: Map<string, AgentInfo>,
+    _spans: ReadableSpan[],
+  ): Promise<void> {
+    for (const [agentId, agentInfo] of agentsInTrace) {
+      const agentHistoryId = this.getAgentHistoryId(agentId, traceId);
+
+      // Find agent's last span for output parsing
+      const agentLastSpan = agentInfo.spans
+        .filter((span) => span.endTime)
+        .sort((a, b) => {
+          if (!a.endTime || !b.endTime) return 0;
+          const aTime = a.endTime[0] * 1e9 + a.endTime[1];
+          const bTime = b.endTime[0] * 1e9 + b.endTime[1];
+          return bTime - aTime;
+        })[0];
+
+      if (agentLastSpan?.endTime) {
+        const finalOutput = this.parseSpanOutput(agentLastSpan);
+        const finalUsage = this.parseUsage(agentLastSpan.attributes);
+        const endTime = this.hrTimeToISOString(agentLastSpan.endTime);
+
+        // Complete the history for this agent
+        await this.sdk.endHistory(agentHistoryId, {
           output: finalOutput,
           usage: finalUsage,
           endTime: endTime,
           status: "completed",
         });
 
-        this.logDebug(`Trace ${traceId} completed and history ${historyId} ended`);
+        this.logDebug(`Agent ${agentId} history ${agentHistoryId} completed`);
       }
-
-      // Clean up trace agents after processing
-      this.traceAgents.delete(traceId);
-    } catch (error) {
-      this.logDebug(`Error processing trace ${traceId}:`, error);
     }
   }
 
+  /**
+   * Get agent history key for tracking
+   */
+  private getAgentHistoryKey(agentId: string, traceId: string): string {
+    return `${agentId}_${traceId}`;
+  }
+
+  /**
+   * Get agent history ID (UUID)
+   */
+  private getAgentHistoryId(agentId: string, traceId: string): string {
+    const historyKey = this.getAgentHistoryKey(agentId, traceId);
+    const historyId = this.activeHistories.get(historyKey) || this.historyIdMap.get(historyKey);
+    if (!historyId) {
+      throw new Error(`No history ID found for agent ${agentId} in trace ${traceId}`);
+    }
+    return historyId;
+  }
+
+  /**
+   * Add event to agent's history and propagate to parent if needed
+   * Uses both trace-specific and cross-trace parent relationships
+   * Now supports RECURSIVE propagation up the entire hierarchy
+   */
+  private async addEventToAgentHistory(
+    agentId: string,
+    traceId: string,
+    event: any,
+  ): Promise<void> {
+    const agentHistoryId = this.getAgentHistoryId(agentId, traceId);
+
+    // Add event to agent's own history
+    await this.sdk.addEventToHistory(agentHistoryId, event);
+    this.logDebug(`Added event ${event.name} to agent ${agentId} history ${agentHistoryId}`);
+
+    // 🔄 RECURSIVE PROPAGATION: Propagate to ALL ancestors up the hierarchy
+    await this.propagateEventToAncestors(agentId, traceId, event, agentId, 0, new Set([agentId]));
+  }
+
+  /**
+   * Recursively propagate events up the entire agent hierarchy
+   * This ensures that deeply nested agents' events appear in all ancestor histories
+   */
+  private async propagateEventToAncestors(
+    agentId: string,
+    traceId: string,
+    event: any,
+    originalAgentId: string,
+    depth: number,
+    visitedAgents: Set<string> = new Set(),
+  ): Promise<void> {
+    // Prevent infinite recursion (safety check)
+    if (depth > 10) {
+      this.logDebug(`Max propagation depth reached for agent ${agentId}`);
+      return;
+    }
+
+    // Find parent of current agent
+    let parentAgentId = this.parentChildMap.get(agentId);
+    if (!parentAgentId) {
+      // 🔗 Check global parent-child map if not found in trace-specific map
+      parentAgentId = this.globalParentChildMap.get(agentId);
+    }
+
+    if (!parentAgentId) {
+      // No parent found, stop propagation
+      return;
+    }
+
+    // 🔄 CIRCULAR REFERENCE PROTECTION: Check if we've already visited this agent
+    if (visitedAgents.has(parentAgentId)) {
+      this.logDebug(
+        `Circular reference detected: ${agentId} → ${parentAgentId}, stopping propagation`,
+      );
+      return;
+    }
+
+    try {
+      // Try to get parent history ID from same trace first, then globally
+      let parentHistoryId: string | undefined;
+
+      try {
+        parentHistoryId = this.getAgentHistoryId(parentAgentId, traceId);
+      } catch {
+        // If parent not found in same trace, use global lookup
+        parentHistoryId = this.globalAgentHistories.get(parentAgentId);
+      }
+
+      if (parentHistoryId) {
+        // Modify event metadata to indicate it's from a descendant agent
+        // Preserve the original agentId so the event is attributed correctly
+        const propagatedEvent = {
+          ...event,
+          metadata: {
+            ...event.metadata,
+            fromChildAgent: agentId, // Immediate child
+            originalAgentId: originalAgentId, // Ultimate originator
+            propagationDepth: depth + 1, // Track how deep this propagation is
+            propagationPath: this.buildPropagationPath(originalAgentId, parentAgentId),
+          },
+        };
+
+        await this.sdk.addEventToHistory(parentHistoryId, propagatedEvent);
+        this.logDebug(
+          `Propagated event ${event.name} from ${originalAgentId} to ancestor ${parentAgentId} (depth: ${depth + 1}, immediate child: ${agentId}, cross-trace: ${!this.parentChildMap.has(agentId)})`,
+        );
+
+        // 🔄 RECURSIVE CALL: Continue propagating to parent's parent
+        const newVisitedAgents = new Set(visitedAgents);
+        newVisitedAgents.add(parentAgentId);
+
+        await this.propagateEventToAncestors(
+          parentAgentId,
+          traceId,
+          event,
+          originalAgentId,
+          depth + 1,
+          newVisitedAgents,
+        );
+      } else {
+        this.logDebug(
+          `Parent ${parentAgentId} history not found for event propagation (depth: ${depth + 1})`,
+        );
+      }
+    } catch (error) {
+      this.logDebug(
+        `Failed to propagate event to ancestor ${parentAgentId} (depth: ${depth + 1}):`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Build a human-readable propagation path for debugging
+   */
+  private buildPropagationPath(originalAgentId: string, currentParentId: string): string {
+    return `${originalAgentId} → ... → ${currentParentId}`;
+  }
+
+  /**
+   * Get all spans for a specific trace ID
+   * This helps with finding parent spans when processing deferred tool spans
+   */
+  private getAllSpansForTrace(traceId: string): ReadableSpan[] {
+    const agentsInTrace = this.traceAgents.get(traceId);
+    if (!agentsInTrace) {
+      return [];
+    }
+
+    const allSpans: ReadableSpan[] = [];
+    for (const agentInfo of agentsInTrace.values()) {
+      allSpans.push(...agentInfo.spans);
+    }
+    return allSpans;
+  }
+
   private async processSpanAsVoltAgentEvents(
-    historyId: string,
+    traceId: string,
     span: ReadableSpan,
     traceMetadata: TraceMetadata,
     agentInfo?: AgentInfo,
@@ -249,11 +631,19 @@ export class VoltAgentExporter implements SpanExporter {
     const output = this.parseSpanOutput(span);
     const metadata = this.parseSpanMetadata(span);
 
+    // Get agent ID for this span
+    const allSpansInTrace = this.getAllSpansForTrace(traceId);
+    const agentId = this.extractAgentIdFromSpan(
+      span,
+      allSpansInTrace.length > 0 ? allSpansInTrace : [span],
+    );
+
     switch (spanType) {
       case "generation":
         // Create agent events for each agent's generation spans
         await this.processGenerationSpan(
-          historyId,
+          traceId,
+          agentId,
           span,
           {
             startTime,
@@ -270,21 +660,46 @@ export class VoltAgentExporter implements SpanExporter {
         break;
 
       case "tool":
-        // Map to tool events
-        await this.processToolSpan(
-          historyId,
-          span,
-          {
-            startTime,
-            endTime,
-            spanId,
-            input,
-            output,
-            metadata,
-          },
-          traceMetadata,
-          agentInfo,
-        );
+        // 🕐 Check if we can find agentId for this tool span
+        if (agentId === VoltAgentExporter.DEFAULT_AGENT_ID) {
+          // This is the default fallback, means we couldn't find a proper agentId
+          this.showDefaultAgentGuidance(traceId);
+          await this.processToolSpan(
+            traceId,
+            agentId,
+            span,
+            {
+              startTime,
+              endTime,
+              spanId,
+              input,
+              output,
+              metadata,
+            },
+            traceMetadata,
+            agentInfo,
+          );
+        } else {
+          // We found a proper agentId, process normally
+          this.logDebug(
+            `${VoltAgentExporter.DEBUG_MESSAGES.TOOL_TRACKED_DEFAULT} ${span.name} found agentId: ${agentId}`,
+          );
+          await this.processToolSpan(
+            traceId,
+            agentId,
+            span,
+            {
+              startTime,
+              endTime,
+              spanId,
+              input,
+              output,
+              metadata,
+            },
+            traceMetadata,
+            agentInfo,
+          );
+        }
         break;
 
       default:
@@ -293,15 +708,14 @@ export class VoltAgentExporter implements SpanExporter {
   }
 
   private async processGenerationSpan(
-    historyId: string,
+    traceId: string,
+    agentId: string,
     span: ReadableSpan,
     data: SpanData,
-    traceMetadata: TraceMetadata,
+    _traceMetadata: TraceMetadata,
     agentInfo?: AgentInfo,
     _isRootSpan = false,
   ): Promise<void> {
-    // Use agent info first, then trace metadata, then defaults
-    const agentId = agentInfo?.agentId ?? traceMetadata.agentId ?? "vercel-ai-agent";
     const displayName =
       agentInfo?.displayName ?? (data.metadata.displayName as string) ?? span.name;
     const usage = this.parseUsage(span.attributes);
@@ -330,14 +744,13 @@ export class VoltAgentExporter implements SpanExporter {
         },
       };
 
-      await this.sdk.addEventToHistory(historyId, agentStartEvent);
-
+      await this.addEventToAgentHistory(agentId, traceId, agentStartEvent);
       this.logDebug(`Added agent:start event for agent: ${agentId}`);
     }
 
     // Agent completion event (if span is finished)
     if (data.endTime) {
-      const hasError = span.status?.code === 2; // ERROR
+      const hasError = span.status?.code === VoltAgentExporter.ERROR_STATUS_CODE; // ERROR
 
       if (hasError) {
         const errorEvent = {
@@ -362,7 +775,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.sdk.addEventToHistory(historyId, errorEvent);
+        await this.addEventToAgentHistory(agentId, traceId, errorEvent);
       } else {
         // Only add success event if this is the last generation span for this agent
         if (agentInfo && this.isLastGenerationSpanForAgent(span, agentInfo)) {
@@ -376,7 +789,7 @@ export class VoltAgentExporter implements SpanExporter {
             metadata: {
               displayName,
               id: agentId,
-              ...(agentInfo.parentAgentId && {
+              ...(agentInfo?.parentAgentId && {
                 agentId: agentInfo.parentAgentId,
               }),
               usage,
@@ -385,7 +798,7 @@ export class VoltAgentExporter implements SpanExporter {
             },
           };
 
-          await this.sdk.addEventToHistory(historyId, successEvent);
+          await this.addEventToAgentHistory(agentId, traceId, successEvent);
           this.logDebug(`Added agent:success event for agent: ${agentId}`);
         }
       }
@@ -393,18 +806,17 @@ export class VoltAgentExporter implements SpanExporter {
   }
 
   private async processToolSpan(
-    historyId: string,
+    traceId: string,
+    agentId: string,
     span: ReadableSpan,
     data: SpanData,
-    traceMetadata: TraceMetadata,
-    agentInfo?: AgentInfo,
+    _traceMetadata: TraceMetadata,
+    _agentInfo?: AgentInfo,
   ): Promise<void> {
     const toolName = (data.metadata.toolName as string) ?? span.name;
-    // Use agent info first, then trace metadata, then defaults
-    const agentId = agentInfo?.agentId ?? traceMetadata.agentId ?? "vercel-ai-agent";
 
     this.logDebug(
-      `Processing tool span: ${toolName}, agentId: ${agentId}, agentInfo: ${agentInfo ? "found" : "not found"}, span agentId: ${span.attributes["ai.telemetry.metadata.agentId"] ?? "not found"}`,
+      `Processing tool span: ${toolName}, agentId: ${agentId}, span agentId: ${span.attributes["ai.telemetry.metadata.agentId"] ?? "not found"}`,
     );
 
     // Tool start event
@@ -421,11 +833,11 @@ export class VoltAgentExporter implements SpanExporter {
       },
     };
 
-    await this.sdk.addEventToHistory(historyId, startEvent);
+    await this.addEventToAgentHistory(agentId, traceId, startEvent);
 
     // Tool completion event (if span is finished)
     if (data.endTime) {
-      const hasError = span.status?.code === 2; // ERROR
+      const hasError = span.status?.code === VoltAgentExporter.ERROR_STATUS_CODE; // ERROR
 
       if (hasError) {
         const errorEvent = {
@@ -445,7 +857,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.sdk.addEventToHistory(historyId, errorEvent);
+        await this.addEventToAgentHistory(agentId, traceId, errorEvent);
       } else {
         const successEvent = {
           name: "tool:success" as const,
@@ -461,7 +873,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.sdk.addEventToHistory(historyId, successEvent);
+        await this.addEventToAgentHistory(agentId, traceId, successEvent);
       }
     }
   }
@@ -491,7 +903,12 @@ export class VoltAgentExporter implements SpanExporter {
   private getSpanType(span: ReadableSpan): "generation" | "tool" | "unknown" {
     const spanName = span.name.toLowerCase();
 
-    if (spanName.includes("generate") || spanName.includes("stream")) {
+    if (
+      spanName.includes("generate") ||
+      spanName.includes("stream") ||
+      spanName.includes("generateobject") ||
+      spanName.includes("streamobject")
+    ) {
       return "generation";
     }
 
@@ -579,6 +996,18 @@ export class VoltAgentExporter implements SpanExporter {
     const attrs = span.attributes;
 
     // Try to parse output from various attributes
+    // Priority: object first (for generateObject), then text, then others
+    if (attrs["ai.response.object"]) {
+      const objectResult = this.safeJsonParse(String(attrs["ai.response.object"]));
+      // If we also have text, combine them
+      if (attrs["ai.response.text"]) {
+        return {
+          object: objectResult,
+          text: attrs["ai.response.text"],
+        };
+      }
+      return { object: objectResult };
+    }
     if (attrs["ai.response.text"]) {
       return { text: attrs["ai.response.text"] };
     }
@@ -588,11 +1017,15 @@ export class VoltAgentExporter implements SpanExporter {
     if (attrs["ai.toolCall.result"]) {
       return this.safeJsonParse(String(attrs["ai.toolCall.result"]));
     }
-    if (attrs["ai.response.object"]) {
-      return this.safeJsonParse(String(attrs["ai.response.object"]));
-    }
     if (attrs["ai.response.toolCalls"]) {
       return this.safeJsonParse(String(attrs["ai.response.toolCalls"]));
+    }
+    // Embedding outputs
+    if (attrs["ai.embedding"]) {
+      return { embedding: this.safeJsonParse(String(attrs["ai.embedding"])) };
+    }
+    if (attrs["ai.embeddings"]) {
+      return { embeddings: this.safeJsonParse(String(attrs["ai.embeddings"])) };
     }
 
     return undefined;
@@ -616,6 +1049,17 @@ export class VoltAgentExporter implements SpanExporter {
     }
     if (attrs["ai.telemetry.metadata.agentId"]) {
       metadata.agentId = attrs["ai.telemetry.metadata.agentId"];
+    }
+
+    // Extract object generation schema information
+    if (attrs["ai.schema"]) {
+      metadata.schema = this.safeJsonParse(String(attrs["ai.schema"]));
+    }
+    if (attrs["ai.schema.name"]) {
+      metadata.schemaName = attrs["ai.schema.name"];
+    }
+    if (attrs["ai.schema.description"]) {
+      metadata.schemaDescription = attrs["ai.schema.description"];
     }
 
     // Extract custom metadata
@@ -685,6 +1129,10 @@ export class VoltAgentExporter implements SpanExporter {
         "ai.settings.mode" in attributes
           ? (attributes["ai.settings.mode"]?.toString() ?? null)
           : null,
+      output:
+        "ai.settings.output" in attributes
+          ? (attributes["ai.settings.output"]?.toString() ?? null)
+          : null,
       temperature:
         "gen_ai.request.temperature" in attributes
           ? (attributes["gen_ai.request.temperature"]?.toString() ?? null)
@@ -745,20 +1193,42 @@ export class VoltAgentExporter implements SpanExporter {
     }
   }
 
+  private logInfo(message: string, ...args: any[]): void {
+    console.log(`[${new Date().toISOString()}] [VoltAgentExporter] ${message}`, ...args);
+  }
+
   async forceFlush(): Promise<void> {
     this.logDebug("Force flushing VoltAgent SDK...");
 
     // End any remaining active histories (only on force flush/shutdown)
-    for (const [historyId, history] of this.activeHistories) {
+    for (const [agentHistoryKey, historyId] of this.activeHistories) {
       try {
-        await this.sdk.endHistory(history);
-        this.logDebug(`Force completed history ${historyId}`);
+        await this.sdk.endHistory(historyId);
+        this.logDebug(`Force completed history ${historyId} for key ${agentHistoryKey}`);
       } catch (error) {
         this.logDebug(`Error force completing history ${historyId}:`, error);
       }
     }
 
     this.activeHistories.clear();
+    this.parentChildMap.clear();
+    this.historyIdMap.clear();
+
+    // 🔗 Clear global maps
+    this.globalAgentHistories.clear();
+    this.globalParentChildMap.clear();
+
+    // 🎯 Clear tool span cache
+    this.toolSpanAgentCache.clear();
+
+    // 🕐 Clear deferred spans
+    if (this.deferredSpans.size > 0) {
+      this.logDebug(`Clearing ${this.deferredSpans.size} deferred spans on force flush`);
+      this.deferredSpans.clear();
+    }
+
+    // Clear trace guidance tracking
+    this.traceGuidanceShown.clear();
 
     // Force flush the SDK
     await this.sdk.flush();
@@ -799,59 +1269,190 @@ export class VoltAgentExporter implements SpanExporter {
     return agents;
   }
 
-  private findRootAgent(agents: Map<string, AgentInfo>): AgentInfo | undefined {
-    // Find agent with no parentAgentId (root agent)
-    for (const agent of agents.values()) {
-      if (!agent.parentAgentId) {
-        return agent;
-      }
-    }
-
-    // Fallback to first agent
-    return agents.values().next().value;
-  }
-
-  private extractAgentIdFromSpan(span: ReadableSpan, allSpans?: ReadableSpan[]): string {
+  /**
+   * Helper method to get agentId directly from span attributes
+   */
+  private getAgentIdFromAttributes(span: ReadableSpan, spanType: string): string | undefined {
     const attrs = span.attributes;
-    const spanType = this.getSpanType(span);
-
-    // Try to get agentId from telemetry metadata
     if (attrs["ai.telemetry.metadata.agentId"]) {
       const agentId = String(attrs["ai.telemetry.metadata.agentId"]);
       this.logDebug(`Found agentId in span attributes for ${spanType} span: ${agentId}`);
       return agentId;
     }
+    return undefined;
+  }
 
-    // For tool calls, try to get agentId from parent span
-    if (allSpans && spanType === "tool") {
-      const parentSpanId = this.getParentSpanId(span);
-      if (parentSpanId) {
-        const parentSpan = allSpans.find((s) => s.spanContext().spanId === parentSpanId);
-        if (parentSpan?.attributes["ai.telemetry.metadata.agentId"]) {
-          const agentId = String(parentSpan.attributes["ai.telemetry.metadata.agentId"]);
-          this.logDebug(`Found agentId from parent span for tool span: ${agentId}`);
-          return agentId;
-        }
-      }
-
-      // If no parent agentId found, try to find agentId from any generation span in the same trace
-      for (const otherSpan of allSpans) {
-        if (
-          this.getSpanType(otherSpan) === "generation" &&
-          otherSpan.attributes["ai.telemetry.metadata.agentId"]
-        ) {
-          const agentId = String(otherSpan.attributes["ai.telemetry.metadata.agentId"]);
-          this.logDebug(`Found agentId from generation span for tool span: ${agentId}`);
-          return agentId;
-        }
-      }
-
-      this.logDebug("No agentId found for tool span, using default");
+  /**
+   * Helper method to find agentId from immediate parent span
+   */
+  private findAgentIdFromParentSpan(
+    span: ReadableSpan,
+    allSpans: ReadableSpan[],
+  ): string | undefined {
+    const parentSpanId = this.getParentSpanId(span);
+    if (!parentSpanId) {
+      this.logDebug(`${VoltAgentExporter.DEBUG_MESSAGES.NO_PARENT_SPAN} ${span.name}`);
+      return undefined;
     }
 
-    // Fallback to default agent id
-    this.logDebug(`Using default agentId for ${spanType} span`);
-    return "vercel-ai-agent";
+    const parentSpan = allSpans.find((s) => s.spanContext().spanId === parentSpanId);
+    if (!parentSpan) {
+      this.logDebug(`Parent span ${parentSpanId} not found in current spans list`);
+      this.logDebug(VoltAgentExporter.DEBUG_MESSAGES.MULTI_AGENT_SCENARIO);
+      return undefined;
+    }
+
+    // 🔍 Debug logging for parent span (only in debug mode)
+    if (this.debug) {
+      this.logDebug(VoltAgentExporter.DEBUG_MESSAGES.PARENT_SPAN_DEBUG);
+      this.logDebug(`Parent span name: ${parentSpan.name}`);
+      this.logDebug("Parent span attributes:", JSON.stringify(parentSpan.attributes, null, 2));
+    }
+
+    // Try to get agentId from parent span
+    if (parentSpan.attributes["ai.telemetry.metadata.agentId"]) {
+      const foundAgentId = String(parentSpan.attributes["ai.telemetry.metadata.agentId"]);
+      this.logDebug(`${VoltAgentExporter.DEBUG_MESSAGES.AGENT_ID_FOUND} ${foundAgentId}`);
+      return foundAgentId;
+    }
+
+    this.logDebug("Parent span has no agentId, checking parent chain...");
+    // If parent doesn't have agentId, check parent's parent recursively
+    return this.findAgentIdInParentChain(parentSpan, allSpans);
+  }
+
+  /**
+   * Helper method to find agentId from closest generation span
+   */
+  private findAgentIdFromClosestGenerationSpan(
+    span: ReadableSpan,
+    allSpans: ReadableSpan[],
+  ): string | undefined {
+    this.logDebug("No parent span found, searching for most recent generation span...");
+
+    const toolStartTime = span.startTime[0] * 1e9 + span.startTime[1];
+    let closestGenerationSpan: { span: ReadableSpan; timeDiff: number } | undefined;
+
+    for (const otherSpan of allSpans) {
+      if (
+        this.getSpanType(otherSpan) === "generation" &&
+        otherSpan.attributes["ai.telemetry.metadata.agentId"]
+      ) {
+        const spanStartTime = otherSpan.startTime[0] * 1e9 + otherSpan.startTime[1];
+        const timeDiff = Math.abs(toolStartTime - spanStartTime);
+
+        if (!closestGenerationSpan || timeDiff < closestGenerationSpan.timeDiff) {
+          closestGenerationSpan = { span: otherSpan, timeDiff };
+        }
+      }
+    }
+
+    if (closestGenerationSpan) {
+      const foundAgentId = String(
+        closestGenerationSpan.span.attributes["ai.telemetry.metadata.agentId"],
+      );
+      this.logDebug(
+        `Found agentId from closest generation span: ${foundAgentId} (time diff: ${closestGenerationSpan.timeDiff}ns)`,
+      );
+      return foundAgentId;
+    }
+
+    return undefined;
+  }
+
+  private extractAgentIdFromSpan(span: ReadableSpan, allSpans?: ReadableSpan[]): string {
+    const spanType = this.getSpanType(span);
+    const spanId = span.spanContext().spanId;
+
+    // 🎯 For tool spans, check cache first
+    if (spanType === "tool" && this.toolSpanAgentCache.has(spanId)) {
+      const cachedAgentId = this.toolSpanAgentCache.get(spanId);
+      if (cachedAgentId) {
+        this.logDebug(`Found cached agentId for tool span: ${cachedAgentId}`);
+        return cachedAgentId;
+      }
+    }
+
+    // Try to get agentId from telemetry metadata
+    const agentIdFromAttributes = this.getAgentIdFromAttributes(span, spanType);
+    if (agentIdFromAttributes) {
+      // 🎯 Cache tool span agentId
+      if (spanType === "tool") {
+        this.toolSpanAgentCache.set(spanId, agentIdFromAttributes);
+      }
+      return agentIdFromAttributes;
+    }
+
+    // For tool calls, try to find agentId from parent spans
+    if (allSpans && spanType === "tool") {
+      let foundAgentId: string | undefined;
+
+      // 🔍 Only show detailed debug for tool spans in debug mode
+      if (this.debug) {
+        this.logDebug(VoltAgentExporter.DEBUG_MESSAGES.TOOL_SPAN_DEBUG);
+        this.logDebug(`Tool span name: ${span.name}`);
+        this.logDebug("Tool span attributes:", JSON.stringify(span.attributes, null, 2));
+        this.logDebug(`Parent span ID: ${this.getParentSpanId(span)}`);
+      }
+
+      // Strategy 1: Get agentId from immediate parent span
+      foundAgentId = this.findAgentIdFromParentSpan(span, allSpans);
+
+      // Strategy 2: If no parent found, find the most recent generation span in trace
+      if (!foundAgentId) {
+        foundAgentId = this.findAgentIdFromClosestGenerationSpan(span, allSpans);
+      }
+
+      if (foundAgentId) {
+        // 🎯 Cache the found agentId
+        this.toolSpanAgentCache.set(spanId, foundAgentId);
+        return foundAgentId;
+      }
+
+      // If we reach here for tool spans, we'll use default - this is normal
+      this.showDefaultAgentGuidance(span.spanContext().traceId);
+    }
+
+    // Fallback to default agent id - this is perfectly fine
+    const defaultAgentId = VoltAgentExporter.DEFAULT_AGENT_ID;
+
+    // Show guidance when using default agent
+    this.showDefaultAgentGuidance(span.spanContext().traceId);
+
+    // 🎯 Cache even the default agentId for tool spans
+    if (spanType === "tool") {
+      this.toolSpanAgentCache.set(spanId, defaultAgentId);
+    }
+
+    return defaultAgentId;
+  }
+
+  /**
+   * Recursively find agentId in parent chain (similar to Langfuse approach)
+   */
+  private findAgentIdInParentChain(
+    span: ReadableSpan,
+    allSpans: ReadableSpan[],
+  ): string | undefined {
+    const parentSpanId = this.getParentSpanId(span);
+    if (!parentSpanId) {
+      return undefined;
+    }
+
+    const parentSpan = allSpans.find((s) => s.spanContext().spanId === parentSpanId);
+    if (!parentSpan) {
+      return undefined;
+    }
+
+    // Check if this parent has agentId
+    if (parentSpan.attributes["ai.telemetry.metadata.agentId"]) {
+      const agentId = String(parentSpan.attributes["ai.telemetry.metadata.agentId"]);
+      this.logDebug(`Found agentId in parent chain: ${agentId}`);
+      return agentId;
+    }
+
+    // Recursively check parent's parent
+    return this.findAgentIdInParentChain(parentSpan, allSpans);
   }
 
   private extractParentAgentIdFromSpan(span: ReadableSpan): string | undefined {
@@ -913,5 +1514,54 @@ export class VoltAgentExporter implements SpanExporter {
   private isTraceComplete(spans: ReadableSpan[]): boolean {
     // Check if all spans in the trace are completed
     return spans.every((span) => span.endTime && span.endTime[0] > 0);
+  }
+
+  private generateUUID(): string {
+    return crypto.randomUUID();
+  }
+
+  private async processDeferredSpans(
+    traceId: string,
+    spans: ReadableSpan[],
+    traceMetadata: TraceMetadata,
+    agentsInTrace: Map<string, AgentInfo>,
+  ): Promise<void> {
+    const deferredSpans = Array.from(this.deferredSpans.values());
+    this.deferredSpans.clear();
+
+    for (const { span, traceId: deferredTraceId } of deferredSpans) {
+      if (deferredTraceId === traceId) {
+        // Clear cache for this span so it can re-evaluate with complete span set
+        this.toolSpanAgentCache.delete(span.spanContext().spanId);
+
+        const allSpansInTrace = this.getAllSpansForTrace(traceId);
+        const agentId = this.extractAgentIdFromSpan(
+          span,
+          allSpansInTrace.length > 0 ? allSpansInTrace : [span],
+        );
+        const deferredAgentInfo = agentsInTrace.get(agentId);
+        const deferredIsRootSpan = this.findRootSpan(spans) === span;
+
+        await this.processSpanAsVoltAgentEvents(
+          traceId,
+          span,
+          traceMetadata,
+          deferredAgentInfo,
+          deferredIsRootSpan,
+        );
+      }
+    }
+  }
+
+  private showDefaultAgentGuidance(traceId: string): void {
+    if (!this.traceGuidanceShown.has(traceId)) {
+      this.logInfo("📋 VoltAgent: Using default agent for tracking.");
+      this.logInfo("💡 For better tracking, add agentId to your metadata:");
+      this.logInfo("   experimental_telemetry: {");
+      this.logInfo("     isEnabled: true,");
+      this.logInfo("     metadata: { agentId: 'my-agent' }");
+      this.logInfo("   }");
+      this.traceGuidanceShown.add(traceId);
+    }
   }
 }

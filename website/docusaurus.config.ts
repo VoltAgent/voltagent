@@ -80,6 +80,18 @@ const config: Config = {
         },
       };
     },
+    // VoltAgent Observability Platform - Separate docs instance
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "observability",
+        path: "observability",
+        routeBasePath: "docs-observability",
+        sidebarPath: "./sidebarsObservability.ts",
+        breadcrumbs: false,
+        sidebarCollapsed: false,
+      },
+    ],
     "./plugins/clarity/index.js",
     "./plugins/ahrefs/index.js",
     [
@@ -146,6 +158,11 @@ const config: Config = {
         {
           to: "/docs",
           label: "Documentation",
+          position: "left",
+        },
+        {
+          to: "/docs-observability",
+          label: "Observability",
           position: "left",
         },
         {
