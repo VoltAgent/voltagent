@@ -1,39 +1,20 @@
 import React from "react";
 import { motion } from "framer-motion";
-import {
-  ListBulletIcon,
-  EyeIcon,
-  CommandLineIcon,
-  ArrowPathIcon,
-} from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { DotPattern } from "../ui/dot-pattern";
-
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import AgentListView from "./AgentListView";
-import AgentDetailView from "./AgentDetailView";
-import AgentChat from "./AgentChat";
-import FlowOverview from "./FlowOverview";
 import PricingSection from "./PricingSection";
 import FrameworkIntegration from "./FrameworkIntegration";
 import ObservabilityFeatures from "./ObservabilityFeatures";
 import Link from "@docusaurus/Link";
-
 import { HowToGetStarted } from "./HowToGetStarted";
 
 export const Console = () => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
-
-  const getResponsiveText = (mobileText: string, desktopText: string) => {
-    return isMobile ? mobileText : desktopText;
-  };
-
   return (
     <section className="relative w-full overflow-hidden py-12 sm:py-16 md:py-20">
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 landing-xs:mb-8 sm:mb-12 landing-md:mb-24">
         {/* Header Section - Responsive */}
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 mb-12 sm:mb-24 items-center">
           <div className="flex flex-col items-center relative">
             <div className="flex items-baseline justify-start">
@@ -81,6 +62,8 @@ export const Console = () => {
         </div>
       </div>
 
+      <PricingSection />
+
       {/* Framework Integration Examples */}
       <FrameworkIntegration />
 
@@ -89,8 +72,6 @@ export const Console = () => {
 
       {/* Observability Features */}
       <ObservabilityFeatures />
-
-      <PricingSection />
     </section>
   );
 };
