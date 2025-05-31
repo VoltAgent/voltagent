@@ -71,7 +71,7 @@ const sidebars: SidebarsConfig = {
         {
           type: "doc",
           id: "js-ts-sdk",
-          label: "🚧 JavaScript/TypeScript SDK",
+          label: "JavaScript/TypeScript SDK",
         },
         {
           type: "doc",

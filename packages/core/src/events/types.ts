@@ -118,17 +118,16 @@ export interface BaseTimelineEvent<M = BaseEventMetadata | null> {
   startTime: string; // ISO 8601 Date string
   endTime?: string | null; // ISO 8601 Date string
   status?: TimelineEventCoreStatus;
-  statusMessage?: string | null;
-  level?: TimelineEventCoreLevel; // Default: 'INFO'
-  input?: Record<string, unknown> | null;
-  output?: Record<string, unknown> | null;
-  metadata: M; // Strongly-typed based on 'type' and 'name'
-  error?: {
+  statusMessage?: {
     message: string;
     stack?: string;
     code?: string | number;
     [key: string]: unknown; // For additional error details
   } | null;
+  level?: TimelineEventCoreLevel; // Default: 'INFO'
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+  metadata: M; // Strongly-typed based on 'type' and 'name'
   version?: string | null; // Version of this event's schema/structure
   parentEventId?: string | null; // For hiyerarşik eventler
   traceId: string; // Corresponds to AgentHistoryEntry.id

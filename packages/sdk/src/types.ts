@@ -6,6 +6,16 @@ import type {
   AgentStartEventMetadata,
   TimelineEventCoreStatus,
   TimelineEventCoreLevel,
+  HistoryStatus,
+  UsageInfo,
+  AgentSuccessOptions,
+  AgentErrorOptions,
+  ToolSuccessOptions,
+  ToolErrorOptions,
+  MemorySuccessOptions,
+  MemoryErrorOptions,
+  RetrieverSuccessOptions,
+  RetrieverErrorOptions,
 } from "@voltagent/core";
 
 // SDK Options
@@ -25,10 +35,10 @@ export interface CreateHistoryRequest {
   conversationId?: string;
   startTime?: string;
   endTime?: string;
-  status?: string;
+  status?: HistoryStatus;
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
-  usage?: Record<string, unknown>;
+  usage?: UsageInfo;
   metadata?: Record<string, unknown>;
   completionStartTime?: string;
   model?: string;
@@ -46,10 +56,10 @@ export interface UpdateHistoryRequest {
   conversationId?: string;
   startTime?: string;
   endTime?: string;
-  status?: string;
+  status?: HistoryStatus;
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
-  usage?: Record<string, unknown>;
+  usage?: UsageInfo;
   metadata?: Record<string, unknown>;
   completionStartTime?: string;
   model?: string;
@@ -82,12 +92,11 @@ interface BaseEventInput<M = BaseEventMetadata | null> {
   startTime?: string; // Optional - will be auto-generated if not provided
   endTime?: string | null;
   status?: TimelineEventCoreStatus;
-  statusMessage?: string | null;
   level?: TimelineEventCoreLevel;
   input?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
   metadata: M; // Required and strongly typed
-  error?: {
+  statusMessage?: {
     message: string;
     stack?: string;
     code?: string | number;
@@ -272,4 +281,123 @@ export type {
   RetrieverStartEvent,
   RetrieverSuccessEvent,
   RetrieverErrorEvent,
+  AgentSuccessOptions,
+  AgentErrorOptions,
+  ToolSuccessOptions,
+  ToolErrorOptions,
+  MemorySuccessOptions,
+  MemoryErrorOptions,
+  RetrieverSuccessOptions,
+  RetrieverErrorOptions,
 } from "@voltagent/core";
+
+// === NEW TRACE-BASED SDK TYPES ===
+
+export interface TraceOptions {
+  name: string;
+  agentId: string; // ana agent_id (history için)
+  input?: any;
+  userId?: string;
+  conversationId?: string;
+  metadata?: Record<string, unknown>;
+  tags?: string[];
+}
+
+export interface TraceEndOptions {
+  output?: any;
+  status?: HistoryStatus;
+  metadata?: Record<string, unknown>;
+  usage?: UsageInfo;
+}
+
+export interface AgentOptions {
+  name: string;
+  input?: any;
+  model?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolOptions {
+  name: string;
+  input?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemoryOptions {
+  name: string;
+  input?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverOptions {
+  name: string;
+  input?: any;
+  metadata?: Record<string, unknown>;
+}
+
+// Context interfaces
+export interface TraceContext {
+  readonly id: string;
+  readonly agentId: string;
+  update(data: Partial<UpdateHistoryRequest>): Promise<TraceContext>;
+  end(options?: TraceEndOptions): Promise<void>;
+  addAgent(options: AgentOptions): Promise<AgentContext>;
+  addEvent(event: TimelineEventInput): Promise<EventContext>;
+}
+
+export interface AgentContext {
+  readonly id: string;
+  readonly traceId: string;
+  readonly parentId?: string;
+  addAgent(options: AgentOptions): Promise<AgentContext>;
+  addTool(options: ToolOptions): Promise<ToolContext>;
+  addMemory(options: MemoryOptions): Promise<MemoryContext>;
+  addRetriever(options: RetrieverOptions): Promise<RetrieverContext>;
+  success(options?: AgentSuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & AgentErrorOptions): Promise<void>;
+}
+
+export interface ToolContext {
+  readonly id: string;
+  readonly parentId: string;
+  readonly traceId: string;
+  success(options?: ToolSuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & ToolErrorOptions): Promise<void>;
+}
+
+export interface MemoryContext {
+  readonly id: string;
+  readonly parentId: string;
+  readonly traceId: string;
+  success(options?: MemorySuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & MemoryErrorOptions): Promise<void>;
+}
+
+export interface RetrieverContext {
+  readonly id: string;
+  readonly parentId: string;
+  readonly traceId: string;
+  success(options?: RetrieverSuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & RetrieverErrorOptions): Promise<void>;
+}
+
+export interface EventContext {
+  readonly id: string;
+  readonly parentId?: string;
+  readonly traceId: string;
+  success(
+    options?:
+      | AgentSuccessOptions
+      | ToolSuccessOptions
+      | MemorySuccessOptions
+      | RetrieverSuccessOptions,
+  ): Promise<void>;
+  error(
+    options: { statusMessage: Error | any } & (
+      | AgentErrorOptions
+      | ToolErrorOptions
+      | MemoryErrorOptions
+      | RetrieverErrorOptions
+    ),
+  ): Promise<void>;
+}

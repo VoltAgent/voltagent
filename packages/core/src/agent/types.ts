@@ -547,3 +547,51 @@ export type AgentOperationOutput =
   | StreamTextFinishResult
   | StandardizedObjectResult<unknown> // Object type generalized
   | StreamObjectFinishResult<unknown>; // Object type generalized
+
+// === AGENT SUCCESS/ERROR OPTIONS ===
+
+export interface AgentSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+  usage?: UsageInfo;
+}
+
+export interface AgentErrorOptions {
+  statusMessage?: Error | any;
+  stage?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemorySuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemoryErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Type that includes callback functions
+ */

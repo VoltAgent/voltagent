@@ -1,6 +1,9 @@
 import type { AgentStatus } from "../types";
 import type { UsageInfo } from "../providers/base/types";
 
+// History status values used in actual history operations
+export type HistoryStatus = "working" | "completed" | "error";
+
 export interface TimelineEvent {
   id: string;
   timestamp: Date | string;
