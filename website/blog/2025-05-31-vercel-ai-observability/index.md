@@ -1,14 +1,14 @@
 ---
 title: Observability for Vercel AI SDK
 description: How to track your LLM Agents built with Vercel AI SDK?
-slug: vercel-ai-agent-observability
-image: https://cdn.voltagent.dev/2025-05-30-vercel-ai-observability/social.png
+slug: vercel-ai-llm-observability
+image: https://cdn.voltagent.dev/2025-05-31-vercel-ai-observability/social.png
 authors: omeraplak
 ---
 
 import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 
-## Tracking Vercel AI Agents in Production
+## Tracking LLM Agents built with Vercel AI SDK in Production
 
 [Vercel AI SDK](https://ai-sdk.dev/docs/introduction/) is today one of the most popular tools to create AI agents. That SDK is so popular among developers because of its TypeScript-first approach and inclusion of such cutting-edge AI features like streaming, tool usage, and multi-modal support right out of the box. We wrote about this [in our previous blog post](https://voltagent.dev/blog/vercel-ai-sdk/).
 
