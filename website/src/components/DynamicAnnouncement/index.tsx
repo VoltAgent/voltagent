@@ -208,7 +208,7 @@ export default function DynamicAnnouncement(): JSX.Element | null {
   const content = announcementContent[country] || announcementContent.default;
 
   return (
-    <div className="bg-emerald-500 text-gray-900 text-center py-2 px-4 relative z-50 text-base font-medium border-b border-white/10">
+    <div className="bg-emerald-500 text-gray-900 text-center py-2 landing-md:py-0 px-4 relative z-50 text-sm font-medium border-b border-white/10">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="w-8" />
         <a
