@@ -21,12 +21,12 @@ const ObservabilityFeatures = () => {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 sm:mb-16">
+      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6 mb-6 landing-xs:mb-4 landing-sm:mb-8 landing-md:mb-12 landing-lg:mb-16">
         <div className="text-left">
-          <h2 className="text-xl sm:text-2xl md:text-3xl text-emerald-500 font-bold mb-4">
+          <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
             AI Agent Observability Matters
           </h2>
-          <p className="text-gray-400 max-w-3xl text-sm sm:text-base md:text-lg mb-4">
+          <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg mb-3 landing-xs:mb-2 landing-sm:mb-4">
             As the number of AI agents in your system grows, maintaining
             visibility becomes increasingly critical. Without proper
             observability, debugging and managing agent behavior becomes
@@ -35,9 +35,9 @@ const ObservabilityFeatures = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 sm:gap-6">
-          <div className="flex flex-col gap-4 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6">
+        <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-xs:gap-2 landing-sm:gap-4 landing-md:gap-6">
+          <div className="flex flex-col gap-3 landing-xs:gap-2 landing-sm:gap-4 landing-md:gap-6">
             {/* Connection Management Card */}
             <motion.div
               className="rounded-md border-2 border-solid border-emerald-500 transition-all duration-300 overflow-hidden h-auto"
@@ -46,21 +46,21 @@ const ObservabilityFeatures = () => {
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               <div
-                className="p-3 sm:p-4 border-b border-white/10 bg-[#191c24]"
+                className="p-2 landing-xs:p-2 landing-sm:p-3 landing-md:p-4 border-b border-white/10 bg-[#191c24]"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-emerald-400/10 w-6 h-6 sm:w-8 sm:h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0">
-                    <ArrowPathIcon className="w-3 h-3 sm:w-4 sm:h-4 landing-md:w-5 landing-md:h-5 text-emerald-400" />
+                <div className="flex items-start gap-2 landing-xs:gap-2 landing-sm:gap-3 landing-md:gap-4">
+                  <div className="bg-emerald-400/10 w-5 h-5 landing-xs:w-5 landing-xs:h-5 landing-sm:w-6 landing-sm:h-6 landing-md:w-8 landing-md:h-8 landing-lg:w-10 landing-lg:h-10 rounded-md flex items-center justify-center shrink-0">
+                    <ArrowPathIcon className="w-2.5 h-2.5 landing-xs:w-2.5 landing-xs:h-2.5 landing-sm:w-3 landing-sm:h-3 landing-md:w-4 landing-md:h-4 landing-lg:w-5 landing-lg:h-5 text-emerald-400" />
                   </div>
                   <div className="flex-1">
-                    <div className="mb-1 text-xs sm:text-sm landing-lg:text-base font-semibold text-white">
+                    <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Any Framework, Any Agent
                     </div>
-                    <p className="text-gray-400 text-xs landing-lg:text-sm mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
                       {getResponsiveText(
                         "Visualize and debug AI agents from any framework in real-time.",
                         "Visualize and debug AI agents from any framework in real-time.",
@@ -82,21 +82,21 @@ const ObservabilityFeatures = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <div
-                className="p-3 sm:p-4 border-b border-white/10 bg-[#191c24]"
+                className="p-2 landing-xs:p-2 landing-sm:p-3 landing-md:p-4 border-b border-white/10 bg-[#191c24]"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-emerald-400/10 w-6 h-6 sm:w-8 sm:h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0">
-                    <CommandLineIcon className="w-3 h-3 sm:w-4 sm:h-4 landing-md:w-5 landing-md:h-5 text-emerald-400" />
+                <div className="flex items-start gap-2 landing-xs:gap-2 landing-sm:gap-3 landing-md:gap-4">
+                  <div className="bg-emerald-400/10 w-5 h-5 landing-xs:w-5 landing-xs:h-5 landing-sm:w-6 landing-sm:h-6 landing-md:w-8 landing-md:h-8 landing-lg:w-10 landing-lg:h-10 rounded-md flex items-center justify-center shrink-0">
+                    <CommandLineIcon className="w-2.5 h-2.5 landing-xs:w-2.5 landing-xs:h-2.5 landing-sm:w-3 landing-sm:h-3 landing-md:w-4 landing-md:h-4 landing-lg:w-5 landing-lg:h-5 text-emerald-400" />
                   </div>
                   <div className="flex-1">
-                    <div className="mb-1 text-xs sm:text-sm landing-lg:text-base font-semibold text-white">
+                    <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Universal Agent Communication
                     </div>
-                    <p className="text-gray-400 text-xs landing-lg:text-sm mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
                       {getResponsiveText(
                         "Chat with AI agents from any framework in real-time.",
                         "Chat with AI agents from any framework, with metrics and insights.",
@@ -111,7 +111,7 @@ const ObservabilityFeatures = () => {
             </motion.div>
           </div>
 
-          <div className="flex flex-col gap-4 sm:gap-6 mt-4 sm:mt-0">
+          <div className="flex flex-col gap-3 landing-xs:gap-2 landing-sm:gap-4 landing-md:gap-6 mt-3 landing-xs:mt-2 landing-sm:mt-4 landing-md:mt-0">
             {/* Agent Detail View Card */}
             <motion.div
               className="rounded-md border-2 border-solid transition-all duration-300 overflow-hidden h-auto"
@@ -120,21 +120,21 @@ const ObservabilityFeatures = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <div
-                className="p-3 sm:p-4 border-b border-white/10 bg-[#191c24]"
+                className="p-2 landing-xs:p-2 landing-sm:p-3 landing-md:p-4 border-b border-white/10 bg-[#191c24]"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-emerald-400/10 w-6 h-6 sm:w-8 sm:h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0">
-                    <EyeIcon className="w-3 h-3 sm:w-4 sm:h-4 landing-md:w-5 landing-md:h-5 text-emerald-400" />
+                <div className="flex items-start gap-2 landing-xs:gap-2 landing-sm:gap-3 landing-md:gap-4">
+                  <div className="bg-emerald-400/10 w-5 h-5 landing-xs:w-5 landing-xs:h-5 landing-sm:w-6 landing-sm:h-6 landing-md:w-8 landing-md:h-8 landing-lg:w-10 landing-lg:h-10 rounded-md flex items-center justify-center shrink-0">
+                    <EyeIcon className="w-2.5 h-2.5 landing-xs:w-2.5 landing-xs:h-2.5 landing-sm:w-3 landing-sm:h-3 landing-md:w-4 landing-md:h-4 landing-lg:w-5 landing-lg:h-5 text-emerald-400" />
                   </div>
                   <div className="flex-1">
-                    <div className="mb-1 text-xs sm:text-sm landing-lg:text-base font-semibold text-white">
+                    <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Framework-Independent Monitoring
                     </div>
-                    <p className="text-gray-400 text-xs landing-lg:text-sm mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
                       {getResponsiveText(
                         "View detailed inputs, outputs, and parameters regardless of framework.",
                         "Inputs, outputs, and parameters for any agent, memory, and tool call.",
@@ -156,21 +156,21 @@ const ObservabilityFeatures = () => {
               transition={{ duration: 0.5 }}
             >
               <div
-                className="p-3 sm:p-4 border-b border-white/10 bg-[#191c24]"
+                className="p-2 landing-xs:p-2 landing-sm:p-3 landing-md:p-4 border-b border-white/10 bg-[#191c24]"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-emerald-400/10 w-6 h-6 sm:w-8 sm:h-8 landing-md:w-10 landing-md:h-10 rounded-md flex items-center justify-center shrink-0">
-                    <ListBulletIcon className="w-3 h-3 sm:w-4 sm:h-4 landing-md:w-5 landing-md:h-5 text-emerald-400" />
+                <div className="flex items-start gap-2 landing-xs:gap-2 landing-sm:gap-3 landing-md:gap-4">
+                  <div className="bg-emerald-400/10 w-5 h-5 landing-xs:w-5 landing-xs:h-5 landing-sm:w-6 landing-sm:h-6 landing-md:w-8 landing-md:h-8 landing-lg:w-10 landing-lg:h-10 rounded-md flex items-center justify-center shrink-0">
+                    <ListBulletIcon className="w-2.5 h-2.5 landing-xs:w-2.5 landing-xs:h-2.5 landing-sm:w-3 landing-sm:h-3 landing-md:w-4 landing-md:h-4 landing-lg:w-5 landing-lg:h-5 text-emerald-400" />
                   </div>
                   <div className="flex-1">
-                    <div className="mb-1 text-xs sm:text-sm landing-lg:text-base font-semibold text-white">
+                    <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Agent List View
                     </div>
-                    <p className="text-gray-400 text-xs landing-lg:text-sm mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
                       {getResponsiveText(
                         "View active and completed agent sessions.",
                         "Displays a list of active or recent agent sessions for quick overview.",

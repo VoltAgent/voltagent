@@ -211,37 +211,40 @@ const PricingSection = () => {
   const renderFeatureValue = (value: boolean | string) => {
     if (typeof value === "boolean") {
       return value ? (
-        <CheckCircleIcon className="w-5 h-5 text-emerald-400 mx-auto" />
+        <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mx-auto" />
       ) : (
-        <XMarkIcon className="w-5 h-5 text-gray-500 mx-auto" />
+        <XMarkIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-gray-500 mx-auto" />
       );
     }
-    return <span className="text-sm text-gray-300">{value}</span>;
+    return (
+      <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-300">
+        {value}
+      </span>
+    );
   };
 
   return (
-    <section className="relative w-full py-12 sm:py-16 md:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <section className="relative w-full py-8 landing-xs:py-6 landing-sm:py-12 landing-md:py-16 landing-lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6">
         {/* Header */}
-        <div className="text-left mb-12 sm:mb-16">
+        <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="text-left mb-12">
-              <h2 className="text-xl sm:text-2xl md:text-3xl text-emerald-500 font-bold mb-4">
+            <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12">
+              <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
                 Simple, Transparent Pricing
               </h2>
-              <p className="text-gray-400 max-w-3xl text-sm sm:text-base md:text-lg">
+              <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
                 Start free, scale as you grow.
               </p>
             </div>
           </motion.div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-16">
+        <div className="grid grid-cols-1 landing-md:grid-cols-3 gap-4 landing-xs:gap-3 landing-sm:gap-6 landing-md:gap-8 mb-10 landing-xs:mb-8 landing-sm:mb-12 landing-md:mb-16">
           {pricingTiers.map((tier, index) => (
             <motion.div
               key={tier.name}
@@ -254,19 +257,19 @@ const PricingSection = () => {
                   : "border-gray-700/50"
               }`}
             >
-              <div className="p-6 sm:p-8">
-                {/* Plan Name */}
-                <div className="text-left mb-6">
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
+              <div className="p-4 landing-xs:p-3 landing-sm:p-6 landing-md:p-8">
+                <div className="text-left mb-4 landing-xs:mb-3 landing-sm:mb-6">
+                  <h3 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl font-bold text-white mb-2 landing-xs:mb-1">
                     {tier.name}
                   </h3>
-                  <p className="text-gray-400 text-sm">{tier.description}</p>
+                  <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm">
+                    {tier.description}
+                  </p>
                 </div>
 
-                {/* CTA Button */}
                 <button
                   type="button"
-                  className={`w-full inline-flex mb-6 items-center justify-center no-underline border-solid border font-semibold rounded transition-colors cursor-pointer px-4 py-3 ${
+                  className={`w-full inline-flex mb-4 landing-xs:mb-3 landing-sm:mb-6 items-center justify-center no-underline border-solid border font-semibold rounded transition-colors cursor-pointer px-3 landing-xs:px-2 landing-sm:px-4 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base ${
                     tier.buttonVariant === "primary"
                       ? "bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300"
                       : "bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20"
@@ -275,33 +278,35 @@ const PricingSection = () => {
                   {tier.buttonText}
                 </button>
 
-                {/* Price */}
-                <div className="text-left mb-8">
+                <div className="text-left mb-6 landing-xs:mb-4 landing-sm:mb-8">
                   <div className="flex items-baseline justify-start">
-                    <span className="text-3xl sm:text-4xl font-bold text-white">
+                    <span className="text-2xl landing-xs:text-xl landing-sm:text-3xl landing-md:text-4xl font-bold text-white">
                       {tier.price}
                     </span>
                     {tier.period && (
-                      <span className="text-gray-400 ml-1">{tier.period}</span>
+                      <span className="text-gray-400 ml-1 text-sm landing-xs:text-xs">
+                        {tier.period}
+                      </span>
                     )}
                   </div>
                   {tier.name === "Free" && (
-                    <p className="text-emerald-400 text-xs mt-1">
+                    <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1">
                       No credit card required
                     </p>
                   )}
                 </div>
 
-                {/* Features */}
-                <div className="space-y-4 ">
+                <div className="space-y-3 landing-xs:space-y-2 landing-sm:space-y-4">
                   {tier.features.map((feature) => (
                     <div key={`${tier.name}-${feature}`}>
                       <div className="flex items-start">
-                        <CheckCircleIcon className="w-5 h-5 text-emerald-400 mr-3  flex-shrink-0" />
-                        <span className="text-gray-300 text-sm">{feature}</span>
+                        <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0" />
+                        <span className="text-gray-300 text-xs landing-xs:text-xs landing-sm:text-sm">
+                          {feature}
+                        </span>
                       </div>
                       {feature === "Up to 10 seats included" && (
-                        <p className="text-emerald-400 text-xs mt-1 ml-8">
+                        <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8">
                           $50 per additional seat
                         </p>
                       )}
@@ -314,79 +319,72 @@ const PricingSection = () => {
         </div>
 
         {/* Comparison Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-12 w-full -mx-4 sm:-mx-6"
-        >
-          <div className="w-full bg-[#191c24] overflow-hidden">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full table-fixed border-collapse border-spacing-0 min-w-full">
-                <thead>
-                  <tr className="border-b border-gray-700/50">
-                    <th className="text-left py-4 px-4 sm:px-8 text-sm font-semibold text-gray-300 bg-[#191c24] w-1/4">
-                      Features
-                    </th>
-                    <th className="text-center py-4 px-4 sm:px-8 text-sm font-semibold text-gray-300 bg-[#191c24] w-1/4">
-                      Free
-                    </th>
-                    <th className="text-center py-4 px-4 sm:px-8 text-sm font-semibold text-emerald-400 bg-[#191c24] w-1/4">
-                      Pro
-                    </th>
-                    <th className="text-center py-4 px-4 sm:px-8 text-sm font-semibold text-gray-300 bg-[#191c24] w-1/4">
-                      Enterprise
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparisonFeatures.map((category) => (
-                    <React.Fragment key={category.category}>
-                      <tr className="border-b border-gray-700/30">
-                        <td
-                          colSpan={4}
-                          className="py-4 px-4 sm:px-8 text-sm font-semibold text-emerald-400 bg-gray-800/30"
-                        >
-                          {category.category}
+        <div className="w-full bg-[#191c24] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full h-full table-fixed border-collapse border-spacing-0 min-w-full">
+              <thead>
+                <tr className="border-b border-gray-700/50">
+                  <th className="text-left py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-1/5">
+                    Features
+                  </th>
+                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
+                    Free
+                  </th>
+                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-emerald-400 bg-[#191c24] w-[26.67%]">
+                    Pro
+                  </th>
+                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
+                    Enterprise
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonFeatures.map((category) => (
+                  <React.Fragment key={category.category}>
+                    <tr className="border-b border-gray-700/30">
+                      <td
+                        colSpan={4}
+                        className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-emerald-400 bg-gray-800/30"
+                      >
+                        {category.category}
+                      </td>
+                    </tr>
+                    {category.features.map((feature) => (
+                      <tr
+                        key={`${category.category}-${feature.name}`}
+                        className="border-b border-gray-700 hover:bg-gray-800/20 transition-colors"
+                      >
+                        <td className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm text-gray-300">
+                          {feature.name}
+                        </td>
+                        <td className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-center">
+                          {renderFeatureValue(feature.free)}
+                        </td>
+                        <td className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-center">
+                          {renderFeatureValue(feature.pro)}
+                        </td>
+                        <td className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-center">
+                          {renderFeatureValue(feature.enterprise)}
                         </td>
                       </tr>
-                      {category.features.map((feature) => (
-                        <tr
-                          key={`${category.category}-${feature.name}`}
-                          className="border-b border-gray-700 hover:bg-gray-800/20 transition-colors"
-                        >
-                          <td className="py-4 px-4 sm:px-8 text-sm text-gray-300">
-                            {feature.name}
-                          </td>
-                          <td className="py-4 px-4 sm:px-8 text-center">
-                            {renderFeatureValue(feature.free)}
-                          </td>
-                          <td className="py-4 px-4 sm:px-8 text-center">
-                            {renderFeatureValue(feature.pro)}
-                          </td>
-                          <td className="py-4 px-4 sm:px-8 text-center">
-                            {renderFeatureValue(feature.enterprise)}
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Additional Info */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-center mt-12"
+          className="text-center mt-8 landing-xs:mt-6 landing-sm:mt-12"
         >
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm">
             All plans include our core monitoring features. Need something
             custom?{" "}
             <span className="text-emerald-400 cursor-pointer hover:underline">

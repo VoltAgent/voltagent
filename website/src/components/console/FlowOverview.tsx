@@ -12,7 +12,7 @@ const FlowOverview = () => {
       <img
         src="/img/ops/flow-1.png"
         alt="Connection Manager"
-        className="w-full h-auto object-cover block max-h-[300px] sm:max-h-[400px] md:max-h-none"
+        className="w-full h-auto object-cover block max-h-[200px] landing-xs:max-h-[150px] landing-sm:max-h-[250px] landing-md:max-h-[300px] landing-lg:max-h-[400px]"
         loading="lazy"
       />
     </div>
