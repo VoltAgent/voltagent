@@ -27,18 +27,18 @@ export class VoltAgentCoreAPI {
   }
 
   /**
-   * Temel fetch metodu - tüm isteklerin kullandığı
+   * Basic fetch method - used by all requests
    */
   private async fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    // Default options'ları ayarla
+    // Set default options
     const fetchOptions: RequestInit = {
       headers: this.headers,
       ...options,
     };
 
-    // Timeout için AbortController kullan
+    // Use AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
     fetchOptions.signal = controller.signal;
@@ -77,15 +77,15 @@ export class VoltAgentCoreAPI {
         } as ApiError;
       }
 
-      // Diğer hatalar (zaten ApiError olarak hata fırlatıldıysa)
+      // Other errors (if already thrown as ApiError)
       throw error;
     }
   }
 
   /**
-   * Yeni bir history oluşturur
-   * @param data History için gerekli veriler
-   * @returns Oluşturulan history nesnesi
+   * Creates a new history
+   * @param data Required data for history
+   * @returns Created history object
    */
   async addHistory(data: CreateHistoryRequest): Promise<History> {
     const response = await this.fetchApi<ApiResponse<History>>("/history", {
@@ -97,9 +97,9 @@ export class VoltAgentCoreAPI {
   }
 
   /**
-   * Var olan bir history'yi günceller
-   * @param data History güncellemesi için gerekli veriler
-   * @returns Güncellenmiş history nesnesi
+   * Updates an existing history
+   * @param data Required data for history update
+   * @returns Updated history object
    */
   async updateHistory(data: UpdateHistoryRequest): Promise<History> {
     const { id, ...updateData } = data;
@@ -112,12 +112,12 @@ export class VoltAgentCoreAPI {
   }
 
   /**
-   * Var olan bir history'ye yeni bir event ekler
-   * @param data Event için gerekli veriler
-   * @returns Eklenen event nesnesi
+   * Adds a new event to an existing history
+   * @param data Required data for event
+   * @returns Added event object
    */
   async addEvent(data: AddEventRequest): Promise<Event> {
-    // TimelineEventCore'dan DTO formatına dönüştür
+    // Convert from TimelineEventCore to DTO format
     const eventDto = {
       history_id: data.historyId,
       event_type: data.event.type,
@@ -144,9 +144,9 @@ export class VoltAgentCoreAPI {
   }
 
   /**
-   * Var olan bir event'i günceller
-   * @param data Event güncellemesi için gerekli veriler
-   * @returns Güncellenmiş event nesnesi
+   * Updates an existing event
+   * @param data Required data for event update
+   * @returns Updated event object
    */
   async updateEvent(data: UpdateEventRequest): Promise<Event> {
     const { id, ...updateData } = data;

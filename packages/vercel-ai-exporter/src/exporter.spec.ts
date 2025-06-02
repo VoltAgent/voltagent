@@ -9,16 +9,21 @@ jest.mock("@voltagent/sdk");
 describe("VoltAgentExporter", () => {
   let exporter: VoltAgentExporter;
   let mockSdk: jest.Mocked<VoltAgentObservabilitySDK>;
+  let mockTrace: any;
 
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
 
+    // Create mock trace object
+    mockTrace = {
+      end: jest.fn().mockResolvedValue(undefined),
+    };
+
     // Create mock SDK
     mockSdk = {
-      createHistory: jest.fn().mockResolvedValue(undefined),
+      trace: jest.fn().mockResolvedValue(mockTrace),
       addEventToHistory: jest.fn().mockResolvedValue(undefined),
-      endHistory: jest.fn().mockResolvedValue(undefined),
       flush: jest.fn().mockResolvedValue(undefined),
     } as any;
 
@@ -452,7 +457,7 @@ describe("VoltAgentExporter", () => {
 
     it("should handle export errors gracefully", async () => {
       // Mock SDK to throw error
-      mockSdk.createHistory.mockRejectedValueOnce(new Error("API Error"));
+      mockSdk.trace.mockRejectedValueOnce(new Error("API Error"));
 
       const span = createMockSpan({
         name: "ai.generateText",
@@ -477,27 +482,37 @@ describe("VoltAgentExporter", () => {
 
   describe("Memory Management", () => {
     it("should clear all caches on force flush", async () => {
-      // Add some data to caches
+      // Add some data to caches and traces
       (exporter as any).activeHistories.set("test-key", "test-value");
+      (exporter as any).activeTraces.set("test-key", mockTrace);
       (exporter as any).toolSpanAgentCache.set("span-123", "agent-123");
       (exporter as any).globalAgentHistories.set("agent-123", "history-123");
 
       await exporter.forceFlush();
 
+      // Verify trace.end() was called
+      expect(mockTrace.end).toHaveBeenCalledTimes(1);
+
       expect((exporter as any).activeHistories.size).toBe(0);
+      expect((exporter as any).activeTraces.size).toBe(0);
       expect((exporter as any).toolSpanAgentCache.size).toBe(0);
       expect((exporter as any).globalAgentHistories.size).toBe(0);
     });
 
     it("should clear all caches on shutdown", async () => {
-      // Add some data to caches
+      // Add some data to caches and traces
       (exporter as any).activeHistories.set("test-key", "test-value");
+      (exporter as any).activeTraces.set("test-key", mockTrace);
       (exporter as any).toolSpanAgentCache.set("span-123", "agent-123");
       (exporter as any).globalAgentHistories.set("agent-123", "history-123");
 
       await exporter.shutdown();
 
+      // Verify trace.end() was called
+      expect(mockTrace.end).toHaveBeenCalledTimes(1);
+
       expect((exporter as any).activeHistories.size).toBe(0);
+      expect((exporter as any).activeTraces.size).toBe(0);
       expect((exporter as any).toolSpanAgentCache.size).toBe(0);
       expect((exporter as any).globalAgentHistories.size).toBe(0);
     });
@@ -566,7 +581,7 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify histories were created
-      expect(mockSdk.createHistory).toHaveBeenCalledTimes(2); // main + sub agent
+      expect(mockSdk.trace).toHaveBeenCalledTimes(2); // main + sub agent
 
       // Verify agent events were created
       expect(mockSdk.addEventToHistory).toHaveBeenCalledWith(
@@ -665,7 +680,7 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify 3 agent histories were created
-      expect(mockSdk.createHistory).toHaveBeenCalledTimes(3);
+      expect(mockSdk.trace).toHaveBeenCalledTimes(3);
 
       // Verify tool events were created for the specialist
       const toolStartCalls = mockSdk.addEventToHistory.mock.calls.filter(

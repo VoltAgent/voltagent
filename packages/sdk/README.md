@@ -78,7 +78,7 @@ await trace.end({
 
 ### Core Concepts
 
-- **Trace**: A complete conversation/session (creates a History record)
+- **Trace**: A complete conversation/session (the main execution context)
 - **Agent**: An AI agent operating within a trace
 - **Tool**: External service calls (APIs, databases, etc.)
 - **Memory**: Data storage and retrieval operations
@@ -87,7 +87,7 @@ await trace.end({
 ### Event Hierarchy
 
 ```
-Trace (History)
+Trace
 ├── Agent 1
 │   ├── Tool 1 → success/error
 │   ├── Memory 1 → success/error
@@ -384,7 +384,7 @@ const trace = await sdk.trace({
 await trace.update({
   status?: string;
   metadata?: Record<string, unknown>;
-  // ... other History fields
+  // ... other trace fields
 });
 
 // End trace - Success

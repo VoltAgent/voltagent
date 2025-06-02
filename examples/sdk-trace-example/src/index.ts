@@ -54,7 +54,6 @@ async function basicTraceExample() {
   try {
     // 1. Create new trace
     const trace = await sdk.trace({
-      name: "Simple Weather Query",
       agentId: "weather-agent-v1",
       input: { query: "What's the weather in Tokyo?" },
       userId: "user-123",
@@ -202,7 +201,6 @@ async function complexHierarchyExample() {
   try {
     // 1. Create research trace
     const trace = await sdk.trace({
-      name: "Multi-Agent Research Project",
       agentId: "research-coordinator",
       input: {
         topic: "Global AI developments and emerging trends",
@@ -676,7 +674,6 @@ async function errorHandlingExample() {
 
   try {
     const trace = await sdk.trace({
-      name: "Error Handling Test",
       agentId: "error-test-agent",
       input: { testType: "error-scenarios" },
     });

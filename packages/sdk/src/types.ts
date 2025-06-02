@@ -1,5 +1,5 @@
-// SDK için tip tanımları
-// Core'dan gelen tipleri yeniden export ediyoruz
+// Type definitions for SDK
+// Re-exporting types from Core
 import type {
   NewTimelineEvent,
   BaseEventMetadata,
@@ -19,7 +19,7 @@ export interface VoltAgentClientOptions {
   timeout?: number;
 }
 
-// History ile ilgili tipler
+// History related types
 export interface CreateHistoryRequest {
   id?: string;
   agent_id: string;
@@ -33,8 +33,6 @@ export interface CreateHistoryRequest {
   usage?: UsageInfo;
   metadata?: Record<string, unknown>;
   completionStartTime?: string;
-  model?: string;
-  modelParameters?: Record<string, unknown>;
   level?: string;
   statusMessage?: string;
   version?: string;
@@ -74,7 +72,7 @@ export interface History {
   updatedAt: string;
 }
 
-// Core'dan strict event tiplerini kullan
+// Use strict event types from Core
 export type TimelineEventCore = NewTimelineEvent;
 
 // --- TYPE-SAFE EVENT INPUT DEFINITIONS ---
@@ -194,7 +192,7 @@ export type RetrieverErrorEventInput = BaseEventInput<BaseEventMetadata> & {
   level: "ERROR" | "CRITICAL";
 };
 
-// Main type-safe event input union - bu artık tek event input tipi
+// Main type-safe event input union - this is now the single event input type
 export type TimelineEventInput =
   | ToolStartEventInput
   | ToolSuccessEventInput
@@ -234,7 +232,7 @@ export interface UpdateEventRequest {
 }
 
 export interface Event {
-  id: string; // UUID, server tarafından oluşturulmuş olacak
+  id: string; // UUID, will be generated server-side
   historyId: string;
   name: string;
   type: "agent" | "tool" | "memory" | "retriever";
@@ -313,7 +311,7 @@ export interface RetrieverErrorOptions {
   metadata?: Record<string, unknown>;
 }
 
-// Core'dan spesifik event tiplerini re-export et
+// Re-export specific event types from Core
 export type {
   ToolStartEvent,
   ToolSuccessEvent,
@@ -335,13 +333,17 @@ export type {
 // === NEW TRACE-BASED SDK TYPES ===
 
 export interface TraceOptions {
-  name: string;
-  agentId: string; // ana agent_id (history için)
+  id?: string;
+  agentId: string;
   input?: any;
   userId?: string;
   conversationId?: string;
   metadata?: Record<string, unknown>;
   tags?: string[];
+  completionStartTime?: string;
+  startTime?: string;
+  version?: string;
+  level?: string;
 }
 
 export interface TraceEndOptions {

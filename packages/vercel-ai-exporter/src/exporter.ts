@@ -117,6 +117,9 @@ export class VoltAgentExporter implements SpanExporter {
   // Track which traces have already shown the default agent guidance
   private traceGuidanceShown = new Set<string>();
 
+  // 🔄 Store trace objects for proper cleanup using trace.end()
+  private activeTraces = new Map<string, any>(); // agentHistoryKey -> trace object
+
   constructor(options: VoltAgentExporterOptions) {
     this.debug = options.debug ?? false;
 
@@ -295,16 +298,15 @@ export class VoltAgentExporter implements SpanExporter {
       const agentHistoryId = this.generateUUID();
 
       // Create new history for this agent
-      await this.sdk.createHistory({
+      const trace = await this.sdk.trace({
         id: agentHistoryId,
-        agent_id: agentId,
+        agentId: agentId,
         input: this.parseSpanInput(agentFirstSpan),
         metadata: combinedMetadata,
         userId: traceMetadata.userId,
         conversationId: traceMetadata.conversationId,
         completionStartTime: completionStartTime,
         tags: traceMetadata.tags && traceMetadata.tags.length > 0 ? traceMetadata.tags : undefined,
-        status: "running",
         startTime: agentFirstSpan
           ? this.hrTimeToISOString(agentFirstSpan.startTime)
           : new Date().toISOString(),
@@ -313,6 +315,9 @@ export class VoltAgentExporter implements SpanExporter {
 
       this.activeHistories.set(agentHistoryKey, agentHistoryId);
       this.historyIdMap.set(agentHistoryKey, agentHistoryId);
+
+      // 🔄 Store the trace object for later use with trace.end()
+      this.activeTraces.set(agentHistoryKey, trace);
 
       // 🔗 Store in global map for cross-trace access
       this.globalAgentHistories.set(agentId, agentHistoryId);
@@ -430,7 +435,13 @@ export class VoltAgentExporter implements SpanExporter {
     _spans: ReadableSpan[],
   ): Promise<void> {
     for (const [agentId, agentInfo] of agentsInTrace) {
-      const agentHistoryId = this.getAgentHistoryId(agentId, traceId);
+      const agentHistoryKey = this.getAgentHistoryKey(agentId, traceId);
+      const trace = this.activeTraces.get(agentHistoryKey);
+
+      if (!trace) {
+        this.logDebug(`No trace object found for agent ${agentId} in trace ${traceId}`);
+        continue;
+      }
 
       // Find agent's last span for output parsing
       const agentLastSpan = agentInfo.spans
@@ -447,15 +458,23 @@ export class VoltAgentExporter implements SpanExporter {
         const finalUsage = this.parseUsage(agentLastSpan.attributes);
         const endTime = this.hrTimeToISOString(agentLastSpan.endTime);
 
-        // Complete the history for this agent
-        await this.sdk.endHistory(agentHistoryId, {
+        // Complete the history using trace.end() instead of sdk.endHistory()
+        await trace.end({
           output: finalOutput,
-          usage: finalUsage,
+          usage: finalUsage
+            ? {
+                promptTokens: finalUsage.promptTokens || 0,
+                completionTokens: finalUsage.completionTokens || 0,
+                totalTokens:
+                  finalUsage.totalTokens ||
+                  (finalUsage.promptTokens || 0) + (finalUsage.completionTokens || 0),
+              }
+            : undefined,
           endTime: endTime,
           status: "completed",
         });
 
-        this.logDebug(`Agent ${agentId} history ${agentHistoryId} completed`);
+        this.logDebug(`Agent ${agentId} trace completed using trace.end()`);
       }
     }
   }
@@ -1199,17 +1218,18 @@ export class VoltAgentExporter implements SpanExporter {
   async forceFlush(): Promise<void> {
     this.logDebug("Force flushing VoltAgent SDK...");
 
-    // End any remaining active histories (only on force flush/shutdown)
-    for (const [agentHistoryKey, historyId] of this.activeHistories) {
+    // End any remaining active histories using trace.end() (only on force flush/shutdown)
+    for (const [agentHistoryKey, trace] of this.activeTraces) {
       try {
-        await this.sdk.endHistory(historyId);
-        this.logDebug(`Force completed history ${historyId} for key ${agentHistoryKey}`);
+        await trace.end();
+        this.logDebug(`Force completed trace for key ${agentHistoryKey}`);
       } catch (error) {
-        this.logDebug(`Error force completing history ${historyId}:`, error);
+        this.logDebug(`Error force completing trace for key ${agentHistoryKey}:`, error);
       }
     }
 
     this.activeHistories.clear();
+    this.activeTraces.clear(); // 🔄 Clear trace objects map
     this.parentChildMap.clear();
     this.historyIdMap.clear();
 

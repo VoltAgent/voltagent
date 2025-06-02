@@ -47,12 +47,12 @@ class TraceContextImpl implements TraceContext {
   }
 
   async update(data: Partial<UpdateHistoryRequest>): Promise<TraceContext> {
-    this.history = await this.sdk.updateHistory(this.id, data);
+    this.history = await this.sdk.updateTrace(this.id, data);
     return this;
   }
 
   async end(options?: TraceEndOptions): Promise<void> {
-    await this.sdk.endHistory(this.id, {
+    await this.sdk.endTrace(this.id, {
       output: options?.output ? { output: options.output } : undefined,
       status: options?.status || "completed",
       metadata: options?.metadata,
@@ -61,7 +61,7 @@ class TraceContextImpl implements TraceContext {
   }
 
   async addAgent(options: AgentOptions): Promise<AgentContext> {
-    const agentEvent = await this.sdk.addEventToHistory(this.id, {
+    const agentEvent = await this.sdk.addEventToTrace(this.id, {
       name: "agent:start",
       type: "agent",
       input: options.input ? { input: options.input } : { input: "" },
@@ -79,7 +79,7 @@ class TraceContextImpl implements TraceContext {
   }
 
   async addEvent(event: TimelineEventInput): Promise<EventContext> {
-    const createdEvent = await this.sdk.addEventToHistory(this.id, event);
+    const createdEvent = await this.sdk.addEventToTrace(this.id, event);
     return new EventContextImpl(createdEvent, this.id, this.sdk);
   }
 }
@@ -104,7 +104,7 @@ class AgentContextImpl implements AgentContext {
   }
 
   async addAgent(options: AgentOptions): Promise<AgentContext> {
-    const subAgentEvent = await this.sdk.addEventToHistory(this.traceId, {
+    const subAgentEvent = await this.sdk.addEventToTrace(this.traceId, {
       name: "agent:start",
       type: "agent",
       status: "running",
@@ -123,7 +123,7 @@ class AgentContextImpl implements AgentContext {
   }
 
   async addTool(options: ToolOptions): Promise<ToolContext> {
-    const toolEvent = await this.sdk.addEventToHistory(this.traceId, {
+    const toolEvent = await this.sdk.addEventToTrace(this.traceId, {
       name: "tool:start",
       type: "tool",
       input: options.input || {},
@@ -141,7 +141,7 @@ class AgentContextImpl implements AgentContext {
   }
 
   async addMemory(options: MemoryOptions): Promise<MemoryContext> {
-    const memoryEvent = await this.sdk.addEventToHistory(this.traceId, {
+    const memoryEvent = await this.sdk.addEventToTrace(this.traceId, {
       name: "memory:write_start",
       type: "memory",
       input: options.input || {},
@@ -159,7 +159,7 @@ class AgentContextImpl implements AgentContext {
   }
 
   async addRetriever(options: RetrieverOptions): Promise<RetrieverContext> {
-    const retrieverEvent = await this.sdk.addEventToHistory(this.traceId, {
+    const retrieverEvent = await this.sdk.addEventToTrace(this.traceId, {
       name: "retriever:start",
       type: "retriever",
       input: options.input || {},
@@ -181,7 +181,7 @@ class AgentContextImpl implements AgentContext {
   }
 
   async success(options?: AgentSuccessOptions): Promise<void> {
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "agent:success",
       type: "agent",
       status: "completed",
@@ -208,7 +208,7 @@ class AgentContextImpl implements AgentContext {
       };
     }
 
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "agent:error",
       type: "agent",
       status: "error",
@@ -246,7 +246,7 @@ class ToolContextImpl implements ToolContext {
   }
 
   async success(options?: ToolSuccessOptions): Promise<void> {
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "tool:success",
       type: "tool",
       status: "completed",
@@ -272,7 +272,7 @@ class ToolContextImpl implements ToolContext {
       };
     }
 
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "tool:error",
       type: "tool",
       status: "error",
@@ -310,7 +310,7 @@ class MemoryContextImpl implements MemoryContext {
   }
 
   async success(options?: MemorySuccessOptions): Promise<void> {
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "memory:write_success",
       type: "memory",
       status: "completed",
@@ -336,7 +336,7 @@ class MemoryContextImpl implements MemoryContext {
       };
     }
 
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "memory:write_error",
       type: "memory",
       status: "error",
@@ -374,7 +374,7 @@ class RetrieverContextImpl implements RetrieverContext {
   }
 
   async success(options?: RetrieverSuccessOptions): Promise<void> {
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "retriever:success",
       type: "retriever",
       status: "completed",
@@ -400,7 +400,7 @@ class RetrieverContextImpl implements RetrieverContext {
       };
     }
 
-    await this.sdk.addEventToHistory(this.traceId, {
+    await this.sdk.addEventToTrace(this.traceId, {
       name: "retriever:error",
       type: "retriever",
       status: "error",
@@ -440,7 +440,7 @@ class EventContextImpl implements EventContext {
     const eventType = this.event.type;
 
     if (eventType === "agent") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "agent:success",
         type: "agent",
         status: "completed",
@@ -452,7 +452,7 @@ class EventContextImpl implements EventContext {
         } as any,
       });
     } else if (eventType === "tool") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "tool:success",
         type: "tool",
         status: "completed",
@@ -464,7 +464,7 @@ class EventContextImpl implements EventContext {
         } as any,
       });
     } else if (eventType === "memory") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "memory:write_success",
         type: "memory",
         status: "completed",
@@ -476,7 +476,7 @@ class EventContextImpl implements EventContext {
         } as any,
       });
     } else if (eventType === "retriever") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "retriever:success",
         type: "retriever",
         status: "completed",
@@ -514,7 +514,7 @@ class EventContextImpl implements EventContext {
     const eventType = this.event.type;
 
     if (eventType === "agent") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "agent:error",
         type: "agent",
         status: "error",
@@ -527,7 +527,7 @@ class EventContextImpl implements EventContext {
         } as any,
       });
     } else if (eventType === "tool") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "tool:error",
         type: "tool",
         status: "error",
@@ -540,7 +540,7 @@ class EventContextImpl implements EventContext {
         } as any,
       });
     } else if (eventType === "memory") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "memory:write_error",
         type: "memory",
         status: "error",
@@ -553,7 +553,7 @@ class EventContextImpl implements EventContext {
         } as any,
       });
     } else if (eventType === "retriever") {
-      await this.sdk.addEventToHistory(this.traceId, {
+      await this.sdk.addEventToTrace(this.traceId, {
         name: "retriever:error",
         type: "retriever",
         status: "error",
@@ -583,9 +583,9 @@ export class VoltAgentObservabilitySDK {
   ) {
     this.coreClient = new VoltAgentCoreAPI(options);
 
-    // Auto flush özelliği
+    // Auto flush feature
     if (options.autoFlush !== false) {
-      const interval = options.flushInterval || 5000; // 5 saniye default
+      const interval = options.flushInterval || 5000; // 5 seconds default
       this.autoFlushInterval = setInterval(() => {
         this.flush();
       }, interval);
@@ -593,57 +593,60 @@ export class VoltAgentObservabilitySDK {
   }
 
   /**
-   * Yeni bir trace oluşturur (History yaratır)
+   * Creates a new trace (creates History)
    */
   async trace(options: TraceOptions): Promise<TraceContext> {
     const historyData: CreateHistoryRequest = {
+      id: options.id,
       agent_id: options.agentId,
       input: options.input,
       userId: options.userId,
       conversationId: options.conversationId,
       metadata: {
-        name: options.name,
         agentId: options.agentId,
         ...options.metadata,
       },
       tags: options.tags,
       status: "working",
-      startTime: new Date().toISOString(),
+      startTime: options.startTime || new Date().toISOString(),
+      completionStartTime: options.completionStartTime,
+      version: options.version,
+      level: options.level,
     };
 
     const history = await this.coreClient.addHistory(historyData);
 
-    // Trace'i internal state'e kaydet
+    // Save trace to internal state
     this.traces.set(history.id, history);
 
     return new TraceContextImpl(history, this);
   }
 
   /**
-   * Mevcut trace verisini döndürür
+   * Returns existing trace data
    */
   getTrace(traceId: string): History | undefined {
     return this.traces.get(traceId);
   }
 
   /**
-   * Internal method for updating history (used by context classes)
+   * Internal method for updating trace (used by context classes)
    */
-  async updateHistory(historyId: string, data: Omit<UpdateHistoryRequest, "id">): Promise<History> {
+  async updateTrace(traceId: string, data: Omit<UpdateHistoryRequest, "id">): Promise<History> {
     const updatedHistory = await this.coreClient.updateHistory({
-      id: historyId,
+      id: traceId,
       ...data,
     });
 
-    this.traces.set(historyId, updatedHistory);
+    this.traces.set(traceId, updatedHistory);
     return updatedHistory;
   }
 
   /**
-   * Internal method for ending history (used by context classes)
+   * Internal method for ending trace (used by context classes)
    */
-  async endHistory(historyId: string, data?: Omit<UpdateHistoryRequest, "id">): Promise<History> {
-    return this.updateHistory(historyId, {
+  async endTrace(traceId: string, data?: Omit<UpdateHistoryRequest, "id">): Promise<History> {
+    return this.updateTrace(traceId, {
       status: "completed",
       endTime: new Date().toISOString(),
       ...data,
@@ -651,18 +654,18 @@ export class VoltAgentObservabilitySDK {
   }
 
   /**
-   * Internal method for adding events to history (used by context classes)
+   * Internal method for adding events to trace (used by context classes)
    */
-  async addEventToHistory(historyId: string, event: TimelineEventInput): Promise<Event> {
+  async addEventToTrace(traceId: string, event: TimelineEventInput): Promise<Event> {
     const eventWithTraceId: TimelineEventCore = {
       id: randomUUID(),
       startTime: new Date().toISOString(),
       ...event,
-      traceId: historyId,
+      traceId: traceId,
     } as unknown as TimelineEventCore;
 
     return this.coreClient.addEvent({
-      historyId,
+      historyId: traceId,
       event: eventWithTraceId,
     });
   }
@@ -678,7 +681,7 @@ export class VoltAgentObservabilitySDK {
   }
 
   /**
-   * Kuyrukta bekleyen tüm event'leri gönderir
+   * Sends all queued events
    */
   async flush(): Promise<void> {
     if (this.eventQueue.length === 0) return;
@@ -703,7 +706,7 @@ export class VoltAgentObservabilitySDK {
   }
 
   /**
-   * SDK'yı kapat ve bekleyen event'leri gönder
+   * Shuts down the SDK and sends pending events
    */
   async shutdown(): Promise<void> {
     if (this.autoFlushInterval) {
@@ -714,7 +717,7 @@ export class VoltAgentObservabilitySDK {
   }
 
   /**
-   * Core client'a direkt erişim (advanced kullanım için)
+   * Direct access to core client (for advanced usage)
    */
   get client(): VoltAgentCoreAPI {
     return this.coreClient;
