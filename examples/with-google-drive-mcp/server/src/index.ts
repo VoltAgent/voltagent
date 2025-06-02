@@ -4,7 +4,7 @@ import { openai } from "@ai-sdk/openai";
 import { createTool } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { serve } from "@hono/node-server";
-import { type JsonSchema, jsonSchemaToZod } from "@n8n/json-schema-to-zod";
+import { convertJsonSchemaToZod } from "zod-from-json-schema";
 
 import { OpenAIToolSet } from "composio-core";
 
@@ -17,6 +17,7 @@ import {
 } from "./db/pendingConnections.js";
 import { generateFunnyVoltAgentId } from "./utils.js";
 import { agent } from "./voltagent/index.js";
+import type { z } from "zod";
 
 // Initialize Composio toolset
 // Ensure COMPOSIO_API_KEY is set in your environment variables
@@ -140,7 +141,9 @@ const handleStream = async (c: Context) => {
       createTool({
         name: toolSpec.function.name,
         description: toolSpec.function.description || "",
-        parameters: jsonSchemaToZod(toolSpec.function.parameters as JsonSchema),
+        parameters: convertJsonSchemaToZod(
+          toolSpec.function.parameters as any,
+        ) as unknown as z.ZodType,
         execute: async (args) => {
           console.log(`Executing tool: ${toolSpec.function.name} for user ${userId}`);
           const result = await composioToolset.executeAction({

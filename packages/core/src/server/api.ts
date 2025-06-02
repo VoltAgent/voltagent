@@ -27,7 +27,7 @@ import {
   type TextRequestSchema,
   type ObjectRequestSchema,
 } from "./api.routes";
-import { jsonSchemaToZod } from "@n8n/json-schema-to-zod";
+import { convertJsonSchemaToZod } from "zod-from-json-schema";
 
 const app = new OpenAPIHono();
 
@@ -395,7 +395,7 @@ app.openapi(objectRoute, async (c) => {
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
-    const schemaInZodObject = jsonSchemaToZod(schema);
+    const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
 
     const response = await agent.generateObject(input, schemaInZodObject, options);
     return c.json(
@@ -433,7 +433,7 @@ app.openapi(streamObjectRoute, async (c) => {
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
-    const schemaInZodObject = jsonSchemaToZod(schema);
+    const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
     const agentStream = await agent.streamObject(input, schemaInZodObject, options);
 
     const sseStream = new ReadableStream({
