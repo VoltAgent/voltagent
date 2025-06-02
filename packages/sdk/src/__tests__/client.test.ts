@@ -79,7 +79,7 @@ describe("VoltAgentCoreAPI", () => {
           body: JSON.stringify({
             agent_id: "agent-123",
             userId: "user-123",
-            status: "active",
+            status: "working",
             input: { query: "test query" },
             metadata: { source: "test" },
           }),
