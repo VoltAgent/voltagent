@@ -503,15 +503,11 @@ export class VoltAgentExporter implements SpanExporter {
    * Uses both trace-specific and cross-trace parent relationships
    * Now supports RECURSIVE propagation up the entire hierarchy
    */
-  private async addEventToAgentHistory(
-    agentId: string,
-    traceId: string,
-    event: any,
-  ): Promise<void> {
+  private async addEventToTrace(agentId: string, traceId: string, event: any): Promise<void> {
     const agentHistoryId = this.getAgentHistoryId(agentId, traceId);
 
     // Add event to agent's own history
-    await this.sdk.addEventToHistory(agentHistoryId, event);
+    await this.sdk.addEventToTrace(agentHistoryId, event);
     this.logDebug(`Added event ${event.name} to agent ${agentId} history ${agentHistoryId}`);
 
     // 🔄 RECURSIVE PROPAGATION: Propagate to ALL ancestors up the hierarchy
@@ -581,7 +577,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.sdk.addEventToHistory(parentHistoryId, propagatedEvent);
+        await this.sdk.addEventToTrace(parentHistoryId, propagatedEvent);
         this.logDebug(
           `Propagated event ${event.name} from ${originalAgentId} to ancestor ${parentAgentId} (depth: ${depth + 1}, immediate child: ${agentId}, cross-trace: ${!this.parentChildMap.has(agentId)})`,
         );
@@ -762,7 +758,7 @@ export class VoltAgentExporter implements SpanExporter {
         },
       };
 
-      await this.addEventToAgentHistory(agentId, traceId, agentStartEvent);
+      await this.addEventToTrace(agentId, traceId, agentStartEvent);
       this.logDebug(`Added agent:start event for agent: ${agentId}`);
     }
 
@@ -793,7 +789,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.addEventToAgentHistory(agentId, traceId, errorEvent);
+        await this.addEventToTrace(agentId, traceId, errorEvent);
       } else {
         // Only add success event if this is the last generation span for this agent
         if (agentInfo && this.isLastGenerationSpanForAgent(span, agentInfo)) {
@@ -816,7 +812,7 @@ export class VoltAgentExporter implements SpanExporter {
             },
           };
 
-          await this.addEventToAgentHistory(agentId, traceId, successEvent);
+          await this.addEventToTrace(agentId, traceId, successEvent);
           this.logDebug(`Added agent:success event for agent: ${agentId}`);
         }
       }
@@ -851,7 +847,7 @@ export class VoltAgentExporter implements SpanExporter {
       },
     };
 
-    await this.addEventToAgentHistory(agentId, traceId, startEvent);
+    await this.addEventToTrace(agentId, traceId, startEvent);
 
     // Tool completion event (if span is finished)
     if (data.endTime) {
@@ -875,7 +871,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.addEventToAgentHistory(agentId, traceId, errorEvent);
+        await this.addEventToTrace(agentId, traceId, errorEvent);
       } else {
         const successEvent = {
           name: "tool:success" as const,
@@ -891,7 +887,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.addEventToAgentHistory(agentId, traceId, successEvent);
+        await this.addEventToTrace(agentId, traceId, successEvent);
       }
     }
   }

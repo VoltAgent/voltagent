@@ -61,7 +61,7 @@ describe("VoltAgentCoreAPI", () => {
       const result = await client.addHistory({
         agent_id: "agent-123",
         userId: "user-123",
-        status: "active",
+        status: "working",
         input: { query: "test query" },
         metadata: { source: "test" },
       });

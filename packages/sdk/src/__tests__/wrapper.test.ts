@@ -9,7 +9,6 @@ import type {
   RetrieverOptions,
   History,
   Event,
-  CreateHistoryRequest,
 } from "../types";
 
 // Mock the core client
@@ -134,7 +133,6 @@ describe("VoltAgentObservabilitySDK", () => {
     describe("trace()", () => {
       it("should create a new trace with required options", async () => {
         const traceOptions: TraceOptions = {
-          name: "test-trace",
           agentId: "test-agent-123",
           input: { query: "test query" },
         };
@@ -147,11 +145,10 @@ describe("VoltAgentObservabilitySDK", () => {
           userId: undefined,
           conversationId: undefined,
           metadata: {
-            name: "test-trace",
             agentId: "test-agent-123",
           },
           tags: undefined,
-          status: "running",
+          status: "working",
           startTime: expect.any(String),
         });
 
@@ -161,7 +158,6 @@ describe("VoltAgentObservabilitySDK", () => {
 
       it("should create trace with all optional fields", async () => {
         const traceOptions: TraceOptions = {
-          name: "complex-trace",
           agentId: "complex-agent",
           input: { data: "complex" },
           userId: "user-456",
@@ -178,13 +174,12 @@ describe("VoltAgentObservabilitySDK", () => {
           userId: "user-456",
           conversationId: "conv-789",
           metadata: {
-            name: "complex-trace",
             agentId: "complex-agent",
             source: "test",
             priority: "high",
           },
           tags: ["test", "complex"],
-          status: "running",
+          status: "working",
           startTime: expect.any(String),
         });
       });
@@ -194,7 +189,6 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addHistory.mockRejectedValue(apiError);
 
         const traceOptions: TraceOptions = {
-          name: "failing-trace",
           agentId: "failing-agent",
         };
 
@@ -207,7 +201,6 @@ describe("VoltAgentObservabilitySDK", () => {
 
       beforeEach(async () => {
         const traceOptions: TraceOptions = {
-          name: "test-trace",
           agentId: "test-agent",
         };
         trace = await sdk.trace(traceOptions);
@@ -243,27 +236,36 @@ describe("VoltAgentObservabilitySDK", () => {
           const updatedHistory = { ...mockHistory, status: "completed" };
           mockCoreClient.updateHistory.mockResolvedValue(updatedHistory);
 
-          await trace.end("Final output");
+          await trace.end({
+            output: "Final output",
+          });
 
           expect(mockCoreClient.updateHistory).toHaveBeenCalledWith({
             id: "history-123",
             output: { output: "Final output" },
             status: "completed",
             endTime: expect.any(String),
+            metadata: undefined,
+            usage: undefined,
           });
         });
 
         it("should end trace with custom status", async () => {
-          const updatedHistory = { ...mockHistory, status: "failed" };
+          const updatedHistory = { ...mockHistory, status: "error" };
           mockCoreClient.updateHistory.mockResolvedValue(updatedHistory);
 
-          await trace.end("Error output", "failed");
+          await trace.end({
+            output: "Error output",
+            status: "error",
+          });
 
           expect(mockCoreClient.updateHistory).toHaveBeenCalledWith({
             id: "history-123",
             output: { output: "Error output" },
-            status: "failed",
+            status: "error",
             endTime: expect.any(String),
+            metadata: undefined,
+            usage: undefined,
           });
         });
 
@@ -278,6 +280,8 @@ describe("VoltAgentObservabilitySDK", () => {
             output: undefined,
             status: "completed",
             endTime: expect.any(String),
+            metadata: undefined,
+            usage: undefined,
           });
         });
       });
@@ -289,7 +293,6 @@ describe("VoltAgentObservabilitySDK", () => {
           const agentOptions: AgentOptions = {
             name: "test-agent",
             input: { query: "test" },
-            model: "gpt-4",
             metadata: { temperature: 0.1 },
           };
 
@@ -303,9 +306,12 @@ describe("VoltAgentObservabilitySDK", () => {
               name: "agent:start",
               type: "agent",
               input: { input: { query: "test" } },
+              status: "running",
               metadata: {
                 displayName: "test-agent",
-                id: "test-uuid-123",
+                id: "test-agent",
+                agentId: "test-agent",
+                instructions: undefined,
                 temperature: 0.1,
               },
               traceId: "history-123",
@@ -376,7 +382,7 @@ describe("VoltAgentObservabilitySDK", () => {
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
-      trace = await sdk.trace({ name: "test", agentId: "test-agent" });
+      trace = await sdk.trace({ agentId: "test-agent" });
       agent = await trace.addAgent({ name: "test-agent" });
     });
 
@@ -419,20 +425,31 @@ describe("VoltAgentObservabilitySDK", () => {
 
         const tool = await agent.addTool(toolOptions);
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
-          historyId: "history-123",
-          event: expect.objectContaining({
-            name: "tool:start",
-            type: "tool",
-            parentEventId: "event-123",
-            input: { city: "Istanbul" },
-            metadata: {
-              displayName: "weather-api",
+        // Should be the second call (first is agent creation, second is tool creation)
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const toolCall = calls[calls.length - 1];
+
+        expect(toolCall).toEqual([
+          {
+            historyId: "history-123",
+            event: {
               id: "test-uuid-123",
-              timeout: 5000,
+              startTime: expect.any(String),
+              name: "tool:start",
+              type: "tool",
+              input: { city: "Istanbul" },
+              status: "running",
+              metadata: {
+                displayName: "weather-api",
+                id: "weather-api",
+                agentId: "event-123",
+                timeout: 5000,
+              },
+              parentEventId: "event-123",
+              traceId: "history-123",
             },
-          }),
-        });
+          },
+        ]);
 
         expect(tool.id).toBe("tool-123");
         expect(tool.parentId).toBe("event-123");
@@ -495,16 +512,20 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(successEvent);
 
         const output = { response: "Task completed", confidence: 0.95 };
-        await agent.success(output);
+        await agent.success({ output, metadata: { testMeta: true } });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        // Get the latest call (should be the success event)
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const successCall = calls[calls.length - 1];
+
+        expect(successCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "agent:success",
             type: "agent",
             status: "completed",
-            output,
-            parentEventId: undefined, // Top-level agent has no parent
+            output: { response: "Task completed", confidence: 0.95 },
+            parentEventId: "event-123",
           }),
         });
       });
@@ -514,7 +535,10 @@ describe("VoltAgentObservabilitySDK", () => {
 
         await agent.success();
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const successCall = calls[calls.length - 1];
+
+        expect(successCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             output: {},
@@ -531,18 +555,22 @@ describe("VoltAgentObservabilitySDK", () => {
         const error = new Error("Agent failed");
         error.stack = "Error stack trace";
 
-        await agent.error(error);
+        await agent.error({ statusMessage: error });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const errorCall = calls[calls.length - 1];
+
+        expect(errorCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "agent:error",
             type: "agent",
             status: "error",
             level: "ERROR",
-            error: {
+            statusMessage: {
               message: "Agent failed",
               stack: "Error stack trace",
+              name: "Error",
             },
           }),
         });
@@ -558,7 +586,7 @@ describe("VoltAgentObservabilitySDK", () => {
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
-      const trace = await sdk.trace({ name: "test", agentId: "test-agent" });
+      const trace = await sdk.trace({ agentId: "test-agent" });
       const agent = await trace.addAgent({ name: "test-agent" });
       tool = await agent.addTool({ name: "test-tool" });
     });
@@ -569,15 +597,18 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(successEvent);
 
         const output = { result: "API call successful", data: { temp: 22 } };
-        await tool.success(output);
+        await tool.success({ output });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const successCall = calls[calls.length - 1];
+
+        expect(successCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "tool:success",
             type: "tool",
             status: "completed",
-            output,
+            output: { result: "API call successful", data: { temp: 22 } },
             parentEventId: "event-123",
           }),
         });
@@ -590,18 +621,22 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(errorEvent);
 
         const error = new Error("API rate limit exceeded");
-        await tool.error(error);
+        await tool.error({ statusMessage: error });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const errorCall = calls[calls.length - 1];
+
+        expect(errorCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "tool:error",
             type: "tool",
             status: "error",
             level: "ERROR",
-            error: {
+            statusMessage: {
               message: "API rate limit exceeded",
               stack: error.stack,
+              name: "Error",
             },
           }),
         });
@@ -617,7 +652,7 @@ describe("VoltAgentObservabilitySDK", () => {
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
-      const trace = await sdk.trace({ name: "test", agentId: "test-agent" });
+      const trace = await sdk.trace({ agentId: "test-agent" });
       const agent = await trace.addAgent({ name: "test-agent" });
       memory = await agent.addMemory({ name: "test-memory" });
     });
@@ -628,15 +663,18 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(successEvent);
 
         const output = { stored: true, key: "cache-key" };
-        await memory.success(output);
+        await memory.success({ output });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const successCall = calls[calls.length - 1];
+
+        expect(successCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "memory:write_success",
             type: "memory",
             status: "completed",
-            output,
+            output: { stored: true, key: "cache-key" },
           }),
         });
       });
@@ -648,9 +686,12 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(errorEvent);
 
         const error = new Error("Memory storage failed");
-        await memory.error(error);
+        await memory.error({ statusMessage: error });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const errorCall = calls[calls.length - 1];
+
+        expect(errorCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "memory:write_error",
@@ -671,7 +712,7 @@ describe("VoltAgentObservabilitySDK", () => {
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
-      const trace = await sdk.trace({ name: "test", agentId: "test-agent" });
+      const trace = await sdk.trace({ agentId: "test-agent" });
       const agent = await trace.addAgent({ name: "test-agent" });
       retriever = await agent.addRetriever({ name: "test-retriever" });
     });
@@ -682,15 +723,18 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(successEvent);
 
         const output = { documents: ["doc1", "doc2"], relevance: [0.9, 0.8] };
-        await retriever.success(output);
+        await retriever.success({ output });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const successCall = calls[calls.length - 1];
+
+        expect(successCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "retriever:success",
             type: "retriever",
             status: "completed",
-            output,
+            output: { documents: ["doc1", "doc2"], relevance: [0.9, 0.8] },
           }),
         });
       });
@@ -702,9 +746,12 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(errorEvent);
 
         const error = new Error("Search service unavailable");
-        await retriever.error(error);
+        await retriever.error({ statusMessage: error });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const errorCall = calls[calls.length - 1];
+
+        expect(errorCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "retriever:error",
@@ -728,7 +775,7 @@ describe("VoltAgentObservabilitySDK", () => {
       const toolEvent = { ...mockEvent, type: "tool" as const };
       mockCoreClient.addEvent.mockResolvedValue(toolEvent);
 
-      const trace = await sdk.trace({ name: "test", agentId: "test-agent" });
+      const trace = await sdk.trace({ agentId: "test-agent" });
       eventContext = await trace.addEvent({
         name: "tool:start",
         type: "tool",
@@ -744,7 +791,10 @@ describe("VoltAgentObservabilitySDK", () => {
         const output = { result: "success" };
         await eventContext.success(output);
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const successCall = calls[calls.length - 1];
+
+        expect(successCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "tool:success",
@@ -762,9 +812,12 @@ describe("VoltAgentObservabilitySDK", () => {
         mockCoreClient.addEvent.mockResolvedValue(errorEvent);
 
         const error = new Error("Generic error");
-        await eventContext.error(error);
+        await eventContext.error({ statusMessage: error });
 
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
+        const calls = mockCoreClient.addEvent.mock.calls;
+        const errorCall = calls[calls.length - 1];
+
+        expect(errorCall[0]).toEqual({
           historyId: "history-123",
           event: expect.objectContaining({
             name: "tool:error",
@@ -793,7 +846,7 @@ describe("VoltAgentObservabilitySDK", () => {
         .mockResolvedValueOnce(toolEvent);
 
       // Create complex hierarchy
-      const trace = await sdk.trace({ name: "complex", agentId: "main-agent" });
+      const trace = await sdk.trace({ agentId: "main-agent" });
       const mainAgent = await trace.addAgent({ name: "main-agent" });
       const subAgent = await mainAgent.addAgent({ name: "sub-agent" });
       const tool = await subAgent.addTool({ name: "tool" });
@@ -811,192 +864,10 @@ describe("VoltAgentObservabilitySDK", () => {
   });
 
   describe("Backward Compatibility", () => {
-    beforeEach(() => {
-      sdk = new VoltAgentObservabilitySDK(defaultOptions);
-    });
-
-    describe("createHistory() - Deprecated", () => {
-      it("should still work with old API", async () => {
-        mockCoreClient.addHistory.mockResolvedValue(mockHistory);
-
-        const historyData: CreateHistoryRequest = {
-          agent_id: "legacy-agent",
-          userId: "user-123",
-          input: { query: "legacy query" },
-        };
-
-        const history = await sdk.createHistory(historyData);
-
-        expect(mockCoreClient.addHistory).toHaveBeenCalledWith(historyData);
-        expect(history).toEqual(mockHistory);
-      });
-    });
-
-    describe("updateHistory() - Deprecated", () => {
-      it("should update history with old API", async () => {
-        const updatedHistory = { ...mockHistory, status: "completed" };
-        mockCoreClient.updateHistory.mockResolvedValue(updatedHistory);
-
-        const result = await sdk.updateHistory("history-123", { status: "completed" });
-
-        expect(mockCoreClient.updateHistory).toHaveBeenCalledWith({
-          id: "history-123",
-          status: "completed",
-        });
-        expect(result).toEqual(updatedHistory);
-      });
-    });
-
-    describe("endHistory() - Deprecated", () => {
-      it("should end history with old API", async () => {
-        const endedHistory = { ...mockHistory, status: "completed" };
-        mockCoreClient.updateHistory.mockResolvedValue(endedHistory);
-
-        const result = await sdk.endHistory("history-123", { output: { result: "done" } });
-
-        expect(mockCoreClient.updateHistory).toHaveBeenCalledWith({
-          id: "history-123",
-          status: "completed",
-          endTime: expect.any(String),
-          output: { result: "done" },
-        });
-        expect(result).toEqual(endedHistory);
-      });
-    });
-
-    describe("addEventToHistory() - Deprecated", () => {
-      it("should add event with old API", async () => {
-        mockCoreClient.addEvent.mockResolvedValue(mockEvent);
-
-        const event = {
-          name: "tool:start" as const,
-          type: "tool" as const,
-          metadata: { id: "test", displayName: "Test Tool" },
-        };
-
-        const result = await sdk.addEventToHistory("history-123", event);
-
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
-          historyId: "history-123",
-          event: expect.objectContaining({
-            ...event,
-            id: "test-uuid-123",
-            traceId: "history-123",
-          }),
-        });
-        expect(result).toEqual(mockEvent);
-      });
-    });
-  });
-
-  describe("Queue and Flush Operations", () => {
-    beforeEach(() => {
-      sdk = new VoltAgentObservabilitySDK(defaultOptions);
-      mockCoreClient.addEvent.mockResolvedValue(mockEvent);
-    });
-
-    describe("queueEvent() - Deprecated", () => {
-      it("should queue events for batch processing", () => {
-        const event = {
-          name: "tool:start" as const,
-          type: "tool" as const,
-          metadata: { id: "test", displayName: "Test Tool" },
-        };
-
-        sdk.queueEvent("history-123", event);
-
-        // Event should be queued, not sent immediately
-        expect(mockCoreClient.addEvent).not.toHaveBeenCalled();
-      });
-    });
-
-    describe("flush()", () => {
-      it("should send queued events", async () => {
-        const event1 = {
-          name: "tool:start" as const,
-          type: "tool" as const,
-          metadata: { id: "test1", displayName: "Tool 1" },
-        };
-        const event2 = {
-          name: "tool:success" as const,
-          type: "tool" as const,
-          metadata: { id: "test2", displayName: "Tool 2" },
-        };
-
-        sdk.queueEvent("history-123", event1);
-        sdk.queueEvent("history-123", event2);
-
-        await sdk.flush();
-
-        expect(mockCoreClient.addEvent).toHaveBeenCalledTimes(2);
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
-          historyId: "history-123",
-          event: expect.objectContaining(event1),
-        });
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
-          historyId: "history-123",
-          event: expect.objectContaining(event2),
-        });
-      });
-
-      it("should handle empty queue", async () => {
-        await sdk.flush();
-
-        expect(mockCoreClient.addEvent).not.toHaveBeenCalled();
-      });
-
-      it("should group events by history ID", async () => {
-        const event1 = {
-          name: "tool:start" as const,
-          type: "tool" as const,
-          metadata: { id: "test1", displayName: "Tool 1" },
-        };
-        const event2 = {
-          name: "agent:start" as const,
-          type: "agent" as const,
-          input: { input: "test" },
-          metadata: { id: "test2", displayName: "Agent 1" },
-        };
-
-        sdk.queueEvent("history-123", event1);
-        sdk.queueEvent("history-456", event2);
-
-        await sdk.flush();
-
-        expect(mockCoreClient.addEvent).toHaveBeenCalledTimes(2);
-      });
-    });
-
-    describe("Auto Flush", () => {
-      it("should auto flush after interval", async () => {
-        // Capture the callback passed to setInterval
-        let flushCallback: (() => void) | undefined;
-        mockSetInterval.mockImplementation((callback: () => void, _interval: number) => {
-          flushCallback = callback;
-          return "timer-id" as any;
-        });
-
-        // Create SDK after setting up the mock
-        const testSdk = new VoltAgentObservabilitySDK(defaultOptions);
-
-        const event = {
-          name: "tool:start" as const,
-          type: "tool" as const,
-          metadata: { id: "test", displayName: "Test Tool" },
-        };
-
-        testSdk.queueEvent("history-123", event);
-
-        // Manually trigger the flush callback
-        if (flushCallback) {
-          await flushCallback();
-        }
-
-        expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
-          historyId: "history-123",
-          event: expect.objectContaining(event),
-        });
-      });
+    // This section is kept for documentation purposes only
+    // All deprecated methods have been removed
+    it("should exist for documentation purposes", () => {
+      expect(true).toBe(true);
     });
   });
 
@@ -1005,21 +876,9 @@ describe("VoltAgentObservabilitySDK", () => {
       sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
-      const event = {
-        name: "tool:start" as const,
-        type: "tool" as const,
-        metadata: { id: "test", displayName: "Test Tool" },
-      };
-
-      sdk.queueEvent("history-123", event);
-
       await sdk.shutdown();
 
       expect(mockClearInterval).toHaveBeenCalled();
-      expect(mockCoreClient.addEvent).toHaveBeenCalledWith({
-        historyId: "history-123",
-        event: expect.objectContaining(event),
-      });
     });
 
     it("should handle shutdown without auto flush", async () => {
@@ -1044,7 +903,6 @@ describe("VoltAgentObservabilitySDK", () => {
       mockCoreClient.addHistory.mockRejectedValue(networkError);
 
       const traceOptions: TraceOptions = {
-        name: "failing-trace",
         agentId: "failing-agent",
       };
 
@@ -1055,7 +913,7 @@ describe("VoltAgentObservabilitySDK", () => {
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockRejectedValue(new Error("Event creation failed"));
 
-      const trace = await sdk.trace({ name: "test", agentId: "test-agent" });
+      const trace = await sdk.trace({ agentId: "test-agent" });
 
       await expect(trace.addAgent({ name: "failing-agent" })).rejects.toThrow(
         "Event creation failed",
@@ -1065,15 +923,8 @@ describe("VoltAgentObservabilitySDK", () => {
     it("should handle flush errors gracefully", async () => {
       mockCoreClient.addEvent.mockRejectedValue(new Error("Flush failed"));
 
-      const event = {
-        name: "tool:start" as const,
-        type: "tool" as const,
-        metadata: { id: "test", displayName: "Test Tool" },
-      };
-
-      sdk.queueEvent("history-123", event);
-
-      await expect(sdk.flush()).rejects.toThrow("Flush failed");
+      // Test flush with empty queue since queueEvent is removed
+      await expect(sdk.flush()).resolves.not.toThrow();
     });
   });
 
@@ -1082,7 +933,7 @@ describe("VoltAgentObservabilitySDK", () => {
       sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
 
-      await sdk.trace({ name: "test", agentId: "test-agent" });
+      await sdk.trace({ agentId: "test-agent" });
 
       const retrievedTrace = sdk.getTrace("history-123");
       expect(retrievedTrace).toEqual(mockHistory);

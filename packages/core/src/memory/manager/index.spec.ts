@@ -757,7 +757,6 @@ describe("MemoryManager - History Management", () => {
       status: "running",
       input: { test: "data" },
       output: null,
-      error: null,
       metadata: {
         displayName: "Test Event",
         id: "test",

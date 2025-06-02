@@ -23,7 +23,7 @@ describe("VoltAgentExporter", () => {
     // Create mock SDK
     mockSdk = {
       trace: jest.fn().mockResolvedValue(mockTrace),
-      addEventToHistory: jest.fn().mockResolvedValue(undefined),
+      addEventToTrace: jest.fn().mockResolvedValue(undefined),
       flush: jest.fn().mockResolvedValue(undefined),
     } as any;
 
@@ -258,7 +258,7 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Should use default agent and create tool events
-      expect(mockSdk.addEventToHistory).toHaveBeenCalledWith(
+      expect(mockSdk.addEventToTrace).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           name: "tool:start",
@@ -307,7 +307,7 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check that tool events were created for the correct agent
-      expect(mockSdk.addEventToHistory).toHaveBeenCalledWith(
+      expect(mockSdk.addEventToTrace).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           name: "tool:start",
@@ -363,7 +363,7 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify that tool event was propagated to parent with correct metadata
-      expect(mockSdk.addEventToHistory).toHaveBeenCalledWith(
+      expect(mockSdk.addEventToTrace).toHaveBeenCalledWith(
         expect.any(String), // parent history ID
         expect.objectContaining({
           name: "tool:start",
@@ -408,15 +408,16 @@ describe("VoltAgentExporter", () => {
       exporter.export([childAgentSpan, toolSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      // Find calls to addEventToHistory that include fromChildAgent and are tool events
-      const propagatedToolCalls = mockSdk.addEventToHistory.mock.calls.filter(
-        (call) => (call[1].metadata as any)?.fromChildAgent && call[1].name?.startsWith("tool"),
+      // Find calls to addEventToTrace that include fromChildAgent and are tool events
+      const propagatedToolCalls = mockSdk.addEventToTrace.mock.calls.filter(
+        (call: any) =>
+          (call[1].metadata as any)?.fromChildAgent && call[1].name?.startsWith("tool"),
       );
 
       expect(propagatedToolCalls.length).toBeGreaterThan(0);
 
       // Verify the propagated tool event preserves original agentId
-      propagatedToolCalls.forEach((call) => {
+      propagatedToolCalls.forEach((call: any) => {
         const event = call[1];
         const metadata = event.metadata as any;
         expect(metadata.fromChildAgent).toBe("quality-checker");
@@ -443,7 +444,7 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Should create error event
-      expect(mockSdk.addEventToHistory).toHaveBeenCalledWith(
+      expect(mockSdk.addEventToTrace).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           name: "agent:error",
@@ -584,20 +585,20 @@ describe("VoltAgentExporter", () => {
       expect(mockSdk.trace).toHaveBeenCalledTimes(2); // main + sub agent
 
       // Verify agent events were created
-      expect(mockSdk.addEventToHistory).toHaveBeenCalledWith(
+      expect(mockSdk.addEventToTrace).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ name: "agent:start" }),
       );
 
       // Verify tool events were created and propagated
-      const toolStartCalls = mockSdk.addEventToHistory.mock.calls.filter(
-        (call) => call[1].name === "tool:start",
+      const toolStartCalls = mockSdk.addEventToTrace.mock.calls.filter(
+        (call: any) => call[1].name === "tool:start",
       );
       expect(toolStartCalls.length).toBe(2); // once for sub-agent, once propagated to main
 
       // Verify correct agent attribution in propagated events
       const propagatedToolEvent = toolStartCalls.find(
-        (call) => (call[1].metadata as any)?.fromChildAgent === "quality-checker",
+        (call: any) => (call[1].metadata as any)?.fromChildAgent === "quality-checker",
       );
       expect(propagatedToolEvent).toBeDefined();
       if (propagatedToolEvent) {
@@ -683,15 +684,15 @@ describe("VoltAgentExporter", () => {
       expect(mockSdk.trace).toHaveBeenCalledTimes(3);
 
       // Verify tool events were created for the specialist
-      const toolStartCalls = mockSdk.addEventToHistory.mock.calls.filter(
-        (call) => call[1].name === "tool:start",
+      const toolStartCalls = mockSdk.addEventToTrace.mock.calls.filter(
+        (call: any) => call[1].name === "tool:start",
       );
       expect(toolStartCalls.length).toBeGreaterThan(0);
 
       // Verify recursive propagation: tool event should appear in ALL ancestor histories
       // But the original tool event doesn't have originalAgentId metadata, so we check all tool:start events
-      const allToolStartCalls = mockSdk.addEventToHistory.mock.calls.filter(
-        (call) => call[1].name === "tool:start",
+      const allToolStartCalls = mockSdk.addEventToTrace.mock.calls.filter(
+        (call: any) => call[1].name === "tool:start",
       );
 
       // Should have: original (1) + propagated to division-manager (1) + propagated to master-coordinator (1) = 3 total
@@ -764,8 +765,8 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify cross-trace propagation happened
-      const propagatedCalls = mockSdk.addEventToHistory.mock.calls.filter(
-        (call) => (call[1].metadata as any)?.originalAgentId === "technical-specialist",
+      const propagatedCalls = mockSdk.addEventToTrace.mock.calls.filter(
+        (call: any) => (call[1].metadata as any)?.originalAgentId === "technical-specialist",
       );
 
       // Should propagate to both division-manager and master-coordinator across traces
@@ -773,7 +774,7 @@ describe("VoltAgentExporter", () => {
 
       // Verify cross-trace propagation metadata
       const crossTracePropagation = propagatedCalls.find(
-        (call) => (call[1].metadata as any)?.propagationDepth === 2,
+        (call: any) => (call[1].metadata as any)?.propagationDepth === 2,
       );
       expect(crossTracePropagation).toBeDefined();
     });
@@ -856,8 +857,8 @@ describe("VoltAgentExporter", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Find all tool events propagated to master coordinator (depth 3)
-      const masterToolEvents = mockSdk.addEventToHistory.mock.calls.filter(
-        (call) =>
+      const masterToolEvents = mockSdk.addEventToTrace.mock.calls.filter(
+        (call: any) =>
           call[1].name === "tool:start" &&
           (call[1].metadata as any)?.propagationDepth === 3 &&
           (call[1].metadata as any)?.originalAgentId === "deep-specialist",
@@ -916,8 +917,8 @@ describe("VoltAgentExporter", () => {
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
 
       // Verify max depth was respected (should not have propagated beyond 10 levels)
-      const allToolEvents = mockSdk.addEventToHistory.mock.calls.filter(
-        (call) => call[1].name === "tool:start",
+      const allToolEvents = mockSdk.addEventToTrace.mock.calls.filter(
+        (call: any) => call[1].name === "tool:start",
       );
 
       // Should have tool events but not more than 11 (original + 10 propagations)

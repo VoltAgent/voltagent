@@ -260,7 +260,6 @@ export class AgentEventEmitter extends EventEmitter {
               input: historyEntry.input as string | BaseMessage[],
             },
             output: null,
-            error: null,
             metadata: {
               displayName: agentName,
               id: agentId,
@@ -325,7 +324,6 @@ export class AgentEventEmitter extends EventEmitter {
               status: "completed",
               input: null,
               output: { content: historyEntry.output },
-              error: null,
               metadata: {
                 displayName: agentName,
                 id: agentId,
@@ -352,7 +350,7 @@ export class AgentEventEmitter extends EventEmitter {
               level: "ERROR",
               input: null,
               output: null,
-              error: { message: historyEntry.output || "Subagent error" },
+              statusMessage: { message: historyEntry.output || "Subagent error" },
               metadata: {
                 displayName: agentName,
                 id: agentId,
