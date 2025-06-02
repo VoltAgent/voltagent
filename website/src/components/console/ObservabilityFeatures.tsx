@@ -60,7 +60,7 @@ const ObservabilityFeatures = () => {
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Any Framework, Any Agent
                     </div>
-                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm mb-0 leading-relaxed">
                       {getResponsiveText(
                         "Visualize and debug AI agents from any framework in real-time.",
                         "Visualize and debug AI agents from any framework in real-time.",
@@ -96,7 +96,7 @@ const ObservabilityFeatures = () => {
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Universal Agent Communication
                     </div>
-                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm  mb-0 leading-relaxed">
                       {getResponsiveText(
                         "Chat with AI agents from any framework in real-time.",
                         "Chat with AI agents from any framework, with metrics and insights.",
@@ -134,7 +134,7 @@ const ObservabilityFeatures = () => {
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Framework-Independent Monitoring
                     </div>
-                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm mb-0 leading-relaxed">
                       {getResponsiveText(
                         "View detailed inputs, outputs, and parameters regardless of framework.",
                         "Inputs, outputs, and parameters for any agent, memory, and tool call.",
@@ -170,7 +170,7 @@ const ObservabilityFeatures = () => {
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Agent List View
                     </div>
-                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0 leading-relaxed">
+                    <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm  mb-0 leading-relaxed">
                       {getResponsiveText(
                         "View active and completed agent sessions.",
                         "Displays a list of active or recent agent sessions for quick overview.",

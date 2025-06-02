@@ -131,14 +131,14 @@ export const HowToGetStarted = () => {
 
               {/* Code Section */}
               <div className="w-full relative rounded-none rounded-b-md overflow-y-hidden backdrop-blur-md transition-all duration-300">
-                <pre className="text-left rounded-none rounded-b-md backdrop-blur-md bg-white/5 overflow-hidden p-0 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-mono m-0">
+                <pre className="text-left rounded-none rounded-b-md backdrop-blur-md bg-white/5 overflow-hidden p-0 text-xs landing-xs:text-xs landing-sm:text-xs landing-md:text-sm font-mono m-0">
                   <div className="flex">
                     <div className="py-4 landing-xs:py-3 landing-sm:py-5 landing-md:py-6 px-1.5 landing-xs:px-1 landing-sm:px-2 landing-md:px-3 text-right text-[#4D5B6E] select-none border-solid border-t-0 border-b-0 border-l-0 border-r border-[#1e2730] min-w-[35px] landing-xs:min-w-[30px] landing-sm:min-w-[40px] landing-md:min-w-[45px] text-xs landing-xs:text-xs">
                       {Array.from({ length: 7 }, (_, i) => (
                         <div key={`line-${i + 1}`}>{i + 1}</div>
                       ))}
                     </div>
-                    <div className="py-4 landing-xs:py-3 landing-sm:py-5 landing-md:py-6 px-2 landing-xs:px-1.5 landing-sm:px-3 landing-md:px-4 block text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base w-full relative">
+                    <div className="py-4 landing-xs:py-3 landing-sm:py-5 landing-md:py-6 px-2 landing-xs:px-1.5 landing-sm:px-3 landing-md:px-4 block text-xs landing-xs:text-xs landing-sm:text-xs landing-md:text-sm w-full relative">
                       <motion.div
                         className="absolute inset-0 bg-[#00d992]/5"
                         layoutId="codeHighlight"
@@ -167,7 +167,7 @@ export const HowToGetStarted = () => {
                         <span className="text-blue-400">new</span>{" "}
                         <span className="text-gray-300">VoltConsole({"{"}</span>
                         <span className="text-main-emerald">projectId: </span>
-                        <span className="text-gray-300">'your-project-id'</span>
+                        <span className="text-gray-300">'your-id'</span>
                         <span className="text-gray-300">{"}"});</span>
                         <br />
                         <br />
