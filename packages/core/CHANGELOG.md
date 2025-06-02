@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 0.1.23
+
+### Patch Changes
+
+- [`b2f423d`](https://github.com/VoltAgent/voltagent/commit/b2f423d55ee031fc02b0e8eda5175cfe15e38a42) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod import issue - #161
+
+  Fixed incorrect zod import that was causing OpenAPI type safety errors. Updated to use proper import from @hono/zod-openapi package.
+
 ## 0.1.22
 
 ### Patch Changes

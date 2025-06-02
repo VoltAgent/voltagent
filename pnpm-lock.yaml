@@ -66,8 +66,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -94,8 +94,8 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -144,8 +144,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -169,8 +169,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -194,8 +194,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.3.11
         version: link:../../packages/google-ai
@@ -287,7 +287,7 @@ importers:
         version: link:../../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.7
-        version: 0.1.23(zod@3.24.2)
+        version: link:../../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
         version: link:../../../packages/vercel-ai
@@ -320,8 +320,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.3.11
         version: link:../../packages/google-ai
@@ -345,8 +345,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/groq-ai':
         specifier: ^0.1.10
         version: link:../../packages/groq-ai
@@ -373,8 +373,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^0.1.3
         version: link:../../packages/langfuse-exporter
@@ -404,8 +404,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -438,14 +438,14 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
       next:
         specifier: 15.3.1
-        version: 15.3.1(@opentelemetry/api@1.9.0)(react-dom@19.1.0)(react@19.1.0)
+        version: 15.3.1(react-dom@19.1.0)(react@19.1.0)
       npm-check-updates:
         specifier: ^17.1.18
         version: 17.1.18
@@ -487,8 +487,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -527,8 +527,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -567,8 +567,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/postgres':
         specifier: ^0.1.0
         version: link:../../packages/postgres
@@ -598,8 +598,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -626,8 +626,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -654,8 +654,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -685,8 +685,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/supabase':
         specifier: ^0.1.6
         version: link:../../packages/supabase
@@ -716,8 +716,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -744,8 +744,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -772,8 +772,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -800,8 +800,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -828,8 +828,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -859,8 +859,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -896,8 +896,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -933,8 +933,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.9
         version: link:../../packages/vercel-ai
@@ -958,8 +958,8 @@ importers:
         specifier: ^0.1.6
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ^0.1.23
+        version: link:../../packages/core
       '@voltagent/xsai':
         specifier: ^0.1.9
         version: link:../../packages/xsai
@@ -986,8 +986,8 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~0.1.22
-        version: 0.1.23(zod@3.24.2)
+        specifier: ~0.1.23
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ~0.1.9
         version: link:../../packages/vercel-ai
@@ -1012,7 +1012,7 @@ importers:
         version: 0.40.0
       '@voltagent/core':
         specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -1274,7 +1274,7 @@ importers:
         version: 0.10.0
       '@voltagent/core':
         specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -1308,7 +1308,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       groq-sdk:
         specifier: ^0.20.0
         version: 0.20.1
@@ -1354,7 +1354,7 @@ importers:
         version: 2.0.0(@opentelemetry/api@1.9.0)
       '@voltagent/core':
         specifier: ^0.1.20
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       langfuse:
         specifier: ^3.37.2
         version: 3.37.2
@@ -1382,7 +1382,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       pg:
         specifier: ^8.16.0
         version: 8.16.0
@@ -1413,7 +1413,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -1441,7 +1441,7 @@ importers:
         version: 2.49.4
       '@voltagent/core':
         specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -1469,7 +1469,7 @@ importers:
         version: 1.3.10(zod@3.24.2)
       '@voltagent/core':
         specifier: ^0.1.20
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       ai:
         specifier: ^4.2.11
         version: 4.2.11(react@19.1.0)(zod@3.24.2)
@@ -1509,7 +1509,7 @@ importers:
         version: 1.30.1(@opentelemetry/api@1.9.0)
       '@voltagent/core':
         specifier: ^0.1.22
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       '@voltagent/sdk':
         specifier: ^0.1.3
         version: link:../sdk
@@ -1540,7 +1540,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^0.1.20
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       '@xsai/generate-speech':
         specifier: ^0.2.0
         version: 0.2.0
@@ -1577,7 +1577,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^0.1.20
-        version: 0.1.23(zod@3.24.2)
+        version: link:../core
       xsai:
         specifier: 0.2.0-beta.3
         version: 0.2.0-beta.3(effect@3.12.7)(zod@3.24.2)
@@ -4791,14 +4791,6 @@ packages:
       - supports-color
     dev: false
 
-  /@n8n/json-schema-to-zod@1.1.0(zod@3.24.2):
-    resolution: {integrity: sha512-HfL3jq5NSb0Mng56QCfUnzD09F4wxWR543jYJZ+XBQpb0f9B102r6K3qEtdXVTs1mwHVnxz5KBaesqipFYPjww==}
-    peerDependencies:
-      zod: ^3.0.0
-    dependencies:
-      zod: 3.24.2
-    dev: false
-
   /@napi-rs/wasm-runtime@0.2.4:
     resolution: {integrity: sha512-9zESzOO5aDByvhIAsOy9TbpZ0Ur2AJbUI7UT73kcUTS2mxAMHOBaa1st/jAymNoCtvrit99kkzT1FZuXVcgfIQ==}
     dependencies:
@@ -6907,33 +6899,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /@voltagent/core@0.1.23(zod@3.24.2):
-    resolution: {integrity: sha512-nRIM+23kX+JZcgDwjI9y1Gs2qDwYeAn0TvQfJyqTdbdCeooPU6aO/rtsKcCY6I5GelpE46Vcv4sa8KMWFJyTIw==}
-    peerDependencies:
-      zod: 3.24.2
-    dependencies:
-      '@hono/node-server': 1.14.0(hono@4.7.7)
-      '@hono/node-ws': 1.1.1(@hono/node-server@1.14.0)(hono@4.7.7)
-      '@hono/swagger-ui': 0.5.1(hono@4.7.7)
-      '@hono/zod-openapi': 0.19.6(hono@4.7.7)(zod@3.24.2)
-      '@libsql/client': 0.15.4
-      '@modelcontextprotocol/sdk': 1.10.1
-      '@n8n/json-schema-to-zod': 1.1.0(zod@3.24.2)
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/sdk-trace-base': 2.0.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-node': 2.0.0(@opentelemetry/api@1.9.0)
-      '@types/ws': 8.18.1
-      hono: 4.7.7
-      npm-check-updates: 17.1.18
-      uuid: 9.0.1
-      ws: 8.18.2
-      zod: 3.24.2
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-    dev: false
 
   /@xsai/embed@0.2.0:
     resolution: {integrity: sha512-xXk6QG/23gHDmlMIEywB4+9JhiQv1DSnxqaJnQiiS2EAqzpKLV4JHT0tjAPAb4Gu+HUGjCQDup0rag6BopfnBg==}
@@ -12960,7 +12925,7 @@ packages:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
     dev: true
 
-  /next@15.3.1(@opentelemetry/api@1.9.0)(react-dom@19.1.0)(react@19.1.0):
+  /next@15.3.1(react-dom@19.1.0)(react@19.1.0):
     resolution: {integrity: sha512-8+dDV0xNLOgHlyBxP1GwHGVaNXsmp+2NhZEYrXr24GWLHtt27YrBPbPuHvzlhi7kZNYjeJNR93IF5zfFu5UL0g==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
     hasBin: true
@@ -12982,7 +12947,6 @@ packages:
         optional: true
     dependencies:
       '@next/env': 15.3.1
-      '@opentelemetry/api': 1.9.0
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.15
       busboy: 1.6.0
