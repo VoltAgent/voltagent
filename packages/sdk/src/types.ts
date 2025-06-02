@@ -8,14 +8,6 @@ import type {
   TimelineEventCoreLevel,
   HistoryStatus,
   UsageInfo,
-  AgentSuccessOptions,
-  AgentErrorOptions,
-  ToolSuccessOptions,
-  ToolErrorOptions,
-  MemorySuccessOptions,
-  MemoryErrorOptions,
-  RetrieverSuccessOptions,
-  RetrieverErrorOptions,
 } from "@voltagent/core";
 
 // SDK Options
@@ -280,6 +272,47 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
+export interface AgentSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+  usage?: UsageInfo;
+}
+
+export interface AgentErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemorySuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemoryErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
 // Core'dan spesifik event tiplerini re-export et
 export type {
   ToolStartEvent,
@@ -297,14 +330,6 @@ export type {
   RetrieverStartEvent,
   RetrieverSuccessEvent,
   RetrieverErrorEvent,
-  AgentSuccessOptions,
-  AgentErrorOptions,
-  ToolSuccessOptions,
-  ToolErrorOptions,
-  MemorySuccessOptions,
-  MemoryErrorOptions,
-  RetrieverSuccessOptions,
-  RetrieverErrorOptions,
 } from "@voltagent/core";
 
 // === NEW TRACE-BASED SDK TYPES ===

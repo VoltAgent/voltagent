@@ -38,16 +38,6 @@ export * from "./utils/update";
 export * from "./voice";
 export * from "./telemetry/exporter";
 export type { UsageInfo } from "./agent/providers";
-export type {
-  AgentSuccessOptions,
-  AgentErrorOptions,
-  ToolSuccessOptions,
-  ToolErrorOptions,
-  MemorySuccessOptions,
-  MemoryErrorOptions,
-  RetrieverSuccessOptions,
-  RetrieverErrorOptions,
-} from "./agent/types";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;
