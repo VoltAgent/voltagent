@@ -225,6 +225,22 @@ export interface AddEventRequest {
   event: TimelineEventCore;
 }
 
+export interface UpdateEventRequest {
+  id: string;
+  agent_id?: string;
+  start_time?: string;
+  end_time?: string;
+  status?: TimelineEventCoreStatus;
+  status_message?: string;
+  level?: TimelineEventCoreLevel;
+  version?: string;
+  parent_event_id?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+}
+
 export interface Event {
   id: string; // UUID, server tarafından oluşturulmuş olacak
   historyId: string;
@@ -313,8 +329,8 @@ export interface TraceEndOptions {
 export interface AgentOptions {
   name: string;
   input?: any;
-  model?: string;
-  metadata?: Record<string, unknown>;
+  instructions?: string;
+  metadata?: Omit<AgentStartEventMetadata, "id" | "agentId" | "displayName" | "instructions">;
 }
 
 export interface ToolOptions {
@@ -353,6 +369,7 @@ export interface AgentContext {
   addTool(options: ToolOptions): Promise<ToolContext>;
   addMemory(options: MemoryOptions): Promise<MemoryContext>;
   addRetriever(options: RetrieverOptions): Promise<RetrieverContext>;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
   success(options?: AgentSuccessOptions): Promise<void>;
   error(options: { statusMessage: Error | any } & AgentErrorOptions): Promise<void>;
 }
@@ -361,6 +378,7 @@ export interface ToolContext {
   readonly id: string;
   readonly parentId: string;
   readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
   success(options?: ToolSuccessOptions): Promise<void>;
   error(options: { statusMessage: Error | any } & ToolErrorOptions): Promise<void>;
 }
@@ -369,6 +387,7 @@ export interface MemoryContext {
   readonly id: string;
   readonly parentId: string;
   readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
   success(options?: MemorySuccessOptions): Promise<void>;
   error(options: { statusMessage: Error | any } & MemoryErrorOptions): Promise<void>;
 }
@@ -377,6 +396,7 @@ export interface RetrieverContext {
   readonly id: string;
   readonly parentId: string;
   readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
   success(options?: RetrieverSuccessOptions): Promise<void>;
   error(options: { statusMessage: Error | any } & RetrieverErrorOptions): Promise<void>;
 }
@@ -385,6 +405,7 @@ export interface EventContext {
   readonly id: string;
   readonly parentId?: string;
   readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
   success(
     options?:
       | AgentSuccessOptions

@@ -124,7 +124,6 @@ export class MemoryManager {
         type,
       },
       output: null,
-      error: null,
       metadata: {
         displayName: "Memory",
         id: "memory",
@@ -155,7 +154,6 @@ export class MemoryManager {
           messageId: memoryMessage.id,
           timestamp: memoryMessage.createdAt,
         },
-        error: null,
         metadata: {
           displayName: "Memory",
           id: "memory",
@@ -179,7 +177,7 @@ export class MemoryManager {
         level: "ERROR",
         input: null,
         output: null,
-        error: {
+        statusMessage: {
           message: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
         },
@@ -279,7 +277,6 @@ export class MemoryManager {
             conversationId,
           },
           output: null,
-          error: null,
           metadata: {
             displayName: "Memory",
             id: "memory",
@@ -316,7 +313,6 @@ export class MemoryManager {
           output: {
             messages,
           },
-          error: null,
           metadata: {
             displayName: "Memory",
             id: "memory",

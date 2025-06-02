@@ -786,6 +786,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           displayName: this.name,
           id: this.id,
           instructions: this.instructions,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -986,7 +990,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
         input: null,
         output: { text: response.text },
-        metadata: { displayName: this.name, id: this.id, usage: response.usage },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          usage: response.usage,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
 
         traceId: operationContext.historyEntry.id,
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
@@ -1059,7 +1071,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ? { originalError: String(voltagentError.originalError) }
             : {}),
         },
-        metadata: { displayName: this.name, id: this.id },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
         traceId: operationContext.historyEntry.id,
         parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
       };
@@ -1167,6 +1186,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         displayName: this.name,
         id: this.id,
         instructions: this.instructions,
+        userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+          string,
+          unknown
+        >,
       },
       traceId: operationContext.historyEntry.id,
     };
@@ -1221,7 +1244,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               status: "running",
               input: chunk.arguments || {},
               output: null,
-              statusMessage: null,
               metadata: {
                 displayName: chunk.name,
                 id: chunk.name,
@@ -1383,7 +1405,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           status: "completed",
           input: null,
           output: { text: result.text },
-          metadata: { displayName: this.name, id: this.id, usage: result.usage },
+          metadata: {
+            displayName: this.name,
+            id: this.id,
+            usage: result.usage,
+            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+              string,
+              unknown
+            >,
+          },
           traceId: operationContext.historyEntry.id,
           parentEventId: agentStartInfo.eventId, // Link to the agent:start event
         };
@@ -1505,7 +1535,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             stage: error.stage,
             ...(error.originalError ? { originalError: String(error.originalError) } : {}),
           },
-          metadata: { displayName: this.name, id: this.id },
+          metadata: {
+            displayName: this.name,
+            id: this.id,
+            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+              string,
+              unknown
+            >,
+          },
           traceId: operationContext.historyEntry.id,
           parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
         };
@@ -1616,6 +1653,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           displayName: this.name,
           id: this.id,
           instructions: this.instructions,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -1677,7 +1718,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
         input: null,
         output: { object: response.object },
-        metadata: { displayName: this.name, id: this.id, usage: response.usage },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          usage: response.usage,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
         traceId: operationContext.historyEntry.id,
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
       };
@@ -1748,7 +1797,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ? { originalError: String(voltagentError.originalError) }
             : {}),
         },
-        metadata: { displayName: this.name, id: this.id },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
         traceId: operationContext.historyEntry.id,
         parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
       };
@@ -1857,6 +1913,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         displayName: this.name,
         id: this.id,
         instructions: this.instructions,
+        userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+          string,
+          unknown
+        >,
       },
       traceId: operationContext.historyEntry.id,
     };
@@ -1920,7 +1980,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             status: "completed",
             input: null,
             output: { object: result.object },
-            metadata: { displayName: this.name, id: this.id, usage: result.usage },
+            metadata: {
+              displayName: this.name,
+              id: this.id,
+              usage: result.usage,
+              userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+                string,
+                unknown
+              >,
+            },
             traceId: operationContext.historyEntry.id,
             parentEventId: agentStartInfo.eventId, // Link to the agent:start event
           };
@@ -2001,7 +2069,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               stage: error.stage,
               ...(error.originalError ? { originalError: String(error.originalError) } : {}),
             },
-            metadata: { displayName: this.name, id: this.id },
+            metadata: {
+              displayName: this.name,
+              id: this.id,
+              userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+                string,
+                unknown
+              >,
+            },
             traceId: operationContext.historyEntry.id,
             parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
           };

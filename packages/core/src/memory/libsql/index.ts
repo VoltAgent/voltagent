@@ -5,6 +5,7 @@ import { createClient } from "@libsql/client";
 import fs from "node:fs";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
+import { safeJsonParse } from "../../utils";
 import type {
   Conversation,
   CreateConversationInput,
@@ -643,7 +644,7 @@ export class LibSQLStorage implements Memory {
       // Serialize JSON fields
       const inputJSON = value.input ? JSON.stringify(value.input) : null;
       const outputJSON = value.output ? JSON.stringify(value.output) : null;
-      const errorJSON = value.error ? JSON.stringify(value.error) : null;
+      const statusMessageJSON = value.statusMessage ? JSON.stringify(value.statusMessage) : null;
       const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
       const tagsJSON = value.tags ? JSON.stringify(value.tags) : null;
 
@@ -664,14 +665,14 @@ export class LibSQLStorage implements Memory {
           value.startTime,
           value.endTime || null,
           value.status || null,
-          value.statusMessage || null,
+          statusMessageJSON || null,
           value.level || "INFO",
           value.version || null,
           value.parentEventId || null,
           tagsJSON,
           inputJSON,
           outputJSON,
-          errorJSON,
+          statusMessageJSON,
           metadataJSON,
         ],
       });
@@ -714,10 +715,10 @@ export class LibSQLStorage implements Memory {
         _agentId: row.agent_id as string, // Keep _agentId for compatibility
         timestamp: new Date(row.timestamp as string),
         status: row.status as string,
-        input: row.input ? JSON.parse(row.input as string) : null,
-        output: row.output ? JSON.parse(row.output as string) : null,
-        usage: row.usage ? JSON.parse(row.usage as string) : null,
-        metadata: row.metadata ? JSON.parse(row.metadata as string) : null,
+        input: row.input ? safeJsonParse(row.input as string) : null,
+        output: row.output ? safeJsonParse(row.output as string) : null,
+        usage: row.usage ? safeJsonParse(row.usage as string) : null,
+        metadata: row.metadata ? safeJsonParse(row.metadata as string) : null,
       };
 
       this.debug(`Got history entry with ID ${key}`);
@@ -731,7 +732,7 @@ export class LibSQLStorage implements Memory {
 
       // Parse and transform steps
       const steps = stepsResult.rows.map((row) => {
-        const step = JSON.parse(row.value as string);
+        const step = safeJsonParse(row.value as string);
         return {
           type: step.type,
           name: step.name,
@@ -754,11 +755,14 @@ export class LibSQLStorage implements Memory {
       // Parse timeline events and construct NewTimelineEvent objects
       const events = timelineEventsResult.rows.map((row) => {
         // Parse JSON fields
-        const input = row.input ? JSON.parse(row.input as string) : undefined;
-        const output = row.output ? JSON.parse(row.output as string) : undefined;
-        const error = row.error ? JSON.parse(row.error as string) : undefined;
-        const metadata = row.metadata ? JSON.parse(row.metadata as string) : undefined;
-        const tags = row.tags ? JSON.parse(row.tags as string) : undefined;
+        const input = row.input ? safeJsonParse(row.input as string) : undefined;
+        const output = row.output ? safeJsonParse(row.output as string) : undefined;
+        const error = row.error ? safeJsonParse(row.error as string) : undefined;
+        const statusMessage = row.status_message
+          ? safeJsonParse(row.status_message as string)
+          : undefined;
+        const metadata = row.metadata ? safeJsonParse(row.metadata as string) : undefined;
+        const tags = row.tags ? safeJsonParse(row.tags as string) : undefined;
 
         // Construct NewTimelineEvent object
         return {
@@ -768,14 +772,14 @@ export class LibSQLStorage implements Memory {
           startTime: row.start_time as string,
           endTime: row.end_time as string,
           status: row.status as string,
-          statusMessage: row.status_message as string,
+          statusMessage: statusMessage,
           level: row.level as string,
           version: row.version as string,
           parentEventId: row.parent_event_id as string,
           tags,
           input,
           output,
-          error,
+          error: statusMessage ? statusMessage : error,
           metadata,
         };
       });
@@ -815,7 +819,7 @@ export class LibSQLStorage implements Memory {
       }
 
       // Parse the JSON value
-      const value = JSON.parse(result.rows[0].value as string);
+      const value = safeJsonParse(result.rows[0].value as string);
       this.debug(`Got history step with ID ${key}`);
       return value;
     } catch (error) {
@@ -886,7 +890,7 @@ export class LibSQLStorage implements Memory {
         id: row.id as string,
         resourceId: row.resource_id as string,
         title: row.title as string,
-        metadata: row.metadata ? JSON.parse(row.metadata as string) : {},
+        metadata: row.metadata ? safeJsonParse(row.metadata as string) : {},
         createdAt: row.created_at as string,
         updatedAt: row.updated_at as string,
       };
@@ -914,7 +918,7 @@ export class LibSQLStorage implements Memory {
         id: row.id as string,
         resourceId: row.resource_id as string,
         title: row.title as string,
-        metadata: JSON.parse(row.metadata as string),
+        metadata: safeJsonParse(row.metadata as string),
         createdAt: row.created_at as string,
         updatedAt: row.updated_at as string,
       }));
@@ -1027,10 +1031,10 @@ export class LibSQLStorage implements Memory {
         _agentId: row.agent_id as string, // Keep _agentId for compatibility
         timestamp: new Date(row.timestamp as string),
         status: row.status as string,
-        input: row.input ? JSON.parse(row.input as string) : null,
-        output: row.output ? JSON.parse(row.output as string) : null,
-        usage: row.usage ? JSON.parse(row.usage as string) : null,
-        metadata: row.metadata ? JSON.parse(row.metadata as string) : null,
+        input: row.input ? safeJsonParse(row.input as string) : null,
+        output: row.output ? safeJsonParse(row.output as string) : null,
+        usage: row.usage ? safeJsonParse(row.usage as string) : null,
+        metadata: row.metadata ? safeJsonParse(row.metadata as string) : null,
       }));
 
       this.debug(`Got all history entries for agent ${agentId} (${entries.length} items)`);
@@ -1047,7 +1051,7 @@ export class LibSQLStorage implements Memory {
 
           // Parse and transform steps
           const steps = stepsResult.rows.map((row) => {
-            const step = JSON.parse(row.value as string);
+            const step = safeJsonParse(row.value as string);
             return {
               type: step.type,
               name: step.name,
@@ -1070,11 +1074,14 @@ export class LibSQLStorage implements Memory {
           // Parse timeline events and construct NewTimelineEvent objects
           const events = timelineEventsResult.rows.map((row) => {
             // Parse JSON fields
-            const input = row.input ? JSON.parse(row.input as string) : undefined;
-            const output = row.output ? JSON.parse(row.output as string) : undefined;
-            const error = row.error ? JSON.parse(row.error as string) : undefined;
-            const metadata = row.metadata ? JSON.parse(row.metadata as string) : undefined;
-            const tags = row.tags ? JSON.parse(row.tags as string) : undefined;
+            const input = row.input ? safeJsonParse(row.input as string) : undefined;
+            const output = row.output ? safeJsonParse(row.output as string) : undefined;
+            const error = row.error ? safeJsonParse(row.error as string) : undefined;
+            const statusMessage = row.status_message
+              ? safeJsonParse(row.status_message as string)
+              : undefined;
+            const metadata = row.metadata ? safeJsonParse(row.metadata as string) : undefined;
+            const tags = row.tags ? safeJsonParse(row.tags as string) : undefined;
 
             // Construct NewTimelineEvent object
             return {
@@ -1084,19 +1091,19 @@ export class LibSQLStorage implements Memory {
               startTime: row.start_time as string,
               endTime: row.end_time as string,
               status: row.status as string,
-              statusMessage: row.status_message as string,
+              statusMessage: statusMessage,
               level: row.level as string,
               version: row.version as string,
               parentEventId: row.parent_event_id as string,
               tags,
               input,
               output,
-              error,
+              error: statusMessage ? statusMessage : error,
               metadata,
             };
           });
 
-          // @ts-ignore
+          // @ts-ignoreç
           entry.steps = steps;
           // @ts-ignore
           entry.events = events;
@@ -1281,7 +1288,7 @@ export class LibSQLStorage implements Memory {
 
         try {
           // JSON verisini parse et
-          const valueObj = JSON.parse(valueStr);
+          const valueObj = safeJsonParse(valueStr);
 
           // ID check
           const id = valueObj.id || key;

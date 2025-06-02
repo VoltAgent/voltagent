@@ -1,3 +1,18 @@
+/**
+ * Safely parse JSON string. If parsing fails, returns the original value.
+ * @param value String to parse as JSON
+ * @returns Parsed JSON object or original value if parsing fails
+ */
+export function safeJsonParse(value: string | null | undefined): any {
+  if (!value) return undefined;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
 // Helper function to safely serialize complex values for debugging
 export function serializeValueForDebug(value: unknown): unknown {
   if (value === null || value === undefined) {

@@ -16,24 +16,11 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /**
  * Simulated weather API call
  */
-async function callWeatherAPI(city: string): Promise<{ temperature: number; condition: string }> {
+async function callWeatherAPI(_city: string): Promise<{ temperature: number; condition: string }> {
   await sleep(500); // API delay simulation
 
   // Simulated weather data for cities around the world
-  const weatherData = {
-    Tokyo: { temperature: 24, condition: "rainy" },
-    London: { temperature: 15, condition: "cloudy" },
-    "New York": { temperature: 28, condition: "sunny" },
-    Paris: { temperature: 19, condition: "partly cloudy" },
-    Sydney: { temperature: 22, condition: "sunny" },
-    Berlin: { temperature: 16, condition: "overcast" },
-    Dubai: { temperature: 35, condition: "hot and sunny" },
-    Singapore: { temperature: 30, condition: "humid" },
-    Moscow: { temperature: 8, condition: "snowy" },
-    Mumbai: { temperature: 32, condition: "hot and humid" },
-  };
-
-  return weatherData[city as keyof typeof weatherData] || { temperature: 20, condition: "unknown" };
+  return { temperature: 24, condition: "rainy" };
 }
 
 /**
@@ -85,10 +72,12 @@ async function basicTraceExample() {
     const agent = await trace.addAgent({
       name: "Weather Agent",
       input: { city: "Tokyo" },
-      model: "gpt-4",
+      instructions:
+        "You are a weather agent. You are responsible for providing weather information to the user.",
       metadata: {
-        role: "weather-assistant",
-        temperature: 0.1,
+        modelParameters: {
+          model: "test-model",
+        },
       },
     });
 
@@ -97,7 +86,10 @@ async function basicTraceExample() {
     // 3. Add tool to agent
     const weatherTool = await agent.addTool({
       name: "weather-api",
-      input: { city: "Tokyo", units: "celsius" },
+      input: {
+        city: "Tokyo",
+        units: "celsius",
+      },
       metadata: {
         apiVersion: "v2",
         timeout: 5000,
@@ -142,7 +134,7 @@ async function basicTraceExample() {
         ttl: 3600, // 1 hour cache
       },
       metadata: {
-        cacheType: "redis",
+        type: "redis",
         region: "ap-northeast-1",
       },
     });
@@ -172,10 +164,6 @@ async function basicTraceExample() {
         promptTokens: 45,
         completionTokens: 25,
         totalTokens: 70,
-      },
-      metadata: {
-        modelUsed: "gpt-4",
-        responseFormat: "text",
       },
     });
 
@@ -240,11 +228,13 @@ async function complexHierarchyExample() {
         task: "Coordinate global AI research project and manage sub-agents",
         strategy: "divide-and-conquer",
       },
-      model: "gpt-4",
       metadata: {
         role: "coordinator",
         experience_level: "senior",
         specialization: "research-management",
+        modelParameters: {
+          model: "gpt-4",
+        },
       },
     });
 
@@ -288,10 +278,12 @@ async function complexHierarchyExample() {
         sources: ["news", "academic-papers", "tech-reports", "industry-analysis"],
         timeframe: "last-2-years",
       },
-      model: "gpt-4",
       metadata: {
         role: "data-collector",
         specialization: "global-ai-landscape",
+        modelParameters: {
+          model: "gpt-4",
+        },
       },
     });
 
@@ -372,11 +364,13 @@ async function complexHierarchyExample() {
         focus: "global-ai-research-trends",
         analysisDepth: "detailed",
       },
-      model: "gpt-4",
       metadata: {
         role: "academic-analyzer",
         specialization: "paper-analysis",
         parentAgent: dataCollector.id,
+        modelParameters: {
+          model: "gpt-4",
+        },
       },
     });
 
@@ -435,11 +429,13 @@ async function complexHierarchyExample() {
         targetLanguages: ["spanish", "chinese", "french"],
         preserveTerminology: true,
       },
-      model: "gpt-4",
       metadata: {
         role: "translator",
         specialization: "technical-translation",
         languages: ["en", "es", "zh", "fr"],
+        modelParameters: {
+          model: "gpt-4",
+        },
       },
     });
 
@@ -496,11 +492,13 @@ async function complexHierarchyExample() {
         criteria: ["accuracy", "fluency", "terminology"],
         threshold: 0.9,
       },
-      model: "gpt-4",
       metadata: {
         role: "quality-checker",
         specialization: "translation-qa",
         parentAgent: translator.id,
+        modelParameters: {
+          model: "gpt-4",
+        },
       },
     });
 
@@ -707,7 +705,6 @@ async function errorHandlingExample() {
     // Mark agent as failed as well
     await agent.error({
       statusMessage: new Error("Agent failed due to tool failure"),
-      stage: "tool_execution",
       metadata: {
         failedTool: failingTool.id,
         errorCategory: "api_failure",

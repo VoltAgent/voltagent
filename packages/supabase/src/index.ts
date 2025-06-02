@@ -1,9 +1,10 @@
-import type {
-  Memory,
-  Conversation,
-  CreateConversationInput,
-  MessageFilterOptions,
-  MemoryMessage,
+import {
+  type Memory,
+  type Conversation,
+  type CreateConversationInput,
+  type MessageFilterOptions,
+  type MemoryMessage,
+  safeJsonParse,
 } from "@voltagent/core";
 import type { NewTimelineEvent } from "@voltagent/core";
 import { type SupabaseClient, createClient } from "@supabase/supabase-js";
@@ -783,6 +784,11 @@ ON ${this.historyTable}(agent_id);`);
       // Transform timeline events to match expected format
       entry.events = (timelineEventsData || [])
         .map((row) => {
+          const statusMessage = row.status_message
+            ? safeJsonParse(row.status_message as string)
+            : undefined;
+          const error = row.error ? safeJsonParse(row.error as string) : undefined;
+
           return {
             id: row.id,
             type: row.event_type,
@@ -790,14 +796,14 @@ ON ${this.historyTable}(agent_id);`);
             startTime: row.start_time,
             endTime: row.end_time,
             status: row.status,
-            statusMessage: row.status_message,
+            statusMessage: statusMessage,
             level: row.level,
             version: row.version,
             parentEventId: row.parent_event_id,
             tags: row.tags,
             input: row.input,
             output: row.output,
-            error: row.error,
+            error: statusMessage ? statusMessage : error,
             metadata: row.metadata,
           };
         })
@@ -907,6 +913,11 @@ ON ${this.historyTable}(agent_id);`);
         } else {
           entry.events = (timelineEventsData || [])
             .map((row) => {
+              const statusMessage = row.status_message
+                ? safeJsonParse(row.status_message as string)
+                : undefined;
+              const error = row.error ? safeJsonParse(row.error as string) : undefined;
+
               return {
                 id: row.id,
                 type: row.event_type,
@@ -914,14 +925,14 @@ ON ${this.historyTable}(agent_id);`);
                 startTime: row.start_time,
                 endTime: row.end_time,
                 status: row.status,
-                statusMessage: row.status_message,
+                statusMessage: statusMessage,
                 level: row.level,
                 version: row.version,
                 parentEventId: row.parent_event_id,
                 tags: row.tags,
                 input: row.input,
                 output: row.output,
-                error: row.error,
+                error: statusMessage ? statusMessage : error,
                 metadata: row.metadata,
               };
             })
@@ -985,7 +996,7 @@ ON ${this.historyTable}(agent_id);`);
       tags: value.tags || null,
       input: value.input || null,
       output: value.output || null,
-      error: value.error || null,
+      error: value.statusMessage || null,
       metadata: value.metadata || null,
     };
 

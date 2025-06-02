@@ -3,6 +3,7 @@ import type {
   VoltAgentClientOptions,
   CreateHistoryRequest,
   UpdateHistoryRequest,
+  UpdateEventRequest,
   History,
   TimelineEventCore,
   TimelineEventInput,
@@ -69,6 +70,7 @@ class TraceContextImpl implements TraceContext {
         displayName: options.name,
         id: options.name,
         agentId: this.agentId,
+        instructions: options.instructions,
         ...options.metadata,
       },
     });
@@ -111,6 +113,7 @@ class AgentContextImpl implements AgentContext {
         displayName: options.name,
         id: options.name,
         agentId: (this.event.metadata?.id as string) || this.id,
+        instructions: options.instructions,
         ...options.metadata,
       },
       parentEventId: this.id,
@@ -173,6 +176,10 @@ class AgentContextImpl implements AgentContext {
     return new RetrieverContextImpl(retrieverEvent, this.traceId, this.id, this.sdk);
   }
 
+  async update(data: Omit<UpdateEventRequest, "id">): Promise<void> {
+    await this.sdk.updateEvent(this.id, data);
+  }
+
   async success(options?: AgentSuccessOptions): Promise<void> {
     await this.sdk.addEventToHistory(this.traceId, {
       name: "agent:success",
@@ -183,6 +190,7 @@ class AgentContextImpl implements AgentContext {
       metadata: {
         ...(this.event.metadata || {}),
         ...options?.metadata,
+        usage: options?.usage,
       } as any,
     });
   }
@@ -209,7 +217,6 @@ class AgentContextImpl implements AgentContext {
       parentEventId: this.id,
       metadata: {
         ...(this.event.metadata || {}),
-        stage: options?.stage,
         ...options?.metadata,
       } as any,
     });
@@ -232,6 +239,10 @@ class ToolContextImpl implements ToolContext {
     this.event = event;
     this.sdk = sdk;
     this.originalMetadata = event.metadata || {};
+  }
+
+  async update(data: Omit<UpdateEventRequest, "id">): Promise<void> {
+    await this.sdk.updateEvent(this.id, data);
   }
 
   async success(options?: ToolSuccessOptions): Promise<void> {
@@ -294,6 +305,10 @@ class MemoryContextImpl implements MemoryContext {
     this.originalMetadata = event.metadata || {};
   }
 
+  async update(data: Omit<UpdateEventRequest, "id">): Promise<void> {
+    await this.sdk.updateEvent(this.id, data);
+  }
+
   async success(options?: MemorySuccessOptions): Promise<void> {
     await this.sdk.addEventToHistory(this.traceId, {
       name: "memory:write_success",
@@ -354,6 +369,10 @@ class RetrieverContextImpl implements RetrieverContext {
     this.originalMetadata = event.metadata || {};
   }
 
+  async update(data: Omit<UpdateEventRequest, "id">): Promise<void> {
+    await this.sdk.updateEvent(this.id, data);
+  }
+
   async success(options?: RetrieverSuccessOptions): Promise<void> {
     await this.sdk.addEventToHistory(this.traceId, {
       name: "retriever:success",
@@ -410,6 +429,10 @@ class EventContextImpl implements EventContext {
     this.parentId = parentId;
     this.event = event;
     this.sdk = sdk;
+  }
+
+  async update(data: Omit<UpdateEventRequest, "id">): Promise<void> {
+    await this.sdk.updateEvent(this.id, data);
   }
 
   async success(output?: any, metadata?: Record<string, any>): Promise<void> {
@@ -641,6 +664,16 @@ export class VoltAgentObservabilitySDK {
     return this.coreClient.addEvent({
       historyId,
       event: eventWithTraceId,
+    });
+  }
+
+  /**
+   * Internal method for updating events (used by context classes)
+   */
+  async updateEvent(eventId: string, data: Omit<UpdateEventRequest, "id">): Promise<Event> {
+    return this.coreClient.updateEvent({
+      id: eventId,
+      ...data,
     });
   }
 

@@ -14,3 +14,12 @@ new VoltAgent({
     agent,
   },
 });
+
+const userContext = new Map<string | symbol, unknown>();
+userContext.set("name", "John Doe");
+
+const response = await agent.generateText("Hello, how are you?", {
+  userContext,
+});
+
+console.log(response);

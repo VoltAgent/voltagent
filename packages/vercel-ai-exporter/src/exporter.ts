@@ -716,8 +716,7 @@ export class VoltAgentExporter implements SpanExporter {
     agentInfo?: AgentInfo,
     _isRootSpan = false,
   ): Promise<void> {
-    const displayName =
-      agentInfo?.displayName ?? (data.metadata.displayName as string) ?? span.name;
+    const displayName = agentInfo?.displayName ?? (data.metadata.displayName as string) ?? agentId;
     const usage = this.parseUsage(span.attributes);
     const modelParameters = this.parseModelParameters(span.attributes);
     const completionStartTime = this.parseCompletionStartTime(span, data.startTime);
@@ -1044,8 +1043,8 @@ export class VoltAgentExporter implements SpanExporter {
     }
 
     // Extract agent metadata
-    if (attrs["ai.telemetry.metadata.agent.name"]) {
-      metadata.displayName = attrs["ai.telemetry.metadata.agent.name"];
+    if (attrs["ai.telemetry.metadata.displayName"]) {
+      metadata.displayName = attrs["ai.telemetry.metadata.displayName"];
     }
     if (attrs["ai.telemetry.metadata.agentId"]) {
       metadata.agentId = attrs["ai.telemetry.metadata.agentId"];
@@ -1470,8 +1469,8 @@ export class VoltAgentExporter implements SpanExporter {
     const attrs = span.attributes;
 
     // Try to get display name from telemetry metadata
-    if (attrs["ai.telemetry.metadata.agentDisplayName"]) {
-      return String(attrs["ai.telemetry.metadata.agentDisplayName"]);
+    if (attrs["ai.telemetry.metadata.displayName"]) {
+      return String(attrs["ai.telemetry.metadata.displayName"]);
     }
 
     if (attrs["ai.telemetry.metadata.agentName"]) {

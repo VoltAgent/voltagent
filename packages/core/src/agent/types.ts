@@ -558,7 +558,6 @@ export interface AgentSuccessOptions {
 
 export interface AgentErrorOptions {
   statusMessage?: Error | any;
-  stage?: string;
   metadata?: Record<string, unknown>;
 }
 

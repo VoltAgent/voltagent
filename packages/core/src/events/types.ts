@@ -100,11 +100,30 @@ export interface BaseEventMetadata {
   displayName?: string;
   id: string;
   agentId?: string;
+  userContext?: Record<string, unknown>;
+}
+
+export type AgentStartEventMetadata = {
+  instructions?: string;
+  modelParameters?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
+    stop?: string[];
+    system?: string;
+    toolChoice?: string;
+  };
+} & Record<string, unknown>;
+
+export interface AgentSuccessEventMetadata extends BaseEventMetadata {
   usage?: Usage;
 }
 
-export interface AgentStartEventMetadata extends BaseEventMetadata {
-  instructions?: string;
+export interface MemoryEventMetadata extends BaseEventMetadata {
+  type?: string;
 }
 
 /**
@@ -123,7 +142,7 @@ export interface BaseTimelineEvent<M = BaseEventMetadata | null> {
     stack?: string;
     code?: string | number;
     [key: string]: unknown; // For additional error details
-  } | null;
+  };
   level?: TimelineEventCoreLevel; // Default: 'INFO'
   input?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
@@ -156,13 +175,13 @@ export type ToolErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
 };
 
 // --- Agent Event Types ---
-export type AgentStartEvent = BaseTimelineEvent<AgentStartEventMetadata> & {
+export type AgentStartEvent = BaseTimelineEvent<AgentStartEventMetadata & BaseEventMetadata> & {
   name: "agent:start";
   type: "agent";
   input: { input: string | BaseMessage[] };
 };
 
-export type AgentSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type AgentSuccessEvent = BaseTimelineEvent<AgentSuccessEventMetadata> & {
   name: "agent:success";
   type: "agent";
   status: "completed";
@@ -176,36 +195,36 @@ export type AgentErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
 };
 
 // --- Memory Event Types ---
-export type MemoryReadStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type MemoryReadStartEvent = BaseTimelineEvent<MemoryEventMetadata> & {
   name: "memory:read_start";
   type: "memory";
 };
 
-export type MemoryReadSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type MemoryReadSuccessEvent = BaseTimelineEvent<MemoryEventMetadata> & {
   name: "memory:read_success";
   type: "memory";
   status: "completed";
 };
 
-export type MemoryReadErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type MemoryReadErrorEvent = BaseTimelineEvent<MemoryEventMetadata> & {
   name: "memory:read_error";
   type: "memory";
   status: "error";
   level: "ERROR" | "CRITICAL";
 };
 
-export type MemoryWriteStartEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type MemoryWriteStartEvent = BaseTimelineEvent<MemoryEventMetadata> & {
   name: "memory:write_start";
   type: "memory";
 };
 
-export type MemoryWriteSuccessEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type MemoryWriteSuccessEvent = BaseTimelineEvent<MemoryEventMetadata> & {
   name: "memory:write_success";
   type: "memory";
   status: "completed";
 };
 
-export type MemoryWriteErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
+export type MemoryWriteErrorEvent = BaseTimelineEvent<MemoryEventMetadata> & {
   name: "memory:write_error";
   type: "memory";
   status: "error";

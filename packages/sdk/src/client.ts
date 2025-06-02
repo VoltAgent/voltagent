@@ -4,6 +4,7 @@ import type {
   UpdateHistoryRequest,
   History,
   AddEventRequest,
+  UpdateEventRequest,
   Event,
   ApiResponse,
   ApiError,
@@ -137,6 +138,21 @@ export class VoltAgentCoreAPI {
     const response = await this.fetchApi<ApiResponse<Event>>("/history-events", {
       method: "POST",
       body: JSON.stringify(eventDto),
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Var olan bir event'i günceller
+   * @param data Event güncellemesi için gerekli veriler
+   * @returns Güncellenmiş event nesnesi
+   */
+  async updateEvent(data: UpdateEventRequest): Promise<Event> {
+    const { id, ...updateData } = data;
+    const response = await this.fetchApi<ApiResponse<Event>>(`/history-events/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updateData),
     });
 
     return response.data;
