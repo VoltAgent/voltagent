@@ -10,7 +10,9 @@ import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 
 ## Tracking LLM Agents built with Vercel AI SDK in Production
 
-[Vercel AI SDK](https://ai-sdk.dev/docs/introduction/) is today one of the most popular tools to create AI agents. That SDK is so popular among developers because of its TypeScript-first approach and inclusion of such cutting-edge AI features like streaming, tool usage, and multi-modal support right out of the box. We wrote about this [in our previous blog post](https://voltagent.dev/blog/vercel-ai-sdk/).
+[Vercel AI SDK](https://ai-sdk.dev/docs/introduction/) is today one of the most popular tools to create AI agents. That SDK is so popular among developers because of its TypeScript-first approach and inclusion of such cutting-edge AI features like streaming, tool usage, and multi-modal support right out of the box.
+
+We wrote about this [in our previous blog post](https://voltagent.dev/blog/vercel-ai-sdk/).
 
 ![Vercel AI SDK Integration](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
 
@@ -25,8 +27,6 @@ Sound familiar?
 Building AI agents is easier with frameworks. You can do amazing things in a handful of lines of code with Vercel AI SDK. VoltAgent is the same; it is an AI agent framework on TypeScript where you can build production-strength agents with advanced capabilities like multi-agent systems, tool usage, and memory management.
 
 But then comes the _production nightmare_: You don't know what tools your agent is executing, you can't see conversation flows, you can't monitor performance.
-
-<!-- truncate -->
 
 When we're building VoltAgent, I kept asking myself "What's my agent doing now?" Traditional monitoring tools? Not so effective for AI applications.
 
@@ -89,12 +89,15 @@ import { VoltAgentExporter } from "@voltagent/vercel-ai-exporter";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 
+// Create VoltAgent exporter
 const voltAgentExporter = new VoltAgentExporter({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
-  debug: true, // for development
+  baseUrl: "https://api.voltagent.dev", // default
+  debug: true, // set to true for development
 });
 
+// Initialize OpenTelemetry SDK
 const sdk = new NodeSDK({
   traceExporter: voltAgentExporter,
   instrumentations: [getNodeAutoInstrumentations()],
@@ -103,9 +106,12 @@ const sdk = new NodeSDK({
 sdk.start();
 ```
 
-That's it. Seriously.
+:::note
+Complete working example: https://github.com/VoltAgent/vercel-ai-sdk-observability
+Track AI calls, tool usage, and multi-agent workflows with minimal code changes.
+:::
 
-## Level 1: Just Turn On Tracking
+## Basic Telemetry
 
 Insert a single line in your current Vercel AI code:
 
@@ -121,6 +127,8 @@ const result = await generateText({
   },
 });
 ```
+
+![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-basic.gif)
 
 And done! 🎉
 
@@ -139,7 +147,7 @@ This message is completely normal! VoltAgent automatically uses a default agent 
 
 Don't worry about this, this is normal. Let's move on to the next step for improved tracking.
 
-## Level 2: Name Your Agent
+## Name Your Agent & Tool Usage
 
 ```typescript
 import { generateText } from "ai";
@@ -174,6 +182,8 @@ const result = await generateText({
 });
 ```
 
+![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-tools.gif)
+
 **What's the difference?**
 
 - You see "weather-assistant" in the console rather than "ai-assistant"
@@ -182,7 +192,7 @@ const result = await generateText({
 
 Seriously, this is _very_ useful already.
 
-## Level 3: Production-Ready Tracking
+## Production-Ready Tracking
 
 In production, you have users and conversations. You'd like to track those as well:
 
@@ -208,6 +218,8 @@ const result = await generateText({
 });
 ```
 
+![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-metadata.gif)
+
 At this point you have _enterprise-level_ monitoring:
 
 - User behavior analysis
@@ -219,7 +231,7 @@ At this point you have _enterprise-level_ monitoring:
 The best part? You can use this same approach with any AI framework. Whether your team uses Vercel AI SDK, LangChain, or direct OpenAI calls - all the tracking data appears in the same unified dashboard.
 :::
 
-## Level 4: Multi-Agent Coordination
+## Multi-Agent Coordination
 
 Most advanced section. When multiple agents collaborate:
 
@@ -258,6 +270,8 @@ const { text: execution } = await generateText({
 });
 ```
 
+![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
+
 **What does this give you?**
 
 - You can see agent hierarchies
@@ -278,6 +292,39 @@ Now my favorite part. When you launch the VoltAgent console:
 - **User analytics** - Who uses it how often
 
 There was a bug over the weekend in production. Usually I would spend hours debugging. Caught it in the console in 2 minutes - there was a timeout on a specific tool call. _Life saver_ indeed.
+
+## What Makes VoltAgent Observability Different
+
+Unlike traditional monitoring tools that focus on model metrics, VoltAgent is designed specifically for **agent workflows**. Here's what makes it unique:
+
+### 🎯 Agent-Centric Approach
+
+VoltAgent shows you what your **agent is doing**, not just how your model is performing:
+
+- **Conversation flows** - See the complete dialogue thread
+- **Tool usage patterns** - Which tools are called when and why
+- **Multi-agent interactions** - How different agents collaborate
+- **Decision tracking** - Why did the agent make that choice?
+
+### ⚡ Live Visualization & Immediate Debugging
+
+**Real-time insights while your agent runs:**
+
+- Developer Console connects directly to your local agent (`localhost:3141`)
+- Watch execution flow as it happens - no waiting for batch processing
+- Spot problems instantly instead of discovering them hours later
+- Zero latency between agent action and console visualization
+
+### 🔍 What You Actually See
+
+VoltAgent visualizes the agent-specific data that matters:
+
+🔀 **Multi-agent coordination** - Parent-child relationships and hierarchies  
+🛠️ **Tool execution flows** - Complete tool call sequences with inputs/outputs  
+💬 **Conversation threading** - How messages connect across interactions  
+🧠 **Agent decision making** - The reasoning behind each step
+
+This is fundamentally different from traditional LLM monitoring that focuses on token counts, response times, and model accuracy. VoltAgent shows you the _behavior_ of your intelligent system.
 
 ## How It All Works Together
 
@@ -381,75 +428,6 @@ tags: [
 ```
 
 Then in the console you can say "Show me all high-priority content-creation activities".
-
-## Framework Agnostic Approach
-
-This is the _coolest_ thing I think. Not just Vercel AI:
-
-- **Python apps** (LangChain, etc.)
-- **Direct OpenAI API calls**
-- **Custom agent frameworks**
-- **Multi-language integration**
-
-So your team member is implementing Python LangChain, you're implementing Vercel AI, another team member is implementing plain OpenAI. _All of them are on the same dashboard_.
-
-This is indeed a game-changer. Since real companies always have hybrid tech stacks.
-
-## Real-World Example: Customer Support Bot
-
-Here is an example. You have a customer support chatbot:
-
-```typescript
-const result = await generateText({
-  model: openai("gpt-4o-mini"),
-  prompt: `Customer issue: ${customerIssue}`,
-  tools: {
-    ticketLookup: {
-      /* lookup from ticket database */
-    },
-    knowledgeBase: {
-      /* knowledge base search */
-    },
-    escalateToHuman: {
-      /* escalate to human agent */
-    },
-  },
-  experimental_telemetry: {
-    isEnabled: true,
-    metadata: {
-      agentId: "customer-support-bot",
-      userId: customerId,
-      conversationId: ticketId,
-      tags: ["support", "customer-service", customerTier],
-      // Custom business data
-      ticketId,
-      customerTier: "premium",
-      department: "support",
-    },
-  },
-});
-```
-
-Things you can view in the console:
-
-- Which customers utilize support the most
-- Which tools are utilized most
-- Average resolution time
-- Escalation patterns
-- Agent performance metrics
-
-_With this data_ you can optimize your support team. Which topics need more training, which tools need to be optimized, etc.
-
-## Getting Started
-
-If you are using Vercel AI SDK, you can literally deploy this in minutes:
-
-1. **Install the packages**
-2. **Get your API keys** ([console.voltagent.dev](https://console.voltagent.dev))
-3. **Set up OpenTelemetry**
-4. **Add `experimental_telemetry: { isEnabled: true }`**
-
-That's it.
 
 First, start with basic tracking. Then gradually add metadata, supply agent IDs, enable user tracking.
 
