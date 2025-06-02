@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/postgres",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "VoltAgent PostgreSQL - PostgreSQL Memory provider integration for VoltAgent",
   "license": "MIT",
   "exports": {
@@ -22,7 +22,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.22",
+    "@voltagent/core": "^0.1.24",
     "pg": "^8.16.0"
   },
   "devDependencies": {

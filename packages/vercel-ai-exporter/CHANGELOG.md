@@ -1,5 +1,17 @@
 # @voltagent/vercel-ai-exporter
 
+## 0.1.3
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve displayName issue in agent events
+
+  Fixed an issue where the displayName property was not being properly handled in agent events, ensuring consistent agent identification across the system.
+
+- Updated dependencies [[`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275)]:
+  - @voltagent/core@0.1.24
+  - @voltagent/sdk@0.1.4
+
 ## 0.1.2
 
 ### Patch Changes

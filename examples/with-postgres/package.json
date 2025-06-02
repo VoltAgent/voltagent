@@ -22,8 +22,8 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.3.10",
     "@voltagent/cli": "^0.1.6",
-    "@voltagent/core": "^0.1.23",
-    "@voltagent/postgres": "^0.1.0",
+    "@voltagent/core": "^0.1.24",
+    "@voltagent/postgres": "^0.1.1",
     "@voltagent/vercel-ai": "^0.1.9",
     "zod": "^3.24.2"
   },
