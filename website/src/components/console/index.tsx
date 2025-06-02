@@ -25,7 +25,7 @@ export const Console = () => {
               </span>
               <div className="relative">
                 <span className="ml-2 text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-xl landing-lg:text-2xl font-medium text-gray-400">
-                  Console
+                  LLM Observability
                 </span>
               </div>
             </div>
