@@ -59,7 +59,7 @@ export const HowToGetStarted = () => {
               <div className="p-3 landing-xs:p-2 landing-sm:p-4">
                 {/* Framework Showcase - Prominent */}
                 <div className="space-y-2">
-                  <div className="flex justify-between mb-3 landing-xs:mb-2 landing-sm:mb-4 landing-md:mb-6 px-4 landing-xs:px-2 landing-sm:px-6 landing-md:px-8 relative">
+                  <div className="flex justify-between mb-3 py-6 landing-xs:mb-2 landing-sm:mb-4 landing-md:mb-6 px-4 landing-xs:px-2 landing-sm:px-6 landing-md:px-8 relative">
                     {/* Framework Items */}
                     <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
                       <VoltAgentLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10 text-emerald-400" />
@@ -75,14 +75,6 @@ export const HowToGetStarted = () => {
 
                     <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
                       <VercelLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10" />
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
-                      <CrewAILogo className="w-12 h-12 landing-xs:w-10 landing-xs:h-10 landing-sm:w-16 landing-sm:h-16 landing-md:w-20 landing-md:h-20" />
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
-                      <LangChainLogo className="w-8 h-8 landing-xs:w-7 landing-xs:h-7 landing-sm:w-12 landing-sm:h-12 landing-md:w-14 landing-md:h-14" />
                     </div>
                   </div>
                   <Link
