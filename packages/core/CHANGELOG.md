@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.25
+
+### Patch Changes
+
+- [`13d25b4`](https://github.com/VoltAgent/voltagent/commit/13d25b4033c3a4b41d501e954e2893b50553d8d4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: update zod-from-json-schema dependency version to resolve MCP tools compatibility issues
+
 ## 0.1.24
 
 ### Patch Changes
