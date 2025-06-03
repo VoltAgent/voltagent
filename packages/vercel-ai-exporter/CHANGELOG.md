@@ -1,5 +1,11 @@
 # @voltagent/vercel-ai-exporter
 
+## 0.1.4
+
+### Patch Changes
+
+- [`7c28c1e`](https://github.com/VoltAgent/voltagent/commit/7c28c1ee7a11da0e5ca32c248e412cc588e7fcdf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: the default base URL setting to `https://api.voltagent.dev`
+
 ## 0.1.3
 
 ### Patch Changes
