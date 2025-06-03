@@ -19,7 +19,7 @@ export const HowToGetStarted = () => {
       {/* How to Use Section */}
       <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6 mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16 landing-lg:mb-24">
         <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16">
-          <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
+          <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-orange-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
             How to Get Started
           </h2>
           <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
@@ -32,7 +32,7 @@ export const HowToGetStarted = () => {
           <div className="grid grid-cols-1 landing-lg:grid-cols-2 gap-4 landing-xs:gap-3 landing-sm:gap-6 landing-md:gap-8 relative z-10">
             {/* Step 1: Build Your LLM App - Framework Focus */}
             <motion.div
-              className="border-solid border-gray-800/50 rounded-md text-center hover:border-emerald-400/50 transition-all duration-300 relative"
+              className="border-solid border-gray-800/50 rounded-md text-center hover:border-orange-400/50 transition-all duration-300 relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -40,10 +40,10 @@ export const HowToGetStarted = () => {
               {/* Header Section */}
               <div className="bg-[#191c24] rounded-t-md p-3 landing-xs:p-2 landing-sm:p-4 landing-xs:pt-3 text-left">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
+                  <div className="bg-orange-400/10 text-orange-400 border border-orange-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-orange-400/20">
                     1
                   </div>
-                  <span className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-lg font-semibold text-emerald-400">
+                  <span className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-lg font-semibold text-orange-400">
                     Build Your LLM App
                   </span>
                 </div>
@@ -79,8 +79,8 @@ export const HowToGetStarted = () => {
                   </div>
                   <Link
                     to="https://github.com/VoltAgent/voltagent/issues/new"
-                    className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
-                      border-solid border border-emerald-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 landing-md:py-3"
+                    className="inline-flex items-center no-underline bg-orange-400/10 text-orange-400 
+                      border-solid border border-orange-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-orange-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 landing-md:py-3"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -99,7 +99,7 @@ export const HowToGetStarted = () => {
 
             {/* Step 2: Implement Connector - Code Focus */}
             <motion.div
-              className="border-solid border-gray-800/50 rounded-md text-center hover:border-emerald-400/50 transition-all duration-300 relative"
+              className="border-solid border-gray-800/50 rounded-md text-center hover:border-orange-400/50 transition-all duration-300 relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -107,10 +107,10 @@ export const HowToGetStarted = () => {
               {/* Header Section */}
               <div className="bg-[#191c24] rounded-t-md p-3 landing-xs:p-2 landing-sm:p-4 pt-4 landing-xs:pt-3 text-left">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
+                  <div className="bg-orange-400/10 text-orange-400 border border-orange-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-orange-400/20">
                     2
                   </div>
-                  <span className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-lg font-semibold text-emerald-400">
+                  <span className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-lg font-semibold text-orange-400">
                     Implement Connector
                   </span>
                 </div>
@@ -145,7 +145,7 @@ export const HowToGetStarted = () => {
                           {"{ VoltConsole }"}
                         </span>{" "}
                         <span className="text-blue-400">from</span>{" "}
-                        <span className="text-main-emerald">
+                        <span className="text-main-orange">
                           '@voltagent/console'
                         </span>
                         <br />
@@ -158,7 +158,7 @@ export const HowToGetStarted = () => {
                         <span className="text-gray-300">console = </span>
                         <span className="text-blue-400">new</span>{" "}
                         <span className="text-gray-300">VoltConsole({"{"}</span>
-                        <span className="text-main-emerald">projectId: </span>
+                        <span className="text-main-orange">projectId: </span>
                         <span className="text-gray-300">'your-id'</span>
                         <span className="text-gray-300">{"}"});</span>
                         <br />
@@ -169,7 +169,7 @@ export const HowToGetStarted = () => {
                         <span className="text-gray-300">{"  "}</span>
                         <span className="text-purple-400">await</span>{" "}
                         <span className="text-gray-300">console.</span>
-                        <span className="text-main-emerald">monitor</span>
+                        <span className="text-main-orange">monitor</span>
                         <span className="text-gray-300">(yourAgent);</span>
                         <br />
                         <span className="text-gray-300">{"}"}</span>{" "}
@@ -189,7 +189,7 @@ export const HowToGetStarted = () => {
       {/* Step 3: Launch Dev Console - Full Width */}
       <div className="w-full mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16 landing-lg:mb-24 px-4 landing-xs:px-3">
         <motion.div
-          className="border-solid border-gray-800/50 rounded-md text-center hover:border-emerald-400/50 transition-all duration-300 relative"
+          className="border-solid border-gray-800/50 rounded-md text-center hover:border-orange-400/50 transition-all duration-300 relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -199,10 +199,10 @@ export const HowToGetStarted = () => {
             <div className="flex flex-col landing-sm:flex-row items-start landing-sm:items-center justify-between px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6">
               <div className="flex flex-col justify-between py-3 landing-xs:py-2 landing-sm:py-4 ">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
+                  <div className="bg-orange-400/10 text-orange-400 border border-orange-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-orange-400/20">
                     3
                   </div>
-                  <span className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-lg font-semibold text-emerald-400">
+                  <span className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-lg font-semibold text-orange-400">
                     Launch Dev Console
                   </span>
                 </div>
@@ -216,8 +216,8 @@ export const HowToGetStarted = () => {
               </div>
               <Link
                 to="https://console.voltagent.dev/demo"
-                className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
-                border-solid border border-emerald-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 landing-md:py-3 mt-2 landing-sm:mt-0"
+                className="inline-flex items-center no-underline bg-orange-400/10 text-orange-400 
+                border-solid border border-orange-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-orange-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 landing-md:py-3 mt-2 landing-sm:mt-0"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

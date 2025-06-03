@@ -160,7 +160,7 @@ const FrameworkIntegration = () => {
       `}</style>
 
       <div className="text-left mb-6 landing-xs:mb-4 landing-sm:mb-8 landing-md:mb-10">
-        <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-400 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
+        <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-orange-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
           Support for all frameworks
         </h2>
         <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg mb-6 landing-xs:mb-4 landing-sm:mb-8">
@@ -243,7 +243,7 @@ const FrameworkIntegration = () => {
             href="https://voltagent.dev/docs-observability/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center no-underline text-emerald-400 hover:text-emerald-300 text-sm landing-xs:text-xs landing-sm:text-base transition-colors duration-200 group"
+            className="inline-flex items-center no-underline text-orange-400 hover:text-orange-300 text-sm landing-xs:text-xs landing-sm:text-base transition-colors duration-200 group"
           >
             See all integrations
             <ChevronRightIcon className="ml-1 w-4 h-4 landing-xs:w-3 landing-xs:h-3 transition-transform duration-200 group-hover:translate-x-1" />

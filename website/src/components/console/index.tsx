@@ -17,11 +17,11 @@ export const Console = () => {
         <div className="grid grid-cols-1 landing-lg:grid-cols-2 gap-4 landing-xs:gap-3 landing-sm:gap-6 landing-md:gap-8 mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16 landing-lg:mb-24 items-center">
           <div className="flex flex-col items-center relative">
             <div className="flex items-baseline justify-start">
-              <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
-                <BoltIcon className="w-3 h-3 landing-xs:w-3 landing-xs:h-3 landing-sm:w-4 landing-sm:h-4 landing-md:w-5 landing-md:h-5 landing-lg:w-6 landing-lg:h-6 text-[#00d992]" />
+              <div className="flex mr-2 items-center border-2 border-solid border-orange-500 rounded-full p-1">
+                <BoltIcon className="w-3 h-3 landing-xs:w-3 landing-xs:h-3 landing-sm:w-4 landing-sm:h-4 landing-md:w-5 landing-md:h-5 landing-lg:w-6 landing-lg:h-6 text-orange-500" />
               </div>
               <span className="text-xl landing-xs:text-lg landing-sm:text-2xl landing-md:text-3xl landing-lg:text-4xl font-bold">
-                <span className="text-[#00d992]">volt</span>
+                <span className="text-orange-500">volt</span>
                 <span className="text-orange-500">ops</span>
               </span>
               <div className="relative">
@@ -42,11 +42,11 @@ export const Console = () => {
               transition={{ duration: 0.5 }}
               className="text-left landing-md:ml-6 landing-lg:ml-8"
             >
-              <p className="text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-xl text-[#dcdcdc] mb-3 landing-xs:mb-2 landing-sm:mb-4">
+              <p className="text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-[#dcdcdc] mb-3 landing-xs:mb-2 landing-sm:mb-4">
                 VoltOps is a{" "}
                 <Link
                   to="https://voltagent.dev/docs/observability/developer-console/"
-                  className="text-[#00d992] no-underline font-bold"
+                  className="text-orange-500 no-underline font-bold"
                 >
                   LLM Observability
                 </Link>{" "}
@@ -54,6 +54,21 @@ export const Console = () => {
                 agents in real-time, no matter if they are built with VoltAgent
                 or another framework.
               </p>
+
+              <div className="flex flex-col landing-sm:flex-row gap-3 landing-xs:gap-2 landing-sm:gap-4 mt-4 landing-xs:mt-3 landing-sm:mt-6">
+                <Link
+                  to="https://voltagent.dev/docs-observability/"
+                  className="inline-flex items-center justify-center no-underline border-solid border font-semibold rounded transition-colors px-4 landing-xs:px-3 landing-sm:px-5 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base bg-orange-400/10 text-orange-400 border-orange-400/20 hover:bg-orange-400/20"
+                >
+                  Docs
+                </Link>
+                <Link
+                  to="https://console.voltagent.dev/"
+                  className="inline-flex items-center justify-center no-underline border-solid border font-semibold rounded transition-colors px-4 landing-xs:px-3 landing-sm:px-5 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base bg-orange-400 text-gray-900 border-orange-400 hover:bg-orange-300"
+                >
+                  Live demo
+                </Link>
+              </div>
             </motion.div>
           </div>
         </div>
