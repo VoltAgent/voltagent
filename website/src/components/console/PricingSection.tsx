@@ -10,11 +10,11 @@ const PricingSection = () => {
       period: "/month",
       description: "Perfect for getting started with AI agent monitoring",
       features: [
-        "Full observability features",
-        "1 free seat",
-        "10k traces per month",
-        "Up to 2 agents",
-        "30 days data retention",
+        "1 seat, 1 organization, 1 project",
+        "10.000 events per month",
+        "1000 requests/min",
+        "Up to 5 agents",
+        "7-day data retention",
       ],
       buttonText: "Get Started",
       buttonVariant: "outline",
@@ -26,8 +26,9 @@ const PricingSection = () => {
       period: "/month",
       description: "Ideal for growing teams and production environments",
       features: [
-        "Up to 10 seats included",
-        "100k traces per month",
+        "Up to 5 seats included",
+        "100.000 events per month",
+        "4000 requests/min",
         "Unlimited agents",
         "90 days data retention",
         "Priority support",
@@ -43,9 +44,9 @@ const PricingSection = () => {
       description: "For large organizations with specific requirements",
       features: [
         "Everything in Pro",
-        "Self-hosted deployment",
-        "Unlimited users & spans",
         "Enterprise only features",
+        "Self-hosted deployment",
+        "Unlimited users & events",
         "Dedicated support",
       ],
       buttonText: "Contact Sales",
@@ -96,12 +97,12 @@ const PricingSection = () => {
         {
           name: "Team Members",
           free: "1 seat",
-          pro: "10 seats",
+          pro: "5 seats",
           enterprise: "Unlimited",
         },
         {
           name: "Data Retention",
-          free: "30 days",
+          free: "7 days",
           pro: "90 days",
           enterprise: "Unlimited",
         },
@@ -124,21 +125,21 @@ const PricingSection = () => {
         },
         {
           name: "OpenTelemetry Support",
-          free: true,
-          pro: true,
-          enterprise: true,
+          free: "soon",
+          pro: "soon",
+          enterprise: "soon",
         },
         {
           name: "LiteLLM Proxy Integration",
-          free: true,
-          pro: true,
-          enterprise: true,
+          free: "soon",
+          pro: "soon",
+          enterprise: "soon",
         },
         {
           name: "Custom API Access",
-          free: true,
-          pro: true,
-          enterprise: true,
+          free: "soon",
+          pro: "soon",
+          enterprise: "soon",
         },
       ],
     },
@@ -147,9 +148,9 @@ const PricingSection = () => {
       features: [
         {
           name: "Prompt Management",
-          free: true,
-          pro: true,
-          enterprise: true,
+          free: "soon",
+          pro: "soon",
+          enterprise: "soon",
         },
         {
           name: "Priority Support",
@@ -216,6 +217,15 @@ const PricingSection = () => {
         <XMarkIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-gray-500 mx-auto" />
       );
     }
+
+    if (value === "soon") {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
+          Soon
+        </span>
+      );
+    }
+
     return (
       <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-300">
         {value}
@@ -301,7 +311,13 @@ const PricingSection = () => {
                     <div key={`${tier.name}-${feature}`}>
                       <div className="flex items-start">
                         <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0" />
-                        <span className="text-gray-300 text-xs landing-xs:text-xs landing-sm:text-sm">
+                        <span
+                          className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
+                            feature === "Enterprise only features"
+                              ? "text-emerald-500 font-medium"
+                              : "text-gray-300"
+                          }`}
+                        >
                           {feature}
                         </span>
                       </div>
@@ -321,7 +337,7 @@ const PricingSection = () => {
         {/* Comparison Table */}
         <div className="w-full bg-[#191c24] overflow-hidden">
           <div className="overflow-x-auto w-full">
-            <table className="w-full h-full table-fixed border-collapse border-spacing-0 min-w-full">
+            <table className="w-full h-full table-fixed border-collapse border-spacing-0 mb-0 min-w-full">
               <thead>
                 <tr className="border-b border-gray-700/50">
                   <th className="text-left py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-1/5">

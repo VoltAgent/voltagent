@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import {
   VercelLogo,
   OllamaLogo,
@@ -31,9 +32,9 @@ const FrameworkIntegration = () => {
     },
     {
       logo: (
-        <PythonLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10 landing-lg:w-12 landing-lg:h-12" />
+        <VercelLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10 landing-lg:w-12 landing-lg:h-12" />
       ),
-      tooltip: "Python SDK",
+      tooltip: "Vercel AI SDK",
       isComingSoon: false,
     },
     {
@@ -45,17 +46,18 @@ const FrameworkIntegration = () => {
     },
     {
       logo: (
-        <VercelLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10 landing-lg:w-12 landing-lg:h-12" />
+        <PythonLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10 landing-lg:w-12 landing-lg:h-12" />
       ),
-      tooltip: "Vercel AI SDK",
+      tooltip: "Python SDK",
       isComingSoon: false,
     },
+
     {
       logo: (
         <OpenTelemetryLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10 landing-lg:w-12 landing-lg:h-12" />
       ),
       tooltip: "OpenTelemetry",
-      isComingSoon: false,
+      isComingSoon: true,
     },
     {
       logo: (
@@ -159,10 +161,11 @@ const FrameworkIntegration = () => {
 
       <div className="text-left mb-6 landing-xs:mb-4 landing-sm:mb-8 landing-md:mb-10">
         <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-400 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
-          Easy Integration with Any Framework & Vanilla JS/Python
+          Support for all frameworks
         </h2>
         <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg mb-6 landing-xs:mb-4 landing-sm:mb-8">
-          Connect your existing AI agents to the console with minimal setup.
+          Connect AI agents built with different frameworks to the LLM
+          Observability console.
         </p>
       </div>
 
@@ -234,6 +237,17 @@ const FrameworkIntegration = () => {
               </div>
             ))}
           </div>
+        </div>
+        <div className="my-6 landing-xs:my-4 landing-sm:my-8">
+          <a
+            href="https://voltagent.dev/docs-observability/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center no-underline text-emerald-400 hover:text-emerald-300 text-sm landing-xs:text-xs landing-sm:text-base transition-colors duration-200 group"
+          >
+            See all integrations
+            <ChevronRightIcon className="ml-1 w-4 h-4 landing-xs:w-3 landing-xs:h-3 transition-transform duration-200 group-hover:translate-x-1" />
+          </a>
         </div>
       </div>
     </div>

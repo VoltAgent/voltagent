@@ -20,8 +20,9 @@ export const Console = () => {
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-3 h-3 landing-xs:w-3 landing-xs:h-3 landing-sm:w-4 landing-sm:h-4 landing-md:w-5 landing-md:h-5 landing-lg:w-6 landing-lg:h-6 text-[#00d992]" />
               </div>
-              <span className="text-xl landing-xs:text-lg landing-sm:text-2xl landing-md:text-3xl landing-lg:text-4xl font-bold text-[#00d992]">
-                voltagent
+              <span className="text-xl landing-xs:text-lg landing-sm:text-2xl landing-md:text-3xl landing-lg:text-4xl font-bold">
+                <span className="text-[#00d992]">volt</span>
+                <span className="text-orange-500">ops</span>
               </span>
               <div className="relative">
                 <span className="ml-2 text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-xl landing-lg:text-2xl font-medium text-gray-400">
@@ -41,20 +42,17 @@ export const Console = () => {
               transition={{ duration: 0.5 }}
               className="text-left landing-md:ml-6 landing-lg:ml-8"
             >
-              <p className="text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-[#dcdcdc] mb-3 landing-xs:mb-2 landing-sm:mb-4">
+              <p className="text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-xl text-[#dcdcdc] mb-3 landing-xs:mb-2 landing-sm:mb-4">
+                VoltOps is a{" "}
                 <Link
                   to="https://voltagent.dev/docs/observability/developer-console/"
                   className="text-[#00d992] no-underline font-bold"
                 >
-                  The Universal Developer Console
+                  LLM Observability
                 </Link>{" "}
-                gives you full visibility into AI agents from any framework
-                during development and execution.
-              </p>
-              <p className="text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-gray-400">
-                Real-time visualization of your agent's execution flow,
-                including function calls, tool usage, and message history -
-                regardless of which framework you use.
+                platform where developers can trace, debug, and optimize AI
+                agents in real-time, no matter if they are built with VoltAgent
+                or another framework.
               </p>
             </motion.div>
           </div>

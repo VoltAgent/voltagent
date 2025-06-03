@@ -27,10 +27,8 @@ const ObservabilityFeatures = () => {
             AI Agent Observability Matters
           </h2>
           <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg mb-3 landing-xs:mb-2 landing-sm:mb-4">
-            As the number of AI agents in your system grows, maintaining
-            visibility becomes increasingly critical. Without proper
-            observability, debugging and managing agent behavior becomes
-            overwhelming.
+            Without proper observability, debugging and managing agent behavior
+            becomes overwhelming.
           </p>
         </div>
       </div>
@@ -58,7 +56,7 @@ const ObservabilityFeatures = () => {
                   </div>
                   <div className="flex-1">
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
-                      Any Framework, Any Agent
+                      N8N-style observability
                     </div>
                     <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm mb-0 leading-relaxed">
                       {getResponsiveText(
@@ -98,8 +96,8 @@ const ObservabilityFeatures = () => {
                     </div>
                     <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm  mb-0 leading-relaxed">
                       {getResponsiveText(
-                        "Chat with AI agents from any framework in real-time.",
-                        "Chat with AI agents from any framework, with metrics and insights.",
+                        "Chat with your AI agents in real-time.",
+                        "Chat with your AI agents, with metrics and insights.",
                       )}
                     </p>
                   </div>
@@ -132,7 +130,7 @@ const ObservabilityFeatures = () => {
                   </div>
                   <div className="flex-1">
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
-                      Framework-Independent Monitoring
+                      Granular Monitoring
                     </div>
                     <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm mb-0 leading-relaxed">
                       {getResponsiveText(

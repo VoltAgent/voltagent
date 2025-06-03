@@ -197,7 +197,7 @@ export const HowToGetStarted = () => {
           {/* Header Section */}
           <div className="bg-[#191c24] rounded-t-md text-left">
             <div className="flex flex-col landing-sm:flex-row items-start landing-sm:items-center justify-between px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6">
-              <div className="flex flex-col justify-between py-3 landing-xs:py-2 landing-sm:py-4 landing-md:py-6">
+              <div className="flex flex-col justify-between py-3 landing-xs:py-2 landing-sm:py-4 ">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
                     3
