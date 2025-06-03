@@ -1,5 +1,31 @@
 # @voltagent/core
 
+## 0.1.27
+
+### Patch Changes
+
+- [#126](https://github.com/VoltAgent/voltagent/pull/126) [`2c47bc1`](https://github.com/VoltAgent/voltagent/commit/2c47bc1e9cd845cc60e6e9d7e86df40c98b82614) Thanks [@fav-devs](https://github.com/fav-devs)! - feat: add custom endpoints feature to VoltAgent API server, allowing developers to extend the API with their own endpoints
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+
+  new VoltAgent({
+    agents: { myAgent },
+    customEndpoints: [
+      {
+        path: "/api/health",
+        method: "get",
+        handler: async (c) => {
+          return c.json({
+            success: true,
+            data: { status: "healthy" },
+          });
+        },
+      },
+    ],
+  });
+  ```
+
 ## 0.1.26
 
 ### Patch Changes
