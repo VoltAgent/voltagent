@@ -68,8 +68,8 @@ export function Manifesto() {
       setLoading(true);
       try {
         const [contributorsResponse, loveResponse] = await Promise.all([
-          fetch("https://api.voltagent.dev/api/contributors"),
-          fetch("https://api.voltagent.dev/api/love"),
+          fetch("https://love.voltagent.dev/api/contributors"),
+          fetch("https://love.voltagent.dev/api/love"),
         ]);
 
         const contributorsData = await contributorsResponse.json();
@@ -155,6 +155,160 @@ export function Manifesto() {
         </p>
       </div>
 
+      {/* Team Section */}
+      <div className="mt-16 border-t border-white/10 pt-12">
+        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+          Team
+        </h2>
+
+        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
+          {/* Static team members, no loading needed */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-48 h-48 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
+              <img
+                src="https://cdn.voltagent.dev/website/team/omer.jpeg"
+                alt="Omer Aplak"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">Omer Aplak</span>
+            <p className="text-main-emerald text-sm mt-1"> CEO</p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/omer-aplak-14b87099/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/omerfarukaplak/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center text-center">
+            <div className="w-48 h-48 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
+              <img
+                src="https://cdn.voltagent.dev/website/team/necatiozmen.jpg"
+                alt="Necati Ozmen"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">Necati Ozmen</span>
+            <p className="text-main-emerald text-sm mt-1">CMO</p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/necatiozmen/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/necatiozmen3/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Angel Investors Section */}
+      <div className="mt-16 border-t border-white/10 pt-12">
+        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
+          Angel Investors
+        </h2>
+
+        <div className="grid grid-cols-1 place-items-center gap-12 max-w-3xl mx-auto mt-6">
+          {/* Static angel investors, no loading needed */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-48 h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+              <img
+                src="https://cdn.voltagent.dev/website/team/emre.jpeg"
+                alt="Emre Baran"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">Emre Baran</span>
+            <p className="text-main-emerald text-sm mt-1">
+              Co-Founder & CEO at Cerbos
+            </p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/emrebaran/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/emre/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+          {/* 
+          <div className="flex flex-col items-center text-center">
+            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+              <img
+                src="https://cdn.voltagent.dev/website/team/umur.jpeg"
+                alt="Umur Cubukcu"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">
+              Umur Cubukcu{" "}
+            </span>
+            <p className="text-main-emerald text-sm mt-1">
+              Co-Founder at Ubicloud
+            </p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/umurc/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/umurc/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="Twitter Profile"
+              >
+                <XLogo className="w-5 h-5" />
+              </a>
+            </div>
+          </div> */}
+        </div>
+      </div>
+
       {/* GitHub Contributors Section */}
       <div className="mt-16 border-t border-white/10 pt-12">
         <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
@@ -179,7 +333,7 @@ export function Manifesto() {
                     <SkeletonText width="60%" height="0.75rem" />
                   </div>
                 ))
-            : contributors.slice(3).map((contributor) => (
+            : contributors?.slice(3).map((contributor) => (
                 <a
                   key={contributor.login}
                   href={contributor.html_url}
@@ -234,160 +388,6 @@ export function Manifesto() {
         </a>
       </div>
 
-      {/* Team Section */}
-      <div className="mt-16 border-t border-white/10 pt-12">
-        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
-          Team
-        </h2>
-
-        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
-          {/* Static team members, no loading needed */}
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/omer.jpeg"
-                alt="Omer Aplak"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">Omer Aplak</span>
-            <p className="text-main-emerald text-sm mt-1"> CEO</p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/omer-aplak-14b87099/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/omerfarukaplak/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/necatiozmen.jpg"
-                alt="Necati Ozmen"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">Necati Ozmen</span>
-            <p className="text-main-emerald text-sm mt-1">CMO</p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/necatiozmen/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/necatiozmen3/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Angel Investors Section */}
-      <div className="mt-16 border-t border-white/10 pt-12">
-        <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
-          Angel Investors
-        </h2>
-
-        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
-          {/* Static angel investors, no loading needed */}
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/emre.jpeg"
-                alt="Emre Baran"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">Emre Baran</span>
-            <p className="text-main-emerald text-sm mt-1">
-              Co-Founder & CEO at Cerbos
-            </p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/emrebaran/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/emre/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
-              <img
-                src="https://cdn.voltagent.dev/website/team/umur.jpeg"
-                alt="Umur Cubukcu"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="text-white font-medium text-lg">
-              Umur Cubukcu{" "}
-            </span>
-            <p className="text-main-emerald text-sm mt-1">
-              Co-Founder at Ubicloud
-            </p>
-            <div className="flex space-x-3 mt-0">
-              <a
-                href="https://www.linkedin.com/in/umurc/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="LinkedIn Profile"
-              >
-                <LinkedInLogo className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/umurc/"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-gray-400 hover:text-main-emerald transition-colors"
-                aria-label="Twitter Profile"
-              >
-                <XLogo className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* GitHub Stargazers Section */}
       <div className="mt-16 border-t border-white/10 pt-12">
         <h2 className="landing-xs:text-sm landing-md:text-lg text-center landing-xs:mb-2 landing-md:mb-3 font-semibold text-main-emerald tracking-wide uppercase">
@@ -415,7 +415,7 @@ export function Manifesto() {
               ))
           ) : (
             <>
-              {recentStargazers.slice(0, 9).map((stargazer) => (
+              {recentStargazers?.slice(0, 9).map((stargazer) => (
                 <a
                   key={stargazer.login}
                   href={`https://github.com/${stargazer.login}`}
