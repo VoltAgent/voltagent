@@ -341,7 +341,6 @@ app.openapi(streamRoute, async (c) => {
               temperature: options.temperature,
               // Add onError callback to handle streaming errors
               onError: async (error: any) => {
-                console.error("Stream error occurred:", error);
                 const errorData = {
                   error: error?.message ?? "Streaming failed",
                   timestamp: new Date().toISOString(),
