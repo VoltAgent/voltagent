@@ -1,5 +1,5 @@
 ---
-title: Observability for Vercel AI SDK
+title: LLM Observability for Vercel AI SDK
 description: How to track your LLM Agents built with Vercel AI SDK?
 slug: vercel-ai-llm-observability
 image: https://cdn.voltagent.dev/2025-05-31-vercel-ai-observability/social.png
@@ -8,7 +8,7 @@ authors: omeraplak
 
 import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 
-## Tracking LLM Agents built with Vercel AI SDK in Production
+## VoltOps: Tracking LLM Agents built with Vercel AI SDK in Production
 
 [Vercel AI SDK](https://ai-sdk.dev/docs/introduction/) is today one of the most popular tools to create AI agents. That SDK is so popular among developers because of its TypeScript-first approach and inclusion of such cutting-edge AI features like streaming, tool usage, and multi-modal support right out of the box.
 
@@ -24,38 +24,59 @@ But check out the problem.
 
 Sound familiar?
 
-Building AI agents is easier with frameworks. You can do amazing things in a handful of lines of code with Vercel AI SDK. VoltAgent is the same; it is an AI agent framework on TypeScript where you can build production-strength agents with advanced capabilities like multi-agent systems, tool usage, and memory management.
-
-But then comes the _production nightmare_: You don't know what tools your agent is executing, you can't see conversation flows, you can't monitor performance.
+Building AI agents is easier with frameworks. But then comes the _production nightmare_: You don't know what tools your agent is executing, you can't see conversation flows, you can't monitor performance.
 
 When we're building VoltAgent, I kept asking myself "What's my agent doing now?" Traditional monitoring tools? Not so effective for AI applications.
 
-So we built the VoltAgent LLM monitoring platform. And today I have an _awesome_ announcement.
+So we built the [VoltOps LLM Observability Platform](https://voltagent.dev/ai-agent-monitoring/) which provides comprehensive monitoring for AI applications built with frameworks like Vercel AI SDK.
 
-## What is Framework-Independent Monitoring
+:::tip Key Solution
+Whether you're building chatbots, content generators, or complex multi-agent systems with Vercel AI, you need visibility into what's happening under the hood. Our platform tracks everything from individual LLM calls to complex agent workflows, giving you the insights you need to optimize performance and debug issues in production.
+:::
 
-VoltAgent is actually two:
+## What Makes VoltOps LLM Observability Different
 
-1. Open source TypeScript framework to create AI Agents
-2. **Monitoring platform independent of frameworks**
+Unlike traditional monitoring tools that focus on model metrics, VoltOps LLM Observability is designed specifically for **agent workflows**. When you're building with Vercel AI SDK, you need more than just token counts and response times. Here's what makes it unique:
 
-The latter is quite crucial. You may be using Vercel AI SDK, someone else may be using LangChain, somebody else may be making plain vanilla OpenAI API calls.
+### Agent-Centric Approach
 
-_We can monitor them all._
+VoltOps shows you what your **agent is doing**, not just how your model is performing:
 
-So you don't need to write the VoltAgent framework for monitoring. You can have end-to-end visibility with literally zero modifications to your existing code.
+- **Conversation flows** - See the complete dialogue thread across multiple interactions. Track how users engage with your AI and where conversations succeed or fail. Unlike traditional tools that show isolated API calls, you get the full context of user journeys.
 
-## Why Framework-Independent Approach?
+- **Tool usage patterns** - Which tools are called when and why, with complete input/output tracking. See if your weather tool is being called appropriately, or if your database query tool is receiving the right parameters. This is crucial for debugging agent behavior in production.
 
-Honestly, we started by thinking about just the VoltAgent framework. But then we thought that _everyone has different tastes_:
+- **Multi-agent interactions** - How different agents collaborate and hand off tasks to each other. When you have a planning agent that delegates to execution agents, VoltOps tracks the entire workflow hierarchy, showing you parent-child relationships and data flow between agents.
 
-- Some are just crazy about Vercel AI (for fast development)
-- Some prefer LangChain (for Python universe)
-- Some use pure OpenAI API (for full control)
+- **Decision tracking** - Why did the agent make that choice? See the reasoning chain that led to specific tool calls or responses. This helps you understand if your agent is making logical decisions or if there are gaps in your prompts or tool descriptions.
 
-And businesses usually have mixed strategies. Compelling everyone to use the same framework... _that's unrealistic_.
+![tool-usage](https://cdn.voltagent.dev/2025-05-31-vercel-ai-observability/tool-usage-2.png)
 
-So we said "Let's make monitoring framework-independent". You use whatever framework you like, we'll do the monitoring.
+### Live Visualization & Immediate Debugging
+
+**Real-time insights while your agent runs:**
+
+- **Watch execution flow as it happens** - No waiting for batch processing or delayed dashboards. See your Vercel AI SDK agents execute in real-time, which is essential for debugging production issues as they occur.
+
+- **Spot problems instantly** - Instead of discovering failures hours later through logs, get immediate alerts when tools fail, when agents get stuck in loops, or when response times spike. This immediate feedback loop dramatically reduces time to resolution.
+
+- **Zero latency monitoring** - Between agent action and console visualization, there's virtually no delay. This real-time capability is particularly important for customer-facing applications where quick issue resolution directly impacts user experience.
+
+![multi-agent](https://cdn.voltagent.dev/2025-05-31-vercel-ai-observability/multi-agent.png)
+
+### What You Actually See
+
+VoltOps visualizes the agent-specific data that matters for Vercel AI SDK applications:
+
+🔀 **Multi-agent coordination** - Parent-child relationships and hierarchies visualized as interactive flowcharts. See how your main conversation agent delegates to specialized tools like code generators, data analysts, or customer service bots.
+
+🛠️ **Tool execution flows** - Complete tool call sequences with inputs/outputs, execution times, and success rates. Know immediately if your database tool is receiving malformed queries or if your API integration is timing out.
+
+💬 **Conversation threading** - How messages connect across interactions, showing user intent progression and agent response patterns. This helps identify where users get confused or where your agent provides incomplete responses.
+
+🧠 **Agent decision making** - The reasoning behind each step, including which tools were considered but not used, and why certain responses were generated. This level of insight is impossible with traditional APM tools.
+
+This is fundamentally different from traditional LLM monitoring that focuses on token counts, response times, and model accuracy. VoltOps shows you the _behavior_ of your intelligent system, which is what actually matters when you're building production AI applications with Vercel AI SDK.
 
 ## 1-Minute Setup: No Kidding
 
@@ -132,7 +153,7 @@ const result = await generateText({
 
 And done! 🎉
 
-You may look at your agent in the VoltAgent console. It will be displayed by default as "ai-assistant" but _no problems_. For the moment, your calls to AI are being tracked, you can look at the execution flow.
+You may look at your agent in the VoltOps LLM Observability dashboard. It will be displayed by default as "ai-assistant" but _no problems_. For the moment, your calls to AI are being tracked, you can look at the execution flow.
 
 You'll have a message like this in the console:
 
@@ -186,7 +207,7 @@ const result = await generateText({
 
 **What's the difference?**
 
-- You see "weather-assistant" in the console rather than "ai-assistant"
+- You see "weather-assistant" in the VoltOps dashboard rather than "ai-assistant"
 - You see tool usage - which tool was applied when, inputs/outputs
 - You can view instructions as documentation
 
@@ -226,10 +247,6 @@ At this point you have _enterprise-level_ monitoring:
 - Conversation flow tracking
 - Tag-based filtering and analytics
 - Critical data for support
-
-:::info Framework Flexibility
-The best part? You can use this same approach with any AI framework. Whether your team uses Vercel AI SDK, LangChain, or direct OpenAI calls - all the tracking data appears in the same unified dashboard.
-:::
 
 ## Multi-Agent Coordination
 
@@ -279,11 +296,11 @@ const { text: execution } = await generateText({
 - Complex workflow tracking
 - Cross-agent context
 
-In the console you have _a whole diagram_ of how agents are talking to each other.
+In the VoltOps dashboard you have _a whole diagram_ of how agents are talking to each other.
 
-## What Do You See in the Console?
+## What Do You See in the VoltOps Dashboard?
 
-Now my favorite part. When you launch the VoltAgent console:
+Now my favorite part. When you launch the VoltOps LLM Observability platform:
 
 - **Real-time agent activity dashboard** - You can view what the agents are doing currently, in real time
 - **Conversation flows** - Timeline of all conversations, tool usage
@@ -291,44 +308,11 @@ Now my favorite part. When you launch the VoltAgent console:
 - **Error debugging** - Where it stopped, which tool was failing
 - **User analytics** - Who uses it how often
 
-There was a bug over the weekend in production. Usually I would spend hours debugging. Caught it in the console in 2 minutes - there was a timeout on a specific tool call. _Life saver_ indeed.
-
-## What Makes VoltAgent Observability Different
-
-Unlike traditional monitoring tools that focus on model metrics, VoltAgent is designed specifically for **agent workflows**. Here's what makes it unique:
-
-### 🎯 Agent-Centric Approach
-
-VoltAgent shows you what your **agent is doing**, not just how your model is performing:
-
-- **Conversation flows** - See the complete dialogue thread
-- **Tool usage patterns** - Which tools are called when and why
-- **Multi-agent interactions** - How different agents collaborate
-- **Decision tracking** - Why did the agent make that choice?
-
-### ⚡ Live Visualization & Immediate Debugging
-
-**Real-time insights while your agent runs:**
-
-- Developer Console connects directly to your local agent (`localhost:3141`)
-- Watch execution flow as it happens - no waiting for batch processing
-- Spot problems instantly instead of discovering them hours later
-- Zero latency between agent action and console visualization
-
-### 🔍 What You Actually See
-
-VoltAgent visualizes the agent-specific data that matters:
-
-🔀 **Multi-agent coordination** - Parent-child relationships and hierarchies  
-🛠️ **Tool execution flows** - Complete tool call sequences with inputs/outputs  
-💬 **Conversation threading** - How messages connect across interactions  
-🧠 **Agent decision making** - The reasoning behind each step
-
-This is fundamentally different from traditional LLM monitoring that focuses on token counts, response times, and model accuracy. VoltAgent shows you the _behavior_ of your intelligent system.
+There was a bug over the weekend in production. Usually I would spend hours debugging. Caught it in the VoltOps dashboard in 2 minutes - there was a timeout on a specific tool call. _Life saver_ indeed.
 
 ## How It All Works Together
 
-Here's what happens behind the scenes when you add VoltAgent observability to your Vercel AI calls:
+Here's what happens behind the scenes when you add VoltOps observability to your Vercel AI calls:
 
 <ZoomableMermaid
 chart={`
@@ -340,7 +324,7 @@ participant VAI as Vercel AI SDK
 participant OTel as OpenTelemetry
 participant VE as VoltAgent Exporter
 participant VP as VoltAgent Platform
-participant Console as VoltAgent Console
+participant Console as VoltOps Dashboard
 
     Dev->>App: Write AI code with experimental_telemetry
     App->>VAI: generateText() with telemetry enabled
@@ -356,7 +340,7 @@ participant Console as VoltAgent Console
     VE->>VP: Send to VoltAgent Platform
     VP->>VP: Process & store data
 
-    Dev->>Console: Open VoltAgent Console
+    Dev->>Console: Open VoltOps Dashboard
     Console->>VP: Request agent data
     VP->>Console: Return real-time data
     Console->>Dev: Display agent activity, flows, metrics
@@ -367,69 +351,6 @@ participant Console as VoltAgent Console
 />
 
 This flow happens automatically once you add the `experimental_telemetry` flag. No additional code changes needed!
-
-## Production Best Practices
-
-Some _real life_ tips:
-
-### Use Meaningful Agent IDs
-
-```typescript
-// ❌ Bad examples:
-agentId: "agent1", "my-agent", "assistant";
-
-// ✅ Good examples:
-agentId: "customer-support-bot", "content-writer", "code-reviewer";
-```
-
-### Don't Forget User ID
-
-```typescript
-experimental_telemetry: {
-  isEnabled: true,
-  metadata: {
-    agentId: "customer-support-bot",
-    userId: req.user.id, // Or session.userId, auth.userId
-  },
-}
-```
-
-:::caution Critical for Analytics
-Without user ID tracking, you can't do user behavior analysis, can't identify power users, and can't debug user-specific issues. This metadata is crucial for production applications!
-:::
-
-Without this you can't do user behavior analysis.
-
-### Conversation ID Strategy
-
-```typescript
-// Generate once at conversation start, then reuse
-const conversationId = `conv_${Date.now()}_${userId}`;
-
-experimental_telemetry: {
-  isEnabled: true,
-  metadata: {
-    agentId: "chat-assistant",
-    userId: "user-123",
-    conversationId, // Same ID for all the messages in this conversation
-  },
-}
-```
-
-### Use Tags Strategically
-
-```typescript
-tags: [
-  "content-creation", // Feature category
-  "high-priority", // Priority level
-  "marketing-team", // Department
-  "blog-post", // Content type
-];
-```
-
-Then in the console you can say "Show me all high-priority content-creation activities".
-
-First, start with basic tracking. Then gradually add metadata, supply agent IDs, enable user tracking.
 
 ## Final Words
 
