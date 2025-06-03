@@ -15,14 +15,14 @@ VoltAgent Observability works with any technology stack through multiple integra
 
 ### SDKs
 
-- 🔄 **JavaScript/TypeScript SDK** - Native integration with full observability _(Coming Soon)_
-- 🔄 **Python SDK** - Native integration with full observability _(Coming Soon)_
+- ✅ [**JavaScript/TypeScript SDK**](/docs-observability/js-ts-sdk/) - Native integration with full observability
+- ✅ [**Python SDK**](/docs-observability/python-sdk/) - Native integration with full observability
 - 🔄 **REST API** - Universal HTTP-based integration for any language _(Coming Soon)_
 
 ### Framework Integrations
 
-- ✅ **VoltAgent Framework** - Native integration with zero configuration
-- ✅ **Vercel AI SDK** - Add observability to existing Vercel AI SDK applications
+- ✅ [**VoltAgent Framework**](/docs-observability/voltagent-framework/) - Native integration with zero configuration
+- ✅ [**Vercel AI SDK**](/docs-observability/vercel-ai/) - Add observability to existing Vercel AI SDK applications
 - 🔄 **OpenAI SDK** - Official OpenAI SDK integration _(Coming Soon)_
 - 🔄 **LangChain** - Comprehensive LLM application framework _(Coming Soon)_
 - 🔄 **LlamaIndex** - Leading RAG framework _(Coming Soon)_
@@ -42,33 +42,3 @@ VoltAgent Observability works with any technology stack through multiple integra
 ### Universal Integration
 
 - 🔄 **OpenTelemetry** - Works with existing observability infrastructure _(Coming Soon)_
-
-## Quick Start
-
-### 1. VoltAgent Framework (Ready Now)
-
-VoltAgent Framework natively supports observability with zero configuration. Simply visit [console.voltagent.dev](https://console.voltagent.dev/) while your VoltAgent app is running:
-
-[VoltAgent Framework Integration →](/docs/observability/developer-console)
-
-### 2. Vercel AI SDK (Ready Now)
-
-Add observability to your existing Vercel AI SDK applications:
-
-[Vercel AI SDK Integration →](./vercel-ai.md)
-
-### 3. Coming Soon
-
-Explore our upcoming integrations and get notified when they're ready.
-
-## Why VoltAgent Observability?
-
-- 🚀 **Zero Configuration** - Works out of the box with supported frameworks
-- 📊 **Real-time Monitoring** - Live performance metrics and traces
-- 🔍 **Deep Debugging** - Step-by-step execution analysis
-- 📈 **Production Ready** - Scale observability with your AI applications
-- 🌐 **Universal Support** - Framework-agnostic approach
-
-## Get Started
-
-Choose your integration method and start monitoring your AI agents today!

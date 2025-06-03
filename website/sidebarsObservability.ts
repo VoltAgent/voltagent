@@ -71,12 +71,12 @@ const sidebars: SidebarsConfig = {
         {
           type: "doc",
           id: "js-ts-sdk",
-          label: "🚧 JavaScript/TypeScript SDK",
+          label: "JavaScript/TypeScript SDK",
         },
         {
           type: "doc",
           id: "python-sdk",
-          label: "🚧 Python SDK",
+          label: "Python SDK",
         },
         {
           type: "doc",

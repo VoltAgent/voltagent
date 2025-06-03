@@ -1,11 +1,13 @@
-// SDK için tip tanımları
-// Core'dan gelen tipleri yeniden export ediyoruz
+// Type definitions for SDK
+// Re-exporting types from Core
 import type {
   NewTimelineEvent,
   BaseEventMetadata,
   AgentStartEventMetadata,
   TimelineEventCoreStatus,
   TimelineEventCoreLevel,
+  HistoryStatus,
+  UsageInfo,
 } from "@voltagent/core";
 
 // SDK Options
@@ -17,7 +19,7 @@ export interface VoltAgentClientOptions {
   timeout?: number;
 }
 
-// History ile ilgili tipler
+// History related types
 export interface CreateHistoryRequest {
   id?: string;
   agent_id: string;
@@ -25,14 +27,12 @@ export interface CreateHistoryRequest {
   conversationId?: string;
   startTime?: string;
   endTime?: string;
-  status?: string;
+  status?: HistoryStatus;
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
-  usage?: Record<string, unknown>;
+  usage?: UsageInfo;
   metadata?: Record<string, unknown>;
   completionStartTime?: string;
-  model?: string;
-  modelParameters?: Record<string, unknown>;
   level?: string;
   statusMessage?: string;
   version?: string;
@@ -46,10 +46,10 @@ export interface UpdateHistoryRequest {
   conversationId?: string;
   startTime?: string;
   endTime?: string;
-  status?: string;
+  status?: HistoryStatus;
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
-  usage?: Record<string, unknown>;
+  usage?: UsageInfo;
   metadata?: Record<string, unknown>;
   completionStartTime?: string;
   model?: string;
@@ -72,7 +72,7 @@ export interface History {
   updatedAt: string;
 }
 
-// Core'dan strict event tiplerini kullan
+// Use strict event types from Core
 export type TimelineEventCore = NewTimelineEvent;
 
 // --- TYPE-SAFE EVENT INPUT DEFINITIONS ---
@@ -82,12 +82,11 @@ interface BaseEventInput<M = BaseEventMetadata | null> {
   startTime?: string; // Optional - will be auto-generated if not provided
   endTime?: string | null;
   status?: TimelineEventCoreStatus;
-  statusMessage?: string | null;
   level?: TimelineEventCoreLevel;
   input?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
   metadata: M; // Required and strongly typed
-  error?: {
+  statusMessage?: {
     message: string;
     stack?: string;
     code?: string | number;
@@ -193,7 +192,7 @@ export type RetrieverErrorEventInput = BaseEventInput<BaseEventMetadata> & {
   level: "ERROR" | "CRITICAL";
 };
 
-// Main type-safe event input union - bu artık tek event input tipi
+// Main type-safe event input union - this is now the single event input type
 export type TimelineEventInput =
   | ToolStartEventInput
   | ToolSuccessEventInput
@@ -216,8 +215,24 @@ export interface AddEventRequest {
   event: TimelineEventCore;
 }
 
+export interface UpdateEventRequest {
+  id: string;
+  agent_id?: string;
+  start_time?: string;
+  end_time?: string;
+  status?: TimelineEventCoreStatus;
+  status_message?: string;
+  level?: TimelineEventCoreLevel;
+  version?: string;
+  parent_event_id?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+}
+
 export interface Event {
-  id: string; // UUID, server tarafından oluşturulmuş olacak
+  id: string; // UUID, will be generated server-side
   historyId: string;
   name: string;
   type: "agent" | "tool" | "memory" | "retriever";
@@ -255,7 +270,48 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-// Core'dan spesifik event tiplerini re-export et
+export interface AgentSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+  usage?: UsageInfo;
+}
+
+export interface AgentErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemorySuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemoryErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverSuccessOptions {
+  output?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverErrorOptions {
+  statusMessage?: Error | any;
+  metadata?: Record<string, unknown>;
+}
+
+// Re-export specific event types from Core
 export type {
   ToolStartEvent,
   ToolSuccessEvent,
@@ -273,3 +329,123 @@ export type {
   RetrieverSuccessEvent,
   RetrieverErrorEvent,
 } from "@voltagent/core";
+
+// === NEW TRACE-BASED SDK TYPES ===
+
+export interface TraceOptions {
+  id?: string;
+  agentId: string;
+  input?: any;
+  userId?: string;
+  conversationId?: string;
+  metadata?: Record<string, unknown>;
+  tags?: string[];
+  completionStartTime?: string;
+  startTime?: string;
+  version?: string;
+  level?: string;
+}
+
+export interface TraceEndOptions {
+  output?: any;
+  status?: HistoryStatus;
+  metadata?: Record<string, unknown>;
+  usage?: UsageInfo;
+}
+
+export interface AgentOptions {
+  name: string;
+  input?: any;
+  instructions?: string;
+  metadata?: Omit<AgentStartEventMetadata, "id" | "agentId" | "displayName" | "instructions">;
+}
+
+export interface ToolOptions {
+  name: string;
+  input?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MemoryOptions {
+  name: string;
+  input?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrieverOptions {
+  name: string;
+  input?: any;
+  metadata?: Record<string, unknown>;
+}
+
+// Context interfaces
+export interface TraceContext {
+  readonly id: string;
+  readonly agentId: string;
+  update(data: Partial<UpdateHistoryRequest>): Promise<TraceContext>;
+  end(options?: TraceEndOptions): Promise<void>;
+  addAgent(options: AgentOptions): Promise<AgentContext>;
+  addEvent(event: TimelineEventInput): Promise<EventContext>;
+}
+
+export interface AgentContext {
+  readonly id: string;
+  readonly traceId: string;
+  readonly parentId?: string;
+  addAgent(options: AgentOptions): Promise<AgentContext>;
+  addTool(options: ToolOptions): Promise<ToolContext>;
+  addMemory(options: MemoryOptions): Promise<MemoryContext>;
+  addRetriever(options: RetrieverOptions): Promise<RetrieverContext>;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
+  success(options?: AgentSuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & AgentErrorOptions): Promise<void>;
+}
+
+export interface ToolContext {
+  readonly id: string;
+  readonly parentId: string;
+  readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
+  success(options?: ToolSuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & ToolErrorOptions): Promise<void>;
+}
+
+export interface MemoryContext {
+  readonly id: string;
+  readonly parentId: string;
+  readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
+  success(options?: MemorySuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & MemoryErrorOptions): Promise<void>;
+}
+
+export interface RetrieverContext {
+  readonly id: string;
+  readonly parentId: string;
+  readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
+  success(options?: RetrieverSuccessOptions): Promise<void>;
+  error(options: { statusMessage: Error | any } & RetrieverErrorOptions): Promise<void>;
+}
+
+export interface EventContext {
+  readonly id: string;
+  readonly parentId?: string;
+  readonly traceId: string;
+  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
+  success(
+    options?:
+      | AgentSuccessOptions
+      | ToolSuccessOptions
+      | MemorySuccessOptions
+      | RetrieverSuccessOptions,
+  ): Promise<void>;
+  error(
+    options: { statusMessage: Error | any } & (
+      | AgentErrorOptions
+      | ToolErrorOptions
+      | MemoryErrorOptions
+      | RetrieverErrorOptions
+    ),
+  ): Promise<void>;
+}

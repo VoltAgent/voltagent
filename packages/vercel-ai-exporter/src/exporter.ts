@@ -117,6 +117,9 @@ export class VoltAgentExporter implements SpanExporter {
   // Track which traces have already shown the default agent guidance
   private traceGuidanceShown = new Set<string>();
 
+  // 🔄 Store trace objects for proper cleanup using trace.end()
+  private activeTraces = new Map<string, any>(); // agentHistoryKey -> trace object
+
   constructor(options: VoltAgentExporterOptions) {
     this.debug = options.debug ?? false;
 
@@ -124,7 +127,7 @@ export class VoltAgentExporter implements SpanExporter {
     this.sdk = new VoltAgentObservabilitySDK({
       publicKey: options.publicKey ?? "",
       secretKey: options.secretKey ?? "",
-      baseUrl: options.baseUrl ?? "https://api.voltagent.com",
+      baseUrl: options.baseUrl ?? "https://api.voltagent.dev",
       autoFlush: options.autoFlush ?? true,
       flushInterval: options.flushInterval ?? 5000,
     });
@@ -295,16 +298,15 @@ export class VoltAgentExporter implements SpanExporter {
       const agentHistoryId = this.generateUUID();
 
       // Create new history for this agent
-      await this.sdk.createHistory({
+      const trace = await this.sdk.trace({
         id: agentHistoryId,
-        agent_id: agentId,
+        agentId: agentId,
         input: this.parseSpanInput(agentFirstSpan),
         metadata: combinedMetadata,
         userId: traceMetadata.userId,
         conversationId: traceMetadata.conversationId,
         completionStartTime: completionStartTime,
         tags: traceMetadata.tags && traceMetadata.tags.length > 0 ? traceMetadata.tags : undefined,
-        status: "running",
         startTime: agentFirstSpan
           ? this.hrTimeToISOString(agentFirstSpan.startTime)
           : new Date().toISOString(),
@@ -313,6 +315,9 @@ export class VoltAgentExporter implements SpanExporter {
 
       this.activeHistories.set(agentHistoryKey, agentHistoryId);
       this.historyIdMap.set(agentHistoryKey, agentHistoryId);
+
+      // 🔄 Store the trace object for later use with trace.end()
+      this.activeTraces.set(agentHistoryKey, trace);
 
       // 🔗 Store in global map for cross-trace access
       this.globalAgentHistories.set(agentId, agentHistoryId);
@@ -430,7 +435,13 @@ export class VoltAgentExporter implements SpanExporter {
     _spans: ReadableSpan[],
   ): Promise<void> {
     for (const [agentId, agentInfo] of agentsInTrace) {
-      const agentHistoryId = this.getAgentHistoryId(agentId, traceId);
+      const agentHistoryKey = this.getAgentHistoryKey(agentId, traceId);
+      const trace = this.activeTraces.get(agentHistoryKey);
+
+      if (!trace) {
+        this.logDebug(`No trace object found for agent ${agentId} in trace ${traceId}`);
+        continue;
+      }
 
       // Find agent's last span for output parsing
       const agentLastSpan = agentInfo.spans
@@ -447,15 +458,23 @@ export class VoltAgentExporter implements SpanExporter {
         const finalUsage = this.parseUsage(agentLastSpan.attributes);
         const endTime = this.hrTimeToISOString(agentLastSpan.endTime);
 
-        // Complete the history for this agent
-        await this.sdk.endHistory(agentHistoryId, {
+        // Complete the history using trace.end() instead of sdk.endHistory()
+        await trace.end({
           output: finalOutput,
-          usage: finalUsage,
+          usage: finalUsage
+            ? {
+                promptTokens: finalUsage.promptTokens || 0,
+                completionTokens: finalUsage.completionTokens || 0,
+                totalTokens:
+                  finalUsage.totalTokens ||
+                  (finalUsage.promptTokens || 0) + (finalUsage.completionTokens || 0),
+              }
+            : undefined,
           endTime: endTime,
           status: "completed",
         });
 
-        this.logDebug(`Agent ${agentId} history ${agentHistoryId} completed`);
+        this.logDebug(`Agent ${agentId} trace completed using trace.end()`);
       }
     }
   }
@@ -484,15 +503,11 @@ export class VoltAgentExporter implements SpanExporter {
    * Uses both trace-specific and cross-trace parent relationships
    * Now supports RECURSIVE propagation up the entire hierarchy
    */
-  private async addEventToAgentHistory(
-    agentId: string,
-    traceId: string,
-    event: any,
-  ): Promise<void> {
+  private async addEventToTrace(agentId: string, traceId: string, event: any): Promise<void> {
     const agentHistoryId = this.getAgentHistoryId(agentId, traceId);
 
     // Add event to agent's own history
-    await this.sdk.addEventToHistory(agentHistoryId, event);
+    await this.sdk.addEventToTrace(agentHistoryId, event);
     this.logDebug(`Added event ${event.name} to agent ${agentId} history ${agentHistoryId}`);
 
     // 🔄 RECURSIVE PROPAGATION: Propagate to ALL ancestors up the hierarchy
@@ -562,7 +577,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.sdk.addEventToHistory(parentHistoryId, propagatedEvent);
+        await this.sdk.addEventToTrace(parentHistoryId, propagatedEvent);
         this.logDebug(
           `Propagated event ${event.name} from ${originalAgentId} to ancestor ${parentAgentId} (depth: ${depth + 1}, immediate child: ${agentId}, cross-trace: ${!this.parentChildMap.has(agentId)})`,
         );
@@ -716,8 +731,7 @@ export class VoltAgentExporter implements SpanExporter {
     agentInfo?: AgentInfo,
     _isRootSpan = false,
   ): Promise<void> {
-    const displayName =
-      agentInfo?.displayName ?? (data.metadata.displayName as string) ?? span.name;
+    const displayName = agentInfo?.displayName ?? (data.metadata.displayName as string) ?? agentId;
     const usage = this.parseUsage(span.attributes);
     const modelParameters = this.parseModelParameters(span.attributes);
     const completionStartTime = this.parseCompletionStartTime(span, data.startTime);
@@ -744,7 +758,7 @@ export class VoltAgentExporter implements SpanExporter {
         },
       };
 
-      await this.addEventToAgentHistory(agentId, traceId, agentStartEvent);
+      await this.addEventToTrace(agentId, traceId, agentStartEvent);
       this.logDebug(`Added agent:start event for agent: ${agentId}`);
     }
 
@@ -775,7 +789,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.addEventToAgentHistory(agentId, traceId, errorEvent);
+        await this.addEventToTrace(agentId, traceId, errorEvent);
       } else {
         // Only add success event if this is the last generation span for this agent
         if (agentInfo && this.isLastGenerationSpanForAgent(span, agentInfo)) {
@@ -798,7 +812,7 @@ export class VoltAgentExporter implements SpanExporter {
             },
           };
 
-          await this.addEventToAgentHistory(agentId, traceId, successEvent);
+          await this.addEventToTrace(agentId, traceId, successEvent);
           this.logDebug(`Added agent:success event for agent: ${agentId}`);
         }
       }
@@ -833,7 +847,7 @@ export class VoltAgentExporter implements SpanExporter {
       },
     };
 
-    await this.addEventToAgentHistory(agentId, traceId, startEvent);
+    await this.addEventToTrace(agentId, traceId, startEvent);
 
     // Tool completion event (if span is finished)
     if (data.endTime) {
@@ -857,7 +871,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.addEventToAgentHistory(agentId, traceId, errorEvent);
+        await this.addEventToTrace(agentId, traceId, errorEvent);
       } else {
         const successEvent = {
           name: "tool:success" as const,
@@ -873,7 +887,7 @@ export class VoltAgentExporter implements SpanExporter {
           },
         };
 
-        await this.addEventToAgentHistory(agentId, traceId, successEvent);
+        await this.addEventToTrace(agentId, traceId, successEvent);
       }
     }
   }
@@ -1044,8 +1058,8 @@ export class VoltAgentExporter implements SpanExporter {
     }
 
     // Extract agent metadata
-    if (attrs["ai.telemetry.metadata.agent.name"]) {
-      metadata.displayName = attrs["ai.telemetry.metadata.agent.name"];
+    if (attrs["ai.telemetry.metadata.displayName"]) {
+      metadata.displayName = attrs["ai.telemetry.metadata.displayName"];
     }
     if (attrs["ai.telemetry.metadata.agentId"]) {
       metadata.agentId = attrs["ai.telemetry.metadata.agentId"];
@@ -1200,17 +1214,18 @@ export class VoltAgentExporter implements SpanExporter {
   async forceFlush(): Promise<void> {
     this.logDebug("Force flushing VoltAgent SDK...");
 
-    // End any remaining active histories (only on force flush/shutdown)
-    for (const [agentHistoryKey, historyId] of this.activeHistories) {
+    // End any remaining active histories using trace.end() (only on force flush/shutdown)
+    for (const [agentHistoryKey, trace] of this.activeTraces) {
       try {
-        await this.sdk.endHistory(historyId);
-        this.logDebug(`Force completed history ${historyId} for key ${agentHistoryKey}`);
+        await trace.end();
+        this.logDebug(`Force completed trace for key ${agentHistoryKey}`);
       } catch (error) {
-        this.logDebug(`Error force completing history ${historyId}:`, error);
+        this.logDebug(`Error force completing trace for key ${agentHistoryKey}:`, error);
       }
     }
 
     this.activeHistories.clear();
+    this.activeTraces.clear(); // 🔄 Clear trace objects map
     this.parentChildMap.clear();
     this.historyIdMap.clear();
 
@@ -1470,8 +1485,8 @@ export class VoltAgentExporter implements SpanExporter {
     const attrs = span.attributes;
 
     // Try to get display name from telemetry metadata
-    if (attrs["ai.telemetry.metadata.agentDisplayName"]) {
-      return String(attrs["ai.telemetry.metadata.agentDisplayName"]);
+    if (attrs["ai.telemetry.metadata.displayName"]) {
+      return String(attrs["ai.telemetry.metadata.displayName"]);
     }
 
     if (attrs["ai.telemetry.metadata.agentName"]) {

@@ -459,7 +459,7 @@ describe("AgentEventEmitter", () => {
               type: "agent",
               status: "error",
               level: "ERROR",
-              error: expect.objectContaining({
+              statusMessage: expect.objectContaining({
                 message: "Error message",
               }),
               metadata: expect.objectContaining({

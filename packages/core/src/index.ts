@@ -27,7 +27,7 @@ export type {
   StreamObjectOnFinishCallback,
   ToolErrorInfo,
 } from "./agent/types";
-export type { AgentHistoryEntry } from "./agent/history";
+export type { AgentHistoryEntry, HistoryStatus } from "./agent/history";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
 export * from "./utils";
@@ -37,6 +37,7 @@ export { AgentRegistry } from "./server/registry";
 export * from "./utils/update";
 export * from "./voice";
 export * from "./telemetry/exporter";
+export type { UsageInfo } from "./agent/providers";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;

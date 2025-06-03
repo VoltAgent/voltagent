@@ -1,12 +1,13 @@
 import { Pool } from "pg";
-import type {
-  Conversation,
-  CreateConversationInput,
-  Memory,
-  MemoryMessage,
-  MemoryOptions,
-  MessageFilterOptions,
-  NewTimelineEvent,
+import {
+  safeJsonParse,
+  type Conversation,
+  type CreateConversationInput,
+  type Memory,
+  type MemoryMessage,
+  type MemoryOptions,
+  type MessageFilterOptions,
+  type NewTimelineEvent,
 } from "@voltagent/core";
 
 /**
@@ -109,7 +110,7 @@ export class PostgresStorage implements Memory {
       // Serialize JSON fields
       const inputJSON = value.input ? JSON.stringify(value.input) : null;
       const outputJSON = value.output ? JSON.stringify(value.output) : null;
-      const errorJSON = value.error ? JSON.stringify(value.error) : null;
+      const statusMessageJSON = value.statusMessage ? JSON.stringify(value.statusMessage) : null;
       const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
       const tagsJSON = value.tags ? JSON.stringify(value.tags) : null;
 
@@ -149,14 +150,14 @@ export class PostgresStorage implements Memory {
           value.startTime,
           value.endTime || null,
           value.status || null,
-          value.statusMessage || null,
+          statusMessageJSON || null,
           value.level || "INFO",
           value.version || null,
           value.parentEventId || null,
           tagsJSON,
           inputJSON,
           outputJSON,
-          errorJSON,
+          statusMessageJSON,
           metadataJSON,
         ],
       );
@@ -879,6 +880,12 @@ export class PostgresStorage implements Memory {
 
       // Parse timeline events and construct NewTimelineEvent objects
       const events = timelineEventsResult.rows.map((row) => {
+        const statusMessage = row.status_message
+          ? safeJsonParse(row.status_message as string)
+          : undefined;
+
+        const error = row.error ? safeJsonParse(row.error as string) : undefined;
+
         // Construct NewTimelineEvent object
         return {
           id: row.id as string,
@@ -887,14 +894,14 @@ export class PostgresStorage implements Memory {
           startTime: row.start_time as string,
           endTime: row.end_time as string,
           status: row.status as string,
-          statusMessage: row.status_message as string,
+          statusMessage: statusMessage,
           level: row.level as string,
           version: row.version as string,
           parentEventId: row.parent_event_id as string,
           tags: row.tags,
           input: row.input,
           output: row.output,
-          error: row.error,
+          error: statusMessage ? statusMessage : error,
           metadata: row.metadata,
         };
       });
@@ -1011,6 +1018,11 @@ export class PostgresStorage implements Memory {
 
           // Parse timeline events and construct NewTimelineEvent objects
           const events = timelineEventsResult.rows.map((row) => {
+            const statusMessage = row.status_message
+              ? safeJsonParse(row.status_message as string)
+              : undefined;
+            const error = row.error ? safeJsonParse(row.error as string) : undefined;
+
             // Construct NewTimelineEvent object
             return {
               id: row.id as string,
@@ -1019,14 +1031,14 @@ export class PostgresStorage implements Memory {
               startTime: row.start_time as string,
               endTime: row.end_time as string,
               status: row.status as string,
-              statusMessage: row.status_message as string,
+              statusMessage: statusMessage,
               level: row.level as string,
               version: row.version as string,
               parentEventId: row.parent_event_id as string,
               tags: row.tags,
               input: row.input,
               output: row.output,
-              error: row.error,
+              error: statusMessage ? statusMessage : error,
               metadata: row.metadata,
             };
           });

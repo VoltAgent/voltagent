@@ -1,25 +1,24 @@
 {
-  "name": "voltagent-example-xsai",
+  "name": "voltagent-example-sdk-trace",
   "private": true,
   "keywords": [
     "voltagent",
     "ai",
-    "agent"
+    "agent",
+    "sdk",
+    "trace"
   ],
   "license": "MIT",
   "author": "",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src ",
+    "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
-    "volt": "volt"
+    "trace": "tsx --env-file=.env ./src/index.ts"
   },
   "dependencies": {
-    "@voltagent/cli": "^0.1.6",
-    "@voltagent/core": "^0.1.25",
-    "@voltagent/xsai": "^0.1.9",
-    "zod": "3.24.2"
+    "@voltagent/sdk": "^0.1.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

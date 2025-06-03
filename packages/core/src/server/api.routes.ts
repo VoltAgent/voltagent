@@ -1,10 +1,5 @@
-import { z } from "zod";
-import { createRoute } from "@hono/zod-openapi";
-import type { AgentStatus } from "../agent/types"; // Import AgentStatus if needed for schemas
+import { z, createRoute } from "@hono/zod-openapi";
 
-// --- Schemas ---
-
-// Common Parameter Schema
 export const ParamsSchema = z.object({
   id: z.string().openapi({
     param: { name: "id", in: "path" },

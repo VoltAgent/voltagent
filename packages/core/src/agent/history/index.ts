@@ -11,6 +11,9 @@ import type {
 } from "../../telemetry/client";
 import type { NewTimelineEvent } from "../../events/types";
 
+// Export types
+export type { HistoryStatus } from "./types";
+
 /**
  * Step information for history
  */

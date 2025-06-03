@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { jsonSchemaToZod } from "@n8n/json-schema-to-zod";
+import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { MCPClient } from "./index";
 
 // Mock the MCP SDK dependencies
@@ -18,8 +18,8 @@ jest.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
   getDefaultEnvironment: jest.fn().mockReturnValue({}),
 }));
 
-jest.mock("@n8n/json-schema-to-zod", () => ({
-  jsonSchemaToZod: jest.fn().mockReturnValue({}),
+jest.mock("zod-from-json-schema", () => ({
+  convertJsonSchemaToZod: jest.fn().mockReturnValue({}),
 }));
 
 describe("MCPClient", () => {
@@ -282,7 +282,7 @@ describe("MCPClient", () => {
 
       expect(mockConnect).toHaveBeenCalled();
       expect(mockListTools).toHaveBeenCalled();
-      expect(jsonSchemaToZod).toHaveBeenCalledTimes(2);
+      expect(convertJsonSchemaToZod).toHaveBeenCalledTimes(2);
 
       expect(agentTools).toEqual(
         expect.objectContaining({
@@ -314,7 +314,7 @@ describe("MCPClient", () => {
     });
 
     it("should skip a tool if schema conversion fails", async () => {
-      (jsonSchemaToZod as jest.Mock).mockImplementationOnce(() => {
+      (convertJsonSchemaToZod as jest.Mock).mockImplementationOnce(() => {
         throw new Error("Schema conversion failed");
       });
 

@@ -282,7 +282,6 @@ describe("HistoryManager", () => {
         status: "completed",
         input: null,
         output: null,
-        error: null,
         metadata: {
           displayName: "Test Event",
           id: "test",
@@ -426,7 +425,6 @@ describe("HistoryManager", () => {
           status: "completed",
           input: null,
           output: null,
-          error: null,
           metadata: {
             displayName: "Test Event",
             id: "test",
@@ -473,7 +471,6 @@ describe("HistoryManager", () => {
           level: "ERROR",
           input: null,
           output: null,
-          error: null,
           metadata: {
             displayName: "Error Event",
             id: "error",

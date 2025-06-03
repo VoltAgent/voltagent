@@ -11,7 +11,6 @@ import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 import ScenarioRecommender from '@site/src/components/blog-widgets/ScenarioRecommender';
 import ModelPerformanceComparator from '@site/src/components/blog-widgets/ModelPerformanceComparator';
 
-# RAG or Fine-tuning? Let Me Share What I've Learned
 
 This is among the most common questions we get when building our AI agent framework. Developers are always asking: "How do I train my agent on my own data?" RAG or fine-tuning?
 
@@ -34,7 +33,7 @@ Which one makes more sense? Having been a maintainer of a framework for years: _
 Start with RAG for your first project. It's faster to implement, cheaper to test, and you can always add fine-tuning later if needed.
 :::
 
-## RAG: "Real-time Information Feeding" Approach
+## RAG: Retrieval-Augmented Generation
 
 ### How Does RAG Work?
 
