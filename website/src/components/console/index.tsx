@@ -43,7 +43,7 @@ export const Console = () => {
               className="text-left landing-md:ml-6 landing-lg:ml-8"
             >
               <p className="text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-[#dcdcdc] mb-3 landing-xs:mb-2 landing-sm:mb-4">
-                VoltOps is a{" "}
+                VoltOps is a n8n-style{" "}
                 <Link
                   to="https://voltagent.dev/docs/observability/developer-console/"
                   className="text-emerald-500 no-underline font-bold"
@@ -63,8 +63,8 @@ export const Console = () => {
                   Docs
                 </Link>
                 <Link
-                  to="https://console.voltagent.dev/"
-                  className="inline-flex items-center justify-center no-underline border-solid border font-semibold rounded transition-colors px-4 landing-xs:px-3 landing-sm:px-5 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300"
+                  to="https://console.voltagent.dev/demo"
+                  className="inline-flex items-center justify-center no-underline border-solid border font-semibold rounded transition-colors px-4 landing-xs:px-3 landing-sm:px-5 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300 hover:text-gray-900"
                 >
                   Live demo
                 </Link>

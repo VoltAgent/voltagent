@@ -71,7 +71,7 @@ const ObservabilityFeatures = () => {
                   </div>
                   <div className="flex-1">
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
-                      N8N-style observability
+                      n8n-style observability
                     </div>
                     <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm mb-0 leading-relaxed">
                       {getResponsiveText(
@@ -112,6 +112,9 @@ const ObservabilityFeatures = () => {
                   <div className="flex-1">
                     <div className="mb-1 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base landing-lg:text-lg font-semibold text-white">
                       Universal Agent Communication
+                      <span className="text-xs text-gray-400 font-normal ml-2">
+                        (in supported platforms)
+                      </span>
                     </div>
                     <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm  mb-0 leading-relaxed">
                       {getResponsiveText(

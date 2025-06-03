@@ -3,13 +3,7 @@ import { motion } from "framer-motion";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
-import {
-  VercelLogo,
-  CrewAILogo,
-  LangChainLogo,
-  PythonLogo,
-  TypeScriptLogo,
-} from "@site/static/img/logos";
+import { VercelLogo, PythonLogo, TypeScriptLogo } from "@site/static/img/logos";
 import { VoltAgentLogo } from "@site/static/img/logos/integrations/voltagent";
 import { PlusIcon } from "@heroicons/react/24/outline";
 
@@ -59,28 +53,60 @@ export const HowToGetStarted = () => {
               <div className="p-3 landing-xs:p-2 landing-sm:p-4">
                 {/* Framework Showcase - Prominent */}
                 <div className="space-y-2">
-                  <div className="flex justify-between mb-3 py-6 landing-xs:mb-2 landing-sm:mb-4 landing-md:mb-6 px-4 landing-xs:px-2 landing-sm:px-6 landing-md:px-8 relative">
+                  <div className="flex justify-between  py-4  px-4 landing-xs:px-2 landing-sm:px-6 landing-md:px-8 relative">
                     {/* Framework Items */}
-                    <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
+                    <Link
+                      to="https://voltagent.dev/docs-observability/voltagent-framework/"
+                      className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <VoltAgentLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10 text-emerald-400" />
-                    </div>
+                      <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-400 font-medium">
+                        VoltAgent
+                      </span>
+                    </Link>
 
-                    <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
+                    <Link
+                      to="https://voltagent.dev/docs-observability/python-sdk/"
+                      className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <PythonLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10" />
-                    </div>
+                      <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-400 font-medium">
+                        Python SDK
+                      </span>
+                    </Link>
 
-                    <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
+                    <Link
+                      to="https://voltagent.dev/docs-observability/js-ts-sdk/"
+                      className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <TypeScriptLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10" />
-                    </div>
+                      <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-400 font-medium">
+                        TypeScript SDK
+                      </span>
+                    </Link>
 
-                    <div className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2">
-                      <VercelLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8 landing-sm:h-8 landing-md:w-10 landing-md:h-10" />
-                    </div>
+                    <Link
+                      to="https://voltagent.dev/docs-observability/vercel-ai/"
+                      className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <VercelLogo className="w-6 h-6 landing-xs:w-5 landing-xs:h-5 landing-sm:w-8  text-white landing-sm:h-8 landing-md:w-10 landing-md:h-10" />
+                      <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-400 font-medium">
+                        Vercel AI SDK
+                      </span>
+                    </Link>
                   </div>
                   <Link
                     to="https://github.com/VoltAgent/voltagent/issues/new"
                     className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
-                      border-solid border border-emerald-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 landing-md:py-3"
+                      border-solid border border-emerald-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 "
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -89,7 +115,7 @@ export const HowToGetStarted = () => {
                     }}
                   >
                     <PlusIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 mr-2 landing-xs:mr-1" />
-                    <span className="text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base">
+                    <span className="text-xs landing-xs:text-xs ">
                       Request Framework Integration
                     </span>
                   </Link>
@@ -123,10 +149,10 @@ export const HowToGetStarted = () => {
 
               {/* Code Section */}
               <div className="w-full relative rounded-none rounded-b-md overflow-y-hidden backdrop-blur-md transition-all duration-300">
-                <pre className="text-left rounded-none rounded-b-md backdrop-blur-md bg-white/5 overflow-hidden p-0 text-xs landing-xs:text-xs landing-sm:text-xs landing-md:text-sm font-mono m-0">
+                <pre className="text-left rounded-none rounded-b-md backdrop-blur-md bg-white/5 overflow-hidden p-0 text-xs landing-xs:text-xs landing-sm:text-xs landing-md:text-sm font-mono m-0 h-fit">
                   <div className="flex">
                     <div className="py-4 landing-xs:py-3 landing-sm:py-5 landing-md:py-6 px-1.5 landing-xs:px-1 landing-sm:px-2 landing-md:px-3 text-right text-[#4D5B6E] select-none border-solid border-t-0 border-b-0 border-l-0 border-r border-[#1e2730] min-w-[35px] landing-xs:min-w-[30px] landing-sm:min-w-[40px] landing-md:min-w-[45px] text-xs landing-xs:text-xs">
-                      {Array.from({ length: 7 }, (_, i) => (
+                      {Array.from({ length: 8 }, (_, i) => (
                         <div key={`line-${i + 1}`}>{i + 1}</div>
                       ))}
                     </div>
@@ -142,41 +168,40 @@ export const HowToGetStarted = () => {
                       <code className="block relative leading-[1.4] z-10">
                         <span className="text-blue-400">import</span>{" "}
                         <span className="text-gray-300">
-                          {"{ VoltConsole }"}
+                          {"{ VoltAgentObservabilitySDK }"}
                         </span>{" "}
                         <span className="text-blue-400">from</span>{" "}
                         <span className="text-main-emerald">
-                          '@voltagent/console'
+                          '@voltagent/sdk'
                         </span>
                         <br />
-                        <br />
-                        <span className="text-gray-300">
-                          {"// Configure console options"}
-                        </span>
                         <br />
                         <span className="text-purple-400">const</span>{" "}
-                        <span className="text-gray-300">console = </span>
+                        <span className="text-gray-300">sdk = </span>
                         <span className="text-blue-400">new</span>{" "}
-                        <span className="text-gray-300">VoltConsole({"{"}</span>
-                        <span className="text-main-emerald">projectId: </span>
-                        <span className="text-gray-300">'your-id'</span>
-                        <span className="text-gray-300">{"}"});</span>
-                        <br />
-                        <br />
-                        <span className="text-purple-400">try</span>{" "}
-                        <span className="text-gray-300">{"{"}</span>
+                        <span className="text-gray-300">
+                          VoltAgentObservabilitySDK({"{"}
+                        </span>
                         <br />
                         <span className="text-gray-300">{"  "}</span>
-                        <span className="text-purple-400">await</span>{" "}
-                        <span className="text-gray-300">console.</span>
-                        <span className="text-main-emerald">monitor</span>
-                        <span className="text-gray-300">(yourAgent);</span>
+                        <span className="text-main-emerald">baseUrl: </span>
+                        <span className="text-gray-300">
+                          'https://api.voltagent.dev',
+                        </span>
                         <br />
-                        <span className="text-gray-300">{"}"}</span>{" "}
-                        <span className="text-purple-400">catch</span>{" "}
-                        <span className="text-gray-300">(error)</span>{" "}
-                        <span className="text-gray-300">{"{"}</span>
+                        <span className="text-gray-300">{"  "}</span>
+                        <span className="text-main-emerald">publicKey: </span>
+                        <span className="text-gray-300">
+                          'your-public-key',
+                        </span>
                         <br />
+                        <span className="text-gray-300">{"  "}</span>
+                        <span className="text-main-emerald">secretKey: </span>
+                        <span className="text-gray-300">
+                          'your-secret-key',
+                        </span>
+                        <br />
+                        <span className="text-gray-300">{"}"});</span>
                       </code>
                     </div>
                   </div>
@@ -203,7 +228,7 @@ export const HowToGetStarted = () => {
                     3
                   </div>
                   <span className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-lg font-semibold text-emerald-400">
-                    Launch Dev Console
+                    Launch VoltOps Platform
                   </span>
                 </div>
                 <div className="flex flex-col gap-2">

@@ -12,7 +12,7 @@ const PricingSection = () => {
       features: [
         "1 seat, 1 organization, 1 project",
         "10.000 events per month",
-        "1000 requests/min",
+        "Limited requests limits",
         "Up to 5 agents",
         "7-day data retention",
       ],
@@ -279,6 +279,16 @@ const PricingSection = () => {
 
                 <button
                   type="button"
+                  onClick={() => {
+                    if (tier.name === "Enterprise") {
+                      window.open(
+                        "https://forms.gle/BrnyFF4unP9pZxAh7",
+                        "_blank",
+                      );
+                    } else if (tier.name === "Free" || tier.name === "Pro") {
+                      window.open("https://console.voltagent.dev", "_blank");
+                    }
+                  }}
                   className={`w-full inline-flex mb-4 landing-xs:mb-3 landing-sm:mb-6 items-center justify-center no-underline border-solid border font-semibold rounded transition-colors cursor-pointer px-3 landing-xs:px-2 landing-sm:px-4 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base ${
                     tier.buttonVariant === "primary"
                       ? "bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300"
@@ -403,9 +413,14 @@ const PricingSection = () => {
           <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm">
             All plans include our core monitoring features. Need something
             custom?{" "}
-            <span className="text-emerald-400 cursor-pointer hover:underline">
+            <a
+              href="https://forms.gle/BrnyFF4unP9pZxAh7"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-400 cursor-pointer hover:underline"
+            >
               Contact us
-            </span>{" "}
+            </a>{" "}
             for a tailored solution.
           </p>
         </motion.div>
