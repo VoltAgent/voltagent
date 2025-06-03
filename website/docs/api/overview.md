@@ -87,6 +87,169 @@ Please note that while the API documentation for `/object` and `/stream-object` 
 
 Currently, the Core API does not implement built-in authentication routes. Ensure that your API server is deployed in a secure environment or protected by appropriate network-level security (e.g., firewall rules, reverse proxy authentication) if exposing it outside your local machine.
 
+## Error Handling
+
+The VoltAgent Core API provides comprehensive error handling for both regular HTTP endpoints and streaming endpoints.
+
+### Regular Endpoints (Non-Streaming)
+
+For regular endpoints like `/text` and `/object`, errors are returned as standard HTTP responses:
+
+```json
+{
+  "success": false,
+  "error": "Error message describing what went wrong"
+}
+```
+
+Common HTTP status codes:
+
+- `404`: Agent not found
+- `500`: Internal server error (e.g., invalid schema, agent processing error)
+
+### Streaming Endpoints (SSE)
+
+For streaming endpoints like `/stream` and `/stream-object`, errors are delivered as Server-Sent Events within the stream itself. This allows real-time error reporting during long-running operations.
+
+#### Error Event Format
+
+When an error occurs during streaming, you'll receive an SSE event with `type: "error"`:
+
+```javascript
+data: {
+  "type": "error",
+  "error": "Error message describing what went wrong",
+  "code": "ERROR_CODE",
+  "timestamp": "2024-01-15T10:30:45.123Z"
+}
+```
+
+#### Error Types and Codes
+
+| Error Code        | Description                    | When it occurs                                        |
+| ----------------- | ------------------------------ | ----------------------------------------------------- |
+| `SETUP_ERROR`     | Error during initial setup     | Agent initialization or configuration issues          |
+| `STREAM_ERROR`    | Generic streaming error        | LLM provider errors, network issues, invalid API keys |
+| `ITERATION_ERROR` | Error during stream processing | Issues while processing stream chunks                 |
+
+#### Streaming Event Flow
+
+A typical successful stream contains these event types:
+
+1. `text` or `object` events (data chunks)
+2. `completion` event (stream finished successfully)
+
+A stream with errors will contain:
+
+1. `text` or `object` events (if any data was processed)
+2. `error` event (when error occurs)
+3. Stream closes after error event
+
+#### Example Error Scenarios
+
+**Invalid API Key:**
+
+```javascript
+data: {
+  "type": "error",
+  "error": "Incorrect API key provided: sk-proj-...",
+  "code": "STREAM_ERROR",
+  "timestamp": "2024-01-15T10:30:45.123Z"
+}
+```
+
+**Schema Validation Error (Object Streaming):**
+
+```javascript
+data: {
+  "type": "error",
+  "error": "Schema validation failed: Expected string, received number",
+  "code": "STREAM_ERROR",
+  "timestamp": "2024-01-15T10:30:45.123Z"
+}
+```
+
+#### Handling Errors in Client Code
+
+**JavaScript/TypeScript Example:**
+
+```javascript
+// Fetch-based SSE streaming (supports POST with request body)
+const streamUrl = "/agents/your-agent-id/stream";
+const response = await fetch(streamUrl, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    input: "Tell me a joke!",
+    options: { temperature: 0.7, maxTokens: 100 },
+  }),
+});
+
+if (!response.ok) {
+  throw new Error(`Stream request failed: ${response.status}`);
+}
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+let buffer = "";
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  buffer += decoder.decode(value, { stream: true });
+  const lines = buffer.split("\n\n");
+  buffer = lines.pop() || "";
+
+  for (const line of lines) {
+    if (line.startsWith("data: ")) {
+      try {
+        const data = JSON.parse(line.substring(6));
+
+        switch (data.type) {
+          case "text":
+            // Handle text chunk
+            console.log("Text:", data.text);
+            break;
+
+          case "object":
+            // Handle object chunk
+            console.log("Object:", data.object);
+            break;
+
+          case "error":
+            // Handle error
+            console.error("Stream error:", data.error);
+            console.error("Error code:", data.code);
+            return; // Exit on error
+
+          case "completion":
+            // Handle completion
+            console.log("Stream completed successfully");
+            return;
+        }
+      } catch (error) {
+        console.error("Error parsing SSE data:", error);
+      }
+    }
+  }
+}
+```
+
+**cURL Example (Streaming with Error):**
+
+```bash
+# This will show error events in the stream if API key is invalid
+curl -N -X POST http://localhost:3141/agents/your-agent-id/stream \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Hello!", "options": { "temperature": 0.7 } }'
+
+# Example output with error:
+# data: {"type":"error","error":"Incorrect API key provided","code":"STREAM_ERROR","timestamp":"2024-01-15T10:30:45.123Z"}
+```
+
 ## Basic Example (Using cURL)
 
 You can quickly test the API using `curl`. Below are examples for key endpoints. You can optionally include `userId` and `conversationId` in the `options` object for context tracking, as shown in the second example for each generation endpoint.
