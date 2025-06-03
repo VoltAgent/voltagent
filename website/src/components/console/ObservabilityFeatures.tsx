@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ListBulletIcon,
@@ -11,12 +11,27 @@ import AgentListView from "./AgentListView";
 import AgentDetailView from "./AgentDetailView";
 import AgentChat from "./AgentChat";
 import FlowOverview from "./FlowOverview";
+import ImageModal from "./ImageModal";
+
+interface ModalImage {
+  src: string;
+  alt: string;
+}
 
 const ObservabilityFeatures = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const [modalImage, setModalImage] = useState<ModalImage | null>(null);
 
   const getResponsiveText = (mobileText: string, desktopText: string) => {
     return isMobile ? mobileText : desktopText;
+  };
+
+  const openModal = (imageSrc: string, imageAlt: string) => {
+    setModalImage({ src: imageSrc, alt: imageAlt });
+  };
+
+  const closeModal = () => {
+    setModalImage(null);
   };
 
   return (
@@ -38,7 +53,7 @@ const ObservabilityFeatures = () => {
           <div className="flex flex-col gap-3 landing-xs:gap-2 landing-sm:gap-4 landing-md:gap-6">
             {/* Connection Management Card */}
             <motion.div
-              className="rounded-md border-2 border-solid border-emerald-500 transition-all duration-300 overflow-hidden h-auto"
+              className="rounded-md border-2 border-solid border-gray-800/50 hover:border-emerald-500 transition-all duration-300 overflow-hidden h-auto"
               initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -68,13 +83,17 @@ const ObservabilityFeatures = () => {
                 </div>
               </div>
               <div>
-                <FlowOverview />
+                <FlowOverview
+                  onImageClick={() =>
+                    openModal("/img/ops/flow-1.png", "Connection Manager")
+                  }
+                />
               </div>
             </motion.div>
 
             {/* Message Inspector Card */}
             <motion.div
-              className="rounded-md border-2 border-solid transition-all duration-300 overflow-hidden h-auto"
+              className="rounded-md border-2 border-solid border-gray-800/50 hover:border-emerald-500 transition-all duration-300 overflow-hidden h-auto"
               initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -104,7 +123,11 @@ const ObservabilityFeatures = () => {
                 </div>
               </div>
               <div>
-                <AgentChat />
+                <AgentChat
+                  onImageClick={() =>
+                    openModal("/img/ops/agent-chat.png", "Message Inspector")
+                  }
+                />
               </div>
             </motion.div>
           </div>
@@ -112,7 +135,7 @@ const ObservabilityFeatures = () => {
           <div className="flex flex-col gap-3 landing-xs:gap-2 landing-sm:gap-4 landing-md:gap-6 mt-3 landing-xs:mt-2 landing-sm:mt-4 landing-md:mt-0">
             {/* Agent Detail View Card */}
             <motion.div
-              className="rounded-md border-2 border-solid transition-all duration-300 overflow-hidden h-auto"
+              className="rounded-md border-2 border-solid border-gray-800/50 hover:border-emerald-500 transition-all duration-300 overflow-hidden h-auto"
               initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -142,13 +165,17 @@ const ObservabilityFeatures = () => {
                 </div>
               </div>
               <div>
-                <AgentDetailView />
+                <AgentDetailView
+                  onImageClick={() =>
+                    openModal("/img/ops/flow-detail-2.png", "Agent Detail")
+                  }
+                />
               </div>
             </motion.div>
 
             {/* Agent List View Card */}
             <motion.div
-              className="rounded-md border-2 border-solid transition-all duration-300 overflow-hidden h-auto"
+              className="rounded-md border-2 border-solid border-gray-800/50 hover:border-emerald-500 transition-all duration-300 overflow-hidden h-auto"
               initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -177,11 +204,23 @@ const ObservabilityFeatures = () => {
                   </div>
                 </div>
               </div>
-              <AgentListView />
+              <AgentListView
+                onImageClick={() =>
+                  openModal("/img/ops/agent-list.png", "Agent Sessions List")
+                }
+              />
             </motion.div>
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={modalImage !== null}
+        onClose={closeModal}
+        imageSrc={modalImage?.src || ""}
+        imageAlt={modalImage?.alt || ""}
+      />
     </>
   );
 };
