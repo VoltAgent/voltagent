@@ -48,9 +48,9 @@ This is where we got inspired by **n8n**, the no-code/low-code automation tool. 
 
 Fueled by these experiences and needs, VoltAgent was born. Our goal was to provide the structure and convenience of a framework while tackling the AI "black box" problem head-on. When designing VoltAgent, our top priority became **observability**.
 
-The key differentiator for VoltAgent is our **[VoltAgent Console](https://console.voltagent.dev/)**. This console lets you visualize the entire lifecycle of your agents LLM interactions, tool usage, state changes, even their internal reasoning on an **n8n-style canvas**.
+The key differentiator for VoltAgent is our **[VoltOps LLM Observability Platform](https://console.voltagent.dev/)**. This console lets you visualize the entire lifecycle of your agents LLM interactions, tool usage, state changes, even their internal reasoning on an **n8n-style canvas**.
 
-![VoltAgent Console Demo](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltOps LLM Observability Platform Demo](https://cdn.voltagent.dev/readme/demo.gif)
 
 With this, you can:
 
@@ -59,7 +59,7 @@ With this, you can:
 - Track your agent's performance and LLM costs in detail.
 - Easily compare results when experimenting with different LLMs or prompts.
 
-While VoltAgent Core (`@voltagent/core`) gives you a flexible and powerful foundation, the VoltAgent Console makes the agents you build on top transparent and understandable.
+While VoltAgent Core (`@voltagent/core`) gives you a flexible and powerful foundation, the VoltOps LLM Observability Platform makes the agents you build on top transparent and understandable.
 
 ### Thanks and Looking ahead
 

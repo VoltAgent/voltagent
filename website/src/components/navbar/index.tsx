@@ -7,7 +7,6 @@ import { GitHubLogo } from "../../../static/img/logos/github";
 import { BoltIcon, StarIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
 import {} from "@heroicons/react/24/solid";
 import {
-  ShoppingBagIcon,
   ServerIcon,
   CommandLineIcon,
   ComputerDesktopIcon,
@@ -74,7 +73,7 @@ export default function Navbar() {
                 <Link to="/ai-agent-monitoring/" className="no-underline">
                   <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                     <ComputerDesktopIcon className="w-5 h-5 mr-3 text-[#00d992]" />
-                    <span className="text-sm">Developer Console</span>
+                    <span className="text-sm">VoltOps LLM Observability</span>
                   </div>
                 </Link>
                 <div className="cursor-pointer p-3 hover:bg-gray-800/50  text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
@@ -262,7 +261,7 @@ export default function Navbar() {
               <Link to="/ai-agent-monitoring/" className="no-underline">
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                  <span className="text-sm">Developer Console</span>
+                  <span className="text-sm">VoltOps LLM Observability</span>
                 </div>
               </Link>
               <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
@@ -335,7 +334,7 @@ export default function Navbar() {
               to="https://console.voltagent.dev/demo"
               className={styles.mobileLoginButton}
             >
-              Log in to Developer Console
+              Log in to VoltOps
             </Link>
             <Link
               to="https://s.voltagent.dev/discord/"

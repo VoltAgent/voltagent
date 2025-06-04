@@ -20,7 +20,7 @@ class KnowledgeBaseRetriever extends BaseRetriever {
     {
       id: "doc4",
       content:
-        "How can I test my agent? You can test VoltAgent agents using the VoltAgent Console.",
+        "How can I test my agent? You can test VoltAgent agents using the VoltOps LLM Observability Platform.",
     },
   ];
 

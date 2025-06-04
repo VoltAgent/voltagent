@@ -97,8 +97,8 @@ app.get("/", (c) => {
         <div class="container">
             <div class="logo">VoltAgent</div>
             <h1>API Running ⚡</h1>
-            <p>Manage and monitor your agents via the Developer Console.</p>
-            <a href="https://console.voltagent.dev" target="_blank" style="margin-bottom: 30px; display: inline-block;">Go to Developer Console</a>
+            <p>Manage and monitor your agents via the VoltOps Platform.</p>
+            <a href="https://console.voltagent.dev" target="_blank" style="margin-bottom: 30px; display: inline-block;">Go to VoltOps Platform</a>
             <div class="support-links" style="margin-top: 15px;">
               <p style="margin-bottom: 15px;">If you find VoltAgent useful, please consider giving us a <a href="http://github.com/voltAgent/voltagent" target="_blank" style="border: none; padding: 0; font-weight: bold; color: #64b5f6;"> star on GitHub ⭐</a>!</p>
               <p>Need support or want to connect with the community? Join our <a href="https://s.voltagent.dev/discord" target="_blank" style="border: none; padding: 0; font-weight: bold; color: #64b5f6;">Discord server</a>.</p>

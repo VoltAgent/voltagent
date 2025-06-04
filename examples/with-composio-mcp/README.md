@@ -121,7 +121,7 @@ You should see logs indicating the MCP connection and tool fetching, followed by
 
 ## Interacting with the Agent
 
-1. Open the VoltAgent Developer Console: [`https://console.voltagent.dev`](https://console.voltagent.dev)
+1. Open the VoltAgent VoltOps Platform: [`https://console.voltagent.dev`](https://console.voltagent.dev)
 2. Find the agent named `Composio MCP Agent`
 3. Click on the agent name, then click the chat icon
 4. Try sending messages that require interaction with the connected services

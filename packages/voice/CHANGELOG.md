@@ -87,6 +87,6 @@
   - **`@voltagent/xsai`**: A Seamless integration with [xsAI](https://xsai.js.org/).
   - **`@voltagent/cli` & `create-voltagent-app`**: Quick start tools to get you building _fast_.
 
-  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltAgent Console](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
+  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltOps LLM Observability Platform](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
 
   Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community](https://s.voltagent.dev/discord)!

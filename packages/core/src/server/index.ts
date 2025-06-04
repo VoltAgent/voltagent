@@ -118,7 +118,7 @@ const printServerStartup = (port: number) => {
 
   console.log();
   console.log(
-    `${colors.bright}${colors.yellow}  ${colors.bright}Developer Console:    ${colors.reset}${colors.white}https://console.voltagent.dev${colors.reset}`,
+    `${colors.bright}${colors.yellow}  ${colors.bright}VoltOps Platform:    ${colors.reset}${colors.white}https://console.voltagent.dev${colors.reset}`,
   );
   console.log(divider);
 };

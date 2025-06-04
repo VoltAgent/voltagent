@@ -216,7 +216,7 @@ You should see the VoltAgent server startup message:
 ══════════════════════════════════════════════════
   ✓ HTTP Server: http://localhost:3141
 
-  Developer Console: https://console.voltagent.dev
+  VoltOps Platform: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
@@ -239,7 +239,7 @@ The supervisor agent will now follow its instructions:
 - Then, it will call the `ContributorsFetcher` for the (mock) contributor list.
 - Finally, it will pass this information to the `RepoAnalyzer` and return the analysis to you in the chat.
 
-You can observe this multi-step process happening in the VoltAgent Developer Console!
+You can observe this multi-step process happening in the VoltAgent VoltOps Platform!
 
 ## Conclusion
 
@@ -248,7 +248,7 @@ Congratulations! You've successfully built a multi-agent system using VoltAgent.
 - Set up a VoltAgent project.
 - Define multiple agents with specific roles and tools (even mock ones).
 - Create a supervisor agent to orchestrate tasks among sub-agents.
-- Run and interact with your agent system via the Developer Console.
+- Run and interact with your agent system via the VoltOps Platform.
 
 This example showcases how you can break down complex tasks into smaller, manageable units, each handled by a specialized agent.
 

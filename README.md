@@ -46,7 +46,7 @@ Escape the limitations of no-code builders and the complexity of starting from s
 
 > An **AI Agent Framework** provides the foundational structure and tools needed to build applications powered by autonomous agents. These agents, often driven by Large Language Models (LLMs), can perceive their environment, make decisions, and take actions to achieve specific goals. Building such agents from scratch involves managing complex interactions with LLMs, handling state, connecting to external tools and data, and orchestrating workflows.
 
-[![VoltAgent Developer Console Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://github.com/VoltAgent/voltagent/blob/main/CONSOLE.md)
+[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://github.com/VoltAgent/voltagent/blob/main/CONSOLE.md)
 
 **VoltAgent** is an open-source TypeScript framework that acts as this essential toolkit. It simplifies the development of AI agent applications by providing modular building blocks, standardized patterns, and abstractions. Whether you're creating chatbots, virtual assistants, automated workflows, or complex multi-agent systems, VoltAgent handles the underlying complexity, allowing you to focus on defining your agents' capabilities and logic.
 
@@ -59,7 +59,7 @@ Instead of building everything from scratch, VoltAgent provides ready-made, modu
 - **Data Retrieval & RAG**: Implement specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)**.
 - **Memory**: Enable agents to remember past interactions for more natural and context-aware conversations.
 - **LLM Compatibility**: Works with popular AI models from OpenAI, Google, Anthropic, and more, allowing easy switching.
-- **Developer Ecosystem**: Includes helpers like `create-voltagent-app`, `@voltagent/cli`, and the visual [VoltAgent Console](https://console.voltagent.dev) for quick setup, monitoring, and debugging.
+- **Developer Ecosystem**: Includes helpers like `create-voltagent-app`, `@voltagent/cli`, and the visual [VoltOps LLM Observability Platform](https://console.voltagent.dev) for quick setup, monitoring, and debugging.
 
 In essence, VoltAgent helps developers build sophisticated AI applications faster and more reliably, avoiding repetitive setup and the limitations of simpler tools.
 
@@ -78,7 +78,7 @@ VoltAgent provides a middle ground, offering structure and components without sa
 - **Flexibility:** Full control over agent behavior, LLM choice, tool integrations, and UI connections.
 - **Avoid Lock-in:** Freedom to switch AI providers and models as needed.
 - **Cost Efficiency:** Features designed to optimize AI service usage and reduce redundant calls.
-- **Visual Monitoring:** Use the [VoltAgent Console](https://console.voltagent.dev) to track agent performance, inspect state, and debug visually.
+- **Visual Monitoring:** Use the [VoltOps LLM Observability Platform](https://console.voltagent.dev) to track agent performance, inspect state, and debug visually.
 
 VoltAgent empowers developers to build their envisioned AI applications efficiently, from simple helpers to complex systems.
 
@@ -130,19 +130,19 @@ VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
 ✓ HTTP Server: http://localhost:3141
 
-Developer Console: https://console.voltagent.dev
+VoltOps Platform: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
 Your agent is now running! To interact with it:
 
-1. Open the Console: Click the [VoltAgent Console](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
-2. Find Your Agent: On the VoltAgent Console page, you should see your agent listed (e.g., "my-agent").
+1. Open the Console: Click the [VoltOps LLM Observability Platform](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
+2. Find Your Agent: On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
 3. Open Agent Details: Click on your agent's name.
 4. Start Chatting: On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5. Send a Message: Type a message like "Hello" and press Enter.
 
-[![VoltAgent Developer Console Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
+[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
 
 ## Key Features
 
@@ -151,7 +151,7 @@ Your agent is now running! To interact with it:
 - **Tool Usage & Lifecycle:** Equip agents with custom or pre-built tools (functions) with type-safety (Zod), lifecycle hooks, and cancellation support to interact with external systems.
 - **Flexible LLM Support:** Integrate seamlessly with various LLM providers (OpenAI, Anthropic, Google, etc.) and easily switch between models.
 - **Memory Management:** Enable agents to retain context across interactions using different configurable memory providers.
-- **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltAgent Console](https://console.voltagent.dev).
+- **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltOps LLM Observability Platform](https://console.voltagent.dev).
 - **Custom API Endpoints:** Extend the VoltAgent API server with your own custom endpoints to build specialized functionality on top of the core framework.
 - **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package.
 - **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources.

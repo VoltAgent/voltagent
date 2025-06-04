@@ -42,12 +42,12 @@ You should see the VoltAgent server startup message in your terminal:
 ══════════════════════════════════════════════════
   ✓ HTTP Server: http://localhost:3141
 
-  Developer Console:    https://console.voltagent.dev
+  VoltOps Platform:    https://console.voltagent.dev
 ══════════════════════════════════════════════════
 [VoltAgent] All packages are up to date
 ```
 
-### Open the Developer Console
+### Open the VoltOps Platform
 
 Visit [console.voltagent.dev](https://console.voltagent.dev/) to see your agent in real-time
 

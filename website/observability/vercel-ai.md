@@ -7,7 +7,7 @@ import TabItem from '@theme/TabItem';
 
 # Vercel AI SDK Integration
 
-VoltAgent Developer Console now works framework-agnostic and provides direct integration with [Vercel AI SDK](https://ai-sdk.dev/docs/introduction). This allows you to add observability to your existing Vercel AI applications with minimal changes.
+VoltOps LLM Observability now works framework-agnostic and provides direct integration with [Vercel AI SDK](https://ai-sdk.dev/docs/introduction). This allows you to add observability to your existing Vercel AI applications with minimal changes.
 
 ![Vercel AI SDK Integration](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
 
@@ -37,7 +37,7 @@ First, install the required packages:
 
 ### Get Your API Keys
 
-You'll need to get your API keys from VoltAgent console:
+You'll need to get your API keys from VoltOps LLM Observability Platform:
 
 1. **Sign up** at [console.voltagent.dev](https://console.voltagent.dev)
 2. **Create an organization** for your team/company
@@ -96,7 +96,7 @@ console.log("Assistant:", result.text);
 
 **✅ What you get:**
 
-- AI calls tracked in VoltAgent console
+- AI calls tracked in VoltOps LLM Observability Platform
 - Basic execution flow visibility
 - All activities grouped under "ai-assistant" (default)
 
@@ -561,6 +561,6 @@ process.on("SIGINT", async () => {
 
 ## Next Steps
 
-- Explore [Developer Console](/docs/observability/developer-console) features
+- Explore [VoltOps Platform](/docs/observability/developer-console) features
 - Check out [Multi-agent examples](https://github.com/voltagent/examples)
 - Learn about production monitoring setup

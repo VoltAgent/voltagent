@@ -31,13 +31,13 @@ Drawing inspiration from the clarity of No-Code tools but retaining the power an
 - **Extensibility:** Designed with modularity in mind, allowing for custom tools, providers, and integrations (like potential voice capabilities hinted at in `@voltagent/voice`).
 - **Clear Best Practices:** We provide guidance and structure (see `agents` and `utils` docs) to help you build maintainable and scalable AI applications.
 
-## Beyond Logs: Meet the VoltAgent Developer Console
+## Beyond Logs: Meet the VoltAgent VoltOps Platform
 
-[![VoltAgent Developer Console](https://cdn.voltagent.dev/readme/demo.gif)](https://console.voltagent.dev/)
+[![VoltAgent VoltOps Platform](https://cdn.voltagent.dev/readme/demo.gif)](https://console.voltagent.dev/)
 
 Debugging AI agents often involves sifting through endless `console.log` statements or trying to piece together scattered information across different services. This "black box" debugging is slow, frustrating, and hinders rapid iteration.
 
-VoltAgent changes the game with its integrated **[Developer Console](https://console.voltagent.dev/)**. Think of it as a visual control center specifically designed for your AI agents:
+VoltAgent changes the game with its integrated **[VoltOps Platform](https://console.voltagent.dev/)**. Think of it as a visual control center specifically designed for your AI agents:
 
 - **Visualize Execution Flow:** See exactly how your agent processes information, which functions are called, which tools are used, and where decisions are made – all laid out visually in a clear graph.
 - **Inspect State & Data in Real-Time:** No more guessing. Examine the agent's internal state, inputs, outputs, and tool interactions at any point during its execution. Understand exactly what data it's working with.

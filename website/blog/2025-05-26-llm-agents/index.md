@@ -273,9 +273,9 @@ participant DB as Database
 
 Without memory, each conversation must start all over again. Even if the user says "we talked about this yesterday," the agent would respond with "Who are you?" Terrible experience!
 
-### VoltAgent Console: Game Changer
+### VoltOps LLM Observability Platform: Game Changer
 
-We built VoltAgent Console to solve a critical problem in agent development. With it, you can visually inspect your agents:
+We built VoltOps LLM Observability Platform to solve a critical problem in agent development. With it, you can visually inspect your agents:
 
 - Preview conversation flows
 - Debug calls to tools
@@ -285,7 +285,7 @@ We built VoltAgent Console to solve a critical problem in agent development. Wit
 It's _vital_ to understand what your agent is doing in production.
 
 :::caution Important for Production
-Operating an agent in production without VoltAgent Console is akin to driving blindfolded. Use it definitely for debugging and optimization.
+Operating an agent in production without VoltOps LLM Observability Platform is akin to driving blindfolded. Use it definitely for debugging and optimization.
 :::
 
 ## Best Practices (From My Experience)

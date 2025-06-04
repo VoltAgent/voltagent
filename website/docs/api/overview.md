@@ -21,7 +21,7 @@ $ node your-app.js
     ✓ HTTP Server:  http://localhost:3141
     ✓ Swagger UI:   http://localhost:3141/ui
 
-    Developer Console:    https://console.voltagent.dev
+    VoltOps Platform:    https://console.voltagent.dev
   ══════════════════════════════════════════════════
 ```
 

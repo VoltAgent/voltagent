@@ -36,7 +36,7 @@ First, install the required packages:
 
 ### Get Your API Keys
 
-You'll need to get your API keys from VoltAgent console:
+You'll need to get your API keys from VoltOps LLM Observability Platform:
 
 1. **Sign up** at [console.voltagent.dev](https://console.voltagent.dev)
 2. **Create an organization** for your team/company
@@ -95,7 +95,7 @@ console.log("Assistant:", result.text);
 
 **✅ What you get:**
 
-- AI calls tracked in VoltAgent console
+- AI calls tracked in VoltOps LLM Observability Platform
 - Basic execution flow visibility
 - All activities grouped under "ai-assistant" (default)
 
@@ -456,7 +456,7 @@ You'll see helpful logs like:
 
 ## Next Steps
 
-- **[Developer Console](../observability/developer-console.md)** - Learn about real-time debugging
+- **[VoltOps Platform](../observability/developer-console.md)** - Learn about real-time debugging
 - **[Langfuse Integration](../observability/langfuse.md)** - Advanced analytics platform
 - **[Production Deployment](#)** - Best practices for production use
 
