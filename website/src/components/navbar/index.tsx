@@ -114,14 +114,26 @@ export default function Navbar() {
             >
               ABOUT US
             </Link>
-            <Link
-              to="/docs/"
-              className={`${styles.navLink} ${
-                isActive("/docs/") ? styles.active : ""
-              }`}
-            >
-              DOCUMENTATION
-            </Link>
+            <div className={`${styles.navLink} group relative`}>
+              <div className="flex items-center cursor-pointer">
+                DOCS
+                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-emerald-400" />
+              </div>
+              <div className="absolute left-0 top-full mt-2 bg-[#0E1618] border border-solid border-gray-800 rounded-md shadow-xl  w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <Link to="/docs/" className="no-underline">
+                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                    <BoltIcon className="w-5 h-5 mr-3 text-[#00d992]" />
+                    <span className="text-sm">Voltagent Docs</span>
+                  </div>
+                </Link>
+                <Link to="/docs-observability/" className="no-underline">
+                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                    <ComputerDesktopIcon className="w-5 h-5 mr-3 text-[#00d992]" />
+                    <span className="text-sm">VoltOps Docs</span>
+                  </div>
+                </Link>
+              </div>
+            </div>
             <Link
               to="https://github.com/voltagent/voltagent/tree/main/examples/"
               className={`${styles.navLink} ${
@@ -304,14 +316,42 @@ export default function Navbar() {
           >
             ABOUT US
           </Link>
-          <Link
-            to="/docs/"
-            className={`${styles.mobileNavLink} ${
-              isActive("/docs/") ? styles.active : ""
-            }`}
-          >
-            DOCUMENTATION
-          </Link>
+          <div className={styles.mobileNavLink}>
+            <button
+              type="button"
+              className="flex items-center px-0  w-full cursor-pointer bg-transparent border-none text-inherit"
+              onClick={() => {
+                const elem = document.getElementById(
+                  "mobile-documentation-dropdown",
+                );
+                if (elem) {
+                  elem.classList.toggle("hidden");
+                }
+              }}
+            >
+              <span className="font-['IBM_Plex_Mono'] font-semibold">
+                DOCUMENTATION
+              </span>
+              <ChevronDownIcon className="w-5 h-5 ml-1" />
+            </button>
+            <div
+              id="mobile-documentation-dropdown"
+              className="hidden  mt-4 mb-2 "
+            >
+              <Link to="/docs/" className="no-underline">
+                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                  <BoltIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <span className="text-sm">Voltagent Docs</span>
+                </div>
+              </Link>
+              <Link to="/docs-observability/" className="no-underline">
+                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <span className="text-sm">VoltOps Docs</span>
+                </div>
+              </Link>
+            </div>
+          </div>
           <Link
             to="https://github.com/voltagent/voltagent/tree/main/examples/"
             className={`${styles.mobileNavLink} ${
