@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/core",
-  "version": "0.1.19",
+  "version": "0.1.27",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
   "license": "MIT",
   "exports": {
@@ -29,7 +29,6 @@
     "@hono/zod-openapi": "^0.19.6",
     "@libsql/client": "^0.15.0",
     "@modelcontextprotocol/sdk": "^1.10.1",
-    "@n8n/json-schema-to-zod": "^1.1.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
@@ -38,7 +37,8 @@
     "npm-check-updates": "^17.1.18",
     "uuid": "^9.0.1",
     "ws": "^8.18.1",
-    "zod": "^3.24.2"
+    "zod": "3.24.2",
+    "zod-from-json-schema": "^0.0.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
@@ -50,6 +50,6 @@
     "typescript": "^5.0.4"
   },
   "peerDependencies": {
-    "zod": "^3.24.2"
+    "zod": "3.24.2"
   }
 }

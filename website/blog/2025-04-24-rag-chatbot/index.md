@@ -20,7 +20,7 @@ What if you want your chatbot to answer questions based on specific documents, r
 
 That's where **Retrieval-Augmented Generation (RAG)** comes in.
 
-![VoltAgent Console Chat Example](https://cdn.voltagent.dev/2025-04-24-rag-chatbot/rag-chatbot-voltagent-console.gif)
+![VoltOps LLM Observability Platform Chat Example](https://cdn.voltagent.dev/2025-04-24-rag-chatbot/rag-chatbot-voltagent-console.gif)
 
 Steps we'll cover:
 
@@ -29,7 +29,7 @@ Steps we'll cover:
 - [Setting up a VoltAgent project.](#setting-up-the-project)
 - [Implementing a custom `BaseRetriever` with a simple knowledge base.](#implementing-the-retriever-and-agent)
 - [Creating a VoltAgent `Agent` that uses the retriever directly.](#implementing-the-retriever-and-agent)
-- [Running and testing the RAG chatbot using the VoltAgent Console.](#running-the-agent)
+- [Running and testing the RAG chatbot using the VoltOps LLM Observability Platform.](#running-the-agent)
 
 <GitHubExampleLink 
   repoUrl="https://github.com/VoltAgent/voltagent/tree/main/examples/with-rag-chatbot" 
@@ -144,7 +144,7 @@ class KnowledgeBaseRetriever extends BaseRetriever {
     {
       id: "doc4",
       content:
-        "How can I test my agent? You can test VoltAgent agents using the VoltAgent Console.",
+        "How can I test my agent? You can test VoltAgent agents using the VoltOps LLM Observability Platform.",
     },
   ];
 
@@ -267,7 +267,7 @@ OPENAI_API_KEY=your_openai_api_key_here
           </TabItem>
         </Tabs>
 
-You should see the VoltAgent server startup message, including a link to the Developer Console:
+You should see the VoltAgent server startup message, including a link to the VoltOps Platform:
 
 ```bash
 ══════════════════════════════════════════════════
@@ -275,7 +275,7 @@ You should see the VoltAgent server startup message, including a link to the Dev
 ══════════════════════════════════════════════════
   ✓ HTTP Server: http://localhost:3141
 
-  Developer Console:    https://console.voltagent.dev
+  VoltOps Platform:    https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
@@ -294,7 +294,7 @@ Now for the fun part!
 
 Observe the responses. They should be directly based on the content from the `documents` array we provided! You can also check your terminal where you ran `npm run dev` - you'll see the logs from the `KnowledgeBaseRetriever` showing what context (if any) was found for each query.
 
-![VoltAgent Console Chat Example](https://cdn.voltagent.dev/2025-04-24-rag-chatbot/rag-chatbot-voltagent-console.gif)
+![VoltOps LLM Observability Platform Chat Example](https://cdn.voltagent.dev/2025-04-24-rag-chatbot/rag-chatbot-voltagent-console.gif)
 
 ## Conclusion
 

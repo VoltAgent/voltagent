@@ -1,0 +1,358 @@
+{
+  "id": 4,
+  "slug": "slack",
+  "name": "Slack",
+  "short_description": "Manage messages, channels, users, and team communication in Slack.",
+  "title": "Slack MCP Server",
+  "description": "The Slack MCP server brings your AI agents together with Slack's entire suite of team communication features. Your agents can send messages, manage channels, collaborate with teammates, manage notifications, and perform sophisticated communication operations automatically. Check out the features listed below to discover how you can leverage these features to automate your team communication and collaboration processes.",
+  "category": "Communication",
+  "logoKey": "slack",
+  "avaliable_providers": ["composio", "zapier"],
+  "total_tools": [
+    {
+      "id": "send_channel_message",
+      "name": "Send Channel Message",
+      "description": "Post a message to a specific Slack channel",
+      "providers": {
+        "zapier": { "id": "send_channel_message" },
+        "composio": { "id": "a_message_to_a_slack_channel" }
+      },
+      "mcp_content": {
+        "heading": "How to Send Channel Messages Automatically using Slack MCP?",
+        "description": "Team communication is much time-consuming effort when it is manual. Your AI delivers messages to specified channels maintaining your communication tone. It is of invaluable help in project updates, announcements, and routine notifications where consistency is the main thing."
+      }
+    },
+    {
+      "id": "send_direct_message",
+      "name": "Send Direct Message",
+      "description": "Send a direct message to a user or yourself",
+      "providers": {
+        "zapier": { "id": "send_direct_message" }
+      },
+      "mcp_content": {
+        "heading": "How to Send Personal Messages using Slack MCP?",
+        "description": "Direct messaging gives you power over private messages. Your AI creates personalized messages for you to send live or schedule to send later. You can employ this technique for confidential topic matter or live messages with personal attention."
+      }
+    },
+    {
+      "id": "send_private_channel_message",
+      "name": "Send Private Channel Message",
+      "description": "Post a message to a private channel",
+      "providers": {
+        "zapier": { "id": "send_private_channel_message" }
+      },
+      "mcp_content": {
+        "heading": "How to Manage Private Team Communication using Slack MCP?",
+        "description": "Private channel messaging is required in high-security environments. Your AI on Slack MCP takes care of private messaging and saves conversation context in limited capacities. This enables safe messages without needing to handle threads manually."
+      }
+    },
+    {
+      "id": "schedule_message",
+      "name": "Schedule Message",
+      "description": "Schedule a message for future delivery in a Slack channel",
+      "providers": {
+        "composio": { "id": "a_message_to_a_channel_at_a_specified_time" }
+      },
+      "mcp_content": {
+        "heading": "How to Plan Messages with Slack MCP?",
+        "description": "Timing is everything when it comes to team communication. Your AI delivers messages for optimal delivery times across different time zones. It's particularly useful for announcements, reminders, or follow-ups that need to go out at specific times."
+      }
+    },
+    {
+      "id": "edit_message",
+      "name": "Edit Message",
+      "description": "Update or modify an existing Slack message",
+      "providers": {
+        "zapier": { "id": "edit_message" },
+        "composio": { "id": "a_slack_message" }
+      },
+      "mcp_content": {
+        "heading": "Repair Messages Without Confusion",
+        "description": "Message editing prevents communication mistakes from becoming permanent. Your AI using Slack MCP corrects typos, updates facts, and changes text without leaving redundant messages behind. This **editing feature** avoids confusion and maintains conversation threads tidy."
+      }
+    },
+    {
+      "id": "delete_message",
+      "name": "Delete Message",
+      "description": "Remove an existing message from a Slack channel",
+      "providers": {
+        "zapier": { "id": "delete_message" }
+      },
+      "mcp_content": {
+        "heading": "Keep Channels Clean Without Human Effort",
+        "description": "Message removal is necessary when facts are outdated or become inappropriate. Your AI removes unwanted messages without losing important conversation flow. This automated cleaning maintains professional channel appearance."
+      }
+    },
+    {
+      "id": "find_message",
+      "name": "Find Message",
+      "description": "Search for specific messages across Slack channels",
+      "providers": {
+        "zapier": { "id": "find_message" },
+        "composio": { "id": "for_messages_with_query" }
+      },
+      "mcp_content": {
+        "heading": "Find Significant Messages with Smart Search",
+        "description": "Discovery of specific messages between different channels is time-consuming. Your AI through Slack MCP scans conversations, channels, and direct messages along many criteria. It proves to be very useful in retrieving project decisions, client messages, or reference material in a matter of seconds."
+      }
+    },
+    {
+      "id": "get_conversation_history",
+      "name": "Get Conversation History",
+      "description": "Retrieve message history from channels or conversations",
+      "providers": {
+        "zapier": { "id": "retrieve_thread_messages" },
+        "composio": { "id": "conversation_history" }
+      },
+      "mcp_content": {
+        "heading": "How to Monitor Team Conversations Effectively?",
+        "description": "Conversation tracking requires effort that most professionals can't keep up with manually. Your AI carries with it full message histories, conversation contexts, and more automatically. This provides detailed visibility for project management and decision tracking."
+      }
+    },
+    {
+      "id": "add_reminder",
+      "name": "Add Reminder",
+      "description": "Create reminders for yourself or team members",
+      "providers": {
+        "zapier": { "id": "add_reminder" },
+        "composio": { "id": "a_reminder" }
+      },
+      "mcp_content": {
+        "heading": "Never Miss Important Tasks Again",
+        "description": "Task management is imperative if you're not sure of upcoming deadlines. Your AI via Slack MCP automatically creates reminders for meetings, deliverables, and follow-ups. This reminder system prevents allowing important items to fall between cracks."
+      }
+    },
+    {
+      "id": "create_channel",
+      "name": "Create Channel",
+      "description": "Create a new public channel",
+      "providers": {
+        "zapier": { "id": "create_channel" }
+      },
+      "mcp_content": {
+        "heading": "How to Create Organized Workspaces Without Manual Setup using Slack MCP?",
+        "description": "Channel organization is about balancing structure and accessibility. Your AI creates new channels for projects, teams, or topics while maintaining reasonable workspace organization. It's perfect for adaptive project-based workflows."
+      }
+    },
+    {
+      "id": "create_private_channel",
+      "name": "Create Private Channel",
+      "description": "Create a new private channel",
+      "providers": {
+        "zapier": { "id": "create_private_channel" }
+      },
+      "mcp_content": {
+        "heading": "How to Set Up Secure Team Spaces with Slack MCP?",
+        "description": "Secure project communication needs secure spaces. Your AI automates the setup of private channels with access control accordingly. It builds secure communication environments without manual complexity setup."
+      }
+    },
+    {
+      "id": "find_public_channel",
+      "name": "Find Public Channel",
+      "description": "Locate public channels by ID or name",
+      "providers": {
+        "zapier": { "id": "find_public_channel" }
+      },
+      "mcp_content": {
+        "heading": "Find Team Channels Without Directory Searching",
+        "description": "Channel discovery becomes slow with large workspace directory. Your AI locates channels based on names, purposes, or topics instantly. This navigation improvement increases communication effectiveness across large organizations."
+      }
+    },
+    {
+      "id": "list_channels",
+      "name": "List All Channels",
+      "description": "Get a list of all workspace channels with filters",
+      "providers": {
+        "composio": { "id": "all_slack_team_channels_with_various_filters" }
+      },
+      "mcp_content": {
+        "heading": "Control Team Channel Overview",
+        "description": "Workspace channels can contain dozens of communication spaces that must be managed systematically. Your AI provides filtered lists of all channels in one operation, maintaining workspace visibility without manual directory browsing."
+      }
+    },
+    {
+      "id": "invite_user_to_channel",
+      "name": "Invite User to Channel",
+      "description": "Add an existing user to a channel",
+      "providers": {
+        "zapier": { "id": "invite_user_to_channel" }
+      },
+      "mcp_content": {
+        "heading": "How to Manage Team Access Automatically with Slack MCP?",
+        "description": "Instructing team members is all about adding members to relevant channels. Your AI handles invitations and access according to role based on project demands. It streamlines workspace access without admin effort."
+      }
+    },
+    {
+      "id": "remove_user_from_channel",
+      "name": "Remove User from Channel",
+      "description": "Remove a user from a specific channel",
+      "providers": {
+        "zapier": { "id": "remove_user_from_channel" }
+      },
+      "mcp_content": {
+        "heading": "How to Manage Team Access in an Efficient Manner with Slack MCP?",
+        "description": "Access management becomes tedious with changing project teams. Your AI with Slack MCP removes users from channels when roles change or projects expire. This **access control method** assures security without manual intervention."
+      }
+    },
+    {
+      "id": "list_users",
+      "name": "List All Users",
+      "description": "Get a comprehensive list of workspace users",
+      "providers": {
+        "composio": { "id": "all_slack_team_users_with_pagination" }
+      },
+      "mcp_content": {
+        "heading": "Maintain User Directory Clean Organization",
+        "description": "Team member lists grow big and difficult to manage manually. Your AI provides paginated user lists with filtering functionality to maintain workspace user management clean and in position for admin operations."
+      }
+    },
+    {
+      "id": "find_user_by_email",
+      "name": "Find User by Email",
+      "description": "Locate users using their email address",
+      "providers": {
+        "zapier": { "id": "find_user_by_email" }
+      },
+      "mcp_content": {
+        "heading": "Fetch User Details for Better Team Collaboration",
+        "description": "Effective team coordination calls for accurate user identification and contact details. Your AI locates team members by email addresses so proper mentions, direct messaging, and collaboration creation are possible."
+      }
+    },
+    {
+      "id": "find_user_by_name",
+      "name": "Find User by Name",
+      "description": "Locate users using their real name",
+      "providers": {
+        "zapier": { "id": "find_user_by_name" }
+      },
+      "mcp_content": {
+        "heading": "How to discover team members for improved Communication using Slack MCP?",
+        "description": "How user searching slows down in large team directories. Your Slack MCP AI discovers individual team members by real name, role, or department. Such targeting enhances communication effectiveness in distributed teams."
+      }
+    },
+    {
+      "id": "find_user_by_username",
+      "name": "Find User by Username",
+      "description": "Locate users using their Slack username",
+      "providers": {
+        "zapier": { "id": "find_user_by_username" }
+      },
+      "mcp_content": {
+        "heading": "Prevent Communication Mistakes",
+        "description": "Waste time and cause confusion in team channels. Your AI verifies usernames before sending messages or invitations, preventing communication errors and maintaining professional interaction quality."
+      }
+    },
+    {
+      "id": "find_user_by_id",
+      "name": "Find User by ID",
+      "description": "Locate users using their unique Slack ID",
+      "providers": {
+        "zapier": { "id": "find_user_by_id" }
+      },
+      "mcp_content": {
+        "heading": "Gain Accurate User Identification",
+        "description": "User ID search provides the most precise method of identifying team members. Your AI uses unique identifiers to ensure accurate user targeting, preventing communication misunderstandings and maintaining proper team interaction records."
+      }
+    },
+    {
+      "id": "add_reaction",
+      "name": "Add Reaction",
+      "description": "Add emoji reactions to messages",
+      "providers": {
+        "composio": { "id": "reaction_to_an_item" }
+      },
+      "mcp_content": {
+        "heading": "Prevent Saying Team Engagement",
+        "description": "Quick feedback responses save time compared to complete message reactions. Your AI adds the appropriate emoji reactions to react to messages, show agreement, or provide feedback. This keeps communication flowing without text noise."
+      }
+    },
+    {
+      "id": "remove_reaction",
+      "name": "Remove Reaction",
+      "description": "Remove emoji reactions from messages",
+      "providers": {
+        "composio": { "id": "reaction_from_item" }
+      },
+      "mcp_content": {
+        "heading": "Fix Reaction Mistakes in an Instant",
+        "description": "Reactions mistakes do happen and can confuse team members. Your AI removes the wrong or inappropriate emoji reactions, clearing up what was intended to communicate and preventing confusion in team discussions."
+      }
+    },
+    {
+      "id": "set_channel_topic",
+      "name": "Set Channel Topic",
+      "description": "Update the topic description for a channel",
+      "providers": {
+        "zapier": { "id": "set_channel_topic" }
+      },
+      "mcp_content": {
+        "heading": "Clear Channel Purposes at All Times",
+        "description": "Channel topics facilitate team members in understanding conversation purpose and intent. Your AI updates topics as projects evolve or priorities change, with channels current and properly organized for team effectiveness."
+      }
+    },
+    {
+      "id": "update_profile",
+      "name": "Update Profile",
+      "description": "Modify user profile information",
+      "providers": {
+        "zapier": { "id": "update_profile" }
+      },
+      "mcp_content": {
+        "heading": "Maintain Team Information Current",
+        "description": "User profile data affects team collaboration and communication effectiveness. Your AI updates user profiles with current roles, contact information, and status data, ensuring accuracy within team directories for improved coordination."
+      }
+    },
+    {
+      "id": "set_status",
+      "name": "Set Status",
+      "description": "Update your Slack status message and emoji",
+      "providers": {
+        "zapier": { "id": "set_status" }
+      },
+      "mcp_content": {
+        "heading": "Automatically Share Availability",
+        "description": "Status updates inform team members about availability and current work. Your AI sends automated status messages by calendar events, work hours, or custom triggers with smooth team communication and boundary respect."
+      }
+    },
+    {
+      "id": "request_approval",
+      "name": "Request Approval",
+      "description": "Send approval requests with response buttons",
+      "providers": {
+        "zapier": { "id": "request_approval" }
+      },
+      "mcp_content": {
+        "heading": "Streamline Decision-Making Processes",
+        "description": "Approval flows typically result in bottlenecks in team productivity. Your AI initiates proper approval requests with clearly defined choices, tracks responses, and reminds automatically. This accelerates decision-making without repetitive manual follow-up."
+      }
+    },
+    {
+      "id": "get_message_by_timestamp",
+      "name": "Get Message by Timestamp",
+      "description": "Retrieve specific messages using timestamp",
+      "providers": {
+        "zapier": { "id": "get_message_by_timestamp" }
+      },
+      "mcp_content": {
+        "heading": "Access Exact Messages for Reference",
+        "description": "Reliable message retrieval is essential to reference guides and audit trails. Your AI fetches specific messages by timestamps, returning accurate conversation references for reporting, project documentation, or compliance needs."
+      }
+    },
+    {
+      "id": "api_request",
+      "name": "API Request",
+      "description": "Make raw HTTP requests with Slack authentication",
+      "providers": {
+        "zapier": { "id": "api_request_beta" }
+      },
+      "mcp_content": {
+        "heading": "Access Advanced Slack API Features",
+        "description": "Default behavior doesn't cover all workflow requirements. Your AI makes authenticated API calls to gain access to advanced Slack features, custom integrations, and expert functions beyond traditional communication tools."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How Can Your AI Agents Leverage the Slack MCP Server?",
+    "description": "Increasingly growing team communication responsibilities result in increased message sophistication. Slack MCP provides end-to-end automation of routine communication tasks and leaves human involvement for critical decision-making. With such a balance, you can focus on strategic team interactions and keep collaboration workflows optimized."
+  }
+}

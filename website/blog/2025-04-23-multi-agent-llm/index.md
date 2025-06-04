@@ -170,11 +170,11 @@ I saw output similar to this in my terminal, indicating the server was running:
 ══════════════════════════════════════════════════
   ✓ HTTP Server: http://localhost:3141
 
-  Developer Console:    https://console.voltagent.dev
+  VoltOps Platform:    https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
-Then, I opened my web browser and navigated to the **Developer Console** URL shown (https://console.voltagent.dev).
+Then, I opened my web browser and navigated to the **VoltOps Platform** URL shown (https://console.voltagent.dev).
 
 Inside the console:
 

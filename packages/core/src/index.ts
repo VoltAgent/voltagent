@@ -2,6 +2,8 @@ import type { Agent } from "./agent";
 import { startServer } from "./server";
 import { AgentRegistry } from "./server/registry";
 import { checkForUpdates } from "./utils/update";
+import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
+import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
@@ -13,6 +15,7 @@ export * from "./tool";
 export * from "./tool/reasoning/index";
 export * from "./memory";
 export * from "./agent/providers";
+export * from "./events/types";
 export type {
   AgentOptions,
   AgentResponse,
@@ -26,16 +29,24 @@ export type {
   StreamObjectOnFinishCallback,
   ToolErrorInfo,
 } from "./agent/types";
-export type { AgentHistoryEntry } from "./agent/history";
+export type { AgentHistoryEntry, HistoryStatus } from "./agent/history";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
 export * from "./utils";
 export * from "./retriever";
 export * from "./mcp";
 export { AgentRegistry } from "./server/registry";
+export { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 export * from "./utils/update";
 export * from "./voice";
+export {
+  CustomEndpointDefinition,
+  CustomEndpointHandler,
+  HttpMethod,
+  CustomEndpointError,
+} from "./server/custom-endpoints";
 export * from "./telemetry/exporter";
+export type { UsageInfo } from "./agent/providers";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;
@@ -46,7 +57,11 @@ type VoltAgentOptions = {
   autoStart?: boolean;
   checkDependencies?: boolean;
   /**
-   * Optional OpenTelemetry SpanExporter instance or array of instances,
+   * Optional array of custom endpoint definitions to register with the API server
+   */
+  customEndpoints?: CustomEndpointDefinition[];
+  /**
+   * Optional OpenTelemetry SpanExporter instance or array of instances.
    * or a VoltAgentExporter instance or array of instances.
    * If provided, VoltAgent will attempt to initialize and register
    * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
@@ -62,9 +77,16 @@ export class VoltAgent {
   private registry: AgentRegistry;
   private serverStarted = false;
 
+  private customEndpoints: CustomEndpointDefinition[] = [];
+
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.registerAgents(options.agents);
+
+    // Store custom endpoints for registration when the server starts
+    if (options.customEndpoints && Array.isArray(options.customEndpoints)) {
+      this.customEndpoints = [...options.customEndpoints];
+    }
 
     if (options.telemetryExporter) {
       // Find the VoltAgentExporter and set it globally
@@ -156,8 +178,68 @@ export class VoltAgent {
       return;
     }
 
-    await startServer();
-    this.serverStarted = true;
+    try {
+      // Register custom endpoints if any
+      if (this.customEndpoints.length > 0) {
+        registerCustomEndpoints(this.customEndpoints);
+      }
+
+      await startServer();
+      this.serverStarted = true;
+    } catch (error) {
+      console.error(
+        `[VoltAgent] Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Register a custom endpoint with the API server
+   * @param endpoint The custom endpoint definition
+   * @throws Error if the endpoint definition is invalid or registration fails
+   */
+  public registerCustomEndpoint(endpoint: CustomEndpointDefinition): void {
+    try {
+      // Add to the internal list
+      this.customEndpoints.push(endpoint);
+
+      // If server is already running, register the endpoint immediately
+      if (this.serverStarted) {
+        registerCustomEndpoint(endpoint);
+      }
+    } catch (error) {
+      console.error(
+        `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Register multiple custom endpoints with the API server
+   * @param endpoints Array of custom endpoint definitions
+   * @throws Error if any endpoint definition is invalid or registration fails
+   */
+  public registerCustomEndpoints(endpoints: CustomEndpointDefinition[]): void {
+    try {
+      if (!endpoints || !Array.isArray(endpoints) || endpoints.length === 0) {
+        return;
+      }
+
+      // Add to the internal list
+      this.customEndpoints.push(...endpoints);
+
+      // If server is already running, register the endpoints immediately
+      if (this.serverStarted) {
+        registerCustomEndpoints(endpoints);
+      }
+    } catch (error) {
+      console.error(
+        `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
   }
 
   /**

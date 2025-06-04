@@ -1,6 +1,6 @@
 const blogPluginExports = require("@docusaurus/plugin-content-blog");
 const utils = require("@docusaurus/utils");
-const path = require("path");
+const path = require("node:path");
 
 const defaultBlogPlugin = blogPluginExports.default;
 
@@ -150,7 +150,7 @@ async function blogPluginExtended(...pluginArgs) {
     /**
      * Override the default `contentLoaded` hook to access blog posts data
      */
-    contentLoaded: async function (data) {
+    contentLoaded: async (data) => {
       const { content: blogContents, actions } = data;
       const { addRoute, createData } = actions;
       const {
@@ -274,8 +274,9 @@ async function blogPluginExtended(...pluginArgs) {
 
           const authorListPaginated = paginateBlogPosts({
             blogPosts: authorPosts,
-            basePageUrl:
-              "/blog/author/" + author.toLowerCase().replace(/_/g, "-"),
+            basePageUrl: `/blog/author/${author
+              .toLowerCase()
+              .replace(/_/g, "-")}`,
             blogTitle: `Posts by ${author}`,
             blogDescription: `Blog posts written by ${author}`,
             postsPerPageOption: "ALL",
@@ -393,12 +394,6 @@ async function blogPluginExtended(...pluginArgs) {
 
       await createTagsListPage();
       await Promise.all(Object.values(blogTags).map(createTagPostsListPage));
-
-      // Add route for tags list page with all tags data
-      const tagsListPath = await createData(
-        `${utils.docuHash(blogTagsListPath)}.json`,
-        JSON.stringify({ allTags }, null, 2),
-      );
     },
   };
 }

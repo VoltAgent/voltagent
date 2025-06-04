@@ -5,7 +5,6 @@ import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
 import type { AgentHistoryEntry } from "./history";
-import type { EventUpdater } from "../events";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
 import type { Span } from "@opentelemetry/api";
@@ -370,9 +369,6 @@ export type OperationContext = {
 
   /** The history entry associated with this operation */
   historyEntry: AgentHistoryEntry;
-
-  /** Map to store tool event updaters using tool call ID as key */
-  eventUpdaters: Map<string, EventUpdater>;
 
   /** Whether this operation is still active */
   isActive: boolean;

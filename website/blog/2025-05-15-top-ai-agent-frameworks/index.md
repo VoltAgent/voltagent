@@ -56,9 +56,9 @@ When I first sketched out VoltAgent, I had a few non-negotiables:
 
 - **Developer Experience First**: The `create-voltagent-app` starter was literally the first thing I built after the core. Getting from "I have an idea" to running code needed to be FAST.
 
-- **Visibility Into The Black Box**: The VoltAgent Console was originally just my debugging tool. I got so much value from seeing what my agents were actually doing that we turned it into a first-class part of the platform. It's like React DevTools, but for your AI agents.
+- **Visibility Into The Black Box**: The VoltOps LLM Observability Platform was originally just my debugging tool. I got so much value from seeing what my agents were actually doing that we turned it into a first-class part of the platform. It's like React DevTools, but for your AI agents.
 
-![VoltAgent Console Demo](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltOps LLM Observability Platform Demo](https://cdn.voltagent.dev/readme/demo.gif)
 
 **Where VoltAgent Actually Works Best**
 

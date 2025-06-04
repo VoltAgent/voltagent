@@ -1,4 +1,4 @@
-import { HistoryManager, type AgentHistoryEntry } from ".";
+import { HistoryManager, type AgentHistoryEntry, type AddEntryParams } from ".";
 import type { BaseMessage } from "../providers";
 import type { AgentStatus } from "../types";
 import type { StepWithContent } from "../providers/base/types";
@@ -9,7 +9,7 @@ import type {
   ExportAgentHistoryPayload,
   AgentHistoryUpdatableFields,
 } from "../../telemetry/client";
-import type { EventStatus } from "../../events";
+import type { NewTimelineEvent } from "../../events/types";
 
 // Mock dependencies
 jest.mock("../../events");
@@ -20,7 +20,6 @@ jest.mock("../../telemetry/exporter", () => ({
     exportTimelineEvent: jest.fn(),
     exportHistorySteps: jest.fn(),
     updateHistoryEntry: jest.fn(),
-    updateTimelineEvent: jest.fn(),
     publicKey: "mock-public-key",
   })),
 }));
@@ -60,15 +59,12 @@ describe("HistoryManager", () => {
       return Promise.resolve(undefined);
     });
 
-    mockMemoryManager.addEventToHistoryEntry = jest
+    mockMemoryManager.addTimelineEvent = jest
       .fn()
-      .mockImplementation((_agentId, id, event) => {
-        const index = mockEntries.findIndex((e) => e.id === id);
+      .mockImplementation((_agentId, _historyId, _eventId, _event) => {
+        const index = mockEntries.findIndex((e) => e.id === _historyId);
         if (index !== -1) {
-          if (!mockEntries[index].events) {
-            mockEntries[index].events = [];
-          }
-          mockEntries[index].events.push(event);
+          // For testing purposes, we'll just return the entry
           return Promise.resolve(mockEntries[index]);
         }
         return Promise.resolve(undefined);
@@ -99,7 +95,6 @@ describe("HistoryManager", () => {
     mockVoltAgentExporter.exportTimelineEvent.mockClear();
     mockVoltAgentExporter.exportHistorySteps.mockClear();
     mockVoltAgentExporter.updateHistoryEntry.mockClear();
-    mockVoltAgentExporter.updateTimelineEvent.mockClear();
 
     // Mock AgentEventEmitter
     const mockEmitter = {
@@ -129,17 +124,19 @@ describe("HistoryManager", () => {
 
   describe("addEntry", () => {
     it("should add an entry to history", async () => {
-      const input = "Test input";
-      const output = "Test output";
-      const status: AgentStatus = "completed";
+      const params: AddEntryParams = {
+        input: "Test input",
+        output: "Test output",
+        status: "completed" as AgentStatus,
+      };
 
-      const entry = await historyManager.addEntry(input, output, status);
+      const entry = await historyManager.addEntry(params);
 
       expect(entry.id).toBeDefined();
-      expect(entry.timestamp).toBeInstanceOf(Date);
-      expect(entry.input).toBe(input);
-      expect(entry.output).toBe(output);
-      expect(entry.status).toBe(status);
+      expect(entry.startTime).toBeInstanceOf(Date);
+      expect(entry.input).toBe(params.input);
+      expect(entry.output).toBe(params.output);
+      expect(entry.status).toBe(params.status);
 
       const entries = await historyManager.getEntries();
       expect(entries.length).toBe(1);
@@ -151,9 +148,13 @@ describe("HistoryManager", () => {
         { role: "system", content: "System message" },
         { role: "user", content: "User message" },
       ];
-      const output = "Test output";
+      const params: AddEntryParams = {
+        input,
+        output: "Test output",
+        status: "completed",
+      };
 
-      const entry = await historyManager.addEntry(input, output, "completed");
+      const entry = await historyManager.addEntry(params);
 
       expect(entry.input).toEqual(input);
     });
@@ -161,9 +162,21 @@ describe("HistoryManager", () => {
     it("should truncate history if maxEntries is exceeded", async () => {
       const limitedHistoryManager = new HistoryManager("test-agent", mockMemoryManager, 2);
 
-      await limitedHistoryManager.addEntry("Input 1", "Output 1", "completed");
-      await limitedHistoryManager.addEntry("Input 2", "Output 2", "completed");
-      await limitedHistoryManager.addEntry("Input 3", "Output 3", "completed");
+      await limitedHistoryManager.addEntry({
+        input: "Input 1",
+        output: "Output 1",
+        status: "completed",
+      });
+      await limitedHistoryManager.addEntry({
+        input: "Input 2",
+        output: "Output 2",
+        status: "completed",
+      });
+      await limitedHistoryManager.addEntry({
+        input: "Input 3",
+        output: "Output 3",
+        status: "completed",
+      });
 
       const entries = await limitedHistoryManager.getEntries();
       expect(entries.length).toBe(3); // Changed from 2 to 3 since truncation is not implemented yet
@@ -174,8 +187,8 @@ describe("HistoryManager", () => {
 
   describe("getEntries", () => {
     it("should return all history entries", async () => {
-      await historyManager.addEntry("Input 1", "Output 1", "completed");
-      await historyManager.addEntry("Input 2", "Output 2", "error");
+      await historyManager.addEntry({ input: "Input 1", output: "Output 1", status: "completed" });
+      await historyManager.addEntry({ input: "Input 2", output: "Output 2", status: "error" });
 
       const entries = await historyManager.getEntries();
 
@@ -185,25 +198,10 @@ describe("HistoryManager", () => {
     });
   });
 
-  describe("getLatestEntry", () => {
-    it("should return undefined for empty history", async () => {
-      const latest = await historyManager.getLatestEntry();
-      expect(latest).toBeUndefined();
-    });
-
-    it("should return the latest entry", async () => {
-      await historyManager.addEntry("Input 1", "Output 1", "completed");
-      const entry2 = await historyManager.addEntry("Input 2", "Output 2", "error");
-
-      const latest = await historyManager.getLatestEntry();
-      expect(latest).toEqual(entry2);
-    });
-  });
-
   describe("clear", () => {
     it("should remove all entries when implemented", async () => {
-      await historyManager.addEntry("Input 1", "Output 1", "completed");
-      await historyManager.addEntry("Input 2", "Output 2", "error");
+      await historyManager.addEntry({ input: "Input 1", output: "Output 1", status: "completed" });
+      await historyManager.addEntry({ input: "Input 2", output: "Output 2", status: "error" });
 
       const entriesBefore = await historyManager.getEntries();
       expect(entriesBefore.length).toBe(2);
@@ -225,12 +223,12 @@ describe("HistoryManager", () => {
       const initialEntries = await historyManager.getEntries();
       expect(initialEntries.length).toBe(0);
 
-      await historyManager.addEntry("Input 1", "Output 1", "completed");
+      await historyManager.addEntry({ input: "Input 1", output: "Output 1", status: "completed" });
 
       const entriesAfterOne = await historyManager.getEntries();
       expect(entriesAfterOne.length).toBe(1);
 
-      await historyManager.addEntry("Input 2", "Output 2", "error");
+      await historyManager.addEntry({ input: "Input 2", output: "Output 2", status: "error" });
 
       const entriesAfterTwo = await historyManager.getEntries();
       expect(entriesAfterTwo.length).toBe(2);
@@ -246,7 +244,11 @@ describe("HistoryManager", () => {
 
   describe("updateEntry", () => {
     it("should update an existing entry", async () => {
-      const entry = await historyManager.addEntry("Input", "Initial output", "working");
+      const entry = await historyManager.addEntry({
+        input: "Input",
+        output: "Initial output",
+        status: "working",
+      });
 
       const updatedEntry = await historyManager.updateEntry(entry.id, {
         output: "Updated output",
@@ -264,32 +266,49 @@ describe("HistoryManager", () => {
     });
   });
 
-  describe("addEventToEntry", () => {
-    it("should add a timeline event to an entry", async () => {
-      const entry = await historyManager.addEntry("Input", "Output", "completed");
+  describe("persistTimelineEvent", () => {
+    it("should persist a timeline event to an entry", async () => {
+      const entry = await historyManager.addEntry({
+        input: "Input",
+        output: "Output",
+        status: "completed",
+      });
 
-      const event = {
-        timestamp: new Date().toISOString(),
-        name: "test-event",
-        type: "agent" as const,
-        data: {
-          status: "completed",
-          affectedNodeId: "agent_test-agent",
+      const event: NewTimelineEvent = {
+        id: "test-event-id",
+        name: "agent:success",
+        type: "agent",
+        startTime: new Date().toISOString(),
+        status: "completed",
+        input: null,
+        output: null,
+        metadata: {
+          displayName: "Test Event",
+          id: "test",
+          agentId: "test-agent",
         },
+        traceId: entry.id,
       };
 
-      const updatedEntry = await historyManager.addEventToEntry(entry.id, event);
+      const updatedEntry = await historyManager.persistTimelineEvent(entry.id, event);
 
       expect(updatedEntry).toBeDefined();
-      expect(updatedEntry?.events).toBeDefined();
-      expect(updatedEntry?.events?.length).toBe(1);
-      expect(updatedEntry?.events?.[0].name).toBe("test-event");
+      expect(mockMemoryManager.addTimelineEvent).toHaveBeenCalledWith(
+        "test-agent",
+        entry.id,
+        "test-event-id",
+        event,
+      );
     });
   });
 
   describe("addStepsToEntry", () => {
     it("should add steps to an entry", async () => {
-      const entry = await historyManager.addEntry("Input", "Output", "completed");
+      const entry = await historyManager.addEntry({
+        input: "Input",
+        output: "Output",
+        status: "completed",
+      });
 
       const steps: StepWithContent[] = [
         {
@@ -326,112 +345,150 @@ describe("HistoryManager", () => {
       // Ensure mockMemoryManager calls are clear for telemetry-specific assertions
       mockMemoryManager.storeHistoryEntry.mockClear();
       mockMemoryManager.updateHistoryEntry.mockClear();
-      mockMemoryManager.addEventToHistoryEntry.mockClear();
+      mockMemoryManager.addTimelineEvent.mockClear();
       mockMemoryManager.addStepsToHistoryEntry.mockClear();
       console.warn = jest.fn(); // Mock console.warn for error handling tests
     });
 
     describe("addEntry with telemetry", () => {
       it("should call voltAgentExporter.exportHistoryEntry when exporter is provided", async () => {
-        const input = "telemetry input";
-        const output = "telemetry output";
-        const status: AgentStatus = "completed";
-        const agentSnapshot = { state: "snapshot" };
-        const userId = "test-user-123";
-        const conversationId = "test-conv-456";
+        const params: AddEntryParams = {
+          input: "telemetry input",
+          output: "telemetry output",
+          status: "completed" as AgentStatus,
+          userId: "test-user-123",
+          conversationId: "test-conv-456",
+          model: "test-model",
+          options: {
+            metadata: {
+              agentSnapshot: { state: "snapshot" },
+            },
+          },
+        };
 
-        const entry = await telemetryHistoryManager.addEntry(
-          input,
-          output,
-          status,
-          [],
-          {},
-          agentSnapshot,
-          userId,
-          conversationId,
-        );
+        const entry = await telemetryHistoryManager.addEntry(params);
 
         expect(mockVoltAgentExporter.exportHistoryEntry).toHaveBeenCalledTimes(1);
         const expectedPayload: ExportAgentHistoryPayload = {
           agent_id: "telemetry-agent",
           project_id: "mock-public-key",
           history_id: entry.id,
-          timestamp: entry.timestamp.toISOString(),
-          type: "agent_run",
-          status: status,
-          input: { text: input },
-          output: { text: output },
+          startTime: entry.startTime.toISOString(),
+          endTime: entry.endTime?.toISOString(),
+          status: params.status,
+          input: { text: params.input },
+          output: { text: params.output },
           steps: [],
           usage: undefined,
-          agent_snapshot: agentSnapshot,
-          userId: userId,
-          conversationId: conversationId,
+          metadata: {
+            agentSnapshot: { state: "snapshot" },
+          },
+          userId: params.userId,
+          conversationId: params.conversationId,
+          model: params.model,
         };
         expect(mockVoltAgentExporter.exportHistoryEntry).toHaveBeenCalledWith(expectedPayload);
       });
 
       it("should NOT call voltAgentExporter.exportHistoryEntry when exporter is NOT provided", async () => {
         // Use the default historyManager instance (without exporter)
-        await historyManager.addEntry("no telemetry input", "no telemetry output", "completed");
+        await historyManager.addEntry({
+          input: "no telemetry input",
+          output: "no telemetry output",
+          status: "completed",
+        });
         expect(mockVoltAgentExporter.exportHistoryEntry).not.toHaveBeenCalled();
       });
 
       it("should handle errors from exportHistoryEntry gracefully", async () => {
         mockVoltAgentExporter.exportHistoryEntry.mockRejectedValueOnce(new Error("Telemetry down"));
-        await telemetryHistoryManager.addEntry("error input", "error output", "completed");
+        await telemetryHistoryManager.addEntry({
+          input: "error input",
+          output: "error output",
+          status: "completed",
+        });
       });
     });
 
-    describe("addEventToEntry with telemetry", () => {
+    describe("persistTimelineEvent with telemetry", () => {
       it("should call voltAgentExporter.exportTimelineEvent when exporter is provided", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
-        const event = {
+        const entry = await telemetryHistoryManager.addEntry({
+          input: "entry",
+          output: "out",
+          status: "completed",
+        });
+        const event: NewTimelineEvent = {
           id: "event-123",
-          timestamp: new Date().toISOString(),
-          name: "test-event",
-          type: "agent" as const,
-          data: { status: "working" as EventStatus, custom: "data" },
+          name: "tool:success",
+          type: "tool",
+          startTime: new Date().toISOString(),
+          status: "completed",
+          input: null,
+          output: null,
+          metadata: {
+            displayName: "Test Event",
+            id: "test",
+            agentId: "telemetry-agent",
+          },
+          traceId: entry.id,
         };
 
-        await telemetryHistoryManager.addEventToEntry(entry.id, event);
+        await telemetryHistoryManager.persistTimelineEvent(entry.id, event);
 
         expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledTimes(1);
 
         // Check that exportTimelineEvent was called with the right parameters
-        // Without asserting the exact object structure which might vary
         expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledWith(
           expect.objectContaining({
             history_id: entry.id,
             event_id: event.id,
+            agent_id: "telemetry-agent",
             event: expect.objectContaining({
               id: event.id,
               name: event.name,
               type: event.type,
-              data: event.data,
-              timestamp: event.timestamp,
+              startTime: event.startTime,
             }),
           }),
         );
       });
 
       it("should handle errors from exportTimelineEvent gracefully", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
+        const entry = await telemetryHistoryManager.addEntry({
+          input: "entry",
+          output: "out",
+          status: "completed",
+        });
         mockVoltAgentExporter.exportTimelineEvent.mockRejectedValueOnce(
           new Error("Timeline Telemetry down"),
         );
-        const event = {
+        const event: NewTimelineEvent = {
           id: "err-event",
-          timestamp: new Date().toISOString(),
-          name: "err",
-          type: "tool" as const,
+          name: "tool:error",
+          type: "tool",
+          startTime: new Date().toISOString(),
+          status: "error",
+          level: "ERROR",
+          input: null,
+          output: null,
+          metadata: {
+            displayName: "Error Event",
+            id: "error",
+            agentId: "telemetry-agent",
+          },
+          traceId: entry.id,
         };
-        await telemetryHistoryManager.addEventToEntry(entry.id, event);
+        await telemetryHistoryManager.persistTimelineEvent(entry.id, event);
       });
     });
 
     describe("addStepsToEntry with telemetry", () => {
       it("should call voltAgentExporter.exportHistorySteps when exporter is provided", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
+        const entry = await telemetryHistoryManager.addEntry({
+          input: "entry",
+          output: "out",
+          status: "completed",
+        });
         const steps: StepWithContent[] = [
           { id: "s1", type: "text", content: "Step 1", role: "assistant" },
         ];
@@ -446,14 +503,17 @@ describe("HistoryManager", () => {
 
         expect(mockVoltAgentExporter.exportHistorySteps).toHaveBeenCalledTimes(1);
         expect(mockVoltAgentExporter.exportHistorySteps).toHaveBeenCalledWith(
-          "mock-public-key",
           entry.id,
           historySteps,
         );
       });
 
       it("should handle errors from exportHistorySteps gracefully", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
+        const entry = await telemetryHistoryManager.addEntry({
+          input: "entry",
+          output: "out",
+          status: "completed",
+        });
         await telemetryHistoryManager.addStepsToEntry(entry.id, [
           { id: "s1", type: "text", content: "Step 1", role: "assistant" },
         ]);
@@ -462,30 +522,37 @@ describe("HistoryManager", () => {
 
     describe("updateEntry with telemetry", () => {
       it("should call voltAgentExporter.updateHistoryEntry for relevant updates", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "working");
-        const updates: Partial<AgentHistoryEntry & { agent_snapshot?: Record<string, unknown> }> = {
+        const entry = await telemetryHistoryManager.addEntry({
+          input: "entry",
+          output: "out",
+          status: "working",
+        });
+        const updates: Partial<AgentHistoryEntry & { metadata?: Record<string, unknown> }> = {
           output: "new output",
           status: "completed",
-          agent_snapshot: { state: "updated" },
+          metadata: { state: "updated" },
         };
         const expectedTelemetryUpdates: AgentHistoryUpdatableFields = {
           output: "new output",
           status: "completed",
-          agent_snapshot: { state: "updated" },
+          metadata: { state: "updated" },
         };
 
         await telemetryHistoryManager.updateEntry(entry.id, updates);
 
         expect(mockVoltAgentExporter.updateHistoryEntry).toHaveBeenCalledTimes(1);
         expect(mockVoltAgentExporter.updateHistoryEntry).toHaveBeenCalledWith(
-          "mock-public-key",
           entry.id,
           expectedTelemetryUpdates,
         );
       });
 
       it("should NOT call voltAgentExporter.updateHistoryEntry if no relevant fields are updated", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "working");
+        const entry = await telemetryHistoryManager.addEntry({
+          input: "entry",
+          output: "out",
+          status: "working",
+        });
         await telemetryHistoryManager.updateEntry(entry.id, {
           some_other_field: "value",
         } as Partial<AgentHistoryEntry>);
@@ -493,69 +560,12 @@ describe("HistoryManager", () => {
       });
 
       it("should handle errors from updateHistoryEntry gracefully", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "working");
+        const entry = await telemetryHistoryManager.addEntry({
+          input: "entry",
+          output: "out",
+          status: "working",
+        });
         await telemetryHistoryManager.updateEntry(entry.id, { output: "new" });
-      });
-    });
-
-    describe("updateTrackedEvent with telemetry", () => {
-      it("should call voltAgentExporter.updateTimelineEvent when exporter is provided", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
-        const eventId = "tracked-event-1";
-        // Add an initial event that updateTrackedEvent can find
-        await telemetryHistoryManager.addEventToEntry(entry.id, {
-          id: eventId,
-          timestamp: new Date().toISOString(),
-          name: "initial",
-          type: "tool",
-        });
-
-        const updates = {
-          status: "completed" as AgentStatus,
-          data: { result: "success" },
-        };
-
-        // The actual implementation sends the full serialized event object, not just the updated fields
-        await telemetryHistoryManager.updateTrackedEvent(entry.id, eventId, updates);
-
-        // updateTrackedEvent internally calls updateEntry, which might also call telemetry if output/status changes
-        // So, we expect updateTimelineEvent to be called specifically for the event update.
-        expect(mockVoltAgentExporter.updateTimelineEvent).toHaveBeenCalledTimes(1);
-
-        // Check that updateTimelineEvent was called with the right parameters
-        // Without asserting the exact object structure which includes timestamps that will vary
-        expect(mockVoltAgentExporter.updateTimelineEvent).toHaveBeenCalledWith(
-          entry.id, // history_id
-          eventId, // event_id
-          expect.objectContaining({
-            id: eventId,
-            name: "initial",
-            type: "tool",
-            data: expect.objectContaining({
-              result: "success",
-            }),
-            timestamp: expect.any(String), // Just check that timestamp is a string
-            updatedAt: expect.any(String), // Just check that updatedAt is a string
-          }),
-        );
-      });
-
-      it("should handle errors from updateTimelineEvent gracefully", async () => {
-        const entry = await telemetryHistoryManager.addEntry("entry", "out", "completed");
-        const eventId = "tracked-error-event-1";
-        await telemetryHistoryManager.addEventToEntry(entry.id, {
-          id: eventId,
-          timestamp: new Date().toISOString(),
-          name: "initial-err",
-          type: "tool",
-        });
-
-        mockVoltAgentExporter.updateTimelineEvent.mockRejectedValueOnce(
-          new Error("Tracked Event Telemetry down"),
-        );
-        await telemetryHistoryManager.updateTrackedEvent(entry.id, eventId, {
-          status: "error" as AgentStatus,
-        });
       });
     });
   });

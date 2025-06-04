@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "slug": "4-agent-ai-team-blog-research",
+    "name": " 4-Agent AI Team for Blog Research",
+    "description": "A sophisticated multi-agent platform built using VoltAgent, Composio MCP, and OpenAI GPT‑4o that revolutionizes content creation workflows. This intelligent set of agents automates research in communities, trend tracking, and first draft writing.",
+    "creator": "Emre Tezisci",
+    "avatar": "https://github.com/emretezisci.png",
+    "githubUrl": "https://github.com/emretezisci/pmm-agent",
+    "tech": [
+      "VoltAgent",
+      "OpenAI",
+      "Composio MCP"
+    ],
+    "screenshot": "https://cdn.voltagent.dev/website/showcase/multi-agent.png",
+    "useCases": [
+      "Content marketing teams producing research-based content pieces",
+      "Digital agencies managing multiple client content needs",
+      "Solo creators generating more content",
+      "Market research and competitive intelligence gathering",
+      "Trend tracking for content strategy planning",
+      "Automated fact checking and citation management"
+    ],
+    "video": "https://www.youtube.com/embed/My6FFxtwqIA"
+  }
+]

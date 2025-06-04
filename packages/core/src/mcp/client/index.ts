@@ -11,7 +11,7 @@ import {
   CallToolResultSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { jsonSchemaToZod } from "@n8n/json-schema-to-zod";
+import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import type {
   ClientInfo,
   HTTPServerConfig,
@@ -23,6 +23,7 @@ import type {
   StdioServerConfig,
 } from "../types";
 import { createTool, type Tool } from "../../tool";
+import type * as z from "zod";
 
 /**
  * Client for interacting with Model Context Protocol (MCP) servers.
@@ -190,7 +191,9 @@ export class MCPClient extends EventEmitter {
         inputSchema: unknown;
       }[]) {
         try {
-          const zodSchema = jsonSchemaToZod(toolDef.inputSchema as Record<string, unknown>);
+          const zodSchema = convertJsonSchemaToZod(
+            toolDef.inputSchema as Record<string, unknown>,
+          ) as unknown as z.ZodType;
           const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`; // Use original separator
 
           const agentTool = createTool({

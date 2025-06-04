@@ -1,5 +1,54 @@
 # @voltagent/supabase
 
+## 0.1.7
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - The `error` column has been deprecated and replaced with `statusMessage` column for better consistency and clearer messaging. The old `error` column is still supported for backward compatibility but will be removed in a future major version.
+
+  Changes:
+
+  - Deprecated `error` column (still functional)
+  - Improved error handling and status reporting
+
+- Updated dependencies [[`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275)]:
+  - @voltagent/core@0.1.24
+
+## 0.1.6
+
+### Patch Changes
+
+- [#160](https://github.com/VoltAgent/voltagent/pull/160) [`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enhanced Supabase memory provider with better performance
+
+  We've significantly improved the Supabase memory provider with better schema design and enhanced performance capabilities. The update includes database schema changes that require migration.
+
+  Migration commands will appear in your terminal - follow those instructions to apply the database changes. If you experience any issues with the migration or memory operations, please reach out on [Discord](https://s.voltagent.dev/discord) for assistance.
+
+  **What's Improved:**
+
+  - Better performance for memory operations and large datasets
+  - Enhanced database schema with optimized indexing
+  - Improved error handling and data validation
+  - Better support for timeline events and metadata storage
+
+  **Migration Notes:**
+
+  - Migration commands will be displayed in your terminal
+  - Follow the terminal instructions to update your database schema
+  - Existing memory data will be preserved during the migration
+
+- Updated dependencies [[`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b)]:
+  - @voltagent/core@0.1.21
+
+## 0.1.5
+
+### Patch Changes
+
+- [#155](https://github.com/VoltAgent/voltagent/pull/155) [`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update `tsconfig.json`'s `target` to `ES2022`
+
+- Updated dependencies [[`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c), [`b164bd0`](https://github.com/VoltAgent/voltagent/commit/b164bd014670452cb162b388f03565db992767af), [`9412cf0`](https://github.com/VoltAgent/voltagent/commit/9412cf0633f20d6b77c87625fc05e9e216936758)]:
+  - @voltagent/core@0.1.20
+
 ## 0.1.4
 
 ### Patch Changes

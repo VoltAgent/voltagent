@@ -3,7 +3,6 @@ import {
   type ExportAgentHistoryPayload,
   type ExportTimelineEventPayload,
   type AgentHistoryUpdatableFields,
-  type TimelineEventUpdatableFields,
 } from "./index";
 import type { VoltAgentExporterOptions } from "../exporter"; // Adjust path as necessary
 import type { HistoryStep } from "../../agent/history"; // Adjust path as necessary
@@ -40,37 +39,44 @@ describe("TelemetryServiceApiClient", () => {
     });
 
     it("should use provided fetch implementation", async () => {
-      const mockFetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+      const mockFetch = jest.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: "test-id" }),
+      });
       const clientWithMockFetch = new TelemetryServiceApiClient({
         ...mockOptions,
         fetch: mockFetch,
       });
-      await clientWithMockFetch.exportAgentHistory({} as ExportAgentHistoryPayload); // Trigger a call
+      await clientWithMockFetch.exportAgentHistory({
+        agent_id: "test-agent",
+        project_id: "test-project",
+        history_id: "test-history",
+        startTime: new Date().toISOString(),
+        status: "completed",
+        input: {},
+      } as ExportAgentHistoryPayload);
       expect(mockFetch).toHaveBeenCalled();
     });
   });
 
-  describe("_callEdgeFunction", () => {
-    it("should make a POST request with correct headers and body", async () => {
+  describe("request", () => {
+    it("should make a request with correct headers and body", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
       });
-      const functionName = "test-function";
-      const payload = { data: "test" };
-      const client = apiClient as any;
-      await client._callEdgeFunction(functionName, payload);
 
-      expect(global.fetch).toHaveBeenCalledWith(`${mockOptions.baseUrl}/${functionName}`, {
+      const client = apiClient as any;
+      await client.request("POST", "/test", { data: "test" });
+
+      expect(global.fetch).toHaveBeenCalledWith(`${mockOptions.baseUrl}/test`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-public-key": mockOptions.publicKey,
+          "x-secret-key": mockOptions.secretKey,
         },
-        body: JSON.stringify({
-          publicKey: mockOptions.publicKey,
-          clientSecretKey: mockOptions.secretKey,
-          payload,
-        }),
+        body: JSON.stringify({ data: "test" }),
       });
     });
 
@@ -83,12 +89,11 @@ describe("TelemetryServiceApiClient", () => {
         json: async () => errorBody,
         text: async () => JSON.stringify(errorBody),
       });
-      const functionName = "test-error-function";
-      const payload = { data: "test" };
+
       const client = apiClient as any;
 
-      await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(
-        `Failed to call VoltAgentExporter Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorBody)}`,
+      await expect(client.request("POST", "/test-error", { data: "test" })).rejects.toThrow(
+        `API request failed: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorBody)}`,
       );
     });
 
@@ -103,48 +108,49 @@ describe("TelemetryServiceApiClient", () => {
         },
         text: async () => errorText,
       });
-      const functionName = "test-text-error-function";
-      const payload = { data: "test" };
+
       const client = apiClient as any;
 
-      await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(
-        `Failed to call VoltAgentExporter Function ${functionName}: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorText)}`,
+      await expect(client.request("POST", "/test-text-error", { data: "test" })).rejects.toThrow(
+        `API request failed: ${errorResponse.status} ${errorResponse.statusText} - ${JSON.stringify(errorText)}`,
       );
     });
 
     it("should re-throw network or other errors", async () => {
       const networkError = new Error("Network failed");
       (global.fetch as jest.Mock).mockRejectedValueOnce(networkError);
-      const functionName = "test-network-error";
-      const payload = { data: "test" };
+
       const client = apiClient as any;
 
-      await expect(client._callEdgeFunction(functionName, payload)).rejects.toThrow(networkError);
+      await expect(client.request("POST", "/test-network-error", { data: "test" })).rejects.toThrow(
+        networkError,
+      );
     });
   });
 
   describe("exportAgentHistory", () => {
-    it('should call _callEdgeFunction with "export-agent-history" and the payload', async () => {
-      const mockResult = { historyEntryId: "new-id" };
+    it('should call request with "POST /history" and the payload', async () => {
+      const mockResult = { id: "new-id" };
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
       const historyData: ExportAgentHistoryPayload = {
         agent_id: "agent-1",
         project_id: "proj-1",
         history_id: "hist-1",
-        timestamp: new Date().toISOString(),
-        type: "agent_run",
+        startTime: new Date().toISOString(),
         status: "completed",
         input: { text: "hello" },
       };
       const result = await apiClient.exportAgentHistory(historyData);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/export-agent-history"),
+        expect.stringContaining("/history"),
         expect.objectContaining({
-          body: JSON.stringify({
-            publicKey: mockOptions.publicKey,
-            clientSecretKey: mockOptions.secretKey,
-            payload: historyData,
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            "x-public-key": mockOptions.publicKey,
+            "x-secret-key": mockOptions.secretKey,
           }),
+          body: expect.stringContaining('"id":"hist-1"'),
         }),
       );
       expect(result).toEqual(mockResult);
@@ -152,27 +158,40 @@ describe("TelemetryServiceApiClient", () => {
   });
 
   describe("exportTimelineEvent", () => {
-    it('should call _callEdgeFunction with "export-timeline-event" and the payload', async () => {
-      const mockResult = { timelineEventId: "event-id-1" };
+    it('should call request with "POST /history-events" and the payload', async () => {
+      const mockResult = { id: "event-id-1" };
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
       const eventData: ExportTimelineEventPayload = {
         history_id: "hist-1",
         event_id: "evt-1",
+        agent_id: "agent-1",
         event: {
-          timestamp: new Date().toISOString(),
+          id: "evt-1",
+          startTime: new Date().toISOString(),
           type: "agent",
-          name: "start",
+          name: "agent:start",
+          status: "running",
+          level: "INFO",
+          version: "1.0.0",
+          traceId: "hist-1",
+          input: { input: "test input" },
+          metadata: {
+            id: "evt-1",
+            agentId: "agent-1",
+          },
         },
       };
       const result = await apiClient.exportTimelineEvent(eventData);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/export-timeline-event"),
+        expect.stringContaining("/history-events"),
         expect.objectContaining({
-          body: JSON.stringify({
-            publicKey: mockOptions.publicKey,
-            clientSecretKey: mockOptions.secretKey,
-            payload: eventData,
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            "x-public-key": mockOptions.publicKey,
+            "x-secret-key": mockOptions.secretKey,
           }),
+          body: expect.stringContaining('"id":"evt-1"'),
         }),
       );
       expect(result).toEqual(mockResult);
@@ -180,65 +199,42 @@ describe("TelemetryServiceApiClient", () => {
   });
 
   describe("exportHistorySteps", () => {
-    it('should call _callEdgeFunction with "export-history-steps" and the payload', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // Returns void
-      const project_id = "proj-1";
+    it('should call request with "PATCH /history/{id}" and the steps in metadata', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
       const history_id = "hist-1";
       const steps: HistoryStep[] = [{ type: "text", content: "Step 1" }];
-      await apiClient.exportHistorySteps(project_id, history_id, steps);
+      await apiClient.exportHistorySteps(history_id, steps);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/export-history-steps"),
+        expect.stringContaining(`/history/${history_id}`),
         expect.objectContaining({
-          body: JSON.stringify({
-            publicKey: mockOptions.publicKey,
-            clientSecretKey: mockOptions.secretKey,
-            payload: { project_id, history_id, steps },
+          method: "PATCH",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            "x-public-key": mockOptions.publicKey,
+            "x-secret-key": mockOptions.secretKey,
           }),
+          body: expect.stringContaining('"steps"'),
         }),
       );
     });
   });
 
   describe("updateAgentHistory", () => {
-    it('should call _callEdgeFunction with "update-agent-history" and the payload', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // Returns void
-      const project_id = "proj-1";
+    it('should call request with "PATCH /history/{id}" and the updates', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
       const history_id = "hist-1";
       const updates: AgentHistoryUpdatableFields = { output: "new output" };
-      await apiClient.updateAgentHistory(project_id, history_id, updates);
+      await apiClient.updateAgentHistory(history_id, updates);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/update-agent-history"),
+        expect.stringContaining(`/history/${history_id}`),
         expect.objectContaining({
-          body: JSON.stringify({
-            publicKey: mockOptions.publicKey,
-            clientSecretKey: mockOptions.secretKey,
-            payload: { project_id, history_id, updates },
+          method: "PATCH",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            "x-public-key": mockOptions.publicKey,
+            "x-secret-key": mockOptions.secretKey,
           }),
-        }),
-      );
-    });
-  });
-
-  describe("updateTimelineEvent", () => {
-    it('should call _callEdgeFunction with "update-timeline-event" and the payload', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // Returns void
-      const history_id = "hist-1";
-      const event_id = "evt-1";
-      const updates: TimelineEventUpdatableFields = {
-        timestamp: new Date().toISOString(),
-        type: "agent",
-        name: "completed",
-        status: "completed",
-      };
-      await apiClient.updateTimelineEvent(history_id, event_id, updates);
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/update-timeline-event"),
-        expect.objectContaining({
-          body: JSON.stringify({
-            publicKey: mockOptions.publicKey,
-            clientSecretKey: mockOptions.secretKey,
-            payload: { history_id, event_id, event: updates },
-          }),
+          body: expect.stringContaining('"output"'),
         }),
       );
     });

@@ -331,7 +331,7 @@ if (agent.voice && response.text) {
 
 Speech-to-text is there too, you can convert audio inputs to text.
 
-### Developer Console Experience
+### VoltOps Platform Experience
 
 ```bash
 npm run dev
@@ -339,11 +339,11 @@ npm run dev
 # VOLTAGENT SERVER STARTED SUCCESSFULLY
 # ══════════════════════════════════════════════════
 # ✓ HTTP Server: http://localhost:3141
-# Developer Console: https://console.voltagent.dev
+# VoltOps Platform: https://console.voltagent.dev
 # ══════════════════════════════════════════════════
 ```
 
-![VoltAgent Console Chat Example](https://cdn.voltagent.dev/2025-04-24-rag-chatbot/rag-chatbot-voltagent-console.gif)
+![VoltOps LLM Observability Platform Chat Example](https://cdn.voltagent.dev/2025-04-24-rag-chatbot/rag-chatbot-voltagent-console.gif)
 
 From the console you can do real-time conversation monitoring, tool execution tracing, memory state inspection, performance metrics, error debugging. Debugging has never been this fun.
 

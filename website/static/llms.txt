@@ -4,7 +4,7 @@ This document provides an exhaustive, self-contained guide to the VoltAgent fram
 
 **Framework Overview:**
 
-> VoltAgent is an open-source TypeScript framework designed for building, orchestrating, and observing sophisticated AI agents. It bridges the gap between the flexibility of pure code and the clarity of visual/no-code tools, providing structure without sacrificing control. Built specifically for the JavaScript/TypeScript ecosystem, VoltAgent empowers developers with modular components (Agents, Tools, Memory, RAG, Voice, Sub-agents) and integrates first-class observability through the dedicated VoltAgent Developer Console.
+> VoltAgent is an open-source TypeScript framework designed for building, orchestrating, and observing sophisticated AI agents. It bridges the gap between the flexibility of pure code and the clarity of visual/no-code tools, providing structure without sacrificing control. Built specifically for the JavaScript/TypeScript ecosystem, VoltAgent empowers developers with modular components (Agents, Tools, Memory, RAG, Voice, Sub-agents) and integrates first-class observability through the dedicated VoltAgent VoltOps Platform.
 
 **Core Philosophy (Manifesto TL;DR):**
 
@@ -12,7 +12,7 @@ VoltAgent exists because building robust AI agents in JS/TS was harder than it n
 
 1.  **Developer Experience:** A code-first approach familiar to JS/TS developers, leveraging TypeScript for type safety.
 2.  **Structure & Modularity:** Pre-built components and patterns for common agent tasks (tools, memory, multi-agent coordination).
-3.  **Observability:** Deep, visual insight into agent execution via the Developer Console to combat the "black box" problem.
+3.  **Observability:** Deep, visual insight into agent execution via the VoltOps Platform to combat the "black box" problem.
 4.  **Flexibility:** Easy integration with various LLM providers and external services, avoiding vendor lock-in.
 
 *   `[Project Manifesto](/website/pages/manifesto.tsx)`: Full philosophy.
@@ -173,13 +173,13 @@ The `Agent` class utilizes several specialized manager classes to handle specifi
 *   A singleton `AgentEventEmitter` instance manages event listeners.
 *   Core components (`Agent`, `MemoryManager`, etc.) emit events at key points (e.g., `agentRegistered`, `historyUpdate`, `historyEntryCreated`, tool start/end, memory get/save).
 *   The `HistoryManager` listens for these events and appends them to the relevant `AgentHistoryEntry`'s `events` array.
-*   The internal API server (`/packages/core/src/server/api.ts`) listens for `historyUpdate` and `historyEntryCreated` events and pushes updates via WebSockets to the connected Developer Console for real-time visualization.
+*   The internal API server (`/packages/core/src/server/api.ts`) listens for `historyUpdate` and `historyEntryCreated` events and pushes updates via WebSockets to the connected VoltOps Platform for real-time visualization.
 *   The `createTrackedEvent` method provides a way to create events that can be updated later (e.g., marking a tool call as 'working' initially, then updating to 'completed' or 'error' when finished), returning an `EventUpdater` function.
 
 **More Info:**
 
 *   `[Observability Overview](/docs/observability/overview.md)`
-*   `[Developer Console Guide](/docs/observability/developer-console.md)`
+*   `[VoltOps Platform Guide](/docs/observability/developer-console.md)`
 *   `[Event System Source Code](/packages/core/src/events/index.ts)`
 *   `[History Manager Source Code](/packages/core/src/agent/history/index.ts)`
 
@@ -349,7 +349,7 @@ const productionAgent = new Agent({
     *   It creates a **new, separate conversation context** for the sub-agent interaction (using a potentially new `conversationId` derived from the parent or randomly generated).
     *   It prepares a system message for the sub-agent including the delegated `task` and `context`.
     *   It calls the sub-agent's primary interaction method (e.g., `generateText`).
-    *   **Crucially, it passes `parentAgentId` (supervisor's ID) and `parentHistoryEntryId` (supervisor's current history ID) in the options to the sub-agent's call.** This allows the sub-agent's events (logged via `AgentEventEmitter`) to be linked back to the supervisor's trace in the Developer Console.
+    *   **Crucially, it passes `parentAgentId` (supervisor's ID) and `parentHistoryEntryId` (supervisor's current history ID) in the options to the sub-agent's call.** This allows the sub-agent's events (logged via `AgentEventEmitter`) to be linked back to the supervisor's trace in the VoltOps Platform.
 *   Sub-agent processes the task, potentially using its own tools/memory within its isolated conversation context.
 *   Sub-agent returns the result.
 *   `handoffTask` returns the result to the `delegate_task` tool execution.
@@ -484,7 +484,7 @@ VoltAgent includes helper functions for common tasks.
 *   **Tool Parsing (`zodSchemaToJsonUI`):** Converts Zod schemas (used in `createTool`) into a JSON format. Used internally for observability, potentially useful for UIs.
     *   `[Source](/packages/core/src/utils/toolParser/index.ts)`
 
-*   **Node Utils (`createNodeId`, etc.):** Internal helpers for creating consistent IDs used in the Developer Console's visualization graph.
+*   **Node Utils (`createNodeId`, etc.):** Internal helpers for creating consistent IDs used in the VoltOps Platform's visualization graph.
     *   `[Source](/packages/core/src/utils/node-utils.ts)`
 
 *   **Update Checkers:** Functions used by the core and CLI to check for package updates using `npm-check-updates`.

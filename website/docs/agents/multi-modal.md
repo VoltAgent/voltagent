@@ -150,11 +150,11 @@ Here's a summary of the official VoltAgent providers:
 
 See the [Providers](../providers/overview.md) documentation for more general details on individual providers.
 
-## Developer Console Integration
+## VoltOps Platform Integration
 
-![VoltAgent Developer Console Multi-modal Demo](https://cdn.voltagent.dev/docs/multi-modal-demo.gif)
+![VoltAgent VoltOps Platform Multi-modal Demo](https://cdn.voltagent.dev/docs/multi-modal-demo.gif)
 
-The [VoltAgent Developer Console](https://console.voltagent.dev/) provides a user-friendly way to interact with multi-modal agents:
+The [VoltAgent VoltOps Platform](https://console.voltagent.dev/) provides a user-friendly way to interact with multi-modal agents:
 
 - **Assistant Chat:** The chat interface includes an attachment button (📎).
 - **Uploading:** Clicking the button allows you to select one or more image files (and potentially other supported file types) from your computer.

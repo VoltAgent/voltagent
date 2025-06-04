@@ -121,9 +121,9 @@ Speaking of specialized platforms, it's insightful to see how observability can 
 
 Our biggest frustration? It was just so darn hard to understand _why_ our agents made certain decisions. What steps did they take? Which tools did they pick, and when? And when an error inevitably popped up, figuring out exactly what went wrong felt like detective work without enough clues. Standard logs helped a bit, but they just weren't cutting it as interactions got more complicated.
 
-We got a lot of inspiration from the visual debugging power of tools like n8n. We thought, "Why can't we have something that clear for AI agents?" So, we decided to build observability right into the core experience. The key differentiator for VoltAgent became our **[VoltAgent Console](https://console.voltagent.dev/)**. This console isn't just another dashboard; it lets you visualize the _entire_ lifecycle of your agents—we're talking LLM interactions, tool usage, state changes, even their internal reasoning—all laid out on an **n8n-style canvas**.
+We got a lot of inspiration from the visual debugging power of tools like n8n. We thought, "Why can't we have something that clear for AI agents?" So, we decided to build observability right into the core experience. The key differentiator for VoltAgent became our **[VoltOps LLM Observability Platform](https://console.voltagent.dev/)**. This console isn't just another dashboard; it lets you visualize the _entire_ lifecycle of your agents—we're talking LLM interactions, tool usage, state changes, even their internal reasoning—all laid out on an **n8n-style canvas**.
 
-![VoltAgent Console Demo](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltOps LLM Observability Platform Demo](https://cdn.voltagent.dev/readme/demo.gif)
 
 With this kind of visual approach, you can suddenly do things like:
 

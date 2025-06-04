@@ -5,7 +5,10 @@
   "description": "Backend framework with a monorepo structure using pnpm and lerna",
   "license": "MIT",
   "author": "",
-  "workspaces": ["packages/*", "examples/*"],
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
   "scripts": {
     "attw": "lerna run attw --scope @voltagent/core",
     "attw:all": "lerna run attw --scope @voltagent/*",
@@ -17,7 +20,7 @@
     "changeset": "changeset",
     "clean": "lerna run clean && lerna clean --yes && rimraf node_modules",
     "coffee": "pnpm nuke && pnpm i && pnpm build:all",
-    "dev": "lerna run dev --parallel --ignore voltagent-example-*",
+    "dev": "lerna run dev --ignore voltagent-example-*",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "biome check .",
     "lint:ci": "biome ci .",
@@ -43,9 +46,15 @@
     "version-packages": "changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile && git add pnpm-lock.yaml"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json}": ["biome format --write --no-errors-on-unmatched"],
-    "*.{md,mdx}": ["prettier --config ./.prettierrc --write"],
-    "package.json": ["sort-package-json"]
+    "*.{js,jsx,ts,tsx,json}": [
+      "biome format --write --no-errors-on-unmatched"
+    ],
+    "*.{md,mdx}": [
+      "prettier --config ./.prettierrc --write"
+    ],
+    "package.json": [
+      "sort-package-json"
+    ]
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.17.4",

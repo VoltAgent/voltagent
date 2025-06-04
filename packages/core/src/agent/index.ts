@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
-import type { EventStatus, EventUpdater } from "../events";
+import type { EventStatus } from "../events";
 import { MemoryManager } from "../memory";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
@@ -41,8 +41,18 @@ import type {
 import type { BaseRetriever } from "../retriever/retriever";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import type { StandardEventData } from "../events/types";
+import type {
+  AgentStartEvent,
+  AgentSuccessEvent,
+  AgentErrorEvent,
+  ToolStartEvent,
+  ToolSuccessEvent,
+  ToolErrorEvent,
+  RetrieverStartEvent,
+  RetrieverSuccessEvent,
+  RetrieverErrorEvent,
+} from "../events/types";
 import type { Voice } from "../voice";
-import { serializeValueForDebug } from "../utils/serialization";
 import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 
@@ -216,23 +226,29 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // If retriever exists and we have input, get context
     if (this.retriever && input && historyEntryId) {
-      // Create retriever node ID
-      const retrieverNodeId = createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id);
+      // [NEW EVENT SYSTEM] Create a retriever:start event
+      const retrieverStartTime = new Date().toISOString(); // Capture start time
+      const retrieverStartEvent: RetrieverStartEvent = {
+        id: crypto.randomUUID(),
+        name: "retriever:start",
+        type: "retriever",
+        startTime: retrieverStartTime,
+        status: "running",
+        input: { query: input },
+        output: null,
+        metadata: {
+          displayName: this.retriever?.tool.name || "Retriever",
+          id: this.retriever?.tool.name,
+          agentId: this.id,
+        },
+        traceId: historyEntryId,
+      };
 
-      // Create tracked event
-      const eventEmitter = AgentEventEmitter.getInstance();
-      const eventUpdater = await eventEmitter.createTrackedEvent({
+      // Publish the retriever:start event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
         agentId: this.id,
         historyId: historyEntryId,
-        name: "retriever:working",
-        status: "working" as AgentStatus,
-        data: {
-          affectedNodeId: retrieverNodeId,
-          status: "working" as EventStatus,
-          timestamp: new Date().toISOString(),
-          input: input,
-        },
-        type: "retriever",
+        event: retrieverStartEvent,
       });
 
       try {
@@ -240,24 +256,91 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (context?.trim()) {
           finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
 
-          // Update the event
-          eventUpdater({
-            data: {
-              status: "completed" as EventStatus,
-              output: context,
+          // [NEW EVENT SYSTEM] Create a retriever:success event
+          const retrieverSuccessEvent: RetrieverSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "retriever:success",
+            type: "retriever",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { context },
+            metadata: {
+              displayName: this.retriever.tool.name || "Retriever",
+              id: this.retriever.tool.name,
+              agentId: this.id,
             },
+            traceId: historyEntryId,
+            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+          };
+
+          // Publish the retriever:success event
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: historyEntryId,
+            event: retrieverSuccessEvent,
+          });
+        } else {
+          // If there was no context returned, still create a success event
+          // but with a note that no context was found
+          const retrieverSuccessEvent: RetrieverSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "retriever:success",
+            type: "retriever",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { context: "No relevant context found" },
+            metadata: {
+              displayName: this.retriever.tool.name || "Retriever",
+              id: this.retriever.tool.name,
+              agentId: this.id,
+            },
+            traceId: historyEntryId,
+            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+          };
+
+          // Publish the retriever:success event (empty result)
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: historyEntryId,
+            event: retrieverSuccessEvent,
           });
         }
       } catch (error) {
-        // Update the event as error
-        eventUpdater({
-          status: "error" as AgentStatus,
-          data: {
-            status: "error" as EventStatus,
-            error: error,
-            errorMessage: error instanceof Error ? error.message : "Unknown error",
+        // [NEW EVENT SYSTEM] Create a retriever:error event
+        const retrieverErrorEvent: RetrieverErrorEvent = {
+          id: crypto.randomUUID(),
+          name: "retriever:error",
+          type: "retriever",
+          startTime: new Date().toISOString(), // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "error",
+          level: "ERROR",
+          input: null,
+          output: null,
+          statusMessage: {
+            message: error instanceof Error ? error.message : "Unknown retriever error",
+            ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
           },
+          metadata: {
+            displayName: this.retriever.tool.name || "Retriever",
+            id: this.retriever.tool.name,
+            agentId: this.id,
+          },
+          traceId: historyEntryId,
+          parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+        };
+
+        // Publish the retriever:error event
+        await AgentEventEmitter.getInstance().publishTimelineEvent({
+          agentId: this.id,
+          historyId: historyEntryId,
+          event: retrieverErrorEvent,
         });
+
         console.warn("Failed to retrieve context:", error);
       }
     }
@@ -460,18 +543,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       modelName: this.getModelName(),
     });
 
-    const historyEntry = await this.historyManager.addEntry(
+    const historyEntry = await this.historyManager.addEntry({
       input,
-      "",
-      initialStatus,
-      [],
-      {
-        events: [],
+      output: "",
+      status: initialStatus,
+      steps: [],
+      options: {
+        metadata: {
+          agentSnapshot: this.getFullState(),
+        },
       },
-      this.getFullState(),
-      options.userId,
-      options.conversationId,
-    );
+      userId: options.userId,
+      conversationId: options.conversationId,
+      model: this.getModelName(),
+    });
 
     const opContext: OperationContext = {
       operationId: historyEntry.id,
@@ -479,26 +564,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         ? new Map(options.userContext)
         : new Map<string | symbol, unknown>(),
       historyEntry,
-      eventUpdaters: new Map<string, EventUpdater>(),
       isActive: true,
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
       otelSpan: otelSpan,
     };
-
-    // Standardized message event
-    this.createStandardTimelineEvent(
-      opContext.historyEntry.id,
-      "start",
-      "idle" as EventStatus,
-      NodeType.MESSAGE,
-      this.id,
-      {
-        input: input,
-      },
-      "agent",
-      opContext,
-    );
 
     return opContext;
   }
@@ -561,99 +631,27 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Update history entry
    */
-  private updateHistoryEntry(context: OperationContext, updates: Partial<AgentHistoryEntry>): void {
-    this.historyManager.updateEntry(context.historyEntry.id, updates);
+  private async updateHistoryEntry(
+    context: OperationContext,
+    updates: Partial<AgentHistoryEntry>,
+  ): Promise<void> {
+    await this.historyManager.updateEntry(context.historyEntry.id, updates);
   }
-
-  /**
-   * Standard timeline event creator
-   */
-  private createStandardTimelineEvent = (
-    historyId: string,
-    eventName: string,
-    status: EventStatus,
-    nodeType: NodeType,
-    nodeName: string,
-    data: Partial<StandardEventData> = {},
-    type: "memory" | "tool" | "agent" | "retriever" = "agent",
-    context?: OperationContext,
-  ): void => {
-    if (!historyId) return;
-
-    const affectedNodeId = createNodeId(nodeType, nodeName, this.id);
-
-    // Serialize userContext if context is available and userContext has entries
-    let userContextData: Record<string, unknown> | undefined = undefined;
-    if (context?.userContext && context.userContext.size > 0) {
-      try {
-        // Use the custom serialization helper
-        userContextData = {};
-        for (const [key, value] of context.userContext.entries()) {
-          const stringKey = typeof key === "symbol" ? key.toString() : String(key);
-          userContextData[stringKey] = serializeValueForDebug(value);
-        }
-      } catch (error) {
-        console.warn("Failed to serialize userContext:", error);
-        userContextData = { serialization_error: true };
-      }
-    }
-
-    // Create the event data, including the serialized userContext
-    const eventData: Partial<StandardEventData> & {
-      userContext?: Record<string, unknown>;
-    } = {
-      affectedNodeId,
-      status: status as any,
-      timestamp: new Date().toISOString(),
-      sourceAgentId: this.id,
-      ...data,
-      ...(userContextData && { userContext: userContextData }),
-    };
-
-    // Create the event payload
-    const eventPayload = {
-      agentId: this.id,
-      historyId,
-      eventName,
-      status: status as any,
-      additionalData: eventData,
-      type,
-    };
-
-    // Use central event emitter
-    AgentEventEmitter.getInstance().addHistoryEvent(eventPayload);
-
-    // If context exists and has parent information, propagate the event to parent
-    if (context?.parentAgentId && context?.parentHistoryEntryId) {
-      // Create a parent event payload
-      const parentEventPayload = {
-        ...eventPayload,
-        agentId: context.parentAgentId,
-        historyId: context.parentHistoryEntryId,
-        // Keep the same additionalData with original affectedNodeId
-      };
-
-      // Add event to parent agent's history
-      AgentEventEmitter.getInstance().addHistoryEvent(parentEventPayload);
-    }
-  };
 
   /**
    * Fix delete operator usage for better performance
    */
-  private addToolEvent = async (
+  private addToolEvent = (
     context: OperationContext,
-    eventName: string,
     toolName: string,
     status: EventStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
-  ): Promise<EventUpdater> => {
+  ): void => {
     // Ensure the toolSpans map exists on the context
     if (!context.toolSpans) {
       context.toolSpans = new Map<string, Span>();
     }
 
-    const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
     const toolCallId = data.toolId?.toString();
 
     if (toolCallId && status === "working") {
@@ -672,75 +670,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context.toolSpans.set(toolCallId, toolSpan);
       }
     }
-
-    const metadata: Record<string, unknown> = {
-      ...(data.metadata || {}),
-    };
-    const { input, output, error, errorMessage, ...standardData } = data;
-    let userContextData: Record<string, unknown> | undefined = undefined;
-    if (context?.userContext && context.userContext.size > 0) {
-      try {
-        userContextData = {};
-        for (const [key, value] of context.userContext.entries()) {
-          const stringKey = typeof key === "symbol" ? key.toString() : String(key);
-          userContextData[stringKey] = serializeValueForDebug(value);
-        }
-      } catch (err) {
-        console.warn("Failed to serialize userContext for tool event:", err);
-        userContextData = { serialization_error: true };
-      }
-    }
-    const internalEventData: Partial<StandardEventData> & {
-      userContext?: Record<string, unknown>;
-      toolId?: string;
-    } = {
-      affectedNodeId: toolNodeId,
-      status: status as any,
-      timestamp: new Date().toISOString(),
-      input: data.input,
-      output: data.output,
-      error: data.error,
-      errorMessage: data.errorMessage,
-      metadata,
-      toolId: toolCallId,
-      ...standardData,
-      ...(userContextData && { userContext: userContextData }),
-    };
-    internalEventData.metadata = {
-      ...internalEventData.metadata,
-      sourceAgentId: this.id,
-      toolName: toolName,
-    };
-    const eventEmitter = AgentEventEmitter.getInstance();
-    const eventUpdater = await eventEmitter.createTrackedEvent({
-      agentId: this.id,
-      historyId: context.historyEntry.id,
-      name: eventName,
-      status: status as any,
-      data: internalEventData,
-      type: "tool",
-    });
-    let parentUpdater: EventUpdater | null = null;
-    if (context.parentAgentId && context.parentHistoryEntryId) {
-      parentUpdater = await eventEmitter.createTrackedEvent({
-        agentId: context.parentAgentId,
-        historyId: context.parentHistoryEntryId,
-        name: eventName,
-        status: status as any,
-        data: { ...internalEventData, sourceAgentId: this.id },
-        type: "tool",
-      });
-    }
-    return async (update: {
-      status?: AgentStatus;
-      data?: Record<string, unknown>;
-    }): Promise<AgentHistoryEntry | undefined> => {
-      const result = await eventUpdater(update);
-      if (parentUpdater) {
-        await parentUpdater(update);
-      }
-      return result;
-    };
   };
 
   /**
@@ -766,35 +695,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
       );
     }
-
-    // Move non-standard fields to metadata
-    const metadata: Record<string, unknown> = {
-      ...(data.metadata || {}),
-    };
-
-    // Extract data fields to use while avoiding parameter reassignment
-    const { usage, ...standardData } = data;
-
-    if (usage) {
-      metadata.usage = usage;
-    }
-
-    // Create new data with metadata
-    const eventData: Partial<StandardEventData> = {
-      ...standardData,
-      metadata,
-    };
-
-    this.createStandardTimelineEvent(
-      context.historyEntry.id,
-      eventName,
-      status,
-      NodeType.AGENT,
-      this.id,
-      eventData,
-      "agent",
-      context,
-    );
   };
 
   /**
@@ -872,16 +772,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
-      this.createStandardTimelineEvent(
-        operationContext.historyEntry.id,
-        "start",
-        "working",
-        NodeType.AGENT,
-        this.id,
-        { input: messages },
-        "agent",
-        operationContext,
-      );
+      // [NEW EVENT SYSTEM] Create an agent:start event
+      const agentStartTime = new Date().toISOString(); // Capture agent start time once
+      const agentStartEvent: AgentStartEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:start",
+        type: "agent",
+        startTime: agentStartTime, // Use captured time
+        status: "running",
+        input: { input },
+        output: null,
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          instructions: this.instructions,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
+        traceId: operationContext.historyEntry.id,
+      };
+
+      // Store agent start time in the operation context for later reference
+      operationContext.userContext.set("agent_start_time", agentStartTime);
+      operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+      // Publish the new event through AgentEventEmitter
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentStartEvent,
+      });
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -912,14 +834,44 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (step.type === "tool_call") {
             if (step.name && step.id) {
               const tool = this.toolManager.getToolByName(step.name);
-              const eventUpdater = await this.addToolEvent(
-                operationContext,
-                "tool_working",
-                step.name,
-                "working",
-                { toolId: step.id, input: step.arguments || {} },
-              );
-              operationContext.eventUpdaters.set(step.id, eventUpdater);
+
+              // [NEW EVENT SYSTEM] Create a tool:start event
+              const toolStartTime = new Date().toISOString(); // Capture start time once
+              const toolStartEvent: ToolStartEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:start",
+                type: "tool",
+                startTime: toolStartTime, // Use captured time
+                status: "running",
+                input: step.arguments || {},
+                output: null,
+                metadata: {
+                  displayName: step.name,
+                  id: step.name,
+                  agentId: this.id,
+                },
+                traceId: operationContext.historyEntry.id,
+                parentEventId: agentStartEvent.id, // Link to the agent:start event
+              };
+
+              // Store tool ID and start time in user context for later reference
+              operationContext.userContext.set(`tool_${step.id}`, {
+                eventId: toolStartEvent.id,
+                startTime: toolStartTime, // Store the start time for later
+              });
+
+              // Publish the tool:start event
+              await AgentEventEmitter.getInstance().publishTimelineEvent({
+                agentId: this.id,
+                historyId: operationContext.historyEntry.id,
+                event: toolStartEvent,
+              });
+
+              await this.addToolEvent(operationContext, step.name, "working", {
+                toolId: step.id,
+                input: step.arguments || {},
+              });
+
               if (tool) {
                 await this.hooks.onToolStart?.({
                   agent: this,
@@ -932,25 +884,73 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             if (step.name && step.id) {
               const toolCallId = step.id;
               const toolName = step.name;
-              const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
-              if (eventUpdater) {
-                const isError = Boolean(step.result?.error);
-                const statusForEvent: any = isError ? "error" : "completed";
-                await eventUpdater({
-                  data: {
-                    error: step.result?.error,
-                    errorMessage: step.result?.error?.message,
-                    status: statusForEvent,
-                    updatedAt: new Date().toISOString(),
-                    output: step.result ?? step.content,
+              const isError = Boolean(step.result?.error);
+
+              // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
+              // Get the associated tool:start event ID and time from context
+              const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+                eventId: string;
+                startTime: string;
+              }) || { eventId: undefined, startTime: new Date().toISOString() };
+
+              if (isError) {
+                // Create tool:error event
+                const toolErrorEvent: ToolErrorEvent = {
+                  id: crypto.randomUUID(),
+                  name: "tool:error",
+                  type: "tool",
+                  startTime: toolStartInfo.startTime, // Use the original start time
+                  endTime: new Date().toISOString(), // Current time as end time
+                  status: "error",
+                  level: "ERROR",
+                  input: null,
+                  output: null,
+                  statusMessage: step.result?.error || {
+                    message: "Unknown tool error",
                   },
+                  metadata: {
+                    displayName: toolName,
+                    id: toolName,
+                    agentId: this.id,
+                  },
+                  traceId: operationContext.historyEntry.id,
+                  parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+                };
+
+                // Publish the tool:error event
+                await AgentEventEmitter.getInstance().publishTimelineEvent({
+                  agentId: this.id,
+                  historyId: operationContext.historyEntry.id,
+                  event: toolErrorEvent,
                 });
-                operationContext.eventUpdaters.delete(toolCallId);
               } else {
-                console.warn(
-                  `[VoltAgentCore] EventUpdater not found for toolCallId: ${toolCallId} in generateText`,
-                );
+                // Create tool:success event
+                const toolSuccessEvent: ToolSuccessEvent = {
+                  id: crypto.randomUUID(),
+                  name: "tool:success",
+                  type: "tool",
+                  startTime: new Date().toISOString(), // Use the original start time
+                  endTime: new Date().toISOString(), // Current time as end time
+                  status: "completed",
+                  input: null,
+                  output: step.result ?? step.content,
+                  metadata: {
+                    displayName: toolName,
+                    id: toolName,
+                    agentId: this.id,
+                  },
+                  traceId: operationContext.historyEntry.id,
+                  parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+                };
+
+                // Publish the tool:success event
+                await AgentEventEmitter.getInstance().publishTimelineEvent({
+                  agentId: this.id,
+                  historyId: operationContext.historyEntry.id,
+                  event: toolSuccessEvent,
+                });
               }
+
               this._endOtelToolSpan(operationContext, toolCallId, toolName, {
                 result: step.result,
                 content: step.content,
@@ -972,19 +972,53 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         },
       });
 
-      operationContext.eventUpdaters.clear();
-      this.updateHistoryEntry(operationContext, {
-        output: response.text,
-        usage: response.usage,
-        status: "completed" as any,
+      // [NEW EVENT SYSTEM] Create an agent:success event
+      const agentStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+        eventId:
+          (operationContext.userContext.get("agent_start_event_id") as string) ||
+          agentStartEvent.id,
+      };
+
+      const agentSuccessEvent: AgentSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:success",
+        type: "agent",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "completed",
+        input: null,
+        output: { text: response.text },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          usage: response.usage,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
+
+        traceId: operationContext.historyEntry.id,
+        parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:success event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentSuccessEvent,
       });
+
+      // Original agent completion event for backward compatibility
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
         input: messages,
         output: response.text,
         usage: response.usage,
-        affectedNodeId: `agent_${this.id}`,
         status: "completed" as any,
       });
+
       operationContext.isActive = false;
       const standardizedOutput: StandardizedTextResult = {
         text: response.text,
@@ -998,16 +1032,69 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         error: undefined,
         context: operationContext,
       });
+
+      await this.updateHistoryEntry(operationContext, {
+        output: response.text,
+        usage: response.usage,
+        endTime: new Date(),
+        status: "completed" as any,
+      });
+
       const typedResponse = response as InferGenerateTextResponse<TProvider>;
       return typedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
-      operationContext.eventUpdaters.clear();
+
+      // [NEW EVENT SYSTEM] Create an agent:error event
+      const agentErrorStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) ||
+          new Date().toISOString(),
+        eventId: operationContext.userContext.get("agent_start_event_id") as string,
+      };
+
+      const agentErrorEvent: AgentErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:error",
+        type: "agent",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        statusMessage: {
+          message: voltagentError.message,
+          code: voltagentError.code,
+          stage: voltagentError.stage,
+          ...(voltagentError.originalError
+            ? { originalError: String(voltagentError.originalError) }
+            : {}),
+        },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
+        traceId: operationContext.historyEntry.id,
+        parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:error event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentErrorEvent,
+      });
+
+      // Original error event for backward compatibility
       this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
-        affectedNodeId: `agent_${this.id}`,
         status: "error" as any,
         metadata: {
           code: voltagentError.code,
@@ -1017,16 +1104,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ...voltagentError.metadata,
         },
       });
-      this.updateHistoryEntry(operationContext, {
-        output: voltagentError.message,
-        status: "error" as any,
-      });
+
       operationContext.isActive = false;
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
         context: operationContext,
+      });
+
+      await this.updateHistoryEntry(operationContext, {
+        status: "error",
+        endTime: new Date(),
       });
       throw voltagentError;
     }
@@ -1083,16 +1172,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     let messages = [systemMessage, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
 
-    this.createStandardTimelineEvent(
-      operationContext.historyEntry.id,
-      "start",
-      "working",
-      NodeType.AGENT,
-      this.id,
-      { input: messages },
-      "agent",
-      operationContext,
-    );
+    // [NEW EVENT SYSTEM] Create an agent:start event
+    const agentStartTime = new Date().toISOString(); // Capture agent start time once
+    const agentStartEvent: AgentStartEvent = {
+      id: crypto.randomUUID(),
+      name: "agent:start",
+      type: "agent",
+      startTime: agentStartTime, // Use captured time
+      status: "running",
+      input: { input },
+      output: null,
+      metadata: {
+        displayName: this.name,
+        id: this.id,
+        instructions: this.instructions,
+        userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+          string,
+          unknown
+        >,
+      },
+      traceId: operationContext.historyEntry.id,
+    };
+
+    // Store agent start time in the operation context for later reference
+    operationContext.userContext.set("agent_start_time", agentStartTime);
+    operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+    // Publish the new event through AgentEventEmitter
+    await AgentEventEmitter.getInstance().publishTimelineEvent({
+      agentId: this.id,
+      historyId: operationContext.historyEntry.id,
+      event: agentStartEvent,
+    });
 
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
@@ -1122,14 +1233,44 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (chunk.type === "tool_call") {
           if (chunk.name && chunk.id) {
             const tool = this.toolManager.getToolByName(chunk.name);
-            const eventUpdater = await this.addToolEvent(
-              operationContext,
-              "tool_working",
-              chunk.name,
-              "working",
-              { toolId: chunk.id, input: chunk.arguments || {} },
-            );
-            operationContext.eventUpdaters.set(chunk.id, eventUpdater);
+
+            // [NEW EVENT SYSTEM] Create a tool:start event
+            const toolStartTime = new Date().toISOString(); // Capture start time once
+            const toolStartEvent: ToolStartEvent = {
+              id: crypto.randomUUID(),
+              name: "tool:start",
+              type: "tool",
+              startTime: toolStartTime, // Use captured time
+              status: "running",
+              input: chunk.arguments || {},
+              output: null,
+              metadata: {
+                displayName: chunk.name,
+                id: chunk.name,
+                agentId: this.id,
+              },
+              traceId: operationContext.historyEntry.id,
+              parentEventId: agentStartEvent.id, // Link to the agent:start event
+            };
+
+            // Store tool ID and start time in user context for later reference
+            operationContext.userContext.set(`tool_${chunk.id}`, {
+              eventId: toolStartEvent.id,
+              startTime: toolStartTime, // Store the start time for later
+            });
+
+            // Publish the tool:start event
+            await AgentEventEmitter.getInstance().publishTimelineEvent({
+              agentId: this.id,
+              historyId: operationContext.historyEntry.id,
+              event: toolStartEvent,
+            });
+
+            // Original tool event for backward compatibility
+            this.addToolEvent(operationContext, chunk.name, "working", {
+              toolId: chunk.id,
+              input: chunk.arguments || {},
+            });
             if (tool) {
               await this.hooks.onToolStart?.({
                 agent: this,
@@ -1142,25 +1283,71 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (chunk.name && chunk.id) {
             const toolCallId = chunk.id;
             const toolName = chunk.name;
-            const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
-            if (eventUpdater) {
-              const isError = Boolean(chunk.result?.error);
-              const statusForEvent: any = isError ? "error" : "completed";
-              await eventUpdater({
-                data: {
-                  error: chunk.result?.error,
-                  errorMessage: chunk.result?.error?.message,
-                  status: statusForEvent,
-                  updatedAt: new Date().toISOString(),
-                  output: chunk.result ?? chunk.content,
+            const isError = Boolean(chunk.result?.error);
+
+            // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
+            // Get the associated tool:start event ID and time from context
+            const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+              eventId: string;
+              startTime: string;
+            }) || { eventId: undefined, startTime: new Date().toISOString() };
+
+            if (isError) {
+              // Create tool:error event
+              const toolErrorEvent: ToolErrorEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:error",
+                type: "tool",
+                startTime: new Date().toISOString(), // Use the original start time
+                endTime: new Date().toISOString(), // Current time as end time
+                status: "error",
+                level: "ERROR",
+                input: null,
+                output: null,
+                statusMessage: chunk.result?.error || { message: "Unknown tool error" },
+                metadata: {
+                  displayName: toolName,
+                  id: toolName,
+                  agentId: this.id,
                 },
+                traceId: operationContext.historyEntry.id,
+                parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+              };
+
+              // Publish the tool:error event
+              await AgentEventEmitter.getInstance().publishTimelineEvent({
+                agentId: this.id,
+                historyId: operationContext.historyEntry.id,
+                event: toolErrorEvent,
               });
-              operationContext.eventUpdaters.delete(toolCallId);
             } else {
-              console.warn(
-                `[VoltAgentCore] EventUpdater not found for toolCallId: ${toolCallId} in streamText`,
-              );
+              // Create tool:success event
+              const toolSuccessEvent: ToolSuccessEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:success",
+                type: "tool",
+                startTime: new Date().toISOString(), // Use the original start time
+                endTime: new Date().toISOString(), // Current time as end time
+                status: "completed",
+                input: null,
+                output: chunk.result ?? chunk.content,
+                metadata: {
+                  displayName: toolName,
+                  id: toolName,
+                  agentId: this.id,
+                },
+                traceId: operationContext.historyEntry.id,
+                parentEventId: toolStartInfo.eventId, // Link to the tool:start event
+              };
+
+              // Publish the tool:success event
+              await AgentEventEmitter.getInstance().publishTimelineEvent({
+                agentId: this.id,
+                historyId: operationContext.historyEntry.id,
+                event: toolSuccessEvent,
+              });
             }
+
             this._endOtelToolSpan(operationContext, toolCallId, toolName, {
               result: chunk.result,
               content: chunk.content,
@@ -1192,17 +1379,57 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (!operationContext.isActive) {
           return;
         }
-        operationContext.eventUpdaters.clear();
-        this.updateHistoryEntry(operationContext, {
+
+        // [NEW EVENT SYSTEM] Create an agent:success event
+        const agentStartInfo = {
+          startTime:
+            (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+          eventId:
+            (operationContext.userContext.get("agent_start_event_id") as string) ||
+            agentStartEvent.id,
+        };
+
+        await this.updateHistoryEntry(operationContext, {
           output: result.text,
           usage: result.usage,
+          endTime: new Date(),
           status: "completed" as any,
         });
+
+        const agentSuccessEvent: AgentSuccessEvent = {
+          id: crypto.randomUUID(),
+          name: "agent:success",
+          type: "agent",
+          startTime: new Date().toISOString(), // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "completed",
+          input: null,
+          output: { text: result.text },
+          metadata: {
+            displayName: this.name,
+            id: this.id,
+            usage: result.usage,
+            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+              string,
+              unknown
+            >,
+          },
+          traceId: operationContext.historyEntry.id,
+          parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+        };
+
+        // Publish the agent:success event
+        await AgentEventEmitter.getInstance().publishTimelineEvent({
+          agentId: this.id,
+          historyId: operationContext.historyEntry.id,
+          event: agentSuccessEvent,
+        });
+
+        // Original agent completion event for backward compatibility
         this.addAgentEvent(operationContext, "finished", "completed" as any, {
           input: messages,
           output: result.text,
           usage: result.usage,
-          affectedNodeId: `agent_${this.id}`,
           status: "completed" as any,
           metadata: {
             finishReason: result.finishReason,
@@ -1224,45 +1451,114 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       onError: async (error: VoltAgentError) => {
         if (error.toolError) {
           const { toolCallId, toolName } = error.toolError;
-          const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
-          if (eventUpdater) {
-            try {
-              const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
-              await eventUpdater({
-                data: {
-                  affectedNodeId: toolNodeId,
-                  error: error.message,
-                  errorMessage: error.message,
-                  status: "error" as any,
-                  updatedAt: new Date().toISOString(),
-                  output: error.message,
-                },
-              });
-              operationContext.eventUpdaters.delete(toolCallId);
-            } catch (updateError) {
-              console.error(
-                `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
-                updateError,
-              );
-            }
-            const tool = this.toolManager.getToolByName(toolName);
-            if (tool) {
-              await this.hooks.onToolEnd?.({
-                agent: this,
-                tool,
-                output: undefined,
-                error: error,
-                context: operationContext,
-              });
-            }
+          try {
+            // [NEW EVENT SYSTEM] Create a tool:error event for tool error during streaming
+            const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+              eventId: string;
+              startTime: string;
+            }) || { eventId: undefined, startTime: new Date().toISOString() };
+
+            const toolErrorEvent: ToolErrorEvent = {
+              id: crypto.randomUUID(),
+              name: "tool:error",
+              type: "tool",
+              startTime: new Date().toISOString(),
+              endTime: new Date().toISOString(),
+              status: "error",
+              level: "ERROR",
+              input: null,
+              output: null,
+              statusMessage: {
+                message: error.message,
+                code: error.code,
+                ...(error.toolError && { toolError: error.toolError }),
+              },
+              metadata: {
+                displayName: toolName,
+                id: toolName,
+                agentId: this.id,
+              },
+              traceId: operationContext.historyEntry.id,
+              parentEventId: toolStartInfo.eventId,
+            };
+
+            // Publish the tool:error event
+            await AgentEventEmitter.getInstance().publishTimelineEvent({
+              agentId: this.id,
+              historyId: operationContext.historyEntry.id,
+              event: toolErrorEvent,
+            });
+          } catch (updateError) {
+            console.error(
+              `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
+              updateError,
+            );
+          }
+          const tool = this.toolManager.getToolByName(toolName);
+          if (tool) {
+            await this.hooks.onToolEnd?.({
+              agent: this,
+              tool,
+              output: undefined,
+              error: error,
+              context: operationContext,
+            });
           }
         }
-        operationContext.eventUpdaters.clear();
+
+        // [NEW EVENT SYSTEM] Create an agent:error event
+        const agentErrorStartInfo = {
+          startTime:
+            (operationContext.userContext.get("agent_start_time") as string) ||
+            new Date().toISOString(),
+          eventId: operationContext.userContext.get("agent_start_event_id") as string,
+        };
+
+        await this.updateHistoryEntry(operationContext, {
+          status: "error",
+          endTime: new Date(),
+        });
+
+        const agentErrorEvent: AgentErrorEvent = {
+          id: crypto.randomUUID(),
+          name: "agent:error",
+          type: "agent",
+          startTime: new Date().toISOString(), // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "error",
+          level: "ERROR",
+          input: null,
+          output: null,
+          statusMessage: {
+            message: error.message,
+            code: error.code,
+            stage: error.stage,
+            ...(error.originalError ? { originalError: String(error.originalError) } : {}),
+          },
+          metadata: {
+            displayName: this.name,
+            id: this.id,
+            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+              string,
+              unknown
+            >,
+          },
+          traceId: operationContext.historyEntry.id,
+          parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+        };
+
+        // Publish the agent:error event
+        await AgentEventEmitter.getInstance().publishTimelineEvent({
+          agentId: this.id,
+          historyId: operationContext.historyEntry.id,
+          event: agentErrorEvent,
+        });
+
+        // Original error event for backward compatibility
         this.addAgentEvent(operationContext, "finished", "error" as any, {
           input: messages,
           error: error,
           errorMessage: error.message,
-          affectedNodeId: `agent_${this.id}`,
           status: "error" as any,
           metadata: {
             code: error.code,
@@ -1272,10 +1568,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ...error.metadata,
           },
         });
-        this.updateHistoryEntry(operationContext, {
-          output: error.message,
-          status: "error" as any,
-        });
+
         operationContext.isActive = false;
         if (internalOptions.provider?.onError) {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
@@ -1346,16 +1639,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
-      this.createStandardTimelineEvent(
-        operationContext.historyEntry.id,
-        "start",
-        "working",
-        NodeType.AGENT,
-        this.id,
-        { input: messages },
-        "agent",
-        operationContext,
-      );
+      // [NEW EVENT SYSTEM] Create an agent:start event
+      const agentStartTime = new Date().toISOString(); // Capture agent start time once
+      const agentStartEvent: AgentStartEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:start",
+        type: "agent",
+        startTime: agentStartTime, // Use captured time
+        status: "running",
+        input: { input },
+        output: null,
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          instructions: this.instructions,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
+        traceId: operationContext.historyEntry.id,
+      };
+
+      // Store agent start time in the operation context for later reference
+      operationContext.userContext.set("agent_start_time", agentStartTime);
+      operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+      // Publish the new event through AgentEventEmitter
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentStartEvent,
+      });
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -1385,21 +1700,60 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         },
       });
 
+      // [NEW EVENT SYSTEM] Create an agent:success event
+      const agentStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+        eventId:
+          (operationContext.userContext.get("agent_start_event_id") as string) ||
+          agentStartEvent.id,
+      };
+
+      const agentSuccessEvent: AgentSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:success",
+        type: "agent",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "completed",
+        input: null,
+        output: { object: response.object },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          usage: response.usage,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
+        traceId: operationContext.historyEntry.id,
+        parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:success event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentSuccessEvent,
+      });
       const responseStr =
         typeof response === "string" ? response : JSON.stringify(response?.object);
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
         output: responseStr,
         usage: response.usage,
-        affectedNodeId: `agent_${this.id}`,
         status: "completed" as any,
         input: messages,
       });
-      this.updateHistoryEntry(operationContext, {
+      operationContext.isActive = false;
+
+      await this.updateHistoryEntry(operationContext, {
         output: responseStr,
         usage: response.usage,
+        endTime: new Date(),
         status: "completed" as any,
       });
-      operationContext.isActive = false;
+
       const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
         object: response.object,
         usage: response.usage,
@@ -1416,11 +1770,56 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       return typedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
+
+      // [NEW EVENT SYSTEM] Create an agent:error event
+      const agentErrorStartInfo = {
+        startTime:
+          (operationContext.userContext.get("agent_start_time") as string) ||
+          new Date().toISOString(),
+        eventId: operationContext.userContext.get("agent_start_event_id") as string,
+      };
+
+      const agentErrorEvent: AgentErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:error",
+        type: "agent",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        statusMessage: {
+          message: voltagentError.message,
+          code: voltagentError.code,
+          stage: voltagentError.stage,
+          ...(voltagentError.originalError
+            ? { originalError: String(voltagentError.originalError) }
+            : {}),
+        },
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
+        traceId: operationContext.historyEntry.id,
+        parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+      };
+
+      // Publish the agent:error event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: operationContext.historyEntry.id,
+        event: agentErrorEvent,
+      });
+
       this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
-        affectedNodeId: `agent_${this.id}`,
         status: "error" as any,
         metadata: {
           code: voltagentError.code,
@@ -1430,11 +1829,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ...voltagentError.metadata,
         },
       });
-      this.updateHistoryEntry(operationContext, {
-        output: voltagentError.message,
-        status: "error" as any,
-      });
       operationContext.isActive = false;
+
+      await this.updateHistoryEntry(operationContext, {
+        status: "error",
+        endTime: new Date(),
+      });
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
@@ -1488,35 +1889,56 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
 
-    let messages: BaseMessage[] = [];
+    await this.hooks.onStart?.({ agent: this, context: operationContext });
+
+    const systemMessage = await this.getSystemMessage({
+      input,
+      historyEntryId: operationContext.historyEntry.id,
+      contextMessages,
+    });
+    let messages = [systemMessage, ...contextMessages];
+    messages = await this.formatInputMessages(messages, input);
+
+    // [NEW EVENT SYSTEM] Create an agent:start event
+    const agentStartTime = new Date().toISOString(); // Capture agent start time once
+    const agentStartEvent: AgentStartEvent = {
+      id: crypto.randomUUID(),
+      name: "agent:start",
+      type: "agent",
+      startTime: agentStartTime, // Use captured time
+      status: "running",
+      input: { input },
+      output: null,
+      metadata: {
+        displayName: this.name,
+        id: this.id,
+        instructions: this.instructions,
+        userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+          string,
+          unknown
+        >,
+      },
+      traceId: operationContext.historyEntry.id,
+    };
+
+    // Store agent start time in the operation context for later reference
+    operationContext.userContext.set("agent_start_time", agentStartTime);
+    operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+
+    // Publish the new event through AgentEventEmitter
+    await AgentEventEmitter.getInstance().publishTimelineEvent({
+      agentId: this.id,
+      historyId: operationContext.historyEntry.id,
+      event: agentStartEvent,
+    });
+
+    const onStepFinish = this.memoryManager.createStepFinishHandler(
+      operationContext,
+      userId,
+      finalConversationId,
+    );
+
     try {
-      await this.hooks.onStart?.({ agent: this, context: operationContext });
-
-      const systemMessage = await this.getSystemMessage({
-        input,
-        historyEntryId: operationContext.historyEntry.id,
-        contextMessages,
-      });
-      messages = [systemMessage, ...contextMessages];
-      messages = await this.formatInputMessages(messages, input);
-
-      this.createStandardTimelineEvent(
-        operationContext.historyEntry.id,
-        "start",
-        "working",
-        NodeType.AGENT,
-        this.id,
-        { input: messages },
-        "agent",
-        operationContext,
-      );
-
-      const onStepFinish = this.memoryManager.createStepFinishHandler(
-        operationContext,
-        userId,
-        finalConversationId,
-      );
-
       const response = await this.llm.streamObject({
         messages,
         model: this.model,
@@ -1539,12 +1961,50 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (!operationContext.isActive) {
             return;
           }
+
+          // [NEW EVENT SYSTEM] Create an agent:success event
+          const agentStartInfo = {
+            startTime:
+              (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+            eventId:
+              (operationContext.userContext.get("agent_start_event_id") as string) ||
+              agentStartEvent.id,
+          };
+
+          const agentSuccessEvent: AgentSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "agent:success",
+            type: "agent",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { object: result.object },
+            metadata: {
+              displayName: this.name,
+              id: this.id,
+              usage: result.usage,
+              userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+                string,
+                unknown
+              >,
+            },
+            traceId: operationContext.historyEntry.id,
+            parentEventId: agentStartInfo.eventId, // Link to the agent:start event
+          };
+
+          // Publish the agent:success event
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: operationContext.historyEntry.id,
+            event: agentSuccessEvent,
+          });
+
           const responseStr = JSON.stringify(result.object);
           this.addAgentEvent(operationContext, "finished", "completed" as any, {
             input: messages,
             output: responseStr,
             usage: result.usage,
-            affectedNodeId: `agent_${this.id}`,
             status: "completed" as any,
             metadata: {
               finishReason: result.finishReason,
@@ -1552,11 +2012,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               providerResponse: result.providerResponse,
             },
           });
-          this.updateHistoryEntry(operationContext, {
+
+          await this.updateHistoryEntry(operationContext, {
             output: responseStr,
             usage: result.usage,
             status: "completed" as any,
           });
+
           operationContext.isActive = false;
           await this.hooks.onEnd?.({
             agent: this,
@@ -1570,46 +2032,66 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         },
         onError: async (error: VoltAgentError) => {
           if (error.toolError) {
-            const { toolCallId, toolName } = error.toolError;
-            const eventUpdater = operationContext.eventUpdaters.get(toolCallId);
-            if (eventUpdater) {
-              try {
-                const toolNodeId = createNodeId(NodeType.TOOL, toolName, this.id);
-                await eventUpdater({
-                  data: {
-                    affectedNodeId: toolNodeId,
-                    error: error.message,
-                    errorMessage: error.message,
-                    status: "error" as any,
-                    updatedAt: new Date().toISOString(),
-                    output: error.message,
-                  },
-                });
-                operationContext.eventUpdaters.delete(toolCallId);
-              } catch (updateError) {
-                console.error(
-                  `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
-                  updateError,
-                );
-              }
-              const tool = this.toolManager.getToolByName(toolName);
-              if (tool) {
-                await this.hooks.onToolEnd?.({
-                  agent: this,
-                  tool,
-                  output: undefined,
-                  error: error,
-                  context: operationContext,
-                });
-              }
+            const { toolName } = error.toolError;
+            const tool = this.toolManager.getToolByName(toolName);
+            if (tool) {
+              await this.hooks.onToolEnd?.({
+                agent: this,
+                tool,
+                output: undefined,
+                error: error,
+                context: operationContext,
+              });
             }
           }
-          operationContext.eventUpdaters.clear();
+
+          // [NEW EVENT SYSTEM] Create an agent:error event
+          const agentErrorStartInfo = {
+            startTime:
+              (operationContext.userContext.get("agent_start_time") as string) ||
+              new Date().toISOString(),
+            eventId: operationContext.userContext.get("agent_start_event_id") as string,
+          };
+
+          const agentErrorEvent: AgentErrorEvent = {
+            id: crypto.randomUUID(),
+            name: "agent:error",
+            type: "agent",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "error",
+            level: "ERROR",
+            input: null,
+            output: null,
+            statusMessage: {
+              message: error.message,
+              code: error.code,
+              stage: error.stage,
+              ...(error.originalError ? { originalError: String(error.originalError) } : {}),
+            },
+            metadata: {
+              displayName: this.name,
+              id: this.id,
+              userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+                string,
+                unknown
+              >,
+            },
+            traceId: operationContext.historyEntry.id,
+            parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
+          };
+
+          // Publish the agent:error event
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: operationContext.historyEntry.id,
+            event: agentErrorEvent,
+          });
+
           this.addAgentEvent(operationContext, "finished", "error" as any, {
             input: messages,
             error: error,
             errorMessage: error.message,
-            affectedNodeId: `agent_${this.id}`,
             status: "error" as any,
             metadata: {
               code: error.code,
@@ -1619,10 +2101,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               ...error.metadata,
             },
           });
-          this.updateHistoryEntry(operationContext, {
-            output: error.message,
-            status: "error" as any,
+
+          await this.updateHistoryEntry(operationContext, {
+            status: "error",
           });
+
           operationContext.isActive = false;
           if (provider?.onError) {
             await (provider.onError as StreamOnErrorCallback)(error);
@@ -1638,17 +2121,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const typedResponse = response as InferStreamObjectResponse<TProvider>;
       return typedResponse;
     } catch (error) {
-      this.addAgentEvent(operationContext, "finished", "error" as any, {
-        input: messages,
-        error,
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
-        affectedNodeId: `agent_${this.id}`,
-        status: "error" as any,
-      });
-      this.updateHistoryEntry(operationContext, {
-        output: error instanceof Error ? error.message : "Unknown error",
-        status: "error" as any,
-      });
       operationContext.isActive = false;
       await this.hooks.onEnd?.({
         agent: this,

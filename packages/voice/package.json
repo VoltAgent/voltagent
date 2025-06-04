@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/voice",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "VoltAgent Voice - Voice capabilities for AI agents",
   "license": "MIT",
   "exports": {
@@ -23,7 +23,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.16",
+    "@voltagent/core": "^0.1.20",
     "@xsai/generate-speech": "^0.2.0",
     "@xsai/generate-transcription": "^0.2.0",
     "elevenlabs": "^1.55.0",

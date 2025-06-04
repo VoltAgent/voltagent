@@ -21,7 +21,7 @@ $ node your-app.js
     ✓ HTTP Server:  http://localhost:3141
     ✓ Swagger UI:   http://localhost:3141/ui
 
-    Developer Console:    https://console.voltagent.dev
+    VoltOps Platform:    https://console.voltagent.dev
   ══════════════════════════════════════════════════
 ```
 
@@ -81,13 +81,419 @@ While the Swagger UI (`/ui`) provides the most comprehensive details, here's a b
 
 :::warning[Object Generation Schema Mismatch]
 Please note that while the API documentation for `/object` and `/stream-object` specifies that the `schema` parameter should be a standard JSON Schema object, the current backend implementation (`Agent.generateObject`, `Agent.streamObject`) still expects a Zod schema instance.
-
-Sending a JSON Schema object via the API will currently result in a runtime error on the backend. This is a known issue tracked for a future backend update. Until then, generating objects via the raw API requires careful handling or using the agent directly within your TypeScript code where you can pass a Zod schema.
 :::
+
+## Custom REST Endpoints
+
+VoltAgent allows you to register custom REST API endpoints alongside the built-in agent endpoints. This feature enables you to extend your API server with custom business logic, data endpoints, or integration points.
+
+### Overview
+
+Custom endpoints are regular REST API routes that you can define with:
+
+- **Path**: URL pattern (with optional parameters)
+- **HTTP Method**: GET, POST, PUT, PATCH, DELETE, OPTIONS
+- **Handler**: Function that processes requests and returns responses
+- **Description**: Optional documentation string
+
+All custom endpoints are automatically displayed in the server startup banner and are included in your API server alongside the core VoltAgent endpoints.
+
+### Registration Methods
+
+You can register custom endpoints using two different methods:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="function" label="Function Call Registration" default>
+
+Use `registerCustomEndpoints()` for programmatic registration, conditional logic, or when you need to register endpoints before creating the VoltAgent instance.
+
+```typescript
+import { registerCustomEndpoints } from "@voltagent/core";
+
+const endpoints = [
+  {
+    path: "/api/health",
+    method: "get" as const,
+    handler: async (c) => {
+      return c.json({
+        success: true,
+        data: { status: "healthy", timestamp: new Date().toISOString() },
+      });
+    },
+    description: "Health check endpoint",
+  },
+];
+
+// Register before creating VoltAgent
+registerCustomEndpoints(endpoints);
+
+// Then create your VoltAgent instance
+new VoltAgent({ agents: { myAgent } });
+```
+
+**Best for:**
+
+- Conditional endpoint registration
+- Registering endpoints before VoltAgent creation
+- Multiple registration calls
+- Dynamic endpoint configuration
+
+</TabItem>
+<TabItem value="constructor" label="Constructor Registration">
+
+Pass endpoints directly to the VoltAgent constructor - the most convenient method for most use cases.
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  customEndpoints: [
+    {
+      path: "/api/users/:id",
+      method: "get" as const,
+      handler: async (c) => {
+        const userId = c.req.param("id");
+        return c.json({
+          success: true,
+          data: { id: userId, name: "John Doe" },
+        });
+      },
+      description: "Get user by ID",
+    },
+  ],
+});
+```
+
+**Best for:**
+
+- Simple, static endpoint registration
+- Most common use cases
+- Clean, declarative configuration
+- Single registration point
+
+</TabItem>
+</Tabs>
+
+#### Using Both Methods
+
+Both methods work together! You can use them simultaneously and all endpoints will be properly registered.
+
+```typescript
+// Function Call: Register some endpoints via function
+registerCustomEndpoints(authEndpoints);
+
+// Constructor: Register others via constructor
+new VoltAgent({
+  agents: { myAgent },
+  customEndpoints: dataEndpoints,
+});
+
+// Result: Both authEndpoints and dataEndpoints are registered
+```
+
+### Endpoint Definition Structure
+
+Each custom endpoint follows this TypeScript interface:
+
+```typescript
+interface CustomEndpointDefinition {
+  path: string; // Must start with "/"
+  method: HttpMethod; // "get" | "post" | "put" | "patch" | "delete" | "options"
+  handler: Function; // Request handler function
+  description?: string; // Optional description for documentation
+}
+```
+
+### Path Patterns
+
+Custom endpoints support various path patterns:
+
+```typescript
+const endpoints = [
+  // Static paths
+  { path: "/api/health", method: "get", handler: healthHandler },
+
+  // Path parameters
+  { path: "/api/users/:id", method: "get", handler: getUserHandler },
+  { path: "/api/posts/:postId/comments/:commentId", method: "get", handler: getCommentHandler },
+
+  // Nested paths
+  { path: "/api/v1/admin/users", method: "post", handler: createUserHandler },
+
+  // File-like paths
+  { path: "/api/files/:filename", method: "get", handler: getFileHandler },
+];
+```
+
+### Handler Functions
+
+Handler functions receive a Hono context object with request/response utilities:
+
+```typescript
+const endpoints = [
+  // GET endpoint
+  {
+    path: "/api/users/:id",
+    method: "get" as const,
+    handler: async (c) => {
+      const userId = c.req.param("id");
+      const user = await getUserById(userId);
+
+      if (!user) {
+        return c.json({ success: false, error: "User not found" }, 404);
+      }
+
+      return c.json({ success: true, data: user });
+    },
+  },
+
+  // POST endpoint with JSON body
+  {
+    path: "/api/users",
+    method: "post" as const,
+    handler: async (c) => {
+      try {
+        const body = await c.req.json();
+        const { name, email } = body;
+
+        const newUser = await createUser({ name, email });
+        return c.json({ success: true, data: newUser }, 201);
+      } catch (error) {
+        return c.json(
+          {
+            success: false,
+            error: "Invalid request body",
+          },
+          400
+        );
+      }
+    },
+  },
+
+  // Query parameters
+  {
+    path: "/api/search",
+    method: "get" as const,
+    handler: async (c) => {
+      const query = c.req.query("q");
+      const limit = parseInt(c.req.query("limit") || "10");
+
+      const results = await searchData(query, limit);
+      return c.json({ success: true, data: results });
+    },
+  },
+];
+```
+
+### Request/Response Utilities
+
+The handler context provides these utilities:
+
+```typescript
+handler: async (c) => {
+  // Path parameters
+  const id = c.req.param("id");
+
+  // Query parameters
+  const page = c.req.query("page");
+  const filters = c.req.queries("filter"); // Array for multiple values
+
+  // Request body
+  const jsonData = await c.req.json();
+  const formData = await c.req.formData();
+  const textData = await c.req.text();
+
+  // Headers
+  const authHeader = c.req.header("authorization");
+
+  // JSON response
+  return c.json({ data: "response" });
+
+  // Text response
+  return c.text("Hello World");
+
+  // HTML response
+  return c.html("<h1>Hello</h1>");
+
+  // Custom response
+  return c.body("Custom content", {
+    status: 201,
+    headers: { "Content-Type": "text/plain" },
+  });
+
+  // Redirect
+  return c.redirect("/new-url");
+};
+```
 
 ## Authentication
 
 Currently, the Core API does not implement built-in authentication routes. Ensure that your API server is deployed in a secure environment or protected by appropriate network-level security (e.g., firewall rules, reverse proxy authentication) if exposing it outside your local machine.
+
+## Error Handling
+
+The VoltAgent Core API provides comprehensive error handling for both regular HTTP endpoints and streaming endpoints.
+
+### Regular Endpoints (Non-Streaming)
+
+For regular endpoints like `/text` and `/object`, errors are returned as standard HTTP responses:
+
+```json
+{
+  "success": false,
+  "error": "Error message describing what went wrong"
+}
+```
+
+Common HTTP status codes:
+
+- `404`: Agent not found
+- `500`: Internal server error (e.g., invalid schema, agent processing error)
+
+### Streaming Endpoints (SSE)
+
+For streaming endpoints like `/stream` and `/stream-object`, errors are delivered as Server-Sent Events within the stream itself. This allows real-time error reporting during long-running operations.
+
+#### Error Event Format
+
+When an error occurs during streaming, you'll receive an SSE event with `type: "error"`:
+
+```javascript
+data: {
+  "type": "error",
+  "error": "Error message describing what went wrong",
+  "code": "ERROR_CODE",
+  "timestamp": "2024-01-15T10:30:45.123Z"
+}
+```
+
+#### Error Types and Codes
+
+| Error Code        | Description                    | When it occurs                                        |
+| ----------------- | ------------------------------ | ----------------------------------------------------- |
+| `SETUP_ERROR`     | Error during initial setup     | Agent initialization or configuration issues          |
+| `STREAM_ERROR`    | Generic streaming error        | LLM provider errors, network issues, invalid API keys |
+| `ITERATION_ERROR` | Error during stream processing | Issues while processing stream chunks                 |
+
+#### Streaming Event Flow
+
+A typical successful stream contains these event types:
+
+1. `text` or `object` events (data chunks)
+2. `completion` event (stream finished successfully)
+
+A stream with errors will contain:
+
+1. `text` or `object` events (if any data was processed)
+2. `error` event (when error occurs)
+3. Stream closes after error event
+
+#### Example Error Scenarios
+
+**Invalid API Key:**
+
+```javascript
+data: {
+  "type": "error",
+  "error": "Incorrect API key provided: sk-proj-...",
+  "code": "STREAM_ERROR",
+  "timestamp": "2024-01-15T10:30:45.123Z"
+}
+```
+
+**Schema Validation Error (Object Streaming):**
+
+```javascript
+data: {
+  "type": "error",
+  "error": "Schema validation failed: Expected string, received number",
+  "code": "STREAM_ERROR",
+  "timestamp": "2024-01-15T10:30:45.123Z"
+}
+```
+
+#### Handling Errors in Client Code
+
+**JavaScript/TypeScript Example:**
+
+```javascript
+// Fetch-based SSE streaming (supports POST with request body)
+const streamUrl = "/agents/your-agent-id/stream";
+const response = await fetch(streamUrl, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    input: "Tell me a joke!",
+    options: { temperature: 0.7, maxTokens: 100 },
+  }),
+});
+
+if (!response.ok) {
+  throw new Error(`Stream request failed: ${response.status}`);
+}
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+let buffer = "";
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  buffer += decoder.decode(value, { stream: true });
+  const lines = buffer.split("\n\n");
+  buffer = lines.pop() || "";
+
+  for (const line of lines) {
+    if (line.startsWith("data: ")) {
+      try {
+        const data = JSON.parse(line.substring(6));
+
+        switch (data.type) {
+          case "text":
+            // Handle text chunk
+            console.log("Text:", data.text);
+            break;
+
+          case "object":
+            // Handle object chunk
+            console.log("Object:", data.object);
+            break;
+
+          case "error":
+            // Handle error
+            console.error("Stream error:", data.error);
+            console.error("Error code:", data.code);
+            return; // Exit on error
+
+          case "completion":
+            // Handle completion
+            console.log("Stream completed successfully");
+            return;
+        }
+      } catch (error) {
+        console.error("Error parsing SSE data:", error);
+      }
+    }
+  }
+}
+```
+
+**cURL Example (Streaming with Error):**
+
+```bash
+# This will show error events in the stream if API key is invalid
+curl -N -X POST http://localhost:3141/agents/your-agent-id/stream \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Hello!", "options": { "temperature": 0.7 } }'
+
+# Example output with error:
+# data: {"type":"error","error":"Incorrect API key provided","code":"STREAM_ERROR","timestamp":"2024-01-15T10:30:45.123Z"}
+```
 
 ## Basic Example (Using cURL)
 

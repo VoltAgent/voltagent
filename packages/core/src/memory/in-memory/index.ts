@@ -1,3 +1,4 @@
+import type { NewTimelineEvent } from "../../events/types";
 import type {
   Conversation,
   CreateConversationInput,
@@ -29,6 +30,8 @@ export class InMemoryStorage implements Memory {
   private storage: Record<string, Record<string, MessageWithMetadata[]>> = {};
   private conversations: Map<string, Conversation> = new Map();
   private historyEntries: Map<string, any> = new Map();
+  private historySteps: Map<string, any> = new Map();
+  private timelineEvents: Map<string, NewTimelineEvent> = new Map();
   private agentHistory: Record<string, string[]> = {};
   private options: InMemoryStorageOptions;
 
@@ -44,6 +47,46 @@ export class InMemoryStorage implements Memory {
   }
 
   /**
+   * Add a timeline event
+   * @param key Event ID (UUID)
+   * @param value Timeline event data
+   * @param historyId Related history entry ID
+   * @param agentId Agent ID for filtering
+   */
+  async addTimelineEvent(
+    key: string,
+    value: NewTimelineEvent,
+    historyId: string,
+    agentId: string,
+  ): Promise<void> {
+    this.debug(`Adding timeline event ${key} for history ${historyId} and agent ${agentId}`, value);
+
+    // Store the timeline event
+    this.timelineEvents.set(key, {
+      ...value,
+      id: key,
+    });
+
+    // Link to the history entry
+    const historyEntry = this.historyEntries.get(historyId);
+    if (historyEntry) {
+      // Initialize events array if it doesn't exist
+      if (!historyEntry.events) {
+        historyEntry.events = [];
+      }
+
+      // Add the event to the history entry
+      historyEntry.events.push({
+        ...value,
+        id: key,
+      });
+
+      // Update the history entry
+      await this.updateHistoryEntry(historyId, historyEntry, agentId);
+    }
+  }
+
+  /**
    * Get a history entry by ID
    */
   async getHistoryEntry(key: string): Promise<any | undefined> {
@@ -55,23 +98,12 @@ export class InMemoryStorage implements Memory {
   }
 
   /**
-   * Get a history event (not needed for in-memory, but required by interface)
-   */
-  async getHistoryEvent(key: string): Promise<any | undefined> {
-    this.debug(`Getting history event with key ${key} - not needed for in-memory implementation`);
-    // For in-memory, we don't need to get individual events
-    // as they're stored directly in the history entries
-    return undefined;
-  }
-
-  /**
-   * Get a history step (not needed for in-memory, but required by interface)
+   * Get a history step by ID
    */
   async getHistoryStep(key: string): Promise<any | undefined> {
-    this.debug(`Getting history step with key ${key} - not needed for in-memory implementation`);
-    // For in-memory, we don't need to get individual steps
-    // as they're stored directly in the history entries
-    return undefined;
+    this.debug(`Getting history step with key ${key}`);
+    const step = this.historySteps.get(key);
+    return step ? JSON.parse(JSON.stringify(step)) : undefined;
   }
 
   /**
@@ -125,87 +157,6 @@ export class InMemoryStorage implements Memory {
   }
 
   /**
-   * Add a history event
-   */
-  async addHistoryEvent(
-    key: string,
-    value: any,
-    historyId: string,
-    agentId: string,
-  ): Promise<void> {
-    this.debug(
-      `Adding history event with key ${key} for history ${historyId} and agent ${agentId}`,
-      value,
-    );
-
-    // Link to the history entry
-    const historyEntry = this.historyEntries.get(historyId);
-    if (!historyEntry) {
-      throw new Error(`History entry with key ${historyId} not found`);
-    }
-
-    // Format the event object to match expected structure
-    const eventObject = {
-      id: key,
-      timestamp: value.timestamp || new Date().toISOString(),
-      name: value.name,
-      type: value.type,
-      affectedNodeId: value.affectedNodeId || value.data?.affectedNodeId,
-      data: {
-        ...(value.metadata || value.data || {}),
-        _trackedEventId: value._trackedEventId,
-        affectedNodeId: value.affectedNodeId || value.data?.affectedNodeId,
-      },
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Initialize events array if it doesn't exist
-    if (!historyEntry.events) {
-      historyEntry.events = [];
-    }
-
-    // Add the complete event object directly to the history entry
-    historyEntry.events.push(eventObject);
-
-    // Update the history entry
-    await this.updateHistoryEntry(historyId, historyEntry, agentId);
-  }
-
-  /**
-   * Update a history event
-   */
-  async updateHistoryEvent(
-    key: string,
-    value: any,
-    historyId: string,
-    agentId: string,
-  ): Promise<void> {
-    this.debug(`Updating history event with key ${key}`, value);
-
-    // Get the history entry
-    const historyEntry = this.historyEntries.get(historyId);
-    if (!historyEntry || !Array.isArray(historyEntry.events)) {
-      throw new Error(`History entry with key ${historyId} not found or has no events`);
-    }
-
-    // Find and update the event in the array
-    const eventIndex = historyEntry.events.findIndex((event: { id: string }) => event.id === key);
-    if (eventIndex === -1) {
-      throw new Error(`Event with key ${key} not found in history ${historyId}`);
-    }
-
-    // Update the event
-    historyEntry.events[eventIndex] = {
-      ...historyEntry.events[eventIndex],
-      ...value,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Update the history entry
-    await this.updateHistoryEntry(historyId, historyEntry, agentId);
-  }
-
-  /**
    * Add a history step
    */
   async addHistoryStep(key: string, value: any, historyId: string, agentId: string): Promise<void> {
@@ -213,6 +164,14 @@ export class InMemoryStorage implements Memory {
       `Adding history step with key ${key} for history ${historyId} and agent ${agentId}`,
       value,
     );
+
+    // Store the step separately
+    this.historySteps.set(key, {
+      ...value,
+      id: key,
+      historyId,
+      agentId,
+    });
 
     // Link to the history entry
     const historyEntry = this.historyEntries.get(historyId);
@@ -252,6 +211,18 @@ export class InMemoryStorage implements Memory {
   ): Promise<void> {
     this.debug(`Updating history step with key ${key}`, value);
 
+    // Update the step in the separate storage
+    const existingStep = this.historySteps.get(key);
+    if (!existingStep) {
+      throw new Error(`Step with key ${key} not found`);
+    }
+
+    this.historySteps.set(key, {
+      ...existingStep,
+      ...value,
+      updatedAt: new Date().toISOString(),
+    });
+
     // Get the history entry
     const historyEntry = this.historyEntries.get(historyId);
     if (!historyEntry || !Array.isArray(historyEntry.steps)) {
@@ -290,7 +261,11 @@ export class InMemoryStorage implements Memory {
     const result = entries.map((entry) => JSON.parse(JSON.stringify(entry)));
 
     // Sort by timestamp (newest first)
-    return result;
+    return result.sort((a, b) => {
+      const aTime = new Date(a.timestamp || a.createdAt || 0).getTime();
+      const bTime = new Date(b.timestamp || b.createdAt || 0).getTime();
+      return bTime - aTime;
+    });
   }
 
   /**

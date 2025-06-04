@@ -22,6 +22,6 @@ new VoltAgent({
   telemetryExporter: new VoltAgentExporter({
     publicKey,
     secretKey,
-    baseUrl: "https://server.voltagent.dev",
+    baseUrl: "https://api.voltagent.dev",
   }),
 });

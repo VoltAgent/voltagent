@@ -42,7 +42,7 @@ export default function LivePreview() {
             }`}
             onClick={() => setActiveTab("console")}
           >
-            Developer Console
+            VoltOps LLM Observability
           </button>
         </div>
       </div>

@@ -1,0 +1,60 @@
+{
+  "name": "@voltagent/vercel-ai-exporter",
+  "version": "0.1.4",
+  "description": "OpenTelemetry exporter for VoltAgent observability with Vercel AI SDK",
+  "keywords": [
+    "voltagent",
+    "vercel-ai",
+    "opentelemetry",
+    "observability",
+    "llm",
+    "ai"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voltagentai/voltagent.git",
+    "directory": "packages/vercel-ai-exporter"
+  },
+  "license": "MIT",
+  "author": "VoltAgent Team",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --apply src/",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@opentelemetry/core": "^1.18.0",
+    "@opentelemetry/sdk-trace-base": "^1.18.0",
+    "@voltagent/core": "^0.1.24",
+    "@voltagent/sdk": "^0.1.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4"
+  },
+  "peerDependencies": {
+    "ai": "^3.0.0 || ^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

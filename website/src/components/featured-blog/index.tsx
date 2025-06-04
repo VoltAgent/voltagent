@@ -48,9 +48,9 @@ const REAL_POSTS: BlogPost[] = [
   },
   {
     id: "2",
-    title: "Escape the 'console.log': VoltAgent Developer Console",
+    title: "Escape the 'console.log': VoltOps LLM Observability",
     excerpt:
-      "Stop drowning in console logs. VoltAgent's Developer Console offers unprecedented visual clarity for building, debugging, and deploying complex AI agents.",
+      "Stop drowning in console logs. VoltOps LLM Observability offers unprecedented visual clarity for building, debugging, and deploying complex AI agents.",
     date: getDateFromSlugDir("2025-04-21-introducing-developer-console"), // Extracted from directory name
     author: {
       name: "Omer Aplak", // From authors.yml

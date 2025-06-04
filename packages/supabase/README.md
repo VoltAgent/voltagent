@@ -93,39 +93,34 @@ CREATE TABLE IF NOT EXISTS voltagent_memory_messages (
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_lookup
 ON voltagent_memory_messages(user_id, conversation_id, created_at);
 
--- Agent History Table
+-- Agent History Table (New Structured Format)
 CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history (
-    key TEXT PRIMARY KEY,
-    value JSONB NOT NULL, -- Store the entry object as JSONB
-    agent_id TEXT NOT NULL
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    status TEXT,
+    input JSONB,
+    output JSONB,
+    usage JSONB,
+    metadata JSONB,
+    -- Legacy columns for migration compatibility
+    key TEXT,
+    value JSONB
 );
 
--- Index for faster lookup by agent_id
+-- Indexes for agent history
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_id
+ON voltagent_memory_agent_history(id);
+
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_agent_id
 ON voltagent_memory_agent_history(agent_id);
-
--- Agent History Events Table
-CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_events (
-    key TEXT PRIMARY KEY,
-    value JSONB NOT NULL, -- Store the event object as JSONB
-    -- Foreign key to history entry
-    history_id TEXT NOT NULL REFERENCES voltagent_memory_agent_history(key) ON DELETE CASCADE,
-    agent_id TEXT NOT NULL
-);
-
--- Indexes for faster lookup
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_events_history_id
-ON voltagent_memory_agent_history_events(history_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_events_agent_id
-ON voltagent_memory_agent_history_events(agent_id);
 
 -- Agent History Steps Table
 CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_steps (
     key TEXT PRIMARY KEY,
     value JSONB NOT NULL, -- Store the step object as JSONB
     -- Foreign key to history entry
-    history_id TEXT NOT NULL REFERENCES voltagent_memory_agent_history(key) ON DELETE CASCADE,
+    history_id TEXT NOT NULL,
     agent_id TEXT NOT NULL
 );
 
@@ -135,6 +130,48 @@ ON voltagent_memory_agent_history_steps(history_id);
 
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_steps_agent_id
 ON voltagent_memory_agent_history_steps(agent_id);
+
+-- Timeline Events Table (New)
+CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_timeline_events (
+    id TEXT PRIMARY KEY,
+    history_id TEXT NOT NULL,
+    agent_id TEXT,
+    event_type TEXT NOT NULL,
+    event_name TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT,
+    status TEXT,
+    status_message TEXT,
+    level TEXT DEFAULT 'INFO',
+    version TEXT,
+    parent_event_id TEXT,
+    tags JSONB,
+    input JSONB,
+    output JSONB,
+    error JSONB,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for timeline events
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_history_id
+ON voltagent_memory_agent_history_timeline_events(history_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_agent_id
+ON voltagent_memory_agent_history_timeline_events(agent_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_event_type
+ON voltagent_memory_agent_history_timeline_events(event_type);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_event_name
+ON voltagent_memory_agent_history_timeline_events(event_name);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_parent_event_id
+ON voltagent_memory_agent_history_timeline_events(parent_event_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_status
+ON voltagent_memory_agent_history_timeline_events(status);
 ```
 
 ### Credentials
@@ -190,7 +227,7 @@ Instead of building everything from scratch, VoltAgent provides ready-made, modu
 - **Data Retrieval & RAG**: Implement specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)**.
 - **Memory**: Enable agents to remember past interactions for more natural and context-aware conversations.
 - **LLM Compatibility**: Works with popular AI models from OpenAI, Google, Anthropic, and more, allowing easy switching.
-- **Developer Ecosystem**: Includes helpers like `create-voltagent-app`, `@voltagent/cli`, and the visual [VoltAgent Console](https://console.voltagent.dev) for quick setup, monitoring, and debugging.
+- **Developer Ecosystem**: Includes helpers like `create-voltagent-app`, `@voltagent/cli`, and the visual [VoltOps LLM Observability Platform](https://console.voltagent.dev) for quick setup, monitoring, and debugging.
 
 In essence, VoltAgent helps developers build sophisticated AI applications faster and more reliably, avoiding repetitive setup and the limitations of simpler tools.
 
@@ -209,7 +246,7 @@ VoltAgent provides a middle ground, offering structure and components without sa
 - **Flexibility:** Full control over agent behavior, LLM choice, tool integrations, and UI connections.
 - **Avoid Lock-in:** Freedom to switch AI providers and models as needed.
 - **Cost Efficiency:** Features designed to optimize AI service usage and reduce redundant calls.
-- **Visual Monitoring:** Use the [VoltAgent Console](https://console.voltagent.dev) to track agent performance, inspect state, and debug visually.
+- **Visual Monitoring:** Use the [VoltOps LLM Observability Platform](https://console.voltagent.dev) to track agent performance, inspect state, and debug visually.
 
 VoltAgent empowers developers to build their envisioned AI applications efficiently, from simple helpers to complex systems.
 
@@ -261,19 +298,19 @@ VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
 ✓ HTTP Server: http://localhost:3141
 
-Developer Console: https://console.voltagent.dev
+VoltOps Platform: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
 Your agent is now running! To interact with it:
 
-1. Open the Console: Click the [VoltAgent Console](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
-2. Find Your Agent: On the VoltAgent Console page, you should see your agent listed (e.g., "my-agent").
+1. Open the Console: Click the [VoltOps LLM Observability Platform](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
+2. Find Your Agent: On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
 3. Open Agent Details: Click on your agent's name.
 4. Start Chatting: On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5. Send a Message: Type a message like "Hello" and press Enter.
 
-![VoltAgent Developer Console Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
+![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
 
 ## Key Features
 
@@ -282,7 +319,7 @@ Your agent is now running! To interact with it:
 - **Tool Usage & Lifecycle:** Equip agents with custom or pre-built tools (functions) with type-safety (Zod), lifecycle hooks, and cancellation support to interact with external systems.
 - **Flexible LLM Support:** Integrate seamlessly with various LLM providers (OpenAI, Anthropic, Google, etc.) and easily switch between models.
 - **Memory Management:** Enable agents to retain context across interactions using different configurable memory providers.
-- **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltAgent Console](https://console.voltagent.dev).
+- **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltOps LLM Observability Platform](https://console.voltagent.dev).
 - **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package.
 - **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources.
 - **Model Context Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities.

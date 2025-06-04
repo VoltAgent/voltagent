@@ -32,7 +32,6 @@ import {
   type ExportAgentHistoryPayload,
   type ExportTimelineEventPayload,
   type AgentHistoryUpdatableFields,
-  type TimelineEventUpdatableFields,
 } from "../client";
 import type { HistoryStep } from "../../agent/history";
 
@@ -43,7 +42,7 @@ export class VoltAgentExporter {
   constructor(options: VoltAgentExporterOptions) {
     let baseUrl = options.baseUrl;
     if (baseUrl.includes("https://server.voltagent.dev")) {
-      baseUrl = `${baseUrl}/functions/v1`;
+      baseUrl = "https://api.voltagent.dev";
     }
     this.apiClient = new TelemetryServiceApiClient({ ...options, baseUrl });
     this.publicKey = options.publicKey;
@@ -70,7 +69,9 @@ export class VoltAgentExporter {
     // };
 
     const result = await this.apiClient.exportAgentHistory(historyEntryData); // Pass directly if already formatted
-    return result;
+    return {
+      historyEntryId: result.id,
+    };
   }
 
   /**
@@ -92,7 +93,9 @@ export class VoltAgentExporter {
     // };
 
     const result = await this.apiClient.exportTimelineEvent(timelineEventData); // Pass directly if already formatted
-    return result;
+    return {
+      timelineEventId: result.id,
+    };
   }
 
   /**
@@ -102,12 +105,8 @@ export class VoltAgentExporter {
    * @param steps - The steps data to export.
    * @returns A promise that resolves with the response from the telemetry service.
    */
-  public async exportHistorySteps(
-    project_id: string,
-    history_id: string,
-    steps: HistoryStep[],
-  ): Promise<void> {
-    await this.apiClient.exportHistorySteps(project_id, history_id, steps);
+  public async exportHistorySteps(history_id: string, steps: HistoryStep[]): Promise<void> {
+    await this.apiClient.exportHistorySteps(history_id, steps);
     // No specific result to return for void methods
   }
 
@@ -120,32 +119,10 @@ export class VoltAgentExporter {
    * @returns A promise that resolves with the response from the telemetry service.
    */
   public async updateHistoryEntry(
-    project_id: string,
     history_id: string,
     updates: Partial<AgentHistoryUpdatableFields>,
   ): Promise<void> {
-    await this.apiClient.updateAgentHistory(project_id, history_id, updates);
+    await this.apiClient.updateAgentHistory(history_id, updates);
     // No specific result to return for void methods
   }
-
-  /**
-   * Updates specific fields of a timeline event.
-   * @param history_id - The ID of the parent history entry.
-   * @param event_id - The ID of the timeline event to update.
-   * @param updates - An object containing the fields to update.
-   * @returns A promise that resolves when the operation is complete.
-   */
-  public async updateTimelineEvent(
-    history_id: string,
-    event_id: string,
-    updates: TimelineEventUpdatableFields,
-  ): Promise<void> {
-    if (!this.apiClient) {
-      return;
-    }
-    await this.apiClient.updateTimelineEvent(history_id, event_id, updates);
-  }
-
-  // TODO: Add methods for batch export if needed in the future.
-  // public async exportBatch(entries: ExportAgentHistoryPayload[]): Promise<void> { ... }
 }

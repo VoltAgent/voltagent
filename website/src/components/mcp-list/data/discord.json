@@ -1,0 +1,165 @@
+{
+  "id": 4,
+  "slug": "discord",
+  "name": "Discord",
+  "short_description": "Make your Discord life easier by managing servers, channels, and messages automatically.",
+  "title": "Discord MCP Server",
+  "description": "Want to make your Discord server run smoothly? The Discord MCP server helps your AI friends do the work for you. They can send messages, organize channels, handle roles, and keep everything running without you having to do it manually.",
+  "category": ["Communication"],
+  "logoKey": "discord",
+  "avaliable_providers": ["composio", "zapier"],
+  "total_tools": [
+    {
+      "id": "add_role",
+      "name": "Add Role",
+      "description": "Give a role to someone in your Discord server",
+      "providers": {
+        "zapier": { "id": "add_role" },
+        "composio": { "id": "add_guild_member_role" }
+      },
+      "mcp_content": {
+        "heading": "How to Automate Role Assignments with Discord MCP?",
+        "description": "Let your AI do the role managing for you! With Discord MCP, you're able to automatically give people roles based on what they do, how long they've been a member, or whatever rules you make. No more mousing around - it just works!"
+      }
+    },
+    {
+      "id": "remove_role",
+      "name": "Remove User Role",
+      "description": "Take away a role from someone",
+      "providers": {
+        "zapier": { "id": "remove_user_role" },
+        "composio": { "id": "delete_guild_member_role" }
+      },
+      "mcp_content": {
+        "heading": "Keep Your Roles Tidy and Organized",
+        "description": "Need to update roles? Your AI friend will assist you! It will delete roles when they're no longer required, such as when a person leaves a project or their temporary permission should expire. It's like having an über-organized assistant!"
+      }
+    },
+    {
+      "id": "send_channel_message",
+      "name": "Send Channel Message",
+      "description": "Post a message in any channel",
+      "providers": {
+        "zapier": { "id": "send_channel_message" }
+      },
+      "mcp_content": {
+        "heading": "How to Automate Channel Messaging with Discord MCP?",
+        "description": "It will send announcements, updates, or simply regular messages to any channel. Great for daily updates, welcome messages, or keeping everyone up to speed without having to type it all out."
+      }
+    },
+    {
+      "id": "send_direct_message",
+      "name": "Send Direct Message",
+      "description": "Send a private message to someone",
+      "providers": {
+        "zapier": { "id": "send_direct_message" },
+        "composio": { "id": "create_dm" }
+      },
+      "mcp_content": {
+        "heading": "Make Personal Messages Easy",
+        "description": "Have to send a lot of personal messages? Your AI can do that! For welcoming new members, reminders, or updates, it can message individuals one by one while keeping your friendly tone."
+      }
+    },
+    {
+      "id": "create_forum_post",
+      "name": "Create Forum Post",
+      "description": "Start a new discussion in a forum channel",
+      "providers": {
+        "zapier": { "id": "create_new_forum_post" }
+      },
+      "mcp_content": {
+        "heading": "How to Manage Forum Discussions with Discord MCP?",
+        "description": "Make your forum channels come alive! Your AI can introduce new topics, post announcements, or create recurring threads. It's like having a helpful moderator that is always on hand to continue the conversation."
+      }
+    },
+    {
+      "id": "send_forum_message",
+      "name": "Send Message in Forum Post",
+      "description": "Add a message to an existing forum discussion",
+      "providers": {
+        "zapier": { "id": "send_message_in_forum_post" }
+      },
+      "mcp_content": {
+        "heading": "Keep Forum Discussions Active",
+        "description": "Never let a conversation fizzle out! Your AI can jump in with helpful responses, news, or reminders on forum threads. It's great for keeping conversations flowing and everyone engaged."
+      }
+    },
+    {
+      "id": "rename_channel",
+      "name": "Rename Channel",
+      "description": "Change a channel's name",
+      "providers": {
+        "zapier": { "id": "rename_channel" }
+      },
+      "mcp_content": {
+        "heading": "Keep Channels Fresh and Relevant",
+        "description": "Need channels that keep pace with your needs? Your AI will automatically rename channels - perfect for event channels, project news, or keeping up to date without taking any extra effort from you."
+      }
+    },
+    {
+      "id": "find_channel",
+      "name": "Find Channel",
+      "description": "Look up a channel by its name",
+      "providers": {
+        "zapier": { "id": "find_channel" }
+      },
+      "mcp_content": {
+        "heading": "Find Any Channel in a Flash",
+        "description": " Your AI can quickly locate what you're looking for. Just tell it what you need, and it'll locate the correct channel in seconds."
+      }
+    },
+    {
+      "id": "find_user",
+      "name": "Find User",
+      "description": "Look up a user by their name",
+      "providers": {
+        "zapier": { "id": "find_user" },
+        "composio": { "id": "get_user" }
+      },
+      "mcp_content": {
+        "heading": "How to Find Users Easily with Discord MCP Server?",
+        "description": "Finding people simplified! Your AI can instantly find any user you require, be it for message sending, role updates, or reviewing details. Scrolling through lengthy member lists is a thing of the past!"
+      }
+    },
+    {
+      "id": "create_guild",
+      "name": "Create Server",
+      "description": "Set up a new Discord server",
+      "providers": {
+        "composio": { "id": "create_guild" }
+      },
+      "mcp_content": {
+        "heading": "How to Create Perfect Servers with Discord MCP?",
+        "description": "Need to begin a new server? Let your AI do it just right! It'll set up channels, make roles, and get all of that just so in the manner you like. It's having a pro server artist at your fingertips."
+      }
+    },
+    {
+      "id": "list_members",
+      "name": "List Server Members",
+      "description": "Get a list of everyone in the server",
+      "providers": {
+        "composio": { "id": "list_guild_members" }
+      },
+      "mcp_content": {
+        "heading": "Know Your Community",
+        "description": "Wondering who's who? Your AI can fetch a complete list of all members on your server. Handy for member number counts, finding active members, or planning community events."
+      }
+    },
+    {
+      "id": "api_request",
+      "name": "API Request",
+      "description": "Make a custom request to Discord's API",
+      "providers": {
+        "zapier": { "id": "api_request_beta" }
+      },
+      "mcp_content": {
+        "heading": "Access Advanced Features",
+        "description": "Got something special in mind? Your AI can tap into Discord's advanced features through the API. Perfect for custom tasks or out-of-the-box automation outside the standard tools."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How Can Your AI Friends Help Run Your Discord Server?",
+    "description": "Make your Discord server awesome without all the work! Your AI helpers can take care of everything from sending messages to managing roles and keeping your community active. They'll handle the day-to-day stuff while you focus on what matters - building a great community!"
+  }
+}
