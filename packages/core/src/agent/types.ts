@@ -1,14 +1,14 @@
+import type { Span } from "@opentelemetry/api";
 import type { BaseMessage } from "../agent/providers/base/types";
 import type { Memory, MemoryOptions } from "../memory/types";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
+import type { AgentHistoryEntry } from "./history";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
-import type { AgentHistoryEntry } from "./history";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
-import type { Span } from "@opentelemetry/api";
-import type { VoltAgentExporter } from "../telemetry/exporter";
 
 /**
  * Provider options type for LLM configurations
@@ -60,6 +60,13 @@ export type AgentOptions = {
    * Agent name
    */
   name: string;
+
+  /**
+   * Agent purpose. This is the purpose of the agent, that will be used to generate the system message for the supervisor agent, if not provided, the agent will use the `instructions` field to generate the system message.
+   *
+   * @example 'An agent for customer support'
+   */
+  purpose?: string;
 
   /**
    * Memory storage for the agent (optional)

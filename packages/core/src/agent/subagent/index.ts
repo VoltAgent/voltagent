@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { AgentRegistry } from "../../server/registry";
+import { createTool } from "../../tool";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
 import type { AgentHandoffOptions, AgentHandoffResult } from "../types";
-import { createTool } from "../../tool";
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -92,7 +92,7 @@ export class SubAgentManager {
     }
 
     const subAgentList = this.subAgents
-      .map((agent) => `- ${agent.name}: ${agent.instructions}`)
+      .map((agent) => `- ${agent.name}: ${agent.purpose ?? agent.instructions}`)
       .join("\n");
 
     return `

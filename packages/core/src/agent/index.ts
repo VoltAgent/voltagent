@@ -1,10 +1,27 @@
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
+import type { StandardEventData } from "../events/types";
+import type {
+  AgentErrorEvent,
+  AgentStartEvent,
+  AgentSuccessEvent,
+  RetrieverErrorEvent,
+  RetrieverStartEvent,
+  RetrieverSuccessEvent,
+  ToolErrorEvent,
+  ToolStartEvent,
+  ToolSuccessEvent,
+} from "../events/types";
 import { MemoryManager } from "../memory";
+import type { BaseRetriever } from "../retriever/retriever";
+import { AgentRegistry } from "../server/registry";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
+import { NodeType, createNodeId } from "../utils/node-utils";
+import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
 import type {
@@ -25,39 +42,22 @@ import type {
   InferStreamTextResponse,
   InternalGenerateOptions,
   ModelType,
+  OperationContext,
   ProviderInstance,
   PublicGenerateOptions,
-  OperationContext,
-  ToolExecutionContext,
-  VoltAgentError,
+  StandardizedObjectResult,
+  StandardizedTextResult,
+  StreamObjectFinishResult,
+  StreamObjectOnFinishCallback,
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
-  StreamObjectFinishResult,
-  StreamObjectOnFinishCallback,
-  StandardizedTextResult,
-  StandardizedObjectResult,
+  ToolExecutionContext,
+  VoltAgentError,
 } from "./types";
-import type { BaseRetriever } from "../retriever/retriever";
-import { NodeType, createNodeId } from "../utils/node-utils";
-import type { StandardEventData } from "../events/types";
-import type {
-  AgentStartEvent,
-  AgentSuccessEvent,
-  AgentErrorEvent,
-  ToolStartEvent,
-  ToolSuccessEvent,
-  ToolErrorEvent,
-  RetrieverStartEvent,
-  RetrieverSuccessEvent,
-  RetrieverErrorEvent,
-} from "../events/types";
-import type { Voice } from "../voice";
-import { AgentRegistry } from "../server/registry";
-import type { VoltAgentExporter } from "../telemetry/exporter";
 
-import { startOperationSpan, endOperationSpan, startToolSpan, endToolSpan } from "./open-telemetry";
 import type { Span } from "@opentelemetry/api";
+import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 
 /**
  * Agent class for interacting with AI models
@@ -72,6 +72,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Agent name
    */
   readonly name: string;
+
+  /**
+   * (sub)agent purpose. This is the purpose of a (sub)agent, that will be used to generate the system message for the supervisor agent, if not provided, the agent will use the `instructions` field to generate the system message.
+   *
+   * @example 'An agent for customer support'
+   */
+  readonly purpose?: string;
 
   /**
    * @deprecated Use `instructions` instead. Will be removed in a future version.
@@ -151,7 +158,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   ) {
     this.id = options.id || options.name;
     this.name = options.name;
-    this.instructions = options.instructions ?? options.description ?? "A helpful AI assistant";
+    this.purpose = options.purpose;
+    this.instructions = options.instructions ?? options.description ?? "";
     this.description = this.instructions;
     this.llm = options.llm as ProviderInstance<TProvider>;
     this.model = options.model;
