@@ -1,20 +1,20 @@
 ---
-title: Developer Console
+title: VoltOps Platform
 slug: /observability/developer-console
 ---
 
-The VoltAgent Developer Console is a web-based tool designed to help you observe and debug your AI agents during development.
+The VoltAgent VoltOps Platform is a web-based tool designed to help you observe and debug your AI agents during development.
 
-![VoltAgent Console](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
 ### Accessing the Console
 
-You can access the hosted Developer Console at:
+You can access the hosted VoltOps Platform at:
 [https://console.voltagent.dev/](https://console.voltagent.dev/)
 
 ### How it Works
 
-When you run a VoltAgent application locally with observability enabled, it exposes a local server (typically on port `3141`). The Developer Console connects directly to this local server via your browser.
+When you run a VoltAgent application locally with observability enabled, it exposes a local server (typically on port `3141`). The VoltOps Platform connects directly to this local server via your browser.
 
 **Key Features (Local Debugging):**
 
@@ -22,7 +22,7 @@ When you run a VoltAgent application locally with observability enabled, it expo
 - **Real-time Visualization:** See the agent's execution flow, including function calls, tool usage, and message history, as it happens.
 - **Debugging Tools:** Inspect the details of each step, view logs, and analyze the agent's state at different points in time.
 
-**Important Note on Data:** The Developer Console at [https://console.voltagent.dev/](https://console.voltagent.dev/) when connected to your `localhost` is for **local debugging only**. It does not store your data remotely.
+**Important Note on Data:** The VoltOps Platform at [https://console.voltagent.dev/](https://console.voltagent.dev/) when connected to your `localhost` is for **local debugging only**. It does not store your data remotely.
 
 ### Getting Started
 
@@ -35,7 +35,7 @@ When you run a VoltAgent application locally with observability enabled, it expo
     ══════════════════════════════════════════════════
       ✓ HTTP Server: http://localhost:3141
 
-      Developer Console:    https://console.voltagent.dev
+      VoltOps Platform:    https://console.voltagent.dev
     ══════════════════════════════════════════════════
     [VoltAgent] All packages are up to date
     ```
@@ -44,12 +44,12 @@ When you run a VoltAgent application locally with observability enabled, it expo
 3.  The console should automatically attempt to connect to `http://localhost:3141`. If your agent is running on a different port, you can configure the connection URL in the console's settings.
 
 <!-- Placeholder for a GIF demonstrating connecting the console to a local agent -->
-<!-- This GIF should show the Developer Console interface successfully connecting to the localhost:3141 endpoint after the VoltAgent application starts. -->
+<!-- This GIF should show the VoltOps Platform interface successfully connecting to the localhost:3141 endpoint after the VoltAgent application starts. -->
 <!-- ![Connecting to Local Agent](placeholder-connect.gif) -->
 
 ### Production Tracing with VoltAgentExporter
 
-While the Developer Console is excellent for local development and real-time debugging, VoltAgent also provides a way to capture and persist observability data for your agents running in production environments. This is achieved using the `VoltAgentExporter`.
+While the VoltOps Platform is excellent for local development and real-time debugging, VoltAgent also provides a way to capture and persist observability data for your agents running in production environments. This is achieved using the `VoltAgentExporter`.
 
 The `VoltAgentExporter` allows you to send telemetry data (traces, logs, metrics related to your agent's execution) to the VoltAgent cloud platform. This enables you to:
 
@@ -90,7 +90,7 @@ new VoltAgent({
   telemetryExporter: new VoltAgentExporter({
     publicKey: voltagentPublicKey,
     secretKey: voltagentSecretKey,
-    baseUrl: "https://server.voltagent.dev", // Default URL for the VoltAgent cloud service
+    baseUrl: "https://api.voltagent.dev", // Default URL for the VoltAgent cloud service
   }),
   // highlight-end
 });
@@ -103,7 +103,7 @@ This setup ensures that your agent's activities are securely transmitted and sto
 
 ### Exploring the Console Features
 
-Once connected, the Developer Console provides several views to help you understand your agent's behavior:
+Once connected, the VoltOps Platform provides several views to help you understand your agent's behavior:
 
 #### Agent List View
 

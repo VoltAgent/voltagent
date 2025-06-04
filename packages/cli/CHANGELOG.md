@@ -1,5 +1,11 @@
 # @voltagent/cli
 
+## 0.1.6
+
+### Patch Changes
+
+- [#155](https://github.com/VoltAgent/voltagent/pull/155) [`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update `tsconfig.json`'s `target` to `ES2022`
+
 ## 0.1.5
 
 ### Patch Changes
@@ -54,6 +60,6 @@
   - **`@voltagent/xsai`**: A Seamless integration with [xsAI](https://xsai.js.org/).
   - **`@voltagent/cli` & `create-voltagent-app`**: Quick start tools to get you building _fast_.
 
-  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltAgent Console](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
+  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltOps LLM Observability Platform](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
 
   Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community](https://s.voltagent.dev/discord)!

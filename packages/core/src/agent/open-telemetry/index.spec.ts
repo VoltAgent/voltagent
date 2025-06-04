@@ -73,8 +73,8 @@ describe("OpenTelemetry Helpers", () => {
         expect.objectContaining({
           kind: SpanKind.INTERNAL,
           attributes: {
-            "voltagent.agent.id": options.agentId,
-            "voltagent.agent.name": options.agentName,
+            "agent.id": options.agentId,
+            "agent.name": options.agentName,
             "enduser.id": options.userId,
             "session.id": options.sessionId,
             "voltagent.parent.agent.id": options.parentAgentId,
@@ -98,8 +98,8 @@ describe("OpenTelemetry Helpers", () => {
         expect.objectContaining({
           kind: SpanKind.INTERNAL,
           attributes: {
-            "voltagent.agent.id": options.agentId,
-            "voltagent.agent.name": options.agentName,
+            "agent.id": options.agentId,
+            "agent.name": options.agentName,
           },
         }),
         expect.any(Object),
@@ -269,7 +269,7 @@ describe("OpenTelemetry Helpers", () => {
             "tool.call.id": options.toolCallId,
             "tool.name": options.toolName,
             "tool.arguments": JSON.stringify(options.toolInput),
-            "voltagent.agent.id": options.agentId,
+            "agent.id": options.agentId,
           },
         }),
         expect.any(Object), // Context potentially modified by setSpan

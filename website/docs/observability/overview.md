@@ -12,8 +12,8 @@ Within the VoltAgent framework, observability helps you:
 - **Improve reliability:** Catch errors and unexpected behavior during development and testing.
 - **Gain insights:** Understand how your agent interacts with tools, memory, and external systems.
 
-The primary tool for observability in VoltAgent is the **Developer Console**. It provides a web-based interface to visualize and inspect your agent's activity in real-time.
+The primary tool for observability in VoltAgent is the **VoltOps LLM Observability**. It provides a web-based interface to visualize and inspect your agent's activity in real-time.
 
-![VoltAgent Console](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
-Learn more about how to use it on the [Developer Console](./developer-console.md) page.
+Learn more about how to use it on the [VoltOps LLM Observability](./developer-console.md) page.

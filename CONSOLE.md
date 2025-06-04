@@ -1,4 +1,4 @@
-# VoltAgent Developer Console
+# VoltOps LLM Observability
 
 <div align="center">
 <a href="https://voltagent.dev/">
@@ -6,20 +6,20 @@
 </a>
 </div>
 <br/>
-The VoltAgent Developer Console is a web-based tool designed to help you monitor, debug, and improve your AI agents during development and execution.
+The VoltOps LLM Observability is a web-based tool designed to help you monitor, debug, and improve your AI agents during development and execution.
 
 <br />
 <br />
 
-Access the hosted Developer Console at: [https://console.voltagent.dev](https://console.voltagent.dev/)
+Access the hosted VoltOps at: [https://console.voltagent.dev](https://console.voltagent.dev/)
 
-[![VoltAgent Console](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
+[![VoltOps LLM Observability Platform](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
 
 You can also try a live interactive demo here: [https://console.voltagent.dev/demo](https://console.voltagent.dev/demo)
 
 ## How it Works
 
-When you run a VoltAgent application locally with observability enabled, it exposes a local server (typically on port `3141`). The Developer Console connects directly to this local server via your browser.
+When you run a VoltAgent application locally with observability enabled, it exposes a local server (typically on port `3141`). The VoltOps connects directly to this local server via your browser.
 
 - **Local Connection:** Communication happens directly between the console in your browser and your local agent process. No data is sent to external servers.
 - **Real-time Data:** Observe agent activities as they happen.
@@ -74,7 +74,7 @@ The console provides several views and features to enhance observability:
   ══════════════════════════════════════════════════
     ✓ HTTP Server: http://localhost:3141
 
-    Developer Console:    https://console.voltagent.dev
+    VoltOps Platform:    https://console.voltagent.dev
   ══════════════════════════════════════════════════
   [VoltAgent] All packages are up to date
   ```

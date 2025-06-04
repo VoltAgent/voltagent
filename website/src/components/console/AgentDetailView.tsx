@@ -1,6 +1,18 @@
 import React from "react";
+import type { FC } from "react";
 
-const AgentDetailView = () => {
+interface AgentDetailViewProps {
+  onImageClick?: () => void;
+}
+
+const AgentDetailView: FC<AgentDetailViewProps> = ({ onImageClick }) => {
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (onImageClick && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      onImageClick();
+    }
+  };
+
   return (
     <div
       className="bg-[#141922] overflow-hidden rounded-b-lg"
@@ -12,8 +24,16 @@ const AgentDetailView = () => {
       <img
         src="/img/ops/flow-detail-2.png"
         alt="Agent Detail"
-        className="w-full h-auto object-cover block max-h-[300px] sm:max-h-[400px] md:max-h-none"
+        className={`w-full h-auto object-cover block max-h-[200px] landing-xs:max-h-[150px] landing-sm:max-h-[250px] landing-md:max-h-[300px] landing-lg:max-h-[400px] ${
+          onImageClick
+            ? "cursor-pointer hover:opacity-90 transition-opacity"
+            : ""
+        }`}
         loading="lazy"
+        onClick={onImageClick}
+        onKeyPress={handleKeyPress}
+        tabIndex={onImageClick ? 0 : undefined}
+        role={onImageClick ? "button" : undefined}
       />
     </div>
   );

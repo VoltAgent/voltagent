@@ -1,5 +1,3 @@
-import type { SVGProps } from "react";
-
 // Defines the structure for individual pieces of content (text, code, heading)
 export interface ServerConfigContentItem {
   type: "text" | "code" | "heading";

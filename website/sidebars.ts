@@ -39,17 +39,9 @@ const sidebars: SidebarsConfig = {
       items: [
         "agents/memory/overview",
         "agents/memory/libsql",
+        "agents/memory/postgres",
         "agents/memory/supabase",
         "agents/memory/in-memory",
-      ],
-    },
-    {
-      type: "category",
-      label: "Observability",
-      items: [
-        "observability/overview",
-        "observability/developer-console",
-        "observability/langfuse",
       ],
     },
     {
@@ -71,12 +63,26 @@ const sidebars: SidebarsConfig = {
         "providers/google-ai",
         "providers/groq-ai",
         "providers/xsai",
+        "providers/anthropic-ai",
+      ],
+    },
+    {
+      type: "category",
+      label: "Observability",
+      items: [
+        "observability/overview",
+        "observability/developer-console",
+        "observability/langfuse",
       ],
     },
     {
       type: "category",
       label: "Integrations",
-      items: ["integrations/overview", "integrations/nextjs"],
+      items: [
+        "integrations/overview",
+        "integrations/nextjs",
+        "integrations/vercel-ai",
+      ],
     },
     {
       type: "category",

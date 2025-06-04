@@ -35,7 +35,7 @@ It's our toolkit for putting together AI powered applications. We provide the co
 We designed VoltAgent to hit a nice sweet spot. It gives you more helpful structure than trying to build everything from raw AI libraries, but it offers a lot more freedom and customization than the simpler no-code platforms out there.
 
 :::tip
-We also built the [VoltAgent Console](https://console.voltagent.dev) a web interface that lets you monitor your agents, see exactly how they're working, and chat with them directly. We find it incredibly useful ourselves for debugging and testing!
+We also built the [VoltOps LLM Observability Platform](https://console.voltagent.dev) a web interface that lets you monitor your agents, see exactly how they're working, and chat with them directly. We find it incredibly useful ourselves for debugging and testing!
 :::
 
 ## Making My Agent Talk to Peaka
@@ -149,13 +149,13 @@ My terminal showed VoltAgent starting up, and it also started the Peaka tool aut
 ══════════════════════════════════════════════════
   ✓ HTTP Server: http://localhost:3141
 
-  Developer Console:    https://console.voltagent.dev
+  VoltOps Platform:    https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
 Now the fun test:
 
-1.  I popped open the [VoltAgent Console](https://console.voltagent.dev) in my browser.
+1.  I popped open the [VoltOps LLM Observability Platform](https://console.voltagent.dev) in my browser.
 2.  Found my agent ("Peaka Data Assistant").
 3.  Opened the chat window.
 4.  Asked it something that needed data from Peaka, maybe like:

@@ -160,9 +160,9 @@ The first time you load the web interface, Composio will likely guide you throug
 
 When we build agents, figuring out _why_ they did something (or why they failed) is super important. That's observability. We knew this would be critical, so we built observability features right into VoltAgent.
 
-You can easily connect your VoltAgent applications to the [VoltAgent Console](https://console.voltagent.dev). It gives you detailed logs and traces, showing exactly what steps the agent took, which tools it called (like the Google Drive search), the data flowing in and out, and any errors that occurred. It makes debugging and just understanding the agent's behavior _so_ much easier.
+You can easily connect your VoltAgent applications to the [VoltOps LLM Observability Platform](https://console.voltagent.dev). It gives you detailed logs and traces, showing exactly what steps the agent took, which tools it called (like the Google Drive search), the data flowing in and out, and any errors that occurred. It makes debugging and just understanding the agent's behavior _so_ much easier.
 
-![VoltAgent Console](https://cdn.voltagent.dev/2025-04-28-building-google-drive-chatbot/voltagent-developer-console-demo.gif)
+![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/2025-04-28-building-google-drive-chatbot/voltagent-developer-console-demo.gif)
 
 ## Conclusion
 

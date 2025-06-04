@@ -16,7 +16,7 @@ Instead of building everything from scratch, VoltAgent provides ready-made build
 - **Works with Many AI Brains**: You're not locked into one AI provider. VoltAgent can work with popular AI models from OpenAI (like ChatGPT), Google, Anthropic, and others.
 - **Quick Start Tools (`create-voltagent-app`, `@voltagent/cli`)**: Helpers to get developers up and running with a new AI project quickly.
 
-To easily monitor and manage the agents you build with VoltAgent, there's a complementary tool called **[VoltAgent Console](https://console.voltagent.dev/)** (available separately). It provides a user-friendly interface, bridging the gap between coding flexibility and no-code convenience.
+To easily monitor and manage the agents you build with VoltAgent, there's a complementary tool called **[VoltOps LLM Observability Platform](https://console.voltagent.dev/)** (available separately). It provides a user-friendly interface, bridging the gap between coding flexibility and no-code convenience.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -39,8 +39,8 @@ const agent = new Agent({
 ```
 
   </TabItem>
-  <TabItem value="console" label="Developer Console">
-![VoltAgent Console](https://cdn.voltagent.dev/readme/demo.gif)
+  <TabItem value="console" label="VoltOps Platform">
+![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
   </TabItem>
 </Tabs>
 
@@ -61,6 +61,6 @@ VoltAgent offers a better way, finding the sweet spot between these two extremes
 - **Stay Flexible:** You have full control to customize how your AI looks, behaves, and interacts.
 - **Avoid Getting Stuck:** VoltAgent doesn't lock you into a specific AI provider. You can switch if needed, protecting your work.
 - **Save Costs:** Smart features help reduce how much you spend on using the underlying AI services.
-- **Monitor and Debug Visually:** The separate [VoltAgent Console](https://console.voltagent.dev/) provides a visual interface to easily track performance, understand behavior, and fix issues in your VoltAgent applications.
+- **Monitor and Debug Visually:** The separate [VoltOps LLM Observability Platform](https://console.voltagent.dev/) provides a visual interface to easily track performance, understand behavior, and fix issues in your VoltAgent applications.
 
 Essentially, VoltAgent helps developers build the exact AI application they imagine – from simple helpers to sophisticated systems – more efficiently and with less frustration, complemented by powerful monitoring tools.

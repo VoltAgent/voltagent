@@ -1,5 +1,6 @@
 import { InMemoryStorage } from ".";
 import type { Conversation, MemoryMessage } from "../types";
+import type { NewTimelineEvent } from "../../events/types";
 
 // Mock Math.random for generateId
 const mockRandomValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
@@ -740,6 +741,298 @@ describe("InMemoryStorage", () => {
 
       // Cleanup
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe("History Operations", () => {
+    describe("addHistoryEntry and getHistoryEntry", () => {
+      it("should add and retrieve a history entry", async () => {
+        // Arrange
+        const historyId = "test-history-1";
+        const agentId = "test-agent-1";
+        const historyData = {
+          id: historyId,
+          timestamp: new Date(),
+          status: "completed",
+          input: { message: "test input" },
+          output: { result: "test output" },
+          usage: { tokens: 100 },
+          metadata: { test: true },
+        };
+
+        // Act
+        await storage.addHistoryEntry(historyId, historyData, agentId);
+        const retrieved = await storage.getHistoryEntry(historyId);
+
+        // Assert
+        expect(retrieved).toBeDefined();
+        expect(retrieved.id).toBe(historyId);
+        expect(retrieved._agentId).toBe(agentId);
+        expect(retrieved.status).toBe("completed");
+        expect(retrieved.input).toEqual({ message: "test input" });
+        expect(retrieved.output).toEqual({ result: "test output" });
+        expect(retrieved.events).toEqual([]);
+        expect(retrieved.steps).toEqual([]);
+      });
+
+      it("should return undefined for non-existent history entry", async () => {
+        // Act
+        const result = await storage.getHistoryEntry("non-existent");
+
+        // Assert
+        expect(result).toBeUndefined();
+      });
+    });
+
+    describe("updateHistoryEntry", () => {
+      it("should update an existing history entry", async () => {
+        // Arrange
+        const historyId = "test-history-2";
+        const agentId = "test-agent-2";
+        const initialData = {
+          id: historyId,
+          timestamp: new Date(),
+          status: "running",
+          input: { message: "initial input" },
+        };
+
+        await storage.addHistoryEntry(historyId, initialData, agentId);
+
+        // Act
+        const updateData = {
+          status: "completed",
+          output: { result: "final output" },
+        };
+        await storage.updateHistoryEntry(historyId, updateData, agentId);
+
+        // Assert
+        const retrieved = await storage.getHistoryEntry(historyId);
+        expect(retrieved.status).toBe("completed");
+        expect(retrieved.output).toEqual({ result: "final output" });
+        expect(retrieved.input).toEqual({ message: "initial input" }); // Should preserve existing data
+      });
+
+      it("should throw error for non-existent history entry", async () => {
+        // Act & Assert
+        await expect(
+          storage.updateHistoryEntry("non-existent", { status: "completed" }, "agent-1"),
+        ).rejects.toThrow("History entry with key non-existent not found");
+      });
+    });
+
+    describe("addHistoryStep and getHistoryStep", () => {
+      it("should add and retrieve a history step", async () => {
+        // Arrange
+        const historyId = "test-history-3";
+        const stepId = "test-step-1";
+        const agentId = "test-agent-3";
+
+        // First create a history entry
+        await storage.addHistoryEntry(historyId, { id: historyId, timestamp: new Date() }, agentId);
+
+        const stepData = {
+          type: "tool",
+          name: "test_tool",
+          content: "Test step content",
+          arguments: { param: "value" },
+        };
+
+        // Act
+        await storage.addHistoryStep(stepId, stepData, historyId, agentId);
+        const retrievedStep = await storage.getHistoryStep(stepId);
+
+        // Assert
+        expect(retrievedStep).toBeDefined();
+        expect(retrievedStep.id).toBe(stepId);
+        expect(retrievedStep.type).toBe("tool");
+        expect(retrievedStep.name).toBe("test_tool");
+        expect(retrievedStep.historyId).toBe(historyId);
+        expect(retrievedStep.agentId).toBe(agentId);
+
+        // Verify step was added to history entry
+        const historyEntry = await storage.getHistoryEntry(historyId);
+        expect(historyEntry.steps).toHaveLength(1);
+        expect(historyEntry.steps[0].id).toBe(stepId);
+      });
+
+      it("should return undefined for non-existent step", async () => {
+        // Act
+        const result = await storage.getHistoryStep("non-existent");
+
+        // Assert
+        expect(result).toBeUndefined();
+      });
+
+      it("should throw error when adding step to non-existent history", async () => {
+        // Act & Assert
+        await expect(
+          storage.addHistoryStep("step-1", { type: "tool" }, "non-existent-history", "agent-1"),
+        ).rejects.toThrow("History entry with key non-existent-history not found");
+      });
+    });
+
+    describe("updateHistoryStep", () => {
+      it("should update an existing history step", async () => {
+        // Arrange
+        const historyId = "test-history-4";
+        const stepId = "test-step-2";
+        const agentId = "test-agent-4";
+
+        await storage.addHistoryEntry(historyId, { id: historyId, timestamp: new Date() }, agentId);
+        await storage.addHistoryStep(
+          stepId,
+          {
+            type: "tool",
+            name: "initial_tool",
+            content: "Initial content",
+          },
+          historyId,
+          agentId,
+        );
+
+        // Act
+        const updateData = {
+          name: "updated_tool",
+          content: "Updated content",
+        };
+        await storage.updateHistoryStep(stepId, updateData, historyId, agentId);
+
+        // Assert
+        const retrievedStep = await storage.getHistoryStep(stepId);
+        expect(retrievedStep.name).toBe("updated_tool");
+        expect(retrievedStep.content).toBe("Updated content");
+        expect(retrievedStep.type).toBe("tool"); // Should preserve existing data
+
+        // Verify step was updated in history entry
+        const historyEntry = await storage.getHistoryEntry(historyId);
+        expect(historyEntry.steps[0].name).toBe("updated_tool");
+      });
+
+      it("should throw error for non-existent step", async () => {
+        // Arrange
+        const historyId = "test-history-5";
+        const agentId = "test-agent-5";
+        await storage.addHistoryEntry(historyId, { id: historyId, timestamp: new Date() }, agentId);
+
+        // Act & Assert
+        await expect(
+          storage.updateHistoryStep("non-existent-step", { name: "updated" }, historyId, agentId),
+        ).rejects.toThrow("Step with key non-existent-step not found");
+      });
+    });
+
+    describe("addTimelineEvent", () => {
+      it("should add a timeline event to a history entry", async () => {
+        // Arrange
+        const historyId = "test-history-6";
+        const eventId = "test-event-1";
+        const agentId = "test-agent-6";
+
+        await storage.addHistoryEntry(historyId, { id: historyId, timestamp: new Date() }, agentId);
+
+        const eventData: NewTimelineEvent = {
+          id: eventId,
+          type: "agent",
+          name: "agent:start",
+          startTime: new Date().toISOString(),
+          status: "running",
+          level: "INFO",
+          traceId: "test-trace",
+          metadata: { id: agentId },
+          input: { input: "test input" },
+        };
+
+        // Act
+        await storage.addTimelineEvent(eventId, eventData, historyId, agentId);
+
+        // Assert
+        const historyEntry = await storage.getHistoryEntry(historyId);
+        expect(historyEntry.events).toHaveLength(1);
+        expect(historyEntry.events[0].id).toBe(eventId);
+        expect(historyEntry.events[0].type).toBe("agent");
+        expect(historyEntry.events[0].name).toBe("agent:start");
+        expect(historyEntry.events[0].status).toBe("running");
+      });
+
+      it("should handle timeline event when history entry does not exist", async () => {
+        // Arrange
+        const eventData: NewTimelineEvent = {
+          id: "event-1",
+          type: "agent",
+          name: "agent:start",
+          startTime: new Date().toISOString(),
+          status: "running",
+          level: "INFO",
+          traceId: "test-trace",
+          metadata: { id: "agent-1" },
+          input: { input: "test input" },
+        };
+
+        // Act - should not throw error
+        await storage.addTimelineEvent("event-1", eventData, "non-existent-history", "agent-1");
+
+        // Assert - event should still be stored separately
+        // @ts-expect-error - Accessing private property for testing
+        expect(storage.timelineEvents.has("event-1")).toBe(true);
+      });
+    });
+
+    describe("getAllHistoryEntriesByAgent", () => {
+      it("should retrieve all history entries for an agent", async () => {
+        // Arrange
+        const agentId = "test-agent-7";
+        const historyId1 = "history-1";
+        const historyId2 = "history-2";
+        const historyId3 = "history-3";
+
+        // Add entries for the target agent
+        await storage.addHistoryEntry(
+          historyId1,
+          {
+            id: historyId1,
+            timestamp: new Date(Date.now() - 3000),
+            status: "completed",
+          },
+          agentId,
+        );
+
+        await storage.addHistoryEntry(
+          historyId2,
+          {
+            id: historyId2,
+            timestamp: new Date(Date.now() - 2000),
+            status: "running",
+          },
+          agentId,
+        );
+
+        // Add entry for different agent
+        await storage.addHistoryEntry(
+          historyId3,
+          {
+            id: historyId3,
+            timestamp: new Date(Date.now() - 1000),
+            status: "completed",
+          },
+          "different-agent",
+        );
+
+        // Act
+        const entries = await storage.getAllHistoryEntriesByAgent(agentId);
+
+        // Assert
+        expect(entries).toHaveLength(2);
+        expect(entries.map((e) => e.id)).toEqual([historyId1, historyId2]); // Should be sorted by timestamp (newest first)
+        expect(entries.every((e) => e._agentId === agentId)).toBe(true);
+      });
+
+      it("should return empty array for agent with no history", async () => {
+        // Act
+        const entries = await storage.getAllHistoryEntriesByAgent("non-existent-agent");
+
+        // Assert
+        expect(entries).toEqual([]);
+      });
     });
   });
 });

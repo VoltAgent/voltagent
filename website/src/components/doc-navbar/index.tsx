@@ -17,7 +17,7 @@ export default function DocNavbar() {
 
   React.useEffect(() => {
     setIsMenuOpen(false);
-  }, [location.pathname]);
+  }, []);
 
   const isActive = (path: string) => {
     const currentPath = location.pathname.endsWith("/")
@@ -46,7 +46,31 @@ export default function DocNavbar() {
                   isActive("/docs/") ? styles.active : ""
                 }`}
               >
-                Docs
+                Framework Docs
+              </Link>
+              <Link
+                to="/docs-observability/"
+                className={`${styles.logoLink} 
+                }`}
+              >
+                <div className="flex items-center justify-start">
+                  <div className="flex mr-2 items-center border-1 border-solid border-[#00d992] rounded-full p-1">
+                    <BoltIcon className="w-3 h-3 landing-xs:w-3 landing-xs:h-3 landing-sm:w-4 landing-sm:h-4 text-[#00d992]" />
+                  </div>
+                  <span className="text-xl landing-xs:text-lg mr-2 landing-sm:text-xl font-bold">
+                    <span className="text-[#00d992]">volt</span>
+                    <span className="text-gray-500">ops</span>
+                  </span>
+                  <div className={styles.separator} />
+                  <Link
+                    to="/docs-observability/"
+                    className={`${styles.navLink} ${
+                      isActive("/docs-observability/") ? styles.active : ""
+                    } ml-2`}
+                  >
+                    LLM Observability Docs
+                  </Link>
+                </div>
               </Link>
             </div>
           </div>
@@ -82,6 +106,7 @@ export default function DocNavbar() {
             </Link>
 
             <button
+              type="button"
               className={`${styles.menuButton} ${
                 isMenuOpen ? styles.menuButtonOpen : ""
               }`}
@@ -121,12 +146,21 @@ export default function DocNavbar() {
               }`}
               onClick={() => setIsMenuOpen(false)}
             >
-              Documentation
+              Framework Docs
             </Link>
             <Link
-              to="/docs/"
+              to="/docs-observability/"
+              className={`${styles.mobileNavLink} ${
+                isActive("/docs-observability/") ? styles.active : ""
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              VoltOps LLM Observability Platform
+            </Link>
+            <Link
+              to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
               className={`${styles.navLink} ${
-                isActive("/docs/") ? styles.active : ""
+                isActive("/changelog/") ? styles.active : ""
               }`}
             >
               Changelog

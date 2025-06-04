@@ -84,9 +84,41 @@ const printServerStartup = (port: number) => {
   console.log(
     `${colors.green}  ✓ ${colors.bright}Swagger UI:   ${colors.reset}${colors.white}http://localhost:${port}/ui${colors.reset}`,
   );
+
+  // Check if custom endpoints were registered
+  const customEndpoints = (global as any).__voltAgentCustomEndpoints;
+  if (customEndpoints && customEndpoints.length > 0) {
+    console.log();
+    console.log(
+      `${colors.green}  ✓ ${colors.bright}Custom Endpoints: ${colors.reset}${colors.dim}${customEndpoints.length} registered${colors.reset}`,
+    );
+
+    // Group endpoints by method for compact display
+    const methodGroups: Record<string, string[]> = {};
+    customEndpoints.forEach((endpoint: any) => {
+      const method = endpoint.method.toUpperCase();
+      if (!methodGroups[method]) {
+        methodGroups[method] = [];
+      }
+      methodGroups[method].push(endpoint.path);
+    });
+
+    // Display endpoints in a compact format
+    const methodOrder = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"];
+    methodOrder.forEach((method) => {
+      if (methodGroups[method]) {
+        methodGroups[method].forEach((path) => {
+          console.log(
+            `${colors.dim}    ${method.padEnd(6)} ${colors.reset}${colors.white}${path}${colors.reset}`,
+          );
+        });
+      }
+    });
+  }
+
   console.log();
   console.log(
-    `${colors.bright}${colors.yellow}  ${colors.bright}Developer Console:    ${colors.reset}${colors.white}https://console.voltagent.dev${colors.reset}`,
+    `${colors.bright}${colors.yellow}  ${colors.bright}VoltOps Platform:    ${colors.reset}${colors.white}https://console.voltagent.dev${colors.reset}`,
   );
   console.log(divider);
 };

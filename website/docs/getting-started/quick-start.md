@@ -100,7 +100,7 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
 ══════════════════════════════════════════════════
   ✓ HTTP Server: http://localhost:3141
 
-  Developer Console:    https://console.voltagent.dev
+  VoltOps Platform:    https://console.voltagent.dev
 ══════════════════════════════════════════════════
 [VoltAgent] All packages are up to date
 ```
@@ -108,12 +108,12 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
 Your agent is now running! To interact with it:
 
 1.  **Open the Console:** Click the [`https://console.voltagent.dev`](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
-2.  **Find Your Agent:** On the VoltAgent Console page, you should see your agent listed (e.g., "my-agent").
+2.  **Find Your Agent:** On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
 3.  **Open Agent Details:** Click on your agent's name.
 4.  **Start Chatting:** On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5.  **Send a Message:** Type a message like "Hello" and press Enter.
 
-![VoltAgent Console](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
 You should receive a response from your AI agent in the chat window. This confirms that your VoltAgent application is set up correctly and communicating with the LLM.
 
@@ -147,7 +147,7 @@ Create a basic TypeScript configuration file (tsconfig.json):
 ```json
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
@@ -293,7 +293,7 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
 ══════════════════════════════════════════════════
   ✓ HTTP Server: http://localhost:3141
 
-  Developer Console:    https://console.voltagent.dev
+  VoltOps Platform:    https://console.voltagent.dev
 ══════════════════════════════════════════════════
 [VoltAgent] All packages are up to date
 ```
@@ -301,7 +301,7 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
 Your agent is now running! To interact with it:
 
 1.  **Open the Console:** Click the `https://console.voltagent.dev` link in your terminal output (or copy-paste it into your browser).
-2.  **Find Your Agent:** On the VoltAgent Console page, you should see your agent listed (e.g., "my-agent").
+2.  **Find Your Agent:** On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
 3.  **Open Agent Details:** Click on your agent's name.
 4.  **Start Chatting:** On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5.  **Send a Message:** Type a message like "Hello" and press Enter.

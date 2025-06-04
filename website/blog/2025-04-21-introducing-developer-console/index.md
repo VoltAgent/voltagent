@@ -1,44 +1,44 @@
 ---
-title: "Escape the 'console.log': VoltAgent Developer Console"
-description: "Stop drowning in console logs. VoltAgent's Developer Console offers unprecedented visual clarity for building, debugging, and deploying complex AI agents."
+title: "Escape the 'console.log': VoltOps LLM Observability"
+description: "Stop drowning in console logs. VoltOps LLM Observability offers unprecedented visual clarity for building, debugging, and deploying complex AI agents."
 slug: voltagent-developer-console
-image_title: "VoltAgent Developer Console"
+image_title: "VoltAgent VoltOps Platform"
 tags: [developer-console]
 image: https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/social.png
 authors: omeraplak
 ---
 
-![VoltAgent Developer Console Overview](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltAgent VoltOps Platform Overview](https://cdn.voltagent.dev/readme/demo.gif)
 
 Building AI agents often feels like working inside a black box. Developers find themselves buried under endless `console.log` statements and scattered breakpoints, trying to piece together _how_ an agent arrived at a decision. This guesswork gets exponentially harder with multi-agent systems. Adding a new agent, or even tweaking a prompt or tool in an existing one, creates a ripple effect. How do you ensure the whole system still works as intended? How do you verify the output is still correct?
 
 This debugging cycle is slow, frustrating, and drains productivity. Developers lose focus chasing down elusive bugs instead of building innovative features. Ensuring the reliability and correctness of complex AI flows becomes a monumental, often uncertain, task.
 
-## Developer Console: Clarity, Not Chaos
+## VoltOps Platform: Clarity, Not Chaos
 
-VoltAgent was designed observability-first precisely to solve this challenge. We believe developers need clear, intuitive tools to understand and manage AI complexity. The **[VoltAgent Developer Console](https://console.voltagent.dev/)** transforms AI debugging from a maze into a map.
+VoltAgent was designed observability-first precisely to solve this challenge. We believe developers need clear, intuitive tools to understand and manage AI complexity. The **[VoltAgent VoltOps Platform](https://console.voltagent.dev/)** transforms AI debugging from a maze into a map.
 
 Think of it as your visual command center for AI development:
 
 - **See the Entire Flow:** Inspired by the clarity of no-code tools, the Console visualizes your entire agent structure (built with the VoltAgent framework) on an infinite canvas. Watch in real-time as your agent executes, seeing exactly which functions run, which tools are called (including details like memory/chat context, RAG retrievals, and MCP server interactions), and the decision path taken.
 
-![VoltAgent Developer Console Canvas](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/canvas.gif)
+![VoltAgent VoltOps Platform Canvas](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/canvas.gif)
 
 - **Step-by-Step Timeline:** Go beyond a static graph. Our timeline view lets you trace every step of an agent's journey from input to output. Understand precisely what data the agent processed and why it made specific choices at each stage.
 
-![VoltAgent Developer Console Timeline](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/timeline.gif)
+![VoltAgent VoltOps Platform Timeline](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/timeline.gif)
 
 - **Real-Time State Inspection:** Dive into the agent's internal state, inputs, and outputs _as they happen_. No more guessing what variables hold or what a tool returned.
 
-![VoltAgent Developer Console State Inspection](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/state.gif)
+![VoltAgent VoltOps Platform State Inspection](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/state.gif)
 
 - **Effortless Multi-Agent Debugging:** The visualization inherently handles multi-agent complexity. See how agents interact, pass information, and contribute to the final outcome, all in one unified view.
 
-![VoltAgent Developer Console Multi-Agent Debugging](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/multi-agent.gif)
+![VoltAgent VoltOps Platform Multi-Agent Debugging](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/multi-agent.gif)
 
 - **Replay and Analyze:** Easily revisit past agent runs (sessions). Debug intermittent issues or analyze specific scenarios by replaying the exact execution flow and state changes.
 
-![VoltAgent Developer Console Replay](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/replay.gif)
+![VoltAgent VoltOps Platform Replay](https://cdn.voltagent.dev/2025-04-21-introducing-developer-console/replay.gif)
 
 - **Local and Secure:** The Console connects directly to your _local_ VoltAgent process. **No sensitive agent data ever leaves your machine.** Debug with complete peace of mind.
 
@@ -54,11 +54,11 @@ The impact is immediate:
 
 The benefits don't stop at development. The same observability that speeds up debugging provides crucial insights into production systems. When issues arise post-deployment, the Console's tracing and replay capabilities allow you to pinpoint the root cause quickly, leading to more robust and trustworthy AI applications.
 
-The Developer Console isn't just an add-on; it's fundamental to how VoltAgent empowers you to build sophisticated AI applications with clarity, confidence, and speed.
+The VoltOps Platform isn't just an add-on; it's fundamental to how VoltAgent empowers you to build sophisticated AI applications with clarity, confidence, and speed.
 
 ## Why VoltAgent?
 
-As outlined in our [Manifesto](/manifesto), VoltAgent was born from our own experiences. We wanted the flexibility of code combined with the insightful visualization often found in visual tools, but without the lock-in. We believe the JavaScript ecosystem deserves dedicated, powerful AI tooling.
+As outlined in our [Manifesto](/about), VoltAgent was born from our own experiences. We wanted the flexibility of code combined with the insightful visualization often found in visual tools, but without the lock-in. We believe the JavaScript ecosystem deserves dedicated, powerful AI tooling.
 
 VoltAgent is our answer – a tool built _by_ JS developers, _for_ JS developers, aiming to make AI development less daunting and more productive.
 
@@ -83,7 +83,7 @@ cd my-first-agent
 npm run dev # or yarn dev / pnpm dev
 ```
 
-Dive into our **[Getting Started Guide](/docs/)** for a deeper look, and open the [Developer Console](https://console.voltagent.dev/) to see your agent in action!
+Dive into our **[Getting Started Guide](/docs/)** for a deeper look, and open the [VoltOps Platform](https://console.voltagent.dev/) to see your agent in action!
 
 ## Join the Community
 

@@ -1,5 +1,167 @@
 # @voltagent/core
 
+## 0.1.27
+
+### Patch Changes
+
+- [#126](https://github.com/VoltAgent/voltagent/pull/126) [`2c47bc1`](https://github.com/VoltAgent/voltagent/commit/2c47bc1e9cd845cc60e6e9d7e86df40c98b82614) Thanks [@fav-devs](https://github.com/fav-devs)! - feat: add custom endpoints feature to VoltAgent API server, allowing developers to extend the API with their own endpoints
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+
+  new VoltAgent({
+    agents: { myAgent },
+    customEndpoints: [
+      {
+        path: "/api/health",
+        method: "get",
+        handler: async (c) => {
+          return c.json({
+            success: true,
+            data: { status: "healthy" },
+          });
+        },
+      },
+    ],
+  });
+  ```
+
+## 0.1.26
+
+### Patch Changes
+
+- [#181](https://github.com/VoltAgent/voltagent/pull/181) [`1b4a9fd`](https://github.com/VoltAgent/voltagent/commit/1b4a9fd78b84d9b758120380cb80a940c2354020) Thanks [@omeraplak](https://github.com/omeraplak)! - Implement comprehensive error handling for streaming endpoints - #170
+
+  - **Backend**: Added error handling to `streamRoute` and `streamObjectRoute` with onError callbacks, safe stream operations, and multiple error layers (setup, iteration, stream errors)
+  - **Documentation**: Added detailed error handling guide with examples for fetch-based SSE streaming
+
+  Fixes issue where streaming errors weren't being communicated to frontend users, leaving them without feedback when API calls failed during streaming operations.
+
+## 0.1.25
+
+### Patch Changes
+
+- [`13d25b4`](https://github.com/VoltAgent/voltagent/commit/13d25b4033c3a4b41d501e954e2893b50553d8d4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: update zod-from-json-schema dependency version to resolve MCP tools compatibility issues
+
+## 0.1.24
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: removed `@n8n/json-schema-to-zod` dependency - #177
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - The `error` column has been deprecated and replaced with `statusMessage` column for better consistency and clearer messaging. The old `error` column is still supported for backward compatibility but will be removed in a future major version.
+
+  Changes:
+
+  - Deprecated `error` column (still functional)
+  - Improved error handling and status reporting
+
+## 0.1.23
+
+### Patch Changes
+
+- [`b2f423d`](https://github.com/VoltAgent/voltagent/commit/b2f423d55ee031fc02b0e8eda5175cfe15e38a42) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod import issue - #161
+
+  Fixed incorrect zod import that was causing OpenAPI type safety errors. Updated to use proper import from @hono/zod-openapi package.
+
+## 0.1.22
+
+### Patch Changes
+
+- [#149](https://github.com/VoltAgent/voltagent/pull/149) [`0137a4e`](https://github.com/VoltAgent/voltagent/commit/0137a4e67deaa2490b4a07f9de5f13633f2c473c) Thanks [@VenomHare](https://github.com/VenomHare)! - Added JSON schema support for REST API `generateObject` and `streamObject` functions. The system now accepts JSON schemas which are internally converted to Zod schemas for validation. This enables REST API usage where Zod schemas cannot be directly passed. #87
+
+  Additional Changes:
+
+  - Included the JSON schema from `options.schema` in the system message for the `generateObject` and `streamObject` functions in both `anthropic-ai` and `groq-ai` providers.
+  - Enhanced schema handling to convert JSON schemas to Zod internally for seamless REST API compatibility.
+
+- [#151](https://github.com/VoltAgent/voltagent/pull/151) [`4308b85`](https://github.com/VoltAgent/voltagent/commit/4308b857ab2133f6ca60f22271dcf30bad8b4c08) Thanks [@process.env.POSTGRES_USER](https://github.com/process.env.POSTGRES_USER)! - feat: Agent memory can now be stored in PostgreSQL database. This feature enables agents to persistently store conversation history in PostgreSQL. - #16
+
+  ## Usage
+
+  ```tsx
+  import { openai } from "@ai-sdk/openai";
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { PostgresStorage } from "@voltagent/postgres";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+
+  // Configure PostgreSQL Memory Storage
+  const memoryStorage = new PostgresStorage({
+    // Read connection details from environment variables
+    connection: {
+      host: process.env.POSTGRES_HOST || "localhost",
+      port: Number.parseInt(process.env.POSTGRES_PORT || "5432"),
+      database: process.env.POSTGRES_DB || "voltagent",
+   || "postgres",
+      password: process.env.POSTGRES_PASSWORD || "password",
+      ssl: process.env.POSTGRES_SSL === "true",
+    },
+
+    // Alternative: Use connection string
+    // connection: process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/voltagent",
+
+    // Optional: Customize table names
+    tablePrefix: "voltagent_memory",
+
+    // Optional: Configure connection pool
+    maxConnections: 10,
+
+    // Optional: Set storage limit for messages
+    storageLimit: 100,
+
+    // Optional: Enable debug logging for development
+    debug: process.env.NODE_ENV === "development",
+  });
+
+  // Create agent with PostgreSQL memory
+  const agent = new Agent({
+    name: "PostgreSQL Memory Agent",
+    description: "A helpful assistant that remembers conversations using PostgreSQL.",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    memory: memoryStorage, // Use the configured PostgreSQL storage
+  });
+  ```
+
+## 0.1.21
+
+### Patch Changes
+
+- [#160](https://github.com/VoltAgent/voltagent/pull/160) [`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improved event system architecture for better observability
+
+  We've updated the event system architecture to improve observability capabilities. The system includes automatic migrations to maintain backward compatibility, though some events may not display perfectly due to the architectural changes. Overall functionality remains stable and most features work as expected.
+
+  No action required - the system will automatically handle the migration process. If you encounter any issues, feel free to reach out on [Discord](https://s.voltagent.dev/discord) for support.
+
+  **What's Changed:**
+
+  - Enhanced event system for better observability and monitoring
+  - Automatic database migrations for seamless upgrades
+  - Improved agent history tracking and management
+
+  **Migration Notes:**
+
+  - Backward compatibility is maintained through automatic migrations
+  - Some legacy events may display differently but core functionality is preserved
+  - No manual intervention needed - migrations run automatically
+
+  **Note:**
+  Some events may not display perfectly due to architecture changes, but the system will automatically migrate and most functionality will work as expected.
+
+## 0.1.20
+
+### Patch Changes
+
+- [#155](https://github.com/VoltAgent/voltagent/pull/155) [`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update `tsconfig.json`'s `target` to `ES2022`
+
+- [#162](https://github.com/VoltAgent/voltagent/pull/162) [`b164bd0`](https://github.com/VoltAgent/voltagent/commit/b164bd014670452cb162b388f03565db992767af) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: pin zod version to 3.24.2 to avoid "Type instantiation is excessively deep and possibly infinite" error
+
+  Fixed compatibility issues between different zod versions that were causing TypeScript compilation errors. This issue occurs when multiple packages use different patch versions of zod (e.g., 3.23.x vs 3.24.x), leading to type instantiation depth problems. By pinning to 3.24.2, we ensure consistent behavior across all packages.
+
+  See: https://github.com/colinhacks/zod/issues/3435
+
+- [#158](https://github.com/VoltAgent/voltagent/pull/158) [`9412cf0`](https://github.com/VoltAgent/voltagent/commit/9412cf0633f20d6b77c87625fc05e9e216936758) Thanks [@baseballyama](https://github.com/baseballyama)! - chore(core): fixed a type error that occurred in src/server/api.ts
+
 ## 0.1.19
 
 ### Patch Changes
@@ -87,7 +249,7 @@
 
 ### Patch Changes
 
-- [`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add `toolName` to event metadata to ensure `delegate_task` name is visible in Voltagent console
+- [`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add `toolName` to event metadata to ensure `delegate_task` name is visible in VoltOps LLM Observability Platform
 
 - [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
 
@@ -658,6 +820,6 @@
   - **`@voltagent/xsai`**: A Seamless integration with [xsAI](https://xsai.js.org/).
   - **`@voltagent/cli` & `create-voltagent-app`**: Quick start tools to get you building _fast_.
 
-  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltAgent Console](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
+  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltOps LLM Observability Platform](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
 
   Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community](https://s.voltagent.dev/discord)!

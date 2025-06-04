@@ -3,6 +3,7 @@ import type { BaseMessage } from "../../agent/providers/base/types";
 import type { Memory, MemoryMessage } from "../types";
 import type { OperationContext } from "../../agent/types";
 import type { AgentHistoryEntry } from "../../agent/history";
+import type { NewTimelineEvent } from "../../events/types";
 import { AgentEventEmitter } from "../../events";
 
 // Mock the AgentRegistry
@@ -33,12 +34,7 @@ jest.mock("../../events", () => {
   return {
     AgentEventEmitter: {
       getInstance: jest.fn().mockReturnValue({
-        createTrackedEvent: jest.fn().mockReturnValue(() => {
-          return {
-            id: "event-1",
-            status: "completed",
-          };
-        }),
+        publishTimelineEvent: jest.fn(),
         addHistoryEvent: jest.fn(),
         emitHistoryUpdate: jest.fn(),
       }),
@@ -50,17 +46,15 @@ jest.mock("../../events", () => {
 const createMockContext = (): OperationContext => {
   const mockHistoryEntry: AgentHistoryEntry = {
     id: "history-1",
-    timestamp: new Date(),
+    startTime: new Date(),
     input: "test input",
     output: "",
     status: "working",
     steps: [],
-    events: [],
   };
 
   return {
     historyEntry: mockHistoryEntry,
-    eventUpdaters: new Map(),
     isActive: true,
     operationId: "test-operation",
     userContext: new Map(),
@@ -74,6 +68,7 @@ class MockMemory implements Memory {
   private historyEntries: Record<string, any> = {};
   private historyEvents: Record<string, any> = {};
   private historySteps: Record<string, any> = {};
+  private timelineEvents: Record<string, any> = {};
 
   async addMessage(
     message: BaseMessage | MemoryMessage,
@@ -251,6 +246,16 @@ class MockMemory implements Memory {
     return this.historySteps[id] || null;
   }
 
+  // Add the missing addTimelineEvent method
+  async addTimelineEvent(
+    key: string,
+    value: NewTimelineEvent,
+    historyId: string,
+    agentId: string,
+  ): Promise<void> {
+    this.timelineEvents[key] = { ...value, history_id: historyId, _agentId: agentId };
+  }
+
   // Getter helper functions for tests
   getHistoryEntries(): Record<string, any> {
     return this.historyEntries;
@@ -262,6 +267,10 @@ class MockMemory implements Memory {
 
   getHistorySteps(): Record<string, any> {
     return this.historySteps;
+  }
+
+  getTimelineEvents(): Record<string, any> {
+    return this.timelineEvents;
   }
 }
 
@@ -312,7 +321,7 @@ describe("MemoryManager", () => {
     });
   });
 
-  describe("getMessages", () => {
+  describe("prepareConversationContext", () => {
     beforeEach(async () => {
       // Add some test messages
       await mockMemory.addMessage({ role: "user", content: "Message 1" }, "user1", "conversation1");
@@ -324,8 +333,13 @@ describe("MemoryManager", () => {
       await mockMemory.addMessage({ role: "user", content: "Message 2" }, "user1", "conversation1");
     });
 
-    it("should retrieve messages from memory", async () => {
-      const messages = await memoryManager.getMessages(mockContext, "user1", "conversation1");
+    it("should retrieve messages from memory during context preparation", async () => {
+      const { messages } = await memoryManager.prepareConversationContext(
+        mockContext,
+        "New message",
+        "user1",
+        "conversation1",
+      );
 
       expect(messages.length).toBe(3);
       expect(messages[0].role).toBe("user");
@@ -337,7 +351,13 @@ describe("MemoryManager", () => {
     });
 
     it("should respect the limit parameter", async () => {
-      const messages = await memoryManager.getMessages(mockContext, "user1", "conversation1", 2);
+      const { messages } = await memoryManager.prepareConversationContext(
+        mockContext,
+        "New message",
+        "user1",
+        "conversation1",
+        2,
+      );
 
       expect(messages.length).toBe(2);
       expect(messages[0].role).toBe("assistant");
@@ -347,12 +367,22 @@ describe("MemoryManager", () => {
     });
 
     it("should return an empty array if userId is not provided", async () => {
-      const messages = await memoryManager.getMessages(mockContext, undefined, "conversation1");
+      const { messages } = await memoryManager.prepareConversationContext(
+        mockContext,
+        "New message",
+        undefined,
+        "conversation1",
+      );
       expect(messages.length).toBe(0);
     });
 
     it("should return an empty array if conversationId is not provided", async () => {
-      const messages = await memoryManager.getMessages(mockContext, "user1", undefined);
+      const { messages } = await memoryManager.prepareConversationContext(
+        mockContext,
+        "New message",
+        "user1",
+        undefined,
+      );
       expect(messages.length).toBe(0);
     });
   });
@@ -659,90 +689,6 @@ describe("MemoryManager - History Management", () => {
     expect(updatedEntry.output).toBe("test output");
   });
 
-  it("should add event to history entry", async () => {
-    const agentId = "test-agent";
-    const entryId = "test-history-entry";
-
-    // First store an entry
-    await mockMemory.addHistoryEntry(
-      entryId,
-      {
-        id: entryId,
-        timestamp: new Date(),
-        status: "running",
-        input: "test input",
-        output: "",
-      },
-      agentId,
-    );
-
-    // Add an event
-    const event = {
-      name: "test-event",
-      type: "agent",
-      data: {
-        affectedNodeId: "agent_test-agent",
-        status: "completed",
-      },
-    };
-
-    await memoryManager.addEventToHistoryEntry(agentId, entryId, event);
-
-    const updatedEntry = await mockMemory.getHistoryEntry(entryId);
-    expect(updatedEntry.events.length).toBe(1);
-    expect(updatedEntry.events[0].name).toBe("test-event");
-    expect(updatedEntry.events[0]._agentId).toBe(agentId);
-  });
-
-  it("should update event in history entry", async () => {
-    const agentId = "test-agent";
-    const entryId = "test-history-entry";
-    const eventId = "test-event";
-
-    // First store an entry
-    await mockMemory.addHistoryEntry(
-      entryId,
-      {
-        id: entryId,
-        timestamp: new Date(),
-        status: "running",
-        input: "test input",
-        output: "",
-      },
-      agentId,
-    );
-
-    // Add an event
-    await mockMemory.addHistoryEvent(
-      eventId,
-      {
-        id: eventId,
-        name: "test-event",
-        type: "agent",
-        metadata: {
-          status: "running",
-        },
-      },
-      entryId,
-      agentId,
-    );
-
-    // Update the event
-    const eventUpdates = {
-      id: eventId,
-      name: "updated-event",
-      data: {
-        status: "completed",
-      },
-    };
-
-    await memoryManager.updateEventInHistoryEntry(agentId, entryId, eventId, eventUpdates);
-
-    const updatedEvent = await mockMemory.getHistoryEvent(eventId);
-    expect(updatedEvent.name).toBe("updated-event");
-    expect(updatedEvent.metadata.status).toBe("completed");
-  });
-
   it("should add steps to history entry", async () => {
     const agentId = "test-agent";
     const entryId = "test-history-entry";
@@ -784,10 +730,53 @@ describe("MemoryManager - History Management", () => {
     expect(updatedEntry.steps[1].type).toBe("tool_result");
   });
 
+  it("should add timeline event to history entry", async () => {
+    const agentId = "test-agent";
+    const entryId = "test-history-entry";
+    const eventId = "test-timeline-event";
+
+    // First store an entry
+    await mockMemory.addHistoryEntry(
+      entryId,
+      {
+        id: entryId,
+        timestamp: new Date(),
+        status: "running",
+        input: "test input",
+        output: "",
+      },
+      agentId,
+    );
+
+    // Add a timeline event
+    const timelineEvent: NewTimelineEvent = {
+      id: eventId,
+      name: "memory:write_start",
+      type: "memory",
+      startTime: new Date().toISOString(),
+      status: "running",
+      input: { test: "data" },
+      output: null,
+      metadata: {
+        displayName: "Test Event",
+        id: "test",
+        agentId: agentId,
+      },
+      traceId: entryId,
+    };
+
+    await memoryManager.addTimelineEvent(agentId, entryId, eventId, timelineEvent);
+
+    const timelineEvents = mockMemory.getTimelineEvents();
+    expect(timelineEvents[eventId]).toBeDefined();
+    expect(timelineEvents[eventId].name).toBe("memory:write_start");
+    expect(timelineEvents[eventId]._agentId).toBe(agentId);
+  });
+
   it("should create memory events during operations", async () => {
     const eventEmitter = AgentEventEmitter.getInstance();
-    // Create spy for createTrackedEvent method
-    const createTrackedEventSpy = jest.spyOn(eventEmitter, "createTrackedEvent");
+    // Create spy for publishTimelineEvent method
+    const publishTimelineEventSpy = jest.spyOn(eventEmitter, "publishTimelineEvent");
 
     // Trigger memory event creation by calling saveMessage
     await memoryManager.saveMessage(
@@ -797,17 +786,10 @@ describe("MemoryManager - History Management", () => {
       "test-conversation",
     );
 
-    // Verify createTrackedEvent was called with correct parameters
-    expect(createTrackedEventSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        agentId: "test-agent",
-        historyId: "history-1",
-        name: "memory:saveMessage",
-        type: "memory",
-      }),
-    );
+    // Verify publishTimelineEvent was called
+    expect(publishTimelineEventSpy).toHaveBeenCalled();
 
-    createTrackedEventSpy.mockRestore();
+    publishTimelineEventSpy.mockRestore();
   });
 });
 

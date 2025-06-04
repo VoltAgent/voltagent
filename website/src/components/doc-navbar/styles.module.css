@@ -65,17 +65,36 @@
   color: #94a3b8;
   font-size: 16px;
   font-weight: 500;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 6px;
+  position: relative;
 }
 
 .navLink:hover {
   color: #ffffff;
   text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .navLink.active {
-  font-weight: 500;
-  color: #ffffff;
+  font-weight: 600;
+  color: #00d992;
+  background-color: rgba(0, 217, 146, 0.15);
+  border: 1px solid rgba(0, 217, 146, 0.3);
+  box-shadow: 0 0 20px rgba(0, 217, 146, 0.1);
+}
+
+.navLink.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00d992, transparent);
+  border-radius: 1px;
 }
 
 .docNavbarRight {
@@ -316,14 +335,23 @@
   color: #94a3b8;
   font-size: 16px;
   font-weight: 500;
-  padding: 8px 0;
+  padding: 8px 16px;
   width: 100%;
   display: block;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.mobileNavLink:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
 }
 
 .mobileNavLink.active {
-  font-weight: 700;
-  color: #ffffff;
+  font-weight: 600;
+  color: #00d992;
+  background-color: rgba(0, 217, 146, 0.15);
+  border: 1px solid rgba(0, 217, 146, 0.3);
 }
 
 @media (min-width: 1024px) {

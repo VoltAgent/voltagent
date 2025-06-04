@@ -1,5 +1,5 @@
 {
-  "name": "with-anthropic",
+  "name": "voltagent-example-with-anthropic",
   "private": true,
   "keywords": [
     "voltagent",
@@ -17,10 +17,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
-    "@voltagent/anthropic-ai": "^0.1.6",
-    "@voltagent/cli": "^0.1.5",
-    "@voltagent/core": "^0.1.19",
-    "zod": "^3.24.2"
+    "@voltagent/anthropic-ai": "^0.1.8",
+    "@voltagent/cli": "^0.1.6",
+    "@voltagent/core": "^0.1.27",
+    "zod": "3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

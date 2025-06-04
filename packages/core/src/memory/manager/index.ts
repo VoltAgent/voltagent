@@ -1,12 +1,18 @@
 import type { StepWithContent } from "../../agent/providers";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import { AgentEventEmitter } from "../../events";
-import type { EventStatus, EventUpdater } from "../../events";
 import { LibSQLStorage } from "../index";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import type { OperationContext } from "../../agent/types";
-import { StandardEventData } from "../../events/types";
+import type {
+  NewTimelineEvent,
+  MemoryReadStartEvent,
+  MemoryReadSuccessEvent,
+  MemoryWriteStartEvent,
+  MemoryWriteSuccessEvent,
+  MemoryWriteErrorEvent,
+} from "../../events/types";
 
 /**
  * Convert BaseMessage to MemoryMessage for memory storage
@@ -68,48 +74,28 @@ export class MemoryManager {
   }
 
   /**
-   * Create a tracked event for a memory operation
+   * Create and publish a timeline event for memory operations
    *
    * @param context - Operation context with history entry info
-   * @param operationName - Name of the memory operation
-   * @param status - Current status of the memory operation
-   * @param initialData - Initial data for the event
-   * @returns An event updater function
+   * @param event - Timeline event to publish
+   * @returns A promise that resolves when the event is published
    */
-  private async createMemoryEvent(
+  private async publishTimelineEvent(
     context: OperationContext,
-    operationName: string,
-    status: EventStatus,
-    initialData: Record<string, any> = {},
-  ): Promise<EventUpdater | undefined> {
+    event: NewTimelineEvent,
+  ): Promise<void> {
     const historyId = context.historyEntry.id;
-    if (!historyId) return undefined;
+    if (!historyId) return;
 
-    // Create a standard node ID
-    const memoryNodeId = createNodeId(NodeType.MEMORY, this.resourceId);
-
-    const eventData: Partial<StandardEventData> = {
-      affectedNodeId: memoryNodeId,
-      timestamp: new Date().toISOString(),
-      status: status as any,
-      input: initialData,
-    };
-
-    const eventEmitter = AgentEventEmitter.getInstance();
-    const eventUpdater = await eventEmitter.createTrackedEvent({
-      agentId: this.resourceId,
-      historyId: historyId,
-      name: `memory:${operationName}`,
-      status: status,
-      data: eventData,
-      type: "memory",
-    });
-
-    // Store event updater in the context
-    const trackerId = `memory-${operationName}-${Date.now()}`;
-    context.eventUpdaters.set(trackerId, eventUpdater);
-
-    return eventUpdater;
+    try {
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.resourceId,
+        historyId: historyId,
+        event: event,
+      });
+    } catch (error) {
+      console.error("[Memory] Failed to publish timeline event:", error);
+    }
   }
 
   /**
@@ -124,121 +110,90 @@ export class MemoryManager {
   ): Promise<void> {
     if (!this.memory || !userId) return;
 
-    // Create a tracked event for this operation
-    const eventUpdater = await this.createMemoryEvent(context, "saveMessage", "working", {
-      messageType: type,
-      userId,
-      conversationId,
-      messageRole: message.role,
-      messageContent: message.content ?? "No content",
-    });
+    // Create memory write start event for new timeline
+    const memoryWriteStartEvent: MemoryWriteStartEvent = {
+      id: crypto.randomUUID(),
+      name: "memory:write_start",
+      type: "memory",
+      startTime: new Date().toISOString(),
+      status: "running",
+      input: {
+        message,
+        userId,
+        conversationId,
+        type,
+      },
+      output: null,
+      metadata: {
+        displayName: "Memory",
+        id: "memory",
+        agentId: this.resourceId,
+      },
+      traceId: context.historyEntry.id,
+    };
 
-    if (!eventUpdater) return;
+    // Publish the memory write start event
+    await this.publishTimelineEvent(context, memoryWriteStartEvent);
 
     try {
       // Perform the operation
       const memoryMessage = convertToMemoryMessage(message, type);
       await this.memory.addMessage(memoryMessage, userId, conversationId);
 
-      // Update event with success
-      eventUpdater({
-        data: {
-          status: "completed" as EventStatus,
-          updatedAt: new Date().toISOString(),
-          output: {
-            success: true,
-            messageId: memoryMessage.id,
-            timestamp: memoryMessage.createdAt,
-          },
+      // Create memory write success event for new timeline
+      const memoryWriteSuccessEvent: MemoryWriteSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:write_success",
+        type: "memory",
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        status: "completed",
+        input: null,
+        output: {
+          success: true,
+          messageId: memoryMessage.id,
+          timestamp: memoryMessage.createdAt,
         },
-      });
+        metadata: {
+          displayName: "Memory",
+          id: "memory",
+          agentId: this.resourceId,
+        },
+        traceId: context.historyEntry.id,
+        parentEventId: memoryWriteStartEvent.id,
+      };
+
+      // Publish the memory write success event
+      await this.publishTimelineEvent(context, memoryWriteSuccessEvent);
     } catch (error) {
-      // Update event with error
-      eventUpdater({
-        status: "error" as EventStatus,
-        data: {
-          status: "error" as EventStatus,
-          updatedAt: new Date().toISOString(),
-          error: error instanceof Error ? error.message : String(error),
-          errorMessage: error instanceof Error ? error.message : String(error),
-          output: {
-            success: false,
-          },
+      // Create memory write error event for new timeline
+      const memoryWriteErrorEvent: MemoryWriteErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:write_error",
+        type: "memory",
+        startTime: memoryWriteStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        statusMessage: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
         },
-      });
-
-      console.error(`[Memory] Failed to save message:`, error);
-    }
-  }
-
-  /**
-   * Get messages from memory
-   */
-  async getMessages(
-    context: OperationContext,
-    userId?: string,
-    conversationId?: string,
-    limit = 10,
-  ): Promise<BaseMessage[]> {
-    if (!this.memory || !userId || !conversationId) return [];
-
-    // Create a tracked event for this operation
-    const eventUpdater = await this.createMemoryEvent(context, "getMessages", "working", {
-      userId,
-      conversationId,
-      limit,
-    });
-
-    if (!eventUpdater) return [];
-
-    try {
-      const memoryMessages = await this.memory.getMessages({
-        userId,
-        conversationId,
-        limit,
-      });
-
-      // Let's properly define message IDs with type safety
-      const firstId = memoryMessages.length > 0 ? (memoryMessages[0] as MemoryMessage).id : null;
-      const lastId =
-        memoryMessages.length > 0
-          ? (memoryMessages[memoryMessages.length - 1] as MemoryMessage).id
-          : null;
-
-      // Update event with success
-      eventUpdater({
-        data: {
-          status: "completed" as EventStatus,
-          updatedAt: new Date().toISOString(),
-          output: {
-            count: memoryMessages.length,
-            firstMessageId: firstId,
-            lastMessageId: lastId,
-          },
+        metadata: {
+          displayName: "Memory",
+          id: "memory",
+          agentId: this.resourceId,
         },
-      });
+        traceId: context.historyEntry.id,
+        parentEventId: memoryWriteStartEvent.id,
+      };
 
-      return memoryMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-    } catch (error) {
-      // Update event with error
-      eventUpdater({
-        status: "error" as EventStatus,
-        data: {
-          status: "error" as EventStatus,
-          updatedAt: new Date().toISOString(),
-          error: error instanceof Error ? error.message : String(error),
-          errorMessage: error instanceof Error ? error.message : String(error),
-          output: {
-            success: false,
-          },
-        },
-      });
+      // Publish the memory write error event
+      await this.publishTimelineEvent(context, memoryWriteErrorEvent);
 
-      console.error(`[Memory] Failed to get messages:`, error);
-      return [];
+      console.error("[Memory] Failed to save message:", error);
     }
   }
 
@@ -297,60 +252,42 @@ export class MemoryManager {
       // Check if conversation exists, if not create it
       const existingConversation = await this.memory.getConversation(conversationId);
       if (!existingConversation) {
-        const eventUpdater = await this.createMemoryEvent(
-          context,
-          "createConversation",
-          "working",
-          {
-            userId,
-            conversationId,
-          },
-        );
-
-        try {
-          const conversation = await this.memory.createConversation({
-            id: conversationId,
-            resourceId: this.resourceId,
-            title: `New Chat ${new Date().toISOString()}`,
-            metadata: {},
-          });
-
-          eventUpdater?.({
-            data: {
-              status: "completed" as EventStatus,
-              updatedAt: new Date().toISOString(),
-              output: {
-                title: conversation.title,
-                id: conversation.id,
-                metadata: conversation.metadata,
-                createdAt: conversation.createdAt,
-              },
-            },
-          });
-        } catch (error) {
-          eventUpdater?.({
-            data: {
-              status: "error" as EventStatus,
-              updatedAt: new Date().toISOString(),
-              error: error instanceof Error ? error.message : String(error),
-              errorMessage: error instanceof Error ? error.message : String(error),
-              output: {
-                success: false,
-              },
-            },
-          });
-        }
+        // TODO: add new event for createConversation
+        await this.memory.createConversation({
+          id: conversationId,
+          resourceId: this.resourceId,
+          title: `New Chat ${new Date().toISOString()}`,
+          metadata: {},
+        });
       } else {
         // Update conversation's updatedAt
         await this.memory.updateConversation(conversationId, {});
       }
 
-      const eventUpdater = await this.createMemoryEvent(context, "getMessages", "working", {
-        userId,
-        conversationId,
-      });
-
+      // TODO: add new event for getMessages
       try {
+        const memoryReadStartEvent: MemoryReadStartEvent = {
+          id: crypto.randomUUID(),
+          name: "memory:read_start",
+          type: "memory",
+          startTime: new Date().toISOString(),
+          status: "running",
+          input: {
+            userId,
+            conversationId,
+          },
+          output: null,
+          metadata: {
+            displayName: "Memory",
+            id: "memory",
+            agentId: this.resourceId,
+          },
+          traceId: context.historyEntry.id,
+        };
+
+        // Publish the memory read start event
+        await this.publishTimelineEvent(context, memoryReadStartEvent);
+
         const memoryMessages = await this.memory.getMessages({
           userId,
           conversationId,
@@ -362,27 +299,32 @@ export class MemoryManager {
           content: m.content,
         }));
 
-        eventUpdater?.({
-          data: {
-            status: "completed" as EventStatus,
-            updatedAt: new Date().toISOString(),
-            output: {
-              messages,
-            },
+        const memoryReadSuccessEvent: MemoryReadSuccessEvent = {
+          id: crypto.randomUUID(),
+          name: "memory:read_success",
+          type: "memory",
+          startTime: new Date().toISOString(),
+          endTime: new Date().toISOString(),
+          status: "completed",
+          input: {
+            userId,
+            conversationId,
           },
-        });
+          output: {
+            messages,
+          },
+          metadata: {
+            displayName: "Memory",
+            id: "memory",
+            agentId: this.resourceId,
+          },
+          traceId: context.historyEntry.id,
+        };
+
+        await this.publishTimelineEvent(context, memoryReadSuccessEvent);
       } catch (error) {
-        eventUpdater?.({
-          data: {
-            status: "error" as EventStatus,
-            updatedAt: new Date().toISOString(),
-            error: error instanceof Error ? error.message : String(error),
-            errorMessage: error instanceof Error ? error.message : String(error),
-            output: {
-              success: false,
-            },
-          },
-        });
+        // TODO: add new event for getMessages
+        console.error("[Memory] Failed to get messages:", error);
       }
     }
 
@@ -476,24 +418,18 @@ export class MemoryManager {
         input: entry.input,
         output: entry.output,
         usage: entry.usage,
+        metadata: entry.metadata,
       };
 
       // Save the main record (using addHistoryEntry and passing agentId)
       await this.memory.addHistoryEntry(entry.id, mainEntry, agentId);
-
-      // Add events if they exist
-      if (entry.events && entry.events.length > 0) {
-        for (const event of entry.events) {
-          await this.addEventToHistoryEntry(agentId, entry.id, event);
-        }
-      }
 
       // Add steps if they exist
       if (entry.steps && entry.steps.length > 0) {
         await this.addStepsToHistoryEntry(agentId, entry.id, entry.steps);
       }
     } catch (error) {
-      console.error(`[Memory] Failed to store history entry:`, error);
+      console.error("[Memory] Failed to store history entry:", error);
     }
   }
 
@@ -517,7 +453,7 @@ export class MemoryManager {
       }
       return undefined;
     } catch (error) {
-      console.error(`[Memory] Failed to get history entry:`, error);
+      console.error("[Memory] Failed to get history entry:", error);
       return undefined;
     }
   }
@@ -536,7 +472,7 @@ export class MemoryManager {
       const agentEntries = await this.memory.getAllHistoryEntriesByAgent(agentId);
       return agentEntries;
     } catch (error) {
-      console.error(`[Memory] Failed to get all history entries:`, error);
+      console.error("[Memory] Failed to get all history entries:", error);
       return [];
     }
   }
@@ -567,31 +503,13 @@ export class MemoryManager {
         status: updates.status !== undefined ? updates.status : entry.status,
         output: updates.output !== undefined ? updates.output : entry.output,
         usage: updates.usage !== undefined ? updates.usage : entry.usage,
+        events: updates.events !== undefined ? updates.events : entry.events,
+        metadata: updates.metadata !== undefined ? updates.metadata : entry.metadata,
         _agentId: agentId, // Always preserve the agentId
       };
 
       // Save the main record to the database and pass agentId
       await this.memory.updateHistoryEntry(entryId, updatedMainEntry, agentId);
-
-      // If there are event updates
-      if (updates.events && Array.isArray(updates.events)) {
-        for (const event of updates.events) {
-          if (event.id) {
-            // If it has an ID, update it
-            const existingEvent = entry.events.find((e: any) => e.id === event.id);
-            if (existingEvent) {
-              // Update the event
-              await this.updateEventInHistoryEntry(agentId, entryId, event.id, event);
-            } else {
-              // Event not found, create a new one
-              await this.addEventToHistoryEntry(agentId, entryId, event);
-            }
-          } else {
-            // If it doesn't have an ID, create a new event
-            await this.addEventToHistoryEntry(agentId, entryId, event);
-          }
-        }
-      }
 
       // If there are step updates
       if (updates.steps) {
@@ -602,59 +520,7 @@ export class MemoryManager {
       // Return the updated record with all relationships
       return await this.getHistoryEntryById(agentId, entryId);
     } catch (error) {
-      console.error(`[Memory] Failed to update history entry:`, error);
-      return undefined;
-    }
-  }
-
-  /**
-   * Update an existing event in a history entry
-   *
-   * @param agentId - The ID of the agent
-   * @param entryId - The ID of the history entry
-   * @param eventId - The ID of the event to update
-   * @param event - Updated event data
-   * @returns A promise that resolves when the update is complete
-   */
-  async updateEventInHistoryEntry(
-    agentId: string,
-    entryId: string,
-    eventId: string,
-    event: any,
-  ): Promise<any | undefined> {
-    if (!this.memory) return undefined;
-
-    try {
-      // Get the event record
-      const existingEvent = await this.memory.getHistoryEvent(eventId);
-      if (
-        !existingEvent ||
-        existingEvent._agentId !== agentId ||
-        existingEvent.history_id !== entryId
-      ) {
-        return undefined;
-      }
-
-      // Prepare the updated event data - use camelCase
-      const updatedEvent = {
-        ...existingEvent,
-        name: event.name || existingEvent.name,
-        type: event.type || existingEvent.type,
-        affectedNodeId: event.affectedNodeId || existingEvent.affectedNodeId, // use camelCase
-        _trackedEventId: event.data?._trackedEventId || existingEvent._trackedEventId,
-        metadata: {
-          ...(existingEvent.metadata || {}),
-          ...(event.data || {}),
-        },
-        updated_at: new Date(),
-      };
-
-      // Save the updated event (using updateHistoryEvent and passing agentId)
-      await this.memory.updateHistoryEvent(eventId, updatedEvent, entryId, agentId);
-
-      return updatedEvent;
-    } catch (error) {
-      console.error(`[Memory] Failed to update event in history entry:`, error);
+      console.error("[Memory] Failed to update history entry:", error);
       return undefined;
     }
   }
@@ -703,50 +569,39 @@ export class MemoryManager {
       // Return the updated record with all relationships
       return await this.getHistoryEntryById(agentId, entryId);
     } catch (error) {
-      console.error(`[Memory] Failed to add steps to history entry:`, error);
+      console.error("[Memory] Failed to add steps to history entry:", error);
       return undefined;
     }
   }
 
   /**
-   * Add an event to a history entry
+   * Add a timeline event to a history entry
+   * This method is part of the new immutable event system
    *
    * @param agentId - The ID of the agent
-   * @param entryId - The ID of the entry to update
-   * @param event - Timeline event to add
+   * @param historyId - The ID of the history entry
+   * @param eventId - The ID of the timeline event
+   * @param event - The NewTimelineEvent object
    * @returns A promise that resolves to the updated entry or undefined
    */
-  async addEventToHistoryEntry(
+  async addTimelineEvent(
     agentId: string,
-    entryId: string,
-    event: any,
+    historyId: string,
+    eventId: string,
+    event: NewTimelineEvent,
   ): Promise<any | undefined> {
     if (!this.memory) return undefined;
 
     try {
-      const entry = await this.memory.getHistoryEntry(entryId);
+      const entry = await this.memory.getHistoryEntry(historyId);
       if (!entry || entry._agentId !== agentId) return undefined;
 
-      // Prepare the event data - use camelCase
-      const eventData = {
-        id: event.id,
-        history_id: entryId,
-        _agentId: agentId,
-        timestamp: event.timestamp || new Date(),
-        name: event.name,
-        type: event.type,
-        affectedNodeId: event.data.affectedNodeId,
-        _trackedEventId: event.data?._trackedEventId,
-        metadata: event.data || {},
-        updated_at: event.updatedAt || new Date(),
-      };
+      // Save the timeline event directly to the new table
+      await this.memory.addTimelineEvent(eventId, event, historyId, agentId);
 
-      // Save the event and pass agentId
-      await this.memory.addHistoryEvent(event.id, eventData, entryId, agentId);
-
-      return await this.getHistoryEntryById(agentId, entryId);
+      return await this.getHistoryEntryById(agentId, historyId);
     } catch (error) {
-      console.error(`[Memory] Failed to add event to history entry:`, error);
+      console.error("Memory: Failed to add timeline event to history entry:", error);
       return undefined;
     }
   }

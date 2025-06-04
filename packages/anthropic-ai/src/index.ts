@@ -247,7 +247,8 @@ export class AnthropicProvider implements LLMProvider<string> {
     options: GenerateObjectOptions<string, TSchema>,
   ): Promise<ProviderObjectResponse<any, z.infer<TSchema>>> {
     const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
-    const systemPrompt = `${getSystemMessage(options.messages)} You must return the response in valid JSON Format with proper schema, nothing else `;
+    const JsonSchema = zodToJsonSchema(options.schema);
+    const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. You must return the response in valid JSON Format with proper schema, nothing else `;
 
     const anthropicMessages = this.getAnthropicMessages(options.messages);
     const model = (options.model || this.model) as string;
@@ -322,7 +323,8 @@ export class AnthropicProvider implements LLMProvider<string> {
   ): Promise<ProviderObjectStreamResponse<any, z.infer<TSchema>>> {
     try {
       const anthropicMessages = this.getAnthropicMessages(options.messages);
-      const systemPrompt = `${getSystemMessage(options.messages)} You must return the response in valid JSON Format, with proper schema `;
+      const JsonSchema = zodToJsonSchema(options.schema);
+      const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. You must return the response in valid JSON Format with proper schema, nothing else `;
       const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
 
       const response = await this.anthropic.messages.create({

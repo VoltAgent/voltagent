@@ -1,0 +1,37 @@
+{
+  "name": "@voltagent/postgres",
+  "version": "0.1.1",
+  "description": "VoltAgent PostgreSQL - PostgreSQL Memory provider integration for VoltAgent",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@voltagent/core": "^0.1.24",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "@types/pg": "^8.15.2",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4"
+  }
+}

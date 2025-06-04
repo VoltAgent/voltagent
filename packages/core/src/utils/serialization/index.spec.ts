@@ -1,4 +1,47 @@
-import { serializeValueForDebug } from "../serialization";
+import { serializeValueForDebug, safeJsonParse } from "../serialization";
+
+describe("safeJsonParse", () => {
+  it("should parse valid JSON strings", () => {
+    expect(safeJsonParse('{"name": "test"}')).toEqual({ name: "test" });
+    expect(safeJsonParse('["a", "b", "c"]')).toEqual(["a", "b", "c"]);
+    expect(safeJsonParse("123")).toBe(123);
+    expect(safeJsonParse('"hello"')).toBe("hello");
+    expect(safeJsonParse("true")).toBe(true);
+    expect(safeJsonParse("false")).toBe(false);
+    expect(safeJsonParse("null")).toBe(null);
+  });
+
+  it("should return original value for invalid JSON", () => {
+    expect(safeJsonParse("invalid json")).toBe("invalid json");
+    expect(safeJsonParse("{ invalid: json }")).toBe("{ invalid: json }");
+    expect(safeJsonParse("undefined")).toBe("undefined");
+  });
+
+  it("should handle empty strings", () => {
+    expect(safeJsonParse("")).toBeUndefined(); // Empty string is treated as falsy
+  });
+
+  it("should handle null and undefined inputs", () => {
+    expect(safeJsonParse(null)).toBeUndefined();
+    expect(safeJsonParse(undefined)).toBeUndefined();
+  });
+
+  it("should handle complex nested objects", () => {
+    const complexObject = {
+      user: { name: "John", age: 30 },
+      items: ["apple", "banana"],
+      settings: { theme: "dark", notifications: true },
+    };
+    const jsonString = JSON.stringify(complexObject);
+    expect(safeJsonParse(jsonString)).toEqual(complexObject);
+  });
+
+  it("should not throw errors on malformed JSON", () => {
+    expect(() => safeJsonParse('{"incomplete": ')).not.toThrow();
+    expect(() => safeJsonParse("{'single': 'quotes'}")).not.toThrow();
+    expect(() => safeJsonParse("random text")).not.toThrow();
+  });
+});
 
 describe("serializeValueForDebug", () => {
   it("should return primitives as is", () => {

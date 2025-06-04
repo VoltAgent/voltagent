@@ -41,7 +41,7 @@ const goals = [
       "<strong>2. Study the ReAct Pattern:</strong> Understand how agents use a Reason + Act loop to accomplish tasks.",
       "<strong>3. Design Your Tools Carefully:</strong> Think about what specific capabilities your agent needs and how to make those tools reliable.",
       "<strong>4. Implement Robust Error Handling:</strong> Agents interacting with multiple tools and making many decisions are prone to more failure points.",
-      "<strong>5. Focus on Observability:</strong> For complex agents, being able to trace their decisions and tool usage (like with the VoltAgent Console) is critical for debugging.",
+      "<strong>5. Focus on Observability:</strong> For complex agents, being able to trace their decisions and tool usage (like with the VoltOps LLM Observability Platform) is critical for debugging.",
     ],
   },
 ];

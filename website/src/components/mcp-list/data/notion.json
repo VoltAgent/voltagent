@@ -5,7 +5,7 @@
   "short_description": "Create, organize, and access Notion pages and databases.",
   "title": "Notion MCP Server",
   "description": "The Notion MCP server connects your AI agents to Notion's document and database capabilities. Your agents can create pages, update databases, add comments, and manage content, all automatically. Review the features listed below to see how you can harness these capabilities to enhance your knowledge management and team collaboration.",
-  "category": "Productivity",
+  "category": ["Task Management"],
   "logoKey": "notion",
   "avaliable_providers": ["composio", "zapier"],
   "total_tools": [

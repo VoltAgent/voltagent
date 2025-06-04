@@ -1,10 +1,5 @@
-import { z } from "zod";
-import { createRoute } from "@hono/zod-openapi";
-import type { AgentStatus } from "../agent/types"; // Import AgentStatus if needed for schemas
+import { z, createRoute } from "@hono/zod-openapi";
 
-// --- Schemas ---
-
-// Common Parameter Schema
 export const ParamsSchema = z.object({
   id: z.string().openapi({
     param: { name: "id", in: "path" },
@@ -165,7 +160,7 @@ const MessageContentSchema = z.union([
 // Define a reusable schema for a single message object
 const MessageObjectSchema = z
   .object({
-    role: z.string().openapi({
+    role: z.enum(["system", "user", "assistant", "tool"]).openapi({
       description: "Role of the sender (e.g., 'user', 'assistant')",
     }),
     content: MessageContentSchema, // Use the reusable content schema
@@ -218,6 +213,38 @@ export const StreamTextEventSchema = z.object({
   error: z.string().optional(),
 });
 
+// Basic JSON Schema Validator
+export const BasicJsonSchema = z
+  .object({
+    type: z.literal("object"),
+    properties: z
+      .record(
+        z.object({
+          type: z.enum(["string", "number", "boolean", "object", "array", "null", "any"]),
+        }),
+      )
+      .optional()
+      .openapi({
+        description: "A dictionary defining each property of the object and its type",
+        example: {
+          id: { type: "string" },
+          age: { type: "number" },
+          isActive: { type: "boolean" },
+        },
+      }),
+    required: z
+      .array(z.string())
+      .optional()
+      .openapi({
+        description: "List of required property names in the object",
+        example: ["id", "age"],
+      }),
+  })
+  .passthrough()
+  .openapi({
+    description: "The Zod schema for the desired object output (passed as JSON)",
+  });
+
 // Object Generation Schemas
 export const ObjectRequestSchema = z
   .object({
@@ -227,9 +254,7 @@ export const ObjectRequestSchema = z
         .array(MessageObjectSchema) // Use the reusable message object schema
         .openapi({ description: "Conversation history" }),
     ]),
-    schema: z.any().openapi({
-      description: "The Zod schema for the desired object output (passed as JSON)",
-    }),
+    schema: BasicJsonSchema,
     options: GenerateOptionsSchema.optional().openapi({
       description: "Optional object generation parameters",
       example: { temperature: 0.2 },
