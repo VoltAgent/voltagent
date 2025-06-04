@@ -7,9 +7,70 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 const sidebars: SidebarsConfig = {
   docs: [
     {
-      type: "doc",
-      id: "overview",
-      label: "Overview",
+      type: "category",
+      label: "Getting Started",
+      items: ["overview", "concept"],
+    },
+    {
+      type: "category",
+      label: "Tracing",
+      items: [
+        "tracing/overview",
+        {
+          type: "doc",
+          id: "tracing/sending-traces",
+          label: "Feature 1",
+        },
+        {
+          type: "doc",
+          id: "tracing/grouping-traces",
+          label: "Feature 2",
+        },
+
+        {
+          type: "doc",
+          id: "tracing/prompt-versioning",
+          label: "Feature 5",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Prompting",
+      items: [
+        "prompting/overview",
+
+        {
+          type: "doc",
+          id: "prompting/grouping-traces",
+          label: "Feature 2",
+        },
+
+        {
+          type: "doc",
+          id: "tracing/prompt-versioning",
+          label: "Feature 5",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Evaluation",
+      items: [
+        "evaluation/overview",
+
+        {
+          type: "doc",
+          id: "evaluation/grouping-traces",
+          label: "Feature 2",
+        },
+
+        {
+          type: "doc",
+          id: "evaluation/prompt-versioning",
+          label: "Feature 5",
+        },
+      ],
     },
     {
       type: "category",
