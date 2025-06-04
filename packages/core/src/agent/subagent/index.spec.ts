@@ -1,7 +1,7 @@
-import { SubAgentManager } from "./index";
 import type { Agent } from "../index";
-import type { AgentHandoffOptions } from "../types";
 import type { BaseMessage } from "../providers";
+import type { AgentHandoffOptions } from "../types";
+import { SubAgentManager } from "./index";
 
 // Creating a Mock Agent class
 class MockAgent {
@@ -140,6 +140,31 @@ describe("SubAgentManager", () => {
       expect(result).toContain("You are a supervisor agent");
       expect(result).toContain("Agent 1: First agent");
       expect(result).toContain("Agent 2: Second agent");
+      expect(result).toContain("<agents_memory>");
+    });
+
+    it("should generate a supervisor message with the purpose of the sub-agents, if provided", () => {
+      const subAgentAgent1 = {
+        id: "agent1",
+        name: "Agent 1",
+        purpose: "First agent",
+        instructions: "A very long instructions\nwith multiple lines\nand paragraphs",
+      } as Agent<any>;
+      const subAgentAgent2 = {
+        id: "agent2",
+        name: "Agent 2",
+        instructions: "No purpose provided",
+      } as Agent<any>;
+
+      const subAgentManager = new SubAgentManager("TestAgent", [subAgentAgent1, subAgentAgent2]);
+      const description = "Original description";
+
+      // Call with empty agentsMemory string (default parameter)
+      const result = subAgentManager.generateSupervisorSystemMessage(description);
+
+      expect(result).toContain("You are a supervisor agent");
+      expect(result).toContain("Agent 1: First agent");
+      expect(result).toContain("Agent 2: No purpose provided");
       expect(result).toContain("<agents_memory>");
     });
   });
