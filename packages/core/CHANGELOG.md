@@ -1,5 +1,25 @@
 # @voltagent/core
 
+## 0.1.28
+
+### Patch Changes
+
+- [#189](https://github.com/VoltAgent/voltagent/pull/189) [`07138fc`](https://github.com/VoltAgent/voltagent/commit/07138fc85ef27c9136d303233559f6b358ad86de) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Added the 'purpose' field to agents (subagents) to provide a limited description of the purpose of the agent to the supervisor instead of passing the instructions for the subagent directly to the supervisor
+
+  ```ts
+  const storyAgent = new Agent({
+    name: "Story Agent",
+    purpose: "A story writer agent that creates original, engaging short stories.",
+    instructions: "You are a creative story writer. Create original, engaging short stories.",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  > The supervisor agent's system prompt is automatically modified to include instructions on how to manage its subagents effectively. It lists the available subagents and their `purpose` and provides guidelines for delegation, communication, and response aggregation.
+
+- [#186](https://github.com/VoltAgent/voltagent/pull/186) [`adad41a`](https://github.com/VoltAgent/voltagent/commit/adad41a930e338c4683306b9dbffec22096eba5c) Thanks [@necatiozmen](https://github.com/necatiozmen)! - chore: update "VoltAgent Console" -> "VoltOps Platform"
+
 ## 0.1.27
 
 ### Patch Changes
