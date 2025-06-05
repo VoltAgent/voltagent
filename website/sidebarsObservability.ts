@@ -64,7 +64,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Prompting (Soon)",
-      items: [],
+      items: ["voltagent-framework", "vercel-ai"],
       collapsed: true,
       collapsible: false,
       className: "sidebar-item-disabled",
@@ -72,7 +72,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Evaluation (Soon)",
-      items: [],
+      items: ["voltagent-framework", "vercel-ai"],
       collapsed: true,
       collapsible: false,
       className: "sidebar-item-disabled",
