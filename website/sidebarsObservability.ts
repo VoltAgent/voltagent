@@ -16,61 +16,66 @@ const sidebars: SidebarsConfig = {
       label: "Tracing",
       items: [
         "tracing/overview",
+        "tracing/concept",
         {
-          type: "doc",
-          id: "tracing/sending-traces",
-          label: "Feature 1",
-        },
-        {
-          type: "doc",
-          id: "tracing/grouping-traces",
-          label: "Feature 2",
-        },
+          type: "category",
+          label: "Features",
+          items: [
+            {
+              type: "doc",
+              id: "tracing/agent-visualization",
+              label: "Agent Flow Charts",
+            },
 
-        {
-          type: "doc",
-          id: "tracing/prompt-versioning",
-          label: "Feature 5",
+            {
+              type: "doc",
+              id: "tracing/metadata",
+              label: "Metadata",
+            },
+            {
+              type: "doc",
+              id: "tracing/multimodal-tracing",
+              label: "Multimodal Tracing",
+            },
+            {
+              type: "doc",
+              id: "tracing/sessions",
+              label: "Sessions",
+            },
+            {
+              type: "doc",
+              id: "tracing/tags",
+              label: "Tags",
+            },
+            {
+              type: "doc",
+              id: "tracing/trace-id",
+              label: "Trace ID",
+            },
+          ],
         },
       ],
     },
     {
       type: "category",
-      label: "Prompting",
-      items: [
-        "prompting/overview",
-
-        {
-          type: "doc",
-          id: "prompting/grouping-traces",
-          label: "Feature 2",
-        },
-
-        {
-          type: "doc",
-          id: "tracing/prompt-versioning",
-          label: "Feature 5",
-        },
-      ],
+      label: "LLM Usage & Costs",
+      items: ["llm-usage-and-costs"],
     },
     {
       type: "category",
-      label: "Evaluation",
-      items: [
-        "evaluation/overview",
-
-        {
-          type: "doc",
-          id: "evaluation/grouping-traces",
-          label: "Feature 2",
-        },
-
-        {
-          type: "doc",
-          id: "evaluation/prompt-versioning",
-          label: "Feature 5",
-        },
-      ],
+      label: "Prompting (Soon)",
+      items: [],
+      collapsed: true,
+      collapsible: false,
+      className: "sidebar-item-disabled",
+    },
+    {
+      type: "category",
+      label: "Evaluation (Soon)",
+      items: [],
+      collapsed: true,
+      collapsible: false,
+      className: "sidebar-item-disabled",
     },
     {
       type: "category",
