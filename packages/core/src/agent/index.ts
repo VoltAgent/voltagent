@@ -801,6 +801,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           >,
           systemPrompt: systemMessage,
           messages,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -1009,6 +1017,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
 
         traceId: operationContext.historyEntry.id,
@@ -1203,6 +1219,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         >,
         systemPrompt: systemMessage,
         messages,
+        modelParameters: {
+          model: this.getModelName(),
+          maxTokens: internalOptions.provider?.maxTokens,
+          temperature: internalOptions.provider?.temperature,
+          topP: internalOptions.provider?.topP,
+          frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+          presencePenalty: internalOptions.provider?.presencePenalty,
+        },
       },
       traceId: operationContext.historyEntry.id,
     };
@@ -1426,6 +1450,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               string,
               unknown
             >,
+            modelParameters: {
+              model: this.getModelName(),
+              maxTokens: internalOptions.provider?.maxTokens,
+              temperature: internalOptions.provider?.temperature,
+              topP: internalOptions.provider?.topP,
+              frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+              presencePenalty: internalOptions.provider?.presencePenalty,
+            },
           },
           traceId: operationContext.historyEntry.id,
           parentEventId: agentStartInfo.eventId, // Link to the agent:start event
@@ -1672,6 +1704,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           >,
           systemPrompt: systemMessage,
           messages,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -1741,6 +1781,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
         traceId: operationContext.historyEntry.id,
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
@@ -1934,6 +1982,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         >,
         systemPrompt: systemMessage,
         messages,
+        modelParameters: {
+          model: this.getModelName(),
+          maxTokens: internalOptions.provider?.maxTokens,
+          temperature: internalOptions.provider?.temperature,
+          topP: internalOptions.provider?.topP,
+          frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+          presencePenalty: internalOptions.provider?.presencePenalty,
+        },
       },
       traceId: operationContext.historyEntry.id,
     };
@@ -2005,6 +2061,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 string,
                 unknown
               >,
+              modelParameters: {
+                model: this.getModelName(),
+                maxTokens: internalOptions.provider?.maxTokens,
+                temperature: internalOptions.provider?.temperature,
+                topP: internalOptions.provider?.topP,
+                frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+                presencePenalty: internalOptions.provider?.presencePenalty,
+              },
             },
             traceId: operationContext.historyEntry.id,
             parentEventId: agentStartInfo.eventId, // Link to the agent:start event
