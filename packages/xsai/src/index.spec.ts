@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { BaseMessage, BaseTool } from "@voltagent/core";
 import { XSAIProvider } from "./index";
 
-// Mock the XSAI library functions
+// Mock the xsAI library functions
 const mockXSAIGenerateText = jest.fn();
 const mockXSAIStreamText = jest.fn();
 const mockXSAIGenerateObject = jest.fn();

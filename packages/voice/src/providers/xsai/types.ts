@@ -1,7 +1,7 @@
 import type { BaseVoiceProviderOptions } from "../base/types";
 
 /* ------------------------------------------------------------------ */
-/*  XSAI model & voice constants                                       */
+/*  xsAI model & voice constants                                       */
 /* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
@@ -14,10 +14,10 @@ export type XSAIVoiceOptions = BaseVoiceProviderOptions & {
   /** XSAI base URL – defaults to `"https://api.openai.com/v1"` */
   baseURL?: string;
 
-  /** Model *id* for TTS (required by XSAI) – default `"tts-1"` */
+  /** Model *id* for TTS (required by xsAI) – default `"tts-1"` */
   ttsModel?: string;
 
-  /** Model *id* for STT (required by XSAI) – default `"whisper-1"` */
+  /** Model *id* for STT (required by xsAI) – default `"whisper-1"` */
   speechModel?: string;
 
   /** Voice ID (library‑specific) – defaults to `"alloy"` */
@@ -44,6 +44,6 @@ export type XSAIListenOptions = {
   language?: string;
   prompt?: string;
   temperature?: string;
-  /** custom filename hint for the Blob sent to XSAI */
+  /** custom filename hint for the Blob sent to xsAI */
   fileName?: string;
 };

@@ -134,7 +134,7 @@ export class XSAIVoiceProvider extends BaseVoiceProvider {
   }
 
   /* ------------------------------------------------------------------ */
-  /*  XSAI hasn't published a voice list API – stub with default        */
+  /*  xsAI hasn't published a voice list API – stub with default        */
   /* ------------------------------------------------------------------ */
   async getVoices(): Promise<VoiceMetadata[]> {
     return [
