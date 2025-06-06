@@ -138,7 +138,7 @@ importers:
         specifier: ^0.40.0
         version: 0.40.0
       '@voltagent/anthropic-ai':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/anthropic-ai
       '@voltagent/cli':
         specifier: ^0.1.6

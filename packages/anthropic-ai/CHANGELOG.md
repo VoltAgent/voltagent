@@ -1,5 +1,11 @@
 # @voltagent/anthropic-ai
 
+## 0.1.9
+
+### Patch Changes
+
+- [#199](https://github.com/VoltAgent/voltagent/pull/199) [`a6c0d8e`](https://github.com/VoltAgent/voltagent/commit/a6c0d8e1618f1b6ae300490e151a8ded2e2ced82) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: optional chaining `usage` in callback handlers to prevent runtime errors when options are undefined
+
 ## 0.1.8
 
 ### Patch Changes
