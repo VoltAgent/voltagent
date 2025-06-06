@@ -799,6 +799,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          systemPrompt: systemMessage,
+          messages,
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -1199,6 +1201,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           string,
           unknown
         >,
+        systemPrompt: systemMessage,
+        messages,
       },
       traceId: operationContext.historyEntry.id,
     };
@@ -1666,6 +1670,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          systemPrompt: systemMessage,
+          messages,
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -1926,6 +1932,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           string,
           unknown
         >,
+        systemPrompt: systemMessage,
+        messages,
       },
       traceId: operationContext.historyEntry.id,
     };
