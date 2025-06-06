@@ -13,7 +13,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import type * as z from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import { type Tool, createTool } from "../../tool";
 import type {
   ClientInfo,

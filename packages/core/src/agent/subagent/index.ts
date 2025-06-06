@@ -1,5 +1,5 @@
 import { z } from "zod";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
 import type { Agent } from "../index";

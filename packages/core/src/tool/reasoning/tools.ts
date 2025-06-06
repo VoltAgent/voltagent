@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { createTool } from "..";
 import type { ToolExecuteOptions } from "../../agent/providers/base/types";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import {
   NextAction,
   type ReasoningStep,

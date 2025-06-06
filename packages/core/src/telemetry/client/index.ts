@@ -2,7 +2,7 @@ import type { AgentHistoryEntry, HistoryStep } from "../../agent/history";
 import type { UsageInfo } from "../../agent/providers";
 import type { AgentStatus } from "../../agent/types";
 import type { NewTimelineEvent } from "../../events/types";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import type { VoltAgentExporterOptions } from "../exporter";
 
 export interface ExportAgentHistoryPayload {

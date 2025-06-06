@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as ncuPackage from "npm-check-updates";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../internal/dev-logger";
 
 type UpdateOptions = {
   filter?: string;

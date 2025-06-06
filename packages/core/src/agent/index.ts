@@ -13,7 +13,7 @@ import type {
   ToolStartEvent,
   ToolSuccessEvent,
 } from "../events/types";
-import devLogger from "../internal/dev-logger";
+import devLogger from "../utils/internal/dev-logger";
 import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";

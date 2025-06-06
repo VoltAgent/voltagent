@@ -10,7 +10,7 @@ import type {
   MemoryWriteSuccessEvent,
   NewTimelineEvent,
 } from "../../events/types";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import { LibSQLStorage } from "../index";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";

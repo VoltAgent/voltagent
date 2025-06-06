@@ -63,14 +63,14 @@ export default {
   },
 };
 
-function isDev(): boolean {
+const isDev = (): boolean => {
   return process.env.NODE_ENV === "development";
-}
+};
 
-function formatLogPrefix(level: "INFO" | "WARN" | "ERROR"): string {
+const formatLogPrefix = (level: "INFO" | "WARN" | "ERROR"): string => {
   return `[VoltAgent] [${timestamp()}] ${level}: `;
-}
+};
 
-function timestamp(): string {
+const timestamp = (): string => {
   return new Date().toISOString().replace("T", " ").slice(0, -1);
-}
+};

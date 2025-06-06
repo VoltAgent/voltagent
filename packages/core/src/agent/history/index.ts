@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { AgentEventEmitter } from "../../events";
 import type { NewTimelineEvent } from "../../events/types";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import type { MemoryManager } from "../../memory";
 import type {
   AgentHistoryUpdatableFields,

@@ -1,5 +1,5 @@
 import type { NewTimelineEvent } from "../../events/types";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import type {
   Conversation,
   CreateConversationInput,

@@ -5,7 +5,7 @@ import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
-import devLogger from "../../internal/dev-logger";
+import devLogger from "../../utils/internal/dev-logger";
 import { safeJsonParse } from "../../utils";
 import type {
   Conversation,

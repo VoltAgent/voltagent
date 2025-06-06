@@ -1,5 +1,5 @@
 import type { ToolSchema } from "../agent/providers/base/types";
-import devLogger from "../internal/dev-logger";
+import devLogger from "../utils/internal/dev-logger";
 import type { Tool } from "./index";
 
 /**
