@@ -1,6 +1,17 @@
 import { InMemoryStorage } from ".";
 import type { Conversation, MemoryMessage } from "../types";
 import type { NewTimelineEvent } from "../../events/types";
+import devLogger from "../../utils/internal/dev-logger";
+
+// Mock devLogger
+jest.mock("../../utils/internal/dev-logger", () => ({
+  __esModule: true,
+  default: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
 // Mock Math.random for generateId
 const mockRandomValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
@@ -53,6 +64,10 @@ describe("InMemoryStorage", () => {
   beforeEach(() => {
     // Reset the mock random index for each test
     mockRandomIndex = 0;
+    // Reset devLogger mocks
+    (devLogger.info as jest.Mock).mockClear();
+    (devLogger.warn as jest.Mock).mockClear();
+    (devLogger.error as jest.Mock).mockClear();
     // Create a fresh storage instance for each test
     storage = new InMemoryStorage({ debug: false });
   });
@@ -729,7 +744,6 @@ describe("InMemoryStorage", () => {
 
     it("should enable debug logging when configured", () => {
       // Arrange
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
       const debugStorage = new InMemoryStorage({ debug: true });
 
       // Act
@@ -737,10 +751,7 @@ describe("InMemoryStorage", () => {
       debugStorage.debug("Test debug message");
 
       // Assert
-      expect(consoleSpy).toHaveBeenCalledWith("[InMemoryStorage] Test debug message", "");
-
-      // Cleanup
-      consoleSpy.mockRestore();
+      expect(devLogger.info).toHaveBeenCalledWith("[InMemoryStorage] Test debug message", "");
     });
   });
 
