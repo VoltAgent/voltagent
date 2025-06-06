@@ -2,10 +2,10 @@ import { join } from "path";
 import { createReadStream, createWriteStream } from "fs";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { VoltAgent, Agent } from "@voltagent/core";
-import { XsAIVoiceProvider } from "@voltagent/voice";
+import { XSAIVoiceProvider } from "@voltagent/voice";
 import { openai } from "@ai-sdk/openai";
 
-const voiceProvider = new XsAIVoiceProvider({
+const voiceProvider = new XSAIVoiceProvider({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 

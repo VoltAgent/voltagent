@@ -1,7 +1,7 @@
 import { PassThrough } from "node:stream";
 import type { VoiceMetadata, ReadableStreamType } from "@voltagent/core";
 import { BaseVoiceProvider } from "../base";
-import { XsaiVoiceOptions, XsaiSpeakOptions, XsaiListenOptions } from "./types";
+import { XSAIVoiceOptions, XSAISpeakOptions, XSAIListenOptions } from "./types";
 import { generateSpeech, GenerateSpeechOptions } from "@xsai/generate-speech";
 import { generateTranscription, GenerateTranscriptionOptions } from "@xsai/generate-transcription";
 
@@ -17,9 +17,9 @@ async function collectChunks(stream: NodeJS.ReadableStream): Promise<Buffer> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  xsAI provider                                                     */
+/*  XSAI provider                                                     */
 /* ------------------------------------------------------------------ */
-export class XsAIVoiceProvider extends BaseVoiceProvider {
+export class XSAIVoiceProvider extends BaseVoiceProvider {
   private readonly apiKey: string;
   private readonly baseURL: string;
   private readonly ttsModel: string;
@@ -27,7 +27,7 @@ export class XsAIVoiceProvider extends BaseVoiceProvider {
   private readonly voice: string;
   private readonly headers?: Record<string, string>;
 
-  constructor(options: XsaiVoiceOptions) {
+  constructor(options: XSAIVoiceOptions) {
     super(options);
 
     this.apiKey = options.apiKey;
@@ -43,7 +43,7 @@ export class XsAIVoiceProvider extends BaseVoiceProvider {
   /* ------------------------------------------------------------------ */
   async speak(
     input: string | NodeJS.ReadableStream,
-    opts: XsaiSpeakOptions = {},
+    opts: XSAISpeakOptions = {},
   ): Promise<NodeJS.ReadableStream> {
     try {
       const text =
@@ -86,7 +86,7 @@ export class XsAIVoiceProvider extends BaseVoiceProvider {
   /* ------------------------------------------------------------------ */
   async listen(
     audio: NodeJS.ReadableStream,
-    opts: XsaiListenOptions = {},
+    opts: XSAIListenOptions = {},
   ): Promise<string | ReadableStreamType> {
     try {
       this.emit("listening", { audio });
@@ -124,23 +124,23 @@ export class XsAIVoiceProvider extends BaseVoiceProvider {
   /*  Real‑time streaming not yet available                             */
   /* ------------------------------------------------------------------ */
   async connect(): Promise<void> {
-    throw new Error("Real‑time streaming not supported by xsAI");
+    throw new Error("Real‑time streaming not supported by XSAI");
   }
   disconnect(): void {
     /* noop */
   }
   async send(): Promise<void> {
-    throw new Error("Real‑time streaming not supported by xsAI");
+    throw new Error("Real‑time streaming not supported by XSAI");
   }
 
   /* ------------------------------------------------------------------ */
-  /*  xsAI hasn't published a voice list API – stub with default        */
+  /*  XSAI hasn't published a voice list API – stub with default        */
   /* ------------------------------------------------------------------ */
   async getVoices(): Promise<VoiceMetadata[]> {
     return [
       {
         id: this.voice ?? "default",
-        name: "xsAI default",
+        name: "XSAI default",
         language: "en",
         gender: "neutral",
       },

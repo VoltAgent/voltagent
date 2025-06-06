@@ -41,24 +41,24 @@ _Note: `xsai` is a required peer dependency. `zod` is needed for `generateObject
 
 ## Configuration
 
-The `XsAIProvider` requires an API key compatible with the target endpoint.
+The `XSAIProvider` requires an API key compatible with the target endpoint.
 
 ```typescript
-import { XsAIProvider } from "@voltagent/xsai";
+import { XSAIProvider } from "@voltagent/xsai";
 
 // Example using OpenAI API key from environment variables
-const openaiProvider = new XsAIProvider({
+const openaiProvider = new XSAIProvider({
   apiKey: process.env.OPENAI_API_KEY!, // Assumes OPENAI_API_KEY is set
 });
 
 // Example connecting to a different OpenAI-compatible endpoint (like Groq)
-const groqProvider = new XsAIProvider({
+const groqProvider = new XSAIProvider({
   apiKey: process.env.GROQ_API_KEY!, // Assumes GROQ_API_KEY is set
   baseURL: "https://api.groq.com/openai/v1/", // Groq's OpenAI-compatible endpoint
 });
 
 // Example connecting to a local endpoint (like Ollama with an OpenAI adapter)
-const localProvider = new XsAIProvider({
+const localProvider = new XSAIProvider({
   apiKey: "ollama", // Often not required or a placeholder for local models
   baseURL: "http://localhost:11434/v1/", // Default Ollama endpoint
 });
@@ -75,19 +75,19 @@ For a complete, runnable example demonstrating basic use with OpenAI, please see
 
 ## Usage
 
-Instantiate your `Agent` with the configured `XsAIProvider`.
+Instantiate your `Agent` with the configured `XSAIProvider`.
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { XsAIProvider } from "@voltagent/xsai";
+import { XSAIProvider } from "@voltagent/xsai";
 
 // Using OpenAI configuration from above
-const xsaiProvider = new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
+const XSAIProvider = new XSAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
 
 const agent = new Agent({
   name: "Compatible Agent",
   instructions: "An agent using an OpenAI-compatible API via xsAI",
-  llm: xsaiProvider,
+  llm: XSAIProvider,
   // Model identifier specific to the target API (e.g., OpenAI, Groq, local)
   model: "gpt-4o-mini",
 });
@@ -158,11 +158,11 @@ Refer to the API documentation of your specific endpoint provider (e.g., [OpenAI
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { XsAIProvider } from "@voltagent/xsai";
+import { XSAIProvider } from "@voltagent/xsai";
 
 async function main() {
   // Assumes OPENAI_API_KEY is set
-  const provider = new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
+  const provider = new XSAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
 
   const agent = new Agent({
     name: "xsAI Text Agent",
@@ -191,10 +191,10 @@ main();
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { XsAIProvider } from "@voltagent/xsai";
+import { XSAIProvider } from "@voltagent/xsai";
 
 async function main() {
-  const provider = new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
+  const provider = new XSAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
 
   const agent = new Agent({
     name: "xsAI Streaming Agent",
@@ -226,7 +226,7 @@ main();
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { XsAIProvider } from "@voltagent/xsai";
+import { XSAIProvider } from "@voltagent/xsai";
 import { z } from "zod";
 
 const recipeSchema = z.object({
@@ -236,7 +236,7 @@ const recipeSchema = z.object({
 });
 
 async function main() {
-  const provider = new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
+  const provider = new XSAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
 
   const agent = new Agent({
     name: "xsAI Object Agent",
@@ -265,7 +265,7 @@ main();
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { XsAIProvider } from "@voltagent/xsai";
+import { XSAIProvider } from "@voltagent/xsai";
 import { z } from "zod";
 
 const travelPlanSchema = z.object({
@@ -276,7 +276,7 @@ const travelPlanSchema = z.object({
 });
 
 async function main() {
-  const provider = new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
+  const provider = new XSAIProvider({ apiKey: process.env.OPENAI_API_KEY! });
 
   const agent = new Agent({
     name: "xsAI Object Streaming Agent",

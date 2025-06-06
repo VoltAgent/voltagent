@@ -1,33 +1,33 @@
 import { z } from "zod";
 import type { BaseMessage, BaseTool } from "@voltagent/core";
-import { XsAIProvider } from "./index";
+import { XSAIProvider } from "./index";
 
-// Mock the xsai library functions
-const mockXsaiGenerateText = jest.fn();
-const mockXsaiStreamText = jest.fn();
-const mockXsaiGenerateObject = jest.fn();
-const mockXsaiStreamObject = jest.fn();
-const mockXsaiTool = jest.fn().mockImplementation(async (toolDef) => {
+// Mock the XSAI library functions
+const mockXSAIGenerateText = jest.fn();
+const mockXSAIStreamText = jest.fn();
+const mockXSAIGenerateObject = jest.fn();
+const mockXSAIStreamObject = jest.fn();
+const mockXSAITool = jest.fn().mockImplementation(async (toolDef) => {
   // Simple mock implementation: return the definition
   // In a real scenario, this might return a wrapped function or object
   return toolDef;
 });
 
 jest.mock("xsai", () => ({
-  generateText: mockXsaiGenerateText,
-  streamText: mockXsaiStreamText,
-  generateObject: mockXsaiGenerateObject,
-  streamObject: mockXsaiStreamObject,
-  tool: mockXsaiTool,
+  generateText: mockXSAIGenerateText,
+  streamText: mockXSAIStreamText,
+  generateObject: mockXSAIGenerateObject,
+  streamObject: mockXSAIStreamObject,
+  tool: mockXSAITool,
 }));
 
-describe("XsAIProvider", () => {
-  let provider: XsAIProvider;
+describe("XSAIProvider", () => {
+  let provider: XSAIProvider;
   const apiKey = "test-xsai-api-key";
 
   beforeEach(() => {
     jest.clearAllMocks();
-    provider = new XsAIProvider({ apiKey });
+    provider = new XSAIProvider({ apiKey });
   });
 
   describe("toMessage", () => {
@@ -119,12 +119,12 @@ describe("XsAIProvider", () => {
         parameters: expect.any(Object),
         execute: expect.any(Function),
       };
-      mockXsaiTool.mockResolvedValue(mockToolResultFromXsai);
+      mockXSAITool.mockResolvedValue(mockToolResultFromXsai);
 
       const result = await provider.convertTools(baseTools);
 
-      expect(mockXsaiTool).toHaveBeenCalledTimes(1);
-      expect(mockXsaiTool).toHaveBeenCalledWith(
+      expect(mockXSAITool).toHaveBeenCalledTimes(1);
+      expect(mockXSAITool).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "get_weather",
           description: "Get current weather",
@@ -150,14 +150,14 @@ describe("XsAIProvider", () => {
         usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
         finishReason: "stop",
       };
-      mockXsaiGenerateText.mockResolvedValue(mockResult);
+      mockXSAIGenerateText.mockResolvedValue(mockResult);
 
       const result = await provider.generateText({
         messages,
         model: "test-model",
       });
 
-      expect(mockXsaiGenerateText).toHaveBeenCalledWith(
+      expect(mockXSAIGenerateText).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Hello" }],
@@ -192,8 +192,8 @@ describe("XsAIProvider", () => {
         parameters: {},
         execute: expect.any(Function),
       };
-      mockXsaiTool.mockResolvedValue(mockToolResult);
-      mockXsaiGenerateText.mockResolvedValue({
+      mockXSAITool.mockResolvedValue(mockToolResult);
+      mockXSAIGenerateText.mockResolvedValue({
         text: "Used tool.",
         usage: {},
         finishReason: "stop",
@@ -201,8 +201,8 @@ describe("XsAIProvider", () => {
 
       await provider.generateText({ messages, model: "test-model", tools });
 
-      expect(mockXsaiTool).toHaveBeenCalledTimes(1);
-      expect(mockXsaiGenerateText).toHaveBeenCalledWith(
+      expect(mockXSAITool).toHaveBeenCalledTimes(1);
+      expect(mockXSAIGenerateText).toHaveBeenCalledWith(
         expect.objectContaining({
           tools: [mockToolResult],
           maxSteps: undefined,
@@ -225,8 +225,8 @@ describe("XsAIProvider", () => {
         id: "tool-step-test-789",
         name: "step_test_tool" /* other fields */,
       };
-      mockXsaiTool.mockResolvedValue(mockToolResult);
-      mockXsaiGenerateText.mockResolvedValue({
+      mockXSAITool.mockResolvedValue(mockToolResult);
+      mockXSAIGenerateText.mockResolvedValue({
         text: "Used tool with steps.",
         usage: {},
         finishReason: "stop",
@@ -240,7 +240,7 @@ describe("XsAIProvider", () => {
         maxSteps: testMaxSteps,
       });
 
-      expect(mockXsaiGenerateText).toHaveBeenCalledWith(
+      expect(mockXSAIGenerateText).toHaveBeenCalledWith(
         expect.objectContaining({
           tools: [mockToolResult],
           maxSteps: testMaxSteps, // Expect the provided maxSteps value
@@ -259,14 +259,14 @@ describe("XsAIProvider", () => {
       const mockResult = {
         textStream: mockStream /* other potential fields from xsai */,
       };
-      mockXsaiStreamText.mockResolvedValue(mockResult);
+      mockXSAIStreamText.mockResolvedValue(mockResult);
 
       const result = await provider.streamText({
         messages,
         model: "test-model",
       });
 
-      expect(mockXsaiStreamText).toHaveBeenCalledWith(
+      expect(mockXSAIStreamText).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Stream this" }],
@@ -290,7 +290,7 @@ describe("XsAIProvider", () => {
         usage: {},
         finishReason: "stop",
       };
-      mockXsaiGenerateObject.mockResolvedValue(mockResult);
+      mockXSAIGenerateObject.mockResolvedValue(mockResult);
 
       const result = await provider.generateObject({
         messages,
@@ -298,7 +298,7 @@ describe("XsAIProvider", () => {
         schema,
       });
 
-      expect(mockXsaiGenerateObject).toHaveBeenCalledWith(
+      expect(mockXSAIGenerateObject).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Generate JSON" }],
@@ -320,7 +320,7 @@ describe("XsAIProvider", () => {
       const mockResult = {
         partialObjectStream: mockStream /* other potential fields */,
       };
-      mockXsaiStreamObject.mockResolvedValue(mockResult);
+      mockXSAIStreamObject.mockResolvedValue(mockResult);
 
       const result = await provider.streamObject({
         messages,
@@ -328,7 +328,7 @@ describe("XsAIProvider", () => {
         schema,
       });
 
-      expect(mockXsaiStreamObject).toHaveBeenCalledWith(
+      expect(mockXSAIStreamObject).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Stream JSON" }],

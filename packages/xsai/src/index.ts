@@ -27,12 +27,12 @@ import type {
 } from "xsai";
 import type { z } from "zod";
 
-export class XsAIProvider implements LLMProvider<string> {
+export class XSAIProvider implements LLMProvider<string> {
   private apiKey: string;
   private baseURL: string;
 
   /**
-   * Creates a new XsAIProvider instance
+   * Creates a new XSAIProvider instance
    * @param options - Configuration options
    * @param options.apiKey - The API key for authentication
    * @param options.baseURL - The base URL for API requests. Defaults to "https://api.openai.com/v1/"
@@ -72,12 +72,12 @@ export class XsAIProvider implements LLMProvider<string> {
             } satisfies ImagePart);
           } else {
             console.warn(
-              `[XsAIProvider] Message (role: ${message.role}) contained unsupported image part format...`,
+              `[XSAIProvider] Message (role: ${message.role}) contained unsupported image part format...`,
             );
           }
         } else {
           console.warn(
-            `[XsAIProvider] Message (role: ${message.role}) contained unsupported content parts...`,
+            `[XSAIProvider] Message (role: ${message.role}) contained unsupported content parts...`,
           );
         }
       }
@@ -86,7 +86,7 @@ export class XsAIProvider implements LLMProvider<string> {
     } else {
       // Handle unexpected content types (null, undefined, etc.)
       console.warn(
-        `[XsAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
+        `[XSAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
         message.content,
       );
 
