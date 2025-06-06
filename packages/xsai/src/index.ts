@@ -23,7 +23,6 @@ import type {
   StreamTextResult,
   StreamTextStep,
   TextPart,
-  ToolResult,
 } from "xsai";
 import type { z } from "zod";
 
@@ -94,7 +93,7 @@ export class XsAIProvider implements LLMProvider<string> {
     }
   };
 
-  convertTools = async (tools: BaseTool[]): Promise<ToolResult[] | undefined> => {
+  convertTools = async (tools: BaseTool[]): Promise<any[] | undefined> => {
     if (!tools || tools.length === 0) {
       return undefined;
     }

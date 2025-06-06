@@ -43,6 +43,7 @@ pnpm add @voltagent/voice
 - **OpenAI**: High-quality voices and transcription.
 - **ElevenLabs**: Realistic, customizable voices.
 - **xsAI**: Lightweight OpenAI-compatible voice API.
+- **Gemini**: Google's native text-to-speech with 30 voices, multi-speaker support, and controllable speech (no real-time streaming).
 
 ## Basic Usage
 
@@ -77,6 +78,15 @@ const xsAIVoice = new XsAIVoiceProvider({
   ttsModel: "tts-1",
   voice: "alloy",
   // If you are not using OpenAI, simply specify the `baseURL`
+});
+
+// Or initialize with Gemini
+import { GeminiVoiceProvider } from "@voltagent/voice";
+
+const geminiVoice = new GeminiVoiceProvider({
+  apiKey: process.env.GEMINI_API_KEY!, // Get from Google AI Studio
+  model: "gemini-2.5-flash-preview-tts", // TTS model
+  voice: "Kore", // Choose from 30 available voices
 });
 ```
 

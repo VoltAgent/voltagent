@@ -1,0 +1,22 @@
+{
+  "name": "with-voice-gemini",
+  "version": "1.0.0",
+  "description": "VoltAgent example with Gemini 2.5 native voice TTS",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@voltagent/core": "workspace:*",
+    "@voltagent/vercel-ai": "workspace:*",
+    "@voltagent/voice": "workspace:*",
+    "@ai-sdk/openai": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.4"
+  }
+}
