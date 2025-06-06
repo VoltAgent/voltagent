@@ -1,10 +1,11 @@
 import { existsSync } from "node:fs";
+import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import fs from "node:fs";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
+import devLogger from "../../internal/dev-logger";
 import { safeJsonParse } from "../../utils";
 import type {
   Conversation,
@@ -143,7 +144,7 @@ export class LibSQLStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options?.debug) {
-      console.log(`[LibSQLStorage] ${message}`, data || "");
+      devLogger.info(`[LibSQLStorage] ${message}`, data || "");
     }
   }
 
@@ -302,16 +303,16 @@ export class LibSQLStorage implements Memory {
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
-          console.log(`${result.migratedCount} records successfully migrated`);
+          devLogger.info(`${result.migratedCount} records successfully migrated`);
         }
       } else {
-        console.error("Migration error:", result.error);
+        devLogger.error("Migration error:", result.error);
 
         // Restore from backup in case of error
         const restoreResult = await this.migrateAgentHistoryData({});
 
         if (restoreResult.success) {
-          console.log("Successfully restored from backup");
+          devLogger.info("Successfully restored from backup");
         }
       }
     } catch (error) {

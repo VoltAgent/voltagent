@@ -1,4 +1,5 @@
 import type { ToolSchema } from "../agent/providers/base/types";
+import devLogger from "../internal/dev-logger";
 import type { Tool } from "./index";
 
 /**
@@ -49,7 +50,7 @@ export const createToolkit = (options: Toolkit): Toolkit => {
     throw new Error("Toolkit name is required");
   }
   if (!options.tools || options.tools.length === 0) {
-    console.warn(`Toolkit '${options.name}' created without any tools.`);
+    devLogger.warn(`Toolkit '${options.name}' created without any tools.`);
   }
 
   return {

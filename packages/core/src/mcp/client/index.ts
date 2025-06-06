@@ -11,7 +11,10 @@ import {
   CallToolResultSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import type * as z from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import devLogger from "../../internal/dev-logger";
+import { type Tool, createTool } from "../../tool";
 import type {
   ClientInfo,
   HTTPServerConfig,
@@ -22,8 +25,6 @@ import type {
   MCPToolResult,
   StdioServerConfig,
 } from "../types";
-import { createTool, type Tool } from "../../tool";
-import type * as z from "zod";
 
 /**
  * Client for interacting with Model Context Protocol (MCP) servers.
@@ -209,7 +210,7 @@ export class MCPClient extends EventEmitter {
                 });
                 return result.content;
               } catch (execError) {
-                console.error(`Error executing remote tool '${toolDef.name}':`, execError);
+                devLogger.error(`Error executing remote tool '${toolDef.name}':`, execError);
                 throw execError;
               }
             },
@@ -217,7 +218,7 @@ export class MCPClient extends EventEmitter {
 
           executableTools[namespacedToolName] = agentTool;
         } catch (toolCreationError) {
-          console.error(
+          devLogger.error(
             `Failed to create executable tool wrapper for '${toolDef.name}':`,
             toolCreationError,
           );

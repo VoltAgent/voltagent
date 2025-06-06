@@ -1,11 +1,12 @@
+import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
+import { v4 as uuidv4 } from "uuid";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
+import type { BaseMessage } from "../index";
+import devLogger from "../internal/dev-logger";
 import { AgentRegistry } from "../server/registry";
-import { v4 as uuidv4 } from "uuid";
 import type { NewTimelineEvent } from "./types";
-import crypto from "node:crypto";
-import type { BaseMessage } from "..";
 
 // New type exports
 export type EventStatus = AgentStatus;
@@ -113,7 +114,7 @@ export class AgentEventEmitter extends EventEmitter {
 
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (!agent) {
-      console.warn("[AgentEventEmitter.publishTimelineEvent] Agent not found: ", agentId);
+      devLogger.warn("Agent not found: ", agentId);
       return undefined;
     }
 
@@ -133,13 +134,10 @@ export class AgentEventEmitter extends EventEmitter {
 
         return updatedEntry;
       }
-      console.warn(
-        "[AgentEventEmitter.publishTimelineEvent] Failed to persist event for history: ",
-        historyId,
-      );
+      devLogger.warn("Failed to persist event for history: ", historyId);
       return undefined;
     } catch (error) {
-      console.error("[AgentEventEmitter.publishTimelineEvent] Error persisting event:", error);
+      devLogger.error("Error persisting event:", error);
       return undefined;
     }
   }

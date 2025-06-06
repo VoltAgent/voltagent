@@ -1,12 +1,13 @@
 import type { Agent } from "./agent";
 import { startServer } from "./server";
-import { AgentRegistry } from "./server/registry";
-import { checkForUpdates } from "./utils/update";
 import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
+import { AgentRegistry } from "./server/registry";
+import { checkForUpdates } from "./utils/update";
 
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import devLogger from "./internal/dev-logger";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 
 export * from "./agent";
@@ -121,7 +122,7 @@ export class VoltAgent {
     // Auto-start server if enabled
     if (options.autoStart !== false) {
       this.startServer().catch((err) => {
-        console.error("[VoltAgent] Failed to start server:", err);
+        devLogger.error("Failed to start server:", err);
         process.exit(1);
       });
     }
@@ -137,14 +138,14 @@ export class VoltAgent {
       });
 
       if (result.hasUpdates) {
-        console.log("\n");
-        console.log(`[VoltAgent] ${result.message}`);
-        console.log("[VoltAgent] Run 'volt update' to update VoltAgent packages");
+        devLogger.info("\n");
+        devLogger.info(result.message);
+        devLogger.info("Run 'volt update' to update VoltAgent packages");
       } else {
-        console.log(`[VoltAgent] ${result.message}`);
+        devLogger.info(result.message);
       }
     } catch (error) {
-      console.error("[VoltAgent] Error checking dependencies:", error);
+      devLogger.error("Error checking dependencies:", error);
     }
   }
 
@@ -174,7 +175,7 @@ export class VoltAgent {
    */
   public async startServer(): Promise<void> {
     if (this.serverStarted) {
-      console.log("[VoltAgent] Server is already running");
+      devLogger.info("Server is already running");
       return;
     }
 
@@ -187,8 +188,8 @@ export class VoltAgent {
       await startServer();
       this.serverStarted = true;
     } catch (error) {
-      console.error(
-        `[VoltAgent] Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
+      devLogger.error(
+        `Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -209,7 +210,7 @@ export class VoltAgent {
         registerCustomEndpoint(endpoint);
       }
     } catch (error) {
-      console.error(
+      devLogger.error(
         `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
@@ -235,7 +236,7 @@ export class VoltAgent {
         registerCustomEndpoints(endpoints);
       }
     } catch (error) {
-      console.error(
+      devLogger.error(
         `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
@@ -267,8 +268,8 @@ export class VoltAgent {
     exporterOrExporters: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[],
   ): void {
     if (isTelemetryInitializedByVoltAgent) {
-      console.warn(
-        "[VoltAgent] Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
+      devLogger.warn(
+        "Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
       );
       return;
     }
@@ -310,11 +311,11 @@ export class VoltAgent {
       // Add automatic shutdown on SIGTERM
       process.on("SIGTERM", () => {
         this.shutdownTelemetry().catch((err) =>
-          console.error("[VoltAgent] Error during SIGTERM telemetry shutdown:", err),
+          devLogger.error("Error during SIGTERM telemetry shutdown:", err),
         );
       });
     } catch (error) {
-      console.error("[VoltAgent] Failed to initialize OpenTelemetry:", error);
+      devLogger.error("Failed to initialize OpenTelemetry:", error);
     }
   }
 
@@ -325,11 +326,11 @@ export class VoltAgent {
         isTelemetryInitializedByVoltAgent = false;
         registeredProvider = null;
       } catch (error) {
-        console.error("[VoltAgent] Error shutting down OpenTelemetry provider:", error);
+        devLogger.error("Error shutting down OpenTelemetry provider:", error);
       }
     } else {
-      console.log(
-        "[VoltAgent] Telemetry provider was not initialized by this VoltAgent instance or already shut down.",
+      devLogger.info(
+        "Telemetry provider was not initialized by this VoltAgent instance or already shut down.",
       );
     }
   }

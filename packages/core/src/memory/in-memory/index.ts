@@ -1,4 +1,5 @@
 import type { NewTimelineEvent } from "../../events/types";
+import devLogger from "../../internal/dev-logger";
 import type {
   Conversation,
   CreateConversationInput,
@@ -275,7 +276,7 @@ export class InMemoryStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options.debug) {
-      console.log(`[InMemoryStorage] ${message}`, data || "");
+      devLogger.info(`[InMemoryStorage] ${message}`, data || "");
     }
   }
 

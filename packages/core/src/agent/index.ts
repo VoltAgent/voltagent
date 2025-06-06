@@ -13,6 +13,7 @@ import type {
   ToolStartEvent,
   ToolSuccessEvent,
 } from "../events/types";
+import devLogger from "../internal/dev-logger";
 import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
@@ -349,7 +350,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           event: retrieverErrorEvent,
         });
 
-        console.warn("Failed to retrieve context:", error);
+        devLogger.warn("Failed to retrieve context:", error);
       }
     }
 
@@ -397,7 +398,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       return formattedMemory || "No previous agent interactions found.";
     } catch (error) {
-      console.warn("Error preparing agents memory:", error);
+      devLogger.warn("Error preparing agents memory:", error);
       return "Error retrieving agent history.";
     }
   }
@@ -442,7 +443,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Ensure operationContext exists before proceeding
     if (!operationContext) {
-      console.warn(
+      devLogger.warn(
         `[Agent ${this.id}] Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.`,
       );
       // Potentially handle this case more gracefully, e.g., throw an error or create a default context
@@ -477,7 +478,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               finalExecOptions as ReasoningToolExecuteOptions; // Cast should be safe here
 
             if (!reasoningOptions.historyEntryId || reasoningOptions.historyEntryId === "unknown") {
-              console.warn(
+              devLogger.warn(
                 `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`,
               );
             }
@@ -664,7 +665,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     if (toolCallId && status === "working") {
       if (context.toolSpans.has(toolCallId)) {
-        console.warn(`[VoltAgentCore] OTEL tool span already exists for toolCallId: ${toolCallId}`);
+        devLogger.warn(`OTEL tool span already exists for toolCallId: ${toolCallId}`);
       } else {
         // Call the helper function
         const toolSpan = startToolSpan({
@@ -699,8 +700,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         data,
       });
     } else {
-      console.warn(
-        `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
+      devLogger.warn(
+        `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
       );
     }
   };
@@ -720,8 +721,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       endToolSpan({ span: toolSpan, resultData });
       context.toolSpans?.delete(toolCallId); // Remove from map after ending
     } else {
-      console.warn(
-        `[VoltAgentCore] OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
+      devLogger.warn(
+        `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
       );
     }
   }
@@ -1497,7 +1498,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               event: toolErrorEvent,
             });
           } catch (updateError) {
-            console.error(
+            devLogger.error(
               `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
               updateError,
             );

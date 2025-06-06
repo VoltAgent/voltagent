@@ -1,4 +1,5 @@
 import { z } from "zod";
+import devLogger from "../../internal/dev-logger";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
 import type { Agent } from "../index";
@@ -192,7 +193,7 @@ Context: ${JSON.stringify(context)}`,
         status: "success",
       };
     } catch (error) {
-      console.error(`Error in handoffTask to ${targetAgent.name}:`, error);
+      devLogger.error(`Error in handoffTask to ${targetAgent.name}:`, error);
 
       // Get error message safely whether error is Error object or string
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -247,7 +248,7 @@ Context: ${JSON.stringify(context)}`,
             userContext,
           });
         } catch (error) {
-          console.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
+          devLogger.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
 
           // Get error message safely whether error is Error object or string
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -301,7 +302,7 @@ Context: ${JSON.stringify(context)}`,
             .map((name: string) => {
               const agent = this.subAgents.find((a: Agent<any>) => a.name === name);
               if (!agent) {
-                console.warn(
+                devLogger.warn(
                   `Agent "${name}" not found. Available agents: ${this.subAgents.map((a) => a.name).join(", ")}`,
                 );
               }
@@ -358,7 +359,7 @@ Context: ${JSON.stringify(context)}`,
             };
           });
         } catch (error) {
-          console.error("Error in delegate_task tool execution:", error);
+          devLogger.error("Error in delegate_task tool execution:", error);
 
           // Return structured error to the LLM
           return {

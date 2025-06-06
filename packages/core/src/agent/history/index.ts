@@ -1,15 +1,16 @@
 import { v4 as uuidv4 } from "uuid";
 import { AgentEventEmitter } from "../../events";
-import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/types";
-import type { AgentStatus } from "../types";
+import type { NewTimelineEvent } from "../../events/types";
+import devLogger from "../../internal/dev-logger";
 import type { MemoryManager } from "../../memory";
-import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type {
-  ExportAgentHistoryPayload,
   AgentHistoryUpdatableFields,
+  ExportAgentHistoryPayload,
   ExportTimelineEventPayload,
 } from "../../telemetry/client";
-import type { NewTimelineEvent } from "../../events/types";
+import type { VoltAgentExporter } from "../../telemetry/exporter";
+import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/types";
+import type { AgentStatus } from "../types";
 
 // Export types
 export type { HistoryStatus } from "./types";
@@ -285,14 +286,13 @@ export class HistoryManager {
         await this.voltAgentExporter.exportHistoryEntry(historyPayload);
       } catch (telemetryError: any) {
         if (telemetryError?.message?.includes("401")) {
-          console.warn(
-            `[HistoryManager] Failed to export history entry to telemetry service for agent ${this.agentId}. Status: 401. Please check your VoltAgentExporter public and secret keys.`,
+          devLogger.warn(
+            `Failed to export history entry to telemetry service for agent ${this.agentId}. Status: 401. Please check your VoltAgentExporter public and secret keys.`,
           );
         } else {
-          console.warn(
-            `[HistoryManager] Failed to export history entry to telemetry service for agent ${this.agentId}. Error:`,
+          devLogger.warn(
+            `Failed to export history entry to telemetry service for agent ${this.agentId}. Error:`,
             telemetryError,
-            "If this issue persists, please open an issue on GitHub: @https://github.com/VoltAgent/voltagent/issues or ask on our Discord server: @https://s.voltagent.dev/discord/",
           );
         }
       }
@@ -463,7 +463,7 @@ export class HistoryManager {
 
       return updatedEntry;
     } catch (error) {
-      console.error("[HistoryManager] Failed to persist timeline event:", error);
+      devLogger.error("Failed to persist timeline event:", error);
       return undefined;
     }
   }
