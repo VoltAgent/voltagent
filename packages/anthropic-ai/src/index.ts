@@ -198,7 +198,7 @@ export class AnthropicProvider implements LLMProvider<string> {
                   const finalResult = {
                     text: currentText,
                     toolCalls: currentToolCalls.map((call) => ({
-                      usage: stopChunk.message.usage,
+                      usage: stopChunk?.message?.usage,
                       ...call,
                     })),
                     toolResults: [],
@@ -302,11 +302,13 @@ export class AnthropicProvider implements LLMProvider<string> {
       return {
         provider: response,
         object: parsedResult.data,
-        usage: {
-          promptTokens: response.usage.input_tokens,
-          completionTokens: response.usage.output_tokens,
-          totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-        },
+        usage: response.usage
+          ? {
+              promptTokens: response.usage.input_tokens,
+              completionTokens: response.usage.output_tokens,
+              totalTokens: response.usage.input_tokens + response.usage.output_tokens,
+            }
+          : undefined,
         finishReason: response.stop_reason as string,
       };
     } catch (error) {
