@@ -59,10 +59,161 @@ import type {
 import type { Span } from "@opentelemetry/api";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 
+export interface VoltAgent<TProvider extends { llm: LLMProvider<unknown> }> {
+  /**
+   * Unique identifier for the agent
+   */
+  readonly id: string;
+
+  /**
+   * Agent name
+   */
+  readonly name: string;
+
+  /**
+   * (sub)agent purpose. This is the purpose of a (sub)agent, that will be used to generate the system message for the supervisor agent, if not provided, the agent will use the `instructions` field to generate the system message.
+   *
+   * @example 'An agent for customer support'
+   */
+  readonly purpose?: string;
+
+  /**
+   * @deprecated Use `instructions` instead. Will be removed in a future version.
+   */
+  readonly description: string;
+
+  /**
+   * Agent instructions. This is the preferred field over `description`.
+   */
+  readonly instructions: string;
+
+  /**
+   * The LLM provider to use
+   */
+  readonly llm: ProviderInstance<TProvider>;
+
+  /**
+   * The AI model to use
+   */
+  readonly model: ModelType<TProvider>;
+
+  /**
+   * Hooks for agent lifecycle events
+   */
+  hooks: AgentHooks;
+
+  /**
+   * Voice provider for the agent
+   */
+  readonly voice?: Voice;
+
+  /**
+   * Indicates if the agent should format responses using Markdown.
+   */
+  readonly markdown: boolean;
+
+  /**
+   * Generate a text response without streaming
+   */
+  generateText(
+    input: string | BaseMessage[],
+    options: PublicGenerateOptions,
+  ): Promise<InferGenerateTextResponse<TProvider>>;
+
+  /**
+   * Generate a structured object response
+   */
+  generateObject<T extends z.ZodType>(
+    input: string | BaseMessage[],
+    schema: T,
+    options: PublicGenerateOptions,
+  ): Promise<InferGenerateObjectResponse<TProvider>>;
+
+  /**
+   * Stream a structured object response
+   */
+  streamObject<T extends z.ZodType>(
+    input: string | BaseMessage[],
+    schema: T,
+    options: PublicGenerateOptions,
+  ): Promise<InferStreamObjectResponse<TProvider>>;
+
+  /**
+   * Generate a text response with streaming
+   */
+  streamText(
+    input: string | BaseMessage[],
+    options: PublicGenerateOptions,
+  ): Promise<InferStreamTextResponse<TProvider>>;
+
+  /**
+   * Add a sub-agent that this agent can delegate tasks to
+   */
+  addSubAgent(agent: VoltAgent<TProvider>): void;
+
+  /**
+   * Remove a sub-agent that this agent can delegate tasks to
+   */
+  removeSubAgent(agentId: string): void;
+
+  /**
+   * Get the tools for the agent
+   */
+  getToolsForApi(): BaseTool[];
+
+  /**
+   * Get the sub-agents for the agent
+   */
+  getSubAgents(): VoltAgent<TProvider>[];
+
+  /**
+   * Get the history for the agent
+   */
+  getHistoryManager(): HistoryManager;
+
+  /**
+   * Check if the agent has a telemetry exporter configured
+   */
+  isTelemetryConfigured(): boolean;
+
+  /**
+   * Add items to the agent
+   *
+   * @todo rename to `addTools`
+   */
+  addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] };
+}
+
+/**
+ * Create a new agent.
+ *
+ * @param options - The options for the agent.
+ * @returns The new agent.
+ */
+export function createAgent<TProvider extends { llm: LLMProvider<unknown> }>(
+  options: AgentOptions &
+    TProvider & {
+      model: ModelType<TProvider>;
+      subAgents?: Agent<any>[]; // Reverted to Agent<any>[] temporarily
+      maxHistoryEntries?: number;
+      hooks?: AgentHooks;
+      retriever?: BaseRetriever;
+      voice?: Voice;
+      markdown?: boolean;
+      telemetryExporter?: VoltAgentExporter;
+    },
+) {
+  return new Agent(options);
+}
+
 /**
  * Agent class for interacting with AI models
+ *
+ * @deprecated Use `createAgent` instead.
  */
-export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
+export class Agent<TProvider extends { llm: LLMProvider<unknown> }>
+  implements VoltAgent<TProvider>
+{
   /**
    * Unique identifier for the agent
    */
@@ -195,541 +346,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Get the system message for the agent
-   */
-  protected async getSystemMessage({
-    input,
-    historyEntryId,
-    contextMessages,
-  }: {
-    input?: string | BaseMessage[];
-    historyEntryId: string;
-    contextMessages: BaseMessage[];
-  }): Promise<BaseMessage> {
-    let baseInstructions = this.instructions || ""; // Ensure baseInstructions is a string
-
-    // --- Add Instructions from Toolkits --- (Simplified Logic)
-    let toolInstructions = "";
-    // Get only the toolkits
-    const toolkits = this.toolManager.getToolkits();
-    for (const toolkit of toolkits) {
-      // Check if the toolkit wants its instructions added
-      if (toolkit.addInstructions && toolkit.instructions) {
-        // Append toolkit instructions
-        // Using a simple newline separation for now.
-        toolInstructions += `\n\n${toolkit.instructions}`;
-      }
-    }
-    if (toolInstructions) {
-      baseInstructions = `${baseInstructions}${toolInstructions}`;
-    }
-    // --- End Add Instructions from Toolkits ---
-
-    // Add Markdown Instruction if Enabled
-    if (this.markdown) {
-      baseInstructions = `${baseInstructions}\n\nUse markdown to format your answers.`;
-    }
-
-    let finalInstructions = baseInstructions;
-
-    // If retriever exists and we have input, get context
-    if (this.retriever && input && historyEntryId) {
-      // [NEW EVENT SYSTEM] Create a retriever:start event
-      const retrieverStartTime = new Date().toISOString(); // Capture start time
-      const retrieverStartEvent: RetrieverStartEvent = {
-        id: crypto.randomUUID(),
-        name: "retriever:start",
-        type: "retriever",
-        startTime: retrieverStartTime,
-        status: "running",
-        input: { query: input },
-        output: null,
-        metadata: {
-          displayName: this.retriever?.tool.name || "Retriever",
-          id: this.retriever?.tool.name,
-          agentId: this.id,
-        },
-        traceId: historyEntryId,
-      };
-
-      // Publish the retriever:start event
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
-        agentId: this.id,
-        historyId: historyEntryId,
-        event: retrieverStartEvent,
-      });
-
-      try {
-        const context = await this.retriever.retrieve(input);
-        if (context?.trim()) {
-          finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
-
-          // [NEW EVENT SYSTEM] Create a retriever:success event
-          const retrieverSuccessEvent: RetrieverSuccessEvent = {
-            id: crypto.randomUUID(),
-            name: "retriever:success",
-            type: "retriever",
-            startTime: new Date().toISOString(), // Use the original start time
-            endTime: new Date().toISOString(), // Current time as end time
-            status: "completed",
-            input: null,
-            output: { context },
-            metadata: {
-              displayName: this.retriever.tool.name || "Retriever",
-              id: this.retriever.tool.name,
-              agentId: this.id,
-            },
-            traceId: historyEntryId,
-            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-          };
-
-          // Publish the retriever:success event
-          await AgentEventEmitter.getInstance().publishTimelineEvent({
-            agentId: this.id,
-            historyId: historyEntryId,
-            event: retrieverSuccessEvent,
-          });
-        } else {
-          // If there was no context returned, still create a success event
-          // but with a note that no context was found
-          const retrieverSuccessEvent: RetrieverSuccessEvent = {
-            id: crypto.randomUUID(),
-            name: "retriever:success",
-            type: "retriever",
-            startTime: new Date().toISOString(), // Use the original start time
-            endTime: new Date().toISOString(), // Current time as end time
-            status: "completed",
-            input: null,
-            output: { context: "No relevant context found" },
-            metadata: {
-              displayName: this.retriever.tool.name || "Retriever",
-              id: this.retriever.tool.name,
-              agentId: this.id,
-            },
-            traceId: historyEntryId,
-            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-          };
-
-          // Publish the retriever:success event (empty result)
-          await AgentEventEmitter.getInstance().publishTimelineEvent({
-            agentId: this.id,
-            historyId: historyEntryId,
-            event: retrieverSuccessEvent,
-          });
-        }
-      } catch (error) {
-        // [NEW EVENT SYSTEM] Create a retriever:error event
-        const retrieverErrorEvent: RetrieverErrorEvent = {
-          id: crypto.randomUUID(),
-          name: "retriever:error",
-          type: "retriever",
-          startTime: new Date().toISOString(), // Use the original start time
-          endTime: new Date().toISOString(), // Current time as end time
-          status: "error",
-          level: "ERROR",
-          input: null,
-          output: null,
-          statusMessage: {
-            message: error instanceof Error ? error.message : "Unknown retriever error",
-            ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
-          },
-          metadata: {
-            displayName: this.retriever.tool.name || "Retriever",
-            id: this.retriever.tool.name,
-            agentId: this.id,
-          },
-          traceId: historyEntryId,
-          parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-        };
-
-        // Publish the retriever:error event
-        await AgentEventEmitter.getInstance().publishTimelineEvent({
-          agentId: this.id,
-          historyId: historyEntryId,
-          event: retrieverErrorEvent,
-        });
-
-        console.warn("Failed to retrieve context:", error);
-      }
-    }
-
-    // If the agent has sub-agents, generate supervisor system message
-    if (this.subAgentManager.hasSubAgents()) {
-      // Fetch recent agent history for the sub-agents
-      const agentsMemory = await this.prepareAgentsMemory(contextMessages);
-
-      // Generate the supervisor message with the agents memory inserted
-      finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
-        finalInstructions,
-        agentsMemory,
-      );
-
-      return {
-        role: "system",
-        content: finalInstructions,
-      };
-    }
-
-    return {
-      role: "system",
-      content: `You are ${this.name}. ${finalInstructions}`,
-    };
-  }
-
-  /**
-   * Prepare agents memory for the supervisor system message
-   * This fetches and formats recent interactions with sub-agents
-   */
-  private async prepareAgentsMemory(contextMessages: BaseMessage[]): Promise<string> {
-    try {
-      // Get all sub-agents
-      const subAgents = this.subAgentManager.getSubAgents();
-      if (subAgents.length === 0) return "";
-
-      // Format the agent histories into a readable format
-      const formattedMemory = contextMessages
-        .filter((p) => p.role !== "system")
-        .filter((p) => p.role === "assistant" && !p.content.toString().includes("toolCallId"))
-        .map((message) => {
-          return `${message.role}: ${message.content}`;
-        })
-        .join("\n\n");
-
-      return formattedMemory || "No previous agent interactions found.";
-    } catch (error) {
-      console.warn("Error preparing agents memory:", error);
-      return "Error retrieving agent history.";
-    }
-  }
-
-  /**
-   * Add input to messages array based on type
-   */
-  private async formatInputMessages(
-    messages: BaseMessage[],
-    input: string | BaseMessage[],
-  ): Promise<BaseMessage[]> {
-    if (typeof input === "string") {
-      // Add user message to the messages array
-      return [
-        ...messages,
-        {
-          role: "user",
-          content: input,
-        },
-      ];
-    }
-    // Add all message objects directly
-    return [...messages, ...input];
-  }
-
-  /**
-   * Calculate maximum number of steps based on sub-agents
-   */
-  private calculateMaxSteps(): number {
-    return this.subAgentManager.calculateMaxSteps();
-  }
-
-  /**
-   * Prepare common options for text generation
-   */
-  private prepareTextOptions(options: CommonGenerateOptions = {}): {
-    tools: BaseTool[];
-    maxSteps: number;
-  } {
-    const { tools: dynamicTools, historyEntryId, operationContext } = options;
-    const baseTools = this.toolManager.prepareToolsForGeneration(dynamicTools);
-
-    // Ensure operationContext exists before proceeding
-    if (!operationContext) {
-      console.warn(
-        `[Agent ${this.id}] Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.`,
-      );
-      // Potentially handle this case more gracefully, e.g., throw an error or create a default context
-    }
-
-    // Create the ToolExecutionContext
-    const toolExecutionContext: ToolExecutionContext = {
-      operationContext: operationContext, // Pass the extracted context
-      agentId: this.id,
-      historyEntryId: historyEntryId || "unknown", // Fallback for historyEntryId
-    };
-
-    // Wrap ALL tools to inject ToolExecutionContext
-    const toolsToUse = baseTools.map((tool) => {
-      const originalExecute = tool.execute;
-      return {
-        ...tool,
-        execute: async (args: unknown, execOptions?: ToolExecuteOptions): Promise<unknown> => {
-          // Merge the base toolExecutionContext with any specific execOptions
-          // execOptions provided by the LLM provider might override parts of the context
-          // if needed, but typically we want to ensure our core context is passed.
-          const finalExecOptions: ToolExecuteOptions = {
-            ...toolExecutionContext, // Inject the context here
-            ...execOptions, // Allow provider-specific options to be included
-          };
-
-          // Specifically handle Reasoning Tools if needed (though context is now injected for all)
-          if (tool.name === "think" || tool.name === "analyze") {
-            // Reasoning tools expect ReasoningToolExecuteOptions, which includes agentId and historyEntryId
-            // These are already present in finalExecOptions via toolExecutionContext
-            const reasoningOptions: ReasoningToolExecuteOptions =
-              finalExecOptions as ReasoningToolExecuteOptions; // Cast should be safe here
-
-            if (!reasoningOptions.historyEntryId || reasoningOptions.historyEntryId === "unknown") {
-              console.warn(
-                `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`,
-              );
-            }
-            // Pass the correctly typed options
-            return originalExecute(args, reasoningOptions);
-          }
-
-          // Execute regular tools with the injected context
-          return originalExecute(args, finalExecOptions);
-        },
-      };
-    });
-
-    // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
-    if (this.subAgentManager.hasSubAgents()) {
-      // Always create a delegate tool with the current operationContext
-      const delegateTool = this.subAgentManager.createDelegateTool({
-        sourceAgent: this,
-        currentHistoryEntryId: historyEntryId,
-        operationContext: options.operationContext,
-        ...options,
-      });
-
-      // Replace existing delegate tool if any
-      const delegateIndex = toolsToUse.findIndex((tool) => tool.name === "delegate_task");
-      if (delegateIndex >= 0) {
-        toolsToUse[delegateIndex] = delegateTool;
-      } else {
-        toolsToUse.push(delegateTool);
-
-        // Add the delegate tool to the tool manager only if it doesn't exist yet
-        // This logic might need refinement if delegate tool should always be added/replaced
-        // For now, assume adding if not present is correct.
-        // this.toolManager.addTools([delegateTool]); // Re-consider if this is needed or handled by prepareToolsForGeneration
-      }
-    }
-
-    return {
-      tools: toolsToUse,
-      maxSteps: this.calculateMaxSteps(),
-    };
-  }
-
-  /**
-   * Initialize a new history entry
-   * @param input User input
-   * @param initialStatus Initial status
-   * @param options Options including parent context
-   * @returns Created operation context
-   */
-  private async initializeHistory(
-    input: string | BaseMessage[],
-    initialStatus: AgentStatus = "working",
-    options: {
-      parentAgentId?: string;
-      parentHistoryEntryId?: string;
-      operationName: string;
-      userContext?: Map<string | symbol, unknown>;
-      userId?: string;
-      conversationId?: string;
-    } = {
-      operationName: "unknown",
-    },
-  ): Promise<OperationContext> {
-    const otelSpan = startOperationSpan({
-      agentId: this.id,
-      agentName: this.name,
-      operationName: options.operationName,
-      parentAgentId: options.parentAgentId,
-      parentHistoryEntryId: options.parentHistoryEntryId,
-      modelName: this.getModelName(),
-    });
-
-    const historyEntry = await this.historyManager.addEntry({
-      input,
-      output: "",
-      status: initialStatus,
-      steps: [],
-      options: {
-        metadata: {
-          agentSnapshot: this.getFullState(),
-        },
-      },
-      userId: options.userId,
-      conversationId: options.conversationId,
-      model: this.getModelName(),
-    });
-
-    const opContext: OperationContext = {
-      operationId: historyEntry.id,
-      userContext: options.userContext
-        ? new Map(options.userContext)
-        : new Map<string | symbol, unknown>(),
-      historyEntry,
-      isActive: true,
-      parentAgentId: options.parentAgentId,
-      parentHistoryEntryId: options.parentHistoryEntryId,
-      otelSpan: otelSpan,
-    };
-
-    return opContext;
-  }
-
-  /**
-   * Get full agent state including tools status
-   */
-  public getFullState() {
-    return {
-      id: this.id,
-      name: this.name,
-      description: this.description,
-      instructions: this.instructions,
-      status: "idle",
-      model: this.getModelName(),
-      // Create a node representing this agent
-      node_id: createNodeId(NodeType.AGENT, this.id),
-
-      tools: this.toolManager.getTools().map((tool) => ({
-        ...tool,
-        node_id: createNodeId(NodeType.TOOL, tool.name, this.id),
-      })),
-
-      // Add node_id to SubAgents
-      subAgents: this.subAgentManager.getSubAgentDetails().map((subAgent) => ({
-        ...subAgent,
-        node_id: createNodeId(NodeType.SUBAGENT, subAgent.id),
-      })),
-
-      memory: {
-        ...this.memoryManager.getMemoryState(),
-        node_id: createNodeId(NodeType.MEMORY, this.id),
-      },
-
-      retriever: this.retriever
-        ? {
-            name: this.retriever.tool.name,
-            description: this.retriever.tool.description,
-            status: "idle", // Default status
-            node_id: createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id),
-          }
-        : null,
-    };
-  }
-
-  /**
-   * Get agent's history
-   */
-  public async getHistory(): Promise<AgentHistoryEntry[]> {
-    return await this.historyManager.getEntries();
-  }
-
-  /**
-   * Add step to history immediately
-   */
-  private addStepToHistory(step: StepWithContent, context: OperationContext): void {
-    this.historyManager.addStepsToEntry(context.historyEntry.id, [step]);
-  }
-
-  /**
-   * Update history entry
-   */
-  private async updateHistoryEntry(
-    context: OperationContext,
-    updates: Partial<AgentHistoryEntry>,
-  ): Promise<void> {
-    await this.historyManager.updateEntry(context.historyEntry.id, updates);
-  }
-
-  /**
-   * Fix delete operator usage for better performance
-   */
-  private addToolEvent = (
-    context: OperationContext,
-    toolName: string,
-    status: EventStatus,
-    data: Partial<StandardEventData> & Record<string, unknown> = {},
-  ): void => {
-    // Ensure the toolSpans map exists on the context
-    if (!context.toolSpans) {
-      context.toolSpans = new Map<string, Span>();
-    }
-
-    const toolCallId = data.toolId?.toString();
-
-    if (toolCallId && status === "working") {
-      if (context.toolSpans.has(toolCallId)) {
-        console.warn(`[VoltAgentCore] OTEL tool span already exists for toolCallId: ${toolCallId}`);
-      } else {
-        // Call the helper function
-        const toolSpan = startToolSpan({
-          toolName,
-          toolCallId,
-          toolInput: data.input,
-          agentId: this.id,
-          parentSpan: context.otelSpan, // Pass the parent operation span
-        });
-        // Store the active tool span
-        context.toolSpans.set(toolCallId, toolSpan);
-      }
-    }
-  };
-
-  /**
-   * Agent event creator (update)
-   */
-  private addAgentEvent = (
-    context: OperationContext,
-    eventName: string,
-    status: AgentStatus,
-    data: Partial<StandardEventData> & Record<string, unknown> = {},
-  ): void => {
-    // Retrieve the OpenTelemetry span from the context
-    const otelSpan = context.otelSpan;
-
-    if (otelSpan) {
-      endOperationSpan({
-        span: otelSpan,
-        status: status as any,
-        data,
-      });
-    } else {
-      console.warn(
-        `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
-      );
-    }
-  };
-
-  /**
-   * Helper method to enrich and end an OpenTelemetry span associated with a tool call.
-   */
-  private _endOtelToolSpan(
-    context: OperationContext,
-    toolCallId: string,
-    toolName: string,
-    resultData: { result?: any; content?: any; error?: any },
-  ): void {
-    const toolSpan = context.toolSpans?.get(toolCallId);
-
-    if (toolSpan) {
-      endToolSpan({ span: toolSpan, resultData });
-      context.toolSpans?.delete(toolCallId); // Remove from map after ending
-    } else {
-      console.warn(
-        `[VoltAgentCore] OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
-      );
-    }
-  }
-
-  /**
    * Generate a text response without streaming
    */
-  async generateText(
+  public async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferGenerateTextResponse<TProvider>> {
@@ -1132,7 +751,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a text response
    */
-  async streamText(
+  public async streamText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferStreamTextResponse<TProvider>> {
@@ -1596,7 +1215,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a structured object response
    */
-  async generateObject<T extends z.ZodType>(
+  public async generateObject<T extends z.ZodType>(
     input: string | BaseMessage[],
     schema: T,
     options: PublicGenerateOptions = {},
@@ -1857,7 +1476,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<T extends z.ZodType>(
+  public async streamObject<T extends z.ZodType>(
     input: string | BaseMessage[],
     schema: T,
     options: PublicGenerateOptions = {},
@@ -2228,7 +1847,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Delegates to ToolManager's addItems method.
    * @returns Object containing added items (difficult to track precisely here, maybe simplify return)
    */
-  addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] } {
+  public addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] } {
     // ToolManager handles the logic of adding tools vs toolkits and checking conflicts
     this.toolManager.addItems(items);
 
@@ -2248,6 +1867,538 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   public _INTERNAL_setVoltAgentExporter(exporter: VoltAgentExporter): void {
     if (this.historyManager) {
       this.historyManager.setExporter(exporter);
+    }
+  }
+
+  /**
+   * Get full agent state including tools status
+   */
+  public getFullState() {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      instructions: this.instructions,
+      status: "idle",
+      model: this.getModelName(),
+      // Create a node representing this agent
+      node_id: createNodeId(NodeType.AGENT, this.id),
+
+      tools: this.toolManager.getTools().map((tool) => ({
+        ...tool,
+        node_id: createNodeId(NodeType.TOOL, tool.name, this.id),
+      })),
+
+      // Add node_id to SubAgents
+      subAgents: this.subAgentManager.getSubAgentDetails().map((subAgent) => ({
+        ...subAgent,
+        node_id: createNodeId(NodeType.SUBAGENT, subAgent.id),
+      })),
+
+      memory: {
+        ...this.memoryManager.getMemoryState(),
+        node_id: createNodeId(NodeType.MEMORY, this.id),
+      },
+
+      retriever: this.retriever
+        ? {
+            name: this.retriever.tool.name,
+            description: this.retriever.tool.description,
+            status: "idle", // Default status
+            node_id: createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id),
+          }
+        : null,
+    };
+  }
+
+  /**
+   * Get agent's history
+   */
+  public async getHistory(): Promise<AgentHistoryEntry[]> {
+    return await this.historyManager.getEntries();
+  }
+
+  /**
+   * Get the system message for the agent
+   */
+  protected async getSystemMessage({
+    input,
+    historyEntryId,
+    contextMessages,
+  }: {
+    input?: string | BaseMessage[];
+    historyEntryId: string;
+    contextMessages: BaseMessage[];
+  }): Promise<BaseMessage> {
+    let baseInstructions = this.instructions || ""; // Ensure baseInstructions is a string
+
+    // --- Add Instructions from Toolkits --- (Simplified Logic)
+    let toolInstructions = "";
+    // Get only the toolkits
+    const toolkits = this.toolManager.getToolkits();
+    for (const toolkit of toolkits) {
+      // Check if the toolkit wants its instructions added
+      if (toolkit.addInstructions && toolkit.instructions) {
+        // Append toolkit instructions
+        // Using a simple newline separation for now.
+        toolInstructions += `\n\n${toolkit.instructions}`;
+      }
+    }
+    if (toolInstructions) {
+      baseInstructions = `${baseInstructions}${toolInstructions}`;
+    }
+    // --- End Add Instructions from Toolkits ---
+
+    // Add Markdown Instruction if Enabled
+    if (this.markdown) {
+      baseInstructions = `${baseInstructions}\n\nUse markdown to format your answers.`;
+    }
+
+    let finalInstructions = baseInstructions;
+
+    // If retriever exists and we have input, get context
+    if (this.retriever && input && historyEntryId) {
+      // [NEW EVENT SYSTEM] Create a retriever:start event
+      const retrieverStartTime = new Date().toISOString(); // Capture start time
+      const retrieverStartEvent: RetrieverStartEvent = {
+        id: crypto.randomUUID(),
+        name: "retriever:start",
+        type: "retriever",
+        startTime: retrieverStartTime,
+        status: "running",
+        input: { query: input },
+        output: null,
+        metadata: {
+          displayName: this.retriever?.tool.name || "Retriever",
+          id: this.retriever?.tool.name,
+          agentId: this.id,
+        },
+        traceId: historyEntryId,
+      };
+
+      // Publish the retriever:start event
+      await AgentEventEmitter.getInstance().publishTimelineEvent({
+        agentId: this.id,
+        historyId: historyEntryId,
+        event: retrieverStartEvent,
+      });
+
+      try {
+        const context = await this.retriever.retrieve(input);
+        if (context?.trim()) {
+          finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
+
+          // [NEW EVENT SYSTEM] Create a retriever:success event
+          const retrieverSuccessEvent: RetrieverSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "retriever:success",
+            type: "retriever",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { context },
+            metadata: {
+              displayName: this.retriever.tool.name || "Retriever",
+              id: this.retriever.tool.name,
+              agentId: this.id,
+            },
+            traceId: historyEntryId,
+            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+          };
+
+          // Publish the retriever:success event
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: historyEntryId,
+            event: retrieverSuccessEvent,
+          });
+        } else {
+          // If there was no context returned, still create a success event
+          // but with a note that no context was found
+          const retrieverSuccessEvent: RetrieverSuccessEvent = {
+            id: crypto.randomUUID(),
+            name: "retriever:success",
+            type: "retriever",
+            startTime: new Date().toISOString(), // Use the original start time
+            endTime: new Date().toISOString(), // Current time as end time
+            status: "completed",
+            input: null,
+            output: { context: "No relevant context found" },
+            metadata: {
+              displayName: this.retriever.tool.name || "Retriever",
+              id: this.retriever.tool.name,
+              agentId: this.id,
+            },
+            traceId: historyEntryId,
+            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+          };
+
+          // Publish the retriever:success event (empty result)
+          await AgentEventEmitter.getInstance().publishTimelineEvent({
+            agentId: this.id,
+            historyId: historyEntryId,
+            event: retrieverSuccessEvent,
+          });
+        }
+      } catch (error) {
+        // [NEW EVENT SYSTEM] Create a retriever:error event
+        const retrieverErrorEvent: RetrieverErrorEvent = {
+          id: crypto.randomUUID(),
+          name: "retriever:error",
+          type: "retriever",
+          startTime: new Date().toISOString(), // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "error",
+          level: "ERROR",
+          input: null,
+          output: null,
+          statusMessage: {
+            message: error instanceof Error ? error.message : "Unknown retriever error",
+            ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
+          },
+          metadata: {
+            displayName: this.retriever.tool.name || "Retriever",
+            id: this.retriever.tool.name,
+            agentId: this.id,
+          },
+          traceId: historyEntryId,
+          parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+        };
+
+        // Publish the retriever:error event
+        await AgentEventEmitter.getInstance().publishTimelineEvent({
+          agentId: this.id,
+          historyId: historyEntryId,
+          event: retrieverErrorEvent,
+        });
+
+        console.warn("Failed to retrieve context:", error);
+      }
+    }
+
+    // If the agent has sub-agents, generate supervisor system message
+    if (this.subAgentManager.hasSubAgents()) {
+      // Fetch recent agent history for the sub-agents
+      const agentsMemory = await this.prepareAgentsMemory(contextMessages);
+
+      // Generate the supervisor message with the agents memory inserted
+      finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
+        finalInstructions,
+        agentsMemory,
+      );
+
+      return {
+        role: "system",
+        content: finalInstructions,
+      };
+    }
+
+    return {
+      role: "system",
+      content: `You are ${this.name}. ${finalInstructions}`,
+    };
+  }
+
+  /**
+   * Prepare agents memory for the supervisor system message
+   * This fetches and formats recent interactions with sub-agents
+   */
+  private async prepareAgentsMemory(contextMessages: BaseMessage[]): Promise<string> {
+    try {
+      // Get all sub-agents
+      const subAgents = this.subAgentManager.getSubAgents();
+      if (subAgents.length === 0) return "";
+
+      // Format the agent histories into a readable format
+      const formattedMemory = contextMessages
+        .filter((p) => p.role !== "system")
+        .filter((p) => p.role === "assistant" && !p.content.toString().includes("toolCallId"))
+        .map((message) => {
+          return `${message.role}: ${message.content}`;
+        })
+        .join("\n\n");
+
+      return formattedMemory || "No previous agent interactions found.";
+    } catch (error) {
+      console.warn("Error preparing agents memory:", error);
+      return "Error retrieving agent history.";
+    }
+  }
+
+  /**
+   * Add input to messages array based on type
+   */
+  private async formatInputMessages(
+    messages: BaseMessage[],
+    input: string | BaseMessage[],
+  ): Promise<BaseMessage[]> {
+    if (typeof input === "string") {
+      // Add user message to the messages array
+      return [
+        ...messages,
+        {
+          role: "user",
+          content: input,
+        },
+      ];
+    }
+    // Add all message objects directly
+    return [...messages, ...input];
+  }
+
+  /**
+   * Calculate maximum number of steps based on sub-agents
+   */
+  private calculateMaxSteps(): number {
+    return this.subAgentManager.calculateMaxSteps();
+  }
+
+  /**
+   * Prepare common options for text generation
+   */
+  private prepareTextOptions(options: CommonGenerateOptions = {}): {
+    tools: BaseTool[];
+    maxSteps: number;
+  } {
+    const { tools: dynamicTools, historyEntryId, operationContext } = options;
+    const baseTools = this.toolManager.prepareToolsForGeneration(dynamicTools);
+
+    // Ensure operationContext exists before proceeding
+    if (!operationContext) {
+      console.warn(
+        `[Agent ${this.id}] Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.`,
+      );
+      // Potentially handle this case more gracefully, e.g., throw an error or create a default context
+    }
+
+    // Create the ToolExecutionContext
+    const toolExecutionContext: ToolExecutionContext = {
+      operationContext: operationContext, // Pass the extracted context
+      agentId: this.id,
+      historyEntryId: historyEntryId || "unknown", // Fallback for historyEntryId
+    };
+
+    // Wrap ALL tools to inject ToolExecutionContext
+    const toolsToUse = baseTools.map((tool) => {
+      const originalExecute = tool.execute;
+      return {
+        ...tool,
+        execute: async (args: unknown, execOptions?: ToolExecuteOptions): Promise<unknown> => {
+          // Merge the base toolExecutionContext with any specific execOptions
+          // execOptions provided by the LLM provider might override parts of the context
+          // if needed, but typically we want to ensure our core context is passed.
+          const finalExecOptions: ToolExecuteOptions = {
+            ...toolExecutionContext, // Inject the context here
+            ...execOptions, // Allow provider-specific options to be included
+          };
+
+          // Specifically handle Reasoning Tools if needed (though context is now injected for all)
+          if (tool.name === "think" || tool.name === "analyze") {
+            // Reasoning tools expect ReasoningToolExecuteOptions, which includes agentId and historyEntryId
+            // These are already present in finalExecOptions via toolExecutionContext
+            const reasoningOptions: ReasoningToolExecuteOptions =
+              finalExecOptions as ReasoningToolExecuteOptions; // Cast should be safe here
+
+            if (!reasoningOptions.historyEntryId || reasoningOptions.historyEntryId === "unknown") {
+              console.warn(
+                `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`,
+              );
+            }
+            // Pass the correctly typed options
+            return originalExecute(args, reasoningOptions);
+          }
+
+          // Execute regular tools with the injected context
+          return originalExecute(args, finalExecOptions);
+        },
+      };
+    });
+
+    // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
+    if (this.subAgentManager.hasSubAgents()) {
+      // Always create a delegate tool with the current operationContext
+      const delegateTool = this.subAgentManager.createDelegateTool({
+        sourceAgent: this,
+        currentHistoryEntryId: historyEntryId,
+        operationContext: options.operationContext,
+        ...options,
+      });
+
+      // Replace existing delegate tool if any
+      const delegateIndex = toolsToUse.findIndex((tool) => tool.name === "delegate_task");
+      if (delegateIndex >= 0) {
+        toolsToUse[delegateIndex] = delegateTool;
+      } else {
+        toolsToUse.push(delegateTool);
+
+        // Add the delegate tool to the tool manager only if it doesn't exist yet
+        // This logic might need refinement if delegate tool should always be added/replaced
+        // For now, assume adding if not present is correct.
+        // this.toolManager.addTools([delegateTool]); // Re-consider if this is needed or handled by prepareToolsForGeneration
+      }
+    }
+
+    return {
+      tools: toolsToUse,
+      maxSteps: this.calculateMaxSteps(),
+    };
+  }
+
+  /**
+   * Initialize a new history entry
+   * @param input User input
+   * @param initialStatus Initial status
+   * @param options Options including parent context
+   * @returns Created operation context
+   */
+  private async initializeHistory(
+    input: string | BaseMessage[],
+    initialStatus: AgentStatus = "working",
+    options: {
+      parentAgentId?: string;
+      parentHistoryEntryId?: string;
+      operationName: string;
+      userContext?: Map<string | symbol, unknown>;
+      userId?: string;
+      conversationId?: string;
+    } = {
+      operationName: "unknown",
+    },
+  ): Promise<OperationContext> {
+    const otelSpan = startOperationSpan({
+      agentId: this.id,
+      agentName: this.name,
+      operationName: options.operationName,
+      parentAgentId: options.parentAgentId,
+      parentHistoryEntryId: options.parentHistoryEntryId,
+      modelName: this.getModelName(),
+    });
+
+    const historyEntry = await this.historyManager.addEntry({
+      input,
+      output: "",
+      status: initialStatus,
+      steps: [],
+      options: {
+        metadata: {
+          agentSnapshot: this.getFullState(),
+        },
+      },
+      userId: options.userId,
+      conversationId: options.conversationId,
+      model: this.getModelName(),
+    });
+
+    const opContext: OperationContext = {
+      operationId: historyEntry.id,
+      userContext: options.userContext
+        ? new Map(options.userContext)
+        : new Map<string | symbol, unknown>(),
+      historyEntry,
+      isActive: true,
+      parentAgentId: options.parentAgentId,
+      parentHistoryEntryId: options.parentHistoryEntryId,
+      otelSpan: otelSpan,
+    };
+
+    return opContext;
+  }
+
+  /**
+   * Add step to history immediately
+   */
+  private addStepToHistory(step: StepWithContent, context: OperationContext): void {
+    this.historyManager.addStepsToEntry(context.historyEntry.id, [step]);
+  }
+
+  /**
+   * Update history entry
+   */
+  private async updateHistoryEntry(
+    context: OperationContext,
+    updates: Partial<AgentHistoryEntry>,
+  ): Promise<void> {
+    await this.historyManager.updateEntry(context.historyEntry.id, updates);
+  }
+
+  /**
+   * Fix delete operator usage for better performance
+   */
+  private addToolEvent = (
+    context: OperationContext,
+    toolName: string,
+    status: EventStatus,
+    data: Partial<StandardEventData> & Record<string, unknown> = {},
+  ): void => {
+    // Ensure the toolSpans map exists on the context
+    if (!context.toolSpans) {
+      context.toolSpans = new Map<string, Span>();
+    }
+
+    const toolCallId = data.toolId?.toString();
+
+    if (toolCallId && status === "working") {
+      if (context.toolSpans.has(toolCallId)) {
+        console.warn(`[VoltAgentCore] OTEL tool span already exists for toolCallId: ${toolCallId}`);
+      } else {
+        // Call the helper function
+        const toolSpan = startToolSpan({
+          toolName,
+          toolCallId,
+          toolInput: data.input,
+          agentId: this.id,
+          parentSpan: context.otelSpan, // Pass the parent operation span
+        });
+        // Store the active tool span
+        context.toolSpans.set(toolCallId, toolSpan);
+      }
+    }
+  };
+
+  /**
+   * Agent event creator (update)
+   */
+  private addAgentEvent = (
+    context: OperationContext,
+    eventName: string,
+    status: AgentStatus,
+    data: Partial<StandardEventData> & Record<string, unknown> = {},
+  ): void => {
+    // Retrieve the OpenTelemetry span from the context
+    const otelSpan = context.otelSpan;
+
+    if (otelSpan) {
+      endOperationSpan({
+        span: otelSpan,
+        status: status as any,
+        data,
+      });
+    } else {
+      console.warn(
+        `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
+      );
+    }
+  };
+
+  /**
+   * Helper method to enrich and end an OpenTelemetry span associated with a tool call.
+   */
+  private _endOtelToolSpan(
+    context: OperationContext,
+    toolCallId: string,
+    toolName: string,
+    resultData: { result?: any; content?: any; error?: any },
+  ): void {
+    const toolSpan = context.toolSpans?.get(toolCallId);
+
+    if (toolSpan) {
+      endToolSpan({ span: toolSpan, resultData });
+      context.toolSpans?.delete(toolCallId); // Remove from map after ending
+    } else {
+      console.warn(
+        `[VoltAgentCore] OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
+      );
     }
   }
 }
