@@ -1,4 +1,3 @@
-import devLogger from "../../internal/dev-logger";
 import type { Tool } from "../../tool";
 import { MCPClient } from "../client/index";
 import type { AnyToolConfig, MCPServerConfig, ToolsetWithTools } from "../types";
@@ -66,7 +65,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
             break;
           }
         }
-        devLogger.error(`Error disconnecting client ${serverName}:`, error);
+        console.error(`Error disconnecting client ${serverName}:`, error);
       }),
     );
 
@@ -87,7 +86,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
         const agentTools = await client.getAgentTools();
         return Object.values(agentTools);
       } catch (error) {
-        devLogger.error(`Error fetching agent tools from server ${serverName}:`, error);
+        console.error(`Error fetching agent tools from server ${serverName}:`, error);
         return []; // Return empty array for this server on error
       }
     });
@@ -111,7 +110,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
         const rawToolsResult: unknown = await client.listTools();
         return { serverName, rawToolsResult };
       } catch (error) {
-        devLogger.error(`Error fetching raw tools from server ${serverName}:`, error);
+        console.error(`Error fetching raw tools from server ${serverName}:`, error);
         return null;
       }
     });
@@ -125,7 +124,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
           if (this.isAnyToolConfigStructure(toolConfig)) {
             allRawTools[`${result.serverName}.${toolName}`] = toolConfig;
           } else {
-            devLogger.warn(
+            console.warn(
               `Tool '${toolName}' from server '${result.serverName}' has unexpected structure, skipping.`,
             );
           }
@@ -157,7 +156,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
           return { serverName, toolset };
         }
       } catch (error) {
-        devLogger.error(`Error fetching agent toolset for server ${serverName}:`, error);
+        console.error(`Error fetching agent toolset for server ${serverName}:`, error);
       }
       return null; // Indicate failure or no tools for this server
     });
@@ -204,13 +203,13 @@ export class MCPConfiguration<TServerKeys extends string = string> {
               rawToolsResult: rawToolsResult as Record<string, AnyToolConfig>,
             };
           } else {
-            devLogger.warn(
+            console.warn(
               `Not all tools from server '${serverName}' have the expected structure, skipping toolset.`,
             );
           }
         }
       } catch (error) {
-        devLogger.error(`Error fetching raw toolset for server ${serverName}:`, error);
+        console.error(`Error fetching raw toolset for server ${serverName}:`, error);
       }
       return null;
     });
@@ -233,7 +232,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
   public async getClient(serverName: TServerKeys): Promise<MCPClient | undefined> {
     const serverConfig = this.serverConfigs[serverName];
     if (!serverConfig) {
-      devLogger.warn(`No configuration found for server: ${serverName}`);
+      console.warn(`No configuration found for server: ${serverName}`);
       return undefined;
     }
     try {
@@ -289,7 +288,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
         await cachedClient.connect();
         return cachedClient;
       } catch (connectionError) {
-        devLogger.warn(
+        console.warn(
           `Reconnection check failed for client ${serverName}, attempting recreation:`,
           connectionError instanceof Error ? connectionError.message : String(connectionError),
         );
@@ -297,7 +296,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
       }
     }
 
-    devLogger.info(`Creating new MCP connection for server: ${serverName as string}`);
+    console.debug(`Creating new MCP connection for server: ${serverName as string}`);
     const newClient = new MCPClient({
       clientInfo: {
         name: serverName as string,
@@ -309,11 +308,11 @@ export class MCPConfiguration<TServerKeys extends string = string> {
     try {
       await newClient.connect();
       this.mcpClientsById.set(serverName, newClient);
-      devLogger.info(`Successfully connected to MCP server: ${serverName as string}`);
+      console.debug(`Successfully connected to MCP server: ${serverName as string}`);
       return newClient;
     } catch (initialConnectionError) {
       this.mcpClientsById.delete(serverName);
-      devLogger.error(`Failed to connect to MCP server ${serverName}:`, initialConnectionError);
+      console.error(`Failed to connect to MCP server ${serverName}:`, initialConnectionError);
       throw new Error(
         `Connection failure for server ${serverName}: ${initialConnectionError instanceof Error ? initialConnectionError.message : String(initialConnectionError)}`,
       );
