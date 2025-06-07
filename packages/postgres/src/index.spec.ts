@@ -1,5 +1,5 @@
-import { PostgresStorage } from ".";
 import type { Conversation, MemoryMessage } from "@voltagent/core";
+import { PostgresStorage } from ".";
 
 // Mock pg Pool
 const mockQuery = jest.fn();
@@ -35,6 +35,7 @@ const createMessage = (overrides: Partial<MemoryMessage> = {}): MemoryMessage =>
 const createConversation = (overrides: Partial<Conversation> = {}): Conversation => ({
   id: "test-conversation-id",
   resourceId: "test-resource",
+  userId: "test-user",
   title: "Test Conversation",
   metadata: {},
   createdAt: new Date().toISOString(),
@@ -145,16 +146,42 @@ describe("PostgresStorage", () => {
 
   describe("Message Operations", () => {
     it("should add a message", async () => {
+      // First create a conversation
+      const conversation = createConversation({ id: "conversation1" });
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: conversation.id,
+            resource_id: conversation.resourceId,
+            user_id: conversation.userId,
+            title: conversation.title,
+            metadata: conversation.metadata,
+            created_at: conversation.createdAt,
+            updated_at: conversation.updatedAt,
+          },
+        ],
+      });
+
+      await storage.createConversation({
+        id: conversation.id,
+        resourceId: conversation.resourceId,
+        userId: conversation.userId,
+        title: conversation.title,
+        metadata: conversation.metadata,
+      });
+
+      // Now add a message
       const message = createMessage();
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // For BEGIN transaction
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For message insert
-      mockQuery.mockResolvedValueOnce({ rows: [] }); // For cleanup query
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: 1 }] }); // For count query
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // For COMMIT transaction
 
       await storage.addMessage(message, "user1", "conversation1");
 
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO"),
         expect.arrayContaining([
-          "user1",
           "conversation1",
           message.id,
           message.role,
@@ -197,21 +224,48 @@ describe("PostgresStorage", () => {
     it("should clear messages", async () => {
       await storage.clearMessages({ userId: "user1", conversationId: "conversation1" });
 
-      expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("DELETE FROM"), [
-        "user1",
-        "conversation1",
-      ]);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM"),
+        expect.arrayContaining(["conversation1", "user1"]),
+      );
     });
 
     it("should respect storage limit", async () => {
-      const message = createMessage();
-      mockQuery.mockResolvedValueOnce({ rows: [] }); // For message insert
-      mockQuery.mockResolvedValueOnce({ rows: [] }); // For cleanup query
-
       const limitedStorage = new PostgresStorage({
         connection: "postgresql://test",
         storageLimit: 1,
       });
+
+      // First create a conversation
+      const conversation = createConversation({ id: "conversation1" });
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: conversation.id,
+            resource_id: conversation.resourceId,
+            user_id: conversation.userId,
+            title: conversation.title,
+            metadata: JSON.stringify(conversation.metadata),
+            created_at: conversation.createdAt,
+            updated_at: conversation.updatedAt,
+          },
+        ],
+      });
+
+      await limitedStorage.createConversation({
+        id: conversation.id,
+        resourceId: conversation.resourceId,
+        userId: conversation.userId,
+        title: conversation.title,
+        metadata: conversation.metadata,
+      });
+
+      const message = createMessage();
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // For BEGIN transaction
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // For message insert
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: 2 }] }); // For count query (exceeds limit)
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // For cleanup query
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // For COMMIT transaction
 
       await limitedStorage.addMessage(message, "user1", "conversation1");
 
@@ -230,6 +284,7 @@ describe("PostgresStorage", () => {
           {
             id: conversation.id,
             resource_id: conversation.resourceId,
+            user_id: conversation.userId,
             title: conversation.title,
             metadata: conversation.metadata,
             created_at: conversation.createdAt,
@@ -241,6 +296,7 @@ describe("PostgresStorage", () => {
       const result = await storage.createConversation({
         id: conversation.id,
         resourceId: conversation.resourceId,
+        userId: conversation.userId,
         title: conversation.title,
         metadata: conversation.metadata,
       });
@@ -250,6 +306,7 @@ describe("PostgresStorage", () => {
         expect.arrayContaining([
           conversation.id,
           conversation.resourceId,
+          conversation.userId,
           conversation.title,
           JSON.stringify(conversation.metadata),
         ]),
@@ -264,6 +321,7 @@ describe("PostgresStorage", () => {
           {
             id: conversation.id,
             resource_id: conversation.resourceId,
+            user_id: conversation.userId,
             title: conversation.title,
             metadata: conversation.metadata,
             created_at: conversation.createdAt,
@@ -284,6 +342,7 @@ describe("PostgresStorage", () => {
         rows: conversations.map((conv) => ({
           id: conv.id,
           resource_id: conv.resourceId,
+          user_id: conv.userId,
           title: conv.title,
           metadata: conv.metadata,
           created_at: conv.createdAt,
@@ -306,6 +365,7 @@ describe("PostgresStorage", () => {
           {
             id: updatedConversation.id,
             resource_id: updatedConversation.resourceId,
+            user_id: updatedConversation.userId,
             title: updatedConversation.title,
             metadata: updatedConversation.metadata,
             created_at: updatedConversation.createdAt,
@@ -334,6 +394,85 @@ describe("PostgresStorage", () => {
       expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("DELETE FROM"), [
         conversation.id,
       ]);
+    });
+
+    it("should get conversations by user ID", async () => {
+      const conversations = [
+        createConversation({ userId: "user1" }),
+        createConversation({ userId: "user1" }),
+      ];
+      mockQuery.mockResolvedValueOnce({
+        rows: conversations.map((conv) => ({
+          id: conv.id,
+          resource_id: conv.resourceId,
+          user_id: conv.userId,
+          title: conv.title,
+          metadata: conv.metadata,
+          created_at: conv.createdAt,
+          updated_at: conv.updatedAt,
+        })),
+      });
+
+      const result = await storage.getConversationsByUserId("user1", { limit: 10 });
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT"),
+        expect.arrayContaining(["user1", 10, 0]),
+      );
+      expect(result).toEqual(conversations);
+    });
+
+    it("should query conversations with multiple filters", async () => {
+      const conversations = [createConversation({ userId: "user1", resourceId: "resource1" })];
+      mockQuery.mockResolvedValueOnce({
+        rows: conversations.map((conv) => ({
+          id: conv.id,
+          resource_id: conv.resourceId,
+          user_id: conv.userId,
+          title: conv.title,
+          metadata: conv.metadata,
+          created_at: conv.createdAt,
+          updated_at: conv.updatedAt,
+        })),
+      });
+
+      const result = await storage.queryConversations({
+        userId: "user1",
+        resourceId: "resource1",
+        limit: 5,
+        orderBy: "created_at",
+        orderDirection: "ASC",
+      });
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT"),
+        expect.arrayContaining(["user1", "resource1", 5, 0]),
+      );
+      expect(result).toEqual(conversations);
+    });
+
+    it("should get conversation messages", async () => {
+      const messages = [
+        createMessage({ id: "msg1", role: "user" }),
+        createMessage({ id: "msg2", role: "assistant" }),
+      ];
+      mockQuery.mockResolvedValueOnce({
+        rows: messages.map((msg) => ({
+          message_id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          type: msg.type,
+          created_at: msg.createdAt,
+        })),
+      });
+
+      const result = await storage.getConversationMessages("conversation1", { limit: 50 });
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT"),
+        expect.arrayContaining(["conversation1", 50, 0]),
+      );
+      expect(result).toEqual(messages);
     });
   });
 
