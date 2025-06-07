@@ -44,13 +44,19 @@ const myAgentHooks = createHooks({
    * Called after the agent finishes processing a request, successfully or with an error.
    */
   onEnd: async (args: OnEndHookArgs) => {
-    const { agent, output, error, context } = args;
+    const { agent, output, error, messages, context } = args;
     if (error) {
       console.error(`[Hook] Agent ${agent.name} finished with error:`, error.message);
+      console.log(`[Hook] User input was:`, messages[0]?.content);
       // Log detailed error info
       console.error(`[Hook] Error Details:`, JSON.stringify(error, null, 2));
     } else if (output) {
       console.log(`[Hook] Agent ${agent.name} finished successfully.`);
+      console.log(`[Hook] Conversation turn:`, {
+        userInput: messages[0]?.content,
+        assistantResponse: messages[1]?.content,
+      });
+
       // Example: Log usage or analyze the result based on output type
       if ("usage" in output && output.usage) {
         console.log(`[Hook] Token Usage: ${output.usage.totalTokens}`);
@@ -150,15 +156,21 @@ onStart: async ({ agent, context }) => {
 ### `onEnd`
 
 - **Triggered:** After the agent finishes processing a request, either successfully or with an error.
-- **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, context: OperationContext }`
-- **Use Cases:** Cleanup logic, logging completion status and results (success or failure), analyzing final output or error details, recording usage statistics.
+- **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, messages: BaseMessage[], context: OperationContext }`
+- **Use Cases:** Cleanup logic, logging completion status and results (success or failure), analyzing final output or error details, recording usage statistics, storing conversation history.
 - **Note:** The `output` object's specific structure within the `AgentOperationOutput` union depends on the agent method called. Check for specific fields (`text`, `object`) or use type guards. `error` will contain the structured `VoltAgentError` on failure.
+- **Messages Parameter:** The `messages` array contains the current conversation turn:
+  - **On Success:** Contains both user input and assistant response `[userMessage, assistantMessage]`
+  - **On Error:** Contains only the user input `[userMessage]` (no assistant response since generation failed)
+  - **Perfect for storing conversation history** without needing to reconstruct from separate events
 
 ```ts
-// Example: Log the outcome of an operation
-onEnd: async ({ agent, output, error, context }) => {
+// Example: Log the outcome of an operation and store conversation history
+onEnd: async ({ agent, output, error, messages, context }) => {
   if (error) {
     console.error(`Agent ${agent.name} operation ${context.operationId} failed: ${error.message}`);
+    console.log(`User input: "${messages[0]?.content}"`);
+    // Only user input available on error (no assistant response)
   } else {
     // Check output type if needed
     if (output && "text" in output) {
@@ -172,6 +184,13 @@ onEnd: async ({ agent, output, error, context }) => {
     } else {
       console.log(`Agent ${agent.name} operation ${context.operationId} succeeded.`);
     }
+
+    // Log the complete conversation turn
+    console.log(`Conversation turn:`, {
+      user: messages[0]?.content,
+      assistant: messages[1]?.content,
+    });
+
     // Log usage if available
     if (output?.usage) {
       console.log(`  Usage: ${output.usage.totalTokens} tokens`);
@@ -241,6 +260,8 @@ Hooks enable a variety of powerful patterns:
 
 1.  **Logging & Observability**: Track agent execution steps, timings, inputs, outputs, and errors for monitoring and debugging.
 2.  **Analytics**: Collect detailed usage data (token counts, tool usage frequency, success/error rates) for analysis.
-3.  **Request/Response Modification**: (Use with caution) Modify inputs before processing or outputs after generation.
-4.  **State Management**: Initialize or clean up request-specific state or resources.
-5.  **Workflow Orchestration**: Trigger external actions or notifications based on agent events (e.g., notify on tool failure or successful completion with specific output).
+3.  **Conversation History Storage**: Use the `messages` parameter in `onEnd` to store clean conversation turns in databases (perfect for Prisma, MongoDB, or any storage solution).
+4.  **Request/Response Modification**: (Use with caution) Modify inputs before processing or outputs after generation.
+5.  **State Management**: Initialize or clean up request-specific state or resources.
+6.  **Workflow Orchestration**: Trigger external actions or notifications based on agent events (e.g., notify on tool failure or successful completion with specific output).
+7.  **UI Integration**: The `messages` array format is compatible with popular UI libraries like Vercel AI SDK, making it easy to display conversations in chat interfaces.

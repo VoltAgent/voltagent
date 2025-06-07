@@ -1,6 +1,7 @@
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../index";
 import type { OperationContext, VoltAgentError, AgentOperationOutput } from "../types";
+import type { BaseMessage } from "../providers";
 
 // Argument Object Interfaces
 export interface OnStartHookArgs {
@@ -14,6 +15,8 @@ export interface OnEndHookArgs {
   output: AgentOperationOutput | undefined;
   /** The VoltAgentError object if the operation failed. Undefined on success. */
   error: VoltAgentError | undefined;
+  /** The complete conversation messages including user input and assistant responses */
+  messages: BaseMessage[];
   context: OperationContext;
 }
 
