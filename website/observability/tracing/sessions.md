@@ -14,6 +14,8 @@ Include a `conversationId` parameter when creating traces. Use any string identi
 
 <SessionExplorer />
 
+![Trace creation in dashboard](https://cdn.voltagent.dev/docs/sdk-doc-demo-screenshots/trace-start.png)
+
 ## Session Replay
 
 VoltOps dashboard automatically groups traces by `conversationId`, enabling you to:
