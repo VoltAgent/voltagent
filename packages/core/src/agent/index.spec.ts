@@ -125,6 +125,11 @@ const mockMemory = {
       },
     ),
 
+  // Add missing user-centric conversation methods
+  getConversationsByUserId: jest.fn().mockImplementation(async () => []),
+  queryConversations: jest.fn().mockImplementation(async () => []),
+  getConversationMessages: jest.fn().mockImplementation(async () => []),
+
   // Special test requirements
   getHistoryEntries: jest.fn().mockImplementation(async () => {
     return [createMockHistoryEntry("Test input")];
