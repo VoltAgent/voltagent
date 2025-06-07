@@ -1,5 +1,6 @@
 import type { ClientCapabilities } from "@modelcontextprotocol/sdk/types.js";
 import type { Tool } from "../tool";
+import type * as xsschema from "xsschema";
 
 /**
  * Client information for MCP
@@ -170,7 +171,7 @@ export type MCPToolCall = {
   /**
    * Arguments to pass to the tool
    */
-  arguments: Record<string, unknown>;
+  arguments: xsschema.JsonSchema;
 };
 
 /**

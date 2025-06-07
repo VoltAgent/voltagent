@@ -1041,6 +1041,9 @@ importers:
       '@voltagent/core':
         specifier: ^0.1.22
         version: link:../core
+      xsschema:
+        specifier: 0.3.0-beta.2
+        version: 0.3.0-beta.2(effect@3.12.7)(zod@3.24.2)
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -1184,6 +1187,9 @@ importers:
       ws:
         specifier: ^8.18.1
         version: 8.18.1
+      xsschema:
+        specifier: 0.3.0-beta.2
+        version: 0.3.0-beta.2(effect@3.12.7)(zod@3.24.2)
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -6944,12 +6950,12 @@ packages:
     resolution: {integrity: sha512-mXezX18gebJsFObBR4D2undF4PqA+GdraiffejIOL7SRWfJEyBCBYXMtL8CqbA/ESU2DuPQUFChusJA4dF1+ig==}
     dependencies:
       '@xsai/generate-text': 0.2.0
-      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
+      xsschema: 0.3.0-beta.3(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
@@ -6993,12 +6999,12 @@ packages:
     resolution: {integrity: sha512-Uanx1CVeYEL8Au/T1VK9viNJWj11pIHuK1bPte3P0XcJKyztI+h07LFWqXeanPMxRe57XSUvV1gOc3ynPYTO/g==}
     dependencies:
       '@xsai/stream-text': 0.2.0
-      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
+      xsschema: 0.3.0-beta.3(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
@@ -7014,12 +7020,12 @@ packages:
     dependencies:
       '@xsai/shared': 0.2.0
       '@xsai/shared-chat': 0.2.0
-      xsschema: 0.2.0(effect@3.12.7)(zod@3.24.2)
+      xsschema: 0.3.0-beta.3(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
@@ -16519,30 +16525,57 @@ packages:
       '@xsai/utils-stream': 0.2.0
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
-      - '@zod/mini'
       - arktype
       - effect
+      - sury
       - zod
       - zod-to-json-schema
     dev: false
 
-  /xsschema@0.2.0(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-UPPI+jP6pn/49q8w7Faz4CYRn33VvG7ngfNQ79nwqTauFP4/m3VusB095a4d5uZ4/TNip5GDxASpzKDoEouN5Q==}
+  /xsschema@0.3.0-beta.2(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-J3DZQuitaGtYqikylm+cJvlI/aatbWvPj2GIzjeUO03opEG/+nIQMLVdZhUjFFE6eEWYDjgtrBLevkqewVcjqQ==}
     peerDependencies:
       '@valibot/to-json-schema': ^1.0.0
-      '@zod/mini': ^4.0.0-beta
       arktype: ^2.1.16
       effect: ^3.14.5
-      zod: ^3.24.3 || ^4.0.0-beta
+      sury: ^10.0.0-rc
+      zod: ^3.25.0
       zod-to-json-schema: ^3.24.5
     peerDependenciesMeta:
       '@valibot/to-json-schema':
         optional: true
-      '@zod/mini':
+      arktype:
+        optional: true
+      effect:
+        optional: true
+      sury:
+        optional: true
+      zod:
+        optional: true
+      zod-to-json-schema:
+        optional: true
+    dependencies:
+      effect: 3.12.7
+      zod: 3.24.2
+    dev: false
+
+  /xsschema@0.3.0-beta.3(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-8fKI0Kqxs7npz3ElebNCeGdS0HDuS2qL3IqHK5O53yCdh419hcr3GQillwN39TNFasHjbMLQ+DjSwpY0NONdnQ==}
+    peerDependencies:
+      '@valibot/to-json-schema': ^1.0.0
+      arktype: ^2.1.16
+      effect: ^3.14.5
+      sury: ^10.0.0-rc
+      zod: ^3.25.0
+      zod-to-json-schema: ^3.24.5
+    peerDependenciesMeta:
+      '@valibot/to-json-schema':
         optional: true
       arktype:
         optional: true
       effect:
+        optional: true
+      sury:
         optional: true
       zod:
         optional: true

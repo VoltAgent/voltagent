@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type * as xsschema from "xsschema";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
 import type { StandardEventData } from "../events/types";
@@ -155,7 +155,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         voice?: Voice;
         markdown?: boolean;
         telemetryExporter?: VoltAgentExporter;
-      },
+      }
   ) {
     this.id = options.id || options.name;
     this.name = options.name;
@@ -191,7 +191,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.id,
       this.memoryManager,
       options.maxHistoryEntries || 0,
-      chosenExporter,
+      chosenExporter
     );
   }
 
@@ -362,7 +362,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Generate the supervisor message with the agents memory inserted
       finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
         finalInstructions,
-        agentsMemory,
+        agentsMemory
       );
 
       return {
@@ -408,7 +408,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    */
   private async formatInputMessages(
     messages: BaseMessage[],
-    input: string | BaseMessage[],
+    input: string | BaseMessage[]
   ): Promise<BaseMessage[]> {
     if (typeof input === "string") {
       // Add user message to the messages array
@@ -444,7 +444,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Ensure operationContext exists before proceeding
     if (!operationContext) {
       devLogger.warn(
-        `[Agent ${this.id}] Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.`,
+        `[Agent ${this.id}] Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.`
       );
       // Potentially handle this case more gracefully, e.g., throw an error or create a default context
     }
@@ -479,7 +479,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
             if (!reasoningOptions.historyEntryId || reasoningOptions.historyEntryId === "unknown") {
               devLogger.warn(
-                `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`,
+                `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`
               );
             }
             // Pass the correctly typed options
@@ -541,7 +541,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       conversationId?: string;
     } = {
       operationName: "unknown",
-    },
+    }
   ): Promise<OperationContext> {
     const otelSpan = startOperationSpan({
       agentId: this.id,
@@ -642,7 +642,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    */
   private async updateHistoryEntry(
     context: OperationContext,
-    updates: Partial<AgentHistoryEntry>,
+    updates: Partial<AgentHistoryEntry>
   ): Promise<void> {
     await this.historyManager.updateEntry(context.historyEntry.id, updates);
   }
@@ -654,7 +654,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     context: OperationContext,
     toolName: string,
     status: EventStatus,
-    data: Partial<StandardEventData> & Record<string, unknown> = {},
+    data: Partial<StandardEventData> & Record<string, unknown> = {}
   ): void => {
     // Ensure the toolSpans map exists on the context
     if (!context.toolSpans) {
@@ -688,7 +688,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     context: OperationContext,
     eventName: string,
     status: AgentStatus,
-    data: Partial<StandardEventData> & Record<string, unknown> = {},
+    data: Partial<StandardEventData> & Record<string, unknown> = {}
   ): void => {
     // Retrieve the OpenTelemetry span from the context
     const otelSpan = context.otelSpan;
@@ -701,7 +701,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
     } else {
       devLogger.warn(
-        `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
+        `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`
       );
     }
   };
@@ -713,7 +713,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     context: OperationContext,
     toolCallId: string,
     toolName: string,
-    resultData: { result?: any; content?: any; error?: any },
+    resultData: { result?: any; content?: any; error?: any }
   ): void {
     const toolSpan = context.toolSpans?.get(toolCallId);
 
@@ -722,7 +722,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       context.toolSpans?.delete(toolCallId); // Remove from map after ending
     } else {
       devLogger.warn(
-        `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
+        `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`
       );
     }
   }
@@ -732,7 +732,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    */
   async generateText(
     input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions = {}
   ): Promise<InferGenerateTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
@@ -759,7 +759,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         userId,
         initialConversationId,
-        contextLimit,
+        contextLimit
       );
 
     if (operationContext.otelSpan) {
@@ -827,7 +827,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
         userId,
-        finalConversationId,
+        finalConversationId
       );
       const { tools, maxSteps } = this.prepareTextOptions({
         ...internalOptions,
@@ -1153,7 +1153,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    */
   async streamText(
     input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions = {}
   ): Promise<InferStreamTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
@@ -1180,7 +1180,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         userId,
         initialConversationId,
-        contextLimit,
+        contextLimit
       );
 
     if (operationContext.otelSpan) {
@@ -1245,7 +1245,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
       userId,
-      finalConversationId,
+      finalConversationId
     );
     const { tools, maxSteps } = this.prepareTextOptions({
       ...internalOptions,
@@ -1407,7 +1407,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         await onStepFinish(step);
         if (internalOptions.provider?.onStepFinish) {
           await (internalOptions.provider.onStepFinish as (step: StepWithContent) => Promise<void>)(
-            step,
+            step
           );
         }
         this.addStepToHistory(step, operationContext);
@@ -1536,7 +1536,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           } catch (updateError) {
             devLogger.error(
               `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
-              updateError,
+              updateError
             );
           }
           const tool = this.toolManager.getToolByName(toolName);
@@ -1633,10 +1633,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a structured object response
    */
-  async generateObject<T extends z.ZodType>(
+  async generateObject<T extends xsschema.Schema>(
     input: string | BaseMessage[],
     schema: T,
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions = {}
   ): Promise<InferGenerateObjectResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
@@ -1663,7 +1663,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         userId,
         initialConversationId,
-        contextLimit,
+        contextLimit
       );
 
     if (operationContext.otelSpan) {
@@ -1730,7 +1730,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
         userId,
-        finalConversationId,
+        finalConversationId
       );
 
       const response = await this.llm.generateObject({
@@ -1817,7 +1817,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed" as any,
       });
 
-      const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
+      const standardizedOutput: StandardizedObjectResult<xsschema.Infer<T>> = {
         object: response.object,
         usage: response.usage,
         finishReason: response.finishReason,
@@ -1912,10 +1912,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<T extends z.ZodType>(
+  async streamObject<T extends xsschema.Schema>(
     input: string | BaseMessage[],
     schema: T,
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateOptions = {}
   ): Promise<InferStreamObjectResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
@@ -1943,7 +1943,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         userId,
         initialConversationId,
-        contextLimit,
+        contextLimit
       );
 
     if (operationContext.otelSpan) {
@@ -2008,7 +2008,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
       userId,
-      finalConversationId,
+      finalConversationId
     );
 
     try {
@@ -2030,7 +2030,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
           }
         },
-        onFinish: async (result: StreamObjectFinishResult<z.infer<T>>) => {
+        onFinish: async (result: StreamObjectFinishResult<xsschema.Infer<T>>) => {
           if (!operationContext.isActive) {
             return;
           }
@@ -2108,7 +2108,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             context: operationContext,
           });
           if (provider?.onFinish) {
-            await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<T>>)(result);
+            await (provider.onFinish as StreamObjectOnFinishCallback<xsschema.Infer<T>>)(result);
           }
         },
         onError: async (error: VoltAgentError) => {

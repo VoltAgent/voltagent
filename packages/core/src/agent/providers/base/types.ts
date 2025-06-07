@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type * as xsschema from "xsschema";
 import type {
   ProviderOptions,
   ToolExecutionContext,
@@ -191,7 +191,7 @@ export type BaseMessage = {
 };
 
 // Schema types
-export type ToolSchema = z.ZodType;
+export type ToolSchema = xsschema.JsonSchema;
 
 // Base tool types
 export type ToolExecuteOptions = {
@@ -274,7 +274,7 @@ export interface StreamTextOptions<TModel> {
   toolExecutionContext?: ToolExecutionContext;
 }
 
-export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
+export interface GenerateObjectOptions<TModel, TSchema extends xsschema.Schema> {
   messages: BaseMessage[];
   model: TModel;
   schema: TSchema;
@@ -284,13 +284,13 @@ export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
   toolExecutionContext?: ToolExecutionContext;
 }
 
-export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
+export interface StreamObjectOptions<TModel, TSchema extends xsschema.Schema> {
   messages: BaseMessage[];
   model: TModel;
   schema: TSchema;
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
-  onFinish?: StreamObjectOnFinishCallback<z.infer<TSchema>>;
+  onFinish?: StreamObjectOnFinishCallback<xsschema.Infer<TSchema>>;
   onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
   toolExecutionContext?: ToolExecutionContext;
@@ -368,13 +368,15 @@ export type LLMProvider<TProvider> = {
    * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
    * @throws {VoltAgentError} If an error occurs during generation.
    */
-  generateObject<TSchema extends z.ZodType>(
+  generateObject<TSchema extends xsschema.Schema>(
     options: GenerateObjectOptions<InferModel<TProvider>, TSchema>,
-  ): Promise<ProviderObjectResponse<InferGenerateObjectResponse<TProvider>, z.infer<TSchema>>>;
+  ): Promise<
+    ProviderObjectResponse<InferGenerateObjectResponse<TProvider>, xsschema.Infer<TSchema>>
+  >;
 
-  streamObject<TSchema extends z.ZodType>(
+  streamObject<TSchema extends xsschema.Schema>(
     options: StreamObjectOptions<InferModel<TProvider>, TSchema>,
-  ): Promise<ProviderObjectStreamResponse<InferStreamResponse<TProvider>, z.infer<TSchema>>>;
+  ): Promise<ProviderObjectStreamResponse<InferStreamResponse<TProvider>, xsschema.Infer<TSchema>>>;
 
   // Message conversion methods
   toMessage(message: BaseMessage): InferMessage<TProvider>;
