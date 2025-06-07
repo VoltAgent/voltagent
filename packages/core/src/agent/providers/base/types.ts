@@ -191,7 +191,7 @@ export type BaseMessage = {
 };
 
 // Schema types
-export type ToolSchema = xsschema.Schema;
+export type ToolSchema = xsschema.JsonSchema;
 
 // Base tool types
 export type ToolExecuteOptions = {

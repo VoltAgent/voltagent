@@ -10,7 +10,6 @@ import type {
   StepWithContent,
   VoltAgentError,
 } from "@voltagent/core";
-import { z } from "zod";
 
 /**
  * Processes text content into a text content block
@@ -169,111 +168,6 @@ export function processContentPart(part: any): ContentBlockParam | null {
   }
 
   return null;
-}
-
-/**
- * Converts a Zod schema to JSON Schema format that Anthropic expects
- * @param {z.ZodType<any>} schema - The Zod schema to convert
- * @returns {Object} A JSON Schema object with type, properties, and required fields
- * @throws {Error} If the schema is not a Zod object
- */
-export function zodToJsonSchema(schema: z.ZodType<any>): {
-  type: "object";
-  properties: Record<string, unknown>;
-  required?: string[];
-} {
-  // Check if it's a ZodObject by checking for the typeName property
-  if (
-    schema &&
-    typeof schema === "object" &&
-    "_def" in schema &&
-    schema._def &&
-    typeof schema._def === "object" &&
-    "typeName" in schema._def &&
-    schema._def.typeName === "ZodObject"
-  ) {
-    // Use a safer type assertion approach
-    const def = schema._def as unknown as { shape: () => Record<string, z.ZodTypeAny> };
-    const shape = def.shape();
-    const properties: Record<string, unknown> = {};
-    const required: string[] = [];
-
-    for (const [key, value] of Object.entries(shape)) {
-      const fieldSchema = convertZodField(value as z.ZodTypeAny);
-      properties[key] = fieldSchema;
-
-      // Check if the field is required
-      if (!(value instanceof z.ZodOptional)) {
-        required.push(key);
-      }
-    }
-
-    return {
-      type: "object" as const,
-      properties,
-      ...(required.length > 0 ? { required } : {}),
-    };
-  }
-
-  throw new Error("Root schema must be a Zod object");
-}
-
-/**
- * Helper function to create a base schema with type and optional description
- * @param {z.ZodType} field - The Zod field to extract description from
- * @param {string} type - The type string to use
- * @returns {Object} Schema object with type and optional description
- */
-function getBaseSchema(field: z.ZodType, type: string) {
-  return {
-    type,
-    ...(field.description ? { description: field.description } : {}),
-  };
-}
-
-/**
- * Helper function to handle primitive type fields
- * @param {z.ZodTypeAny} field - The Zod field to process
- * @param {string} type - The type string to use
- * @returns {Object} Schema object with type and optional description
- */
-function handlePrimitiveType(field: z.ZodTypeAny, type: string) {
-  return getBaseSchema(field, type);
-}
-
-/**
- * Converts a Zod field to a JSON Schema field
- * @param {z.ZodTypeAny} zodField - The Zod field to convert
- * @returns {any} The JSON Schema representation of the field
- */
-export function convertZodField(zodField: z.ZodTypeAny): any {
-  if (zodField instanceof z.ZodString) {
-    return handlePrimitiveType(zodField, "string");
-  }
-  if (zodField instanceof z.ZodNumber) {
-    return handlePrimitiveType(zodField, "number");
-  }
-  if (zodField instanceof z.ZodBoolean) {
-    return handlePrimitiveType(zodField, "boolean");
-  }
-  if (zodField instanceof z.ZodArray) {
-    return {
-      type: "array",
-      items: convertZodField(zodField.element),
-      ...(zodField.description ? { description: zodField.description } : {}),
-    };
-  }
-  if (zodField instanceof z.ZodEnum) {
-    return {
-      type: "string",
-      enum: zodField._def.values,
-      ...(zodField.description ? { description: zodField.description } : {}),
-    };
-  }
-  if (zodField instanceof z.ZodOptional) {
-    return convertZodField(zodField.unwrap());
-  }
-  return { type: "string" };
 }
 
 /**

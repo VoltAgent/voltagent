@@ -1041,6 +1041,9 @@ importers:
       '@voltagent/core':
         specifier: ^0.1.22
         version: link:../core
+      xsschema:
+        specifier: 0.3.0-beta.2
+        version: 0.3.0-beta.2(effect@3.12.7)(zod@3.24.2)
       zod:
         specifier: 3.24.2
         version: 3.24.2

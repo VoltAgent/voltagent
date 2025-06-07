@@ -11,8 +11,7 @@ import {
   CallToolResultSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import type * as z from "zod";
-import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import * as xsschema from "xsschema";
 import devLogger from "../../utils/internal/dev-logger";
 import { type Tool, createTool } from "../../tool";
 import type {
@@ -192,16 +191,14 @@ export class MCPClient extends EventEmitter {
         inputSchema: unknown;
       }[]) {
         try {
-          const zodSchema = convertJsonSchemaToZod(
-            toolDef.inputSchema as Record<string, unknown>,
-          ) as unknown as z.ZodType;
+          const jsonSchema = await xsschema.toJsonSchema(toolDef.inputSchema as xsschema.Schema);
           const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`; // Use original separator
 
           const agentTool = createTool({
             name: namespacedToolName,
             description: toolDef.description || `Executes the remote tool: ${toolDef.name}`,
-            parameters: zodSchema,
-            execute: async (args: Record<string, unknown>): Promise<unknown> => {
+            parameters: jsonSchema,
+            execute: async (args: xsschema.JsonSchema): Promise<unknown> => {
               try {
                 const result = await this.callTool({
                   // Use original method name

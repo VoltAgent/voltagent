@@ -13,7 +13,7 @@ import type {
   StreamTextOptions,
   VoltAgentError,
 } from "@voltagent/core";
-import type { z } from "zod";
+import * as xsschema from "xsschema";
 import type {
   AnthropicMessage,
   AnthropicProviderOptions,
@@ -29,7 +29,6 @@ import {
   handleStepFinish,
   processContent,
   processResponseContent,
-  zodToJsonSchema,
 } from "./utils";
 
 export class AnthropicProvider implements LLMProvider<string> {
@@ -80,10 +79,20 @@ export class AnthropicProvider implements LLMProvider<string> {
   }
 
   toTool(tool: BaseTool): AnthropicTool {
+    const jsonSchema = xsschema.toJsonSchemaSync(tool.parameters);
+    if (jsonSchema.type !== "object") {
+      throw new Error("Tool parameters must be an object");
+    }
+
     return {
       name: tool.name,
       description: tool.description,
-      input_schema: zodToJsonSchema(tool.parameters),
+      input_schema: {
+        ...jsonSchema,
+        // Already checked that the type is object above
+        type: "object",
+        properties: jsonSchema.properties ?? {},
+      },
     };
   }
 
@@ -243,11 +252,11 @@ export class AnthropicProvider implements LLMProvider<string> {
     }
   }
 
-  async generateObject<TSchema extends z.ZodType>(
+  async generateObject<TSchema extends xsschema.Schema>(
     options: GenerateObjectOptions<string, TSchema>,
-  ): Promise<ProviderObjectResponse<any, z.infer<TSchema>>> {
+  ): Promise<ProviderObjectResponse<any, xsschema.Infer<TSchema>>> {
     const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
-    const JsonSchema = zodToJsonSchema(options.schema);
+    const JsonSchema = await xsschema.toJsonSchema(options.schema);
     const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. You must return the response in valid JSON Format with proper schema, nothing else `;
 
     const anthropicMessages = this.getAnthropicMessages(options.messages);
@@ -283,7 +292,7 @@ export class AnthropicProvider implements LLMProvider<string> {
         throw new Error(`The JSON returned by Anthropic API is not valid \n ${err}`);
       }
 
-      const parsedResult = options.schema.safeParse(parsedObject);
+      const parsedResult = await xsschema.validate(parsedObject, options.schema);
       if (!parsedResult.success) {
         throw new Error(
           `the response doesn't match the specified schema: ${parsedResult.error.message}`,
@@ -320,12 +329,12 @@ export class AnthropicProvider implements LLMProvider<string> {
     }
   }
 
-  async streamObject<TSchema extends z.ZodType>(
+  async streamObject<TSchema extends xsschema.Schema>(
     options: StreamObjectOptions<string, TSchema>,
-  ): Promise<ProviderObjectStreamResponse<any, z.infer<TSchema>>> {
+  ): Promise<ProviderObjectStreamResponse<any, xsschema.Infer<TSchema>>> {
     try {
       const anthropicMessages = this.getAnthropicMessages(options.messages);
-      const JsonSchema = zodToJsonSchema(options.schema);
+      const JsonSchema = await xsschema.toJsonSchema(options.schema);
       const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. You must return the response in valid JSON Format with proper schema, nothing else `;
       const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
 
@@ -353,7 +362,7 @@ export class AnthropicProvider implements LLMProvider<string> {
                 // Try to parse partial JSON as it comes in
                 try {
                   const partialObject = JSON.parse(accumulatedText);
-                  const parseResult = options.schema.safeParse(partialObject);
+                  const parseResult = await xsschema.validate(partialObject, options.schema);
 
                   if (parseResult.success) {
                     controller.enqueue(parseResult.data);
@@ -366,7 +375,7 @@ export class AnthropicProvider implements LLMProvider<string> {
               if (chunk.type === "message_stop") {
                 try {
                   const parsedObject = JSON.parse(accumulatedText);
-                  const parsedResult = options.schema.safeParse(parsedObject);
+                  const parsedResult = await xsschema.validate(parsedObject, options.schema);
 
                   if (parsedResult.success) {
                     controller.enqueue(parsedResult.data);
