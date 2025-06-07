@@ -10,6 +10,8 @@ By adding structured metadata to your traces, you can categorize, filter, and an
 
 <MetadataUsageExplorer />
 
+Technical metadata helps optimize model performance, track different configurations, and correlate AI behavior with specific parameter settings. Essential for prompt engineering and model tuning.
+
 ## Core Metadata Fields
 
 | Field            | Category                  | Description                                                                  |
@@ -28,7 +30,7 @@ By adding structured metadata to your traces, you can categorize, filter, and an
 | `workflowId`     | Multi-Agent Relationships | Groups agents working together in complex workflows                          |
 | `stage`          | Multi-Agent Relationships | Identifies the current stage in multi-step processes                         |
 
-## Metadata Benefits
+## Why Metadata Important
 
 ### Powerful Filtering and Search
 

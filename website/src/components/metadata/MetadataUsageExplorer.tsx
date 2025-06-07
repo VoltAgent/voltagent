@@ -275,17 +275,12 @@ const MetadataUsageExplorer = () => {
           </div>
 
           {/* Code Example */}
-          <div className="mb-4">
+          <div>
             <h5 className="mb-2 text-base text-emerald-200">Example:</h5>
             <pre className="bg-gray-900 rounded-md p-3 text-sm text-green-300 overflow-x-auto border border-gray-600">
               <code>{selectedUsage.examples[selectedSDK]}</code>
             </pre>
           </div>
-
-          <h5 className="mb-2 text-base text-emerald-200">Use Case:</h5>
-          <p className="leading-relaxed text-gray-200">
-            {selectedUsage.details}
-          </p>
         </div>
       )}
     </div>
