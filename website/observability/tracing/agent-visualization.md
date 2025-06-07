@@ -4,9 +4,13 @@ title: Agent Flow Charts
 
 VoltOps transforms your AI agent workflows into interactive visual flowcharts, making complex multi-agent systems easy to understand and debug. Our node-based visualization shows how agents, tools, and data flow through your AI applications in real-time.
 
+![agent flow](https://cdn.voltagent.dev/docs/voltop-docs/multi-agent.png)
+
 ## Visual Flow Representation
 
 Each trace is automatically rendered as an interactive graph where agents appear as connected nodes, showing the complete execution path from user input to final response. You can see exactly how agents delegate tasks, which tools they use, and how data flows between different components.
+
+![Flow gif](https://cdn.voltagent.dev/docs/voltop-docs/vercel-ai-demo-basic.gif)
 
 ## Key Features
 
