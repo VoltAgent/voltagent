@@ -14,7 +14,6 @@ jest.mock("@libsql/client", () => {
     messages: [
       {
         message_id: "msg-1",
-        user_id: "user-1",
         conversation_id: "conversation-1",
         role: "user",
         content: "Hello",
@@ -23,7 +22,6 @@ jest.mock("@libsql/client", () => {
       },
       {
         message_id: "msg-2",
-        user_id: "user-1",
         conversation_id: "conversation-1",
         role: "assistant",
         content: "Hi there!",
@@ -32,7 +30,6 @@ jest.mock("@libsql/client", () => {
       },
       {
         message_id: "msg-3",
-        user_id: "user-2",
         conversation_id: "conversation-2",
         role: "user",
         content: "Different user",
@@ -44,6 +41,7 @@ jest.mock("@libsql/client", () => {
       {
         id: "conversation-1",
         resource_id: "resource-1",
+        user_id: "user-1",
         title: "First Conversation",
         metadata: JSON.stringify({ isImportant: true }),
         created_at: "2023-01-01T10:00:00.000Z",
@@ -52,6 +50,7 @@ jest.mock("@libsql/client", () => {
       {
         id: "conversation-2",
         resource_id: "resource-1",
+        user_id: "user-2",
         title: "Second Conversation",
         metadata: JSON.stringify({ isImportant: false }),
         created_at: "2023-01-01T11:00:00.000Z",
@@ -77,13 +76,22 @@ jest.mock("@libsql/client", () => {
           return Promise.resolve({ rows: [] });
         }
 
-        // Apply userId filter if present
-        if (args?.includes("user-1")) {
-          filteredMessages = filteredMessages.filter((m) => m.user_id === "user-1");
-        } else if (args?.includes("user-2")) {
-          filteredMessages = filteredMessages.filter((m) => m.user_id === "user-2");
-        } else if (args?.includes("unknown-user")) {
-          return Promise.resolve({ rows: [] }); // Explicit handling for unknown user
+        // Handle JOIN queries with conversations for user filtering
+        if (sql?.includes("INNER JOIN") && sql?.includes("_conversations")) {
+          // Filter by user_id through conversation join
+          if (args?.includes("user-1")) {
+            filteredMessages = filteredMessages.filter((m) => {
+              const conv = mockData.conversations.find((c) => c.id === m.conversation_id);
+              return conv?.user_id === "user-1";
+            });
+          } else if (args?.includes("user-2")) {
+            filteredMessages = filteredMessages.filter((m) => {
+              const conv = mockData.conversations.find((c) => c.id === m.conversation_id);
+              return conv?.user_id === "user-2";
+            });
+          } else if (args?.includes("unknown-user")) {
+            return Promise.resolve({ rows: [] }); // Explicit handling for unknown user
+          }
         }
 
         // Apply conversationId filter if present
@@ -358,6 +366,7 @@ describe("LibSQLStorage", () => {
         const newConversation = await storage.createConversation({
           id: "new-conversation-id",
           resourceId: "resource-new",
+          userId: "test-user",
           title: "New Conversation",
           metadata: { isTest: true },
         });
@@ -367,6 +376,7 @@ describe("LibSQLStorage", () => {
           expect.objectContaining({
             id: expect.any(String),
             resourceId: "resource-new",
+            userId: "test-user",
             title: "New Conversation",
             metadata: { isTest: true },
             createdAt: expect.any(String),
@@ -380,6 +390,7 @@ describe("LibSQLStorage", () => {
         const newConversation = await storage.createConversation({
           id: customId,
           resourceId: "resource-new",
+          userId: "test-user",
           title: "New Conversation",
           metadata: { isTest: true },
         });
@@ -389,6 +400,7 @@ describe("LibSQLStorage", () => {
           expect.objectContaining({
             id: customId,
             resourceId: "resource-new",
+            userId: "test-user",
             title: "New Conversation",
             metadata: { isTest: true },
             createdAt: expect.any(String),
@@ -401,6 +413,7 @@ describe("LibSQLStorage", () => {
         const minimalConversation = await storage.createConversation({
           id: "minimal-conversation-id",
           resourceId: "resource-minimal",
+          userId: "test-user",
           title: "",
           metadata: {},
         });
@@ -409,6 +422,7 @@ describe("LibSQLStorage", () => {
           expect.objectContaining({
             id: expect.any(String),
             resourceId: "resource-minimal",
+            userId: "test-user",
             title: "",
             metadata: {},
           }),
@@ -424,6 +438,7 @@ describe("LibSQLStorage", () => {
           expect.objectContaining({
             id: "conversation-1",
             resourceId: "resource-1",
+            userId: "user-1",
             title: "First Conversation",
             metadata: { isImportant: true },
           }),

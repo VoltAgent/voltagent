@@ -412,6 +412,7 @@ export class InMemoryStorage implements Memory {
     const newConversation: Conversation = {
       id: conversation.id,
       resourceId: conversation.resourceId,
+      userId: conversation.userId,
       title: conversation.title,
       metadata: conversation.metadata,
       createdAt: now,
@@ -448,6 +449,175 @@ export class InMemoryStorage implements Memory {
       .sort((a, b) => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       });
+  }
+
+  /**
+   * Get conversations by user ID with query options
+   * @param userId User ID
+   * @param options Query options
+   * @returns Array of conversations
+   */
+  async getConversationsByUserId(
+    userId: string,
+    options: Omit<import("../types").ConversationQueryOptions, "userId"> = {},
+  ): Promise<Conversation[]> {
+    this.debug(`Getting conversations for user ${userId}`, options);
+
+    const {
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    // Filter conversations by user ID
+    let filtered = Array.from(this.conversations.values()).filter((c) => c.userId === userId);
+
+    // Apply resource filter if specified
+    if (resourceId) {
+      filtered = filtered.filter((c) => c.resourceId === resourceId);
+    }
+
+    // Sort conversations
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (orderBy) {
+        case "created_at":
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case "updated_at":
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+          break;
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        default:
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+      }
+
+      if (orderDirection === "ASC") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      }
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    });
+
+    // Apply pagination
+    if (limit > 0) {
+      filtered = filtered.slice(offset, offset + limit);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Query conversations with advanced options
+   * @param options Query options
+   * @returns Array of conversations
+   */
+  async queryConversations(
+    options: import("../types").ConversationQueryOptions,
+  ): Promise<Conversation[]> {
+    this.debug("Querying conversations", options);
+
+    const {
+      userId,
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    // Start with all conversations
+    let filtered = Array.from(this.conversations.values());
+
+    // Apply user filter if specified
+    if (userId) {
+      filtered = filtered.filter((c) => c.userId === userId);
+    }
+
+    // Apply resource filter if specified
+    if (resourceId) {
+      filtered = filtered.filter((c) => c.resourceId === resourceId);
+    }
+
+    // Sort conversations
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (orderBy) {
+        case "created_at":
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case "updated_at":
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+          break;
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        default:
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+      }
+
+      if (orderDirection === "ASC") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      }
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    });
+
+    // Apply pagination
+    if (limit > 0) {
+      filtered = filtered.slice(offset, offset + limit);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Get all messages for a specific conversation
+   * @param conversationId Conversation ID
+   * @param options Options for pagination
+   * @returns Array of messages
+   */
+  async getConversationMessages(
+    conversationId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<import("../types").MemoryMessage[]> {
+    this.debug(`Getting messages for conversation ${conversationId}`, options);
+
+    const { limit = 100, offset = 0 } = options;
+
+    // Find messages across all users for this conversation
+    const allMessages: import("../types").MemoryMessage[] = [];
+
+    for (const userId in this.storage) {
+      const userMessages = this.storage[userId][conversationId] || [];
+      allMessages.push(...userMessages);
+    }
+
+    // Sort by creation time
+    allMessages.sort((a, b) => {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
+    // Apply pagination
+    if (limit > 0) {
+      return allMessages.slice(offset, offset + limit);
+    }
+
+    return allMessages;
   }
 
   /**

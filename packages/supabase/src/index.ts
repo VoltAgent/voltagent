@@ -1,18 +1,19 @@
+import { type SupabaseClient, createClient } from "@supabase/supabase-js";
 import {
-  type Memory,
   type Conversation,
+  type ConversationQueryOptions,
   type CreateConversationInput,
-  type MessageFilterOptions,
+  type Memory,
   type MemoryMessage,
+  type MessageFilterOptions,
   safeJsonParse,
 } from "@voltagent/core";
 import type { NewTimelineEvent } from "@voltagent/core";
-import { type SupabaseClient, createClient } from "@supabase/supabase-js";
 
 export interface SupabaseMemoryOptions {
   supabaseUrl: string;
   supabaseKey: string;
-  tableName?: string; // Base table name, defaults to 'voltagent_memory'
+  tableName?: string; // Base table name, defaults to "voltagent_memory"
 }
 
 export class SupabaseMemory implements Memory {
@@ -104,9 +105,9 @@ export class SupabaseMemory implements Memory {
   private async checkTimelineEventsTable(): Promise<boolean> {
     try {
       const { error } = await this.client.from(this.timelineEventsTable).select("id").limit(1);
-      return !!error; // If there's an error, table doesn't exist
+      return !!error; // If there"s an error, table doesn"t exist
     } catch {
-      return true; // Table doesn't exist
+      return true; // Table doesn"t exist
     }
   }
 
@@ -119,9 +120,9 @@ export class SupabaseMemory implements Memory {
         .from(this.historyTable)
         .select("id, timestamp, status, input, output, usage, metadata")
         .limit(1);
-      return !!error; // If there's an error, columns don't exist
+      return !!error; // If there"s an error, columns don"t exist
     } catch {
-      return true; // Columns don't exist
+      return true; // Columns don"t exist
     }
   }
 
@@ -226,7 +227,7 @@ CREATE TABLE IF NOT EXISTS ${this.timelineEventsTable} (
     end_time TEXT,
     status TEXT,
     status_message TEXT,
-    level TEXT DEFAULT 'INFO',
+    level TEXT DEFAULT "INFO",
     version TEXT,
     parent_event_id TEXT,
     tags JSONB,
@@ -260,10 +261,10 @@ ON ${this.timelineEventsTable}(status);`);
         console.log(`\n${"=".repeat(100)}`);
         console.log("📋 FRESH INSTALLATION INSTRUCTIONS:");
         console.log("1. Go to your Supabase Dashboard");
-        console.log("2. Click on 'SQL Editor' in the left sidebar");
-        console.log("3. Click 'New Query'");
-        console.log("4. Copy and paste the entire SQL block above");
-        console.log("5. Click 'Run' to execute");
+        console.log('2. Click on "SQL Editor" in the left sidebar');
+        console.log('3. Click "New Query"');
+        console.log("4. Copy and paste the SQL above");
+        console.log('5. Click "Run" to execute');
         console.log("6. Restart your application");
         console.log(`${"=".repeat(100)}\n`);
         return;
@@ -295,7 +296,7 @@ ON ${this.timelineEventsTable}(status);`);
   end_time TEXT,
   status TEXT,
   status_message TEXT,
-  level TEXT DEFAULT 'INFO',
+  level TEXT DEFAULT "INFO",
   version TEXT,
   parent_event_id TEXT,
   tags JSONB,
@@ -353,10 +354,10 @@ ON ${this.historyTable}(agent_id);`);
         console.log(`\n${"=".repeat(100)}`);
         console.log("📋 MIGRATION INSTRUCTIONS:");
         console.log("1. Go to your Supabase Dashboard");
-        console.log("2. Click on 'SQL Editor' in the left sidebar");
-        console.log("3. Click 'New Query'");
-        console.log("4. Copy and paste the entire SQL block above");
-        console.log("5. Click 'Run' to execute");
+        console.log('2. Click on "SQL Editor" in the left sidebar');
+        console.log('3. Click "New Query"');
+        console.log("4. Copy and paste the SQL above");
+        console.log('5. Click "Run" to execute');
         console.log("6. Restart your application");
         console.log(`${"=".repeat(100)}\n`);
       }
@@ -430,7 +431,7 @@ ON ${this.historyTable}(agent_id);`);
       query = query.eq("role", role);
     }
     if (before) {
-      // Assuming 'before' is a timestamp or message ID that can be compared with created_at
+      // Assuming "before" is a timestamp or message ID that can be compared with created_at
       query = query.lt("created_at", before); // Use ISO string format for timestamp
     }
     if (after) {
@@ -463,10 +464,7 @@ ON ${this.historyTable}(agent_id);`);
     );
   }
 
-  async clearMessages(options: {
-    userId: string;
-    conversationId?: string;
-  }): Promise<void> {
+  async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
     const { userId, conversationId = "default" } = options;
 
     const { error } = await this.client
@@ -533,6 +531,7 @@ ON ${this.historyTable}(agent_id);`);
     return {
       id: data.id,
       resourceId: data.resource_id,
+      userId: "default", // TODO: Update when Supabase schema supports user_id
       title: data.title,
       metadata: data.metadata || {},
       createdAt: data.created_at,
@@ -556,6 +555,7 @@ ON ${this.historyTable}(agent_id);`);
       data?.map((row) => ({
         id: row.id,
         resourceId: row.resource_id,
+        userId: "default", // TODO: Update when Supabase schema supports user_id
         title: row.title,
         metadata: row.metadata || {},
         createdAt: row.created_at,
@@ -603,6 +603,7 @@ ON ${this.historyTable}(agent_id);`);
     return {
       id: data.id,
       resourceId: data.resource_id,
+      userId: "default", // TODO: Update when Supabase schema supports user_id
       title: data.title,
       metadata: data.metadata || {},
       createdAt: data.created_at,
@@ -611,28 +612,13 @@ ON ${this.historyTable}(agent_id);`);
   }
 
   async deleteConversation(id: string): Promise<void> {
-    // Delete messages associated with the conversation first
-    const { error: messagesError } = await this.client
-      .from(this.messagesTable)
-      .delete()
-      .eq("conversation_id", id);
+    await this.initialized;
 
-    if (messagesError) {
-      console.error(`Error deleting messages for conversation ${id} from Supabase:`, messagesError);
-      // Decide if we should proceed to delete the conversation record itself
-      // For now, we'll throw to indicate the operation wasn't fully successful
-      throw new Error(`Failed to delete messages for conversation: ${messagesError.message}`);
-    }
+    const { error } = await this.client.from(this.conversationsTable).delete().eq("id", id);
 
-    // Then delete the conversation record
-    const { error: conversationError } = await this.client
-      .from(this.conversationsTable)
-      .delete()
-      .eq("id", id);
-
-    if (conversationError) {
-      console.error(`Error deleting conversation ${id} from Supabase:`, conversationError);
-      throw new Error(`Failed to delete conversation record: ${conversationError.message}`);
+    if (error) {
+      console.error("Error deleting conversation:", error);
+      throw new Error("Failed to delete conversation");
     }
   }
 
@@ -1117,7 +1103,7 @@ ON ${this.historyTable}(agent_id);`);
           .limit(1);
 
         if (sampleError) {
-          // Table doesn't exist or we can't access it
+          // Table doesn"t exist or we can"t access it
           console.log(`${oldTableName} table not found, migration not needed`);
           return {
             success: true,
@@ -1155,7 +1141,7 @@ ON ${this.historyTable}(agent_id);`);
       }
 
       // Check if migration is needed
-      // If table doesn't have value column, it's already migrated
+      // If table doesn"t have value column, it"s already migrated
       if (!hasValueColumn) {
         console.log("Table is already in new format, migration not needed");
         return {
@@ -1632,5 +1618,66 @@ ON ${this.historyTable}(agent_id);`);
         backupCreated: options.createBackup,
       };
     }
+  }
+
+  /**
+   * Get conversations by user ID (placeholder implementation)
+   * Note: This is a placeholder to satisfy the interface. Supabase implementation
+   * needs to be updated to support the new user-centric schema.
+   */
+  async getConversationsByUserId(
+    userId: string,
+    options: Omit<ConversationQueryOptions, "userId"> = {},
+  ): Promise<Conversation[]> {
+    console.warn(
+      `getConversationsByUserId not fully implemented in Supabase yet for user ${userId}. Falling back to getConversations.`,
+    );
+
+    // For now, fall back to getting all conversations
+    // TODO: Implement proper user-based filtering when Supabase schema is updated
+    if (options.resourceId) {
+      return this.getConversations(options.resourceId);
+    }
+
+    return [];
+  }
+
+  /**
+   * Query conversations with advanced options (placeholder implementation)
+   * Note: This is a placeholder to satisfy the interface. Supabase implementation
+   * needs to be updated to support the new user-centric schema.
+   */
+  async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
+    const { userId, resourceId } = options;
+    console.warn(
+      `queryConversations not fully implemented in Supabase yet for user ${userId || "unknown"}. Falling back to getConversations.`,
+    );
+
+    // For now, fall back to resource-based queries
+    if (resourceId) {
+      return this.getConversations(resourceId);
+    }
+
+    return [];
+  }
+
+  /**
+   * Get all messages for a specific conversation (placeholder implementation)
+   * Note: This is a placeholder to satisfy the interface. Supabase implementation
+   * needs to be updated to support the new user-centric schema.
+   */
+  async getConversationMessages(
+    conversationId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<MemoryMessage[]> {
+    console.warn(
+      "getConversationMessages not fully implemented in Supabase yet. Falling back to getMessages.",
+    );
+
+    // For now, fall back to the existing getMessages method
+    return this.getMessages({
+      conversationId,
+      limit: options.limit,
+    });
   }
 }

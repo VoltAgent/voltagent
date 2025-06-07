@@ -256,6 +256,40 @@ class MockMemory implements Memory {
     this.timelineEvents[key] = { ...value, history_id: historyId, _agentId: agentId };
   }
 
+  // Add the missing user-centric conversation methods
+  async getConversationsByUserId(userId: string, _options: any = {}): Promise<any[]> {
+    return Object.values(this.conversations).filter((c) => c.userId === userId);
+  }
+
+  async queryConversations(options: any): Promise<any[]> {
+    let conversations = Object.values(this.conversations);
+
+    if (options.userId) {
+      conversations = conversations.filter((c) => c.userId === options.userId);
+    }
+    if (options.resourceId) {
+      conversations = conversations.filter((c) => c.resourceId === options.resourceId);
+    }
+
+    return conversations;
+  }
+
+  async getConversationMessages(conversationId: string, options: any = {}): Promise<any[]> {
+    // Find messages for this conversation across all user-conversation keys
+    const allMessages: any[] = [];
+    for (const [key, messages] of Object.entries(this.messages)) {
+      if (key.endsWith(`:${conversationId}`)) {
+        allMessages.push(...messages);
+      }
+    }
+
+    // Sort by creation time
+    allMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    const { limit = 100, offset = 0 } = options;
+    return allMessages.slice(offset, offset + limit);
+  }
+
   // Getter helper functions for tests
   getHistoryEntries(): Record<string, any> {
     return this.historyEntries;

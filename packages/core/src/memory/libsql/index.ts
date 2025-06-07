@@ -3,7 +3,6 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
 import { safeJsonParse } from "../../utils";
 import devLogger from "../../utils/internal/dev-logger";
@@ -17,6 +16,54 @@ import type {
 } from "../types";
 
 /**
+ * Enhanced LibSQL Storage for VoltAgent with User-Centric Conversation Management
+ *
+ * This implementation provides:
+ * - User-specific conversation management
+ * - Automatic migration from old schema to new schema
+ * - Query builder pattern for flexible data retrieval
+ * - Pagination support
+ *
+ * ## Schema Changes
+ *
+ * ### Conversations Table:
+ * - Added `user_id` column to associate conversations with users
+ * - Existing conversations are migrated with default user_id = "default"
+ *
+ * ### Messages Table:
+ * - Removed `user_id` column (now retrieved via conversation relationship)
+ * - Primary key changed from (user_id, conversation_id, message_id) to (conversation_id, message_id)
+ *
+ * ## Usage Examples
+ *
+ * ```typescript
+ * import { ExtendedLibSQLStorage } from "@voltagent/core/memory";
+ *
+ * const memoryStorage = new ExtendedLibSQLStorage({
+ *   url: process.env.DATABASE_URL || "",
+ *   authToken: process.env.DATABASE_AUTH_TOKEN,
+ * });
+ *
+ * // Get conversations for a user (similar to ChatGPT sidebar)
+ * const conversations = await memoryStorage.getConversationsByUserId('user123', {
+ *   limit: 50,
+ *   orderBy: 'updated_at',
+ *   orderDirection: 'DESC'
+ * });
+ *
+ * // Get messages for a specific conversation
+ * const messages = await memoryStorage.getConversationMessages('conversation-id', {
+ *   limit: 100
+ * });
+ *
+ * // Query builder pattern (fluent interface)
+ * const recentConversations = await memoryStorage
+ *   .getUserConversations('user123')
+ *   .limit(10)
+ *   .orderBy('updated_at', 'DESC')
+ *   .execute();
+ *
+ * // Paginated results
  * Function to add a delay between 0-0 seconds for debugging
  */
 async function debugDelay(): Promise<void> {
@@ -160,6 +207,7 @@ export class LibSQLStorage implements Memory {
         CREATE TABLE IF NOT EXISTS ${conversationsTableName} (
           id TEXT PRIMARY KEY,
           resource_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
           title TEXT NOT NULL,
           metadata TEXT NOT NULL,
           created_at TEXT NOT NULL,
@@ -172,14 +220,13 @@ export class LibSQLStorage implements Memory {
 
     await this.client.execute(`
         CREATE TABLE IF NOT EXISTS ${messagesTableName} (
-          user_id TEXT NOT NULL,
           conversation_id TEXT NOT NULL,
           message_id TEXT NOT NULL,
           role TEXT NOT NULL,
           content TEXT NOT NULL,
           type TEXT NOT NULL,
           created_at TEXT NOT NULL,
-          PRIMARY KEY (user_id, conversation_id, message_id)
+          PRIMARY KEY (conversation_id, message_id)
         )
       `);
 
@@ -236,13 +283,19 @@ export class LibSQLStorage implements Memory {
     // Create index for faster queries
     await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${messagesTableName}_lookup
-        ON ${messagesTableName}(user_id, conversation_id, created_at)
+        ON ${messagesTableName}(conversation_id, created_at)
       `);
 
     // Create index for conversations
     await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${conversationsTableName}_resource
         ON ${conversationsTableName}(resource_id)
+      `);
+
+    // Create index for conversations by user_id
+    await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${conversationsTableName}_user
+        ON ${conversationsTableName}(user_id)
       `);
 
     // Create indexes for history tables
@@ -295,6 +348,25 @@ export class LibSQLStorage implements Memory {
       `);
 
     this.debug("Database initialized successfully");
+
+    // Run conversation schema migration first
+    try {
+      const migrationResult = await this.migrateConversationSchema({
+        createBackup: true,
+      });
+
+      if (migrationResult.success) {
+        if ((migrationResult.migratedCount || 0) > 0) {
+          devLogger.info(
+            `${migrationResult.migratedCount} conversation records successfully migrated`,
+          );
+        }
+      } else {
+        devLogger.error("Conversation migration error:", migrationResult.error);
+      }
+    } catch (error) {
+      this.debug("Error migrating conversation schema:", error);
+    }
 
     try {
       const result = await this.migrateAgentHistoryData({
@@ -352,62 +424,74 @@ export class LibSQLStorage implements Memory {
       role,
     } = options;
 
-    this.debug(
-      `Getting messages for user ${userId} and conversation ${conversationId} with options`,
-      options,
-    );
-
-    const tableName = `${this.options.tablePrefix}_messages`;
-
-    // Build the SQL query with filters
-    let sql = `SELECT role, content, type, created_at FROM ${tableName} WHERE user_id = ? AND conversation_id = ?`;
-    const params: any[] = [userId, conversationId];
-
-    // Add role filter if specified
-    if (role) {
-      sql += " AND role = ?";
-      params.push(role);
-    }
-
-    // Add created_at filters if specified
-    if (before) {
-      sql += " AND created_at < ?";
-      params.push(before);
-    }
-
-    if (after) {
-      sql += " AND created_at > ?";
-      params.push(after);
-    }
-
-    // Order by created_at
-    sql += " ORDER BY created_at ASC";
-
-    // Add limit if specified
-    if (limit && limit > 0) {
-      sql += " LIMIT ?";
-      params.push(limit);
-    }
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
 
     try {
+      let sql = `
+        SELECT m.message_id, m.role, m.content, m.type, m.created_at, m.conversation_id
+        FROM ${messagesTableName} m
+      `;
+      const args: any[] = [];
+      const conditions: string[] = [];
+
+      // If userId is specified, we need to join with conversations table
+      if (userId !== "default") {
+        sql += ` INNER JOIN ${conversationsTableName} c ON m.conversation_id = c.id`;
+        conditions.push("c.user_id = ?");
+        args.push(userId);
+      }
+
+      // Add conversation_id filter
+      if (conversationId !== "default") {
+        conditions.push("m.conversation_id = ?");
+        args.push(conversationId);
+      }
+
+      // Add time-based filters
+      if (before) {
+        conditions.push("m.created_at < ?");
+        args.push(new Date(before).toISOString());
+      }
+
+      if (after) {
+        conditions.push("m.created_at > ?");
+        args.push(new Date(after).toISOString());
+      }
+
+      // Add role filter
+      if (role) {
+        conditions.push("m.role = ?");
+        args.push(role);
+      }
+
+      // Add WHERE clause if we have conditions
+      if (conditions.length > 0) {
+        sql += ` WHERE ${conditions.join(" AND ")}`;
+      }
+
+      // Add ordering and limit
+      sql += " ORDER BY m.created_at ASC";
+      if (limit && limit > 0) {
+        sql += " LIMIT ?";
+        args.push(limit);
+      }
+
       const result = await this.client.execute({
         sql,
-        args: params,
+        args,
       });
 
-      // Convert the database rows to BaseMessage objects
-      return result.rows.map((row: Row) => {
-        return {
-          id: row.message_id as string,
-          role: row.role as BaseMessage["role"],
-          content: row.content as string,
-          type: row.type as "text" | "tool-call" | "tool-result",
-          createdAt: row.created_at as string,
-        };
-      });
+      return result.rows.map((row) => ({
+        id: row.message_id as string,
+        role: row.role as import("../../agent/providers/base/types").BaseMessage["role"],
+        content: row.content as string,
+        type: row.type as "text" | "tool-call" | "tool-result",
+        createdAt: row.created_at as string,
+      }));
     } catch (error) {
-      this.debug("Error fetching messages:", error);
-      throw new Error("Failed to fetch messages from LibSQL database");
+      this.debug("Error getting messages:", error);
+      throw new Error("Failed to get messages from LibSQL database");
     }
   }
 
@@ -428,60 +512,30 @@ export class LibSQLStorage implements Memory {
     // Add delay for debugging
     await debugDelay();
 
-    this.debug(`Adding message for user ${userId} and conversation ${conversationId}`, message);
-
     const tableName = `${this.options.tablePrefix}_messages`;
-    const messageId = this.generateId();
-
-    // Convert the message content to a JSON string
-    const contentString = JSON.stringify(message.content);
 
     try {
-      // Insert the message into the database
       await this.client.execute({
-        sql: `INSERT INTO ${tableName} (user_id, conversation_id, message_id, role, content, type, created_at) 
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO ${tableName} (conversation_id, message_id, role, content, type, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
         args: [
-          userId,
           conversationId,
-          messageId,
+          message.id,
           message.role,
-          contentString,
+          message.content as string,
           message.type,
           message.createdAt,
         ],
       });
 
-      // If we have a storage limit, clean up old messages
-      if (this.options.storageLimit && this.options.storageLimit > 0) {
-        // Get the count of messages for this user/conversation
-        const countResult = await this.client.execute({
-          sql: `SELECT COUNT(*) as count FROM ${tableName} WHERE user_id = ? AND conversation_id = ?`,
-          args: [userId, conversationId],
-        });
+      this.debug("Message added successfully", { userId, conversationId, messageId: message.id });
 
-        const count = countResult.rows[0].count as number;
-
-        // If we have more messages than the limit, delete the oldest ones
-        if (count > this.options.storageLimit) {
-          await this.client.execute({
-            sql: `DELETE FROM ${tableName} 
-                  WHERE user_id = ? AND conversation_id = ? 
-                  AND message_id IN (
-                    SELECT message_id FROM ${tableName} 
-                    WHERE user_id = ? AND conversation_id = ?
-                    ORDER BY created_at ASC
-                    LIMIT ?
-                  )`,
-            args: [
-              userId,
-              conversationId,
-              userId,
-              conversationId,
-              count - this.options.storageLimit,
-            ],
-          });
-        }
+      // Optionally, prune old messages to respect storage limit
+      try {
+        await this.pruneOldMessages(conversationId);
+      } catch (pruneError) {
+        this.debug("Error pruning old messages:", pruneError);
+        // Don't throw error for pruning failure
       }
     } catch (error) {
       this.debug("Error adding message:", error);
@@ -490,28 +544,83 @@ export class LibSQLStorage implements Memory {
   }
 
   /**
+   * Prune old messages to respect storage limit
+   * @param conversationId Conversation ID to prune messages for
+   */
+  private async pruneOldMessages(conversationId: string): Promise<void> {
+    const limit = this.options.storageLimit || 100;
+    const tableName = `${this.options.tablePrefix}_messages`;
+
+    try {
+      // Get the count of messages for this conversation
+      const countResult = await this.client.execute({
+        sql: `SELECT COUNT(*) as count FROM ${tableName} WHERE conversation_id = ?`,
+        args: [conversationId],
+      });
+
+      const messageCount = countResult.rows[0]?.count as number;
+
+      if (messageCount > limit) {
+        // Delete the oldest messages beyond the limit
+        const deleteCount = messageCount - limit;
+
+        await this.client.execute({
+          sql: `DELETE FROM ${tableName} 
+                WHERE conversation_id = ? 
+                AND message_id IN (
+                  SELECT message_id FROM ${tableName} 
+                  WHERE conversation_id = ? 
+                  ORDER BY created_at ASC 
+                  LIMIT ?
+                )`,
+          args: [conversationId, conversationId, deleteCount],
+        });
+
+        this.debug(`Pruned ${deleteCount} old messages for conversation ${conversationId}`);
+      }
+    } catch (error) {
+      this.debug("Error pruning old messages:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Clear messages from memory
    */
-  async clearMessages(options: {
-    userId: string;
-    conversationId?: string;
-  }): Promise<void> {
+  async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
     // Wait for database initialization
     await this.initialized;
 
     // Add delay for debugging
     await debugDelay();
 
-    const { userId, conversationId = "default" } = options;
-    const tableName = `${this.options.tablePrefix}_messages`;
+    const { userId, conversationId } = options;
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
 
     try {
-      await this.client.execute({
-        sql: `DELETE FROM ${tableName} WHERE user_id = ? AND conversation_id = ?`,
-        args: [userId, conversationId],
-      });
-
-      this.debug(`Cleared messages for user ${userId} and conversation ${conversationId}`);
+      if (conversationId) {
+        // Clear messages for a specific conversation (with user validation)
+        await this.client.execute({
+          sql: `DELETE FROM ${messagesTableName} 
+                WHERE conversation_id = ? 
+                AND conversation_id IN (
+                  SELECT id FROM ${conversationsTableName} WHERE user_id = ?
+                )`,
+          args: [conversationId, userId],
+        });
+        this.debug(`Cleared messages for conversation ${conversationId} for user ${userId}`);
+      } else {
+        // Clear all messages for the user across all their conversations
+        await this.client.execute({
+          sql: `DELETE FROM ${messagesTableName} 
+                WHERE conversation_id IN (
+                  SELECT id FROM ${conversationsTableName} WHERE user_id = ?
+                )`,
+          args: [userId],
+        });
+        this.debug(`Cleared all messages for user ${userId}`);
+      }
     } catch (error) {
       this.debug("Error clearing messages:", error);
       throw new Error("Failed to clear messages from LibSQL database");
@@ -842,11 +951,12 @@ export class LibSQLStorage implements Memory {
 
     try {
       await this.client.execute({
-        sql: `INSERT INTO ${tableName} (id, resource_id, title, metadata, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO ${tableName} (id, resource_id, user_id, title, metadata, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
         args: [
           conversation.id,
           conversation.resourceId,
+          conversation.userId,
           conversation.title,
           metadataString,
           now,
@@ -857,6 +967,7 @@ export class LibSQLStorage implements Memory {
       return {
         id: conversation.id,
         resourceId: conversation.resourceId,
+        userId: conversation.userId,
         title: conversation.title,
         metadata: conversation.metadata,
         createdAt: now,
@@ -890,6 +1001,7 @@ export class LibSQLStorage implements Memory {
       return {
         id: row.id as string,
         resourceId: row.resource_id as string,
+        userId: row.user_id as string,
         title: row.title as string,
         metadata: row.metadata ? safeJsonParse(row.metadata as string) : {},
         createdAt: row.created_at as string,
@@ -918,6 +1030,7 @@ export class LibSQLStorage implements Memory {
       return result.rows.map((row) => ({
         id: row.id as string,
         resourceId: row.resource_id as string,
+        userId: row.user_id as string,
         title: row.title as string,
         metadata: safeJsonParse(row.metadata as string),
         createdAt: row.created_at as string,
@@ -926,6 +1039,165 @@ export class LibSQLStorage implements Memory {
     } catch (error) {
       this.debug("Error getting conversations:", error);
       throw new Error("Failed to get conversations from LibSQL database");
+    }
+  }
+
+  async getConversationsByUserId(
+    userId: string,
+    options: Omit<import("../types").ConversationQueryOptions, "userId"> = {},
+  ): Promise<Conversation[]> {
+    await this.initialized;
+
+    // Add delay for debugging
+    await debugDelay();
+
+    const {
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    const tableName = `${this.options.tablePrefix}_conversations`;
+
+    try {
+      let sql = `SELECT * FROM ${tableName} WHERE user_id = ?`;
+      const args: any[] = [userId];
+
+      if (resourceId) {
+        sql += " AND resource_id = ?";
+        args.push(resourceId);
+      }
+
+      sql += ` ORDER BY ${orderBy} ${orderDirection}`;
+
+      if (limit > 0) {
+        sql += " LIMIT ? OFFSET ?";
+        args.push(limit, offset);
+      }
+
+      const result = await this.client.execute({
+        sql,
+        args,
+      });
+
+      return result.rows.map((row) => ({
+        id: row.id as string,
+        resourceId: row.resource_id as string,
+        userId: row.user_id as string,
+        title: row.title as string,
+        metadata: safeJsonParse(row.metadata as string),
+        createdAt: row.created_at as string,
+        updatedAt: row.updated_at as string,
+      }));
+    } catch (error) {
+      this.debug("Error getting conversations by user ID:", error);
+      throw new Error("Failed to get conversations by user ID from LibSQL database");
+    }
+  }
+
+  async queryConversations(
+    options: import("../types").ConversationQueryOptions,
+  ): Promise<Conversation[]> {
+    await this.initialized;
+
+    // Add delay for debugging
+    await debugDelay();
+
+    const {
+      userId,
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    const tableName = `${this.options.tablePrefix}_conversations`;
+
+    try {
+      let sql = `SELECT * FROM ${tableName}`;
+      const args: any[] = [];
+      const conditions: string[] = [];
+
+      if (userId) {
+        conditions.push("user_id = ?");
+        args.push(userId);
+      }
+
+      if (resourceId) {
+        conditions.push("resource_id = ?");
+        args.push(resourceId);
+      }
+
+      if (conditions.length > 0) {
+        sql += ` WHERE ${conditions.join(" AND ")}`;
+      }
+
+      sql += ` ORDER BY ${orderBy} ${orderDirection}`;
+
+      if (limit > 0) {
+        sql += " LIMIT ? OFFSET ?";
+        args.push(limit, offset);
+      }
+
+      const result = await this.client.execute({
+        sql,
+        args,
+      });
+
+      return result.rows.map((row) => ({
+        id: row.id as string,
+        resourceId: row.resource_id as string,
+        userId: row.user_id as string,
+        title: row.title as string,
+        metadata: safeJsonParse(row.metadata as string),
+        createdAt: row.created_at as string,
+        updatedAt: row.updated_at as string,
+      }));
+    } catch (error) {
+      this.debug("Error querying conversations:", error);
+      throw new Error("Failed to query conversations from LibSQL database");
+    }
+  }
+
+  async getConversationMessages(
+    conversationId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<import("../types").MemoryMessage[]> {
+    await this.initialized;
+
+    // Add delay for debugging
+    await debugDelay();
+
+    const { limit = 100, offset = 0 } = options;
+    const tableName = `${this.options.tablePrefix}_messages`;
+
+    try {
+      let sql = `SELECT * FROM ${tableName} WHERE conversation_id = ? ORDER BY created_at ASC`;
+      const args: any[] = [conversationId];
+
+      if (limit > 0) {
+        sql += " LIMIT ? OFFSET ?";
+        args.push(limit, offset);
+      }
+
+      const result = await this.client.execute({
+        sql,
+        args,
+      });
+
+      return result.rows.map((row) => ({
+        id: row.message_id as string,
+        role: row.role as import("../../agent/providers/base/types").BaseMessage["role"],
+        content: row.content as string,
+        type: row.type as "text" | "tool-call" | "tool-result",
+        createdAt: row.created_at as string,
+      }));
+    } catch (error) {
+      this.debug("Error getting conversation messages:", error);
+      throw new Error("Failed to get conversation messages from LibSQL database");
     }
   }
 
@@ -948,6 +1220,11 @@ export class LibSQLStorage implements Memory {
       if (updates.resourceId !== undefined) {
         updatesList.push("resource_id = ?");
         args.push(updates.resourceId);
+      }
+
+      if (updates.userId !== undefined) {
+        updatesList.push("user_id = ?");
+        args.push(updates.userId);
       }
 
       if (updates.title !== undefined) {
@@ -1404,7 +1681,7 @@ export class LibSQLStorage implements Memory {
                       event.parentEventId || null,
                       null, // tags
                       inputData,
-                      event.data.output ? JSON.stringify({ text: event.data.output }) : null,
+                      event.data.output ? JSON.stringify(event.data.output) : null,
                       eventName === "agent:error" ? JSON.stringify(event.data.error) : null,
                       metadata,
                     ],
@@ -1716,5 +1993,407 @@ export class LibSQLStorage implements Memory {
         backupCreated: options.createBackup,
       };
     }
+  }
+
+  /**
+   * Migrate conversation schema to add user_id and update messages table
+   * @param options Migration options
+   * @returns Migration result
+   */
+  async migrateConversationSchema(
+    options: {
+      createBackup?: boolean;
+      restoreFromBackup?: boolean;
+      deleteBackupAfterSuccess?: boolean;
+    } = {},
+  ): Promise<{
+    success: boolean;
+    migratedCount?: number;
+    error?: Error;
+    backupCreated?: boolean;
+  }> {
+    const {
+      createBackup = true,
+      restoreFromBackup = false,
+      deleteBackupAfterSuccess = false,
+    } = options;
+
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const conversationsBackupName = `${conversationsTableName}_backup`;
+    const messagesBackupName = `${messagesTableName}_backup`;
+
+    try {
+      this.debug("Starting conversation schema migration...");
+
+      // If restoreFromBackup option is active, restore from backup
+      if (restoreFromBackup) {
+        this.debug("Starting restoration from backup...");
+
+        // Check if backup tables exist
+        const convBackupCheck = await this.client.execute({
+          sql: "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+          args: [conversationsBackupName],
+        });
+
+        const msgBackupCheck = await this.client.execute({
+          sql: "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+          args: [messagesBackupName],
+        });
+
+        if (convBackupCheck.rows.length === 0 || msgBackupCheck.rows.length === 0) {
+          throw new Error("No backup found to restore");
+        }
+
+        // Start transaction
+        await this.client.execute("BEGIN TRANSACTION;");
+
+        // Restore tables from backup
+        await this.client.execute(`DROP TABLE IF EXISTS ${conversationsTableName};`);
+        await this.client.execute(`DROP TABLE IF EXISTS ${messagesTableName};`);
+        await this.client.execute(
+          `ALTER TABLE ${conversationsBackupName} RENAME TO ${conversationsTableName};`,
+        );
+        await this.client.execute(
+          `ALTER TABLE ${messagesBackupName} RENAME TO ${messagesTableName};`,
+        );
+
+        // Complete transaction
+        await this.client.execute("COMMIT;");
+
+        this.debug("Restoration from backup completed successfully");
+        return { success: true, backupCreated: false };
+      }
+
+      // Check current table structures
+      const convTableInfo = await this.client.execute({
+        sql: "PRAGMA table_info(?)",
+        args: [conversationsTableName],
+      });
+
+      const msgTableInfo = await this.client.execute({
+        sql: "PRAGMA table_info(?)",
+        args: [messagesTableName],
+      });
+
+      // Check if conversations table has user_id column
+      const hasUserIdInConversations = convTableInfo.rows.some((row) => row.name === "user_id");
+
+      // Check if messages table has user_id column
+      const hasUserIdInMessages = msgTableInfo.rows.some((row) => row.name === "user_id");
+
+      // If conversations already has user_id and messages doesn't have user_id, migration not needed
+      if (hasUserIdInConversations && !hasUserIdInMessages) {
+        this.debug("Tables are already in new format, migration not needed");
+        return { success: true, migratedCount: 0 };
+      }
+
+      // If neither table exists, no migration needed
+      if (convTableInfo.rows.length === 0 && msgTableInfo.rows.length === 0) {
+        this.debug("Tables don't exist, migration not needed");
+        return { success: true, migratedCount: 0 };
+      }
+
+      // Create backups if requested
+      if (createBackup) {
+        this.debug("Creating backups...");
+
+        // Remove existing backups
+        await this.client.execute(`DROP TABLE IF EXISTS ${conversationsBackupName};`);
+        await this.client.execute(`DROP TABLE IF EXISTS ${messagesBackupName};`);
+
+        // Create backups
+        if (convTableInfo.rows.length > 0) {
+          await this.client.execute(
+            `CREATE TABLE ${conversationsBackupName} AS SELECT * FROM ${conversationsTableName};`,
+          );
+        }
+
+        if (msgTableInfo.rows.length > 0) {
+          await this.client.execute(
+            `CREATE TABLE ${messagesBackupName} AS SELECT * FROM ${messagesTableName};`,
+          );
+        }
+
+        this.debug("Backups created successfully");
+      }
+
+      // Get existing data
+      let conversationData: Row[] = [];
+      let messageData: Row[] = [];
+
+      if (convTableInfo.rows.length > 0) {
+        const convResult = await this.client.execute(`SELECT * FROM ${conversationsTableName}`);
+        conversationData = convResult.rows;
+      }
+
+      if (msgTableInfo.rows.length > 0) {
+        const msgResult = await this.client.execute(`SELECT * FROM ${messagesTableName}`);
+        messageData = msgResult.rows;
+      }
+
+      // Start transaction for migration
+      await this.client.execute("BEGIN TRANSACTION;");
+
+      // Create temporary tables with new schemas
+      const tempConversationsTable = `${conversationsTableName}_temp`;
+      const tempMessagesTable = `${messagesTableName}_temp`;
+
+      await this.client.execute(`
+        CREATE TABLE ${tempConversationsTable} (
+          id TEXT PRIMARY KEY,
+          resource_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          metadata TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `);
+
+      await this.client.execute(`
+        CREATE TABLE ${tempMessagesTable} (
+          conversation_id TEXT NOT NULL,
+          message_id TEXT NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          type TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (conversation_id, message_id)
+        )
+      `);
+
+      let migratedCount = 0;
+
+      // Migrate conversations data
+      for (const row of conversationData) {
+        let userId = "default"; // Default user_id for existing conversations
+
+        // If the table already has user_id, use it
+        if (hasUserIdInConversations && row.user_id) {
+          userId = row.user_id as string;
+        }
+
+        await this.client.execute({
+          sql: `INSERT INTO ${tempConversationsTable} 
+                (id, resource_id, user_id, title, metadata, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          args: [
+            row.id,
+            row.resource_id,
+            userId,
+            row.title,
+            row.metadata,
+            row.created_at,
+            row.updated_at,
+          ],
+        });
+        migratedCount++;
+      }
+
+      // Migrate messages data
+      for (const row of messageData) {
+        await this.client.execute({
+          sql: `INSERT INTO ${tempMessagesTable} 
+                (conversation_id, message_id, role, content, type, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?)`,
+          args: [
+            row.conversation_id,
+            row.message_id,
+            row.role,
+            row.content,
+            row.type,
+            row.created_at,
+          ],
+        });
+      }
+
+      // Replace old tables with new ones
+      await this.client.execute(`DROP TABLE IF EXISTS ${conversationsTableName};`);
+      await this.client.execute(`DROP TABLE IF EXISTS ${messagesTableName};`);
+      await this.client.execute(
+        `ALTER TABLE ${tempConversationsTable} RENAME TO ${conversationsTableName};`,
+      );
+      await this.client.execute(`ALTER TABLE ${tempMessagesTable} RENAME TO ${messagesTableName};`);
+
+      // Commit transaction
+      await this.client.execute("COMMIT;");
+
+      // Delete backups if requested
+      if (deleteBackupAfterSuccess) {
+        await this.client.execute(`DROP TABLE IF EXISTS ${conversationsBackupName};`);
+        await this.client.execute(`DROP TABLE IF EXISTS ${messagesBackupName};`);
+      }
+
+      this.debug(
+        `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
+      );
+
+      return {
+        success: true,
+        migratedCount,
+        backupCreated: createBackup,
+      };
+    } catch (error) {
+      this.debug("Error during conversation schema migration:", error);
+
+      // Rollback transaction if still active
+      try {
+        await this.client.execute("ROLLBACK;");
+      } catch (rollbackError) {
+        this.debug("Error rolling back transaction:", rollbackError);
+      }
+
+      return {
+        success: false,
+        error: error as Error,
+        backupCreated: createBackup,
+      };
+    }
+  }
+}
+
+/**
+ * Extended LibSQL storage implementation with additional convenience methods
+ * This serves as an example of how users can extend the base storage
+ */
+export class ExtendedLibSQLStorage extends LibSQLStorage {
+  /**
+   * Get conversations for a user with a fluent query builder interface
+   * @param userId User ID to filter by
+   * @returns Query builder object
+   */
+  getUserConversations(userId: string) {
+    return {
+      /**
+       * Limit the number of results
+       * @param count Number of conversations to return
+       * @returns Query builder
+       */
+      limit: (count: number) => ({
+        /**
+         * Order results by a specific field
+         * @param field Field to order by
+         * @param direction Sort direction
+         * @returns Query builder
+         */
+        orderBy: (
+          field: "created_at" | "updated_at" | "title" = "updated_at",
+          direction: "ASC" | "DESC" = "DESC",
+        ) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query with default ordering
+         * @returns Promise of conversations
+         */
+        execute: () => this.getConversationsByUserId(userId, { limit: count }),
+      }),
+
+      /**
+       * Order results by a specific field
+       * @param field Field to order by
+       * @param direction Sort direction
+       * @returns Query builder
+       */
+      orderBy: (
+        field: "created_at" | "updated_at" | "title" = "updated_at",
+        direction: "ASC" | "DESC" = "DESC",
+      ) => ({
+        /**
+         * Limit the number of results
+         * @param count Number of conversations to return
+         * @returns Query builder
+         */
+        limit: (count: number) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query without limit
+         * @returns Promise of conversations
+         */
+        execute: () =>
+          this.getConversationsByUserId(userId, {
+            orderBy: field,
+            orderDirection: direction,
+          }),
+      }),
+
+      /**
+       * Execute the query with default options
+       * @returns Promise of conversations
+       */
+      execute: () => this.getConversationsByUserId(userId),
+    };
+  }
+
+  /**
+   * Get conversation by ID and ensure it belongs to the specified user
+   * @param conversationId Conversation ID
+   * @param userId User ID to validate ownership
+   * @returns Conversation or null
+   */
+  async getUserConversation(conversationId: string, userId: string): Promise<Conversation | null> {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation || conversation.userId !== userId) {
+      return null;
+    }
+    return conversation;
+  }
+
+  /**
+   * Get paginated conversations for a user
+   * @param userId User ID
+   * @param page Page number (1-based)
+   * @param pageSize Number of items per page
+   * @returns Object with conversations and pagination info
+   */
+  async getPaginatedUserConversations(
+    userId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{
+    conversations: Conversation[];
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+  }> {
+    const offset = (page - 1) * pageSize;
+
+    // Get one extra to check if there are more pages
+    const conversations = await this.getConversationsByUserId(userId, {
+      limit: pageSize + 1,
+      offset,
+      orderBy: "updated_at",
+      orderDirection: "DESC",
+    });
+
+    const hasMore = conversations.length > pageSize;
+    const results = hasMore ? conversations.slice(0, pageSize) : conversations;
+
+    return {
+      conversations: results,
+      page,
+      pageSize,
+      hasMore,
+    };
   }
 }

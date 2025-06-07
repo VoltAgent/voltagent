@@ -257,6 +257,7 @@ export class MemoryManager {
         await this.memory.createConversation({
           id: conversationId,
           resourceId: this.resourceId,
+          userId: userId,
           title: `New Chat ${new Date().toISOString()}`,
           metadata: {},
         });
