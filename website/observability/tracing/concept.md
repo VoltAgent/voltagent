@@ -4,24 +4,67 @@ title: Concept
 
 In VoltOps, a trace is a record of the entire process from a user's request to the system's response. Each trace captures all steps, decisions, and data flow from the beginning to the end of a single user interaction.
 
+:::tip Solves the black-box problem
+Traces eliminate the "black box" nature of AI applications by providing complete transparency and enabling you to manage your systems with confidence.
+:::
+
+VoltOps provides **n8n-style observability** with a visual canvas interface that makes complex AI workflows intuitive to understand.
+
+:::note The n8n-inspired canvas visualization offers several key advantages
+
+- **Visual Workflow Mapping**: See your entire AI workflow as connected nodes, making it easy to understand data flow and decision points
+- **Intuitive Debugging**: Quickly identify where issues occur by visually following the execution path through your AI agents and tools
+- **Non-Technical Accessibility**: Enable stakeholders without deep technical knowledge to understand and analyze AI system behavior
+- **Real-time Monitoring**: Watch your AI workflows execute in real-time with live status updates on the visual canvas
+- **Simplified Complexity**: Transform complex, multi-step AI processes into clear, digestible visual representations
+  :::
+
 ## Core Trace Features
 
-**📋 Unique Session Identity**
+<br/>
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#10b981', 'primaryTextColor':'#ffffff', 'primaryBorderColor':'#10b981', 'lineColor':'#10b981', 'sectionBkgColor':'#10b981', 'altSectionBkgColor':'#059669', 'gridColor':'#10b981', 'secondaryColor':'#10b981', 'tertiaryColor':'#ffffff'}}}%%
+sequenceDiagram
+    participant User
+    participant App as LLM Application
+    participant VoltOps as VoltOps Observability
+    participant LLM as LLM/Tools/DB
+
+    User->>App: Send Request
+    App->>VoltOps: Initialize Trace
+
+    App->>LLM: AI Operations (Prompts, Tools, Memory)
+    VoltOps->>VoltOps: Track: Tokens, Cost, Latency, Status
+    LLM->>App: Responses & Data
+
+    App->>User: Send Response
+    App->>VoltOps: Complete Trace
+
+    Note over VoltOps: Real-time Analytics & Monitoring
+```
+
+<br/>
+
+**Unique Session Identity:**
 Each trace is identified with a unique session ID and maintains complete context throughout the interaction lifecycle.
 
-**🏷️ Flexible Organization**
+**Flexible Organization:**
 Traces support tagging and metadata for easy categorization and filtering across your AI workflows.
 
-**⚡ Real-time Visibility**
+**Real-time Visibility:**
 VoltOps captures and visualizes traces in real-time, enabling instant monitoring and issue detection.
 
-**🔗 Hierarchical Structure**
+**Hierarchical Structure:**
 Agents, tools, memory operations, and retrievers are organized in meaningful hierarchies that reflect your AI application's logic.
 
-**📊 Complete Lifecycle Tracking**
+**Complete Lifecycle Tracking:**
 From start to finish, traces monitor status changes, performance metrics, and outcomes.
 
-## Information Captured in Traces
+<details>
+<summary>
+ **Information Captured in Traces**
+</summary>
 
 ### Session and Context Data
 
@@ -44,7 +87,7 @@ From start to finish, traces monitor status changes, performance metrics, and ou
 - **Success Metrics**: Completion rates, confidence scores, and quality indicators
 - **Audit Trail**: Decision points and state transitions
 
-Traces eliminate the "black box" nature of AI applications by providing complete transparency and enabling you to manage your systems with confidence.
+</details>
 
 ## VoltOps vs General Observability Concepts
 
@@ -66,14 +109,14 @@ Status changes function as timestamped events marking state transitions and prov
 
 ### VoltOps Advantages for AI Applications
 
-**AI-Native Structure**
+**AI-Native Structure**:
 Organizes data around AI concepts (agents, tools, memory) that directly correspond to how developers think about AI workflows.
 
-**Semantic Hierarchy**
+**Semantic Hierarchy**:
 Creates meaningful hierarchies that reflect business logic rather than just technical call stacks.
 
-**Context Preservation**
+**Context Preservation**:
 Maintains conversation history, user profiles, and decision context throughout the entire trace lifecycle.
 
-**Performance Optimization**
+**Performance Optimization**:
 Built-in tracking of AI-specific metrics like token usage, model costs, and inference latency.

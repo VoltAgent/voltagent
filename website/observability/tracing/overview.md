@@ -6,9 +6,14 @@ title: Overview
 
 Tracing is the process of recording and visualizing the complete execution path of your AI applications in real-time. It shows you exactly what your AI agents are doing, which tools they're using, and how data flows through your system from start to finish.
 
+![Vercel AI SDK Integration](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
+
 ## Why Tracing Matters for LLM Applications
 
-### Understanding Complex AI Workflows
+<details>
+<summary>
+Understanding Complex AI Workflows
+</summary>
 
 Large Language Model applications often involve complex, multi-step processes that can be difficult to debug and optimize. Unlike traditional applications with predictable execution paths, LLM apps feature:
 
@@ -17,34 +22,41 @@ Large Language Model applications often involve complex, multi-step processes th
 - **Tool integration**: AI agents interact with external APIs, databases, and services
 - **Non-deterministic behavior**: The same input can produce different execution paths
 
-### Key Benefits of Tracing
+</details>
 
-**🔍 Debug with Confidence**
+<details>
+<summary>
+Key Benefits of Tracing
+</summary>
+
+**Debug with Confidence**
 
 - Identify exactly where errors occur in your AI workflow
 - Understand why certain decisions were made by your AI agents
 - Track the flow of data through complex processing chains
 - Pinpoint performance bottlenecks in real-time
 
-**📊 Monitor Performance**
+**Monitor Performance**
 
 - Track response times for each component of your AI system
 - Monitor token usage and costs across different LLM calls
 - Identify slow operations that impact user experience
 
-**🚀 Optimize Your AI Applications**
+**Optimize Your AI Applications**
 
 - Analyze which tools and prompts perform best
 - Identify redundant or inefficient processing steps
 - Optimize prompt engineering based on actual execution data
 - Fine-tune your AI workflows for better performance
 
-**👥 Collaborate Effectively**
+**Collaborate Effectively**
 
 - Share detailed traces with team members for debugging
 - Document AI behavior patterns for future reference
 - Enable non-technical stakeholders to understand AI decision-making
 - Create reproducible test cases from real execution traces
+
+</details>
 
 ### Common Use Cases
 
