@@ -1,19 +1,20 @@
 import {
   type Content,
+  type FunctionCall,
+  type FunctionResponse,
   type GenerateContentConfig,
   type GenerateContentParameters,
   type GenerateContentResponse,
   type GenerateContentResponseUsageMetadata,
   GoogleGenAI,
   type GoogleGenAIOptions,
-  type Schema,
   type Part,
-  type FunctionCall,
+  type Schema,
   createPartFromFunctionResponse,
-  type FunctionResponse,
 } from "@google/genai";
 import type {
   BaseMessage,
+  BaseTool,
   GenerateObjectOptions,
   LLMProvider,
   MessageRole,
@@ -21,18 +22,17 @@ import type {
   ProviderTextStreamResponse,
   StepWithContent,
   UsageInfo,
-  BaseTool,
 } from "@voltagent/core";
 import type { z } from "zod";
 import type {
   GoogleGenerateContentStreamResult,
-  GoogleProviderRuntimeOptions,
-  GoogleStreamTextOptions,
   GoogleGenerateTextOptions,
+  GoogleProviderRuntimeOptions,
   GoogleProviderTextResponse,
+  GoogleStreamTextOptions,
 } from "./types";
+import { executeFunctionCalls, prepareToolsForGoogleSDK } from "./utils/function-calling";
 import { isZodObject, responseSchemaFromZodType } from "./utils/schema_helper";
-import { prepareToolsForGoogleSDK, executeFunctionCalls } from "./utils/function-calling";
 
 type StreamProcessingState = {
   accumulatedText: string;
