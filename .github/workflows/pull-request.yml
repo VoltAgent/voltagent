@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 20, 22, 24]
+        node-version: [20, 22, 24]
     concurrency:
       group: ${{ github.ref }}-lint-${{ matrix.node-version }}
       cancel-in-progress: true
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 20, 22, 24]
+        node-version: [20, 22, 24]
     concurrency:
       group: ${{ github.ref }}-pr-build-${{ matrix.node-version }}
       cancel-in-progress: true
