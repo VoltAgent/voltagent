@@ -1,6 +1,6 @@
+import type { BaseMessage } from "@voltagent/core";
 import type { Groq } from "groq-sdk";
 import { z } from "zod";
-import type { BaseMessage } from "@voltagent/core";
 import { GroqProvider } from "./index";
 
 // Mock the Groq SDK
