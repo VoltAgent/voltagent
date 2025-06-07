@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 0.1.30
+
+### Patch Changes
+
+- [#201](https://github.com/VoltAgent/voltagent/pull/201) [`04dd320`](https://github.com/VoltAgent/voltagent/commit/04dd3204455b09dc490d1bdfbd0cfeea13c3c409) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: include modelParameters in agent event metadata
+
+  This adds the `modelParameters` field to agent event metadata to improve observability and debugging of model-specific behavior during agent execution.
+
 ## 0.1.29
 
 ### Patch Changes
