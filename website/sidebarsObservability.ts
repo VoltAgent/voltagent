@@ -57,25 +57,19 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
-      type: "category",
+      type: "doc",
+      id: "llm-usage-and-costs",
       label: "LLM Usage & Costs",
-      items: ["llm-usage-and-costs"],
     },
     {
       type: "category",
       label: "Prompting (Soon)",
       items: ["voltagent-framework", "vercel-ai"],
-      collapsed: true,
-      collapsible: false,
-      className: "sidebar-item-disabled",
     },
     {
       type: "category",
       label: "Evaluation (Soon)",
       items: ["voltagent-framework", "vercel-ai"],
-      collapsed: true,
-      collapsible: false,
-      className: "sidebar-item-disabled",
     },
     {
       type: "category",

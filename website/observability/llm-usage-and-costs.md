@@ -4,6 +4,8 @@ title: LLM Usage & Costs
 
 # LLM Usage & Costs
 
+BURAYA NE YAZMAK LAZIM
+
 VoltOps automatically tracks and displays LLM usage statistics including prompt tokens, completion tokens, and total costs across all your AI interactions. Monitor your spending, optimize token usage, and analyze cost patterns in real-time.
 
 ## Usage Statistics Display

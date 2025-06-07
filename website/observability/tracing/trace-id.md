@@ -22,7 +22,3 @@ const trace = await sdk.trace({
   },
 });
 ```
-
-## Traceability Benefits
-
-VoltOps uses this metadata to correlate logs, visualize sessions, and track agent performance across your distributed AI systems.
