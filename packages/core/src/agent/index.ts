@@ -1053,10 +1053,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         finishReason: response.finishReason,
         providerResponse: response,
       };
+
+      // Create clean messages array with just current user input and assistant response
+      const userInputMessages = await this.formatInputMessages([], input);
+
+      const cleanMessages = [
+        ...userInputMessages,
+        { role: "assistant" as const, content: response.text },
+      ];
+
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
+        messages: cleanMessages,
         context: operationContext,
       });
 
@@ -1133,10 +1143,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       operationContext.isActive = false;
+
+      // For errors, only send the user input (no assistant response since it failed)
+      const userInputMessages = await this.formatInputMessages([], input);
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
+        messages: userInputMessages,
         context: operationContext,
       });
 
@@ -1482,11 +1497,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             providerResponse: result.providerResponse,
           },
         });
+        // Create clean messages array with just current user input and assistant response
+        const userInputMessages = await this.formatInputMessages([], input);
+
+        const cleanMessages = [
+          ...userInputMessages,
+          { role: "assistant" as const, content: result.text },
+        ];
+
         operationContext.isActive = false;
         await this.hooks.onEnd?.({
           agent: this,
           output: result,
           error: undefined,
+          messages: cleanMessages,
           context: operationContext,
         });
         if (internalOptions.provider?.onFinish) {
@@ -1618,10 +1642,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (internalOptions.provider?.onError) {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
+        // For errors, only send the user input (no assistant response since it failed)
+        const userInputMessages = await this.formatInputMessages([], input);
+
         await this.hooks.onEnd?.({
           agent: this,
           output: undefined,
           error: error,
+          messages: userInputMessages,
           context: operationContext,
         });
       },
@@ -1823,10 +1851,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         finishReason: response.finishReason,
         providerResponse: response,
       };
+
+      // Create clean messages array with just current user input and assistant response
+      const userInputMessages = await this.formatInputMessages([], input);
+
+      const cleanMessages = [
+        ...userInputMessages,
+        { role: "assistant" as const, content: JSON.stringify(response.object) },
+      ];
+
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
+        messages: cleanMessages,
         context: operationContext,
       });
       const typedResponse = response as InferGenerateObjectResponse<TProvider>;
@@ -1899,10 +1937,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         endTime: new Date(),
       });
 
+      // For errors, only send the user input (no assistant response since it failed)
+      const userInputMessages = await this.formatInputMessages([], input);
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
+        messages: userInputMessages,
         context: operationContext,
       });
       throw voltagentError;
@@ -2100,11 +2142,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             status: "completed" as any,
           });
 
+          // Create clean messages array with just current user input and assistant response
+          const userInputMessages = await this.formatInputMessages([], input);
+
+          const cleanMessages = [
+            ...userInputMessages,
+            { role: "assistant" as const, content: JSON.stringify(result.object) },
+          ];
+
           operationContext.isActive = false;
           await this.hooks.onEnd?.({
             agent: this,
             output: result,
             error: undefined,
+            messages: cleanMessages,
             context: operationContext,
           });
           if (provider?.onFinish) {
@@ -2191,10 +2242,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (provider?.onError) {
             await (provider.onError as StreamOnErrorCallback)(error);
           }
+          // For errors, only send the user input (no assistant response since it failed)
+          const userInputMessages = await this.formatInputMessages([], input);
+
           await this.hooks.onEnd?.({
             agent: this,
             output: undefined,
             error: error,
+            messages: userInputMessages,
             context: operationContext,
           });
         },
@@ -2203,10 +2258,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       return typedResponse;
     } catch (error) {
       operationContext.isActive = false;
+      // For errors, only send the user input (no assistant response since it failed)
+      const userInputMessages = await this.formatInputMessages([], input);
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: error as VoltAgentError,
+        messages: userInputMessages,
         context: operationContext,
       });
       throw error;

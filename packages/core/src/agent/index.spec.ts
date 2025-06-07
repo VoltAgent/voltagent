@@ -1040,6 +1040,187 @@ describe("Agent", () => {
     });
   });
 
+  describe("onEnd hook", () => {
+    it("should call onEnd hook with correct messages on successful text generation", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Test Agent instructions",
+      });
+
+      const userInput = "Hello, how are you?";
+      await agentWithOnEnd.generateText(userInput);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Check basic structure
+      expect(callArgs).toHaveProperty("agent");
+      expect(callArgs).toHaveProperty("output");
+      expect(callArgs).toHaveProperty("error");
+      expect(callArgs).toHaveProperty("messages");
+      expect(callArgs).toHaveProperty("context");
+
+      // Check messages structure for success case
+      expect(callArgs.messages).toHaveLength(2);
+      expect(callArgs.messages[0]).toEqual({
+        role: "user",
+        content: userInput,
+      });
+      expect(callArgs.messages[1]).toEqual({
+        role: "assistant",
+        content: "Hello, I am a test agent!",
+      });
+
+      // Check other properties
+      expect(callArgs.agent).toBe(agentWithOnEnd);
+      expect(callArgs.output).toBeDefined();
+      expect(callArgs.error).toBeUndefined();
+      expect(callArgs.context).toBeDefined();
+    });
+
+    it("should call onEnd hook with correct messages array input on successful text generation", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Array Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Array Test Agent instructions",
+      });
+
+      const messages: BaseMessage[] = [
+        { role: "user", content: "Hello!" },
+        { role: "assistant", content: "Hi there!" },
+        { role: "user", content: "How are you?" },
+      ];
+
+      await agentWithOnEnd.generateText(messages);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Check messages structure for success case with array input
+      expect(callArgs.messages).toHaveLength(4); // 3 input messages + 1 assistant response
+      expect(callArgs.messages.slice(0, 3)).toEqual(messages);
+      expect(callArgs.messages[3]).toEqual({
+        role: "assistant",
+        content: "Hello, I am a test agent!",
+      });
+    });
+
+    it("should call onEnd hook with only user input on error", async () => {
+      const onEndSpy = jest.fn();
+      const errorProvider = new MockProvider(mockModel);
+      jest.spyOn(errorProvider, "generateText").mockRejectedValue(new Error("Generation failed"));
+
+      const agentWithError = new TestAgent({
+        name: "Error OnEnd Test Agent",
+        model: mockModel,
+        llm: errorProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "Error OnEnd Test Agent instructions",
+      });
+
+      const userInput = "This will cause an error";
+
+      try {
+        await agentWithError.generateText(userInput);
+      } catch {
+        // Expected to throw
+      }
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Check messages structure for error case - only user input, no assistant response
+      expect(callArgs.messages).toHaveLength(1);
+      expect(callArgs.messages[0]).toEqual({
+        role: "user",
+        content: userInput,
+      });
+
+      // Check error properties
+      expect(callArgs.agent).toBe(agentWithError);
+      expect(callArgs.output).toBeUndefined();
+      expect(callArgs.error).toBeDefined();
+      expect(callArgs.context).toBeDefined();
+    });
+
+    it("should call onEnd hook with correct messages on successful object generation", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Object Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Object Test Agent instructions",
+      });
+
+      const userInput = "Generate a person object";
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      await agentWithOnEnd.generateObject(userInput, schema);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Check messages structure for object generation
+      expect(callArgs.messages).toHaveLength(2);
+      expect(callArgs.messages[0]).toEqual({
+        role: "user",
+        content: userInput,
+      });
+      expect(callArgs.messages[1].role).toBe("assistant");
+      expect(callArgs.messages[1].content).toContain("John Doe"); // Should contain the generated object as JSON
+    });
+
+    it("should call onEnd hook with userContext passed correctly", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Context Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Context Test Agent instructions",
+      });
+
+      const userContext = new Map<string | symbol, unknown>();
+      userContext.set("testKey", "testValue");
+
+      await agentWithOnEnd.generateText("Test with context", { userContext });
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      expect(callArgs.context.userContext).toBeInstanceOf(Map);
+      expect(callArgs.context.userContext.get("testKey")).toBe("testValue");
+    });
+
+    it("should call streamText without errors", async () => {
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Stream Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "OnEnd Stream Test Agent instructions",
+      });
+
+      const userInput = "Stream test";
+      const result = await agentWithOnEnd.streamText(userInput);
+
+      // Verify that streamText was called and returns expected structure
+      expect(mockProvider.streamTextCalls).toBe(1);
+      expect(result).toBeDefined();
+      expect(result.textStream).toBeDefined();
+    });
+  });
+
   describe("userContext", () => {
     it("should initialize userContext within OperationContext", async () => {
       // Create agent with a spy hook to capture the context
