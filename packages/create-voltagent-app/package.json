@@ -8,11 +8,15 @@
     "create-voltagent": "./dist/index.js",
     "create-voltagent-app": "./dist/index.js"
   },
-  "files": ["dist", "templates"],
+  "files": [
+    "dist",
+    "templates"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
     "start": "node dist/index.js",
     "test": "jest --passWithNoTests"
   },

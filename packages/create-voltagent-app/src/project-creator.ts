@@ -1,10 +1,10 @@
 import path from "node:path";
+import chalk from "chalk";
 import fs from "fs-extra";
 import type { ProjectOptions } from "./types";
+import { createSpinner } from "./utils/animation";
 import fileManager from "./utils/file-manager";
 import { getAllTemplates } from "./utils/templates";
-import { createSpinner } from "./utils/animation";
-import chalk from "chalk";
 
 export const createProject = async (options: ProjectOptions, targetDir: string): Promise<void> => {
   // Check and create folder
