@@ -1,9 +1,9 @@
+import { Readable } from "node:stream";
+import type { VoiceMetadata } from "@voltagent/core";
 import { ElevenLabsClient } from "elevenlabs";
 import type { Voice as ElevenLabsVoice } from "elevenlabs/api/types/Voice";
-import type { VoiceMetadata } from "@voltagent/core";
 import { BaseVoiceProvider } from "../base";
 import type { ElevenLabsModel, ElevenLabsVoiceOptions } from "./types";
-import { Readable } from "node:stream";
 
 export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
   private readonly client: ElevenLabsClient;

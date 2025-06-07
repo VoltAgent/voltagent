@@ -1,7 +1,7 @@
 import type { Tool } from "..";
-import { thinkTool as baseThinkTool, analyzeTool as baseAnalyzeTool } from "./tools";
 import type { Toolkit } from "../toolkit";
 import { createToolkit } from "../toolkit";
+import { analyzeTool as baseAnalyzeTool, thinkTool as baseThinkTool } from "./tools";
 
 export * from "./types";
 

@@ -13,7 +13,6 @@ import type {
   ToolStartEvent,
   ToolSuccessEvent,
 } from "../events/types";
-import devLogger from "../utils/internal/dev-logger";
 import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
@@ -21,6 +20,7 @@ import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
+import devLogger from "../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";

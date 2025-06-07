@@ -1,8 +1,8 @@
-import { Command } from "commander";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import chalk from "chalk";
-import os from "os";
-import fs from "fs";
-import path from "path";
+import type { Command } from "commander";
 import { captureError, captureWhoamiEvent } from "../utils/analytics";
 
 export const registerWhoamiCommand = (program: Command): void => {

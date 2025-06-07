@@ -1,6 +1,6 @@
+import type { BaseMessage } from "../agent/providers";
 import type { AgentTool } from "../tool";
 import { createRetrieverTool } from "./tools";
-import type { BaseMessage } from "../agent/providers";
 import type { Retriever, RetrieverOptions } from "./types";
 
 /**

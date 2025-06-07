@@ -1,4 +1,4 @@
-import { BaseMessage } from "../agent/providers/base/types";
+import type { BaseMessage } from "../agent/providers/base/types";
 import { BaseRetriever } from "./retriever";
 import * as toolsModule from "./tools";
 import type { RetrieverOptions } from "./types";
@@ -14,7 +14,7 @@ jest.mock("./tools", () => ({
 
 // Create a concrete implementation of the abstract BaseRetriever class for testing
 class TestRetriever extends BaseRetriever {
-  public testResults: string = "test content";
+  public testResults = "test content";
 
   async retrieve(_text: string | BaseMessage[]): Promise<string> {
     // Simple implementation that returns predefined results

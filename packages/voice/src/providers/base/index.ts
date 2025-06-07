@@ -1,9 +1,9 @@
-import type { Voice, VoiceEventType, ReadableStreamType } from "@voltagent/core";
+import type { ReadableStreamType, Voice, VoiceEventType } from "@voltagent/core";
 import type { BaseVoiceProviderEvents, BaseVoiceProviderOptions } from "./types";
 
 export abstract class BaseVoiceProvider implements Voice {
   protected options: BaseVoiceProviderOptions;
-  protected eventListeners: Map<VoiceEventType, Set<Function>>;
+  protected eventListeners: Map<VoiceEventType, Set<(args: any) => void>>;
 
   constructor(options: BaseVoiceProviderOptions = {}) {
     this.options = options;

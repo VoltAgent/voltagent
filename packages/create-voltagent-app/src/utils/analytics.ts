@@ -1,7 +1,7 @@
+import crypto from "node:crypto";
+import os from "node:os";
 import { PostHog } from "posthog-node";
 import { v4 as uuidv4 } from "uuid";
-import os from "os";
-import crypto from "crypto";
 
 // Check if telemetry is disabled via environment variable
 const isTelemetryDisabled = (): boolean => {
@@ -30,7 +30,7 @@ const getMachineId = (): string => {
 
     const dataToHash = `${hostname}-${cpus}-${platform}-${arch}`;
     return crypto.createHash("sha256").update(dataToHash).digest("hex").substring(0, 32);
-  } catch (error) {
+  } catch {
     // Fallback to a random UUID if machine info isn't accessible
     return uuidv4();
   }
@@ -45,7 +45,7 @@ const getOSInfo = () => {
       os_version: os.version(),
       os_arch: os.arch(),
     };
-  } catch (error) {
+  } catch {
     // Fallback to minimal info if OS info isn't accessible due to security restrictions
     return {
       os_platform: "unknown",

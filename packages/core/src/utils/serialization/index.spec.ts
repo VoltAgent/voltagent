@@ -1,4 +1,4 @@
-import { serializeValueForDebug, safeJsonParse } from "../serialization";
+import { safeJsonParse, serializeValueForDebug } from "../serialization";
 
 describe("safeJsonParse", () => {
   it("should parse valid JSON strings", () => {

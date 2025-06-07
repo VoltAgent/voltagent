@@ -1,6 +1,6 @@
-import { Announcement } from "../types";
-import chalk from "chalk";
 import boxen from "boxen";
+import chalk from "chalk";
+import type { Announcement } from "../types";
 
 // Mock announcements - will be fetched from API in the real implementation
 const MOCK_ANNOUNCEMENTS: Announcement[] = [

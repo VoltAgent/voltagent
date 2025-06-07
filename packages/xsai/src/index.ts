@@ -58,7 +58,7 @@ export class XSAIProvider implements LLMProvider<string> {
 
   toMessage = (message: BaseMessage): Message => {
     if (typeof message.content === "string") return message as Message;
-    else if (Array.isArray(message.content)) {
+    if (Array.isArray(message.content)) {
       const content: (TextPart | ImagePart)[] = [];
 
       for (const part of message.content) {
@@ -83,15 +83,14 @@ export class XSAIProvider implements LLMProvider<string> {
       }
 
       return { role: message.role, content } as Message;
-    } else {
-      // Handle unexpected content types (null, undefined, etc.)
-      console.warn(
-        `[XSAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
-        message.content,
-      );
-
-      return { role: message.role, content: "" } as Message; // Fallback to empty string
     }
+    // Handle unexpected content types (null, undefined, etc.)
+    console.warn(
+      `[XSAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
+      message.content,
+    );
+
+    return { role: message.role, content: "" } as Message; // Fallback to empty string
   };
 
   convertTools = async (tools: BaseTool[]): Promise<ToolResult[] | undefined> => {

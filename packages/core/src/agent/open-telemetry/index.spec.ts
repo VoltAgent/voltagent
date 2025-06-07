@@ -1,6 +1,6 @@
-import { trace, context, SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { SpanKind, SpanStatusCode, context, trace } from "@opentelemetry/api";
 import type { Span } from "@opentelemetry/api";
-import { startOperationSpan, endOperationSpan, startToolSpan, endToolSpan } from "./index"; // Assuming the helper functions are exported from './index'
+import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./index"; // Assuming the helper functions are exported from './index'
 
 // Mock the OpenTelemetry API
 jest.mock("@opentelemetry/api", () => {

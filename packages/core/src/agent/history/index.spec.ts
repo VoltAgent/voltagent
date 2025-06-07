@@ -1,15 +1,15 @@
-import { HistoryManager, type AgentHistoryEntry, type AddEntryParams } from ".";
-import type { BaseMessage } from "../providers";
-import type { AgentStatus } from "../types";
-import type { StepWithContent } from "../providers/base/types";
+import { type AddEntryParams, type AgentHistoryEntry, HistoryManager } from ".";
 import { AgentEventEmitter } from "../../events";
-import { MemoryManager } from "../../memory";
-import type { VoltAgentExporter } from "../../telemetry/exporter";
-import type {
-  ExportAgentHistoryPayload,
-  AgentHistoryUpdatableFields,
-} from "../../telemetry/client";
 import type { NewTimelineEvent } from "../../events/types";
+import { MemoryManager } from "../../memory";
+import type {
+  AgentHistoryUpdatableFields,
+  ExportAgentHistoryPayload,
+} from "../../telemetry/client";
+import type { VoltAgentExporter } from "../../telemetry/exporter";
+import type { BaseMessage } from "../providers";
+import type { StepWithContent } from "../providers/base/types";
+import type { AgentStatus } from "../types";
 
 // Mock dependencies
 jest.mock("../../events");

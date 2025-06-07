@@ -1,8 +1,8 @@
+import { promises as fs, createWriteStream } from "node:fs";
+import { join } from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import tar from "tar";
-import { createWriteStream, promises as fs } from "fs";
-import { join } from "path";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
 
 const TEMP_PREFIX = ".voltagent-github.temp";
 
@@ -21,7 +21,7 @@ export const existsInRepo = async ({
       `https://api.github.com/repos/voltagent/voltagent/contents/examples/${encodeURIComponent(path)}?ref=${branch}`,
     );
     return response.status === 200;
-  } catch (error) {
+  } catch {
     return false;
   }
 };
@@ -44,10 +44,10 @@ const downloadTar = async (url: string): Promise<string | undefined> => {
 
     await pipeline(readable, fileStream);
     return tempFile;
-  } catch (err) {
+  } catch {
     try {
       await fs.unlink(tempFile);
-    } catch (err) {
+    } catch {
       // ignore
     }
     return undefined;
@@ -89,10 +89,10 @@ export const downloadExample = async ({
         return false;
       },
     });
-  } catch (err) {
+  } catch {
     try {
       await fs.unlink(tempFile);
-    } catch (err) {
+    } catch {
       // ignore
     }
     return "extract-failed";
@@ -100,7 +100,7 @@ export const downloadExample = async ({
 
   try {
     await fs.unlink(tempFile);
-  } catch (err) {
+  } catch {
     // ignore
   }
 

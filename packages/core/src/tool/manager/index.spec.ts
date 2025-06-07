@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type AgentTool, createTool, ToolManager } from "../index";
+import { type AgentTool, ToolManager, createTool } from "../index";
 
 describe("ToolManager", () => {
   let toolManager: ToolManager;

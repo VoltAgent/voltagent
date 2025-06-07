@@ -1,21 +1,21 @@
+import fs from "node:fs";
+import path from "node:path";
+import chalk from "chalk";
 import { Command } from "commander";
 import inquirer from "inquirer";
-import { ProjectOptions, Feature } from "./types";
-import logger from "./utils/logger";
-import path from "path";
+import ora from "ora";
 import { createProject } from "./project-creator";
+import type { ProjectOptions } from "./types";
+import { captureError, captureProjectCreation } from "./utils/analytics";
 import {
-  showLogo,
-  showWelcomeMessage,
-  showSuccessMessage,
   colorTypewriter,
+  showLogo,
+  showSuccessMessage,
+  showWelcomeMessage,
   sleep,
 } from "./utils/animation";
-import chalk from "chalk";
-import { captureProjectCreation, captureError } from "./utils/analytics";
-import ora from "ora";
 import { downloadExample, existsInRepo } from "./utils/github";
-import fs from "fs";
+import logger from "./utils/logger";
 
 export const runCLI = async (): Promise<void> => {
   const program = new Command();
@@ -142,7 +142,7 @@ const handleExampleDownload = async (example: string, destination?: string): Pro
       try {
         fs.mkdirSync(targetDir, { recursive: true });
         dirSpinner.succeed(`Directory ${chalk.cyan(projectName)} created`);
-      } catch (err) {
+      } catch {
         dirSpinner.fail(`Failed to create directory ${chalk.cyan(projectName)}`);
         process.exit(1);
       }

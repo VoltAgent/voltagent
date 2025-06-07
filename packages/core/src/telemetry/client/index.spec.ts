@@ -1,11 +1,11 @@
+import type { HistoryStep } from "../../agent/history"; // Adjust path as necessary
+import type { VoltAgentExporterOptions } from "../exporter"; // Adjust path as necessary
 import {
-  TelemetryServiceApiClient,
+  type AgentHistoryUpdatableFields,
   type ExportAgentHistoryPayload,
   type ExportTimelineEventPayload,
-  type AgentHistoryUpdatableFields,
+  TelemetryServiceApiClient,
 } from "./index";
-import type { VoltAgentExporterOptions } from "../exporter"; // Adjust path as necessary
-import type { HistoryStep } from "../../agent/history"; // Adjust path as necessary
 
 global.fetch = jest.fn();
 

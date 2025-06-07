@@ -1,7 +1,7 @@
 import { InMemoryStorage } from ".";
-import type { Conversation, MemoryMessage } from "../types";
 import type { NewTimelineEvent } from "../../events/types";
 import devLogger from "../../utils/internal/dev-logger";
+import type { Conversation, MemoryMessage } from "../types";
 
 // Mock devLogger
 jest.mock("../../utils/internal/dev-logger", () => ({

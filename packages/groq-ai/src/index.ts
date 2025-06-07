@@ -12,11 +12,11 @@ import type {
   StreamObjectOptions,
   StreamTextOptions,
 } from "@voltagent/core";
-import type { z } from "zod";
-import type { GroqProviderOptions } from "./types";
 import { Groq } from "groq-sdk";
-import { convertToolsForSDK } from "./utils";
+import type { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
+import type { GroqProviderOptions } from "./types";
+import { convertToolsForSDK } from "./utils";
 
 export class GroqProvider implements LLMProvider<string> {
   // @ts-ignore

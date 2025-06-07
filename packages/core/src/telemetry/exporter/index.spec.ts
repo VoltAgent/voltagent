@@ -1,10 +1,10 @@
-import { VoltAgentExporter, type VoltAgentExporterOptions } from "./index";
+import type { HistoryStep } from "../../agent/history"; // Adjust path as necessary
 import type {
+  AgentHistoryUpdatableFields,
   ExportAgentHistoryPayload,
   ExportTimelineEventPayload,
-  AgentHistoryUpdatableFields,
 } from "../client"; // Adjust path as necessary for types
-import type { HistoryStep } from "../../agent/history"; // Adjust path as necessary
+import { VoltAgentExporter, type VoltAgentExporterOptions } from "./index";
 
 // Define top-level mocks for each method of TelemetryServiceApiClient
 const mockExportAgentHistory = jest.fn();

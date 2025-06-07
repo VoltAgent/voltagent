@@ -1,6 +1,6 @@
 import { PassThrough } from "node:stream";
+import type { ReadableStreamType, VoiceMetadata } from "@voltagent/core";
 import OpenAI from "openai";
-import type { VoiceMetadata, ReadableStreamType } from "@voltagent/core";
 import { BaseVoiceProvider } from "../base";
 import type {
   OpenAIAudioFormat,

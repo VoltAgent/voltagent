@@ -1,31 +1,30 @@
+import { swaggerUI } from "@hono/swagger-ui";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
 import type { z } from "zod";
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { swaggerUI } from "@hono/swagger-ui";
+import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import type { AgentHistoryEntry } from "../agent/history";
-import { AgentEventEmitter } from "../events";
-import { AgentRegistry } from "./registry";
-import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 import type { AgentStatus } from "../agent/types";
+import { AgentEventEmitter } from "../events";
 import {
+  type PackageUpdateInfo,
   checkForUpdates,
   updateAllPackages,
   updateSinglePackage,
-  type PackageUpdateInfo,
 } from "../utils/update";
 import {
-  getAgentsRoute,
-  textRoute,
-  streamRoute,
-  objectRoute,
-  streamObjectRoute,
   type ErrorSchema,
-  type TextResponseSchema,
+  type ObjectRequestSchema,
   type ObjectResponseSchema,
   type TextRequestSchema,
-  type ObjectRequestSchema,
+  type TextResponseSchema,
+  getAgentsRoute,
+  objectRoute,
+  streamObjectRoute,
+  streamRoute,
+  textRoute,
 } from "./api.routes";
 import type { CustomEndpointDefinition } from "./custom-endpoints";
 import {
@@ -33,7 +32,8 @@ import {
   validateCustomEndpoint,
   validateCustomEndpoints,
 } from "./custom-endpoints";
-import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { AgentRegistry } from "./registry";
+import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 
 const app = new OpenAPIHono();
 

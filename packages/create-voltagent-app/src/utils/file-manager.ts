@@ -1,5 +1,5 @@
-import fs from "fs-extra";
 import path from "node:path";
+import fs from "fs-extra";
 import type { ProjectOptions, TemplateFile } from "../types";
 
 const fileManager = {

@@ -1,7 +1,7 @@
+import crypto from "node:crypto";
+import os from "node:os";
 import { PostHog } from "posthog-node";
 import { v4 as uuidv4 } from "uuid";
-import os from "os";
-import crypto from "crypto";
 
 // Check if telemetry is disabled via environment variable
 const isTelemetryDisabled = (): boolean => {
@@ -30,7 +30,7 @@ const getMachineId = (): string => {
 
     const dataToHash = `${hostname}-${cpus}-${platform}-${arch}`;
     return crypto.createHash("sha256").update(dataToHash).digest("hex").substring(0, 32);
-  } catch (error) {
+  } catch {
     // Fallback to a random UUID if machine info isn't accessible
     return uuidv4();
   }
@@ -45,7 +45,7 @@ const getOSInfo = () => {
       os_version: os.version(),
       os_arch: os.arch(),
     };
-  } catch (error) {
+  } catch {
     // Fallback to minimal info if OS info isn't accessible due to security restrictions
     return {
       os_platform: "unknown",
@@ -57,9 +57,7 @@ const getOSInfo = () => {
 };
 
 // Function to capture CLI initialization events
-export const captureInitEvent = (options: {
-  packageManager: string;
-}) => {
+export const captureInitEvent = (options: { packageManager: string }) => {
   // Skip if telemetry is disabled
   if (isTelemetryDisabled()) return;
 
@@ -75,9 +73,7 @@ export const captureInitEvent = (options: {
 };
 
 // Function to capture CLI update check events
-export const captureUpdateEvent = (options: {
-  hadUpdates: boolean;
-}) => {
+export const captureUpdateEvent = (options: { hadUpdates: boolean }) => {
   // Skip if telemetry is disabled
   if (isTelemetryDisabled()) return;
 
@@ -93,10 +89,7 @@ export const captureUpdateEvent = (options: {
 };
 
 // Function to capture error events
-export const captureError = (options: {
-  command: string;
-  errorMessage: string;
-}) => {
+export const captureError = (options: { command: string; errorMessage: string }) => {
   // Skip if telemetry is disabled
   if (isTelemetryDisabled()) return;
 
@@ -113,9 +106,7 @@ export const captureError = (options: {
 };
 
 // Function to capture whoami command events
-export const captureWhoamiEvent = (options: {
-  numVoltPackages: number;
-}) => {
+export const captureWhoamiEvent = (options: { numVoltPackages: number }) => {
   // Skip if telemetry is disabled
   if (isTelemetryDisabled()) return;
 

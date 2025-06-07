@@ -4,8 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import type { BaseMessage } from "../index";
-import devLogger from "../utils/internal/dev-logger";
 import { AgentRegistry } from "../server/registry";
+import devLogger from "../utils/internal/dev-logger";
 import type { NewTimelineEvent } from "./types";
 
 // New type exports

@@ -1,11 +1,11 @@
-import { Command } from "commander";
+import fs from "node:fs";
+import path from "node:path";
 import chalk from "chalk";
-import ora from "ora";
-import path from "path";
-import fs from "fs";
-import * as ncuPackage from "npm-check-updates";
+import type { Command } from "commander";
 import inquirer from "inquirer";
-import { captureUpdateEvent, captureError } from "../utils/analytics";
+import * as ncuPackage from "npm-check-updates";
+import ora from "ora";
+import { captureError, captureUpdateEvent } from "../utils/analytics";
 
 // Not directly importing from @voltagent/core due to potential circular dependencies
 // instead, we'll implement a simpler version here
@@ -61,14 +61,13 @@ const checkForUpdates = async (
         count,
         message: `Found ${count} outdated packages:\n${updatesList}`,
       };
-    } else {
-      return {
-        hasUpdates: false,
-        updates: {},
-        count: 0,
-        message: "All packages are up to date",
-      };
     }
+    return {
+      hasUpdates: false,
+      updates: {},
+      count: 0,
+      message: "All packages are up to date",
+    };
   } catch (error) {
     console.error("Error checking for updates:", error);
     return {
@@ -158,7 +157,7 @@ const getCurrentVersion = (packageName: string, packageJsonPath: string): string
     }
 
     return "unknown";
-  } catch (error) {
+  } catch {
     return "unknown";
   }
 };

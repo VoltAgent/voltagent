@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { AgentEventEmitter } from "../../events";
 import type { NewTimelineEvent } from "../../events/types";
-import devLogger from "../../utils/internal/dev-logger";
 import type { MemoryManager } from "../../memory";
 import type {
   AgentHistoryUpdatableFields,
@@ -9,6 +8,7 @@ import type {
   ExportTimelineEventPayload,
 } from "../../telemetry/client";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
+import devLogger from "../../utils/internal/dev-logger";
 import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/types";
 import type { AgentStatus } from "../types";
 

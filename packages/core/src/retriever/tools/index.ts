@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTool, type AgentTool } from "../../tool";
+import { type AgentTool, createTool } from "../../tool";
 import type { Retriever } from "../types";
 
 /**

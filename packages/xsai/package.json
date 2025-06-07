@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
