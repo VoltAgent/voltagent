@@ -53,6 +53,7 @@ export type MessageFilterOptions = {
 export type Conversation = {
   id: string;
   resourceId: string;
+  userId: string;
   title: string;
   metadata: Record<string, unknown>;
   createdAt: string;
@@ -65,8 +66,21 @@ export type Conversation = {
 export type CreateConversationInput = {
   id: string;
   resourceId: string;
+  userId: string;
   title: string;
   metadata: Record<string, unknown>;
+};
+
+/**
+ * Query builder options for conversations
+ */
+export type ConversationQueryOptions = {
+  userId?: string;
+  resourceId?: string;
+  limit?: number;
+  offset?: number;
+  orderBy?: "created_at" | "updated_at" | "title";
+  orderDirection?: "ASC" | "DESC";
 };
 
 /**
@@ -86,10 +100,7 @@ export type Memory = {
   /**
    * Clear messages from memory
    */
-  clearMessages(options: {
-    userId: string;
-    conversationId?: string;
-  }): Promise<void>;
+  clearMessages(options: { userId: string; conversationId?: string }): Promise<void>;
 
   /**
    * Create a new conversation
@@ -105,6 +116,27 @@ export type Memory = {
    * Get conversations for a resource
    */
   getConversations(resourceId: string): Promise<Conversation[]>;
+
+  /**
+   * Get conversations by user ID with query options
+   */
+  getConversationsByUserId(
+    userId: string,
+    options?: Omit<ConversationQueryOptions, "userId">,
+  ): Promise<Conversation[]>;
+
+  /**
+   * Get conversations with advanced query options
+   */
+  queryConversations(options: ConversationQueryOptions): Promise<Conversation[]>;
+
+  /**
+   * Get all messages for a specific conversation
+   */
+  getConversationMessages(
+    conversationId: string,
+    options?: { limit?: number; offset?: number },
+  ): Promise<MemoryMessage[]>;
 
   /**
    * Update a conversation

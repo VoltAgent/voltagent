@@ -52,6 +52,7 @@ describe("InMemoryStorage", () => {
   const createConversation = (overrides: Partial<Conversation> = {}): Conversation => ({
     id: `conv-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     resourceId: "resource-test",
+    userId: "test-user",
     title: "Test Conversation",
     metadata: {},
     createdAt: new Date().toISOString(),
@@ -470,6 +471,7 @@ describe("InMemoryStorage", () => {
         const conversation = await storage.createConversation({
           id: testData.id,
           resourceId: testData.resourceId,
+          userId: "test-user",
           title: testData.title,
           metadata: testData.metadata,
         });
@@ -478,6 +480,7 @@ describe("InMemoryStorage", () => {
         expect(conversation).toEqual({
           id: testData.id,
           resourceId: testData.resourceId,
+          userId: "test-user",
           title: testData.title,
           metadata: testData.metadata,
           createdAt: expect.any(String),
@@ -499,6 +502,7 @@ describe("InMemoryStorage", () => {
         const conversation = await storage.createConversation({
           id: testData.id,
           resourceId: testData.resourceId,
+          userId: "test-user",
           title: testData.title,
           metadata: testData.metadata,
         });
@@ -507,6 +511,7 @@ describe("InMemoryStorage", () => {
         expect(conversation).toEqual({
           id: customId,
           resourceId: testData.resourceId,
+          userId: "test-user",
           title: testData.title,
           metadata: testData.metadata,
           createdAt: expect.any(String),
@@ -519,6 +524,7 @@ describe("InMemoryStorage", () => {
         const conversation = await storage.createConversation({
           id: "test-conversation-2",
           resourceId: "resource-minimal",
+          userId: "test-user",
           title: "",
           metadata: {},
         });
@@ -527,6 +533,7 @@ describe("InMemoryStorage", () => {
         expect(conversation).toEqual({
           id: "test-conversation-2",
           resourceId: "resource-minimal",
+          userId: "test-user",
           title: "",
           metadata: {},
           createdAt: expect.any(String),
@@ -541,6 +548,7 @@ describe("InMemoryStorage", () => {
         const created = await storage.createConversation({
           id: "test-conversation-3",
           resourceId: "resource-1",
+          userId: "test-user",
           title: "Test Conversation",
           metadata: { isTest: true },
         });
@@ -569,6 +577,7 @@ describe("InMemoryStorage", () => {
         await storage.createConversation({
           id: "test-conversation-4",
           resourceId: "resource-1",
+          userId: "test-user",
           title: "First Conversation",
           metadata: { order: 1 },
         });
@@ -577,6 +586,7 @@ describe("InMemoryStorage", () => {
         await storage.createConversation({
           id: "test-conversation-5",
           resourceId: "resource-1",
+          userId: "test-user",
           title: "Second Conversation",
           metadata: { order: 2 },
         });
@@ -585,6 +595,7 @@ describe("InMemoryStorage", () => {
         await storage.createConversation({
           id: "test-conversation-6",
           resourceId: "resource-2",
+          userId: "test-user",
           title: "Different Resource",
           metadata: { order: 3 },
         });
@@ -621,6 +632,7 @@ describe("InMemoryStorage", () => {
         existingConversation = await storage.createConversation({
           id: "test-conversation-7",
           resourceId: "resource-1",
+          userId: "test-user",
           title: "Original Title",
           metadata: { originalKey: "value" },
         });
@@ -674,7 +686,8 @@ describe("InMemoryStorage", () => {
         existingConversation = await storage.createConversation({
           id: "test-conversation-8",
           resourceId: "resource-1",
-          title: "To Be Deleted",
+          userId: "test-user",
+          title: "Original Title",
           metadata: {},
         });
 
