@@ -13,7 +13,13 @@ jobs:
       - uses: wagoid/commitlint-github-action@v5
   lint:
     runs-on: ubuntu-latest
-    name: Lint
+    strategy:
+      matrix:
+        node-version: [18, 20, 22, 24]
+    concurrency:
+      group: ${{ github.ref }}-lint-${{ matrix.node-version }}
+      cancel-in-progress: true
+    name: Lint (Node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -21,7 +27,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: "pnpm"
       - name: Install Dependencies
         run: |
@@ -33,10 +39,13 @@ jobs:
       #  run: pnpm sp lint
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22, 24]
     concurrency:
-      group: ${{ github.ref }}-pr-build
+      group: ${{ github.ref }}-pr-build-${{ matrix.node-version }}
       cancel-in-progress: true
-    name: Build & Test
+    name: Build & Test (Node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -44,7 +53,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: "pnpm"
       - name: Install
         run: pnpm install
@@ -66,5 +75,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - name: Check TSDoc Links
-        run: npx tsdoc-link-check --patterns packages/** 
+        run: npx tsdoc-link-check --patterns packages/**
