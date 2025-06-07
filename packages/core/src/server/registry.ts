@@ -74,7 +74,7 @@ export class AgentRegistry {
       this.agentRelationships.set(childId, []);
     }
 
-    const parents = this.agentRelationships.get(childId)!;
+    const parents = this.agentRelationships.get(childId) ?? [];
     if (!parents.includes(parentId)) {
       parents.push(parentId);
     }
@@ -87,7 +87,7 @@ export class AgentRegistry {
    */
   public unregisterSubAgent(parentId: string, childId: string): void {
     if (this.agentRelationships.has(childId)) {
-      const parents = this.agentRelationships.get(childId)!;
+      const parents = this.agentRelationships.get(childId) ?? [];
       const index = parents.indexOf(parentId);
       if (index !== -1) {
         parents.splice(index, 1);

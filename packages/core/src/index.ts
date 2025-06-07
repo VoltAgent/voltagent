@@ -7,8 +7,8 @@ import { checkForUpdates } from "./utils/update";
 
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import devLogger from "./utils/internal/dev-logger";
 import type { VoltAgentExporter } from "./telemetry/exporter";
+import devLogger from "./utils/internal/dev-logger";
 
 export * from "./agent";
 export * from "./agent/hooks";

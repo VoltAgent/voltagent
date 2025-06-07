@@ -1,7 +1,7 @@
-import { AgentEventEmitter } from "./index";
-import { AgentRegistry } from "../server/registry";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
+import { AgentRegistry } from "../server/registry";
+import { AgentEventEmitter } from "./index";
 
 // Mock AgentRegistry
 jest.mock("../server/registry");

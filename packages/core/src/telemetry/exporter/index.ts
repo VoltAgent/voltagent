@@ -27,13 +27,13 @@ export interface VoltAgentExporterOptions {
   fetch?: typeof fetch;
 }
 
+import type { HistoryStep } from "../../agent/history";
 import {
-  TelemetryServiceApiClient,
+  type AgentHistoryUpdatableFields,
   type ExportAgentHistoryPayload,
   type ExportTimelineEventPayload,
-  type AgentHistoryUpdatableFields,
+  TelemetryServiceApiClient,
 } from "../client";
-import type { HistoryStep } from "../../agent/history";
 
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;

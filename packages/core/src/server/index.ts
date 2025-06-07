@@ -1,8 +1,8 @@
+import type { IncomingMessage } from "node:http";
+import type { Socket } from "node:net";
 import { serve } from "@hono/node-server";
-import app, { createWebSocketServer } from "./api";
 import type { WebSocketServer } from "ws";
-import type { IncomingMessage } from "http";
-import type { Socket } from "net";
+import app, { createWebSocketServer } from "./api";
 
 // Terminal color codes
 const colors = {

@@ -1,7 +1,7 @@
 // @ts-ignore - To prevent errors when loading Jest mocks
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
-import type { MemoryMessage, Memory } from "../memory/types";
+import type { Memory, MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
 import { createTool } from "../tool";
 import { Agent } from "./index";
@@ -18,12 +18,12 @@ import type {
 
 // @ts-ignore - To simplify test types
 import type { AgentHistoryEntry } from "../agent/history";
-import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
-import { createHooks } from "./hooks";
-import { HistoryManager } from "./history";
-import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { NewTimelineEvent } from "../events/types";
 import type { BaseRetriever } from "../retriever/retriever";
+import type { VoltAgentExporter } from "../telemetry/exporter";
+import { HistoryManager } from "./history";
+import { createHooks } from "./hooks";
+import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: unknown };

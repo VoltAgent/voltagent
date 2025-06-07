@@ -1,6 +1,6 @@
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../index";
-import type { OperationContext, VoltAgentError, AgentOperationOutput } from "../types";
+import type { AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
 
 // Argument Object Interfaces
 export interface OnStartHookArgs {

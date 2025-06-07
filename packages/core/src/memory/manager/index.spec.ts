@@ -1,10 +1,10 @@
 import { MemoryManager } from ".";
-import type { BaseMessage } from "../../agent/providers/base/types";
-import type { Memory, MemoryMessage } from "../types";
-import type { OperationContext } from "../../agent/types";
 import type { AgentHistoryEntry } from "../../agent/history";
-import type { NewTimelineEvent } from "../../events/types";
+import type { BaseMessage } from "../../agent/providers/base/types";
+import type { OperationContext } from "../../agent/types";
 import { AgentEventEmitter } from "../../events";
+import type { NewTimelineEvent } from "../../events/types";
+import type { Memory, MemoryMessage } from "../types";
 
 // Mock the AgentRegistry
 jest.mock("../../server/registry", () => {
