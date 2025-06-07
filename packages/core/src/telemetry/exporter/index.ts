@@ -1,11 +1,21 @@
+import type { HistoryStep } from "../../agent/history";
+import {
+  type AgentHistoryUpdatableFields,
+  type ExportAgentHistoryPayload,
+  type ExportTimelineEventPayload,
+  TelemetryServiceApiClient,
+} from "../client";
+
 /**
  * Options for configuring the VoltAgentExporter.
  */
 export interface VoltAgentExporterOptions {
   /**
    * The base URL for the VoltAgent Edge Functions.
+   *
+   * @default "https://api.voltagent.dev"
    */
-  baseUrl: string;
+  baseUrl?: string;
 
   /**
    * The public API key for the project, used to identify the project
@@ -27,20 +37,12 @@ export interface VoltAgentExporterOptions {
   fetch?: typeof fetch;
 }
 
-import {
-  TelemetryServiceApiClient,
-  type ExportAgentHistoryPayload,
-  type ExportTimelineEventPayload,
-  type AgentHistoryUpdatableFields,
-} from "../client";
-import type { HistoryStep } from "../../agent/history";
-
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;
   public readonly publicKey: string;
 
   constructor(options: VoltAgentExporterOptions) {
-    let baseUrl = options.baseUrl;
+    let baseUrl = options.baseUrl ?? "https://api.voltagent.dev";
     if (baseUrl.includes("https://server.voltagent.dev")) {
       baseUrl = "https://api.voltagent.dev";
     }

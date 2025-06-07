@@ -1,0 +1,41 @@
+{
+  "name": "@voltagent/fastify",
+  "version": "0.0.1",
+  "description": "VoltAgent Fastify - Fastify plugin for integrating with Volt suite of tools & products",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@voltagent/core": "^0.1.24",
+    "fastify": "^5.3.3",
+    "fastify-plugin": "^5.0.1",
+    "ts-pattern": "^5.7.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4"
+  },
+  "peerDependencies": {
+    "@voltagent/core": "^0.1.0"
+  }
+}
