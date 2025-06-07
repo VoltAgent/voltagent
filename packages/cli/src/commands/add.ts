@@ -1,5 +1,5 @@
-import type { Command } from "commander";
 import chalk from "chalk";
+import type { Command } from "commander";
 import { captureError } from "../utils/analytics";
 
 export const registerAddCommand = (program: Command) => {

@@ -1,9 +1,9 @@
-import { Command } from "commander";
+import { execSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import chalk from "chalk";
-import fs from "fs";
-import path from "path";
-import { execSync } from "child_process";
-import { captureInitEvent, captureError } from "../utils/analytics";
+import type { Command } from "commander";
+import { captureError, captureInitEvent } from "../utils/analytics";
 
 export const registerInitCommand = (program: Command): void => {
   program
@@ -39,7 +39,7 @@ export const registerInitCommand = (program: Command): void => {
           } else if (fs.existsSync(path.join(process.cwd(), "yarn.lock"))) {
             packageManager = "yarn";
           }
-        } catch (error) {
+        } catch {
           // Default to npm if detection fails
           packageManager = "npm";
         }
@@ -48,8 +48,8 @@ export const registerInitCommand = (program: Command): void => {
 
         // Add "volt" script to package.json
         let modified = false;
-        if (!scripts["volt"] || scripts["volt"] !== "volt") {
-          scripts["volt"] = "volt";
+        if (!scripts.volt || scripts.volt !== "volt") {
+          scripts.volt = "volt";
           modified = true;
         }
 
@@ -71,7 +71,7 @@ export const registerInitCommand = (program: Command): void => {
             fs.constants.F_OK,
           );
           isPackageInstalled = true;
-        } catch (error) {
+        } catch {
           // Package is not installed
           isPackageInstalled = false;
         }

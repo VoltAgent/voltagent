@@ -1,5 +1,5 @@
 import Conf from "conf";
-import { CLIConfig } from "../types";
+import type { CLIConfig } from "../types";
 
 // Default configuration
 const defaultConfig: CLIConfig = {

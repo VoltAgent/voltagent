@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { Command } from "commander";
 import chalk from "chalk";
+import { Command } from "commander";
 import figlet from "figlet";
+import { registerAddCommand } from "./commands/add";
 import { registerInitCommand } from "./commands/init";
 import { registerUpdateCommand } from "./commands/update";
 import { registerWhoamiCommand } from "./commands/whoami";
-import { registerAddCommand } from "./commands/add";
 import { captureError } from "./utils/analytics";
 import posthogClient from "./utils/analytics";
 
