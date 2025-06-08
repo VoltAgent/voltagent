@@ -4,8 +4,8 @@
   "description": "Anthropic AI provider for VoltAgent",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     }
   },

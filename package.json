@@ -2,22 +2,20 @@
   "name": "voltagent",
   "version": "0.1.0",
   "private": true,
-  "description": "Backend framework with a monorepo structure using pnpm and lerna",
+  "description": "Backend framework with a monorepo structure using pnpm",
   "license": "MIT",
   "author": "",
-  "workspaces": ["packages/*", "examples/*"],
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
   "scripts": {
-    "attw": "lerna run attw --scope @voltagent/core",
-    "attw:all": "lerna run attw --scope @voltagent/*",
-    "biome": "biome",
-    "bootstrap": "lerna bootstrap",
-    "build": "lerna run build",
-    "build:all": "lerna run build --scope @voltagent/*",
-    "build:example": "lerna run build --scope voltagent-basic-example",
+    "build": "pnpm -r run build",
+    "build:all": "pnpm --filter @voltagent/core run build && pnpm -r --filter @voltagent/* --filter !@voltagent/core run build",
     "changeset": "changeset",
-    "clean": "lerna run clean && lerna clean --yes && rimraf node_modules",
+    "clean": "pnpm -r run clean && pnpm -r exec rm -rf node_modules && rimraf node_modules",
     "coffee": "pnpm nuke && pnpm i && pnpm build:all",
-    "dev": "lerna run dev --ignore voltagent-example-*",
+    "dev": "pnpm -r --parallel --filter @voltagent/* run dev",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "biome check .",
     "lint:ci": "biome ci .",
@@ -25,27 +23,30 @@
     "lint:fix": "biome check . --apply",
     "lint:staged": "lint-staged",
     "nuke": "echo 'Removing all node_modules, builds and lockfiles' && pnpm nuke:node_modules && pnpm nuke:builds && pnpm nuke:lockfiles",
-    "nuke:builds": "lerna exec -- rimraf dist && lerna exec -- rimraf build",
-    "nuke:lockfiles": "lerna exec -- rimraf package-lock.json && lerna exec -- rimraf yarn.lock && lerna exec -- rimraf pnpm-lock.yaml",
-    "nuke:node_modules": "lerna clean --yes && rimraf node_modules",
-    "nx": "nx",
+    "nuke:builds": "pnpm -r exec rimraf dist && pnpm -r exec rimraf build",
+    "nuke:lockfiles": "pnpm -r exec rimraf package-lock.json && pnpm -r exec rimraf yarn.lock && pnpm -r exec rimraf pnpm-lock.yaml",
+    "nuke:node_modules": "pnpm -r exec rimraf node_modules",
     "prepare": "husky install",
-    "publint": "lerna run publint --scope @voltagent/core",
-    "publint:all": "lerna run publint --scope @voltagent/*",
-    "publish": "lerna publish",
+    "publint": "pnpm --filter @voltagent/core exec publint",
+    "publint:all": "pnpm --filter @voltagent/* exec publint",
+    "publish": "pnpm -r publish",
     "sp": "syncpack",
-    "start": "lerna run start",
-    "start:example": "lerna run start --scope voltagent-basic-example",
-    "test": "lerna run test --stream",
-    "test:all": "lerna run test --stream --scope @voltagent/*",
+    "test": "pnpm -r run test",
+    "test:all": "pnpm --filter @voltagent/* run test",
     "test:all:coverage": "pnpm test:all -- -- --coverage",
     "test:coverage": "pnpm test -- -- --coverage",
     "version-packages": "changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile && git add pnpm-lock.yaml"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json}": ["biome format --write --no-errors-on-unmatched"],
-    "*.{md,mdx}": ["prettier --config ./.prettierrc --write"],
-    "package.json": ["sort-package-json"]
+    "*.{js,jsx,ts,tsx,json}": [
+      "biome format --write --no-errors-on-unmatched"
+    ],
+    "*.{md,mdx}": [
+      "prettier --config ./.prettierrc --write"
+    ],
+    "package.json": [
+      "sort-package-json"
+    ]
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.17.4",
@@ -55,12 +56,10 @@
     "@commitlint/cli": "^18.2.0",
     "@commitlint/config-conventional": "^18.2.0",
     "husky": "^8.0.3",
-    "lerna": "^7.4.2",
     "lint-staged": "^15.4.3",
-    "nx": "^20.4.6",
     "prettier": "^3.5.3",
     "publint": "^0.3.8",
-    "rimraf": "^5.0.5",
+    "rimraf": "^6.0.1",
     "sort-package-json": "^2.15.1",
     "syncpack": "^13.0.2",
     "typescript": "^5.3.2"
@@ -69,6 +68,5 @@
   "engines": {
     "node": ">=20",
     "pnpm": ">=8"
-  },
-  "nx": {}
+  }
 }

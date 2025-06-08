@@ -137,11 +137,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-
-# NX
-.nx
-
-
 .voltagent
 
 # Create VoltAgent App
