@@ -4162,16 +4162,16 @@ color: #ddd6fe !important;
   position: relative !important;
   padding-left: 1.5rem !important;
 }
-.menu__list-item-collapsible .menu__link::before {
+
+/* .menu__list-item-collapsible .menu__link::before {
   content:"•" !important;
   position: absolute !important;
-  left: 0.5rem !important;
+  left: 0rem !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   color: rgb(16, 185, 129) !important;
   font-size: 1rem !important;
-}
-
+} */
 
 
 .menu__list-item-collapsible .menu__link--active {
