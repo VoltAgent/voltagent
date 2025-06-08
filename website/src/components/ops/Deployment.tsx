@@ -116,7 +116,7 @@ const initialDeploymentLogs: DeploymentLog[] = [
   // --- Stage 3: Building Application ---
   {
     id: 6,
-    message: "Using Node.js v18.18.0",
+    message: "Using Node.js v20.19.0",
     timestamp: "10:30:03.100",
     stageId: 3,
     visible: false,

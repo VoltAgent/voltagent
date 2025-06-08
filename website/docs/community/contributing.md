@@ -51,7 +51,7 @@ Understanding the purpose of each package helps in directing your contributions 
 
 ### Requirements
 
-- [Node.js](https://nodejs.org/en/) version 18 or higher
+- [Node.js](https://nodejs.org/en/) version 20 or higher
 - [Git](https://git-scm.com/) and [GitHub](https://github.com) account
 - [pnpm](https://pnpm.io/) version 8.10.5 or higher (as per `package.json`)
 
@@ -182,9 +182,9 @@ pnpm changeset
 
 Follow the prompts:
 
-1.  Select the package(s) you modified.
-2.  Choose the appropriate semantic version bump (`major`, `minor`, `patch`).
-3.  Write a clear description of the change. Reference the relevant GitHub issue number (e.g., `Fixes #123`).
+1. Select the package(s) you modified.
+2. Choose the appropriate semantic version bump (`major`, `minor`, `patch`).
+3. Write a clear description of the change. Reference the relevant GitHub issue number (e.g., `Fixes #123`).
 
 Commit the generated `.changeset/*.md` file along with your code changes.
 
@@ -208,10 +208,10 @@ Fixes #789
 
 ### Creating a Pull Request
 
-1.  Push your changes (including the changeset file) to your forked repository.
-2.  Create a Pull Request against the `main` branch of the main VoltAgent repository (link-to-your-repo).
-3.  Ensure your PR title and description are clear. Reference any related issues.
-4.  CI checks (linting, tests, commitlint, changeset validation) will run automatically. Please address any failures.
-5.  Maintainers will review your PR. Be responsive to feedback.
+1. Push your changes (including the changeset file) to your forked repository.
+2. Create a Pull Request against the `main` branch of the main VoltAgent repository (link-to-your-repo).
+3. Ensure your PR title and description are clear. Reference any related issues.
+4. CI checks (linting, tests, commitlint, changeset validation) will run automatically. Please address any failures.
+5. Maintainers will review your PR. Be responsive to feedback.
 
 We look forward to your contributions! 🎉
