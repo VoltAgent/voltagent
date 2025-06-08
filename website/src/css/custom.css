@@ -4112,8 +4112,8 @@ color: #ddd6fe !important;
   padding: 0 !important;
 }
 
-.menu__link--sublist-caret:after {
-  display: none;
+.menu__link--sublist-caret::after {
+  width: 0.9rem !important;
 }
 
 .menu__link {
@@ -4164,14 +4164,14 @@ color: #ddd6fe !important;
 }
 
 /* .menu__list-item-collapsible .menu__link::before {
-  content:"•" !important;
+  content:"-" !important;
   position: absolute !important;
-  left: 0rem !important;
+  left: 0.1rem !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   color: rgb(16, 185, 129) !important;
   font-size: 1rem !important;
-} */
+}  */
 
 
 .menu__list-item-collapsible .menu__link--active {
