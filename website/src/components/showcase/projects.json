@@ -7,11 +7,7 @@
     "creator": "Emre Tezisci",
     "avatar": "https://github.com/emretezisci.png",
     "githubUrl": "https://github.com/emretezisci/pmm-agent",
-    "tech": [
-      "VoltAgent",
-      "OpenAI",
-      "Composio MCP"
-    ],
+    "tech": ["VoltAgent", "OpenAI", "Composio MCP"],
     "screenshot": "https://cdn.voltagent.dev/website/showcase/multi-agent.png",
     "useCases": [
       "Content marketing teams producing research-based content pieces",

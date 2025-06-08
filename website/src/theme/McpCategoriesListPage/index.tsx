@@ -1,8 +1,8 @@
-import React from "react";
-import Layout from "@theme/Layout";
 import Link from "@docusaurus/Link";
 import { TagIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
+import Layout from "@theme/Layout";
+import React from "react";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
 export default function McpCategoriesListPage(props) {

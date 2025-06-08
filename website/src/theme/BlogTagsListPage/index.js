@@ -1,3 +1,4 @@
+import Link from "@docusaurus/Link";
 import {
   HtmlClassNameProvider,
   PageMetadata,
@@ -7,7 +8,6 @@ import BlogLayout from "@theme/BlogLayout";
 import SearchMetadata from "@theme/SearchMetadata";
 import clsx from "clsx";
 import React from "react";
-import Link from "@docusaurus/Link";
 
 export default function BlogTagsListPage({ tags }) {
   const allTags = tags || [];

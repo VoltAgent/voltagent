@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
 import { useLocation } from "@docusaurus/router";
 import useIsBrowser from "@docusaurus/useIsBrowser";
+import React, { useEffect } from "react";
 import { GitHubStarsProvider } from "../contexts/GitHubStarsContext";
 
 // Default implementation, that you can customize

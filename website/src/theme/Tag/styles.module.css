@@ -28,7 +28,7 @@
 
 .tagWithCount::before,
 .tagWithCount::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   border: 1px solid var(--docusaurus-tag-list-border);

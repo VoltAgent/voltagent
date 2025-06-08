@@ -1,27 +1,28 @@
-import React, { useEffect, useState } from "react";
-import TOCItems from "@theme/TOCItems";
-import { ShareWidget } from "./ShareWidget";
-import clsx from "clsx";
 import { useLocation } from "@docusaurus/router";
+import TOCItems from "@theme/TOCItems";
+import clsx from "clsx";
+import React, { useEffect, useState } from "react";
+import { ShareWidget } from "./ShareWidget";
 
 const LINK_CLASS_NAME = "table-of-contents__link toc-highlight";
 
-export default function TOC({ className, toc, ...props }) {
+export default function TOC({ toc, ...props }) {
   const location = useLocation();
   const isBlogPost = location.pathname.includes("/blog/");
   const [activeId, setActiveId] = useState("");
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
+        for (const entry of entries) {
           if (entry.isIntersecting) {
             const id = entry.target.id;
             if (id) {
               setActiveId(id);
             }
           }
-        });
+        }
       },
       {
         rootMargin: "-64px 0% -40% 0%",
@@ -32,7 +33,9 @@ export default function TOC({ className, toc, ...props }) {
     const headings = document.querySelectorAll(
       "h1[id], h2[id], h3[id], h4[id]",
     );
-    headings.forEach((heading) => observer.observe(heading));
+    for (const heading of headings) {
+      observer.observe(heading);
+    }
 
     return () => observer.disconnect();
   }, [location.pathname]);
@@ -61,7 +64,7 @@ export default function TOC({ className, toc, ...props }) {
         <h3 className="text-base font-semibold border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 mb-1">
           Table of Contents
         </h3>
-        <div className="w-24 h-1 bg-main-emerald rounded-full"></div>
+        <div className="w-24 h-1 bg-main-emerald rounded-full" />
       </div>
       <style>
         {`

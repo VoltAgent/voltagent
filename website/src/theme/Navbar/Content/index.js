@@ -20,6 +20,7 @@ function NavbarItems({ items }) {
     <>
       {items.map((item, i) => (
         <ErrorCauseBoundary
+          // biome-ignore lint/suspicious/noArrayIndexKey: ignore
           key={i}
           onError={(error) =>
             new Error(

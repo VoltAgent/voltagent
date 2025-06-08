@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import React from "react";
-import clsx from "clsx";
-import Layout from "@theme/Layout";
 import BlogSidebar from "@theme/BlogSidebar";
+import Layout from "@theme/Layout";
+import clsx from "clsx";
+import React from "react";
 
 import { useWindowSize } from "@docusaurus/theme-common";
 import { Footer } from "@site/src/components/footer";
@@ -34,8 +34,9 @@ export default function BlogLayout(props) {
               "col",
               {
                 "col--8": sidebar && !isMobile && isBlogPostPage,
-                "col--9": sidebar && !isMobile && !isBlogPostPage,
-                "col--9": !sidebar && !isMobile && isBlogPostPage,
+                "col--9":
+                  (sidebar && !isMobile && !isBlogPostPage) ||
+                  (!sidebar && !isMobile && isBlogPostPage),
                 "col--12": isMobile,
               },
               "px-3",

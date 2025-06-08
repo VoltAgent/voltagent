@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from "react";
-import Layout from "@theme/Layout";
-import { ArrowLeftIcon, ServerIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
-import { DotPattern } from "../../components/ui/dot-pattern";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import { ArrowLeftIcon, ServerIcon } from "@heroicons/react/24/outline";
+import Layout from "@theme/Layout";
+import React, { useState, useEffect } from "react";
+import { DotPattern } from "../../components/ui/dot-pattern";
 
+import CodeBlock from "../../components/mcp-list/mcp-page/CodeBlock";
 // Import existing components
 import SidebarInfoSection from "../../components/mcp-list/mcp-page/mcp-info";
 import ExpandableTool from "../../components/mcp-list/mcp-page/tool-input";
-import CodeBlock from "../../components/mcp-list/mcp-page/CodeBlock";
 
 // Import logo helper
 import { getLogoComponent, logoMap } from "../../utils/logo-helper";
 
+import { BoltIcon } from "@heroicons/react/20/solid";
 // Import server config helper
 import { providerServerConfigs } from "../../components/mcp-list/mcp-page/serverConfigContent";
-import { BoltIcon } from "@heroicons/react/20/solid";
 
 // Server Config Content Renderer Component
 const ServerConfigContentRenderer = ({ contentItems, mcp }) => {

@@ -1,12 +1,12 @@
-import { amethyst } from "@codesandbox/sandpack-themes";
 import {
-  SandpackProvider,
-  SandpackLayout,
   SandpackCodeEditor,
   SandpackFileExplorer,
+  SandpackLayout,
+  SandpackProvider,
 } from "@codesandbox/sandpack-react";
-import { useState } from "react";
+import { amethyst } from "@codesandbox/sandpack-themes";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import { useState } from "react";
 
 export default function LivePreview() {
   const [activeTab, setActiveTab] = useState<"code" | "console">("code");

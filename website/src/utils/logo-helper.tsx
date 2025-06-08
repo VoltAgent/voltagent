@@ -1,5 +1,11 @@
 import React from "react";
 
+import { ServerIcon } from "@heroicons/react/20/solid";
+import { Claude37Logo } from "../../static/img/logos/claudie";
+import { ComposioLogo } from "../../static/img/logos/composio";
+import { CursorLogo } from "../../static/img/logos/cursor";
+import { DiscordLogo } from "../../static/img/logos/discord";
+import { DiscordLogo2 } from "../../static/img/logos/discord-2";
 // Import integration logos
 import { AhrefLogo } from "../../static/img/logos/integrations/ahref";
 import { AirtableLogo } from "../../static/img/logos/integrations/airtable";
@@ -12,6 +18,7 @@ import { GmailLogo } from "../../static/img/logos/integrations/gmail";
 import { GoogleCalendarLogo } from "../../static/img/logos/integrations/google-calendar";
 import { GoogleDriveLogo } from "../../static/img/logos/integrations/google-drive";
 import { GoogleSheetsLogo } from "../../static/img/logos/integrations/google-sheets";
+import { GumloopLogo } from "../../static/img/logos/integrations/gumloop";
 import { HubspotLogo } from "../../static/img/logos/integrations/hubspot";
 import { IntercomLogo } from "../../static/img/logos/integrations/intercom";
 import { JiraLogo } from "../../static/img/logos/integrations/jira";
@@ -21,15 +28,8 @@ import { MixpanelLogo } from "../../static/img/logos/integrations/mixpanel";
 import { NotionLogo } from "../../static/img/logos/integrations/notion";
 import { OneDriveLogo } from "../../static/img/logos/integrations/one-drive";
 import { PineconeLogo } from "../../static/img/logos/integrations/pinecone";
-import { Claude37Logo } from "../../static/img/logos/claudie";
-import { CursorLogo } from "../../static/img/logos/cursor";
-import { ComposioLogo } from "../../static/img/logos/composio";
-import { ZapierLogo } from "../../static/img/logos/integrations/zapier";
-import { GumloopLogo } from "../../static/img/logos/integrations/gumloop";
 import { SlackLogo } from "../../static/img/logos/integrations/slack";
-import { ServerIcon } from "@heroicons/react/20/solid";
-import { DiscordLogo } from "../../static/img/logos/discord";
-import { DiscordLogo2 } from "../../static/img/logos/discord-2";
+import { ZapierLogo } from "../../static/img/logos/integrations/zapier";
 
 // Map logo components by key
 export const logoMap = {

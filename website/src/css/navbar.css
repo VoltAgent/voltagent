@@ -111,7 +111,7 @@
   align-items: center;
 }
 
-[data-theme='dark'] .navbar {
+[data-theme="dark"] .navbar {
   background: #0a1017;
 }
 
@@ -148,8 +148,8 @@
   font-weight: 600;
 }
 
-[data-theme='dark'] .navbar__link:hover,
-[data-theme='dark'] .navbar__link--active {
+[data-theme="dark"] .navbar__link:hover,
+[data-theme="dark"] .navbar__link--active {
   border-bottom: 4px solid #00d992;
 }
 
@@ -231,7 +231,7 @@
 }
 
 .navbar-sidebar .navbar-sidebar__item:first-child .menu__link--active::before {
-  content: url('/static/img/selected-arrow.svg');
+  content: url("/static/img/selected-arrow.svg");
   position: relative;
   top: 2px;
   margin-right: 0.375rem;
@@ -261,8 +261,8 @@
 .navbar-sidebar .navbar-sidebar__item:last-child .clean-btn.navbar-sidebar__back {
   padding: 16px;
   margin-bottom: 16px;
-  border-bottom: 1px solid #E5E7EB;
-  color: #4B5563;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
   font-size: 14px;
   font-weight: 500;
   display: flex;
@@ -271,7 +271,7 @@
 }
 
 .navbar-sidebar .navbar-sidebar__item:last-child .clean-btn.navbar-sidebar__back::after {
-  content: 'Back to main menu';
+  content: "Back to main menu";
   font-size: var(--typography-links-m-font-size) !important;
   line-height: var(--typography-links-m-line-height) !important;
   font-weight: var(--typography-links-m-font-weight) !important;
@@ -280,7 +280,7 @@
 
 .navbar-sidebar .navbar-sidebar__item:last-child .clean-btn.navbar-sidebar__back::before {
   display: inline-block;
-  content: url('/static/img/arrow-yellow.svg');
+  content: url("/static/img/arrow-yellow.svg");
   position: relative;
   left: -13px;
   top: -6px;
@@ -299,13 +299,13 @@
 }
 
 .navbar-sidebar .navbar-sidebar__item:last-child .menu__caret:before {
-  content: url('/static/img/arrow-yellow.svg') !important;
+  content: url("/static/img/arrow-yellow.svg") !important;
   top: 3px !important;
   position: relative;
 }
 
 .navbar-sidebar .navbar-sidebar__item:last-child .menu__list-item--collapsed .menu__caret:before {
-  content: url('/static/img/arrow-yellow.svg') !important;
+  content: url("/static/img/arrow-yellow.svg") !important;
   top: -1px !important;
   position: relative;
 }
@@ -314,8 +314,12 @@
   justify-content: space-evenly;
 }
 
-.navbar-sidebar .navbar-sidebar__item:last-child .menu__list .menu__list .menu__link.menu__link--active::before {
-  content: url('/static/img/selected-arrow-yellow.svg');
+.navbar-sidebar
+  .navbar-sidebar__item:last-child
+  .menu__list
+  .menu__list
+  .menu__link.menu__link--active::before {
+  content: url("/static/img/selected-arrow-yellow.svg");
   top: 5px;
   position: relative;
   margin-right: -1.5rem;
@@ -327,7 +331,7 @@
   margin-top: 1.125rem !important;
 }
 
-.navbar-sidebar .navbar-sidebar__item:last-child>.clean-btn {
+.navbar-sidebar .navbar-sidebar__item:last-child > .clean-btn {
   font-size: 0px !important;
 }
 
@@ -347,9 +351,9 @@
 }
 
 .login-btn:hover {
-  background: #F3F4F6;
+  background: #f3f4f6;
   color: #111827;
-  border-color: #D1D5DB;
+  border-color: #d1d5db;
 }
 
 .signup-btn {
@@ -373,7 +377,6 @@
 
 /* Mobile styles */
 @media (max-width: 996px) {
-
   .navbar__items--right .login-btn,
   .navbar__items--right .signup-btn,
   .navbar__items--right .slack-icon-btn {
@@ -462,8 +465,8 @@
   .navbar-sidebar__back {
     padding: 1rem 1.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid #E5E7EB;
-    color: #4B5563;
+    border-bottom: 1px solid #e5e7eb;
+    color: #4b5563;
     font-size: 0.875rem;
     font-weight: 500;
     display: flex;
@@ -552,8 +555,8 @@
 .navbar-sidebar__back {
   padding: 16px;
   margin-bottom: 16px;
-  border-bottom: 1px solid #E5E7EB;
-  color: #4B5563;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
   font-size: 14px;
   font-weight: 500;
   display: flex;
@@ -565,7 +568,7 @@
   border-radius: 4px;
   padding: 8px 12px;
   font-size: 14px;
-  color: #4B5563;
+  color: #4b5563;
   transition: all 0.2s;
   text-decoration: none !important;
   border-bottom: none !important;
@@ -624,7 +627,6 @@
 }
 
 @media (max-width: 1270px) {
-
   .clean-btn.navbar-sidebar__back,
   .navbar-sidebar__back {
     display: none !important;

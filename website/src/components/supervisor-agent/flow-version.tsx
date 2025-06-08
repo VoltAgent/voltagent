@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
 import {
-  ReactFlow,
-  Node,
-  Edge,
-  Position,
-  useNodesState,
-  useEdgesState,
-  ConnectionMode,
   Background,
+  ConnectionMode,
+  type Edge,
   Handle,
   MarkerType,
+  type Node,
+  Position,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { useCallback, useEffect, useState } from "react";
 
 type FlowVersionProps = {
   isVisible: boolean;
@@ -198,7 +198,7 @@ const initialNodes: Node[] = [
     id: "team-line",
     position: { x: 485, y: 220 },
     data: {
-      label: <div className="w-[130px] h-[1px] bg-[#4b5563]"></div>,
+      label: <div className="w-[130px] h-[1px] bg-[#4b5563]" />,
       className: "",
     },
     type: "custom",
@@ -253,7 +253,7 @@ const createEdge = (
   source: string,
   target: string,
   color: string,
-  isResponse: boolean = false,
+  isResponse = false,
 ): Edge => {
   const edge: Edge = {
     id: `${source}-${target}`,
@@ -297,7 +297,7 @@ const createUserEdge = (
   source: string,
   target: string,
   color: string,
-  isResponse: boolean = false,
+  isResponse = false,
 ): Edge => {
   const edge: Edge = {
     id: `${source}-${target}`,
@@ -370,11 +370,18 @@ const createMemoryEdge = (source: string, target: string): Edge => ({
 });
 
 export const FlowVersion = ({ isVisible }: FlowVersionProps) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, _, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [animationStep, setAnimationStep] = useState(0);
+  const [__, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // In VSCode, this may be shown as `suppressions/unused`,
+  // but running the biome command directly works fine.
+  // This happens because, when opening the `voltagent` directory in VSCode,
+  // the LSP uses the biome config from the project root directory.
+  // This is likely because the `website` directory is not a pnpm monorepo,
+  // so it doesn't have its own biome config.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: invalidate when setEdges is called
   const startAnimation = useCallback(() => {
     setIsAnimating(true);
     setAnimationStep(0);

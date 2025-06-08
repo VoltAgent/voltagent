@@ -1,17 +1,17 @@
 import React from "react";
 
-export const CohereLogo = ({ className }: { className?: string }) => (
+export const CohereLogo = () => (
   <svg
     version="1.1"
     id="Layer_1"
     xmlns="http://www.w3.org/2000/svg"
     xmlnsXlink="http://www.w3.org/1999/xlink"
     viewBox="0 0 75 75"
-    style={{ enableBackground: "new 0 0 75 75" }}
     xmlSpace="preserve"
     width="16"
     height="16"
   >
+    <title>Cohere logo</title>
     <style>
       {`.st0{fill-rule:evenodd;clip-rule:evenodd;fill:#39594D;}
         .st1{fill-rule:evenodd;clip-rule:evenodd;fill:#D18EE2;}

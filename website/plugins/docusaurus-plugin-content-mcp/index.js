@@ -61,7 +61,7 @@ function loadMcpData() {
       .readdirSync(dataDir)
       .filter((file) => file.endsWith(".json"));
 
-    files.forEach((file) => {
+    for (const file of files) {
       const filePath = path.join(dataDir, file);
       const fileContent = fs.readFileSync(filePath, "utf8");
       const jsonData = JSON.parse(fileContent);
@@ -99,7 +99,7 @@ function loadMcpData() {
           data: jsonData,
         });
       }
-    });
+    }
   } catch (error) {
     console.error("Error loading MCP data:", error);
   }
@@ -166,13 +166,13 @@ async function mcpPluginExtended(...pluginArgs) {
       });
 
       const categories = {};
-      allMcps.forEach((mcp) => {
+      for (const mcp of allMcps) {
         const category = mcp.metadata.category;
         if (category) {
           categories[category] = categories[category] || [];
           categories[category].push(mcp);
         }
-      });
+      }
 
       const categoriesListData = await createData(
         "categories-list.json",

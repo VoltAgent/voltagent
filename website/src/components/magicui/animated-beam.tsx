@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { RefObject, useEffect, useId, useState } from "react";
+import { type RefObject, useEffect, useId, useState } from "react";
 
 import { cn } from "@site/src/utils/index";
 
@@ -238,7 +238,6 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
           } else if (pathType === "stepped") {
             // For stepped paths, calculate the sum of all segments
             const dx = Math.abs(endX - startX);
-            const dy = Math.abs(endY - startY);
             const vOffset = Math.abs(verticalOffset || 30);
             const approxLength =
               dx +
@@ -294,6 +293,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
       )}
       viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
     >
+      <title>Animated beam</title>
       {/* Base path with glow effect */}
       <filter id={`glow-${id}`} x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur stdDeviation="6" result="blur" />
@@ -422,18 +422,14 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
             delay,
             duration,
             ease: [0.16, 1, 0.3, 1], // https://easings.net/#easeOutExpo
-            repeat: Infinity,
+            repeat: Number.POSITIVE_INFINITY,
             repeatDelay: 0,
           }}
         >
-          <stop stopColor={gradientStartColor} stopOpacity="0"></stop>
-          <stop stopColor={gradientStartColor}></stop>
-          <stop offset="32.5%" stopColor={gradientStopColor}></stop>
-          <stop
-            offset="100%"
-            stopColor={gradientStopColor}
-            stopOpacity="0"
-          ></stop>
+          <stop stopColor={gradientStartColor} stopOpacity="0" />
+          <stop stopColor={gradientStartColor} />
+          <stop offset="32.5%" stopColor={gradientStopColor} />
+          <stop offset="100%" stopColor={gradientStopColor} stopOpacity="0" />
         </motion.linearGradient>
       </defs>
     </svg>

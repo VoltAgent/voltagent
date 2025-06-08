@@ -1,7 +1,7 @@
-import React from "react";
 import Link from "@docusaurus/Link";
 // Assuming heroicons structure - adjust if needed
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import React from "react";
 // Assuming SVG import structure - adjust if needed
 // You might need to adjust this path based on your project structure
 import { GitHubLogo } from "../../../static/img/logos/github";

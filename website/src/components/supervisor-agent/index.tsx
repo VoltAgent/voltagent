@@ -1,14 +1,14 @@
-import { WorkflowCodeExample } from "./workflow-code-example";
 import {
-  UserPlusIcon,
-  EyeIcon,
-  UsersIcon,
   CpuChipIcon,
+  EyeIcon,
+  UserPlusIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import { useState } from "react";
-import { MobileVersion } from "./mobile-version";
 import { MobileCodeBlock } from "./mobile-code-block";
+import { MobileVersion } from "./mobile-version";
+import { WorkflowCodeExample } from "./workflow-code-example";
 
 export function SupervisorAgent() {
   const [highlightedSection, setHighlightedSection] = useState<string | null>(
@@ -164,7 +164,7 @@ export function SupervisorAgent() {
                       >
                         {/* Define supervisor agent */}
                         <span className="text-gray-300">
-                          {`// Define supervisor agent`}
+                          {"// Define supervisor agent"}
                         </span>
                         <br />
                         <span className="text-blue-400">const</span>
@@ -215,7 +215,9 @@ export function SupervisorAgent() {
                         )}`}
                       >
                         {/* Define story agent */}
-                        <span className="text-gray-300">{`// Define story agent`}</span>
+                        <span className="text-gray-300">
+                          {"// Define story agent"}
+                        </span>
                         <br />
                         <span className="text-blue-400">const</span>
                         <span> storyAgent = </span>
@@ -257,7 +259,9 @@ export function SupervisorAgent() {
                         className={`block ${getHighlightClasses("memory")}`}
                       >
                         {/* Define translator agent */}
-                        <span className="text-gray-300">{`// Define translator agent`}</span>
+                        <span className="text-gray-300">
+                          {"// Define translator agent"}
+                        </span>
                         <br />
                         <span className="text-blue-400">const</span>
                         <span> translatorAgent = </span>
@@ -301,14 +305,16 @@ export function SupervisorAgent() {
                         className={`block ${getHighlightClasses("dynamic")}`}
                       >
                         {/* Stream response from supervisor agent */}
-                        <span className="text-gray-300">{`// Stream response from supervisor agent`}</span>
+                        <span className="text-gray-300">
+                          {"// Stream response from supervisor agent"}
+                        </span>
                         <br />
                         <span className="text-blue-400">const</span>
                         <span> result = </span>
                         <span className="text-blue-400">await</span>
                         <span> supervisorAgent.streamText(</span>
                         <br />
-                        <span className="ml-4"></span>
+                        <span className="ml-4" />
                         <span className="text-yellow-300">
                           "Write a 100 word story in English."
                         </span>
@@ -336,6 +342,7 @@ export function SupervisorAgent() {
               <div className="flex w-[45%] flex-col gap-6">
                 {/* Feature 1 - Centralized Coordination */}
                 <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "centralized"
@@ -364,6 +371,7 @@ export function SupervisorAgent() {
 
                 {/* Feature 2 - Specialized Agent Roles */}
                 <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "specialized"
@@ -391,6 +399,7 @@ export function SupervisorAgent() {
 
                 {/* Feature 3 - Shared Memory System */}
                 <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "memory"
@@ -419,6 +428,7 @@ export function SupervisorAgent() {
 
                 {/* Feature 4 - Dynamic Agent Selection */}
                 <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "dynamic"

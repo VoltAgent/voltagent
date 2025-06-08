@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
 import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { motion } from "framer-motion";
+import React from "react";
 
 const PricingSection = () => {
   const pricingTiers = [

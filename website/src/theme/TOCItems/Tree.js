@@ -1,5 +1,5 @@
-import React from "react";
 import Link from "@docusaurus/Link";
+import React from "react";
 
 // Recursive component rendering the toc tree
 function TOCItemTree({
@@ -26,7 +26,7 @@ function TOCItemTree({
             <Link
               to={`#${heading.id}`}
               className={combinedClassName || undefined}
-              // Developer provided the HTML, so assume it's safe.
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: ignore
               dangerouslySetInnerHTML={{ __html: heading.value }}
             />
             <TOCItemTree

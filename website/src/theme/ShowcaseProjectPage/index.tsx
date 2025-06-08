@@ -1,9 +1,9 @@
-import React from "react";
 import Head from "@docusaurus/Head";
-import Layout from "@theme/Layout";
 import Link from "@docusaurus/Link";
-import { motion } from "framer-motion";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import Layout from "@theme/Layout";
+import { motion } from "framer-motion";
+import React from "react";
 import { GitHubLogo } from "../../../static/img/logos/github";
 import { DotPattern } from "../../components/ui/dot-pattern";
 

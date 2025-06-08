@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   CheckCircleIcon,
-  CpuChipIcon,
-  PaperAirplaneIcon,
   ClockIcon,
-  RocketLaunchIcon,
+  CpuChipIcon,
   ExclamationTriangleIcon,
+  PaperAirplaneIcon,
+  RocketLaunchIcon,
 } from "@heroicons/react/24/outline";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // Types for our data structures
 type StageStatus = "pending" | "in-progress" | "complete" | "failed";
@@ -455,13 +455,13 @@ export default function Deployment() {
     const timelineEvents = timeline;
 
     // Execute each action in the timeline
-    timelineEvents.forEach((event) => {
+    for (const event of timelineEvents) {
       const timeoutId = setTimeout(() => {
         executeTimelineEvent(event);
       }, event.time);
       // Store the latest timeout ID to potentially clear it on failure
       timeoutRef.current = timeoutId;
-    });
+    }
   }, [resetDeployment]);
 
   // Execute a timeline event

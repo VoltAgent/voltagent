@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import Layout from "@theme/Layout";
+import Link from "@docusaurus/Link";
 import {
-  MagnifyingGlassIcon,
   ArrowTopRightOnSquareIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
-import Link from "@docusaurus/Link";
+import Layout from "@theme/Layout";
+import { motion } from "framer-motion";
+import React, { useState } from "react";
 import { DotPattern } from "../../components/ui/dot-pattern";
 import { getLogoComponent } from "../../utils/logo-helper";
 

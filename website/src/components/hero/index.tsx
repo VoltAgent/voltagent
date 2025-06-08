@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import Link from "@docusaurus/Link";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import { HeartIcon } from "@heroicons/react/24/solid";
-import { LineShadowText } from "../magicui/line-shadow-text";
+import { useEffect, useRef, useState } from "react";
 import { AgentsAnimation } from "../agents-animation";
-import Link from "@docusaurus/Link";
+import { LineShadowText } from "../magicui/line-shadow-text";
 
 export function Hero() {
   const [isVisible, setIsVisible] = useState(false);

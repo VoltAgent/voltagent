@@ -1,7 +1,7 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { BoltIcon } from "@heroicons/react/24/solid";
 import { CodeBracketIcon } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
+import { motion } from "framer-motion";
+import React from "react";
 import { ProjectCard } from "./ProjectCard";
 
 interface ShowcaseListProps {

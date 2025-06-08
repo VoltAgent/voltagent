@@ -1,6 +1,6 @@
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { AnimatePresence, motion } from "framer-motion";
+import type React from "react";
 import type { FC } from "react";
 
 interface ImageModalProps {

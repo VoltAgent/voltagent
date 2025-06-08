@@ -7,6 +7,7 @@ export const BraintrustLogo = ({ className }: { className?: string }) => (
     height="25.616438356164384"
     viewBox="0 0 219 33"
   >
+    <title>Braintrust logo</title>
     <path
       fill="currentColor"
       fillRule="evenodd"

@@ -11,6 +11,7 @@ export const FilterIcon = (props: React.SVGProps<SVGSVGElement>) => (
     {...props}
     className={clsx("dark:text-gray-0 text-gray-900")}
   >
+    <title>Filter icon</title>
     <path
       stroke="currentColor"
       strokeLinecap="round"

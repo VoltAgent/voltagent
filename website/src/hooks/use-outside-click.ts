@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 
-import React from "react";
+import { useEffect } from "react";
 
 type Handler = (event: MouseEvent) => void;
 
@@ -8,7 +8,8 @@ export const useOutsideClick = <T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
   callback: Handler,
 ) => {
-  React.useEffect(() => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
+  useEffect(() => {
     const handleClick = (event) => {
       if (ref.current && !ref.current.contains(event.target)) {
         event.preventDefault();

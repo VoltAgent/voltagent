@@ -19,6 +19,7 @@ export default function NavbarMobilePrimaryMenu() {
           mobile
           {...item}
           onClick={() => mobileSidebar.toggle()}
+          // biome-ignore lint/suspicious/noArrayIndexKey: ignore
           key={i}
         />
       ))}

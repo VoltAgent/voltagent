@@ -1,10 +1,10 @@
-import React, { useState } from "react";
 import {
   ArrowPathIcon,
   DocumentTextIcon,
-  PhotoIcon,
   MusicalNoteIcon,
+  PhotoIcon,
 } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 
 // Input modes supported by the component
 const inputModes = [
@@ -150,6 +150,7 @@ export default function MultimodalQueryExplorer(): JSX.Element {
           {sampleQueries[selectedMode as keyof typeof sampleQueries].map(
             (sample, i) => (
               <button
+                // biome-ignore lint/suspicious/noArrayIndexKey: ignore
                 key={`${selectedMode}-sample-${i}`}
                 type="button"
                 onClick={() => {

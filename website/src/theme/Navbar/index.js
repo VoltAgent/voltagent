@@ -1,7 +1,7 @@
-import React from "react";
-import CustomNavbar from "@site/src/components/navbar";
-import DocNavbar from "@site/src/components/doc-navbar";
 import { useLocation } from "@docusaurus/router";
+import DocNavbar from "@site/src/components/doc-navbar";
+import CustomNavbar from "@site/src/components/navbar";
+import React from "react";
 
 export default function Navbar() {
   const location = useLocation();

@@ -26,6 +26,7 @@ export const DotPattern: React.FC<DotPatternProps> = ({
         xmlns="http://www.w3.org/2000/svg"
         style={{ position: "fixed", top: 0, left: 0, zIndex: -1 }}
       >
+        <title>Decorative dot pattern background</title>
         <defs>
           <radialGradient
             id={gradientId}

@@ -1,5 +1,5 @@
-import React from "react";
 import Layout from "@theme/Layout";
+import React from "react";
 import { Manifesto } from "../components/about";
 
 export default function ManifestoPage() {

@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
 import Link from "@docusaurus/Link";
+import { motion } from "framer-motion";
+import React from "react";
 import { GitHubLogo } from "../../../static/img/logos/github";
 
 interface ProjectCardProps {
