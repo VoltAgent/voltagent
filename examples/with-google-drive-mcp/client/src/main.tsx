@@ -1,10 +1,10 @@
+import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
-import { StrictMode } from "react";
 import App from "./App.tsx";
 import "./index.css";
-import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./components/LoginPage.tsx";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext.tsx";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
