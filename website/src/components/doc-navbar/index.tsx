@@ -44,11 +44,10 @@ export default function DocNavbar() {
                         voltagent
                       </span>
                     </div>
-                    <span className="text-gray-400 mx-2 text-base">
+                    <span className="text-gray-400 mx-2 mt-1 text-base">
                       Framework
                     </span>
-                    <div className={styles.separator} />
-                    <span className="text-main-emerald ml-2 font-semibold text-base">
+                    <span className="text-main-emerald  mt-1 font-semibold text-base">
                       Docs
                     </span>
                   </div>
@@ -72,11 +71,10 @@ export default function DocNavbar() {
                         ops
                       </span>
                     </div>
-                    <span className="text-gray-400 mx-2 text-base ">
+                    <span className="text-gray-400 mt-1 mx-2 text-base ">
                       LLM Observability
                     </span>
-                    <div className={styles.separator} />
-                    <span className="text-main-emerald ml-2 font-semibold text-base">
+                    <span className="text-main-emerald mt-1 font-semibold text-base">
                       Docs
                     </span>
                   </div>
@@ -101,12 +99,15 @@ export default function DocNavbar() {
                 </Link>
               )}
 
-              <Link
-                to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-                className={`${styles.navLink}`}
-              >
-                Changelog
-              </Link>
+              {/* Show changelog only when NOT on observability docs */}
+              {!isActive("/docs-observability/") && (
+                <Link
+                  to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
+                  className={`${styles.navLink}`}
+                >
+                  Changelog
+                </Link>
+              )}
             </div>
             <div className={styles.searchBarContainer}>
               <SearchBar />
@@ -186,14 +187,17 @@ export default function DocNavbar() {
                 VoltOps LLM Observability Platform
               </Link>
             )}
-            <Link
-              to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-              className={`${styles.navLink} ${
-                isActive("/changelog/") ? styles.active : ""
-              }`}
-            >
-              Changelog
-            </Link>
+            {/* Show changelog only when NOT on observability docs */}
+            {!isActive("/docs-observability/") && (
+              <Link
+                to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
+                className={`${styles.navLink} ${
+                  isActive("/changelog/") ? styles.active : ""
+                }`}
+              >
+                Changelog
+              </Link>
+            )}
           </div>
         </div>
       )}
