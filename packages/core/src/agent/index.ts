@@ -441,6 +441,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           role: "tool",
           content: step.content,
         });
+      } else if (step.type === "text") {
+        messages.push({
+          role: "assistant",
+          content: step.content,
+        });
       }
     }
 
@@ -1084,15 +1089,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         providerResponse: response,
       };
 
-      // Create clean messages array with user input + tool calls/results + final assistant response
+      // Create clean messages array with user input + complete conversation flow
       const userInputMessages = await this.formatInputMessages([], input);
       const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
-      const cleanMessages = [
-        ...userInputMessages,
-        ...stepMessages,
-        { role: "assistant" as const, content: response.text },
-      ];
+      const cleanMessages = [...userInputMessages, ...stepMessages];
 
       await this.hooks.onEnd?.({
         agent: this,
@@ -1529,15 +1530,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             providerResponse: result.providerResponse,
           },
         });
-        // Create clean messages array with user input + tool calls/results + final assistant response
+        // Create clean messages array with user input + complete conversation flow
         const userInputMessages = await this.formatInputMessages([], input);
         const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
-        const cleanMessages = [
-          ...userInputMessages,
-          ...stepMessages,
-          { role: "assistant" as const, content: result.text },
-        ];
+        const cleanMessages = [...userInputMessages, ...stepMessages];
 
         operationContext.isActive = false;
         await this.hooks.onEnd?.({
@@ -1863,8 +1860,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         historyId: operationContext.historyEntry.id,
         event: agentSuccessEvent,
       });
-      const responseStr =
-        typeof response === "string" ? response : JSON.stringify(response?.object);
+
+      const responseStr = JSON.stringify(response.object);
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
         output: responseStr,
         usage: response.usage,
@@ -1887,15 +1884,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         providerResponse: response,
       };
 
-      // Create clean messages array with user input + tool calls/results + final assistant response
+      // Create clean messages array with user input + complete conversation flow
       const userInputMessages = await this.formatInputMessages([], input);
       const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
-      const cleanMessages = [
-        ...userInputMessages,
-        ...stepMessages,
-        { role: "assistant" as const, content: JSON.stringify(response.object) },
-      ];
+      const cleanMessages = [...userInputMessages, ...stepMessages];
 
       await this.hooks.onEnd?.({
         agent: this,
@@ -2180,17 +2173,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             status: "completed" as any,
           });
 
-          // Create clean messages array with user input + tool calls/results + final assistant response
+          // Create clean messages array with user input + complete conversation flow
           const userInputMessages = await this.formatInputMessages([], input);
           const stepMessages = this.convertStepsToMessages(
             operationContext.conversationSteps || [],
           );
 
-          const cleanMessages = [
-            ...userInputMessages,
-            ...stepMessages,
-            { role: "assistant" as const, content: JSON.stringify(result.object) },
-          ];
+          const cleanMessages = [...userInputMessages, ...stepMessages];
 
           operationContext.isActive = false;
           await this.hooks.onEnd?.({

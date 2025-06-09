@@ -179,6 +179,8 @@ class MockProvider implements LLMProvider<MockModelType> {
           role: "assistant",
           content: "Using test-tool",
           id: "test-tool-call-id",
+          name: "test-tool",
+          arguments: {},
         });
       }
 
@@ -189,11 +191,24 @@ class MockProvider implements LLMProvider<MockModelType> {
           role: "tool",
           content: "tool result",
           id: "test-tool-call-id",
+          name: "test-tool",
+          result: "tool result",
         });
       }
     }
 
     const result = { text: "Hello, I am a test agent!" };
+
+    // Simulate final text response step like real providers do
+    if (options.onStepFinish) {
+      await options.onStepFinish({
+        type: "text",
+        role: "assistant",
+        content: result.text,
+        id: "final-text-step",
+      });
+    }
+
     return {
       provider: result,
       text: result.text,
@@ -249,6 +264,7 @@ class MockProvider implements LLMProvider<MockModelType> {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
+    onStepFinish?: (step: StepWithContent) => Promise<void>;
   }): Promise<ProviderObjectResponse<MockGenerateObjectResult<z.infer<T>>, z.infer<T>>> {
     this.generateObjectCalls++;
     this.lastMessages = options.messages;
@@ -260,6 +276,16 @@ class MockProvider implements LLMProvider<MockModelType> {
         hobbies: ["reading", "gaming"],
       } as z.infer<T>,
     };
+
+    // Simulate final object response step like real providers do
+    if (options.onStepFinish) {
+      await options.onStepFinish({
+        type: "text",
+        role: "assistant",
+        content: JSON.stringify(result.object),
+        id: "final-object-step",
+      });
+    }
 
     return {
       provider: result,
