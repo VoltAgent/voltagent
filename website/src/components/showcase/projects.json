@@ -40,5 +40,25 @@
     ],
     "blogPost": "https://www.999.dev/blog/powering-999dev-with-voltagent-framework/",
     "demoUrl": "https://999.dev/demo/"
+  },
+  {
+    "id": 3,
+    "slug": "inventory-query-agent",
+    "name": "Inventory Query Agent",
+    "isPrivate": true,
+    "description": "This simple project uses VoltAgent and TypeScript to create an agent connected to a custom tool that queries a database (SQL, NoSQL, or any other system). The agent receives an input parameter such as a product name or code, queries the database, filters the results, and returns useful information like stock quantity, product name, description, and the specific store or location where it's available.",
+    "creator": "Carranza12",
+    "avatar": "https://github.com/Carranza12.png",
+    "githubUrl": "https://www.youtube.com/embed/HW_cqz_3Q38?si=r1gNB13mZ3B0TLYm&amp;start=822",
+    "tech": ["VoltAgent", "TypeScript"],
+    "screenshot": "https://cdn.voltagent.dev/website/showcase/inventory-agent.png",
+    "useCases": [
+      "Employees in physical stores or warehouses can quickly check product availability and location",
+      "eCommerce platforms can track product inventory before launching promotions or managing stock",
+      "Integration with customer service chatbots to automatically answer product availability questions",
+      "Generate inventory reports without manual intervention",
+      "Internal dashboards for logistics, purchasing, or sales teams"
+    ],
+    "video": "https://www.youtube.com/embed/HW_cqz_3Q38?si=r1gNB13mZ3B0TLYm&amp;start=822"
   }
 ]
