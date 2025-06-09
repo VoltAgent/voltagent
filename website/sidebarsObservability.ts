@@ -56,11 +56,24 @@ const sidebars: SidebarsConfig = {
         },
       ],
     },
+
+    {
+      type: "category",
+      label: "Analytics Dashboard",
+      items: [
+        {
+          type: "doc",
+          id: "dashboard/trace-metrics",
+          label: "Trace Metrics",
+        },
+      ],
+    },
     {
       type: "doc",
       id: "llm-usage-and-costs",
       label: "LLM Usage & Costs",
     },
+
     {
       type: "doc",
       id: "prompting/index",

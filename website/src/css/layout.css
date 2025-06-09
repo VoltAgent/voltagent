@@ -6,6 +6,39 @@ html {
   background-color: #070f12;
 }
 
+/* Documentation and blog pages background */
+[class*="docsWrapper_"],
+[class*="docMainContainer_"],
+[class*="docItemContainer_"],
+main[class*="docMainContainer_"],
+html.blog-wrapper,
+html.blog-post-page,
+html[class*="blog-wrapper"],
+html[class*="blog-post-page"],
+.blog-wrapper,
+.blog-post-page {
+  background-color: #1d1d1d !important;
+}
+
+/* Target blog content areas specifically */
+html.blog-wrapper #__docusaurus,
+html.blog-post-page #__docusaurus,
+html.blog-wrapper body,
+html.blog-post-page body {
+  background-color: #1d1d1d !important;
+}
+
+/* Ensure the entire documentation page area has the dark background */
+html[data-theme="dark"] #__docusaurus:has([class*="docsWrapper_"]) {
+  background-color: #1d1d1d;
+}
+
+/* Target the main wrapper when it contains documentation or blog */
+.main-wrapper:has([class*="docsWrapper_"]),
+.main-wrapper:has([class*="docMainContainer_"]) {
+  background-color: #1d1d1d !important;
+}
+
 /* Announcement bar height */
 div[class^="announcementBar_"] {
   height: 45px;
