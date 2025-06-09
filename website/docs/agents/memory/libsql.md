@@ -69,9 +69,52 @@ const agent = new Agent({
 - `storageLimit` (number, optional): The maximum number of messages to retain per user/conversation thread. Older messages are automatically pruned when the limit is exceeded. Defaults to `100`.
 - `debug` (boolean, optional): Enables detailed logging from the storage provider to the console. Defaults to `false`.
 
+## User-Centric Conversation Management
+
+The LibSQL provider includes enhanced support for managing conversations across multiple users:
+
+```typescript
+// Get conversations for a specific user
+const conversations = await memoryStorage.getConversationsByUserId("user-123", {
+  limit: 50,
+  orderBy: "updated_at",
+  orderDirection: "DESC",
+});
+
+// Query builder pattern for complex queries
+const recentConversations = await memoryStorage
+  .getUserConversations("user-123")
+  .limit(10)
+  .orderBy("updated_at", "DESC")
+  .execute();
+
+// Pagination support
+const page1 = await memoryStorage.getPaginatedUserConversations("user-123", 1, 20);
+console.log(page1.conversations); // Array of conversations
+console.log(page1.hasMore); // Boolean indicating if more pages exist
+
+// Get conversation with user validation
+const conversation = await memoryStorage.getUserConversation("conversation-id", "user-123");
+
+// Create and update conversations
+const newConversation = await memoryStorage.createConversation({
+  id: "conversation-id",
+  resourceId: "app-resource-1",
+  userId: "user-123",
+  title: "New Chat Session",
+  metadata: { source: "web-app" },
+});
+
+await memoryStorage.updateConversation("conversation-id", {
+  title: "Updated Title",
+});
+```
+
 ## Automatic Table Creation
 
 Unlike some other database providers, `LibSQLStorage` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, etc., with the configured `tablePrefix`) in the target database if they don't already exist. This simplifies setup, especially for local development using SQLite files.
+
+The provider also **automatically migrates** existing databases to new schemas when you update VoltAgent, ensuring backward compatibility.
 
 ## Use Cases
 

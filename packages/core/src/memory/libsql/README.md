@@ -69,9 +69,9 @@ CREATE TABLE messages (
 ### Basic Setup
 
 ```typescript
-import { ExtendedLibSQLStorage } from "@voltagent/core/memory";
+import { LibSQLStorage } from "@voltagent/core/memory";
 
-const memoryStorage = new ExtendedLibSQLStorage({
+const memoryStorage = new LibSQLStorage({
   url: process.env.DATABASE_URL || "file:.voltagent/memory.db",
   authToken: process.env.DATABASE_AUTH_TOKEN,
 });
@@ -209,7 +209,7 @@ The storage automatically handles migration when initialized. The migration proc
 
 ```typescript
 // Initialize without automatic migration
-const storage = new ExtendedLibSQLStorage({
+const storage = new LibSQLStorage({
   url: "file:memory.db",
   // Migration happens automatically in initializeDatabase()
 });
