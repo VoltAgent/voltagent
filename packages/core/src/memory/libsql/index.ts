@@ -6,8 +6,10 @@ import { createClient } from "@libsql/client";
 import type { NewTimelineEvent } from "../../events/types";
 import { safeJsonParse } from "../../utils";
 import devLogger from "../../utils/internal/dev-logger";
+import type { BaseMessage } from "../../agent/providers/base/types";
 import type {
   Conversation,
+  ConversationQueryOptions,
   CreateConversationInput,
   Memory,
   MemoryMessage,
@@ -485,7 +487,7 @@ export class LibSQLStorage implements Memory {
 
       return result.rows.map((row) => ({
         id: row.message_id as string,
-        role: row.role as import("../../agent/providers/base/types").BaseMessage["role"],
+        role: row.role as BaseMessage["role"],
         content: row.content as string,
         type: row.type as "text" | "tool-call" | "tool-result",
         createdAt: row.created_at as string,
@@ -1045,7 +1047,7 @@ export class LibSQLStorage implements Memory {
 
   async getConversationsByUserId(
     userId: string,
-    options: Omit<import("../types").ConversationQueryOptions, "userId"> = {},
+    options: Omit<ConversationQueryOptions, "userId"> = {},
   ): Promise<Conversation[]> {
     await this.initialized;
 
@@ -1139,9 +1141,7 @@ export class LibSQLStorage implements Memory {
    * });
    * ```
    */
-  public async queryConversations(
-    options: import("../types").ConversationQueryOptions,
-  ): Promise<Conversation[]> {
+  public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     await this.initialized;
 
     // Add delay for debugging
@@ -1258,7 +1258,7 @@ export class LibSQLStorage implements Memory {
   public async getConversationMessages(
     conversationId: string,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<import("../types").MemoryMessage[]> {
+  ): Promise<MemoryMessage[]> {
     await this.initialized;
 
     // Add delay for debugging
@@ -1283,7 +1283,7 @@ export class LibSQLStorage implements Memory {
 
       return result.rows.map((row) => ({
         id: row.message_id as string,
-        role: row.role as import("../../agent/providers/base/types").BaseMessage["role"],
+        role: row.role as BaseMessage["role"],
         content: row.content as string,
         type: row.type as "text" | "tool-call" | "tool-result",
         createdAt: row.created_at as string,

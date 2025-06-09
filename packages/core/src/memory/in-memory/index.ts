@@ -2,6 +2,7 @@ import type { NewTimelineEvent } from "../../events/types";
 import devLogger from "../../utils/internal/dev-logger";
 import type {
   Conversation,
+  ConversationQueryOptions,
   CreateConversationInput,
   Memory,
   MemoryMessage,
@@ -464,7 +465,7 @@ export class InMemoryStorage implements Memory {
    */
   public async getConversationsByUserId(
     userId: string,
-    options: Omit<import("../types").ConversationQueryOptions, "userId"> = {},
+    options: Omit<ConversationQueryOptions, "userId"> = {},
   ): Promise<Conversation[]> {
     this.debug(`Getting conversations for user ${userId}`, options);
 
@@ -562,9 +563,7 @@ export class InMemoryStorage implements Memory {
    * });
    * ```
    */
-  public async queryConversations(
-    options: import("../types").ConversationQueryOptions,
-  ): Promise<Conversation[]> {
+  public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     this.debug("Querying conversations", options);
 
     const {
@@ -680,13 +679,13 @@ export class InMemoryStorage implements Memory {
   public async getConversationMessages(
     conversationId: string,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<import("../types").MemoryMessage[]> {
+  ): Promise<MemoryMessage[]> {
     this.debug(`Getting messages for conversation ${conversationId}`, options);
 
     const { limit = 100, offset = 0 } = options;
 
     // Find messages across all users for this conversation
-    const allMessages: import("../types").MemoryMessage[] = [];
+    const allMessages: MemoryMessage[] = [];
 
     for (const userId in this.storage) {
       const userMessages = this.storage[userId][conversationId] || [];
