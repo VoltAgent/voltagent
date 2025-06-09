@@ -37,9 +37,9 @@ import type {
  * ## Usage Examples
  *
  * ```typescript
- * import { ExtendedLibSQLStorage } from "@voltagent/core/memory";
+ * import { LibSQLStorage } from "@voltagent/core/memory";
  *
- * const memoryStorage = new ExtendedLibSQLStorage({
+ * const memoryStorage = new LibSQLStorage({
  *   url: process.env.DATABASE_URL || "",
  *   authToken: process.env.DATABASE_AUTH_TOKEN,
  * });
@@ -64,6 +64,7 @@ import type {
  *   .execute();
  *
  * // Paginated results
+ * const paginatedConversations = await memoryStorage.getPaginatedUserConversations('user123', 1, 20);
  * Function to add a delay between 0-0 seconds for debugging
  */
 async function debugDelay(): Promise<void> {
@@ -2251,13 +2252,7 @@ export class LibSQLStorage implements Memory {
       };
     }
   }
-}
 
-/**
- * Extended LibSQL storage implementation with additional convenience methods
- * This serves as an example of how users can extend the base storage
- */
-export class ExtendedLibSQLStorage extends LibSQLStorage {
   /**
    * Get conversations for a user with a fluent query builder interface
    * @param userId User ID to filter by
