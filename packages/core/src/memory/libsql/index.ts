@@ -1098,7 +1098,48 @@ export class LibSQLStorage implements Memory {
     }
   }
 
-  async queryConversations(
+  /**
+   * Query conversations with flexible filtering and pagination options
+   *
+   * This method provides a powerful way to search and filter conversations
+   * with support for user-based filtering, resource filtering, pagination,
+   * and custom sorting.
+   *
+   * @param options Query options for filtering and pagination
+   * @param options.userId Optional user ID to filter conversations by specific user
+   * @param options.resourceId Optional resource ID to filter conversations by specific resource
+   * @param options.limit Maximum number of conversations to return (default: 50)
+   * @param options.offset Number of conversations to skip for pagination (default: 0)
+   * @param options.orderBy Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
+   * @param options.orderDirection Sort direction: 'ASC' or 'DESC' (default: 'DESC')
+   *
+   * @returns Promise that resolves to an array of conversations matching the criteria
+   *
+   * @example
+   * ```typescript
+   * // Get all conversations for a specific user
+   * const userConversations = await storage.queryConversations({
+   *   userId: 'user123',
+   *   limit: 20
+   * });
+   *
+   * // Get conversations for a resource with pagination
+   * const resourceConversations = await storage.queryConversations({
+   *   resourceId: 'chatbot-v1',
+   *   limit: 10,
+   *   offset: 20,
+   *   orderBy: 'created_at',
+   *   orderDirection: 'ASC'
+   * });
+   *
+   * // Get all conversations (admin view)
+   * const allConversations = await storage.queryConversations({
+   *   limit: 100,
+   *   orderBy: 'updated_at'
+   * });
+   * ```
+   */
+  public async queryConversations(
     options: import("../types").ConversationQueryOptions,
   ): Promise<Conversation[]> {
     await this.initialized;
@@ -1163,7 +1204,58 @@ export class LibSQLStorage implements Memory {
     }
   }
 
-  async getConversationMessages(
+  /**
+   * Get messages for a specific conversation with pagination support
+   *
+   * This method retrieves all messages within a conversation, ordered chronologically
+   * from oldest to newest. It supports pagination to handle large conversations
+   * efficiently and avoid memory issues.
+   *
+   * @param conversationId The unique identifier of the conversation to retrieve messages from
+   * @param options Optional pagination and filtering options
+   * @param options.limit Maximum number of messages to return (default: 100)
+   * @param options.offset Number of messages to skip for pagination (default: 0)
+   *
+   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
+   *
+   * @example
+   * ```typescript
+   * // Get the first 50 messages in a conversation
+   * const messages = await storage.getConversationMessages('conv-123', {
+   *   limit: 50
+   * });
+   *
+   * // Get messages with pagination (skip first 20, get next 30)
+   * const olderMessages = await storage.getConversationMessages('conv-123', {
+   *   limit: 30,
+   *   offset: 20
+   * });
+   *
+   * // Get all messages (use with caution for large conversations)
+   * const allMessages = await storage.getConversationMessages('conv-123');
+   *
+   * // Process messages in batches
+   * const batchSize = 100;
+   * let offset = 0;
+   * let hasMore = true;
+   *
+   * while (hasMore) {
+   *   const batch = await storage.getConversationMessages('conv-123', {
+   *     limit: batchSize,
+   *     offset: offset
+   *   });
+   *
+   *   // Process batch
+   *   processBatch(batch);
+   *
+   *   hasMore = batch.length === batchSize;
+   *   offset += batchSize;
+   * }
+   * ```
+   *
+   * @throws {Error} If the conversation ID is invalid or database query fails
+   */
+  public async getConversationMessages(
     conversationId: string,
     options: { limit?: number; offset?: number } = {},
   ): Promise<import("../types").MemoryMessage[]> {
@@ -1998,10 +2090,63 @@ export class LibSQLStorage implements Memory {
 
   /**
    * Migrate conversation schema to add user_id and update messages table
-   * @param options Migration options
-   * @returns Migration result
+   *
+   * ⚠️  **CRITICAL WARNING: DESTRUCTIVE OPERATION** ⚠️
+   *
+   * This method performs a DESTRUCTIVE schema migration that:
+   * - DROPS and recreates existing tables
+   * - Creates temporary tables during migration
+   * - Modifies the primary key structure of the messages table
+   * - Can cause DATA LOSS if interrupted or if errors occur
+   *
+   * **IMPORTANT SAFETY REQUIREMENTS:**
+   * - 🛑 STOP all application instances before running this migration
+   * - 🛑 Ensure NO concurrent database operations are running
+   * - 🛑 Take a full database backup before running (independent of built-in backup)
+   * - 🛑 Test the migration on a copy of production data first
+   * - 🛑 Plan for downtime during migration execution
+   *
+   * **What this migration does:**
+   * 1. Creates backup tables (if createBackup=true)
+   * 2. Creates temporary tables with new schema
+   * 3. Migrates data from old tables to new schema
+   * 4. DROPS original tables
+   * 5. Renames temporary tables to original names
+   * 6. All operations are wrapped in a transaction for atomicity
+   *
+   * @param options Migration configuration options
+   * @param options.createBackup Whether to create backup tables before migration (default: true, HIGHLY RECOMMENDED)
+   * @param options.restoreFromBackup Whether to restore from existing backup instead of migrating (default: false)
+   * @param options.deleteBackupAfterSuccess Whether to delete backup tables after successful migration (default: false)
+   *
+   * @returns Promise resolving to migration result with success status, migrated count, and backup info
+   *
+   * @example
+   * ```typescript
+   * // RECOMMENDED: Run with backup creation (default)
+   * const result = await storage.migrateConversationSchema({
+   *   createBackup: true,
+   *   deleteBackupAfterSuccess: false // Keep backup for safety
+   * });
+   *
+   * if (result.success) {
+   *   console.log(`Migrated ${result.migratedCount} conversations successfully`);
+   * } else {
+   *   console.error('Migration failed:', result.error);
+   *   // Consider restoring from backup
+   * }
+   *
+   * // If migration fails, restore from backup:
+   * const restoreResult = await storage.migrateConversationSchema({
+   *   restoreFromBackup: true
+   * });
+   * ```
+   *
+   * @throws {Error} If migration fails and transaction is rolled back
+   *
+   * @since This migration is typically only needed when upgrading from older schema versions
    */
-  async migrateConversationSchema(
+  private async migrateConversationSchema(
     options: {
       createBackup?: boolean;
       restoreFromBackup?: boolean;
@@ -2258,7 +2403,7 @@ export class LibSQLStorage implements Memory {
    * @param userId User ID to filter by
    * @returns Query builder object
    */
-  getUserConversations(userId: string) {
+  public getUserConversations(userId: string) {
     return {
       /**
        * Limit the number of results
@@ -2346,7 +2491,10 @@ export class LibSQLStorage implements Memory {
    * @param userId User ID to validate ownership
    * @returns Conversation or null
    */
-  async getUserConversation(conversationId: string, userId: string): Promise<Conversation | null> {
+  public async getUserConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<Conversation | null> {
     const conversation = await this.getConversation(conversationId);
     if (!conversation || conversation.userId !== userId) {
       return null;
@@ -2361,7 +2509,7 @@ export class LibSQLStorage implements Memory {
    * @param pageSize Number of items per page
    * @returns Object with conversations and pagination info
    */
-  async getPaginatedUserConversations(
+  public async getPaginatedUserConversations(
     userId: string,
     page = 1,
     pageSize = 10,
