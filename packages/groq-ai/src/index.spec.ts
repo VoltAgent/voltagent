@@ -332,6 +332,177 @@ describe("GroqProvider", () => {
     });
   });
 
+  describe("tool handling", () => {
+    it("should include toolName in tool-result steps", async () => {
+      const onStepFinishMock = jest.fn();
+
+      // Mock response with tool calls
+      const mockResponseWithToolCall = {
+        id: "chatcmpl-tool-test",
+        object: "chat.completion",
+        created: Date.now(),
+        model: "llama3-8b-8192",
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [
+                {
+                  id: "test-tool-call-id",
+                  type: "function",
+                  function: {
+                    name: "test_tool",
+                    arguments: JSON.stringify({ param: "value" }),
+                  },
+                },
+              ],
+            },
+            finish_reason: "tool_calls",
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+        },
+      };
+
+      // Mock final response after tool execution
+      const mockFinalResponse = {
+        id: "chatcmpl-final",
+        object: "chat.completion",
+        created: Date.now(),
+        model: "llama3-8b-8192",
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: "assistant",
+              content: "Tool execution completed successfully",
+            },
+            finish_reason: "stop",
+          },
+        ],
+        usage: {
+          prompt_tokens: 15,
+          completion_tokens: 25,
+          total_tokens: 40,
+        },
+      };
+
+      // Mock tool
+      const mockTool = {
+        id: "test_tool",
+        name: "test_tool",
+        description: "A test tool",
+        parameters: z.object({
+          param: z.string().optional(),
+        }),
+        execute: jest.fn().mockResolvedValue("tool result"),
+      };
+
+      mockCreate
+        .mockResolvedValueOnce(mockResponseWithToolCall)
+        .mockResolvedValueOnce(mockFinalResponse);
+
+      await provider.generateText({
+        messages: [{ role: "user", content: "Use the test tool" }],
+        model: "llama3-8b-8192",
+        tools: [mockTool],
+        onStepFinish: onStepFinishMock,
+      });
+
+      // Check that onStepFinish was called for tool call and tool result
+      expect(onStepFinishMock).toHaveBeenCalledTimes(2);
+
+      // Check tool_call step
+      const toolCallStep = onStepFinishMock.mock.calls[0][0];
+      expect(toolCallStep.type).toBe("tool_call");
+      expect(toolCallStep.name).toBe("test_tool");
+      expect(JSON.parse(toolCallStep.content)[0].toolName).toBe("test_tool");
+
+      // Check tool_result step
+      const toolResultStep = onStepFinishMock.mock.calls[1][0];
+      expect(toolResultStep.type).toBe("tool_result");
+      expect(toolResultStep.name).toBe("test_tool");
+      expect(JSON.parse(toolResultStep.content)[0].toolName).toBe("test_tool");
+
+      // Verify tool was executed
+      expect(mockTool.execute).toHaveBeenCalledWith({ param: "value" });
+    });
+
+    it("should create proper step content format for tool calls", () => {
+      const chunk = {
+        type: "tool-call",
+        toolCallId: "test-call-123",
+        toolName: "calculator",
+        args: JSON.stringify({ operation: "add", a: 1, b: 2 }),
+        usage: { promptTokens: 5, completionTokens: 3, totalTokens: 8 },
+      };
+
+      const step = provider.createStepFromChunk(chunk);
+
+      expect(step).toEqual({
+        id: "test-call-123",
+        type: "tool_call",
+        name: "calculator",
+        arguments: JSON.stringify({ operation: "add", a: 1, b: 2 }),
+        content: JSON.stringify([
+          {
+            type: "tool-call",
+            toolCallId: "test-call-123",
+            toolName: "calculator",
+            args: JSON.stringify({ operation: "add", a: 1, b: 2 }),
+          },
+        ]),
+        role: "assistant",
+        usage: { promptTokens: 5, completionTokens: 3, totalTokens: 8 },
+      });
+    });
+
+    it("should create proper step content format for tool results", () => {
+      const resultChunk = {
+        type: "tool-result",
+        toolCallId: "test-call-123",
+        toolName: "calculator",
+        result: { answer: 3 },
+        args: JSON.stringify({ operation: "add", a: 1, b: 2 }),
+      };
+
+      const step = provider.createStepFromChunk(resultChunk);
+
+      expect(step).toEqual({
+        id: "test-call-123",
+        type: "tool_result",
+        name: "calculator",
+        result: { answer: 3 },
+        arguments: JSON.stringify({ operation: "add", a: 1, b: 2 }),
+        content: JSON.stringify([
+          {
+            type: "tool-result",
+            toolCallId: "test-call-123",
+            toolName: "calculator",
+            result: { answer: 3 },
+          },
+        ]),
+        role: "tool",
+        usage: undefined,
+      });
+    });
+
+    it("should return null for unsupported chunk types", () => {
+      const unsupportedChunk = {
+        type: "unsupported",
+        someData: "value",
+      };
+
+      const step = provider.createStepFromChunk(unsupportedChunk);
+      expect(step).toBeNull();
+    });
+  });
+
   describe("generateObject", () => {
     it("should generate object successfully", async () => {
       const testSchema = z.object({

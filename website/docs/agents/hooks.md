@@ -159,10 +159,13 @@ onStart: async ({ agent, context }) => {
 - **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, messages: BaseMessage[], context: OperationContext }`
 - **Use Cases:** Cleanup logic, logging completion status and results (success or failure), analyzing final output or error details, recording usage statistics, storing conversation history.
 - **Note:** The `output` object's specific structure within the `AgentOperationOutput` union depends on the agent method called. Check for specific fields (`text`, `object`) or use type guards. `error` will contain the structured `VoltAgentError` on failure.
-- **Messages Parameter:** The `messages` array contains the current conversation turn:
-  - **On Success:** Contains both user input and assistant response `[userMessage, assistantMessage]`
-  - **On Error:** Contains only the user input `[userMessage]` (no assistant response since generation failed)
-  - **Perfect for storing conversation history** without needing to reconstruct from separate events
+- **Messages Parameter:** The `messages` array contains the complete conversation flow for the current operation:
+  - **On Success:** Contains user input, any tool interactions, and final assistant response `[userMessage, toolCallMessage?, toolResultMessage?, ..., assistantMessage]`
+  - **On Error:** Contains user input and any tool interactions that occurred before the error `[userMessage, toolCallMessage?, toolResultMessage?, ...]` (no final assistant response since generation failed)
+  - **Tool Interactions:** When tools are used, additional messages are included:
+    - Tool call messages with `role: "assistant"` containing the tool invocation
+    - Tool result messages with `role: "tool"` containing the tool output
+  - **Perfect for storing complete conversation history** including all tool usage, compatible with UI frameworks like Vercel AI SDK
 
 ```ts
 // Example: Log the outcome of an operation and store conversation history
@@ -185,10 +188,13 @@ onEnd: async ({ agent, output, error, messages, context }) => {
       console.log(`Agent ${agent.name} operation ${context.operationId} succeeded.`);
     }
 
-    // Log the complete conversation turn
-    console.log(`Conversation turn:`, {
+    // Log the complete conversation flow
+    console.log(`Conversation flow:`, {
       user: messages[0]?.content,
-      assistant: messages[1]?.content,
+      // Could include tool calls/results in between
+      assistant: messages[messages.length - 1]?.content, // Final assistant response
+      totalMessages: messages.length,
+      includedToolInteractions: messages.some((m) => m.role === "tool"),
     });
 
     // Log usage if available
@@ -265,3 +271,43 @@ Hooks enable a variety of powerful patterns:
 5.  **State Management**: Initialize or clean up request-specific state or resources.
 6.  **Workflow Orchestration**: Trigger external actions or notifications based on agent events (e.g., notify on tool failure or successful completion with specific output).
 7.  **UI Integration**: The `messages` array format is compatible with popular UI libraries like Vercel AI SDK, making it easy to display conversations in chat interfaces.
+
+## Full Conversation Flow Example
+
+Here's an example showing how the `messages` parameter includes complete conversation flow with tool interactions:
+
+```ts
+const conversationHooks = createHooks({
+  onEnd: async ({ agent, output, error, messages, context }) => {
+    // Example messages array for a successful operation with tool usage:
+    // [
+    //   { role: "user", content: "Use weather tool for San Francisco" },
+    //   {
+    //     role: "assistant",
+    //     content: "[{\"type\":\"tool-call\",\"toolCallId\":\"call_mmZhyZwnheCjZQCRxFPR14pF\",\"toolName\":\"getWeather\",\"args\":{\"location\":\"San Francisco\"}}]",
+    //   },
+    //   {
+    //     role: "tool",
+    //     content: "[{\"type\":\"tool-result\",\"toolCallId\":\"call_mmZhyZwnheCjZQCRxFPR14pF\",\"toolName\":\"getWeather\",\"result\":{\"weather\":{\"location\":\"San Francisco\",\"temperature\":8,\"condition\":\"Rainy\",\"humidity\":86,\"windSpeed\":14},\"message\":\"Current weather in San Francisco: 8°C and rainy with 86% humidity and wind speed of 14 km/h.\"}}]",
+    //   },
+    //   { role: "assistant", content: "The weather in San Francisco is sunny and 22°C." }
+    // ]
+
+    if (!error && output) {
+      // Store complete conversation including tool interactions
+      await storeConversation({
+        operationId: context.operationId,
+        messages: messages, // Full conversation flow
+        usage: output.usage,
+        timestamp: new Date(),
+      });
+
+      // Check if tools were used
+      const toolInteractions = messages.filter((m) => m.role === "tool");
+      if (toolInteractions.length > 0) {
+        console.log(`Operation used ${toolInteractions.length} tool(s)`);
+      }
+    }
+  },
+});
+```

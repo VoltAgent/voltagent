@@ -1064,7 +1064,7 @@ describe("Agent", () => {
       expect(callArgs).toHaveProperty("messages");
       expect(callArgs).toHaveProperty("context");
 
-      // Check messages structure for success case
+      // Check messages structure for success case (no tools used)
       expect(callArgs.messages).toHaveLength(2);
       expect(callArgs.messages[0]).toEqual({
         role: "user",
@@ -1077,6 +1077,62 @@ describe("Agent", () => {
 
       // Check other properties
       expect(callArgs.agent).toBe(agentWithOnEnd);
+      expect(callArgs.output).toBeDefined();
+      expect(callArgs.error).toBeUndefined();
+      expect(callArgs.context).toBeDefined();
+    });
+
+    it("should call onEnd hook with full conversation flow including tool calls", async () => {
+      const onEndSpy = jest.fn();
+      const mockTool = createTool({
+        id: "test-tool",
+        name: "test-tool",
+        description: "A test tool",
+        parameters: z.object({}),
+        execute: async () => "tool result",
+      });
+
+      const agentWithTool = new TestAgent({
+        name: "OnEnd Tool Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        tools: [mockTool],
+        instructions: "OnEnd Tool Test Agent instructions",
+      });
+
+      const userInput = "Use the test tool";
+      await agentWithTool.generateText(userInput);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Check messages structure for success case with tool usage
+      // Expected flow: user input -> assistant tool call -> tool result -> final assistant response
+      expect(callArgs.messages).toHaveLength(4);
+
+      expect(callArgs.messages[0]).toEqual({
+        role: "user",
+        content: userInput,
+      });
+
+      expect(callArgs.messages[1]).toEqual({
+        role: "assistant",
+        content: "Using test-tool",
+      });
+
+      expect(callArgs.messages[2]).toEqual({
+        role: "tool",
+        content: "tool result",
+      });
+
+      expect(callArgs.messages[3]).toEqual({
+        role: "assistant",
+        content: "Hello, I am a test agent!",
+      });
+
+      // Check other properties
+      expect(callArgs.agent).toBe(agentWithTool);
       expect(callArgs.output).toBeDefined();
       expect(callArgs.error).toBeUndefined();
       expect(callArgs.context).toBeDefined();
@@ -1103,7 +1159,7 @@ describe("Agent", () => {
       expect(onEndSpy).toHaveBeenCalledTimes(1);
       const callArgs = onEndSpy.mock.calls[0][0];
 
-      // Check messages structure for success case with array input
+      // Check messages structure for success case with array input (no tool usage)
       expect(callArgs.messages).toHaveLength(4); // 3 input messages + 1 assistant response
       expect(callArgs.messages.slice(0, 3)).toEqual(messages);
       expect(callArgs.messages[3]).toEqual({
@@ -1138,6 +1194,49 @@ describe("Agent", () => {
 
       // Check messages structure for error case - only user input, no assistant response
       expect(callArgs.messages).toHaveLength(1);
+      expect(callArgs.messages[0]).toEqual({
+        role: "user",
+        content: userInput,
+      });
+
+      // Check error properties
+      expect(callArgs.agent).toBe(agentWithError);
+      expect(callArgs.output).toBeUndefined();
+      expect(callArgs.error).toBeDefined();
+      expect(callArgs.context).toBeDefined();
+    });
+
+    it("should call onEnd hook with messages on error", async () => {
+      const onEndSpy = jest.fn();
+      const errorProvider = new MockProvider(mockModel);
+
+      // Mock generateText to throw error immediately
+      jest.spyOn(errorProvider, "generateText").mockImplementation(async () => {
+        throw new Error("Generation failed");
+      });
+
+      const agentWithError = new TestAgent({
+        name: "Error OnEnd Test Agent",
+        model: mockModel,
+        llm: errorProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "Error OnEnd Test Agent instructions",
+      });
+
+      const userInput = "This will cause an error";
+
+      try {
+        await agentWithError.generateText(userInput);
+      } catch {
+        // Expected to throw
+      }
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // For errors, we expect at least the user input message
+      expect(callArgs.messages.length).toBeGreaterThanOrEqual(1);
+
       expect(callArgs.messages[0]).toEqual({
         role: "user",
         content: userInput,

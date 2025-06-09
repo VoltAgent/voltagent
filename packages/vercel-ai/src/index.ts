@@ -101,6 +101,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
           {
             type: "tool-result",
             toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
             result: chunk.result,
           },
         ]),

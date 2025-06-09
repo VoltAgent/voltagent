@@ -192,6 +192,7 @@ export class XSAIProvider implements LLMProvider<string> {
               {
                 type: "tool-result",
                 toolCallId: toolResult.toolCallId,
+                toolName: toolResult.toolName,
                 result: toolResult.result,
               },
             ]),

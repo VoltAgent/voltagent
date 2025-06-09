@@ -425,6 +425,29 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Convert conversation steps to BaseMessage format for hooks
+   */
+  private convertStepsToMessages(steps: StepWithContent[]): BaseMessage[] {
+    const messages: BaseMessage[] = [];
+
+    for (const step of steps) {
+      if (step.type === "tool_call") {
+        messages.push({
+          role: "assistant",
+          content: step.content,
+        });
+      } else if (step.type === "tool_result") {
+        messages.push({
+          role: "tool",
+          content: step.content,
+        });
+      }
+    }
+
+    return messages;
+  }
+
+  /**
    * Calculate maximum number of steps based on sub-agents
    */
   private calculateMaxSteps(): number {
@@ -577,6 +600,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
       otelSpan: otelSpan,
+      conversationSteps: [],
     };
 
     return opContext;
@@ -631,10 +655,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Add step to history immediately
+   * Add step to history immediately and to conversation steps
    */
   private addStepToHistory(step: StepWithContent, context: OperationContext): void {
     this.historyManager.addStepsToEntry(context.historyEntry.id, [step]);
+
+    // Also track in conversation steps for hook messages
+    if (!context.conversationSteps) {
+      context.conversationSteps = [];
+    }
+    context.conversationSteps.push(step);
   }
 
   /**
@@ -1054,11 +1084,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         providerResponse: response,
       };
 
-      // Create clean messages array with just current user input and assistant response
+      // Create clean messages array with user input + tool calls/results + final assistant response
       const userInputMessages = await this.formatInputMessages([], input);
+      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
       const cleanMessages = [
         ...userInputMessages,
+        ...stepMessages,
         { role: "assistant" as const, content: response.text },
       ];
 
@@ -1497,11 +1529,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             providerResponse: result.providerResponse,
           },
         });
-        // Create clean messages array with just current user input and assistant response
+        // Create clean messages array with user input + tool calls/results + final assistant response
         const userInputMessages = await this.formatInputMessages([], input);
+        const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
         const cleanMessages = [
           ...userInputMessages,
+          ...stepMessages,
           { role: "assistant" as const, content: result.text },
         ];
 
@@ -1642,14 +1676,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (internalOptions.provider?.onError) {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
-        // For errors, only send the user input (no assistant response since it failed)
+        // For errors, send user input + any tool calls/results that occurred before the error
         const userInputMessages = await this.formatInputMessages([], input);
+        const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
         await this.hooks.onEnd?.({
           agent: this,
           output: undefined,
           error: error,
-          messages: userInputMessages,
+          messages: [...userInputMessages, ...stepMessages],
           context: operationContext,
         });
       },
@@ -1852,11 +1887,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         providerResponse: response,
       };
 
-      // Create clean messages array with just current user input and assistant response
+      // Create clean messages array with user input + tool calls/results + final assistant response
       const userInputMessages = await this.formatInputMessages([], input);
+      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
       const cleanMessages = [
         ...userInputMessages,
+        ...stepMessages,
         { role: "assistant" as const, content: JSON.stringify(response.object) },
       ];
 
@@ -1937,14 +1974,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         endTime: new Date(),
       });
 
-      // For errors, only send the user input (no assistant response since it failed)
+      // For errors, send user input + any tool calls/results that occurred before the error
       const userInputMessages = await this.formatInputMessages([], input);
+      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
-        messages: userInputMessages,
+        messages: [...userInputMessages, ...stepMessages],
         context: operationContext,
       });
       throw voltagentError;
@@ -2142,11 +2180,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             status: "completed" as any,
           });
 
-          // Create clean messages array with just current user input and assistant response
+          // Create clean messages array with user input + tool calls/results + final assistant response
           const userInputMessages = await this.formatInputMessages([], input);
+          const stepMessages = this.convertStepsToMessages(
+            operationContext.conversationSteps || [],
+          );
 
           const cleanMessages = [
             ...userInputMessages,
+            ...stepMessages,
             { role: "assistant" as const, content: JSON.stringify(result.object) },
           ];
 
@@ -2242,14 +2284,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (provider?.onError) {
             await (provider.onError as StreamOnErrorCallback)(error);
           }
-          // For errors, only send the user input (no assistant response since it failed)
+          // For errors, send user input + any tool calls/results that occurred before the error
           const userInputMessages = await this.formatInputMessages([], input);
+          const stepMessages = this.convertStepsToMessages(
+            operationContext.conversationSteps || [],
+          );
 
           await this.hooks.onEnd?.({
             agent: this,
             output: undefined,
             error: error,
-            messages: userInputMessages,
+            messages: [...userInputMessages, ...stepMessages],
             context: operationContext,
           });
         },
@@ -2258,14 +2303,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       return typedResponse;
     } catch (error) {
       operationContext.isActive = false;
-      // For errors, only send the user input (no assistant response since it failed)
+      // For errors, send user input + any tool calls/results that occurred before the error
       const userInputMessages = await this.formatInputMessages([], input);
+      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: error as VoltAgentError,
-        messages: userInputMessages,
+        messages: [...userInputMessages, ...stepMessages],
         context: operationContext,
       });
       throw error;
