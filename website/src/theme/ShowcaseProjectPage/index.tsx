@@ -1,6 +1,6 @@
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import React from "react";
@@ -134,17 +134,28 @@ export default function ShowcaseProjectPage({
                   </div>
                 </div>
 
-                {/* GitHub Link */}
+                {/* GitHub/Project Link */}
                 <a
                   href={project.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center no-underline px-3 sm:px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border-solid border-gray-600 rounded-lg transition-colors"
                 >
-                  <GitHubLogo className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  <span className="text-gray-300 font-medium text-sm sm:text-base">
-                    Source Code
-                  </span>
+                  {project.isPrivate ? (
+                    <>
+                      <ArrowTopRightOnSquareIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-300" />
+                      <span className="text-gray-300 font-medium text-sm sm:text-base">
+                        Visit Project
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <GitHubLogo className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      <span className="text-gray-300 font-medium text-sm sm:text-base">
+                        Source Code
+                      </span>
+                    </>
+                  )}
                 </a>
               </div>
             </motion.div>

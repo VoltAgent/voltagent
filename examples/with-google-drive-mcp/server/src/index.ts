@@ -1,23 +1,23 @@
-import { Hono, type Context } from "hono";
-import { cors } from "hono/cors";
 import { openai } from "@ai-sdk/openai";
+import { serve } from "@hono/node-server";
 import { createTool } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { serve } from "@hono/node-server";
+import { type Context, Hono } from "hono";
+import { cors } from "hono/cors";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 
 import { OpenAIToolSet } from "composio-core";
 
+import type { z } from "zod";
 // Import refactored modules
-import { setupDatabase, saveUserConnection, getUserConnection } from "./db/index.js";
+import { getUserConnection, saveUserConnection, setupDatabase } from "./db/index.js";
 import {
-  storePendingConnection,
   getPendingConnection,
   removePendingConnection,
+  storePendingConnection,
 } from "./db/pendingConnections.js";
 import { generateFunnyVoltAgentId } from "./utils.js";
 import { agent } from "./voltagent/index.js";
-import type { z } from "zod";
 
 // Initialize Composio toolset
 // Ensure COMPOSIO_API_KEY is set in your environment variables

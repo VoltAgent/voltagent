@@ -1,6 +1,6 @@
+import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 export const agent = new Agent({
   name: "Base Agent",

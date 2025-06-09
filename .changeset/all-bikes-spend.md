@@ -1,18 +1,18 @@
 ---
-"create-voltagent-app": minor
-"@voltagent/cli": minor
-"@voltagent/anthropic-ai": minor
-"@voltagent/core": minor
-"@voltagent/google-ai": minor
-"@voltagent/groq-ai": minor
-"@voltagent/langfuse-exporter": minor
-"@voltagent/postgres": minor
-"@voltagent/sdk": minor
-"@voltagent/supabase": minor
-"@voltagent/vercel-ai": minor
-"@voltagent/vercel-ai-exporter": minor
-"@voltagent/voice": minor
-"@voltagent/xsai": minor
+"create-voltagent-app": patch
+"@voltagent/cli": patch
+"@voltagent/anthropic-ai": patch
+"@voltagent/core": patch
+"@voltagent/google-ai": patch
+"@voltagent/groq-ai": patch
+"@voltagent/langfuse-exporter": patch
+"@voltagent/postgres": patch
+"@voltagent/sdk": patch
+"@voltagent/supabase": patch
+"@voltagent/vercel-ai": patch
+"@voltagent/vercel-ai-exporter": patch
+"@voltagent/voice": patch
+"@voltagent/xsai": patch
 ---
 
 chore!: drop Node.js v18
