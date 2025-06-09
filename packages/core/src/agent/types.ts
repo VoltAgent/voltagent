@@ -138,11 +138,25 @@ export type ModelType<T> = T extends { llm: LLMProvider<any> }
   : never;
 
 /**
+ * Infer generate text options type
+ */
+export type InferGenerateTextOptions<T extends { llm: LLMProvider<any> }> = Parameters<
+  T["llm"]["generateText"]
+>[0];
+
+/**
  * Infer generate text response type
  */
 export type InferGenerateTextResponse<T extends { llm: LLMProvider<any> }> = Awaited<
   ReturnType<T["llm"]["generateText"]>
 >;
+
+/**
+ * Infer generate object options type
+ */
+export type InferStreamTextOptions<T extends { llm: LLMProvider<any> }> = Parameters<
+  T["llm"]["streamText"]
+>[0];
 
 /**
  * Infer stream text response type
@@ -152,11 +166,25 @@ export type InferStreamTextResponse<T extends { llm: LLMProvider<any> }> = Await
 >;
 
 /**
+ * Infer stream text options type
+ */
+export type InferGenerateObjectOptions<T extends { llm: LLMProvider<any> }> = Parameters<
+  T["llm"]["generateObject"]
+>[0];
+
+/**
  * Infer generate object response type
  */
 export type InferGenerateObjectResponse<T extends { llm: LLMProvider<any> }> = Awaited<
   ReturnType<T["llm"]["generateObject"]>
 >;
+
+/**
+ * Infer stream object options type
+ */
+export type InferStreamObjectOptions<T extends { llm: LLMProvider<any> }> = Parameters<
+  T["llm"]["streamObject"]
+>[0];
 
 /**
  * Infer stream object response type
@@ -215,14 +243,34 @@ export interface InternalGenerateOptions extends CommonGenerateOptions {
   parentHistoryEntryId?: string;
 }
 
+type BasePublicGenerateOptions = Omit<
+  CommonGenerateOptions,
+  "historyEntryId" | "operationContext" | "provider"
+>;
+
 /**
  * Public-facing generate options for external users
  * Omits internal implementation details like historyEntryId and operationContext
  */
-export type PublicGenerateOptions = Omit<
-  CommonGenerateOptions,
-  "historyEntryId" | "operationContext"
->;
+export type PublicGenerateTextOptions<TProvider extends { llm: LLMProvider<any> }> =
+  BasePublicGenerateOptions & {
+    provider?: InferGenerateTextOptions<TProvider>;
+  };
+
+export type PublicGenerateObjectOptions<TProvider extends { llm: LLMProvider<any> }> =
+  BasePublicGenerateOptions & {
+    provider?: InferGenerateObjectOptions<TProvider>;
+  };
+
+export type PublicStreamTextOptions<TProvider extends { llm: LLMProvider<any> }> =
+  BasePublicGenerateOptions & {
+    provider?: InferStreamTextOptions<TProvider>;
+  };
+
+export type PublicStreamObjectOptions<TProvider extends { llm: LLMProvider<any> }> =
+  BasePublicGenerateOptions & {
+    provider?: InferStreamObjectOptions<TProvider>;
+  };
 
 /**
  * Agent status information

@@ -45,7 +45,10 @@ import type {
   ModelType,
   OperationContext,
   ProviderInstance,
-  PublicGenerateOptions,
+  PublicGenerateObjectOptions,
+  PublicGenerateTextOptions,
+  PublicStreamObjectOptions,
+  PublicStreamTextOptions,
   StandardizedObjectResult,
   StandardizedTextResult,
   StreamObjectFinishResult,
@@ -730,9 +733,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a text response without streaming
    */
-  async generateText(
+  public async generateText(
     input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateTextOptions<TProvider> = {},
   ): Promise<InferGenerateTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
@@ -1151,9 +1154,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a text response
    */
-  async streamText(
+  public async streamText(
     input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
+    options: PublicStreamTextOptions<TProvider> = {},
   ): Promise<InferStreamTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
@@ -1633,10 +1636,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a structured object response
    */
-  async generateObject<T extends z.ZodType>(
+  public async generateObject<T extends z.ZodType>(
     input: string | BaseMessage[],
     schema: T,
-    options: PublicGenerateOptions = {},
+    options: PublicGenerateObjectOptions<TProvider> = {},
   ): Promise<InferGenerateObjectResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
@@ -1912,10 +1915,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<T extends z.ZodType>(
+  public async streamObject<T extends z.ZodType>(
     input: string | BaseMessage[],
     schema: T,
-    options: PublicGenerateOptions = {},
+    options: PublicStreamObjectOptions<TProvider> = {},
   ): Promise<InferStreamObjectResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
