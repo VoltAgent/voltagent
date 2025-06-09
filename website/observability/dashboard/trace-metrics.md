@@ -6,7 +6,7 @@ title: Analytics Dashboard
 
 The Analytics Dashboard gives you a clear view of how your traces are performing and what is happening with your LLM calls. It is designed to help you keep an eye on your AI agents and see how they are performing in real-time.
 
-## Trace Metrics
+### Trace Metrics
 
 Here, it shows you all that you may want to know about your traces for whatever time period you choose.
 
@@ -17,10 +17,6 @@ This is where you can see the big picture of how your AI system is doing:
 - **Success Rate**: It tells you what percentage of your traces actually completed successfully. It's a great way to see if your system is reliable.
 - **Error Rate**: This tells you how many traces are not succeeding. If the number here is high, you'll have to dig further to find out what isn't working.
 - **Working/In Progress**: The number of traces which are in the process of execution. This gives you an idea of how busy your system is at the moment.
-
-#### Use Case
-
-This is perfect if you are a DevOps engineer or AI researcher who needs to be sure that your LLM applications are running well and staying online.
 
 ### Trace Statistics
 
@@ -40,8 +36,6 @@ This puts you in perspective about what you're looking at:
 - **Time Range**: What time range you're looking at data for - you can set this to be specific days or weeks
 - **Data Points**: The quantity of measurement points within your selected range
 - **Granularity**: How often the data was recorded (e.g., every hour, every day)
-
-#### Use Case
 
 This comes in handy when you're dealing with issues, reviewing performance, or building different views for different people on your team.
 

@@ -66,6 +66,31 @@ const sidebars: SidebarsConfig = {
           id: "dashboard/trace-metrics",
           label: "Trace Metrics",
         },
+        {
+          type: "doc",
+          id: "dashboard/trace-counts",
+          label: "Trace Counts Over Time",
+        },
+        {
+          type: "doc",
+          id: "dashboard/llm-call-overview",
+          label: "LLM Call Overview",
+        },
+        {
+          type: "doc",
+          id: "dashboard/llm-call-success-rates",
+          label: "LLM Call Success Rates",
+        },
+        {
+          type: "doc",
+          id: "dashboard/llm-cost-overview",
+          label: "LLM Cost Overview",
+        },
+        {
+          type: "doc",
+          id: "dashboard/user-cost-overview",
+          label: "User Cost Overview",
+        },
       ],
     },
     {
