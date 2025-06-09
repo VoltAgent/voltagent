@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import Link from "@docusaurus/Link";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 
 interface ProjectCardProps {
   project: {
@@ -16,6 +17,7 @@ interface ProjectCardProps {
     screenshot: string;
     useCases: string[];
     video?: string;
+    isPrivate?: boolean;
   };
 }
 
@@ -67,7 +69,14 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
               </span>
             </div>
 
-            <GitHubLogo className="w-5 h-5" />
+            {project.isPrivate ? (
+              <div className="flex items-center text-gray-400 text-xs">
+                <span className="mr-1">See Project</span>
+                <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+              </div>
+            ) : (
+              <GitHubLogo className="w-5 h-5" />
+            )}
           </div>
 
           {/* Tech Stack */}
