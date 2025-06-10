@@ -16,6 +16,17 @@ export interface SupabaseMemoryOptions {
   tableName?: string; // Base table name, defaults to "voltagent_memory"
 }
 
+/**
+ * Supabase Storage for VoltAgent
+ *
+ * This implementation provides:
+ * - Conversation management with user support
+ * - Automatic migration from old schema to new schema
+ * - PostgreSQL-optimized queries through Supabase
+ * - Real-time capabilities through Supabase subscriptions
+ *
+ * @see {@link https://voltagent.ai/docs/storage/supabase | Supabase Storage Documentation}
+ */
 export class SupabaseMemory implements Memory {
   private client: SupabaseClient;
   private baseTableName: string;
