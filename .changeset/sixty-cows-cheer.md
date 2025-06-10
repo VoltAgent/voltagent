@@ -12,15 +12,12 @@ class MyRetriever extends BaseRetriever {
     // Find relevant documents
     const docs = this.findRelevantDocs(input);
 
-    // Store references in userContext
-    if (options.userContext) {
-      const references = docs.map((doc) => ({
-        id: doc.id,
-        title: doc.title,
-        source: doc.source,
-      }));
-      options.userContext.set("references", references);
-    }
+    const references = docs.map((doc) => ({
+      id: doc.id,
+      title: doc.title,
+      source: doc.source,
+    }));
+    options.userContext.set("references", references);
 
     return docs.map((doc) => doc.content).join("\n");
   }
