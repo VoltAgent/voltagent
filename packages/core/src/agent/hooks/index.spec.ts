@@ -97,6 +97,16 @@ describe("Agent Hooks Functionality", () => {
       const response = await agent.generateText("Test input"); // Assuming success
 
       // Verify onEnd was called with the correct structure using objectContaining
+      // Construct the expected standardized output for the hook
+      const expectedOutput = {
+        text: response.text,
+        usage: response.usage,
+        finishReason: response.finishReason,
+        providerResponse: response,
+        // warnings: response.warnings, // If response includes warnings
+      };
+
+      // Verify onEnd was called with the agent, standardized output, undefined error, messages, and context
       expect(onEndSpy).toHaveBeenCalledWith({
         agent: agent,
         output: expect.objectContaining({
@@ -110,6 +120,38 @@ describe("Agent Hooks Functionality", () => {
           operationId: expect.any(String),
           isActive: expect.any(Boolean),
         }),
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: "user",
+            content: "Test input",
+          }),
+          expect.objectContaining({
+            role: "assistant",
+            content: expect.any(String),
+          }),
+        ]),
+      });
+    });
+
+    it("should call onEnd with correct messages structure on success", async () => {
+      const onEndSpy = jest.fn();
+      agent.hooks = createHooks({ onEnd: onEndSpy });
+
+      const userInput = "Hello, how are you?";
+      await agent.generateText(userInput);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Verify messages structure
+      expect(callArgs.messages).toHaveLength(2);
+      expect(callArgs.messages[0]).toEqual({
+        role: "user",
+        content: userInput,
+      });
+      expect(callArgs.messages[1]).toEqual({
+        role: "assistant",
+        content: expect.any(String),
       });
     });
 
@@ -129,13 +171,14 @@ describe("Agent Hooks Functionality", () => {
         hooks: createHooks({ onEnd: onEndSpy }),
       });
 
+      const userInput = "Test input that will fail";
       try {
-        await errorAgent.generateText("Test input");
+        await errorAgent.generateText(userInput);
       } catch (_e) {
         // Expected error
       }
 
-      // Verify onEnd was called with undefined output and an error object
+      // Verify onEnd was called with undefined output, error object, and only user input in messages
       expect(onEndSpy).toHaveBeenCalledWith({
         agent: errorAgent,
         output: undefined,
@@ -144,6 +187,42 @@ describe("Agent Hooks Functionality", () => {
           operationId: expect.any(String),
           isActive: expect.any(Boolean),
         }),
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: "user",
+            content: userInput,
+          }),
+        ]),
+      });
+
+      // Verify that only user input is present (no assistant response on error)
+      const callArgs = onEndSpy.mock.calls[0][0];
+      expect(callArgs.messages).toHaveLength(1);
+      expect(callArgs.messages[0].role).toBe("user");
+      expect(callArgs.messages[0].content).toBe(userInput);
+    });
+
+    it("should call onEnd with correct messages when using BaseMessage array input", async () => {
+      const onEndSpy = jest.fn();
+      agent.hooks = createHooks({ onEnd: onEndSpy });
+
+      const inputMessages = [
+        { role: "user" as const, content: "Hello!" },
+        { role: "assistant" as const, content: "Hi there!" },
+        { role: "user" as const, content: "How are you?" },
+      ];
+
+      await agent.generateText(inputMessages);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Verify messages structure contains input messages + assistant response
+      expect(callArgs.messages).toHaveLength(4); // 3 input + 1 assistant response
+      expect(callArgs.messages.slice(0, 3)).toEqual(inputMessages);
+      expect(callArgs.messages[3]).toEqual({
+        role: "assistant",
+        content: expect.any(String),
       });
     });
   });

@@ -581,6 +581,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
       otelSpan: otelSpan,
+      conversationSteps: [],
     };
 
     return opContext;
@@ -635,10 +636,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Add step to history immediately
+   * Add step to history immediately and to conversation steps
    */
   private addStepToHistory(step: StepWithContent, context: OperationContext): void {
     this.historyManager.addStepsToEntry(context.historyEntry.id, [step]);
+
+    // Also track in conversation steps for hook messages
+    if (!context.conversationSteps) {
+      context.conversationSteps = [];
+    }
+    context.conversationSteps.push(step);
   }
 
   /**
@@ -1059,7 +1066,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         providerResponse: response,
         userContext: new Map(operationContext.userContext),
       };
+
       await this.hooks.onEnd?.({
+        conversationId: finalConversationId,
         agent: this,
         output: standardizedOutput,
         error: undefined,
@@ -1139,10 +1148,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       operationContext.isActive = false;
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
+        conversationId: finalConversationId,
         context: operationContext,
       });
 
@@ -1501,6 +1512,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           agent: this,
           output: resultWithContext,
           error: undefined,
+          conversationId: finalConversationId,
           context: operationContext,
         });
         if (internalOptions.provider?.onFinish) {
@@ -1634,10 +1646,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (internalOptions.provider?.onError) {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
+
         await this.hooks.onEnd?.({
           agent: this,
           output: undefined,
           error: error,
+          conversationId: finalConversationId,
           context: operationContext,
         });
       },
@@ -1817,8 +1831,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         historyId: operationContext.historyEntry.id,
         event: agentSuccessEvent,
       });
-      const responseStr =
-        typeof response === "string" ? response : JSON.stringify(response?.object);
+
+      const responseStr = JSON.stringify(response.object);
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
         output: responseStr,
         usage: response.usage,
@@ -1841,10 +1855,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         providerResponse: response,
         userContext: new Map(operationContext.userContext),
       };
+
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
+        conversationId: finalConversationId,
         context: operationContext,
       });
       const typedResponse = response as InferGenerateObjectResponse<TProvider>;
@@ -1921,6 +1937,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         agent: this,
         output: undefined,
         error: voltagentError,
+        conversationId: finalConversationId,
         context: operationContext,
       });
       throw voltagentError;
@@ -2131,6 +2148,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             agent: this,
             output: resultWithContext,
             error: undefined,
+            conversationId: finalConversationId,
             context: operationContext,
           });
           if (provider?.onFinish) {
@@ -2219,10 +2237,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (provider?.onError) {
             await (provider.onError as StreamOnErrorCallback)(error);
           }
+
           await this.hooks.onEnd?.({
             agent: this,
             output: undefined,
             error: error,
+            conversationId: finalConversationId,
             context: operationContext,
           });
         },
@@ -2235,6 +2255,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         agent: this,
         output: undefined,
         error: error as VoltAgentError,
+        conversationId: finalConversationId,
         context: operationContext,
       });
       throw error;

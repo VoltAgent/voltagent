@@ -167,9 +167,16 @@ export class GroqProvider implements LLMProvider<string> {
       return {
         id: chunk.toolCallId,
         type: "tool_call",
-        content: chunk.toolName,
+        content: JSON.stringify([
+          {
+            type: "tool-call",
+            toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
+            args: chunk.args,
+          },
+        ]),
         name: chunk.toolName,
-        role: "tool" as MessageRole,
+        role: "assistant" as MessageRole,
         arguments: chunk.args,
         usage: chunk.usage || undefined,
       };
@@ -178,7 +185,14 @@ export class GroqProvider implements LLMProvider<string> {
       return {
         id: chunk.toolCallId,
         type: "tool_result",
-        content: chunk.toolName,
+        content: JSON.stringify([
+          {
+            type: "tool-result",
+            toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
+            result: chunk.result,
+          },
+        ]),
         name: chunk.toolName,
         role: "tool" as MessageRole,
         arguments: chunk.args,
@@ -256,7 +270,11 @@ export class GroqProvider implements LLMProvider<string> {
           if (functionResponse === undefined) {
             throw `Function ${functionName} returned undefined`;
           }
-          toolResults.push({ name: functionName, output: functionResponse });
+          toolResults.push({
+            toolCallId: toolCall.id,
+            name: functionName,
+            output: functionResponse,
+          });
 
           groqMessages.push({
             tool_call_id: toolCall.id,
@@ -269,9 +287,8 @@ export class GroqProvider implements LLMProvider<string> {
           for (const toolResult of toolResults) {
             const step = this.createStepFromChunk({
               type: "tool-result",
-              toolCallId: toolCalls.find((toolItem) => toolResult.name === toolItem.id)?.id,
-              toolName: toolCalls.find((toolItem) => toolResult.name === toolItem.id)?.function
-                .name,
+              toolCallId: toolResult.toolCallId,
+              toolName: toolResult.name,
               result: toolResult.output,
               usage: usage,
             });

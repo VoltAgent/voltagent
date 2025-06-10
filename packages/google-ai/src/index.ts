@@ -208,6 +208,7 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
           {
             type: "tool-result",
             toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
             result: chunk.result,
           },
         ]),

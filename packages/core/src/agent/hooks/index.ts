@@ -9,11 +9,19 @@ export interface OnStartHookArgs {
 }
 
 export interface OnEndHookArgs {
+  /**
+   * The conversation ID.
+   */
+  conversationId: string;
+  /**
+   * The agent that generated the output.
+   */
   agent: Agent<any>;
   /** The standardized successful output object. Undefined on error. */
   output: AgentOperationOutput | undefined;
   /** The VoltAgentError object if the operation failed. Undefined on success. */
   error: VoltAgentError | undefined;
+  /** The complete conversation messages including user input and assistant responses (Vercel AI SDK compatible) */
   context: OperationContext;
 }
 

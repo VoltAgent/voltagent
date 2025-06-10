@@ -1,10 +1,10 @@
+import type { BaseMessage, OperationContext, StepWithContent } from "@voltagent/core";
 import { appendResponseMessages } from "ai";
 import type * as VercelAIv5 from "ai-v5";
 import { P, match } from "ts-pattern";
-import type { BaseMessage, StepWithContent } from "../../core/src/agent/providers";
-import { generateMessageId } from "../../core/src/utils/internal/identifiers";
-import { hasKey, isDate, isString } from "../../core/src/utils/internal/utils";
+import patterns from "./patterns";
 import type { UIMessage, VercelVersion } from "./types";
+import { generateMessageId, hasKey } from "./utils";
 
 export interface ConvertToUIMessagesOptions<TVersion extends VercelVersion = VercelVersion> {
   version: TVersion;
@@ -12,35 +12,72 @@ export interface ConvertToUIMessagesOptions<TVersion extends VercelVersion = Ver
 
 /**
  * Convert a list of messages to a list of UIMessages.
- * @param messages - The input message(s) to convert.
- * @param steps - The steps to convert from the agent/provider.
+ *
+ * @example
+ * ```typescript
+ * new Agent({
+ *   ...
+ *   hooks: {
+ *     onFinish: (result) => {
+ *       chatStore.save({
+ *         conversationId: result.conversationId,
+ *         messages: convertToUIMessages(result.operationContext),
+ *       })
+ *     }
+ *   }
+ *   ...
+ * })
+ * ```
+ *
+ * @param operationContext - The operation context to convert.
  * @param options - The options for the conversion.
  * @returns The converted messages.
  */
 export function convertToUIMessages(
-  messages: BaseMessage[],
-  steps: StepWithContent[],
+  operationContext: OperationContext,
   options?: ConvertToUIMessagesOptions<"v4">,
 ): Array<UIMessage<"v4">>;
 export function convertToUIMessages<
   TMetadata = unknown,
   TDataParts extends VercelAIv5.UIDataTypes = VercelAIv5.UIDataTypes,
 >(
-  messages: BaseMessage[],
-  steps: StepWithContent[],
+  operationContext: OperationContext,
   options?: ConvertToUIMessagesOptions<"v5">,
 ): Array<UIMessage<"v5", TMetadata, TDataParts>>;
 export function convertToUIMessages<
   TMetadata = unknown,
   TDataParts extends VercelAIv5.UIDataTypes = VercelAIv5.UIDataTypes,
 >(
-  messages: BaseMessage[],
-  steps: StepWithContent[],
+  operationContext: OperationContext,
   options?: ConvertToUIMessagesOptions,
 ): Array<UIMessage<"v4">> | Array<UIMessage<"v5", TMetadata, TDataParts>> {
   if (options?.version === "v5") {
     throw new Error("V5 is not supported yet");
   }
+
+  const messages = match(operationContext.historyEntry.input)
+    .returnType<BaseMessage[]>()
+    .with(P.string, (input) => {
+      return [{ role: "user", content: input }];
+    })
+    .with(P.array(patterns.message), (input) => {
+      return input;
+    })
+    .with(patterns.message, (input) => {
+      return [input as BaseMessage];
+    })
+    .otherwise(() => {
+      return [];
+    });
+
+  const steps = match(operationContext.conversationSteps)
+    .returnType<StepWithContent[]>()
+    .with(P.nullish, () => {
+      return [];
+    })
+    .otherwise((steps) => {
+      return steps;
+    });
 
   return convertToV4UIMessages(messages, steps);
 }
@@ -70,7 +107,7 @@ function convertToV4UIMessages(
     createdAt: match(message)
       .when(
         (m) => hasKey(m, "createdAt"),
-        ({ createdAt }) => (isDate(createdAt) ? createdAt : new Date()),
+        ({ createdAt }) => (createdAt instanceof Date ? createdAt : new Date()),
       )
       .otherwise(() => new Date()),
     parts: match(message.content)
@@ -149,7 +186,7 @@ type VercelResponseMessage = Parameters<
 >[0]["responseMessages"][number];
 
 function getId(message: unknown): string {
-  if (hasKey(message, "id") && isString(message.id)) {
+  if (hasKey(message, "id") && typeof message.id === "string") {
     return message.id;
   }
   return generateMessageId();
