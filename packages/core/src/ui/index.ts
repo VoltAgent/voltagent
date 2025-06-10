@@ -1,10 +1,8 @@
 import { appendResponseMessages } from "ai";
-import type * as VercelAI from "ai";
 import type * as VercelAIv5 from "ai-v5";
 import { P, match } from "ts-pattern";
 import type { BaseMessage, StepWithContent } from "../agent/providers";
 import { generateMessageId } from "../utils/internal/identifiers";
-import { safeParseJson } from "../utils/internal/parse";
 import { hasKey, isDate, isString } from "../utils/internal/utils";
 import type { UIMessage, VercelVersion } from "./types";
 
@@ -104,31 +102,45 @@ function convertToV4UIMessages(
     return match(step)
       .returnType<VercelResponseMessage>()
       .with({ type: "tool_call" }, (step) => ({
-        id: step.id,
-        role: "tool",
-        content: safeParseJson<VercelAI.ToolResultPart[]>(step.content) ?? [],
+        id: generateMessageId(),
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: step.id,
+            // biome-ignore lint/style/noNonNullAssertion: this SHOULD always be defined
+            toolName: step.name!,
+            args: step.arguments,
+          },
+        ],
       }))
       .with({ type: "tool_result" }, (step) => ({
-        id: step.id,
+        id: generateMessageId(),
         role: "tool",
-        content: safeParseJson<VercelAI.ToolResultPart[]>(step.content) ?? [],
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: step.id,
+            // biome-ignore lint/style/noNonNullAssertion: this SHOULD always be defined
+            toolName: step.name!,
+            result: step.result,
+          },
+        ],
       }))
       .with({ type: "text" }, (step) => ({
         id: step.id,
         role: "assistant",
-        content: step.content,
+        content: [{ type: "text", text: step.content }],
       }))
       .exhaustive();
   }) satisfies VercelResponseMessage[];
 
+  // @ts-expect-error - TODO: fix this
   return appendResponseMessages({
     messages: inputMessages,
     responseMessages,
   }).map((message) => ({
-    id: message.id,
-    role: message.role,
-    content: message.content,
-    parts: message.parts ?? [],
+    ...message,
   }));
 }
 

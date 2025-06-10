@@ -1076,14 +1076,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         userContext: new Map(operationContext.userContext),
       };
 
+      const cleanMessages = convertToUIMessages(
+        this.formatInput(input),
+        operationContext.conversationSteps || [],
+      );
+
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
-        messages: convertToUIMessages(
-          this.formatInput(input),
-          operationContext.conversationSteps || [],
-        ),
+        messages: cleanMessages,
         context: operationContext,
       });
 
@@ -1161,12 +1163,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       operationContext.isActive = false;
 
+      // For errors, only send the user input (no assistant response since it failed)
+      const cleanMessages = convertToUIMessages(this.formatInput(input), []);
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
-        // For errors, only send the user input (no assistant response since it failed)
-        messages: convertToUIMessages(this.formatInput(input), []),
+        messages: cleanMessages,
         context: operationContext,
       });
 
@@ -1513,12 +1517,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             providerResponse: result.providerResponse,
           },
         });
+
         // Create clean messages array with user input + complete conversation flow
         const cleanMessages = convertToUIMessages(
           this.formatInput(input),
           operationContext.conversationSteps || [],
         );
-
         operationContext.isActive = false;
 
         // Add userContext to result
@@ -1666,15 +1670,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
 
+        // For errors, send user input + any tool calls/results that occurred before the error
+        const cleanMessages = convertToUIMessages(
+          this.formatInput(input),
+          operationContext.conversationSteps || [],
+        );
+
         await this.hooks.onEnd?.({
           agent: this,
           output: undefined,
           error: error,
-          // For errors, send user input + any tool calls/results that occurred before the error
-          messages: convertToUIMessages(
-            this.formatInput(input),
-            operationContext.conversationSteps || [],
-          ),
+          messages: cleanMessages,
           context: operationContext,
         });
       },

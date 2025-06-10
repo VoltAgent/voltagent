@@ -7,7 +7,7 @@ import { createIdGenerator } from "ai";
  */
 export const generateMessageId = createIdGenerator({
   prefix: "msg",
-  separator: "_",
+  separator: "-",
   size: 24,
 });
 
@@ -17,7 +17,7 @@ export const generateMessageId = createIdGenerator({
  * @returns The tool call ID.
  */
 export const generateToolCallId = createIdGenerator({
-  prefix: "tool-call",
+  prefix: "tool",
   separator: "_",
   size: 24,
 });
