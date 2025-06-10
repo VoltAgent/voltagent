@@ -1,3 +1,5 @@
+import type { Span } from "@opentelemetry/api";
+import { P, match } from "ts-pattern";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
@@ -13,7 +15,7 @@ import type {
   ToolStartEvent,
   ToolSuccessEvent,
 } from "../events/types";
-import { MemoryManager } from "../memory";
+import { type Memory, MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
@@ -25,6 +27,7 @@ import { NodeType, createNodeId } from "../utils/node-utils";
 import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
+import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 import type {
   BaseMessage,
   BaseTool,
@@ -56,9 +59,6 @@ import type {
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
-
-import type { Span } from "@opentelemetry/api";
-import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 
 /**
  * Agent class for interacting with AI models
@@ -176,7 +176,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     // Initialize memory manager
-    this.memoryManager = new MemoryManager(this.id, options.memory, options.memoryOptions || {});
+    this.memoryManager = new MemoryManager(
+      this.id,
+      // If the agent has sub-agents, we default to no memory unless explicitly provided
+      match({ memory: options.memory, subAgents: options.subAgents || [] })
+        .returnType<Memory | false | undefined>()
+        .with({ subAgents: P.when((s) => s.length === 0), memory: P.nullish }, () => false)
+        .otherwise((o) => o.memory),
+      options.memoryOptions || {},
+    );
 
     // Initialize tool manager (tools are now passed directly)
     this.toolManager = new ToolManager(options.tools || []);
@@ -2246,6 +2254,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    */
   public addSubAgent(agent: Agent<any>): void {
     this.subAgentManager.addSubAgent(agent);
+
+    // We add a warning in dev since we now default to false for agents without sub-agents
+    if (this.memoryManager.getMemory() === undefined) {
+      devLogger.warn("Adding subagents to an agent without memory");
+    }
 
     // Add delegate tool if this is the first sub-agent
     if (this.subAgentManager.getSubAgents().length === 1) {

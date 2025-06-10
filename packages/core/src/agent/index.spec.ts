@@ -336,6 +336,10 @@ class TestAgent<TProvider extends { llm: LLMProvider<unknown> }> extends Agent<T
   getSubAgentManager() {
     return this.subAgentManager;
   }
+
+  getMemoryManager() {
+    return this.memoryManager;
+  }
 }
 
 // Mock HistoryManager
@@ -519,6 +523,42 @@ describe("Agent", () => {
       });
       expect(agentWithBoth.instructions).toBe("Uses provided instructions");
       expect(agentWithBoth.description).toBe("Uses provided instructions");
+    });
+
+    it("should not automatically use in-memory AgentMemory if sub-agents are not provided and memory is not provided", () => {
+      const subAgent1 = new TestAgent({
+        name: "Sub-Agent 1 (no memory)",
+        instructions: "Uses provided instructions",
+        model: mockModel,
+        llm: mockProvider,
+      });
+      const subAgent2 = new TestAgent({
+        name: "Sub-Agent 2 (with memory)",
+        instructions: "Uses provided instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: mockMemory,
+      });
+      const subAgent3 = new TestAgent({
+        name: "Sub-Agent 3 (memory: false)",
+        instructions: "Uses provided instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: false,
+      });
+      const agentWithSubAgents = new TestAgent({
+        name: "Agent With Sub-Agents",
+        purpose: "Agent With Sub-Agents",
+        instructions: "Uses provided instructions",
+        model: mockModel,
+        llm: mockProvider,
+        subAgents: [subAgent1, subAgent2],
+      });
+
+      expect(agentWithSubAgents.getMemoryManager().getMemory()).toBeDefined();
+      expect(subAgent1.getMemoryManager().getMemory()).toBeUndefined();
+      expect(subAgent2.getMemoryManager().getMemory()).toBeDefined();
+      expect(subAgent3.getMemoryManager().getMemory()).toBeUndefined();
     });
 
     // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
