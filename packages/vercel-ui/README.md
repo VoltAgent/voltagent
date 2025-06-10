@@ -21,8 +21,8 @@ const agent = new Agent({
   model: "gpt-4.1-mini",
   llm: new VercelAIProvider(),
   hooks: {
-    onFinish: (result) => {
-      chatStore.save({
+    onEnd: async (result) => {
+      await chatStore.save({
         conversationId: result.conversationId,
         messages: convertToUIMessages(result.operationContext),
       });
@@ -30,22 +30,16 @@ const agent = new Agent({
   },
 });
 
-const result = await agent.generateText("Hello, how are you?", {
-  hooks: {},
+const result = await agent.generateText("Hello, how are you?");
+
+// You can now fetch the messages from your custom chat store and return to the UI to provide a
+// history of the conversation.
+
+app.get("/api/chat/:id", async ({ req }) => {
+  const conversation = await chatStore.read(req.param("id"));
+  return Response.json(conversation.messages);
 });
 ```
-
-## 🔧 Usage Examples
-
-```typescript
-
-```
-
-## 🔗 Links
-
-- [Documentation](https://voltagent.dev/docs-observability/)
-- [Console Dashboard](https://console.voltagent.dev)
-- [API Reference](https://voltagent.dev/docs-observability/)
 
 ## 📄 License
 

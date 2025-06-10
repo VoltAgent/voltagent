@@ -1,301 +1,191 @@
-import { Agent } from "@voltagent/core";
-import type {
-  BaseMessage,
-  LLMProvider,
-  MessageRole,
-  OperationContext,
-  ProviderTextResponse,
-  StepWithContent,
-} from "@voltagent/core";
-import { z } from "zod";
+import type { BaseMessage, OperationContext, StepWithContent } from "@voltagent/core";
 import { convertToUIMessages } from "./index";
-import type { UIMessage } from "./types";
-
-// Mock types for testing
-type MockModelType = { modelId: string; [key: string]: unknown };
-
-// Mock Provider implementation for testing
-class MockProvider implements LLMProvider<MockModelType> {
-  generateTextCalls = 0;
-  lastMessages: BaseMessage[] = [];
-
-  constructor(private model: MockModelType) {}
-
-  toMessage(message: BaseMessage): BaseMessage {
-    return message;
-  }
-
-  fromMessage(message: BaseMessage): BaseMessage {
-    return message;
-  }
-
-  getModelIdentifier(model: MockModelType): string {
-    return model.modelId;
-  }
-
-  async generateText(): Promise<
-    ProviderTextResponse<unknown> & { operationContext: OperationContext }
-  > {
-    this.generateTextCalls++;
-    return {
-      text: "Hello, I am a test agent!",
-      usage: {
-        promptTokens: 10,
-        completionTokens: 20,
-        totalTokens: 30,
-      },
-      toolCalls: [],
-      toolResults: [],
-      finishReason: "stop",
-      operationContext: {
-        historyEntry: {
-          input: "Hello!",
-          output: "Hello, I am a test agent!",
-          status: "completed",
-          startTime: new Date(),
-          endTime: new Date(),
-          steps: [],
-        },
-        conversationSteps: [],
-        userContext: new Map(),
-      },
-    };
-  }
-
-  async streamText(): Promise<any> {
-    throw new Error("Not implemented");
-  }
-
-  async generateObject(): Promise<any> {
-    throw new Error("Not implemented");
-  }
-
-  async streamObject(): Promise<any> {
-    throw new Error("Not implemented");
-  }
-}
 
 describe("convertToUIMessages", () => {
-  let agent: Agent<{ llm: LLMProvider<MockModelType> }>;
-  let mockModel: MockModelType;
-  let mockProvider: LLMProvider<MockModelType>;
-
-  beforeEach(() => {
-    mockModel = { modelId: "mock-model-id" };
-    mockProvider = new MockProvider(mockModel);
-
-    agent = new Agent({
-      id: "test-agent",
-      name: "Test Agent",
-      description: "A test agent for unit testing",
-      model: mockModel,
-      llm: mockProvider,
-      instructions: "A helpful AI assistant",
-    });
+  it("should convert string input to UI messages", () => {
+    const ctx = createFauxContext("Hello!");
+    const result = convertToUIMessages(ctx);
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toBe("Hello!");
   });
 
-  describe("string input", () => {
-    it("should convert string input to UI messages", async () => {
-      const result = await agent.generateText("Hello!");
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages).toHaveLength(2); // System message + User message
-      expect(uiMessages[0].role).toBe("system");
-      expect(uiMessages[1].role).toBe("user");
-      expect(uiMessages[1].content).toBe("Hello!");
-    });
+  it("should convert array of messages to UI messages", () => {
+    const messages: Message[] = [
+      { role: "user", content: "Hello!" },
+      { role: "assistant", content: "Hi there!" },
+    ];
+    const ctx = createFauxContext(messages);
+    const result = convertToUIMessages(ctx);
+    expect(result).toHaveLength(2);
+    expect(result[0].content).toBe("Hello!");
+    expect(result[1].content).toBe("Hi there!");
   });
 
-  describe("array input", () => {
-    it("should convert array of messages to UI messages", async () => {
-      const messages: BaseMessage[] = [
-        { role: "user" as MessageRole, content: "Hello!" },
-        { role: "assistant" as MessageRole, content: "Hi there!" },
-        { role: "user" as MessageRole, content: "How are you?" },
-      ];
-
-      const result = await agent.generateText(messages);
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages).toHaveLength(4); // System message + 3 input messages
-      expect(uiMessages[0].role).toBe("system");
-      expect(uiMessages[1].role).toBe("user");
-      expect(uiMessages[1].content).toBe("Hello!");
-      expect(uiMessages[2].role).toBe("assistant");
-      expect(uiMessages[2].content).toBe("Hi there!");
-      expect(uiMessages[3].role).toBe("user");
-      expect(uiMessages[3].content).toBe("How are you?");
-    });
+  it("should convert a single message to UI messages", () => {
+    const message: Message = {
+      role: "user",
+      content: "Hello!",
+    };
+    // @ts-expect-error - we're testing the edge case of a single message
+    const ctx = createFauxContext(message);
+    const result = convertToUIMessages(ctx);
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toBe("Hello!");
   });
 
-  describe("single message input", () => {
-    it("should convert single message to UI messages", async () => {
-      const message: BaseMessage = { role: "user" as MessageRole, content: "Hello!" };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages).toHaveLength(2); // System message + User message
-      expect(uiMessages[0].role).toBe("system");
-      expect(uiMessages[1].role).toBe("user");
-      expect(uiMessages[1].content).toBe("Hello!");
-    });
+  it("should handle a non-allowed input type", () => {
+    // @ts-expect-error - we're testing the edge case of a non-allowed input type
+    const ctx = createFauxContext(123);
+    const result = convertToUIMessages(ctx);
+    expect(result).toEqual([]);
   });
 
-  describe("message parts", () => {
-    it("should handle text parts correctly", async () => {
-      const message: BaseMessage = {
-        role: "user" as MessageRole,
-        content: [{ type: "text", text: "Hello!" }],
-      };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
+  it("should handle input message parts (text, image, file)", () => {
+    const message: Message = {
+      role: "user",
+      content: [
+        { type: "text", text: "Hello!" },
+        { type: "image", image: Buffer.from("img"), mimeType: "image/png" },
+        { type: "file", data: Buffer.from("file"), mimeType: "application/pdf" },
+      ],
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].parts).toEqual([
+      { type: "text", text: "Hello!" },
+      { type: "file", data: Buffer.from("img").toString(), mimeType: "image/png" },
+      { type: "file", data: Buffer.from("file").toString(), mimeType: "application/pdf" },
+    ]);
+  });
 
-      expect(uiMessages[1].parts).toHaveLength(1);
-      expect(uiMessages[1].parts[0]).toEqual({
+  it("should handle steps with text content", () => {
+    const ctx = createFauxContext("Use the test tool", [
+      {
         type: "text",
-        text: "Hello!",
-      });
-    });
-
-    it("should handle image parts correctly", async () => {
-      const message: BaseMessage = {
-        role: "user" as MessageRole,
-        content: [
-          {
-            type: "image",
-            image: Buffer.from("test-image"),
-            mimeType: "image/png",
-          },
-        ],
-      };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages[1].parts).toHaveLength(1);
-      expect(uiMessages[1].parts[0]).toEqual({
-        type: "file",
-        data: Buffer.from("test-image").toString(),
-        mimeType: "image/png",
-      });
-    });
-
-    it("should handle file parts correctly", async () => {
-      const message: BaseMessage = {
-        role: "user" as MessageRole,
-        content: [
-          {
-            type: "file",
-            data: Buffer.from("test-file"),
-            mimeType: "application/pdf",
-          },
-        ],
-      };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages[1].parts).toHaveLength(1);
-      expect(uiMessages[1].parts[0]).toEqual({
-        type: "file",
-        data: Buffer.from("test-file").toString(),
-        mimeType: "application/pdf",
-      });
-    });
+        id: "text-1",
+        content: "Use the test tool",
+        role: "assistant",
+      },
+    ]);
+    const result = convertToUIMessages(ctx);
+    expect(result).toHaveLength(2);
+    expect(result[1].role).toEqual("assistant");
+    expect(result[1].content).toEqual("Use the test tool");
   });
 
-  describe("tool calls", () => {
-    it("should handle tool calls in steps", async () => {
-      const mockTool = {
-        id: "test-tool",
+  it("should handle missing conversation steps", () => {
+    const ctx = createFauxContext("Use the test tool");
+    const result = convertToUIMessages({
+      ...ctx,
+      conversationSteps: undefined,
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].role).toEqual("user");
+    expect(result[0].content).toEqual("Use the test tool");
+  });
+
+  it("should handle tool calls in steps", () => {
+    const ctx = createFauxContext("Use the test tool", [
+      {
+        type: "tool_call",
+        id: "tool-1",
         name: "test-tool",
-        description: "A test tool",
-        parameters: z.object({}),
-        execute: async () => "tool result",
-      };
-
-      agent.addItems([mockTool]);
-
-      const result = await agent.generateText("Use the test tool");
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      // Find the assistant message with tool calls
-      const assistantMessage = uiMessages.find(
-        (msg) =>
-          msg.role === "assistant" &&
-          Array.isArray(msg.content) &&
-          msg.content.some((part) => part.type === "tool-call"),
-      );
-
-      expect(assistantMessage).toBeDefined();
-      expect(assistantMessage?.content).toContainEqual(
-        expect.objectContaining({
-          type: "tool-call",
+        arguments: { foo: "bar" },
+        content: "",
+        role: "assistant",
+      },
+      {
+        type: "tool_result",
+        id: "tool-1",
+        name: "test-tool",
+        result: "tool result",
+        content: "",
+        role: "tool",
+      },
+    ]);
+    const result = convertToUIMessages(ctx);
+    const toolCallMessage = result.find(
+      (msg) =>
+        msg.role === "assistant" && msg.parts.some((part) => part.type === "tool-invocation"),
+    );
+    const toolCallPart = toolCallMessage?.parts.find((part) => part.type === "tool-invocation");
+    expect(toolCallPart).toBeDefined();
+    expect(toolCallPart).toEqual(
+      expect.objectContaining({
+        type: "tool-invocation",
+        toolInvocation: {
+          toolCallId: "tool-1",
           toolName: "test-tool",
-        }),
-      );
-    });
+          state: "result",
+          step: expect.any(Number),
+          args: { foo: "bar" },
+          result: "tool result",
+        },
+      }),
+    );
   });
 
-  describe("version handling", () => {
-    it("should throw error for v5 version", () => {
-      const result = agent.generateText("Hello!");
-      expect(() => convertToUIMessages(result.operationContext, { version: "v5" })).toThrow(
-        "V5 is not supported yet",
-      );
-    });
-
-    it("should use v4 by default", async () => {
-      const result = await agent.generateText("Hello!");
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages).toBeInstanceOf(Array);
-      expect(uiMessages[0]).toHaveProperty("role");
-      expect(uiMessages[0]).toHaveProperty("content");
-    });
+  it("should throw error for v5 version", () => {
+    const ctx = createFauxContext("Hello!");
+    expect(() => convertToUIMessages(ctx, { version: "v5" })).toThrow("V5 is not supported yet");
   });
 
-  describe("message IDs", () => {
-    it("should generate IDs for messages without IDs", async () => {
-      const message: BaseMessage = { role: "user" as MessageRole, content: "Hello!" };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages[1].id).toBeDefined();
-      expect(typeof uiMessages[1].id).toBe("string");
-    });
-
-    it("should preserve existing message IDs", async () => {
-      const message: BaseMessage = {
-        role: "user" as MessageRole,
-        content: "Hello!",
-        id: "custom-id",
-      };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages[1].id).toBe("custom-id");
-    });
+  it("should generate IDs for messages without IDs", () => {
+    const ctx = createFauxContext("Hello!");
+    const result = convertToUIMessages(ctx);
+    expect(result[0].id).toBeDefined();
+    expect(typeof result[0].id).toBe("string");
   });
 
-  describe("createdAt timestamps", () => {
-    it("should add createdAt timestamp if not present", async () => {
-      const message: BaseMessage = { role: "user" as MessageRole, content: "Hello!" };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
+  it("should preserve existing message IDs", () => {
+    const message: Message = {
+      id: "custom-id",
+      role: "user",
+      content: "Hello!",
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].id).toBe("custom-id");
+  });
 
-      expect(uiMessages[1].createdAt).toBeInstanceOf(Date);
-    });
+  it("should add createdAt timestamp if not present", () => {
+    const ctx = createFauxContext("Hello!");
+    const result = convertToUIMessages(ctx);
+    expect(result[0].createdAt?.getSeconds()).toEqual(expect.any(Number));
+  });
 
-    it("should preserve existing createdAt timestamp", async () => {
-      const customDate = new Date("2024-01-01");
-      const message: BaseMessage = {
-        role: "user" as MessageRole,
-        content: "Hello!",
-        createdAt: customDate,
-      };
-      const result = await agent.generateText([message]);
-      const uiMessages = convertToUIMessages(result.operationContext);
-
-      expect(uiMessages[1].createdAt).toEqual(customDate);
-    });
+  it("should preserve existing createdAt timestamp", () => {
+    const customDate = new Date("2024-01-01");
+    const message: Message = {
+      role: "user",
+      content: "Hello!",
+      createdAt: customDate,
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].createdAt).toEqual(customDate);
   });
 });
+
+type Message = BaseMessage & {
+  [key: string]: any;
+};
+
+function createFauxContext(
+  input: string | Message[],
+  steps: StepWithContent[] = [],
+): OperationContext {
+  return {
+    operationId: "test-op",
+    userContext: new Map(),
+    historyEntry: {
+      id: "test-history",
+      startTime: new Date(),
+      status: "completed",
+      input,
+      output: "",
+    },
+    isActive: true,
+    conversationSteps: steps,
+  };
+}
