@@ -24,7 +24,13 @@ The VoltOps platform provides a user-friendly way to interact with multi-modal a
 
 ## Supported media formats
 
-burası dolması lazım
+VoltOps handles multiple file types for comprehensive multimodal tracing:
+
+- **Image files**: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`
+- **Audio content**: `.mp3`, `.wav`, `.m4a`, `.ogg`
+- **Document types**: `.pdf`, `.txt`, `.json`, structured data
+
+All uploaded content is automatically processed, indexed, and made available for agent analysis while maintaining full traceability in the VoltOps observability dashboard.
 
 ## Why Multimodal Tracing Matters
 

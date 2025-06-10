@@ -11,15 +11,14 @@ const sessionExamples = [
     agentId="support-agent-v1",
     input={"query": "How to reset password?"},
     userId="user-123",
-    conversationId="conv-456",  # Session identifier
+    conversationId="conv-456",
     tags=["support", "password-reset"],
     metadata={
         "priority": "high",
-        "source": "web-chat"
-    }
+        "source": "web-chat",
+    },
 ) as trace:
-    # All traces with same conversationId form a session
-    pass`,
+    print(f"Trace created: {trace.id}")`,
       vercel: `const result = await generateText({
   model: openai("gpt-4o-mini"),
   prompt: "How to reset password?",
@@ -33,16 +32,18 @@ const sessionExamples = [
     }
   }
 });`,
-      voltagent: `// VoltAgent Framework automatically handles sessions
-// Built-in observability tracks conversationId
-const agent = new Agent({
-  name: "Customer Support Agent",
-  instructions: "Help users with account issues",
-  conversationId: "conv-456", // Session identifier
-  userId: "user-123"
-});
-
-await agent.run("How to reset password?");`,
+      javascript: `const trace = await sdk.trace({
+  name: "Customer Support Query",
+  agentId: "support-agent-v1",
+  input: { query: "How to reset password?" },
+  userId: "user-123",
+  conversationId: "conv-456",
+  tags: ["support", "password-reset"],
+  metadata: {
+    priority: "high",
+    source: "web-chat",
+  },
+});`,
     },
     details:
       "Start by adding a conversationId to any trace creation. All traces sharing the same conversationId will be automatically grouped into a session for replay and analysis.",
@@ -93,7 +94,7 @@ await generateText({
     }
   }
 });`,
-      voltagent: `const conversationId = "conv-456";
+      javascript: `const conversationId = "conv-456";
 
 // First interaction
 const agent1 = new Agent({
@@ -137,7 +138,7 @@ const conversationId = \`workflow_order_\${orderId}\`;
 // ❌ Avoid: Generic IDs
 const conversationId = "session1";
 const conversationId = "chat";`,
-      voltagent: `// ✅ Good: Structured naming
+      javascript: `// ✅ Good: Structured naming
 const conversationId = \`support_\${Date.now()}_\${userId}\`;
 const conversationId = \`meeting_\${projectId}_\${timestamp}\`;
 const conversationId = \`workflow_\${workflowType}_\${id}\`;
@@ -155,16 +156,16 @@ const agent = new Agent({
 
 const SessionExplorer = () => {
   const [selectedExampleId, setSelectedExampleId] = useState<string>("basic");
-  const [selectedSDK, setSelectedSDK] = useState<string>("python");
+  const [selectedSDK, setSelectedSDK] = useState<string>("javascript");
 
   const selectedExample = sessionExamples.find(
     (example) => example.id === selectedExampleId,
   );
 
   const sdkOptions = [
+    { id: "javascript", name: "JS/TS SDK" },
     { id: "python", name: "Python SDK" },
     { id: "vercel", name: "Vercel AI SDK" },
-    { id: "voltagent", name: "VoltAgent Framework" },
   ];
 
   return (

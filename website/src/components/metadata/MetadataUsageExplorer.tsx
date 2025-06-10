@@ -230,15 +230,15 @@ const MetadataUsageExplorer = () => {
   const [selectedUsageId, setSelectedUsageId] = useState<string | null>(
     "basic",
   );
-  const [selectedSDK, setSelectedSDK] = useState<string>("vercel");
+  const [selectedSDK, setSelectedSDK] = useState<string>("typescript");
 
   const selectedUsage = metadataUsageData.find(
     (usage) => usage.id === selectedUsageId,
   );
 
   const sdkOptions = [
-    { id: "vercel", name: "Vercel AI SDK" },
     { id: "typescript", name: "JS/TS SDK" },
+    { id: "vercel", name: "Vercel AI SDK" },
     { id: "python", name: "Python SDK" },
   ];
 

@@ -79,12 +79,6 @@ VoltAgent Observability works with any technology stack through multiple integra
 - 🔄 **Agno** - Modern TypeScript-first AI agent framework _(Coming Soon)_
 - 🔄 **CrewAI** - Multi-agent orchestration and collaboration _(Coming Soon)_
 
-### Cloud Platforms
-
-- 🔄 **Amazon Bedrock** - AWS foundation model service _(Coming Soon)_
-- 🔄 **Google Vertex AI** - Google Cloud AI platform _(Coming Soon)_
-- 🔄 **Hugging Face** - Open-source AI models and datasets _(Coming Soon)_
-
 ### Universal Integration
 
 - 🔄 **OpenTelemetry** - Works with existing observability infrastructure _(Coming Soon)_
