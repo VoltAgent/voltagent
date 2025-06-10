@@ -17,7 +17,7 @@ html[class*="blog-wrapper"],
 html[class*="blog-post-page"],
 .blog-wrapper,
 .blog-post-page {
-  background-color: #1d1d1d !important;
+  background-color: #161616 !important;
 }
 
 /* Target blog content areas specifically */
@@ -25,18 +25,18 @@ html.blog-wrapper #__docusaurus,
 html.blog-post-page #__docusaurus,
 html.blog-wrapper body,
 html.blog-post-page body {
-  background-color: #1d1d1d !important;
+  background-color: #161616 !important;
 }
 
 /* Ensure the entire documentation page area has the dark background */
 html[data-theme="dark"] #__docusaurus:has([class*="docsWrapper_"]) {
-  background-color: #1d1d1d;
+  background-color: #161616;
 }
 
 /* Target the main wrapper when it contains documentation or blog */
 .main-wrapper:has([class*="docsWrapper_"]),
 .main-wrapper:has([class*="docMainContainer_"]) {
-  background-color: #1d1d1d !important;
+  background-color: #161616 !important;
 }
 
 /* Announcement bar height */

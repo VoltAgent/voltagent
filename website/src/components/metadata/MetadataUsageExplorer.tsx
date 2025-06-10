@@ -243,8 +243,11 @@ const MetadataUsageExplorer = () => {
   ];
 
   return (
-    <div className="my-5 rounded-lg border-2 border-emerald-500 bg-gray-800 p-5 text-gray-100 shadow-lg">
-      <h3 className="mb-5 mt-0 border-b-2 border-emerald-600 pb-2.5 text-xl text-gray-300">
+    <div
+      className="my-5 rounded-lg border-solid border-zinc-800 bg-gray-900 p-5 text-gray-100 shadow-lg"
+      style={{ backgroundColor: "#1a1a1a" }}
+    >
+      <h3 className="mb-5 mt-0 border-b border-gray-700 pb-2.5 text-xl text-gray-300">
         Metadata Usage Patterns
       </h3>
       <div className="mb-5 flex flex-wrap gap-2.5">
@@ -253,8 +256,8 @@ const MetadataUsageExplorer = () => {
             key={usage.id}
             className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200 ease-in-out ${
               selectedUsageId === usage.id
-                ? "bg-emerald-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white"
+                ? "bg-emerald-400/10 text-emerald-400  border-solid border border-emerald-400/20 "
+                : " border-solid border border-emerald-400/20 text-emerald-300 hover:bg-emerald-800/30 hover:text-emerald-100"
             }`}
             onClick={() => setSelectedUsageId(usage.id)}
             onKeyDown={(e) => {
@@ -272,7 +275,10 @@ const MetadataUsageExplorer = () => {
       </div>
 
       {selectedUsage && (
-        <div className="mt-5 rounded-md border border-gray-600 bg-gray-700 p-4 text-gray-200">
+        <div
+          className="mt-5 rounded-md border border-gray-700 bg-gray-800 p-4 text-gray-200"
+          style={{ backgroundColor: "#242424" }}
+        >
           <h4 className="mb-2 mt-0 text-lg text-emerald-300">
             {selectedUsage.name}
           </h4>
@@ -289,8 +295,11 @@ const MetadataUsageExplorer = () => {
                   className={`cursor-pointer px-3 py-1.5 text-sm font-medium rounded-t-md transition-colors duration-200 ${
                     selectedSDK === sdk.id
                       ? "bg-gray-900 text-emerald-300 border-b-2 border-emerald-500"
-                      : "bg-gray-600 text-gray-400 hover:text-gray-200 hover:bg-gray-500"
+                      : "bg-gray-700 text-gray-400 hover:text-gray-200 hover:bg-gray-600"
                   }`}
+                  style={
+                    selectedSDK === sdk.id ? { backgroundColor: "#1a1a1a" } : {}
+                  }
                   onClick={() => setSelectedSDK(sdk.id)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -310,7 +319,10 @@ const MetadataUsageExplorer = () => {
           {/* Code Example */}
           <div>
             <h5 className="mb-2 text-base text-emerald-200">Example:</h5>
-            <pre className="bg-gray-900 rounded-md p-3 text-sm text-green-300 overflow-x-auto border border-gray-600">
+            <pre
+              className="bg-gray-900 rounded-md p-3 text-sm text-white-300 overflow-x-auto border border-gray-700"
+              style={{ backgroundColor: "#1a1a1a" }}
+            >
               <code>{selectedUsage.examples[selectedSDK]}</code>
             </pre>
           </div>

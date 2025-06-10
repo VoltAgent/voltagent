@@ -16,7 +16,7 @@ Experience VoltOps in action with [**Live Demo**](https://console.voltagent.dev/
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
 :::tip More integrations coming soon
-VoltOps is framework-agnostic — it can be used with or without Voltagent.
+VoltOps is framework-agnostic, it can be used with or without Voltagent.
 
 **Supported Framework Integrations:**
 

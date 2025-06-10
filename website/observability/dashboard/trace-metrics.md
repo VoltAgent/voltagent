@@ -6,9 +6,13 @@ title: Analytics Dashboard
 
 The Analytics Dashboard gives you a clear view of how your traces are performing and what is happening with your LLM calls. It is designed to help you keep an eye on your AI agents and see how they are performing in real-time.
 
+![dashboard](https://cdn.voltagent.dev/docs/voltop-docs/dashboard/dashboard.png)
+
 ### Trace Metrics
 
 Here, it shows you all that you may want to know about your traces for whatever time period you choose.
+
+![trace-metrics](https://cdn.voltagent.dev/docs/voltop-docs/dashboard/trace-metrics.png)
 
 ### Success Rate Analysis
 

@@ -169,15 +169,21 @@ const SessionExplorer = () => {
   ];
 
   return (
-    <div className="my-5 rounded-lg border-2 border-emerald-500 bg-gray-800 p-5 text-gray-100 shadow-lg">
+    <div
+      className="my-5 rounded-lg border-solid border-zinc-800 bg-gray-900 p-5 text-gray-100 shadow-lg"
+      style={{ backgroundColor: "#1a1a1a" }}
+    >
+      <h3 className="mb-5 mt-0 border-b border-gray-700 pb-2.5 text-xl text-gray-300">
+        Session Usage Patterns
+      </h3>
       <div className="mb-5 flex flex-wrap gap-2.5">
         {sessionExamples.map((example) => (
           <div
             key={example.id}
             className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200 ease-in-out ${
               selectedExampleId === example.id
-                ? "bg-emerald-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white"
+                ? "bg-emerald-400/10 text-emerald-400  border-solid border border-emerald-400/20 "
+                : "border-solid border border-emerald-400/20 text-emerald-300 hover:bg-emerald-800/30 hover:text-emerald-100"
             }`}
             onClick={() => setSelectedExampleId(example.id)}
             onKeyDown={(e) => {
@@ -195,7 +201,10 @@ const SessionExplorer = () => {
       </div>
 
       {selectedExample && (
-        <div className="mt-5 rounded-md border border-gray-600 bg-gray-700 p-4 text-gray-200">
+        <div
+          className="mt-5 rounded-md border border-gray-700 bg-gray-800 p-4 text-gray-200"
+          style={{ backgroundColor: "#242424" }}
+        >
           <h4 className="mb-2 mt-0 text-lg text-emerald-300">
             {selectedExample.name}
           </h4>
@@ -231,9 +240,12 @@ const SessionExplorer = () => {
           </div>
 
           {/* Code Example */}
-          <div className="mb-4">
+          <div>
             <h5 className="mb-2 text-base text-emerald-200">Example:</h5>
-            <pre className="bg-gray-900 rounded-md p-3 text-sm text-green-300 overflow-x-auto border border-gray-600">
+            <pre
+              className="bg-gray-900 rounded-md p-3 text-sm text-white-300 overflow-x-auto border border-gray-700"
+              style={{ backgroundColor: "#1a1a1a" }}
+            >
               <code>{selectedExample.examples[selectedSDK]}</code>
             </pre>
           </div>

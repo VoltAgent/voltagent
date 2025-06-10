@@ -1,8 +1,10 @@
 ---
-title: User Cost Metrics Overview
+title: User Cost Metrics
 ---
 
 This section shows where your expenses are divided among your users and shapes usage habits. You can see who is utilizing your AI the most and what it is costing you.
+
+![user-cost-metrics](https://cdn.voltagent.dev/docs/voltop-docs/dashboard/user-cost-metrics.png)
 
 - **Active Users**: Number of users who made LLM calls within the time interval selected
 - **Avg Cost/User**: Average cost per active user for all activity

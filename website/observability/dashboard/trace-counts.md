@@ -6,6 +6,8 @@ title: Trace Counts Over Time
 
 This graph offers a timeline of your trace activity over time and allows you to view quite clearly how your system behaves over time. You can watch the movement of successful traces, errors, and work in progress in real-time.
 
+![trace-count-chart](https://cdn.voltagent.dev/docs/voltop-docs/dashboard/trace-count-chart.png)
+
 ### What You Can See
 
 The graph displays four trace statuses in varying color-coded lines:
@@ -14,15 +16,6 @@ The graph displays four trace statuses in varying color-coded lines:
 - **Error** (Red Line): Tracks failed traces over time, allowing you to easily spot trouble periods
 - **Working** (Yellow Line): Indicates traces that are in progress, reflecting system load
 - **Unknown** (Gray Line): Stores any traces whose status is unknown or undefined
-
-### Time Controls
-
-You can also control the time period you're looking at:
-
-- **Time Range**: Choose specific hours, days, or weeks to examine
-- **Granularity**: Define how granular you want the data points (every hour, every 6 hours, daily)
-
-  This flexibility lets you zoom in for a single event or zoom out for trends over time.
 
 ### Reading the Chart
 

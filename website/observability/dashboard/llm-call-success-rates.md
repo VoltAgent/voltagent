@@ -4,7 +4,7 @@ title: LLM Call Success Rates
 
 This chart gives you a visual overview of your LLM call performance over time, showing you precisely when calls are successful.
 
-### Chart Overview
+![llm-success-rate](https://cdn.voltagent.dev/docs/voltop-docs/dashboard/llm-success-chart-2.png)
 
 The success rates chart shows your LLM agent call performance and success rates over your selected time period. Both call volume and reliability can be tracked in one view.
 
@@ -21,16 +21,6 @@ The graph is laid out to easily spot patterns:
 - **Success Trends**: White line shows if your success rate is steady or changing
 - **Time Patterns**: See when your system is busiest and how regular it is during peak times
 - **Problem Spots**: Dips in success rate line or red error markers help you spot issues
-
-### Time Controls
-
-You have control over what you are analyzing:
-
-- **Granularity**: Choose how often you want the data points (every hour, every 6 hours, daily)
-- **Time Range**: Choose specific time ranges to zoom in on
-- **Agent Filter**: Pick which specific agent you want to monitor
-
-It is especially useful when you need to investigate performance deltas, track the impact of system updates, or get an idea of how your LLM performance varies throughout the day.
 
 ### Key Benefits
 

@@ -1,10 +1,10 @@
 ---
-title: LLM Cost Metrics Overview
+title: LLM Cost Metrics
 ---
 
 This page gives you a complete summary of your AI spending with main financial data displayed in readable cards and in-depth cost history over time.
 
-### Cost Summary Cards
+![llm-cost-metrics](https://cdn.voltagent.dev/docs/voltop-docs/dashboard/llm-cost-metrics.png)
 
 What each card shows:
 
