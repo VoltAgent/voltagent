@@ -6,7 +6,9 @@ title: LLM Usage & Costs
 
 VoltOps automatically tracks and displays LLM usage statistics including prompt tokens, completion tokens, and total costs across all your AI interactions. Monitor your spending, optimize token usage, and analyze cost patterns in real-time.
 
-## Automatic Pricing Calculation
+![llm-usage-1](https://cdn.voltagent.dev/docs/voltop-docs/llm-cost-1.png)
+
+### Automatic Pricing Calculation
 
 When you include the model name in your metadata under `modelParameters`, VoltOps automatically calculates pricing for all supported LLM providers. This gives you instant cost visibility without manual configuration.
 
@@ -47,15 +49,17 @@ agent = await trace.add_agent(
 )
 ```
 
+![llm-usage-2](https://cdn.voltagent.dev/docs/voltop-docs/llm-cost-2.png)
+
 ## Usage Statistics Display
 
 VoltOps provides detailed token usage breakdowns in your dashboard:
 
-```
-LLM Usage Statistics:
-Prompt      Completion    Total
-25026 tokens  297 tokens    25323 tokens
-```
+<div align="center">
+<img src="https://cdn.voltagent.dev/docs/voltop-docs/console-cost.png" alt="console cost" width="300" />
+</div>
+
+<br/>
 
 This gives you instant visibility into:
 
