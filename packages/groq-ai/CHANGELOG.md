@@ -1,5 +1,13 @@
 # @voltagent/groq-ai
 
+## 0.1.12
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
+
+  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
+
 ## 0.1.11
 
 ### Patch Changes

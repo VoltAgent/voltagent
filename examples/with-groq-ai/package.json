@@ -18,7 +18,7 @@
   "dependencies": {
     "@voltagent/cli": "^0.1.7",
     "@voltagent/core": "^0.1.31",
-    "@voltagent/groq-ai": "^0.1.11",
+    "@voltagent/groq-ai": "^0.1.12",
     "zod": "3.24.2"
   },
   "devDependencies": {

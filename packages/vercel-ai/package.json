@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/vercel-ai",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "VoltAgent Vercel AI - Vercel AI provider integration for VoltAgent",
   "license": "MIT",
   "exports": {
