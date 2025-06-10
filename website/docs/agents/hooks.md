@@ -157,23 +157,16 @@ onStart: async ({ agent, context }) => {
 ### `onEnd`
 
 - **Triggered:** After the agent finishes processing a request, either successfully or with an error.
-- **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, messages: ChatMessage[], context: OperationContext }`
+- **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, conversationId: string, context: OperationContext }`
 - **Use Cases:** Cleanup logic, logging completion status and results (success or failure), analyzing final output or error details, recording usage statistics, storing conversation history.
 - **Note:** The `output` object's specific structure within the `AgentOperationOutput` union depends on the agent method called. Check for specific fields (`text`, `object`) or use type guards. `error` will contain the structured `VoltAgentError` on failure.
-- **Messages Parameter:** The `messages` array contains the complete conversation flow in ChatMessage format (Vercel AI SDK compatible):
-  - **On Success:** Contains user input and assistant response with tool calls grouped in `toolInvocations` array `[userMessage, assistantMessage]`
-  - **On Error:** Contains user input and any tool interactions that occurred before the error `[userMessage, assistantMessage?]` (no final assistant response since generation failed)
-  - **Tool Interactions:** When tools are used, they are grouped within assistant messages:
-    - Assistant messages contain `toolInvocations` array with tool calls and results
-    - Each `toolInvocation` has `toolCallId`, `toolName`, `args`, `result`, and `state` fields
-  - **Perfect for storing complete conversation history** and directly compatible with Vercel AI SDK's `appendResponseMessages` function
 
 ```ts
 // Example: Log the outcome of an operation and store conversation history
-onEnd: async ({ agent, output, error, messages, context }) => {
+onEnd: async ({ agent, output, error, conversationId, context }) => {
   if (error) {
     console.error(`Agent ${agent.name} operation ${context.operationId} failed: ${error.message}`);
-    console.log(`User input: "${messages[0]?.content}"`);
+    console.log(`User input: "${context.historyEntry.input}"`);
     // Only user input available on error (no assistant response)
   } else {
     // Check output type if needed
@@ -191,11 +184,11 @@ onEnd: async ({ agent, output, error, messages, context }) => {
 
     // Log the complete conversation flow
     console.log(`Conversation flow:`, {
-      user: messages[0]?.content,
-      assistant: messages[messages.length - 1]?.content, // Final assistant response
-      totalMessages: messages.length,
-      toolInteractions: messages.flatMap((m) => m.toolInvocations || []).length,
-      toolsUsed: messages.flatMap((m) => m.toolInvocations || []).map((t) => t.toolName),
+      user: context.historyEntry.input,
+      assistant: context.steps, // the assistant steps
+      totalMessages: context.steps.length,
+      toolInteractions: context.steps.flatMap((s) => s.toolInvocations || []).length,
+      toolsUsed: context.steps.flatMap((s) => s.toolInvocations || []).map((t) => t.toolName),
     });
 
     // Log usage if available
@@ -267,13 +260,51 @@ Hooks enable a variety of powerful patterns:
 
 1.  **Logging & Observability**: Track agent execution steps, timings, inputs, outputs, and errors for monitoring and debugging.
 2.  **Analytics**: Collect detailed usage data (token counts, tool usage frequency, success/error rates) for analysis.
-3.  **Conversation History Storage**: Use the `messages` parameter in `onEnd` to store clean conversation turns in databases (perfect for Prisma, MongoDB, or any storage solution).
-4.  **Request/Response Modification**: (Use with caution) Modify inputs before processing or outputs after generation.
-5.  **State Management**: Initialize or clean up request-specific state or resources.
-6.  **Workflow Orchestration**: Trigger external actions or notifications based on agent events (e.g., notify on tool failure or successful completion with specific output).
-7.  **UI Integration**: The `messages` array format is compatible with popular UI libraries like Vercel AI SDK, making it easy to display conversations in chat interfaces.
+3.  **Request/Response Modification**: (Use with caution) Modify inputs before processing or outputs after generation.
+4.  **State Management**: Initialize or clean up request-specific state or resources.
+5.  **Workflow Orchestration**: Trigger external actions or notifications based on agent events (e.g., notify on tool failure or successful completion with specific output).
+6.  **UI Integration**: You can leverage the `@voltagent/vercel-ui` package to convert the `OperationContext` to a list of messages that can be used with the Vercel AI SDK (see below example).
 
-## Full Conversation Flow Example
+## Examples
+
+### Vercel UI Integration Example
+
+Here's an example of how you can use the `@voltagent/vercel-ui` package to convert the `OperationContext` to a list of messages that can be used with the Vercel AI SDK:
+
+```ts
+import { convertToUIMessages } from "@voltagent/vercel-ui";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent } from "@voltagent/core";
+
+const agent = new Agent({
+  id: "assistant",
+  name: "Assistant",
+  purpose: "A helpful assistant that can answer questions and help with tasks.",
+  instructions: "You are a helpful assistant that can answer questions and help with tasks.",
+  model: "gpt-4.1-mini",
+  llm: new VercelAIProvider(),
+  hooks: {
+    onEnd: async (result) => {
+      await chatStore.save({
+        conversationId: result.conversationId,
+        messages: convertToUIMessages(result.operationContext),
+      });
+    },
+  },
+});
+
+const result = await agent.generateText("Hello, how are you?");
+
+// You can now fetch the messages from your custom chat store and return to the UI to provide a
+// history of the conversation.
+
+app.get("/api/chats/:id", async ({ req }) => {
+  const conversation = await chatStore.read(req.param("id"));
+  return Response.json(conversation.messages);
+});
+```
+
+### Full Conversation Flow Example
 
 Here's an example showing how the `messages` parameter includes complete conversation flow with tool interactions:
 

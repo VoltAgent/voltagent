@@ -35,7 +35,7 @@ const result = await agent.generateText("Hello, how are you?");
 // You can now fetch the messages from your custom chat store and return to the UI to provide a
 // history of the conversation.
 
-app.get("/api/chat/:id", async ({ req }) => {
+app.get("/api/chats/:id", async ({ req }) => {
   const conversation = await chatStore.read(req.param("id"));
   return Response.json(conversation.messages);
 });

@@ -106,6 +106,7 @@ describe("Agent Hooks Functionality", () => {
           providerResponse: response,
         }),
         error: undefined,
+        conversationId: expect.any(String),
         context: expect.objectContaining({
           operationId: expect.any(String),
           isActive: expect.any(Boolean),
@@ -139,6 +140,7 @@ describe("Agent Hooks Functionality", () => {
       expect(onEndSpy).toHaveBeenCalledWith({
         agent: errorAgent,
         output: undefined,
+        conversationId: expect.any(String),
         error: expect.objectContaining({ message: "LLM Error" }), // Check for VoltAgentError structure
         context: expect.objectContaining({
           operationId: expect.any(String),
