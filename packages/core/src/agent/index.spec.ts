@@ -936,6 +936,7 @@ describe("Agent", () => {
       const mockRetriever = {
         retrieveCalls: 0,
         expectedContext: "This is retrieved context",
+        lastRetrieveOptions: null as any,
 
         // Add required BaseRetriever properties
         options: {},
@@ -947,10 +948,32 @@ describe("Agent", () => {
           execute: async () => "tool execution result",
         },
 
-        retrieve: jest.fn().mockImplementation(async () => {
-          mockRetriever.retrieveCalls++;
-          return mockRetriever.expectedContext;
-        }),
+        retrieve: jest
+          .fn()
+          .mockImplementation(async (_input: string | BaseMessage[], options?: any) => {
+            mockRetriever.retrieveCalls++;
+            mockRetriever.lastRetrieveOptions = options;
+
+            // Store references in userContext if available - simple test case
+            if (options?.userContext) {
+              const references = [
+                {
+                  id: "doc-1",
+                  title: "VoltAgent Usage Guide",
+                  source: "Official Documentation",
+                },
+                {
+                  id: "doc-2",
+                  title: "API Reference",
+                  source: "Technical Documentation",
+                },
+              ];
+
+              options.userContext.set("references", references);
+            }
+
+            return mockRetriever.expectedContext;
+          }),
       };
 
       return mockRetriever;
@@ -1037,6 +1060,105 @@ describe("Agent", () => {
         `retriever_mock-retriever_${testAgentWithRetriever.id}`,
       );
       expect(state.retriever?.description).toBe(mockRetriever.tool.description);
+    });
+
+    it("should store references in userContext", async () => {
+      const mockRetriever = createMockRetriever();
+
+      // Use onEnd hook to capture the final userContext
+      let capturedUserContext: Map<string | symbol, unknown> | undefined;
+      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+        capturedUserContext = context.userContext;
+      });
+
+      const testAgentWithRetriever = new TestAgent({
+        id: "references-test-agent",
+        name: "References Test Agent",
+        description: "A test agent with retriever for references testing",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        hooks: createHooks({ onEnd: onEndHook }),
+        instructions: "References Test Agent instructions",
+      });
+
+      await testAgentWithRetriever.generateText("What is VoltAgent?");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify onEnd hook was called and captured userContext
+      expect(onEndHook).toHaveBeenCalled();
+      expect(capturedUserContext).toBeInstanceOf(Map);
+
+      const references = capturedUserContext?.get("references") as Array<{
+        id: string;
+        title: string;
+        source: string;
+      }>;
+      expect(references).toBeDefined();
+      expect(Array.isArray(references)).toBe(true);
+    });
+
+    it("should pass userContext to retriever during generation", async () => {
+      const mockRetriever = createMockRetriever();
+
+      const testAgentWithRetriever = new TestAgent({
+        id: "usercontext-retriever-test-agent",
+        name: "UserContext Retriever Test Agent",
+        description: "A test agent with retriever for userContext testing",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: "UserContext Retriever Test Agent instructions",
+      });
+
+      const initialUserContext = new Map<string | symbol, unknown>();
+      initialUserContext.set("initial_data", "test_value");
+
+      await testAgentWithRetriever.generateText("Test query for retrieval", {
+        userContext: initialUserContext,
+      });
+
+      // Verify retriever was called with options containing userContext
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+      expect(mockRetriever.lastRetrieveOptions).toBeDefined();
+      expect(mockRetriever.lastRetrieveOptions.userContext).toBeInstanceOf(Map);
+      expect(mockRetriever.lastRetrieveOptions.userContext.get("initial_data")).toBe("test_value");
+    });
+
+    it("should work without userContext in options", async () => {
+      const mockRetriever = createMockRetriever();
+
+      // Use onEnd hook to capture the final userContext
+      let capturedUserContext: Map<string | symbol, unknown> | undefined;
+      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+        capturedUserContext = context.userContext;
+      });
+
+      const testAgentWithRetriever = new TestAgent({
+        id: "no-context-retriever-test-agent",
+        name: "No Context Retriever Test Agent",
+        description: "A test agent with retriever for no context testing",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        hooks: createHooks({ onEnd: onEndHook }),
+        instructions: "No Context Retriever Test Agent instructions",
+      });
+
+      await testAgentWithRetriever.generateText("Test without initial context");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify onEnd hook was called and captured userContext
+      expect(onEndHook).toHaveBeenCalled();
+      expect(capturedUserContext).toBeInstanceOf(Map);
+
+      const references = capturedUserContext?.get("references");
+      expect(references).toBeDefined();
+      expect(Array.isArray(references)).toBe(true);
     });
   });
 

@@ -14,7 +14,7 @@ A retriever connects your agent to data sources like documents, databases, or AP
 To create a custom retriever in VoltAgent, you **extend the `BaseRetriever` class** and **implement the abstract `retrieve` method**. This method contains the logic for fetching data from your specific source.
 
 ```ts
-import { BaseRetriever, type BaseMessage } from "@voltagent/core";
+import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
 
 // Example: Simple retriever fetching from a predefined document list
 class MySimpleRetriever extends BaseRetriever {
@@ -26,7 +26,7 @@ class MySimpleRetriever extends BaseRetriever {
   ];
 
   // You MUST implement this method
-  async retrieve(input: string | BaseMessage[]): Promise<string> {
+  async retrieve(input: string | BaseMessage[], options: RetrieveOptions): Promise<string> {
     // Determine the actual query string from the input
     const query = typeof input === "string" ? input : (input[input.length - 1].content as string);
     console.log(`MySimpleRetriever: Searching for context related to "${query}"`);
@@ -59,6 +59,105 @@ const retrieverWithOptions = new MySimpleRetriever({
 // Or create it without tool options if only using direct attachment
 const retrieverBasic = new MySimpleRetriever();
 ```
+
+## Using userContext with Retrievers
+
+VoltAgent's retriever system supports a powerful feature called [**userContext**](/docs/agents/context), which allows retrievers to store additional information that can be accessed after the agent completes its response. This is particularly useful for tracking references, sources, or metadata about the retrieved content.
+
+```ts
+import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
+
+class ReferencesRetriever extends BaseRetriever {
+  private documents = [
+    {
+      id: "doc1",
+      title: "VoltAgent Usage Guide",
+      content: "VoltAgent is a framework for building AI agents...",
+      source: "Official Documentation",
+    },
+    {
+      id: "doc2",
+      title: "API Reference",
+      content: "Retrievers enhance LLMs with external data...",
+      source: "Technical Documentation",
+    },
+    {
+      id: "doc3",
+      title: "Example Projects",
+      content: "VoltAgent supports tools, memory, sub-agents...",
+      source: "GitHub Repository",
+    },
+  ];
+
+  async retrieve(input: string | BaseMessage[], options: RetrieveOptions): Promise<string> {
+    const query = typeof input === "string" ? input : (input[input.length - 1].content as string);
+
+    // Find relevant documents
+    const relevantDocs = this.documents.filter((doc) =>
+      doc.content.toLowerCase().includes(query.toLowerCase())
+    );
+
+    // Store references in userContext for later access
+    if (options.userContext && relevantDocs.length > 0) {
+      const references = relevantDocs.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        source: doc.source,
+      }));
+
+      // Store references under "references" key
+      options.userContext.set("references", references);
+    }
+
+    // Return content for the LLM
+    if (relevantDocs.length > 0) {
+      return relevantDocs.map((doc) => `Title: ${doc.title}\nContent: ${doc.content}`).join("\n\n");
+    }
+
+    return "No relevant information found.";
+  }
+}
+
+// Usage example
+const agent = new Agent({
+  name: "Assistant with References",
+  instructions: "A helpful assistant that provides sourced information",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  retriever: new ReferencesRetriever(),
+});
+
+// When you call the agent, you can access references from the response
+const response = await agent.generateText("What is VoltAgent?");
+
+console.log("Answer:", response.text);
+
+// Access the references stored by the retriever
+const references = response.userContext?.get("references");
+if (references) {
+  console.log("Sources used:");
+  references.forEach((ref) => {
+    console.log(`- ${ref.title} (${ref.source})`);
+  });
+}
+```
+
+**Output example:**
+
+```
+Answer: VoltAgent is a framework for building AI agents using TypeScript. It supports tools, memory, sub-agents, and retrievers to enhance LLMs with external data...
+
+Sources used:
+- VoltAgent Usage Guide (Official Documentation)
+- Example Projects (GitHub Repository)
+```
+
+This pattern is particularly useful for:
+
+- **Citation tracking**: Show users which sources informed the response
+- **Audit trails**: Keep track of what data was used for compliance
+- **Debugging**: Understand which documents the retriever found relevant
+- **User experience**: Allow users to explore the sources for more details
 
 ## Using Retrievers with Agents
 
