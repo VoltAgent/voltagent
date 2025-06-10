@@ -1,3 +1,4 @@
+import type { ReadableStream } from "node:stream/web";
 import type { z } from "zod";
 import type { Tool } from "../../../tool";
 import type {
