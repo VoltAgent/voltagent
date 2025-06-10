@@ -1,0 +1,44 @@
+{
+  "name": "@voltagent/ui",
+  "version": "0.0.1",
+  "description": "VoltAgent UI - UI integration for VoltAgent",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@voltagent/core": "^0.1.31",
+    "@xsai/generate-speech": "^0.2.0",
+    "@xsai/generate-transcription": "^0.2.0",
+    "ai": "^4.2.11",
+    "ai-v5": "npm:ai@5.0.0-alpha.11",
+    "elevenlabs": "^1.55.0",
+    "openai": "^4.91.0",
+    "ts-pattern": "^5.7.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.19.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4"
+  }
+}
