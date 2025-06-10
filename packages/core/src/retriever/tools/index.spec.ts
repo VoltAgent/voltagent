@@ -42,7 +42,7 @@ describe("createRetrieverTool", () => {
     expect(tool.description).toBe(customDescription);
   });
 
-  it("should call the retriever's retrieve method with the query", async () => {
+  it("should call the retriever's retrieve method with query and options", async () => {
     // Arrange
     const mockResults: string = "Test content 1";
     const mockRetriever = createMockRetriever(mockResults);
@@ -53,8 +53,54 @@ describe("createRetrieverTool", () => {
     await tool.execute({ query });
 
     // Assert
-    expect(mockRetriever.retrieve).toHaveBeenCalledWith(query);
+    expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
+      userContext: undefined,
+    });
     expect(mockRetriever.retrieve).toHaveBeenCalledTimes(1);
+  });
+
+  it("should pass userContext from executeOptions to retriever", async () => {
+    // Arrange
+    const mockResults: string = "Test content with context";
+    const mockRetriever = createMockRetriever(mockResults);
+    const tool = createRetrieverTool(mockRetriever);
+    const query = "test query";
+
+    // Mock userContext
+    const userContext = new Map<string | symbol, unknown>();
+    const executeOptions = {
+      operationContext: {
+        userContext,
+        operationId: "test-op",
+        historyEntry: {} as any,
+        isActive: true,
+      },
+    };
+
+    // Act
+    await tool.execute({ query }, executeOptions);
+
+    // Assert
+    expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
+      userContext,
+    });
+  });
+
+  it("should handle missing executeOptions gracefully", async () => {
+    // Arrange
+    const mockResults: string = "Test content";
+    const mockRetriever = createMockRetriever(mockResults);
+    const tool = createRetrieverTool(mockRetriever);
+    const query = "test query";
+
+    // Act
+    const result = await tool.execute({ query }, undefined);
+
+    // Assert
+    expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
+      userContext: undefined,
+    });
+    expect(result).toBe("Test content");
   });
 
   it("should format retrieval results correctly", async () => {

@@ -1,14 +1,14 @@
-import React from "react";
-import clsx from "clsx";
 import Link from "@docusaurus/Link";
 import {
-  PageMetadata,
   HtmlClassNameProvider,
+  PageMetadata,
   ThemeClassNames,
 } from "@docusaurus/theme-common";
 import BlogPostItems from "@theme/BlogPostItems";
-import SearchMetadata from "@theme/SearchMetadata";
 import Layout from "@theme/Layout";
+import SearchMetadata from "@theme/SearchMetadata";
+import clsx from "clsx";
+import React from "react";
 
 export default function BlogAuthorPage({ metadata, items }) {
   const { author, blogTitle, blogDescription, authorPosts } = metadata;

@@ -1,7 +1,7 @@
-import type * as React from "react";
-import RecommendedServersSection from "./recommended-servers";
-import { getLogoComponent } from "../../../utils/logo-helper";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import type * as React from "react";
+import { getLogoComponent } from "../../../utils/logo-helper";
+import RecommendedServersSection from "./recommended-servers";
 
 // Define types for the props
 interface McpProps {

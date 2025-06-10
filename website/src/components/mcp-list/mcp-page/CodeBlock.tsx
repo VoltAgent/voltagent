@@ -1,5 +1,5 @@
+import { AnimatePresence, motion } from "framer-motion";
 import type React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 // Animation variants for code block
 const codeBlockVariants = {

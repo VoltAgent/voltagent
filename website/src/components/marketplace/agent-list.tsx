@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { BoltIcon } from "@heroicons/react/24/solid";
 import {
-  CurrencyDollarIcon,
-  ChartBarIcon,
   ArrowPathIcon,
   BoltIcon as BoltOutlineIcon,
+  ChartBarIcon,
   CheckIcon,
+  CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
+import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
 
-// Import avatar images
-import michaelAvatar from "../../../static/img/avatars/the-office/michael.png";
+import angelaAvatar from "../../../static/img/avatars/the-office/angela.png";
 import dwightAvatar from "../../../static/img/avatars/the-office/dwight.png";
 import jimAvatar from "../../../static/img/avatars/the-office/jim.png";
-import pamAvatar from "../../../static/img/avatars/the-office/pam.png";
-import angelaAvatar from "../../../static/img/avatars/the-office/angela.png";
 import kevinAvatar from "../../../static/img/avatars/the-office/kevin.png";
+// Import avatar images
+import michaelAvatar from "../../../static/img/avatars/the-office/michael.png";
+import pamAvatar from "../../../static/img/avatars/the-office/pam.png";
 
 // Sample agent data
 const dummyAgents = [

@@ -2,7 +2,13 @@ import BrowserOnly from "@docusaurus/BrowserOnly";
 import { Transition } from "@headlessui/react";
 import clsx from "clsx";
 import { useScroll } from "framer-motion";
-import React, { type FC, type PropsWithChildren } from "react";
+import {
+  type FC,
+  type PropsWithChildren,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { useKeyDown } from "../hooks/use-keydown";
 import { useOutsideClick } from "../hooks/use-outside-click";
@@ -16,7 +22,7 @@ type Props = {
 };
 
 export const CommonDrawer: FC<PropsWithChildren<Props>> = (props) => {
-  React.useEffect(() => {
+  useEffect(() => {
     if (props.open) {
       document.body.style.overflow = "hidden";
     } else {
@@ -42,12 +48,11 @@ const DrawerComponent: FC<PropsWithChildren<Props>> = ({
   title,
   open,
   onClose,
-  variant,
 }) => {
-  const [topOffset, setTopOffset] = React.useState(DEFAULT_TOP_OFFSET);
+  const [topOffset, setTopOffset] = useState(DEFAULT_TOP_OFFSET);
   const { scrollY } = useScroll();
 
-  const drawerRef = React.useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
   useOutsideClick(drawerRef, (event) => {
     event.stopPropagation();
     onClose();
@@ -57,7 +62,8 @@ const DrawerComponent: FC<PropsWithChildren<Props>> = ({
   });
 
   // this is required for the <TopAnnouncement /> component.
-  React.useEffect(() => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
+  useEffect(() => {
     const unsubscribeScrollY = scrollY.onChange((latest) => {
       if (latest >= 48) {
         setTopOffset(0);

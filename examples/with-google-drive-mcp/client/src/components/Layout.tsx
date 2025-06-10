@@ -1,4 +1,4 @@
-import type { ReactNode, FC } from "react";
+import type { FC, ReactNode } from "react";
 import VoltLogo from "./VoltLogo"; // VoltLogo is used as a value
 
 interface LayoutProps {

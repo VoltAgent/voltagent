@@ -1,14 +1,14 @@
-import React, { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import React, { useState } from "react";
 
-import { BraintrustLogo2 } from "../../../static/img/logos/observability/braintrust-2";
-import { LangSmithLogo } from "../../../static/img/logos/observability/langsmith";
-import { Dash0Logo } from "../../../static/img/logos/observability/dash0";
 import { LangfuseLogo } from "@site/static/img/logos/observability/langfuse";
 import { LangWatchLogo } from "@site/static/img/logos/observability/langwatch";
-import { SignozLogo } from "../../../static/img/logos/observability/signoz";
-import { NewRelicLogo } from "../../../static/img/logos/observability/new-relic";
+import { BraintrustLogo2 } from "../../../static/img/logos/observability/braintrust-2";
+import { Dash0Logo } from "../../../static/img/logos/observability/dash0";
 import HoneyhiveLogo from "../../../static/img/logos/observability/honeyhive.png";
+import { LangSmithLogo } from "../../../static/img/logos/observability/langsmith";
+import { NewRelicLogo } from "../../../static/img/logos/observability/new-relic";
+import { SignozLogo } from "../../../static/img/logos/observability/signoz";
 import TraceLogo from "../../../static/img/logos/observability/traceloop.png";
 
 type ObservabilityTab =
@@ -717,6 +717,7 @@ const TabItem = ({
   onClick: () => void;
 }) => {
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: ignore
     <div
       className={`flex flex-col items-center px-3 pt-2 cursor-pointer transition-all duration-300 ease-in-out  min-w-[80px] ${
         isActive

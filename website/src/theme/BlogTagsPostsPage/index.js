@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
 import Link from "@docusaurus/Link";
 import Translate, { translate } from "@docusaurus/Translate";
 import {
@@ -13,10 +13,9 @@ import BlogPostItems from "@theme/BlogPostItems";
 import SearchMetadata from "@theme/SearchMetadata";
 import Unlisted from "@theme/Unlisted";
 import clsx from "clsx";
-import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
+import React, { useEffect, useState, useRef } from "react";
 
 const POSTS_PER_PAGE = 12;
-const ANIMATION_DELAY = 25;
 
 // Very simple pluralization: probably good enough for now
 function useBlogPostsPlural() {
@@ -58,7 +57,7 @@ function BlogTagsPostsPageMetadata({ tag }) {
   );
 }
 
-function BlogTagsPostsPageContent({ tag, items, sidebar, listMetadata, tags }) {
+function BlogTagsPostsPageContent({ tag, items, listMetadata, tags }) {
   const title = useBlogTagsPostsPageTitle(tag);
   const [visiblePosts, setVisiblePosts] = useState(
     ExecutionEnvironment.canUseDOM ? POSTS_PER_PAGE : items.length,
@@ -175,14 +174,14 @@ function BlogTagsPostsPageContent({ tag, items, sidebar, listMetadata, tags }) {
           </div>
 
           <BlogPostItems items={loadedPosts} tags={allTags}>
-            <div className="flex flex-col gap-8"></div>
+            <div className="flex flex-col gap-8" />
           </BlogPostItems>
         </div>
       </div>
 
       {ExecutionEnvironment.canUseDOM && visiblePosts < items.length && (
         <div ref={loaderRef} className="flex justify-center items-center py-4">
-          <div className="w-4 h-4 border-2 border-primary-yellow border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-primary-yellow border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 

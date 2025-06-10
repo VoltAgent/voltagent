@@ -1,3 +1,5 @@
+import Link from "@docusaurus/Link";
+import { useLocation } from "@docusaurus/router";
 import {
   HtmlClassNameProvider,
   PageMetadata,
@@ -10,8 +12,6 @@ import BlogPostItems from "@theme/BlogPostItems";
 import SearchMetadata from "@theme/SearchMetadata";
 import clsx from "clsx";
 import React from "react";
-import Link from "@docusaurus/Link";
-import { useLocation } from "@docusaurus/router";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
 function BlogListPageMetadata(props) {

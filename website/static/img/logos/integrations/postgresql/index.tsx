@@ -11,7 +11,9 @@ export const PostgresLogo = ({ className }: { className?: string }) => (
   >
     <title id="postgresLogoTitle">PostgreSQL Logo</title>
     <style>
-      {`.B{stroke-linecap:round}.C{stroke-linejoin:round}.D{stroke-linejoin:miter}.E{stroke-width:.716}`}
+      {
+        ".B{stroke-linecap:round}.C{stroke-linejoin:round}.D{stroke-linejoin:miter}.E{stroke-width:.716}"
+      }
     </style>
     <g fill="none" stroke="#fff">
       <path

@@ -1,6 +1,6 @@
 {
   "name": "create-voltagent-app",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "description": "Create VoltAgent applications with one command",
   "license": "MIT",
   "main": "dist/index.js",
@@ -42,7 +42,7 @@
     "@types/gradient-string": "^1.1.5",
     "@types/inquirer": "^9.0.7",
     "@types/jest": "^29.5.0",
-    "@types/node": "^18.15.11",
+    "@types/node": "^20.19.0",
     "@types/tar": "^6.1.10",
     "@types/uuid": "^9.0.8",
     "jest": "^29.5.0",
@@ -51,6 +51,6 @@
     "typescript": "^5.0.4"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=20"
   }
 }

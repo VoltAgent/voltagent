@@ -1,11 +1,11 @@
-import type React from "react";
-import { GitHubLogo } from "../../../static/img/logos/github";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
 import {
-  ClipboardIcon,
   ClipboardDocumentCheckIcon,
+  ClipboardIcon,
 } from "@heroicons/react/24/outline";
+import type React from "react";
 import { useState } from "react";
+import { GitHubLogo } from "../../../static/img/logos/github";
 
 interface GitHubExampleLinkProps {
   repoUrl: string;

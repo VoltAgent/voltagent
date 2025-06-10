@@ -1,11 +1,11 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { BoltIcon } from "@heroicons/react/24/solid";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
-import { VercelLogo, PythonLogo, TypeScriptLogo } from "@site/static/img/logos";
-import { VoltAgentLogo } from "@site/static/img/logos/integrations/voltagent";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { PlusIcon } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
+import { PythonLogo, TypeScriptLogo, VercelLogo } from "@site/static/img/logos";
+import { VoltAgentLogo } from "@site/static/img/logos/integrations/voltagent";
+import { motion } from "framer-motion";
+import React from "react";
 
 export const HowToGetStarted = () => {
   return (

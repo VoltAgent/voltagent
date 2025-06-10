@@ -1,5 +1,5 @@
-import React, { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 
 const goals = [
   {
@@ -89,6 +89,7 @@ const OrchestrationStarterKitAdvisor = () => {
             {selectedGoal.advice.map((item) => (
               <li
                 key={item}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: render svg in div
                 dangerouslySetInnerHTML={{ __html: item }}
                 className="mb-2 border-b border-dashed p-2 border-emerald-500/30  text-emerald-100 last:mb-0 last:border-b-0"
               />

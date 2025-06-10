@@ -1,6 +1,6 @@
-import React from "react";
 import Head from "@docusaurus/Head";
 import Layout from "@theme/Layout";
+import React from "react";
 import { ShowcaseList } from "../../components/showcase";
 import { DotPattern } from "../../components/ui/dot-pattern";
 

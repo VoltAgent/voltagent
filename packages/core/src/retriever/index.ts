@@ -4,5 +4,5 @@
  */
 
 export { BaseRetriever } from "./retriever";
-export type { Retriever, RetrieverOptions } from "./types";
+export type { Retriever, RetrieverOptions, RetrieveOptions } from "./types";
 export { createRetrieverTool } from "./tools";

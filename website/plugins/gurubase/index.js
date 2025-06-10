@@ -1,12 +1,11 @@
-module.exports = function (context) {
+module.exports = (context) => ({
+  name: "docusaurus-plugin-gurubase-widget", // Feel free to change this name
+  injectHtmlTags() {
     return {
-      name: "docusaurus-plugin-gurubase-widget", // Feel free to change this name
-      injectHtmlTags() {
-        return {
-          postBodyTags: [
-            {
-              tagName: "script",
-              innerHTML: `
+      postBodyTags: [
+        {
+          tagName: "script",
+          innerHTML: `
                 (function() {
                   // Configuration options: https://github.com/Gurubase/gurubase-widget
                   // Only activate on docs endpoint
@@ -24,9 +23,8 @@ module.exports = function (context) {
                   }
                 })();
               `,
-            },
-          ],
-        };
-      },
+        },
+      ],
     };
-  };
+  },
+});

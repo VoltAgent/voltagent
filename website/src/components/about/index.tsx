@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { DotPattern } from "../ui/dot-pattern";
 import confetti from "canvas-confetti";
+import React, { useEffect, useState } from "react";
 import { LinkedInLogo } from "../../../static/img/logos/linkedin";
 import { XLogo } from "../../../static/img/logos/x";
+import { DotPattern } from "../ui/dot-pattern";
 
 interface Contributor {
   login: string;

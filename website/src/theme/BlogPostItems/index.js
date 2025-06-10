@@ -1,20 +1,15 @@
+import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
 import { BlogPostProvider } from "@docusaurus/theme-common/internal";
 import BlogPostItem from "@theme/BlogPostItem";
-import React, { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Footer } from "@site/src/components/footer";
-import Link from "@docusaurus/Link";
-import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
+import React, { useEffect, useRef, useState } from "react";
 
 const POSTS_PER_PAGE = 12;
 const ANIMATION_DELAY = 25;
 
 export default function BlogPostItems({
   items,
-  tags,
   component: BlogPostItemComponent = BlogPostItem,
-  isAuthorPage,
-  isTagsPage,
   children,
 }) {
   const [visiblePosts, setVisiblePosts] = useState(
@@ -107,7 +102,7 @@ export default function BlogPostItems({
           ref={loaderRef}
           className="flex justify-center items-center py-8 mt-4"
         >
-          <div className="w-5 h-5 border-2 border-main-emerald border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-5 h-5 border-2 border-main-emerald border-t-transparent rounded-full animate-spin" />
         </div>
       )}
     </div>

@@ -1,11 +1,11 @@
-import { CodeExample } from "./code-example";
 import {
-  WindowIcon,
   CircleStackIcon,
   CommandLineIcon,
+  WindowIcon,
   WrenchIcon,
 } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
+import { CodeExample } from "./code-example";
 
 export function AgentsDetail() {
   const [selectedFeature, setSelectedFeature] = useState<
@@ -39,7 +39,7 @@ export function AgentsDetail() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Code Example - Left column */}
           <div className="lg:w-1/2 h-full order-2 lg:order-2">
-            <CodeExample isVisible={true} featureType={selectedFeature} />
+            <CodeExample featureType={selectedFeature} />
           </div>
 
           {/* Features Section - Right column */}
@@ -49,6 +49,7 @@ export function AgentsDetail() {
 
               {/* Feature 4 - Tools */}
               <div className="relative">
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "tools"
@@ -73,6 +74,7 @@ export function AgentsDetail() {
               </div>
 
               <div className="relative">
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "api"
@@ -98,6 +100,7 @@ export function AgentsDetail() {
 
               {/* Feature 3 - Prompt */}
               <div className="relative">
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "prompt"
@@ -123,6 +126,7 @@ export function AgentsDetail() {
 
               {/* Feature 2 - Memory */}
               <div className="relative">
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "memory"

@@ -1,16 +1,16 @@
-import React from "react";
 import {
-  RocketLaunchIcon,
-  ChartBarIcon,
   BugAntIcon,
+  ChartBarIcon,
   ChatBubbleBottomCenterIcon,
+  RocketLaunchIcon,
 } from "@heroicons/react/24/outline";
+import React from "react";
 
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import AIChat from "./AIChat";
+import Debugging from "./Debugging";
 import Deployment from "./Deployment";
 import Observability from "./Observability";
-import Debugging from "./Debugging";
-import AIChat from "./AIChat";
 
 export default function Ops() {
   const isMobile = useMediaQuery("(max-width: 768px)");

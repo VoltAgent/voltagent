@@ -1,6 +1,6 @@
+import clsx from "clsx"; // Import clsx for conditional classes
 import type React from "react";
 import { useState } from "react";
-import clsx from "clsx"; // Import clsx for conditional classes
 
 type Recommendation = {
   method: "Direct Attachment" | "Tool" | "Unsure";

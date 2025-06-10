@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
 import {
-  ListBulletIcon,
-  EyeIcon,
-  CommandLineIcon,
   ArrowPathIcon,
+  CommandLineIcon,
+  EyeIcon,
+  ListBulletIcon,
 } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import AgentListView from "./AgentListView";
-import AgentDetailView from "./AgentDetailView";
+import { motion } from "framer-motion";
+import React, { useState } from "react";
 import AgentChat from "./AgentChat";
+import AgentDetailView from "./AgentDetailView";
+import AgentListView from "./AgentListView";
 import FlowOverview from "./FlowOverview";
 import ImageModal from "./ImageModal";
 

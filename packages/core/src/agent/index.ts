@@ -203,10 +203,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input,
     historyEntryId,
     contextMessages,
+    operationContext,
   }: {
     input?: string | BaseMessage[];
     historyEntryId: string;
     contextMessages: BaseMessage[];
+    operationContext?: OperationContext;
   }): Promise<BaseMessage> {
     let baseInstructions = this.instructions || ""; // Ensure baseInstructions is a string
 
@@ -262,7 +264,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       try {
-        const context = await this.retriever.retrieve(input);
+        const context = await this.retriever.retrieve(input, {
+          userContext: operationContext?.userContext,
+        });
         if (context?.trim()) {
           finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
 
@@ -792,6 +796,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
+        operationContext,
       });
 
       messages = [systemMessage, ...contextMessages];
@@ -1068,6 +1073,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         usage: response.usage,
         finishReason: response.finishReason,
         providerResponse: response,
+        userContext: new Map(operationContext.userContext),
       };
 
       await this.hooks.onEnd?.({
@@ -1219,6 +1225,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       input,
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
+      operationContext,
     });
     let messages = [systemMessage, ...contextMessages];
     messages = await this.buildMessages(messages, input);
@@ -1513,15 +1520,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         );
 
         operationContext.isActive = false;
+
+        // Add userContext to result
+        const resultWithContext = {
+          ...result,
+          userContext: new Map(operationContext.userContext),
+        };
+
         await this.hooks.onEnd?.({
           agent: this,
-          output: result,
+          output: resultWithContext,
           error: undefined,
           messages: cleanMessages,
           context: operationContext,
         });
         if (internalOptions.provider?.onFinish) {
-          await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(result);
+          await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(
+            resultWithContext,
+          );
         }
       },
       onError: async (error: VoltAgentError) => {
@@ -1717,6 +1733,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
+        operationContext,
       });
       messages = [systemMessage, ...contextMessages];
       messages = await this.buildMessages(messages, input);
@@ -1859,6 +1876,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         usage: response.usage,
         finishReason: response.finishReason,
         providerResponse: response,
+        userContext: new Map(operationContext.userContext),
       };
 
       // Create clean messages array with user input + complete conversation flow
@@ -2010,6 +2028,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       input,
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
+      operationContext,
     });
     let messages = [systemMessage, ...contextMessages];
     messages = await this.buildMessages(messages, input);
@@ -2158,15 +2177,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             operationContext.conversationSteps || [],
           );
           operationContext.isActive = false;
+
+          // Add userContext to result
+          const resultWithContext = {
+            ...result,
+            userContext: new Map(operationContext.userContext),
+          };
+
           await this.hooks.onEnd?.({
             agent: this,
-            output: result,
+            output: resultWithContext,
             error: undefined,
             messages: cleanMessages,
             context: operationContext,
           });
           if (provider?.onFinish) {
-            await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<T>>)(result);
+            await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<T>>)(
+              resultWithContext,
+            );
           }
         },
         onError: async (error: VoltAgentError) => {

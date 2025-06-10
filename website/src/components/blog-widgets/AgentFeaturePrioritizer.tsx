@@ -204,7 +204,7 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
     }
 
     // Fallback to defaults with some customization
-    let recommendations = [...featureRecommendations["default"]];
+    let recommendations = [...featureRecommendations.default];
 
     // Adjust based on data requirements
     if (

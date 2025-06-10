@@ -1,24 +1,24 @@
 "use client";
 
-import React, { forwardRef, useRef, useState, useEffect } from "react";
-import clsx from "clsx";
-import { AnimatedBeam } from "../magicui/animated-beam";
 import {
+  ArrowPathIcon,
+  ArrowPathRoundedSquareIcon,
   BoltIcon,
   ChatBubbleLeftRightIcon,
-  CommandLineIcon,
-  ArrowPathIcon,
-  DocumentTextIcon,
   CircleStackIcon,
-  CpuChipIcon,
-  WrenchScrewdriverIcon,
-  ArrowPathRoundedSquareIcon,
-  MagnifyingGlassIcon,
-  CommandLineIcon as CodeIcon,
   ClockIcon,
+  CommandLineIcon as CodeIcon,
+  CommandLineIcon,
+  CpuChipIcon,
+  DocumentTextIcon,
   ArrowPathIcon as IntegrationIcon,
+  MagnifyingGlassIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import clsx from "clsx";
+import React, { forwardRef, useRef, useState, useEffect } from "react";
+import { AnimatedBeam } from "../magicui/animated-beam";
 
 // Beat types mapping for different node types
 const beatTypes: Record<string, string> = {
@@ -260,7 +260,7 @@ const playBeat = (beatType: string) => {
           whiteNoise.disconnect();
           const index = activeSources.indexOf(whiteNoise);
           if (index > -1) activeSources.splice(index, 1);
-        } catch (e) {
+        } catch {
           // Ignore errors during cleanup
         }
       }, config.decay * 1000);
@@ -294,7 +294,7 @@ const playBeat = (beatType: string) => {
           oscillator.disconnect();
           const index = activeSources.indexOf(oscillator);
           if (index > -1) activeSources.splice(index, 1);
-        } catch (e) {
+        } catch {
           // Ignore errors during cleanup
         }
       }, config.decay * 1000);
@@ -332,14 +332,14 @@ const playBeat = (beatType: string) => {
 // Clean up audio resources to prevent memory leaks
 const cleanupAudioResources = () => {
   // Stop all active sources
-  activeSources.forEach((source) => {
+  for (const source of activeSources) {
     try {
       source.stop();
       source.disconnect();
-    } catch (e) {
+    } catch {
       // Ignore errors during cleanup
     }
-  });
+  }
 
   // Clear arrays
   activeSources = [];
@@ -361,7 +361,7 @@ const startBeatSequencer = () => {
 
   beatInterval = window.setInterval(() => {
     // Play each active beat according to its pattern in the 16-step sequence
-    activeBeats.forEach((beatType) => {
+    for (const beatType of activeBeats) {
       const beatPatterns: Record<string, number[]> = {
         kick: [0, 4, 8, 12],
         snare: [4, 12],
@@ -384,7 +384,7 @@ const startBeatSequencer = () => {
       if (pattern.includes(step)) {
         playBeat(beatType);
       }
-    });
+    }
 
     step = (step + 1) % 16;
 
@@ -438,7 +438,7 @@ const removeBeat = (beatType: string) => {
 // Handle the stop button click from console
 if (typeof window !== "undefined") {
   const originalConsoleLog = console.log;
-  console.log = function (...args) {
+  console.log = (...args: Parameters<typeof console.log>) => {
     if (args[0] === "%cStop Beats" && args.length > 1) {
       const element = document.createElement("div");
       element.setAttribute("style", args[1]);
@@ -473,23 +473,17 @@ const Node = forwardRef<
   }
 >(
   (
-    { className, children, label, description, type = "input", icon, nodeId },
+    { className, children, label, description, type = "input", nodeId },
     ref,
   ) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isActive, setIsActive] = useState(false);
 
-    const nodeColors = {
-      input: "border-[#4f5d75] bg-[#0c2520]",
-      output: "border-[#4f5d75] bg-[#0c2520]",
-      core: "border-[#00d992] bg-[#0e2c24] shadow-[0_0_30px_rgba(0,217,146,0.3)]",
-      module: "border-[#00d992] bg-[#0c2520]",
-    };
-
     const isMobile = useMediaQuery("(max-width: 768px)");
 
     const beatType = beatTypes[nodeId || type] || beatTypes.kick;
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
     useEffect(() => {
       // Update active state based on presence in activeBeats
       setIsActive(activeBeats.includes(beatType));
@@ -513,6 +507,7 @@ const Node = forwardRef<
     if (type === "input" || type === "output") {
       return (
         <div className="relative">
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
           <div
             ref={ref}
             className={clsx(
@@ -554,12 +549,13 @@ const Node = forwardRef<
 
     // Keep the original circular design for core and module types
     return (
-      <div className={`flex flex-col items-center relative`}>
+      <div className="flex flex-col items-center relative">
         {label && type === "core" && (
           <span className="text-xs mb-2 font-medium text-gray-300">
             {label}
           </span>
         )}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
         <div
           ref={ref}
           className={clsx(
@@ -717,15 +713,8 @@ export function AgentsAnimation({
     },
   ];
 
-  // Calculate total animation duration
-  const totalDuration =
-    startDelay +
-    particleInterval * 3 +
-    leftToCenterDuration +
-    centerToRightDuration +
-    loopDelay;
-
   // Effect to generate new random output mappings for each cycle
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   useEffect(() => {
     const shuffledOutputs = shuffleArray([...outputRefs]);
     const newMapping: { [key: string]: React.RefObject<HTMLDivElement> } = {};
@@ -739,11 +728,12 @@ export function AgentsAnimation({
   }, [cycle]);
 
   // Effect to handle beam sequence and animation cycle
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   useEffect(() => {
     const timers: NodeJS.Timeout[] = [];
 
     // Start input beams
-    inputSequence.forEach((input) => {
+    for (const input of inputSequence) {
       const inputTimer = setTimeout(() => {
         setActiveBeams((prev) => ({
           ...prev,
@@ -762,7 +752,7 @@ export function AgentsAnimation({
       }, input.delay * 1000);
 
       timers.push(inputTimer);
-    });
+    }
 
     // Calculate when the last output beam will complete
     const lastBeamCompleteTime =
@@ -780,7 +770,9 @@ export function AgentsAnimation({
     timers.push(cycleTimer);
 
     return () => {
-      timers.forEach((timer) => clearTimeout(timer));
+      for (const timer of timers) {
+        clearTimeout(timer);
+      }
     };
   }, [cycle]);
 
@@ -805,6 +797,7 @@ export function AgentsAnimation({
   }, [activeBeams.output, moduleInteractionActive, inputSequence.length]);
 
   // Reset module interactions at start of new cycle
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   useEffect(() => {
     setModuleInteractionActive(false);
   }, [cycle]);
@@ -872,7 +865,7 @@ export function AgentsAnimation({
             nodeId="core"
           >
             <div className="relative ">
-              <div className="absolute inset-0 rounded-full bg-[#00d992] blur-md opacity-30 animate-pulse"></div>
+              <div className="absolute inset-0 rounded-full bg-[#00d992] blur-md opacity-30 animate-pulse" />
               <Icons.lightning
                 className={clsx(
                   "text-[#00d992]",
@@ -1047,7 +1040,7 @@ export function AgentsAnimation({
         className="flex justify-between items-center  landing-xs:mt-24 landing-md:mt-0 max-w-[300px] w-full relative py-4"
       >
         {/* Module container box */}
-        <div className="absolute inset-0 border border-dashed   border-[#4f5d75] rounded-md opacity-30 -mx-4"></div>
+        <div className="absolute inset-0 border border-dashed   border-[#4f5d75] rounded-md opacity-30 -mx-4" />
         <Node
           ref={workflowRef}
           type="module"

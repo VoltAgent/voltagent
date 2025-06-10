@@ -6,12 +6,8 @@
     "description": "A sophisticated multi-agent platform built using VoltAgent, Composio MCP, and OpenAI GPT‑4o that revolutionizes content creation workflows. This intelligent set of agents automates research in communities, trend tracking, and first draft writing.",
     "creator": "Emre Tezisci",
     "avatar": "https://github.com/emretezisci.png",
-    "githubUrl": "https://github.com/emretezisci/pmm-agent",
-    "tech": [
-      "VoltAgent",
-      "OpenAI",
-      "Composio MCP"
-    ],
+    "githubUrl": "https://github.com/emretezisci/pmm-agent/",
+    "tech": ["VoltAgent", "OpenAI", "Composio MCP"],
     "screenshot": "https://cdn.voltagent.dev/website/showcase/multi-agent.png",
     "useCases": [
       "Content marketing teams producing research-based content pieces",
@@ -21,6 +17,48 @@
       "Trend tracking for content strategy planning",
       "Automated fact checking and citation management"
     ],
-    "video": "https://www.youtube.com/embed/My6FFxtwqIA"
+    "video": "https://www.youtube.com/embed/My6FFxtwqIA/"
+  },
+  {
+    "id": 2,
+    "slug": "999-dev-ai-teammate",
+    "name": "999.dev - AI Teammate",
+    "description": "An AI teammate that integrates with Slack, Linear, and GitHub to turn team conversations into development work. Handles feature requests, bug discussions, cross-team coordination, and code review workflows.",
+    "creator": "malpacas",
+    "avatar": "https://github.com/malpacas.png",
+    "githubUrl": "https://999.dev/",
+    "isPrivate": true,
+    "tech": ["VoltAgent", "Node.js", "MongoDB", "LibSQL", "Supermemory"],
+    "screenshot": "https://cdn.voltagent.dev/website/showcase/999dev.png",
+    "useCases": [
+      "Feature request to development workflow",
+      "Bug discussion to fix workflow",
+      "Cross-team coordination",
+      "Code review automation",
+      "Team conversation to development task conversion",
+      "Slack, Linear, and GitHub integration"
+    ],
+    "blogPost": "https://www.999.dev/blog/powering-999dev-with-voltagent-framework/",
+    "demoUrl": "https://999.dev/demo/"
+  },
+  {
+    "id": 3,
+    "slug": "inventory-query-agent",
+    "name": "Inventory Query Agent",
+    "isPrivate": true,
+    "description": "This simple project uses VoltAgent and TypeScript to create an agent connected to a custom tool that queries a database (SQL, NoSQL, or any other system). The agent receives an input parameter such as a product name or code, queries the database, filters the results, and returns useful information like stock quantity, product name, description, and the specific store or location where it's available.",
+    "creator": "Carranza12",
+    "avatar": "https://github.com/Carranza12.png",
+    "githubUrl": "https://www.youtube.com/embed/HW_cqz_3Q38?si=r1gNB13mZ3B0TLYm&amp;start=822",
+    "tech": ["VoltAgent", "TypeScript"],
+    "screenshot": "https://cdn.voltagent.dev/website/showcase/inventory-agent.png",
+    "useCases": [
+      "Employees in physical stores or warehouses can quickly check product availability and location",
+      "eCommerce platforms can track product inventory before launching promotions or managing stock",
+      "Integration with customer service chatbots to automatically answer product availability questions",
+      "Generate inventory reports without manual intervention",
+      "Internal dashboards for logistics, purchasing, or sales teams"
+    ],
+    "video": "https://www.youtube.com/embed/HW_cqz_3Q38?si=r1gNB13mZ3B0TLYm&amp;start=822"
   }
 ]

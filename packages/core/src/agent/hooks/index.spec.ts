@@ -81,7 +81,10 @@ describe("Agent Hooks Functionality", () => {
       // Verify onStart was called with the correct object structure
       expect(onStartSpy).toHaveBeenCalledWith({
         agent: agent,
-        context: expect.objectContaining({ operationId: expect.any(String) }), // Check for context object
+        context: expect.objectContaining({
+          operationId: expect.any(String),
+          isActive: expect.any(Boolean),
+        }), // Check for context object
       });
     });
   });
@@ -103,9 +106,15 @@ describe("Agent Hooks Functionality", () => {
       };
 
       // Verify onEnd was called with the agent, standardized output, undefined error, messages, and context
+      // Verify onEnd was called with the correct structure using objectContaining
       expect(onEndSpy).toHaveBeenCalledWith({
         agent: agent,
-        output: expectedOutput,
+        output: expect.objectContaining({
+          text: response.text,
+          usage: response.usage,
+          finishReason: response.finishReason,
+          providerResponse: response,
+        }),
         error: undefined,
         messages: expect.arrayContaining([
           expect.objectContaining({
@@ -119,7 +128,10 @@ describe("Agent Hooks Functionality", () => {
             parts: expect.arrayContaining([expect.anything()]),
           }),
         ]),
-        context: expect.objectContaining({ operationId: expect.any(String) }),
+        context: expect.objectContaining({
+          operationId: expect.any(String),
+          isActive: expect.any(Boolean),
+        }),
       });
     });
 
@@ -179,7 +191,10 @@ describe("Agent Hooks Functionality", () => {
             content: userInput,
           }),
         ]),
-        context: expect.objectContaining({ operationId: expect.any(String) }),
+        context: expect.objectContaining({
+          operationId: expect.any(String),
+          isActive: expect.any(Boolean),
+        }),
       });
 
       // Verify that only user input is present (no assistant response on error)

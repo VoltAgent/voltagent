@@ -10,6 +10,7 @@ export const CloseIcon = (props: SVGProps<SVGSVGElement>) => (
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
+    <title>Close icon</title>
     <rect
       x="6.80786"
       y="23.7783"

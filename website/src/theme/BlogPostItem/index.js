@@ -1,9 +1,9 @@
 import Link from "@docusaurus/Link";
 import { useBlogPost } from "@docusaurus/theme-common/internal";
-import BlogPostItemContainer from "@theme/BlogPostItem/Container";
-import React from "react";
-import clsx from "clsx";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
+import BlogPostItemContainer from "@theme/BlogPostItem/Container";
+import clsx from "clsx";
+import React from "react";
 
 export default function BlogPostItem({ className }) {
   const { metadata } = useBlogPost();

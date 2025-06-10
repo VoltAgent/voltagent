@@ -1,10 +1,10 @@
 import Link from "@docusaurus/Link";
-import { GitHubLogo } from "../../../static/img/logos/github";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import { DiscordLogo } from "../../../static/img/logos/discord";
-import { XLogo } from "../../../static/img/logos/x";
+import { GitHubLogo } from "../../../static/img/logos/github";
 import { LinkedInLogo } from "../../../static/img/logos/linkedin";
 import { RedditLogo } from "../../../static/img/logos/reddit";
-import { BoltIcon } from "@heroicons/react/24/solid";
+import { XLogo } from "../../../static/img/logos/x";
 
 export function Footer() {
   return (

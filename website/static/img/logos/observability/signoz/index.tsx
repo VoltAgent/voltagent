@@ -7,6 +7,7 @@ export const SignozLogo = ({ className }: { className?: string }) => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Signoz logo</title>
     <path
       d="M16.8 0H4.2C1.8804 0 0 1.8804 0 4.2V16.8C0 19.1196 1.8804 21 4.2 21H16.8C19.1196 21 21 19.1196 21 16.8V4.2C21 1.8804 19.1196 0 16.8 0Z"
       fill="white"

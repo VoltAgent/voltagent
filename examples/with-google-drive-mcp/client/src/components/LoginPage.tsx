@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import VoltLogo from "./VoltLogo";
 import Layout from "./Layout";
+import VoltLogo from "./VoltLogo";
 
 const LoginPage = () => {
   // isConnecting için yerel state eklendi

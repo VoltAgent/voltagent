@@ -476,6 +476,9 @@ export interface StreamTextFinishResult {
 
   /** Any warnings generated during the completion (if available). */
   warnings?: unknown[];
+
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -503,6 +506,9 @@ export interface StreamObjectFinishResult<TObject> {
 
   /** The reason the stream finished (if available). Although less common for object streams. */
   finishReason?: string;
+
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -527,6 +533,8 @@ export interface StandardizedTextResult {
   finishReason?: string;
   /** Warnings (if available from provider). */
   warnings?: unknown[];
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -544,6 +552,8 @@ export interface StandardizedObjectResult<TObject> {
   finishReason?: string;
   /** Warnings (if available from provider). */
   warnings?: unknown[];
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**

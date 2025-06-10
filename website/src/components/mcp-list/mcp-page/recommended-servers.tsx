@@ -1,7 +1,7 @@
-import type * as React from "react";
+import Link from "@docusaurus/Link";
 import { ServerStackIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid"; // BoltIcon is used for Cursor
-import Link from "@docusaurus/Link";
+import type * as React from "react";
 import { getLogoComponent } from "../../../utils/logo-helper";
 
 interface SimilarMcp {

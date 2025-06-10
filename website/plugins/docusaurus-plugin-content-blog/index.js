@@ -112,12 +112,12 @@ function getAuthorPosts(allBlogPosts, metadata) {
 function getAllTags(allBlogPosts) {
   // Collect tags and calculate their counts
   const tagCounts = {};
-  allBlogPosts.forEach((post) => {
+  for (const post of allBlogPosts) {
     const postTags = post.metadata.frontMatter.tags || [];
-    postTags.forEach((tag) => {
+    for (const tag of postTags) {
       tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-    });
-  });
+    }
+  }
 
   // Format tags
   const formattedTags = Object.entries(tagCounts).map(([label, count]) => {
