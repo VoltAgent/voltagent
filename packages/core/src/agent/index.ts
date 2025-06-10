@@ -20,6 +20,7 @@ import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
+import { convertToUIMessages } from "../ui";
 import devLogger from "../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import type { Voice } from "../voice";
@@ -55,7 +56,6 @@ import type {
   StreamTextOnFinishCallback,
   ToolExecutionContext,
   VoltAgentError,
-  ChatMessage,
 } from "./types";
 
 import type { Span } from "@opentelemetry/api";
@@ -405,111 +405,32 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Add input to messages array based on type
+   * Build messages array including the base messages and the input messages
+   * @param messages - The messages to build
+   * @param input - The input to build, can be a string or an array of BaseMessages
+   * @returns An array of BaseMessages
    */
-  private async formatInputMessages(
+  private async buildMessages(
     messages: BaseMessage[],
     input: string | BaseMessage[],
   ): Promise<BaseMessage[]> {
-    if (typeof input === "string") {
-      // Add user message to the messages array
-      return [
-        ...messages,
-        {
-          role: "user",
-          content: input,
-        },
-      ];
-    }
-    // Add all message objects directly
-    return [...messages, ...input];
+    return [...messages, ...this.formatInput(input)];
   }
 
   /**
-   * Format input for ChatMessage format (Vercel AI SDK compatible)
+   * Format input to an array of BaseMessages
+   * @param input - The input to format, can be a string or an array of BaseMessages
+   * @returns An array of BaseMessages
    */
-  private async formatInputAsChatMessages(input: string | BaseMessage[]): Promise<ChatMessage[]> {
+  private formatInput(input: string | BaseMessage[]): BaseMessage[] {
     if (typeof input === "string") {
-      return [
-        {
-          id: "",
-          role: "user",
-          content: input,
-          createdAt: new Date(),
-        },
-      ];
+      return [{ role: "user", content: input }];
     }
 
-    // Convert BaseMessage[] to ChatMessage[]
     return input.map((msg) => ({
-      id: "",
-      role: msg.role as ChatMessage["role"],
+      role: msg.role,
       content: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content),
-      createdAt: new Date(),
     }));
-  }
-
-  /**
-   * Convert conversation steps to ChatMessage format for hooks (Vercel AI SDK compatible)
-   */
-  private convertStepsToMessages(steps: StepWithContent[]): ChatMessage[] {
-    const messages: ChatMessage[] = [];
-    let currentAssistantMessage: ChatMessage | null = null;
-    let stepCounter = 0;
-
-    for (const step of steps) {
-      if (step.type === "tool_call") {
-        // If no current assistant message, create one
-        if (!currentAssistantMessage) {
-          currentAssistantMessage = {
-            id: "",
-            role: "assistant",
-            content: "",
-            createdAt: new Date(),
-            toolInvocations: [],
-          };
-          messages.push(currentAssistantMessage);
-        }
-
-        // Add tool call to current assistant message
-        currentAssistantMessage.toolInvocations = currentAssistantMessage.toolInvocations || [];
-        currentAssistantMessage.toolInvocations.push({
-          toolCallId: step.id,
-          toolName: step.name || "unknown",
-          args: step.arguments || {},
-          state: "call",
-          step: stepCounter++,
-        });
-      } else if (step.type === "tool_result") {
-        // Find the corresponding tool call and update it with result
-        if (currentAssistantMessage?.toolInvocations) {
-          const toolInvocation = currentAssistantMessage.toolInvocations.find(
-            (inv) => inv.toolCallId === step.id,
-          );
-          if (toolInvocation) {
-            toolInvocation.result = step.result || step.content;
-            toolInvocation.state = "result";
-          }
-        }
-      } else if (step.type === "text") {
-        // If no current assistant message, create one
-        if (!currentAssistantMessage) {
-          currentAssistantMessage = {
-            id: "",
-            role: "assistant",
-            content: step.content,
-            createdAt: new Date(),
-            toolInvocations: [],
-          };
-          messages.push(currentAssistantMessage);
-        } else {
-          // Append text to existing assistant message
-          currentAssistantMessage.content += step.content;
-        }
-      }
-    }
-
-    return messages;
   }
 
   /**
@@ -874,7 +795,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       messages = [systemMessage, ...contextMessages];
-      messages = await this.formatInputMessages(messages, input);
+      messages = await this.buildMessages(messages, input);
 
       // [NEW EVENT SYSTEM] Create an agent:start event
       const agentStartTime = new Date().toISOString(); // Capture agent start time once
@@ -1149,17 +1070,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         providerResponse: response,
       };
 
-      // Create clean messages array with user input + complete conversation flow
-      const userInputMessages = await this.formatInputAsChatMessages(input);
-      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
-
-      const cleanMessages = [...userInputMessages, ...stepMessages];
-
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
-        messages: cleanMessages,
+        messages: convertToUIMessages(
+          this.formatInput(input),
+          operationContext.conversationSteps || [],
+        ),
         context: operationContext,
       });
 
@@ -1237,14 +1155,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       operationContext.isActive = false;
 
-      // For errors, only send the user input (no assistant response since it failed)
-      const userInputMessages = await this.formatInputAsChatMessages(input);
-
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
-        messages: userInputMessages,
+        // For errors, only send the user input (no assistant response since it failed)
+        messages: convertToUIMessages(this.formatInput(input), []),
         context: operationContext,
       });
 
@@ -1305,7 +1221,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       contextMessages,
     });
     let messages = [systemMessage, ...contextMessages];
-    messages = await this.formatInputMessages(messages, input);
+    messages = await this.buildMessages(messages, input);
 
     // [NEW EVENT SYSTEM] Create an agent:start event
     const agentStartTime = new Date().toISOString(); // Capture agent start time once
@@ -1591,10 +1507,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           },
         });
         // Create clean messages array with user input + complete conversation flow
-        const userInputMessages = await this.formatInputAsChatMessages(input);
-        const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
-
-        const cleanMessages = [...userInputMessages, ...stepMessages];
+        const cleanMessages = convertToUIMessages(
+          this.formatInput(input),
+          operationContext.conversationSteps || [],
+        );
 
         operationContext.isActive = false;
         await this.hooks.onEnd?.({
@@ -1733,15 +1649,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (internalOptions.provider?.onError) {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
-        // For errors, send user input + any tool calls/results that occurred before the error
-        const userInputMessages = await this.formatInputAsChatMessages(input);
-        const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
 
         await this.hooks.onEnd?.({
           agent: this,
           output: undefined,
           error: error,
-          messages: [...userInputMessages, ...stepMessages],
+          // For errors, send user input + any tool calls/results that occurred before the error
+          messages: convertToUIMessages(
+            this.formatInput(input),
+            operationContext.conversationSteps || [],
+          ),
           context: operationContext,
         });
       },
@@ -1802,7 +1719,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextMessages,
       });
       messages = [systemMessage, ...contextMessages];
-      messages = await this.formatInputMessages(messages, input);
+      messages = await this.buildMessages(messages, input);
 
       // [NEW EVENT SYSTEM] Create an agent:start event
       const agentStartTime = new Date().toISOString(); // Capture agent start time once
@@ -1945,10 +1862,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
 
       // Create clean messages array with user input + complete conversation flow
-      const userInputMessages = await this.formatInputAsChatMessages(input);
-      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
-
-      const cleanMessages = [...userInputMessages, ...stepMessages];
+      const cleanMessages = convertToUIMessages(
+        this.formatInput(input),
+        operationContext.conversationSteps || [],
+      );
 
       await this.hooks.onEnd?.({
         agent: this,
@@ -2028,14 +1945,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // For errors, send user input + any tool calls/results that occurred before the error
-      const userInputMessages = await this.formatInputAsChatMessages(input);
-      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
+      const cleanMessages = convertToUIMessages(
+        this.formatInput(input),
+        operationContext.conversationSteps || [],
+      );
 
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
-        messages: [...userInputMessages, ...stepMessages],
+        messages: cleanMessages,
         context: operationContext,
       });
       throw voltagentError;
@@ -2093,7 +2012,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       contextMessages,
     });
     let messages = [systemMessage, ...contextMessages];
-    messages = await this.formatInputMessages(messages, input);
+    messages = await this.buildMessages(messages, input);
 
     // [NEW EVENT SYSTEM] Create an agent:start event
     const agentStartTime = new Date().toISOString(); // Capture agent start time once
@@ -2234,13 +2153,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           });
 
           // Create clean messages array with user input + complete conversation flow
-          const userInputMessages = await this.formatInputAsChatMessages(input);
-          const stepMessages = this.convertStepsToMessages(
+          const cleanMessages = convertToUIMessages(
+            this.formatInput(input),
             operationContext.conversationSteps || [],
           );
-
-          const cleanMessages = [...userInputMessages, ...stepMessages];
-
           operationContext.isActive = false;
           await this.hooks.onEnd?.({
             agent: this,
@@ -2334,8 +2250,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             await (provider.onError as StreamOnErrorCallback)(error);
           }
           // For errors, send user input + any tool calls/results that occurred before the error
-          const userInputMessages = await this.formatInputAsChatMessages(input);
-          const stepMessages = this.convertStepsToMessages(
+          const cleanMessages = convertToUIMessages(
+            this.formatInput(input),
             operationContext.conversationSteps || [],
           );
 
@@ -2343,7 +2259,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             agent: this,
             output: undefined,
             error: error,
-            messages: [...userInputMessages, ...stepMessages],
+            messages: cleanMessages,
             context: operationContext,
           });
         },
@@ -2353,14 +2269,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     } catch (error) {
       operationContext.isActive = false;
       // For errors, send user input + any tool calls/results that occurred before the error
-      const userInputMessages = await this.formatInputAsChatMessages(input);
-      const stepMessages = this.convertStepsToMessages(operationContext.conversationSteps || []);
+      const cleanMessages = convertToUIMessages(
+        this.formatInput(input),
+        operationContext.conversationSteps || [],
+      );
 
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: error as VoltAgentError,
-        messages: [...userInputMessages, ...stepMessages],
+        messages: cleanMessages,
         context: operationContext,
       });
       throw error;

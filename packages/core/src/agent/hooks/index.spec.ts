@@ -111,10 +111,12 @@ describe("Agent Hooks Functionality", () => {
           expect.objectContaining({
             role: "user",
             content: "Test input",
+            parts: expect.arrayContaining([expect.anything()]),
           }),
           expect.objectContaining({
             role: "assistant",
-            content: expect.any(String),
+            content: expect.anything(),
+            parts: expect.arrayContaining([expect.anything()]),
           }),
         ]),
         context: expect.objectContaining({ operationId: expect.any(String) }),

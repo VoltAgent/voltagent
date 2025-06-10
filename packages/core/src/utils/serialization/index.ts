@@ -1,3 +1,5 @@
+// TODO: move this to internal utils once we have a separate package for internals.
+
 /**
  * Safely parse JSON string. If parsing fails, returns the original value.
  * @param value String to parse as JSON

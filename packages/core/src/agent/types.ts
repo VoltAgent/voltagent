@@ -569,14 +569,3 @@ export interface ToolInvocation {
   state: "call" | "result";
   step?: number;
 }
-
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant" | "system" | "tool";
-  content: string;
-  createdAt?: Date;
-  toolInvocations?: ToolInvocation[];
-  reasoning?: string;
-}
-
-export type ChatMessages = ChatMessage[];

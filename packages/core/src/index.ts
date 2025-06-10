@@ -29,10 +29,10 @@ export type {
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
   ToolErrorInfo,
-  ChatMessage,
-  ChatMessages,
   ToolInvocation,
 } from "./agent/types";
+export { convertToUIMessages } from "./ui";
+export type { UIMessage } from "./ui/types";
 export type { AgentHistoryEntry, HistoryStatus } from "./agent/history";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
