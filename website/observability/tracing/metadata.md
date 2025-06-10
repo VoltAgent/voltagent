@@ -12,24 +12,6 @@ By adding structured metadata to your traces, you can categorize, filter, and an
 
 Technical metadata helps optimize model performance, track different configurations, and correlate AI behavior with specific parameter settings. Essential for prompt engineering and model tuning.
 
-## Core Metadata Fields
-
-| Field            | Category                  | Description                                                                  |
-| ---------------- | ------------------------- | ---------------------------------------------------------------------------- |
-| `agentId`        | Agent Identification      | Unique identifier for the AI agent or workflow                               |
-| `instructions`   | Agent Identification      | Human-readable description of the agent's purpose                            |
-| `version`        | Agent Identification      | Agent or model version for tracking changes over time                        |
-| `userId`         | User & Session Context    | Identifies the user making the request for user behavior analysis            |
-| `conversationId` | User & Session Context    | Groups related interactions in multi-turn conversations                      |
-| `sessionId`      | User & Session Context    | Tracks user sessions across multiple conversations                           |
-| `tags`           | Organizational Context    | Flexible labels for categorization (e.g., "support", "urgent", "production") |
-| `department`     | Organizational Context    | Business unit or team responsible for the workflow                           |
-| `projectId`      | Organizational Context    | Associates traces with specific projects or initiatives                      |
-| `environment`    | Organizational Context    | Deployment environment (dev, staging, production)                            |
-| `parentAgentId`  | Multi-Agent Relationships | Establishes hierarchical relationships between agents                        |
-| `workflowId`     | Multi-Agent Relationships | Groups agents working together in complex workflows                          |
-| `stage`          | Multi-Agent Relationships | Identifies the current stage in multi-step processes                         |
-
 ## Why Metadata Important
 
 ### Powerful Filtering and Search

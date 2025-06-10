@@ -112,7 +112,10 @@ export default function DocNavbar() {
             <div className={styles.searchBarContainer}>
               <SearchBar />
             </div>
-            <div className={styles.versionBadge}>v0.1.x</div>
+            {/* Show version badge only when NOT on observability docs */}
+            {!isActive("/docs-observability/") && (
+              <div className={styles.versionBadge}>v0.1.x</div>
+            )}
             <Link
               to="https://s.voltagent.dev/discord"
               className={styles.socialButton}
@@ -163,7 +166,10 @@ export default function DocNavbar() {
           <NavbarMobileSidebarSecondaryMenu />
           <div className={cn("h-px", "bg-gray-600/50", "w-full")} />
           <div className={cn("flex", "flex-col", "items-start", "gap-4")}>
-            <div className={styles.versionBadgeMobile}>v0.1.x</div>
+            {/* Show mobile version badge only when NOT on observability docs */}
+            {!isActive("/docs-observability/") && (
+              <div className={styles.versionBadgeMobile}>v0.1.x</div>
+            )}
             {!isActive("/docs-observability/") && (
               <Link
                 to="/docs/"

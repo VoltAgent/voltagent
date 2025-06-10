@@ -134,7 +134,24 @@ experimental_telemetry: {
       model: "gpt-4"
     }
   }
-});`,
+});
+
+const policyChecker = await agent.addAgent({
+  name: "Policy Checker",
+  input: {
+    userId: "user-123",
+    requestType: "password-reset",
+  },
+  instructions: "You are responsible for verifying customer requests against company policies.",
+  metadata: {
+    modelParameters: {
+      model: "gpt-4",
+    },
+  },
+});
+
+
+`,
       python: `agent = await trace.add_agent({
     "name": "Support Agent", 
     "input": {"query": "User needs password reset help"},
@@ -144,14 +161,30 @@ experimental_telemetry: {
             "model": "gpt-4"
         }
     }
-})`,
+})
+
+
+policy_checker = await agent.add_agent({
+    "name": "Policy Checker",
+    "input": {
+        "user_id": "user-123",
+        "request_type": "password-reset",
+    },
+    "instructions": "You are responsible for verifying customer requests against company policies.",
+    "metadata": {
+        "modelParameters": {
+            "model": "gpt-4",
+        },
+    },
+})    
+`,
     },
     details:
       "Multi-agent metadata creates clear hierarchies and workflow relationships. Use parentAgentId to show delegation, workflowId to group related agents, and stage to track workflow progress.",
   },
   {
     id: "technical",
-    name: "Technical Configuration",
+    name: "LLM Model Parameters",
     description:
       "Track model parameters and technical settings for optimization.",
     examples: {
