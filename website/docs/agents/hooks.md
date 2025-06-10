@@ -20,6 +20,7 @@ import {
   type AgentTool,
   type AgentOperationOutput, // Unified success output type
   type VoltAgentError, // Standardized error type
+  type ChatMessage, // Vercel AI SDK compatible message format
   type OnStartHookArgs, // Argument types for hooks
   type OnEndHookArgs,
   type OnToolStartHookArgs,
@@ -156,16 +157,16 @@ onStart: async ({ agent, context }) => {
 ### `onEnd`
 
 - **Triggered:** After the agent finishes processing a request, either successfully or with an error.
-- **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, messages: BaseMessage[], context: OperationContext }`
+- **Argument Object (`OnEndHookArgs`):** `{ agent: Agent, output: AgentOperationOutput | undefined, error: VoltAgentError | undefined, messages: ChatMessage[], context: OperationContext }`
 - **Use Cases:** Cleanup logic, logging completion status and results (success or failure), analyzing final output or error details, recording usage statistics, storing conversation history.
 - **Note:** The `output` object's specific structure within the `AgentOperationOutput` union depends on the agent method called. Check for specific fields (`text`, `object`) or use type guards. `error` will contain the structured `VoltAgentError` on failure.
-- **Messages Parameter:** The `messages` array contains the complete conversation flow for the current operation:
-  - **On Success:** Contains user input, any tool interactions, and final assistant response `[userMessage, toolCallMessage?, toolResultMessage?, ..., assistantMessage]`
-  - **On Error:** Contains user input and any tool interactions that occurred before the error `[userMessage, toolCallMessage?, toolResultMessage?, ...]` (no final assistant response since generation failed)
-  - **Tool Interactions:** When tools are used, additional messages are included:
-    - Tool call messages with `role: "assistant"` containing the tool invocation
-    - Tool result messages with `role: "tool"` containing the tool output
-  - **Perfect for storing complete conversation history** including all tool usage, compatible with UI frameworks like Vercel AI SDK
+- **Messages Parameter:** The `messages` array contains the complete conversation flow in ChatMessage format (Vercel AI SDK compatible):
+  - **On Success:** Contains user input and assistant response with tool calls grouped in `toolInvocations` array `[userMessage, assistantMessage]`
+  - **On Error:** Contains user input and any tool interactions that occurred before the error `[userMessage, assistantMessage?]` (no final assistant response since generation failed)
+  - **Tool Interactions:** When tools are used, they are grouped within assistant messages:
+    - Assistant messages contain `toolInvocations` array with tool calls and results
+    - Each `toolInvocation` has `toolCallId`, `toolName`, `args`, `result`, and `state` fields
+  - **Perfect for storing complete conversation history** and directly compatible with Vercel AI SDK's `appendResponseMessages` function
 
 ```ts
 // Example: Log the outcome of an operation and store conversation history
@@ -191,10 +192,10 @@ onEnd: async ({ agent, output, error, messages, context }) => {
     // Log the complete conversation flow
     console.log(`Conversation flow:`, {
       user: messages[0]?.content,
-      // Could include tool calls/results in between
       assistant: messages[messages.length - 1]?.content, // Final assistant response
       totalMessages: messages.length,
-      includedToolInteractions: messages.some((m) => m.role === "tool"),
+      toolInteractions: messages.flatMap((m) => m.toolInvocations || []).length,
+      toolsUsed: messages.flatMap((m) => m.toolInvocations || []).map((t) => t.toolName),
     });
 
     // Log usage if available
@@ -279,18 +280,33 @@ Here's an example showing how the `messages` parameter includes complete convers
 ```ts
 const conversationHooks = createHooks({
   onEnd: async ({ agent, output, error, messages, context }) => {
-    // Example messages array for a successful operation with tool usage:
+    // Example messages array for a successful operation with tool usage (ChatMessage format):
     // [
-    //   { role: "user", content: "Use weather tool for San Francisco" },
     //   {
+    //     id: "msg_1",
+    //     role: "user",
+    //     content: "What's the weather in San Francisco?",
+    //     createdAt: new Date()
+    //   },
+    //   {
+    //     id: "msg_2",
     //     role: "assistant",
-    //     content: "[{\"type\":\"tool-call\",\"toolCallId\":\"call_mmZhyZwnheCjZQCRxFPR14pF\",\"toolName\":\"getWeather\",\"args\":{\"location\":\"San Francisco\"}}]",
-    //   },
-    //   {
-    //     role: "tool",
-    //     content: "[{\"type\":\"tool-result\",\"toolCallId\":\"call_mmZhyZwnheCjZQCRxFPR14pF\",\"toolName\":\"getWeather\",\"result\":{\"weather\":{\"location\":\"San Francisco\",\"temperature\":8,\"condition\":\"Rainy\",\"humidity\":86,\"windSpeed\":14},\"message\":\"Current weather in San Francisco: 8°C and rainy with 86% humidity and wind speed of 14 km/h.\"}}]",
-    //   },
-    //   { role: "assistant", content: "The weather in San Francisco is sunny and 22°C." }
+    //     content: "The weather in San Francisco is 8°C and rainy with 86% humidity.",
+    //     createdAt: new Date(),
+    //     toolInvocations: [
+    //       {
+    //         toolCallId: "call_mmZhyZwnheCjZQCRxFPR14pF",
+    //         toolName: "getWeather",
+    //         args: { location: "San Francisco" },
+    //         result: {
+    //           weather: { location: "San Francisco", temperature: 8, condition: "Rainy", humidity: 86, windSpeed: 14 },
+    //           message: "Current weather in San Francisco: 8°C and rainy with 86% humidity."
+    //         },
+    //         state: "result",
+    //         step: 0
+    //       }
+    //     ]
+    //   }
     // ]
 
     if (!error && output) {
@@ -303,9 +319,12 @@ const conversationHooks = createHooks({
       });
 
       // Check if tools were used
-      const toolInteractions = messages.filter((m) => m.role === "tool");
+      const toolInteractions = messages.flatMap((m) => m.toolInvocations || []);
       if (toolInteractions.length > 0) {
         console.log(`Operation used ${toolInteractions.length} tool(s)`);
+        toolInteractions.forEach((tool, i) => {
+          console.log(`  Tool ${i + 1}: ${tool.toolName} (${tool.state})`);
+        });
       }
     }
   },

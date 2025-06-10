@@ -2,26 +2,53 @@
 "@voltagent/core": patch
 ---
 
-feat: add messages parameter to onEnd hook with full conversation flow
+feat: add ChatMessage format for Vercel AI SDK compatibility in onEnd hook
 
-Added `messages` array to the `onEnd` hook arguments, containing the complete conversation turn including tool calls and results. On success, includes user input, tool interactions, and final assistant response. On error, includes user input and any tool interactions that occurred before the error.
+Added `messages` array to the `onEnd` hook arguments with new ChatMessage format that's fully compatible with Vercel AI SDK. Tool calls and results are now grouped within assistant messages in the `toolInvocations` array, making it ready for direct use with Vercel AI's UI components.
 
 ```ts
 const hooks = createHooks({
   onEnd: async ({ agent, output, error, messages, context }) => {
-    // messages now contains full conversation flow:
+    // messages now contains ChatMessage[] format compatible with Vercel AI SDK:
     // [
-    //   { role: "user", content: "Use weather tool for San Francisco" },
     //   {
+    //     id: "msg-1",
+    //     role: "user",
+    //     content: "What's the weather like in San Francisco today?",
+    //     createdAt: new Date()
+    //   },
+    //   {
+    //     id: "msg-2",
     //     role: "assistant",
-    //     content: "[{\"type\":\"tool-call\",\"toolCallId\":\"call_mmZhyZwnheCjZQCRxFPR14pF\",\"toolName\":\"getWeather\",\"args\":{\"location\":\"San Francisco\"}}]",
-    //   },
-    //   {
-    //     role: "tool",
-    //     content: "[{\"type\":\"tool-result\",\"toolCallId\":\"call_mmZhyZwnheCjZQCRxFPR14pF\",\"toolName\":\"getWeather\",\"result\":{\"weather\":{\"location\":\"San Francisco\",\"temperature\":8,\"condition\":\"Rainy\",\"humidity\":86,\"windSpeed\":14},\"message\":\"Current weather in San Francisco: 8°C and rainy with 86% humidity and wind speed of 14 km/h.\"}}]",
-    //   },
-    //   { role: "assistant", content: "The weather in San Francisco is sunny and 22°C." }
+    //     content: "The weather in San Francisco today is 8°C and rainy.",
+    //     createdAt: new Date(),
+    //     toolInvocations: [
+    //       {
+    //         toolCallId: "call_3gafyUbf9cx1FOxqi4tfSq2i",
+    //         toolName: "getWeather",
+    //         args: { location: "San Francisco" },
+    //         state: "result",
+    //         step: 0,
+    //         result: {
+    //           weather: { location: "San Francisco", temperature: 8, condition: "Rainy" },
+    //           message: "Current weather in San Francisco: 8°C and rainy."
+    //         }
+    //       }
+    //     ]
+    //   }
     // ]
+
+    // Can be used directly with Vercel AI SDK:
+    const updatedMessages = appendResponseMessages({
+      messages: existingMessages,
+      responseMessages: messages,
+    });
   },
 });
 ```
+
+New types exported:
+
+- `ChatMessage`: Individual message with Vercel AI SDK compatible structure
+- `ChatMessages`: Array type alias for ChatMessage[]
+- `ToolInvocation`: Tool call and result information structure

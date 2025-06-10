@@ -1,7 +1,6 @@
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../index";
-import type { AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
-import type { BaseMessage } from "../providers";
+import type { AgentOperationOutput, OperationContext, VoltAgentError, ChatMessage } from "../types";
 
 // Argument Object Interfaces
 export interface OnStartHookArgs {
@@ -15,8 +14,8 @@ export interface OnEndHookArgs {
   output: AgentOperationOutput | undefined;
   /** The VoltAgentError object if the operation failed. Undefined on success. */
   error: VoltAgentError | undefined;
-  /** The complete conversation messages including user input and assistant responses */
-  messages: BaseMessage[];
+  /** The complete conversation messages including user input and assistant responses (Vercel AI SDK compatible) */
+  messages: ChatMessage[];
   context: OperationContext;
 }
 

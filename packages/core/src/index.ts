@@ -29,6 +29,9 @@ export type {
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
   ToolErrorInfo,
+  ChatMessage,
+  ChatMessages,
+  ToolInvocation,
 } from "./agent/types";
 export type { AgentHistoryEntry, HistoryStatus } from "./agent/history";
 export type { AgentHooks } from "./agent/hooks";

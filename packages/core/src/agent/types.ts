@@ -557,3 +557,26 @@ export type AgentOperationOutput =
   | StreamTextFinishResult
   | StandardizedObjectResult<unknown> // Object type generalized
   | StreamObjectFinishResult<unknown>; // Object type generalized
+
+/**
+ * Vercel AI SDK compatible message types for UI integration
+ */
+export interface ToolInvocation {
+  toolCallId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  result?: unknown;
+  state: "call" | "result";
+  step?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system" | "tool";
+  content: string;
+  createdAt?: Date;
+  toolInvocations?: ToolInvocation[];
+  reasoning?: string;
+}
+
+export type ChatMessages = ChatMessage[];

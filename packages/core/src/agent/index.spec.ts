@@ -1090,16 +1090,29 @@ describe("Agent", () => {
       expect(callArgs).toHaveProperty("messages");
       expect(callArgs).toHaveProperty("context");
 
-      // Check messages structure for success case (no tools used)
+      // Check messages structure for success case (no tools used) - ChatMessage format
       expect(callArgs.messages).toHaveLength(2);
-      expect(callArgs.messages[0]).toEqual({
-        role: "user",
-        content: userInput,
-      });
-      expect(callArgs.messages[1]).toEqual({
-        role: "assistant",
-        content: "Hello, I am a test agent!",
-      });
+
+      // User input message in ChatMessage format
+      expect(callArgs.messages[0]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "user",
+          content: userInput,
+          createdAt: expect.any(Date),
+        }),
+      );
+
+      // Assistant response message in ChatMessage format
+      expect(callArgs.messages[1]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "assistant",
+          content: "Hello, I am a test agent!",
+          createdAt: expect.any(Date),
+          toolInvocations: [],
+        }),
+      );
 
       // Check other properties
       expect(callArgs.agent).toBe(agentWithOnEnd);
@@ -1133,29 +1146,39 @@ describe("Agent", () => {
       expect(onEndSpy).toHaveBeenCalledTimes(1);
       const callArgs = onEndSpy.mock.calls[0][0];
 
-      // Check messages structure for success case with tool usage
-      // Expected flow: user input -> assistant tool call -> tool result -> final assistant response
-      expect(callArgs.messages).toHaveLength(4);
+      // Check messages structure for success case with tool usage - ChatMessage format
+      // Expected flow: user input -> single assistant message with toolInvocations containing tool call and result
+      expect(callArgs.messages).toHaveLength(2);
 
-      expect(callArgs.messages[0]).toEqual({
-        role: "user",
-        content: userInput,
-      });
+      // User input message
+      expect(callArgs.messages[0]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "user",
+          content: userInput,
+          createdAt: expect.any(Date),
+        }),
+      );
 
-      expect(callArgs.messages[1]).toEqual({
-        role: "assistant",
-        content: "Using test-tool",
-      });
-
-      expect(callArgs.messages[2]).toEqual({
-        role: "tool",
-        content: "tool result",
-      });
-
-      expect(callArgs.messages[3]).toEqual({
-        role: "assistant",
-        content: "Hello, I am a test agent!",
-      });
+      // Assistant message with tool invocations
+      expect(callArgs.messages[1]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "assistant",
+          content: "Hello, I am a test agent!", // Final text content
+          createdAt: expect.any(Date),
+          toolInvocations: expect.arrayContaining([
+            expect.objectContaining({
+              toolCallId: expect.any(String),
+              toolName: "test-tool",
+              args: {},
+              state: "result",
+              step: expect.any(Number),
+              result: "tool result",
+            }),
+          ]),
+        }),
+      );
 
       // Check other properties
       expect(callArgs.agent).toBe(agentWithTool);
@@ -1185,13 +1208,47 @@ describe("Agent", () => {
       expect(onEndSpy).toHaveBeenCalledTimes(1);
       const callArgs = onEndSpy.mock.calls[0][0];
 
-      // Check messages structure for success case with array input (no tool usage)
+      // Check messages structure for success case with array input (no tool usage) - ChatMessage format
       expect(callArgs.messages).toHaveLength(4); // 3 input messages + 1 assistant response
-      expect(callArgs.messages.slice(0, 3)).toEqual(messages);
-      expect(callArgs.messages[3]).toEqual({
-        role: "assistant",
-        content: "Hello, I am a test agent!",
-      });
+
+      // Check input messages converted to ChatMessage format
+      expect(callArgs.messages[0]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "user",
+          content: "Hello!",
+          createdAt: expect.any(Date),
+        }),
+      );
+
+      expect(callArgs.messages[1]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "assistant",
+          content: "Hi there!",
+          createdAt: expect.any(Date),
+        }),
+      );
+
+      expect(callArgs.messages[2]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "user",
+          content: "How are you?",
+          createdAt: expect.any(Date),
+        }),
+      );
+
+      // Final assistant response
+      expect(callArgs.messages[3]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "assistant",
+          content: "Hello, I am a test agent!",
+          createdAt: expect.any(Date),
+          toolInvocations: [],
+        }),
+      );
     });
 
     it("should call onEnd hook with only user input on error", async () => {
@@ -1218,12 +1275,16 @@ describe("Agent", () => {
       expect(onEndSpy).toHaveBeenCalledTimes(1);
       const callArgs = onEndSpy.mock.calls[0][0];
 
-      // Check messages structure for error case - only user input, no assistant response
+      // Check messages structure for error case - only user input, no assistant response - ChatMessage format
       expect(callArgs.messages).toHaveLength(1);
-      expect(callArgs.messages[0]).toEqual({
-        role: "user",
-        content: userInput,
-      });
+      expect(callArgs.messages[0]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "user",
+          content: userInput,
+          createdAt: expect.any(Date),
+        }),
+      );
 
       // Check error properties
       expect(callArgs.agent).toBe(agentWithError);
@@ -1260,13 +1321,17 @@ describe("Agent", () => {
       expect(onEndSpy).toHaveBeenCalledTimes(1);
       const callArgs = onEndSpy.mock.calls[0][0];
 
-      // For errors, we expect at least the user input message
+      // For errors, we expect at least the user input message - ChatMessage format
       expect(callArgs.messages.length).toBeGreaterThanOrEqual(1);
 
-      expect(callArgs.messages[0]).toEqual({
-        role: "user",
-        content: userInput,
-      });
+      expect(callArgs.messages[0]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "user",
+          content: userInput,
+          createdAt: expect.any(Date),
+        }),
+      );
 
       // Check error properties
       expect(callArgs.agent).toBe(agentWithError);
@@ -1296,14 +1361,27 @@ describe("Agent", () => {
       expect(onEndSpy).toHaveBeenCalledTimes(1);
       const callArgs = onEndSpy.mock.calls[0][0];
 
-      // Check messages structure for object generation
+      // Check messages structure for object generation - ChatMessage format
       expect(callArgs.messages).toHaveLength(2);
-      expect(callArgs.messages[0]).toEqual({
-        role: "user",
-        content: userInput,
-      });
-      expect(callArgs.messages[1].role).toBe("assistant");
-      expect(callArgs.messages[1].content).toContain("John Doe"); // Should contain the generated object as JSON
+
+      expect(callArgs.messages[0]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "user",
+          content: userInput,
+          createdAt: expect.any(Date),
+        }),
+      );
+
+      expect(callArgs.messages[1]).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          role: "assistant",
+          content: expect.stringContaining("John Doe"), // Should contain the generated object as JSON
+          createdAt: expect.any(Date),
+          toolInvocations: [],
+        }),
+      );
     });
 
     it("should call onEnd hook with userContext passed correctly", async () => {
