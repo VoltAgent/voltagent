@@ -25,7 +25,7 @@ export interface SupabaseMemoryOptions {
  * - PostgreSQL-optimized queries through Supabase
  * - Real-time capabilities through Supabase subscriptions
  *
- * @see {@link https://voltagent.ai/docs/storage/supabase | Supabase Storage Documentation}
+ * @see {@link https://voltagent.ai/docs/agents/memory/supabase | Supabase Storage Documentation}
  */
 export class SupabaseMemory implements Memory {
   private client: SupabaseClient;

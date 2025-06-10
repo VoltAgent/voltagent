@@ -26,7 +26,7 @@ import type {
  * - Query builder pattern for flexible data retrieval
  * - Pagination support
  *
- * @see {@link https://voltagent.ai/docs/storage/libsql | LibSQL Storage Documentation}
+ * @see {@link https://voltagent.ai/docs/agents/memory/libsql | LibSQL Storage Documentation}
  * Function to add a delay between 0-0 seconds for debugging
  */
 async function debugDelay(): Promise<void> {
@@ -1065,7 +1065,7 @@ export class LibSQLStorage implements Memory {
    *
    * @param options Query options for filtering and pagination
    * @returns Promise that resolves to an array of conversations matching the criteria
-   * @see {@link https://voltagent.ai/docs/storage/libsql#querying-conversations | Querying Conversations}
+   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#querying-conversations | Querying Conversations}
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     await this.initialized;
@@ -1136,7 +1136,7 @@ export class LibSQLStorage implements Memory {
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
    * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   * @see {@link https://voltagent.ai/docs/storage/libsql#conversation-messages | Getting Conversation Messages}
+   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,
