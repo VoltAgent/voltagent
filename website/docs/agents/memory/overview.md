@@ -155,13 +155,26 @@ Your custom class must implement the `Memory` interface defined in `@voltagent/c
 
 Refer to the `Memory` type definition in `@voltagent/core/memory` for the full interface details. Key methods include:
 
+**Message Management:**
+
 - `addMessage(...)`: Stores a new message.
 - `getMessages(...)`: Retrieves messages for a conversation.
 - `clearMessages(...)`: Deletes messages for a specific conversation.
-- `createConversation(...)`, `getConversation(...)`, `getConversations(...)`, `updateConversation(...)`, `deleteConversation(...)`: Manage conversation metadata.
-- `addHistoryEntry(...)`, `updateHistoryEntry(...)`, `getHistoryEntry(...)`, `getAllHistoryEntriesByAgent(...)`: Manage agent run history entries.
-- `addHistoryEvent(...)`, `updateHistoryEvent(...)`, `getHistoryEvent(...)`: Manage events within a history entry.
+
+**Conversation Management:**
+
+- `createConversation(...)`, `getConversation(...)`, `getConversations(...)`: Basic conversation operations.
+- `getConversationsByUserId(...)`: Get conversations for a specific user with query options.
+- `queryConversations(...)`: Advanced conversation querying with filtering and pagination.
+- `getConversationMessages(...)`: Get messages for a specific conversation with pagination.
+- `updateConversation(...)`, `deleteConversation(...)`: Update and delete conversations.
+
+**Agent History Management:**
+
+- `addHistoryEntry(...)`, `updateHistoryEntry(...)`, `getHistoryEntry(...)`: Manage agent run history entries.
+- `getAllHistoryEntriesByAgent(...)`: Get all history entries for an agent.
 - `addHistoryStep(...)`, `updateHistoryStep(...)`, `getHistoryStep(...)`: Manage steps within a history entry.
+- `addTimelineEvent(...)`: Add immutable timeline events for detailed execution tracking.
 
 ```ts
 import type {
@@ -223,17 +236,9 @@ export class MyCustomStorage implements Memory {
   async updateHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
     /* ... */ throw new Error("Not implemented");
   }
-  async addHistoryEvent(
+  async addTimelineEvent(
     key: string,
-    value: any,
-    historyId: string,
-    agentId: string
-  ): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async updateHistoryEvent(
-    key: string,
-    value: any,
+    value: NewTimelineEvent,
     historyId: string,
     agentId: string
   ): Promise<void> {
@@ -253,13 +258,25 @@ export class MyCustomStorage implements Memory {
   async getHistoryEntry(key: string): Promise<any> {
     /* ... */ throw new Error("Not implemented");
   }
-  async getHistoryEvent(key: string): Promise<any> {
-    /* ... */ throw new Error("Not implemented");
-  }
   async getHistoryStep(key: string): Promise<any> {
     /* ... */ throw new Error("Not implemented");
   }
   async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async getConversationsByUserId(
+    userId: string,
+    options?: Omit<ConversationQueryOptions, "userId">
+  ): Promise<Conversation[]> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async getConversationMessages(
+    conversationId: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<MemoryMessage[]> {
     /* ... */ throw new Error("Not implemented");
   }
 }

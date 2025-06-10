@@ -110,6 +110,97 @@ await memoryStorage.updateConversation("conversation-id", {
 });
 ```
 
+## Querying Conversations
+
+The LibSQL storage provides powerful conversation querying capabilities with filtering, pagination, and sorting options:
+
+```typescript
+// Query with multiple filters
+const workConversations = await memoryStorage.queryConversations({
+  userId: "user-123",
+  resourceId: "work-agent",
+  limit: 25,
+  offset: 0,
+  orderBy: "created_at",
+  orderDirection: "DESC",
+});
+
+// Get all conversations for a user
+const userConversations = await memoryStorage.queryConversations({
+  userId: "user-123",
+  limit: 50,
+});
+
+// Get conversations for a specific resource
+const resourceConversations = await memoryStorage.queryConversations({
+  resourceId: "chatbot-v1",
+  limit: 100,
+  orderBy: "updated_at",
+});
+
+// Admin view - get all conversations
+const allConversations = await memoryStorage.queryConversations({
+  limit: 200,
+  orderBy: "created_at",
+  orderDirection: "ASC",
+});
+```
+
+**Query Options:**
+
+- `userId` (optional): Filter conversations by specific user
+- `resourceId` (optional): Filter conversations by specific resource
+- `limit` (optional): Maximum number of conversations to return (default: 50)
+- `offset` (optional): Number of conversations to skip for pagination (default: 0)
+- `orderBy` (optional): Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
+- `orderDirection` (optional): Sort direction: 'ASC' or 'DESC' (default: 'DESC')
+
+## Getting Conversation Messages
+
+Retrieve messages for a specific conversation with pagination support:
+
+```typescript
+// Get all messages for a conversation
+const messages = await memoryStorage.getConversationMessages("conversation-456");
+
+// Get messages with pagination
+const firstBatch = await memoryStorage.getConversationMessages("conversation-456", {
+  limit: 50,
+  offset: 0,
+});
+
+// Get next batch
+const nextBatch = await memoryStorage.getConversationMessages("conversation-456", {
+  limit: 50,
+  offset: 50,
+});
+
+// Process messages in batches for large conversations
+const batchSize = 100;
+let offset = 0;
+let hasMore = true;
+
+while (hasMore) {
+  const batch = await memoryStorage.getConversationMessages("conversation-456", {
+    limit: batchSize,
+    offset: offset,
+  });
+
+  // Process batch
+  processBatch(batch);
+
+  hasMore = batch.length === batchSize;
+  offset += batchSize;
+}
+```
+
+**Message Query Options:**
+
+- `limit` (optional): Maximum number of messages to return (default: 100)
+- `offset` (optional): Number of messages to skip for pagination (default: 0)
+
+Messages are returned in chronological order (oldest first) for natural conversation flow.
+
 ## Automatic Table Creation
 
 Unlike some other database providers, `LibSQLStorage` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, etc., with the configured `tablePrefix`) in the target database if they don't already exist. This simplifies setup, especially for local development using SQLite files.
