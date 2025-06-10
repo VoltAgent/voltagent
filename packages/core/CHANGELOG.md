@@ -1,5 +1,37 @@
 # @voltagent/core
 
+## 0.1.31
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- [#223](https://github.com/VoltAgent/voltagent/pull/223) [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6) Thanks [@omeraplak](https://github.com/omeraplak)! - Add userContext support to retrievers for tracking references and metadata
+
+  Retrievers can now store additional information (like references, sources, citations) in userContext that can be accessed from agent responses. This enables tracking which documents were used to generate responses, perfect for citation systems and audit trails.
+
+  ```ts
+  class MyRetriever extends BaseRetriever {
+    async retrieve(input: string, options: RetrieveOptions): Promise<string> {
+      // Find relevant documents
+      const docs = this.findRelevantDocs(input);
+
+      const references = docs.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        source: doc.source,
+      }));
+      options.userContext.set("references", references);
+
+      return docs.map((doc) => doc.content).join("\n");
+    }
+  }
+
+  // Access references from response
+  const response = await agent.generateText("What is VoltAgent?");
+  const references = response.userContext?.get("references");
+  ```
+
 ## 0.1.30
 
 ### Patch Changes
