@@ -1,3 +1,4 @@
+import { ReadableStream } from "node:stream/web";
 // @ts-ignore - To prevent errors when loading Jest mocks
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
