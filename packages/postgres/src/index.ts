@@ -12,48 +12,16 @@ import {
 import { Pool } from "pg";
 
 /**
- * Enhanced PostgreSQL Storage for VoltAgent with User-Centric Conversation Management
+ * PostgreSQL Storage for VoltAgent
  *
  * This implementation provides:
- * - User-specific conversation management
+ * - Conversation management with user support
  * - Automatic migration from old schema to new schema
  * - Query builder pattern for flexible data retrieval
  * - Pagination support
  * - PostgreSQL-optimized queries with proper indexing
  *
- * ## Schema Changes
- *
- * ### Conversations Table:
- * - Added `user_id` column (REQUIRED)
- * - Updated indexes for user-based queries
- *
- * ### Messages Table:
- * - Removed `user_id` column (now derived through conversation relationship)
- * - Updated foreign key constraints
- *
- * ## Usage Examples
- *
- * ```typescript
- * const storage = new PostgresStorage({
- *   connection: {
- *     host: "localhost",
- *     port: 5432,
- *     database: "voltagent",
- *     user: "postgres",
- *     password: "password",
- *   },
- * });
- *
- * // Get user conversations (ChatGPT-style)
- * const conversations = await storage.getConversationsByUserId("user123", {
- *   limit: 50,
- *   orderBy: "updated_at",
- *   orderDirection: "DESC",
- * });
- *
- * // Get conversation messages
- * const messages = await storage.getConversationMessages("conversation-id");
- * ```
+ * @see {@link https://voltagent.ai/docs/storage/postgresql | PostgreSQL Storage Documentation}
  */
 
 /**
@@ -1131,45 +1099,11 @@ export class PostgresStorage implements Memory {
   }
 
   /**
-   * Query conversations with flexible filtering and pagination options
-   *
-   * This method provides a powerful way to search and filter conversations
-   * with support for user-based filtering, resource filtering, pagination,
-   * and custom sorting.
+   * Query conversations with filtering and pagination options
    *
    * @param options Query options for filtering and pagination
-   * @param options.userId Optional user ID to filter conversations by specific user
-   * @param options.resourceId Optional resource ID to filter conversations by specific resource
-   * @param options.limit Maximum number of conversations to return (default: 50)
-   * @param options.offset Number of conversations to skip for pagination (default: 0)
-   * @param options.orderBy Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
-   * @param options.orderDirection Sort direction: 'ASC' or 'DESC' (default: 'DESC')
-   *
    * @returns Promise that resolves to an array of conversations matching the criteria
-   *
-   * @example
-   * ```typescript
-   * // Get all conversations for a specific user
-   * const userConversations = await storage.queryConversations({
-   *   userId: 'user123',
-   *   limit: 20
-   * });
-   *
-   * // Get conversations for a resource with pagination
-   * const resourceConversations = await storage.queryConversations({
-   *   resourceId: 'chatbot-v1',
-   *   limit: 10,
-   *   offset: 20,
-   *   orderBy: 'created_at',
-   *   orderDirection: 'ASC'
-   * });
-   *
-   * // Get all conversations (admin view)
-   * const allConversations = await storage.queryConversations({
-   *   limit: 100,
-   *   orderBy: 'updated_at'
-   * });
-   * ```
+   * @see {@link https://voltagent.ai/docs/storage/postgresql#querying-conversations | Querying Conversations}
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     await this.initialized;
@@ -1238,53 +1172,10 @@ export class PostgresStorage implements Memory {
   /**
    * Get messages for a specific conversation with pagination support
    *
-   * This method retrieves all messages within a conversation, ordered chronologically
-   * from oldest to newest. It supports pagination to handle large conversations
-   * efficiently and avoid memory issues.
-   *
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
-   * @param options.limit Maximum number of messages to return (default: 100)
-   * @param options.offset Number of messages to skip for pagination (default: 0)
-   *
    * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   *
-   * @example
-   * ```typescript
-   * // Get the first 50 messages in a conversation
-   * const messages = await storage.getConversationMessages('conv-123', {
-   *   limit: 50
-   * });
-   *
-   * // Get messages with pagination (skip first 20, get next 30)
-   * const olderMessages = await storage.getConversationMessages('conv-123', {
-   *   limit: 30,
-   *   offset: 20
-   * });
-   *
-   * // Get all messages (use with caution for large conversations)
-   * const allMessages = await storage.getConversationMessages('conv-123');
-   *
-   * // Process messages in batches
-   * const batchSize = 100;
-   * let offset = 0;
-   * let hasMore = true;
-   *
-   * while (hasMore) {
-   *   const batch = await storage.getConversationMessages('conv-123', {
-   *     limit: batchSize,
-   *     offset: offset
-   *   });
-   *
-   *   // Process batch
-   *   processBatch(batch);
-   *
-   *   hasMore = batch.length === batchSize;
-   *   offset += batchSize;
-   * }
-   * ```
-   *
-   * @throws {Error} If the conversation ID is invalid or database query fails
+   * @see {@link https://voltagent.ai/docs/storage/postgresql#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,
