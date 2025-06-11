@@ -13,6 +13,7 @@ import type {
   ProviderTextStreamResponse,
   StepWithContent,
 } from "@voltagent/core";
+import { createAsyncIterableStream } from "@voltagent/core";
 import type {
   GenerateObjectResult,
   GenerateTextResult,
@@ -281,7 +282,7 @@ export class XSAIProvider implements LLMProvider<string> {
     // Return only provider and textStream - usage, toolCalls, etc. come in the stream
     return {
       provider: result,
-      textStream: result.textStream,
+      textStream: createAsyncIterableStream(result.textStream),
     };
   }
 
@@ -394,7 +395,7 @@ export class XSAIProvider implements LLMProvider<string> {
     // Return only provider and objectStream - other data comes in the stream
     return {
       provider: result,
-      objectStream: result.partialObjectStream,
+      objectStream: createAsyncIterableStream(result.partialObjectStream),
     };
   }
 }

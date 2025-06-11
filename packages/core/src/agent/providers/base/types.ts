@@ -1,6 +1,6 @@
-import type { ReadableStream } from "node:stream/web";
 import type { z } from "zod";
 import type { Tool } from "../../../tool";
+import type { AsyncIterableStream } from "../../../utils/async-iterable-stream";
 import type {
   OperationContext,
   ProviderOptions,
@@ -76,7 +76,7 @@ export type ProviderTextStreamResponse<TOriginalResponse> = {
   /**
    * Text stream for consuming the response
    */
-  textStream: ReadableStream<string>;
+  textStream: AsyncIterableStream<string>;
 };
 
 /**
@@ -116,7 +116,7 @@ export type ProviderObjectStreamResponse<TOriginalResponse, TObject> = {
   /**
    * Object stream for consuming partial objects
    */
-  objectStream: ReadableStream<Partial<TObject>>;
+  objectStream: AsyncIterableStream<Partial<TObject>>;
 };
 
 /**
@@ -348,9 +348,7 @@ export type InferProviderParams<T> = T extends {
     : Record<string, never>
   : Record<string, never>;
 
-// Base provider type
 export type LLMProvider<TProvider> = {
-  // Core methods
   /**
    * Generates a text response based on the provided options.
    * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
@@ -360,6 +358,11 @@ export type LLMProvider<TProvider> = {
     options: GenerateTextOptions<InferModel<TProvider>>,
   ): Promise<ProviderTextResponse<InferGenerateTextResponse<TProvider>>>;
 
+  /**
+   * Streams a text response based on the provided options.
+   * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
+   * @throws {VoltAgentError} If an error occurs during streaming.
+   */
   streamText(
     options: StreamTextOptions<InferModel<TProvider>>,
   ): Promise<ProviderTextStreamResponse<InferStreamResponse<TProvider>>>;
@@ -373,14 +376,25 @@ export type LLMProvider<TProvider> = {
     options: GenerateObjectOptions<InferModel<TProvider>, TSchema>,
   ): Promise<ProviderObjectResponse<InferGenerateObjectResponse<TProvider>, z.infer<TSchema>>>;
 
+  /**
+   * Streams a structured object response based on the provided options and schema.
+   * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
+   * @throws {VoltAgentError} If an error occurs during streaming.
+   */
   streamObject<TSchema extends z.ZodType>(
     options: StreamObjectOptions<InferModel<TProvider>, TSchema>,
   ): Promise<ProviderObjectStreamResponse<InferStreamResponse<TProvider>, z.infer<TSchema>>>;
 
-  // Message conversion methods
+  /**
+   * Converts a base message to a provider-specific message.
+   * @param message The base message to convert.
+   * @returns The provider-specific message.
+   */
   toMessage(message: BaseMessage): InferMessage<TProvider>;
 
-  // Optional tool conversion method
+  /**
+   * Optional tool conversion method.
+   */
   toTool?: (tool: BaseTool) => InferTool<TProvider>;
 
   /**

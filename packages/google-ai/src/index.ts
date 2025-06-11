@@ -23,6 +23,7 @@ import type {
   StepWithContent,
   UsageInfo,
 } from "@voltagent/core";
+import { createAsyncIterableStream } from "@voltagent/core";
 import type { z } from "zod";
 import type {
   GoogleGenerateContentStreamResult,
@@ -701,35 +702,37 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       isPausedForFunctionCalling: false,
     };
 
-    const readableStream = new ReadableStream<string>({
-      async start(controller) {
-        try {
-          await state._processStreamWithFunctionCalls(
-            streamIterator,
-            controller,
-            streamState,
-            options,
-            availableTools,
-            currentApiCallContents,
-            model,
-            initialConfig,
-          );
-          await state._finalizeStream(streamState, options, controller);
-        } catch (error) {
-          console.error(
-            "[GoogleGenAIProvider] Error during Google GenAI stream processing:",
-            error,
-          );
-          if (options.onError) {
-            await options.onError(error);
+    const readableStream = createAsyncIterableStream(
+      new ReadableStream<string>({
+        async start(controller) {
+          try {
+            await state._processStreamWithFunctionCalls(
+              streamIterator,
+              controller,
+              streamState,
+              options,
+              availableTools,
+              currentApiCallContents,
+              model,
+              initialConfig,
+            );
+            await state._finalizeStream(streamState, options, controller);
+          } catch (error) {
+            console.error(
+              "[GoogleGenAIProvider] Error during Google GenAI stream processing:",
+              error,
+            );
+            if (options.onError) {
+              await options.onError(error);
+            }
+            controller.error(error);
           }
-          controller.error(error);
-        }
-      },
-      cancel(reason) {
-        console.debug("[GoogleGenAIProvider] Google GenAI Stream cancelled:", reason);
-      },
-    });
+        },
+        cancel(reason) {
+          console.debug("[GoogleGenAIProvider] Google GenAI Stream cancelled:", reason);
+        },
+      }),
+    );
 
     return {
       provider: initialStreamResult,

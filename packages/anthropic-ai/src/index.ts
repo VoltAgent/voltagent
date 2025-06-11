@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { createAsyncIterableStream } from "@voltagent/core";
 import type {
   BaseMessage,
   BaseTool,
@@ -134,97 +135,99 @@ export class AnthropicProvider implements LLMProvider<string> {
         system: getSystemMessage(options.messages),
       });
 
-      const textStream = new ReadableStream({
-        start: async (controller) => {
-          try {
-            let currentText = "";
-            const currentToolCalls: AnthropicToolCall[] = [];
+      const textStream = createAsyncIterableStream(
+        new ReadableStream({
+          start: async (controller) => {
+            try {
+              let currentText = "";
+              const currentToolCalls: AnthropicToolCall[] = [];
 
-            for await (const chunk of response) {
-              if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
-                currentText += chunk.delta.text;
+              for await (const chunk of response) {
+                if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+                  currentText += chunk.delta.text;
 
-                const textChunk = createStepFromChunk({
-                  type: "text",
-                  text: chunk.delta.text,
-                  usage: undefined,
-                });
+                  const textChunk = createStepFromChunk({
+                    type: "text",
+                    text: chunk.delta.text,
+                    usage: undefined,
+                  });
 
-                controller.enqueue(chunk.delta.text);
+                  controller.enqueue(chunk.delta.text);
 
-                if (textChunk) {
-                  if (options.onChunk) {
-                    options.onChunk(textChunk);
+                  if (textChunk) {
+                    if (options.onChunk) {
+                      options.onChunk(textChunk);
+                    }
+
+                    if (options.onStepFinish) {
+                      options.onStepFinish(textChunk);
+                    }
                   }
-
-                  if (options.onStepFinish) {
-                    options.onStepFinish(textChunk);
-                  }
-                }
-              }
-
-              if (
-                chunk.type === "content_block_start" &&
-                chunk.content_block?.type === "tool_use"
-              ) {
-                const toolBlock = chunk.content_block;
-                const toolCall: AnthropicToolCall = {
-                  type: "tool-call",
-                  toolCallId: toolBlock.id,
-                  toolName: toolBlock.name,
-                  args: toolBlock.input || {},
-                };
-
-                currentToolCalls.push(toolCall);
-
-                // Handle onChunk callback for tool call
-                if (options?.onChunk) {
-                  const step = createStepFromChunk(toolCall);
-                  if (step) await options.onChunk(step);
                 }
 
-                // Handle onStepFinish for tool call
-                if (options.onStepFinish) {
-                  const step = createStepFromChunk(toolCall);
-                  if (step) await options.onStepFinish(step);
-                }
-              }
-
-              // Handle message completion
-              if (chunk.type === "message_stop") {
-                const stopChunk = chunk as StopMessageChunk;
-                // Call onFinish with the final result
-                if (options.onFinish) {
-                  const finalResult = {
-                    text: currentText,
-                    toolCalls: currentToolCalls.map((call) => ({
-                      usage: stopChunk?.message?.usage,
-                      ...call,
-                    })),
-                    toolResults: [],
-                    finishReason: "stop",
+                if (
+                  chunk.type === "content_block_start" &&
+                  chunk.content_block?.type === "tool_use"
+                ) {
+                  const toolBlock = chunk.content_block;
+                  const toolCall: AnthropicToolCall = {
+                    type: "tool-call",
+                    toolCallId: toolBlock.id,
+                    toolName: toolBlock.name,
+                    args: toolBlock.input || {},
                   };
 
-                  await options.onFinish(finalResult);
+                  currentToolCalls.push(toolCall);
+
+                  // Handle onChunk callback for tool call
+                  if (options?.onChunk) {
+                    const step = createStepFromChunk(toolCall);
+                    if (step) await options.onChunk(step);
+                  }
+
+                  // Handle onStepFinish for tool call
+                  if (options.onStepFinish) {
+                    const step = createStepFromChunk(toolCall);
+                    if (step) await options.onStepFinish(step);
+                  }
                 }
 
-                // Close the stream
-                controller.close();
+                // Handle message completion
+                if (chunk.type === "message_stop") {
+                  const stopChunk = chunk as StopMessageChunk;
+                  // Call onFinish with the final result
+                  if (options.onFinish) {
+                    const finalResult = {
+                      text: currentText,
+                      toolCalls: currentToolCalls.map((call) => ({
+                        usage: stopChunk?.message?.usage,
+                        ...call,
+                      })),
+                      toolResults: [],
+                      finishReason: "stop",
+                    };
+
+                    await options.onFinish(finalResult);
+                  }
+
+                  // Close the stream
+                  controller.close();
+                }
               }
+            } catch (error) {
+              const voltError = generateVoltError(
+                "Error while parsing streamed text response from Anthropic API",
+                error,
+                "llm_stream",
+              );
+              if (options.onError) {
+                options.onError(voltError);
+              }
+              controller.error(voltError);
             }
-          } catch (error) {
-            const voltError = generateVoltError(
-              "Error while parsing streamed text response from Anthropic API",
-              error,
-              "llm_stream",
-            );
-            if (options.onError) {
-              options.onError(voltError);
-            }
-            controller.error(voltError);
-          }
-        },
-      });
+          },
+        }),
+      );
 
       return {
         provider: response,
@@ -343,78 +346,80 @@ export class AnthropicProvider implements LLMProvider<string> {
       let accumulatedText = "";
 
       // Start processing in the background without awaiting
-      const objectStream = new ReadableStream({
-        start: async (controller) => {
-          try {
-            for await (const chunk of response) {
-              if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
-                accumulatedText += chunk.delta.text;
+      const objectStream = createAsyncIterableStream(
+        new ReadableStream({
+          start: async (controller) => {
+            try {
+              for await (const chunk of response) {
+                if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+                  accumulatedText += chunk.delta.text;
 
-                // Try to parse partial JSON as it comes in
-                try {
-                  const partialObject = JSON.parse(accumulatedText);
-                  const parseResult = options.schema.safeParse(partialObject);
+                  // Try to parse partial JSON as it comes in
+                  try {
+                    const partialObject = JSON.parse(accumulatedText);
+                    const parseResult = options.schema.safeParse(partialObject);
 
-                  if (parseResult.success) {
-                    controller.enqueue(parseResult.data);
-                  }
-                } catch {
-                  // Expected - will fail until we have valid JSON
-                }
-              }
-
-              if (chunk.type === "message_stop") {
-                try {
-                  const parsedObject = JSON.parse(accumulatedText);
-                  const parsedResult = options.schema.safeParse(parsedObject);
-
-                  if (parsedResult.success) {
-                    controller.enqueue(parsedResult.data);
-
-                    if (options.onFinish) {
-                      await options.onFinish(parsedResult.data);
+                    if (parseResult.success) {
+                      controller.enqueue(parseResult.data);
                     }
-
-                    if (options.onStepFinish) {
-                      await options.onStepFinish(parsedResult.data);
-                    }
-                  } else {
-                    console.warn(
-                      "Response does not match the specified schema:",
-                      parsedResult.error.message,
-                    );
-                    throw new Error(`Schema validation failed: ${parsedResult.error.message}`);
+                  } catch {
+                    // Expected - will fail until we have valid JSON
                   }
-                } catch (error) {
-                  const voltError: VoltAgentError = {
-                    message: "Anthropic API did not return valid JSON",
-                    originalError: error,
-                  };
-                  if (options.onError) {
-                    options?.onError(voltError);
-                  }
-                  console.warn("Anthropic API did not return valid JSON:", accumulatedText);
-                  controller.error(voltError);
                 }
 
-                // Close when done
-                controller.close();
-                return;
+                if (chunk.type === "message_stop") {
+                  try {
+                    const parsedObject = JSON.parse(accumulatedText);
+                    const parsedResult = options.schema.safeParse(parsedObject);
+
+                    if (parsedResult.success) {
+                      controller.enqueue(parsedResult.data);
+
+                      if (options.onFinish) {
+                        await options.onFinish(parsedResult.data);
+                      }
+
+                      if (options.onStepFinish) {
+                        await options.onStepFinish(parsedResult.data);
+                      }
+                    } else {
+                      console.warn(
+                        "Response does not match the specified schema:",
+                        parsedResult.error.message,
+                      );
+                      throw new Error(`Schema validation failed: ${parsedResult.error.message}`);
+                    }
+                  } catch (error) {
+                    const voltError: VoltAgentError = {
+                      message: "Anthropic API did not return valid JSON",
+                      originalError: error,
+                    };
+                    if (options.onError) {
+                      options?.onError(voltError);
+                    }
+                    console.warn("Anthropic API did not return valid JSON:", accumulatedText);
+                    controller.error(voltError);
+                  }
+
+                  // Close when done
+                  controller.close();
+                  return;
+                }
               }
+            } catch (error) {
+              const voltError = generateVoltError(
+                "Error while parsing streamed object response in Anthropic API",
+                error,
+                "llm_stream",
+              );
+              if (options.onError) {
+                options.onError(voltError);
+              }
+              controller.error(voltError);
             }
-          } catch (error) {
-            const voltError = generateVoltError(
-              "Error while parsing streamed object response in Anthropic API",
-              error,
-              "llm_stream",
-            );
-            if (options.onError) {
-              options.onError(voltError);
-            }
-            controller.error(voltError);
-          }
-        },
-      });
+          },
+        }),
+      );
 
       return {
         provider: response,

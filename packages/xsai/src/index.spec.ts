@@ -275,7 +275,8 @@ describe("XSAIProvider", () => {
         }),
       );
       expect(result.provider).toBe(mockResult);
-      expect(result.textStream).toBe(mockStream);
+      expect(result.textStream).toBeInstanceOf(ReadableStream);
+      expect(result.textStream).toHaveProperty([Symbol.asyncIterator]);
     });
 
     // TODO: Add tests for onStepFinish and onFinish callback wrapping within streamText
@@ -511,7 +512,8 @@ describe("XSAIProvider", () => {
         }),
       );
       expect(result.provider).toBe(mockResult);
-      expect(result.objectStream).toBe(mockStream);
+      expect(result.objectStream).toBeInstanceOf(ReadableStream);
+      expect(result.objectStream).toHaveProperty([Symbol.asyncIterator]);
     });
 
     // TODO: Add tests for onStepFinish and onFinish callback wrapping within streamObject

@@ -39,6 +39,7 @@ export * from "./mcp";
 export { AgentRegistry } from "./server/registry";
 export { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 export * from "./utils/update";
+export { createAsyncIterableStream, type AsyncIterableStream } from "./utils/async-iterable-stream";
 export * from "./voice";
 export {
   CustomEndpointDefinition,

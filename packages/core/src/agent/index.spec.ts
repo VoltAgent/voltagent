@@ -1,9 +1,9 @@
-import { ReadableStream } from "node:stream/web";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { Memory, MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
 import { createTool } from "../tool";
+import { createAsyncIterableStream } from "../utils/async-iterable-stream";
 import { Agent } from "./index";
 import type {
   BaseMessage,
@@ -232,27 +232,31 @@ class MockProvider implements LLMProvider<MockModelType> {
     this.streamTextCalls++;
     this.lastMessages = options.messages;
 
-    const stream = new ReadableStream<{
-      type: "text-delta";
-      textDelta: string;
-    }>({
-      start(controller) {
-        controller.enqueue({ type: "text-delta", textDelta: "Hello" });
-        controller.enqueue({ type: "text-delta", textDelta: ", " });
-        controller.enqueue({ type: "text-delta", textDelta: "world!" });
-        controller.close();
-      },
-    });
+    const stream = createAsyncIterableStream(
+      new ReadableStream<{
+        type: "text-delta";
+        textDelta: string;
+      }>({
+        start(controller) {
+          controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+          controller.enqueue({ type: "text-delta", textDelta: ", " });
+          controller.enqueue({ type: "text-delta", textDelta: "world!" });
+          controller.close();
+        },
+      }),
+    );
 
     // Create a text stream
-    const textStream = new ReadableStream<string>({
-      start(controller) {
-        controller.enqueue("Hello");
-        controller.enqueue(", ");
-        controller.enqueue("world!");
-        controller.close();
-      },
-    });
+    const textStream = createAsyncIterableStream(
+      new ReadableStream<string>({
+        start(controller) {
+          controller.enqueue("Hello");
+          controller.enqueue(", ");
+          controller.enqueue("world!");
+          controller.close();
+        },
+      }),
+    );
 
     return {
       provider: stream,
@@ -339,7 +343,7 @@ class MockProvider implements LLMProvider<MockModelType> {
 
     return {
       provider: result,
-      objectStream: partialObjectStream,
+      objectStream: createAsyncIterableStream(partialObjectStream),
     };
   }
 }
