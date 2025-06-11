@@ -2,7 +2,7 @@
 title: Metadata
 ---
 
-import MetadataUsageExplorer from '@site/src/components/metadata/MetadataUsageExplorer';
+import MetadataUsageExplorer from '@site/src/components/docs-widgets/MetadataUsageExplorer';
 
 Metadata in VoltOps tracing consists of key-value pairs that provide rich context and organization for your AI workflows. Unlike the core functional data (inputs, outputs, errors), metadata helps you organize and understand the business context, operational environment, and relationships within your AI system.
 

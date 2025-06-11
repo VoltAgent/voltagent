@@ -2,7 +2,7 @@
 title: Sessions
 ---
 
-import SessionExplorer from '@site/src/components/sessions/SessionExplorer';
+import SessionExplorer from '@site/src/components/docs-widgets/SessionExplorer';
 
 # Sessions
 

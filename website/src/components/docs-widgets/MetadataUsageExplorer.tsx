@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CodeBlock from "@theme/CodeBlock";
 
 const metadataUsageData = [
   {
@@ -319,12 +320,18 @@ const MetadataUsageExplorer = () => {
           {/* Code Example */}
           <div>
             <h5 className="mb-2 text-base text-emerald-200">Example:</h5>
-            <pre
-              className="bg-gray-900 rounded-md p-3 text-sm text-white-300 overflow-x-auto border border-gray-700"
-              style={{ backgroundColor: "#1a1a1a" }}
+            <CodeBlock
+              language={
+                selectedSDK === "typescript"
+                  ? "typescript"
+                  : selectedSDK === "python"
+                    ? "python"
+                    : "javascript"
+              }
+              showLineNumbers
             >
-              <code>{selectedUsage.examples[selectedSDK]}</code>
-            </pre>
+              {selectedUsage.examples[selectedSDK]}
+            </CodeBlock>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@
 title: Tags
 ---
 
-import TagExplorer from '@site/src/components/tags/TagExplorer';
+import TagExplorer from '@site/src/components/docs-widgets/TagExplorer';
 
 # Tags
 

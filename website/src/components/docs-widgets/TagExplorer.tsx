@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CodeBlock from "@theme/CodeBlock";
 
 const tagExamples = [
   {
@@ -350,12 +351,18 @@ const TagExplorer = () => {
           {/* Code Example */}
           <div className="mb-4">
             <h5 className="mb-2 text-base text-emerald-200">Example:</h5>
-            <pre
-              className="bg-gray-900 rounded-md p-3 text-sm text-white-300 overflow-x-auto border border-gray-700"
-              style={{ backgroundColor: "#1a1a1a" }}
+            <CodeBlock
+              language={
+                selectedSDK === "typescript"
+                  ? "typescript"
+                  : selectedSDK === "python"
+                    ? "python"
+                    : "javascript"
+              }
+              showLineNumbers
             >
-              <code>{selectedExample.examples[selectedSDK]}</code>
-            </pre>
+              {selectedExample.examples[selectedSDK]}
+            </CodeBlock>
           </div>
           <p className="leading-relaxed text-gray-200">
             {selectedExample.details}
