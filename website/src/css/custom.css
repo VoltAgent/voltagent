@@ -4303,7 +4303,7 @@ aside.theme-doc-sidebar-container {
 /* Documentation Images */
 .markdown img {
   border-radius: 12px !important;
-  padding: 6px !important;
+  padding: 4px !important;
 
 
 
@@ -4313,9 +4313,9 @@ aside.theme-doc-sidebar-container {
 }
 
 [data-theme='dark'] .markdown img {
-  border: 1px solid rgba(51, 65, 85, 0.8) !important;
+  border: 1px solid rgba(70, 76, 85, 0.8) !important;
   /* slate-700 with opacity */
-  background-color: rgba(31, 41, 55, 0.25) !important;
+  background-color: rgba(19, 19, 20, 0.25) !important;
   /* bg-gray-800/25 */
 }
 
