@@ -193,6 +193,34 @@ describe("SubAgentManager", () => {
       expect(result.result).toBe("Response from Math Agent");
       expect(result.messages.length).toBe(2);
     });
+
+    it("should call onHandoff hook with correct arguments when target agent has hooks", async () => {
+      const onHandoffSpy = jest.fn();
+
+      // Create a mock agent with hooks
+      const mockAgentWithHooks = new MockAgent("agent3", "Agent with Hooks") as any;
+      mockAgentWithHooks.hooks = {
+        onHandoff: onHandoffSpy,
+      };
+
+      const sourceAgent = new MockAgent("source", "Source Agent") as any;
+
+      const options: AgentHandoffOptions = {
+        task: "Test handoff with hooks",
+        targetAgent: mockAgentWithHooks,
+        sourceAgent: sourceAgent,
+        context: { test: "data" },
+        sharedContext: [],
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Verify onHandoff was called with the correct object structure
+      expect(onHandoffSpy).toHaveBeenCalledWith({
+        agent: mockAgentWithHooks,
+        source: sourceAgent,
+      });
+    });
   });
 
   describe("handoffToMultiple", () => {
