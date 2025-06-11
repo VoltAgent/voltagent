@@ -33,7 +33,7 @@ export default function DocNavbar() {
           <div className={styles.docNavbarLeft}>
             <div className={styles.navLinks}>
               {/* Show Framework Docs only when NOT on observability docs */}
-              {!isActive("/docs-observability/") && (
+              {!isActive("/voltops-llm-observability-docs/") && (
                 <Link to="/docs/" className={`${styles.logoLink}`}>
                   <div className="flex items-center">
                     <div className="flex items-center justify-center border-2 border-solid border-[#00d992] rounded-full p-1">
@@ -56,7 +56,7 @@ export default function DocNavbar() {
 
               {!isActive("/docs/") && (
                 <Link
-                  to="/docs-observability/"
+                  to="/voltops-llm-observability-docs/"
                   className={`${styles.logoLink}`}
                 >
                   <div className="flex items-center">
@@ -87,20 +87,23 @@ export default function DocNavbar() {
             <div className={styles.navLinks}>
               {/* Show link to VoltOps docs when on regular docs */}
               {isActive("/docs/") && (
-                <Link to="/docs-observability/" className={`${styles.navLink}`}>
+                <Link
+                  to="/voltops-llm-observability-docs/"
+                  className={`${styles.navLink}`}
+                >
                   VoltOps Docs
                 </Link>
               )}
 
               {/* Show link to Voltagent docs when on observability docs */}
-              {isActive("/docs-observability/") && (
+              {isActive("/voltops-llm-observability-docs/") && (
                 <Link to="/docs/" className={`${styles.navLink}`}>
                   Voltagent Docs
                 </Link>
               )}
 
               {/* Show changelog only when NOT on observability docs */}
-              {!isActive("/docs-observability/") && (
+              {!isActive("/voltops-llm-observability-docs/") && (
                 <Link
                   to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
                   className={`${styles.navLink}`}
@@ -113,7 +116,7 @@ export default function DocNavbar() {
               <SearchBar />
             </div>
             {/* Show version badge only when NOT on observability docs */}
-            {!isActive("/docs-observability/") && (
+            {!isActive("/voltops-llm-observability-docs/") && (
               <div className={styles.versionBadge}>v0.1.x</div>
             )}
             <Link
@@ -167,10 +170,10 @@ export default function DocNavbar() {
           <div className={cn("h-px", "bg-gray-600/50", "w-full")} />
           <div className={cn("flex", "flex-col", "items-start", "gap-4")}>
             {/* Show mobile version badge only when NOT on observability docs */}
-            {!isActive("/docs-observability/") && (
+            {!isActive("/voltops-llm-observability-docs/") && (
               <div className={styles.versionBadgeMobile}>v0.1.x</div>
             )}
-            {!isActive("/docs-observability/") && (
+            {!isActive("/voltops-llm-observability-docs/") && (
               <Link
                 to="/docs/"
                 className={`${styles.mobileNavLink} ${
@@ -184,9 +187,11 @@ export default function DocNavbar() {
 
             {!isActive("/docs/") && (
               <Link
-                to="/docs-observability/"
+                to="/voltops-llm-observability-docs/"
                 className={`${styles.mobileNavLink} ${
-                  isActive("/docs-observability/") ? styles.active : ""
+                  isActive("/voltops-llm-observability-docs/")
+                    ? styles.active
+                    : ""
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -194,7 +199,7 @@ export default function DocNavbar() {
               </Link>
             )}
             {/* Show changelog only when NOT on observability docs */}
-            {!isActive("/docs-observability/") && (
+            {!isActive("/voltops-llm-observability-docs/") && (
               <Link
                 to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
                 className={`${styles.navLink} ${

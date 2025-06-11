@@ -30,7 +30,8 @@ const FrameworkIntegration = () => {
       ),
       tooltip: "VoltAgent",
       isComingSoon: false,
-      docUrl: "https://voltagent.dev/docs-observability/voltagent-framework/",
+      docUrl:
+        "https://voltagent.dev/voltops-llm-observability-docs/voltagent-framework/",
     },
     {
       logo: (
@@ -38,7 +39,7 @@ const FrameworkIntegration = () => {
       ),
       tooltip: "Vercel AI SDK",
       isComingSoon: false,
-      docUrl: "https://voltagent.dev/docs-observability/vercel-ai/",
+      docUrl: "https://voltagent.dev/voltops-llm-observability-docs/vercel-ai/",
     },
     {
       logo: (
@@ -46,7 +47,7 @@ const FrameworkIntegration = () => {
       ),
       tooltip: "TypeScript SDK",
       isComingSoon: false,
-      docUrl: "https://voltagent.dev/docs-observability/js-ts-sdk/",
+      docUrl: "https://voltagent.dev/voltops-llm-observability-docs/js-ts-sdk/",
     },
     {
       logo: (
@@ -54,7 +55,8 @@ const FrameworkIntegration = () => {
       ),
       tooltip: "Python SDK",
       isComingSoon: false,
-      docUrl: "https://voltagent.dev/docs-observability/python-sdk/",
+      docUrl:
+        "https://voltagent.dev/voltops-llm-observability-docs/python-sdk/",
     },
 
     {
@@ -270,7 +272,7 @@ const FrameworkIntegration = () => {
         </div>
         <div className="my-6 landing-xs:my-4 landing-sm:my-8">
           <a
-            href="https://voltagent.dev/docs-observability/"
+            href="https://voltagent.dev/voltops-llm-observability-docs/"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center no-underline text-emerald-400 hover:text-emerald-300 text-sm landing-xs:text-xs landing-sm:text-base transition-colors duration-200 group"

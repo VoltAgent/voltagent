@@ -61,14 +61,14 @@ VoltAgent Observability works with any technology stack through multiple integra
 
 ### SDKs
 
-- ✅ [**JavaScript/TypeScript SDK**](/docs-observability/js-ts-sdk/) - Native integration with full observability
-- ✅ [**Python SDK**](/docs-observability/python-sdk/) - Native integration with full observability
+- ✅ [**JavaScript/TypeScript SDK**](/voltops-llm-observability-docs/js-ts-sdk/) - Native integration with full observability
+- ✅ [**Python SDK**](/voltops-llm-observability-docs/python-sdk/) - Native integration with full observability
 - 🔄 **REST API** - Universal HTTP-based integration for any language _(Coming Soon)_
 
 ### Framework Integrations
 
-- ✅ [**VoltAgent Framework**](/docs-observability/voltagent-framework/) - Native integration with zero configuration
-- ✅ [**Vercel AI SDK**](/docs-observability/vercel-ai/) - Add observability to existing Vercel AI SDK applications
+- ✅ [**VoltAgent Framework**](/voltops-llm-observability-docs/voltagent-framework/) - Native integration with zero configuration
+- ✅ [**Vercel AI SDK**](/voltops-llm-observability-docs/vercel-ai/) - Add observability to existing Vercel AI SDK applications
 - 🔄 **OpenAI SDK** - Official OpenAI SDK integration _(Coming Soon)_
 - 🔄 **LangChain** - Comprehensive LLM application framework _(Coming Soon)_
 - 🔄 **LlamaIndex** - Leading RAG framework _(Coming Soon)_

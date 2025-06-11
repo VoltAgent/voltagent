@@ -86,7 +86,7 @@ const config: Config = {
       {
         id: "observability",
         path: "observability",
-        routeBasePath: "docs-observability",
+        routeBasePath: "voltops-llm-observability-docs",
         sidebarPath: "./sidebarsObservability.ts",
         breadcrumbs: false,
         sidebarCollapsed: false,
@@ -105,6 +105,22 @@ const config: Config = {
           {
             to: "/about/",
             from: "/manifesto/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/vercel-ai",
+            from: "/docs-observability/vercel-ai",
+          },
+          {
+            to: "/voltops-llm-observability-docs/voltagent-framework",
+            from: "/docs-observability/voltagent-framework",
+          },
+          {
+            to: "/voltops-llm-observability-docs/js-ts-sdk",
+            from: "/docs-observability/js-ts-sdk",
+          },
+          {
+            to: "/voltops-llm-observability-docs/python-sdk",
+            from: "/docs-observability/python-sdk",
           },
         ],
       },
@@ -165,7 +181,7 @@ const config: Config = {
           position: "left",
         },
         {
-          to: "/docs-observability",
+          to: "/voltops-llm-observability-docs",
           label: "Observability",
           position: "left",
         },

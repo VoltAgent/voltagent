@@ -48,7 +48,7 @@ await trace.end({
 ## Full Documentation
 
 For complete setup instructions, detailed examples, and advanced features, visit:
-**[📖 VoltAgent JavaScript/TypeScript SDK Documentation](https://voltagent.dev/docs-observability/js-ts-sdk/)**
+**[📖 VoltAgent JavaScript/TypeScript SDK Documentation](https://voltagent.dev/voltops-llm-observability-docs/js-ts-sdk/)**
 
 ## Prerequisites
 

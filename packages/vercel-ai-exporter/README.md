@@ -139,7 +139,7 @@ experimental_telemetry: {
 ## Learn More
 
 **📖 For complete documentation and detailed examples:**  
-👉 **[VoltAgent Vercel AI SDK Integration Guide](https://voltagent.dev/docs-observability/vercel-ai/)**
+👉 **[VoltAgent Vercel AI SDK Integration Guide](https://voltagent.dev/voltops-llm-observability-docs/vercel-ai/)**
 
 What you'll find in the guide:
 

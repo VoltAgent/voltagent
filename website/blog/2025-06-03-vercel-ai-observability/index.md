@@ -28,7 +28,7 @@ Building AI agents is easier with frameworks. But then comes the _production nig
 
 When we're building VoltAgent, I kept asking myself "What's my agent doing now?" Traditional monitoring tools? Not so effective for AI applications.
 
-So we built the [VoltOps LLM Observability Platform](https://voltagent.dev/ai-agent-monitoring/) which provides comprehensive monitoring for AI applications built with frameworks like Vercel AI SDK.
+So we built the [VoltOps LLM Observability Platform](https://voltagent.dev/voltops-llm-observability/) which provides comprehensive monitoring for AI applications built with frameworks like Vercel AI SDK.
 
 :::tip Key Solution
 Whether you're building chatbots, content generators, or complex multi-agent systems with Vercel AI, you need visibility into what's happening under the hood. Our platform tracks everything from individual LLM calls to complex agent workflows, giving you the insights you need to optimize performance and debug issues in production.

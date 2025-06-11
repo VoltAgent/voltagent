@@ -724,9 +724,9 @@ npm run examples
 
 ## 🔗 Links
 
-- [Documentation](https://voltagent.dev/docs-observability/)
+- [Documentation](https://voltagent.dev/voltops-llm-observability-docs/)
 - [Console Dashboard](https://console.voltagent.dev)
-- [API Reference](https://voltagent.dev/docs-observability/)
+- [API Reference](https://voltagent.dev/voltops-llm-observability-docs/)
 
 ## 📄 License
 
