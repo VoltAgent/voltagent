@@ -340,6 +340,13 @@ CREATE TABLE IF NOT EXISTS ${this.conversationsTable}_migration_flags (
     migrated_count INTEGER DEFAULT 0,
     metadata JSONB DEFAULT '{}'::jsonb
 );
+
+-- Insert fresh installation flags to prevent future migrations
+INSERT INTO voltagent_memory_conversations_migration_flags (migration_type, migrated_count, metadata) 
+VALUES 
+    ('conversation_schema_migration', 0, '{"fresh_install": true}'::jsonb),
+    ('agent_history_migration', 0, '{"fresh_install": true}'::jsonb)
+ON CONFLICT (migration_type) DO NOTHING;
 `);
 
         console.log(`\n${"=".repeat(100)}`);

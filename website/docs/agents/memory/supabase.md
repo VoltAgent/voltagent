@@ -178,6 +178,22 @@ ON voltagent_memory_agent_history_timeline_events(parent_event_id);
 
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_status
 ON voltagent_memory_agent_history_timeline_events(status);
+
+-- Migration Flags Table (Prevents duplicate migrations)
+CREATE TABLE IF NOT EXISTS voltagent_memory_conversations_migration_flags (
+    id SERIAL PRIMARY KEY,
+    migration_type TEXT NOT NULL UNIQUE,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    migrated_count INTEGER DEFAULT 0,
+    metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- Insert fresh installation flags to prevent future migrations
+INSERT INTO voltagent_memory_conversations_migration_flags (migration_type, migrated_count, metadata)
+VALUES
+    ('conversation_schema_migration', 0, '{"fresh_install": true}'::jsonb),
+    ('agent_history_migration', 0, '{"fresh_install": true}'::jsonb)
+ON CONFLICT (migration_type) DO NOTHING;
 ```
 
 Alternatively, integrate these SQL statements into your Supabase migration workflow using the [Supabase CLI](https://supabase.com/docs/guides/cli).
