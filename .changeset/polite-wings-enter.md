@@ -1,5 +1,9 @@
 ---
 "@voltagent/core": patch
+"@voltagent/xsai": patch
+"@voltagent/anthropic-ai": patch
+"@voltagent/google-ai": patch
+"@voltagent/groq-ai": patch
 ---
 
 fix: migrate the provider streams to `AsyncIterableStream`
