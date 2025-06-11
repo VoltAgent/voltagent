@@ -1,5 +1,49 @@
 # @voltagent/xsai
 
+## 0.2.3
+
+### Patch Changes
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
 ## 0.2.2
 
 ### Patch Changes

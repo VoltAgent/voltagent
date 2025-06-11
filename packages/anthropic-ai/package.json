@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/anthropic-ai",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Anthropic AI provider for VoltAgent",
   "exports": {
     ".": {
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
-    "@voltagent/core": "^0.1.31",
+    "@voltagent/core": "^0.1.32",
     "zod": "3.24.2"
   },
   "devDependencies": {

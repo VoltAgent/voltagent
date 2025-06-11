@@ -1,5 +1,39 @@
 # @voltagent/supabase
 
+## 0.1.9
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
 ## 0.1.8
 
 ### Patch Changes
