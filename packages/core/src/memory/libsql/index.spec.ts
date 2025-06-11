@@ -370,7 +370,7 @@ describe("LibSQLStorage", () => {
           createdAt: new Date().toISOString(),
         };
 
-        const result = await storage.addMessage(message, "user-1", "conversation-1");
+        const result = await storage.addMessage(message, "conversation-1");
 
         // Function should complete without error and return void
         expect(result).toBeUndefined();

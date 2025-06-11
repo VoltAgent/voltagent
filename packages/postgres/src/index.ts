@@ -868,11 +868,7 @@ export class PostgresStorage implements Memory {
   /**
    * Add a message to the conversation history
    */
-  public async addMessage(
-    message: MemoryMessage,
-    userId = "default",
-    conversationId = "default",
-  ): Promise<void> {
+  public async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
     await this.initialized;
 
     const client = await this.pool.connect();
@@ -930,9 +926,7 @@ export class PostgresStorage implements Memory {
       }
 
       await client.query("COMMIT");
-      this.debug(
-        `Added message for conversation ${conversationId}. UserId parameter: ${userId} (compatibility only)`,
-      );
+      this.debug(`Added message for conversation ${conversationId}`);
     } catch (error) {
       await client.query("ROLLBACK");
       this.debug("Error adding message:", error);

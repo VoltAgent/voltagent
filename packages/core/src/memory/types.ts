@@ -90,7 +90,7 @@ export type Memory = {
   /**
    * Add a message to memory
    */
-  addMessage(message: BaseMessage, userId: string, conversationId?: string): Promise<void>;
+  addMessage(message: BaseMessage, conversationId?: string): Promise<void>;
 
   /**
    * Get messages from memory

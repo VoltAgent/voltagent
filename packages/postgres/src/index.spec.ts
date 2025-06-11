@@ -177,7 +177,7 @@ describe("PostgresStorage", () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ count: 1 }] }); // For count query
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For COMMIT transaction
 
-      await storage.addMessage(message, "user1", "conversation1");
+      await storage.addMessage(message, "conversation1");
 
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO"),
@@ -265,7 +265,7 @@ describe("PostgresStorage", () => {
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For cleanup query
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For COMMIT transaction
 
-      await storage.addMessage(message, "user1", "conversation1");
+      await storage.addMessage(message, "conversation1");
 
       // Verify that cleanup was called when limit was exceeded
       expect(mockQuery).toHaveBeenCalledWith(

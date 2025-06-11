@@ -349,15 +349,21 @@ export class InMemoryStorage implements Memory {
   /**
    * Add a message to the conversation history
    * @param message Message to add
-   * @param userId User identifier (optional, defaults to "default")
    * @param conversationId Conversation identifier (optional, defaults to "default")
    */
-  public async addMessage(
-    message: MemoryMessage,
-    userId = "default",
-    conversationId = "default",
-  ): Promise<void> {
-    this.debug(`Adding message for user ${userId} and conversation ${conversationId}`, message);
+  public async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
+    this.debug(`Adding message for conversation ${conversationId}`, message);
+
+    // Get the conversation to find the userId
+    const conversation = await this.getConversation(conversationId);
+    let userId = "default";
+
+    if (conversation) {
+      userId = conversation.userId;
+    } else {
+      // If conversation doesn't exist, use default user
+      this.debug(`Conversation ${conversationId} not found, using default user`);
+    }
 
     // Create user's messages container if it doesn't exist
     if (!this.storage[userId]) {

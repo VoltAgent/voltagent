@@ -73,8 +73,18 @@ export class SupabaseMemory implements Memory {
    */
   private async initializeDatabase(): Promise<void> {
     try {
-      // First, ensure database tables exist with correct structure
+      // First check if this is a fresh installation before doing anything
+      const isFreshInstallation = await this.checkFreshInstallation();
+
+      // Ensure database tables exist with correct structure
       await this.ensureDatabaseStructure();
+
+      // Skip all migrations if this is a fresh installation
+      if (isFreshInstallation) {
+        // Set migration flags to prevent future migrations from running
+        await this.setFreshInstallationFlags();
+        return;
+      }
 
       // Run conversation schema migration first
       try {
@@ -291,7 +301,7 @@ CREATE TABLE IF NOT EXISTS ${this.timelineEventsTable} (
     end_time TEXT,
     status TEXT,
     status_message TEXT,
-    level TEXT DEFAULT "INFO",
+    level TEXT DEFAULT 'INFO',
     version TEXT,
     parent_event_id TEXT,
     tags JSONB,
@@ -320,7 +330,17 @@ CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_timeline_events_parent_even
 ON ${this.timelineEventsTable}(parent_event_id);
 
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_timeline_events_status 
-ON ${this.timelineEventsTable}(status);`);
+ON ${this.timelineEventsTable}(status);
+
+-- Migration Flags Table (Prevents duplicate migrations)
+CREATE TABLE IF NOT EXISTS ${this.conversationsTable}_migration_flags (
+    id SERIAL PRIMARY KEY,
+    migration_type TEXT NOT NULL UNIQUE,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    migrated_count INTEGER DEFAULT 0,
+    metadata JSONB DEFAULT '{}'::jsonb
+);
+`);
 
         console.log(`\n${"=".repeat(100)}`);
         console.log("📋 FRESH INSTALLATION INSTRUCTIONS:");
@@ -360,7 +380,7 @@ ON ${this.timelineEventsTable}(status);`);
   end_time TEXT,
   status TEXT,
   status_message TEXT,
-  level TEXT DEFAULT "INFO",
+  level TEXT DEFAULT 'INFO',
   version TEXT,
   parent_event_id TEXT,
   tags JSONB,
@@ -1081,6 +1101,46 @@ ON ${this.historyTable}(agent_id);`);
   }
 
   /**
+   * Set migration flags for fresh installation to prevent future migrations
+   * @private
+   */
+  private async setFreshInstallationFlags(): Promise<void> {
+    try {
+      const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
+
+      // Insert migration flags to mark fresh installation
+      const { error } = await this.client.from(migrationFlagTable).insert([
+        {
+          migration_type: "conversation_schema_migration",
+          completed_at: new Date().toISOString(),
+          migrated_count: 0,
+          metadata: { fresh_install: true },
+        },
+        {
+          migration_type: "agent_history_migration",
+          completed_at: new Date().toISOString(),
+          migrated_count: 0,
+          metadata: { fresh_install: true },
+        },
+      ]);
+
+      if (error) {
+        // If table doesn't exist, that's expected for fresh install
+        // The flags will be set via SQL when user runs the setup script
+        this.debugLog("Migration flags table not found (expected for fresh install)");
+      } else {
+        this.debugLog("✅ Fresh installation migration flags set successfully");
+      }
+    } catch (flagError) {
+      // Silent fail for fresh installation - flags will be set via SQL
+      this.debugLog(
+        "Could not set migration flags programmatically (will be set via SQL)",
+        flagError,
+      );
+    }
+  }
+
+  /**
    * Migrate conversation schema to add user_id and update messages table
    *
    * ⚠️  **CRITICAL WARNING: DESTRUCTIVE OPERATION** ⚠️
@@ -1152,11 +1212,11 @@ ON ${this.historyTable}(agent_id);`);
       // Check if migration has already been completed by looking for a migration flag
       this.debugLog("🔍 Checking for migration flags table...");
       try {
-        const { data: migrationFlag, error: queryError } = await this.client
+        // First, try to get any migration flag (without .single() to avoid multiple rows error)
+        const { data: migrationFlags, error: queryError } = await this.client
           .from(`${this.conversationsTable}_migration_flags`)
           .select("*")
-          .eq("migration_type", "conversation_schema_migration")
-          .single();
+          .eq("migration_type", "conversation_schema_migration");
 
         // Check if table doesn't exist
         if (queryError) {
@@ -1190,10 +1250,13 @@ ON ${this.historyTable}(agent_id);`);
             );
             console.log("");
           } else {
-            // Table exists but no migration flag found
-            this.debugLog("✅ Migration flags table found, but no migration flag exists yet");
+            // Some other error occurred
+            this.debugLog("Error checking migration flags:", queryError);
+            this.debugLog("Proceeding with migration check...");
           }
-        } else if (migrationFlag) {
+        } else if (migrationFlags && migrationFlags.length > 0) {
+          // Migration flag(s) found - take the first one
+          const migrationFlag = migrationFlags[0];
           this.debugLog("✅ Migration flags table found!");
           this.debugLog(
             `🚀 Conversation schema migration already completed on ${migrationFlag.completed_at}`,
@@ -1270,7 +1333,6 @@ ON ${this.historyTable}(agent_id);`);
 
       // If conversations already has user_id and messages doesn't have user_id, migration not needed
       if (hasUserIdInConversations && !hasUserIdInMessages) {
-        console.log("Tables are already in new format, migration not needed");
         return { success: true, migratedCount: 0 };
       }
 
@@ -1390,17 +1452,18 @@ ON ${this.historyTable}(agent_id);`);
         `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
       );
 
-      // If messages table still has user_id column, suggest removing it
+      // If messages table still has user_id column, require removing it
       if (hasUserIdInMessages) {
         console.log("");
-        console.log("🔧 OPTIONAL CLEANUP STEP:");
+        console.log("🔧 REQUIRED CLEANUP STEP:");
         console.log(
-          "Now that migration is complete, you can optionally remove the user_id column from messages table:",
+          "Migration is complete, but you MUST remove the user_id column from messages table to prevent errors:",
         );
         console.log(`ALTER TABLE ${messagesTableName} DROP COLUMN IF EXISTS user_id;`);
         console.log(
-          "(This is safe to run now that user_id data has been moved to conversations table)",
+          "(This is REQUIRED now that user_id data has been moved to conversations table)",
         );
+        console.log("❗ Run this SQL command to complete the migration properly.");
         console.log("");
       }
 
@@ -1436,8 +1499,6 @@ ON ${this.historyTable}(agent_id);`);
               "🔧 To prevent this, create the migration flags table using the SQL provided above",
             );
             console.log("");
-          } else {
-            console.log("Could not set migration flag (non-critical):", insertError);
           }
         }
       } catch (flagError: any) {

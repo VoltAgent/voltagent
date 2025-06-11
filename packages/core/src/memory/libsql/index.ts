@@ -389,14 +389,7 @@ export class LibSQLStorage implements Memory {
     // Add delay for debugging
     await debugDelay();
 
-    const {
-      userId = "default",
-      conversationId = "default",
-      limit = this.options.storageLimit,
-      before,
-      after,
-      role,
-    } = options;
+    const { userId = "default", conversationId = "default", limit, before, after, role } = options;
 
     const messagesTableName = `${this.options.tablePrefix}_messages`;
     const conversationsTableName = `${this.options.tablePrefix}_conversations`;
@@ -475,11 +468,7 @@ export class LibSQLStorage implements Memory {
    * @param userId User identifier (optional, defaults to "default")
    * @param conversationId Conversation identifier (optional, defaults to "default")
    */
-  async addMessage(
-    message: MemoryMessage,
-    userId = "default",
-    conversationId = "default",
-  ): Promise<void> {
+  async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
     // Wait for database initialization
     await this.initialized;
 
@@ -502,7 +491,7 @@ export class LibSQLStorage implements Memory {
         ],
       });
 
-      this.debug("Message added successfully", { userId, conversationId, messageId: message.id });
+      this.debug("Message added successfully", { conversationId, messageId: message.id });
 
       // Optionally, prune old messages to respect storage limit
       try {

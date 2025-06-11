@@ -82,8 +82,17 @@ describe("InMemoryStorage", () => {
           role: "user",
         });
 
+        // Create conversation first
+        await storage.createConversation({
+          id: "test-conversation",
+          resourceId: "test-resource",
+          userId: "test-user",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
         // Act
-        await storage.addMessage(message, "test-user", "test-conversation");
+        await storage.addMessage(message, "test-conversation");
         const messages = await storage.getMessages({
           userId: "test-user",
           conversationId: "test-conversation",
@@ -112,6 +121,16 @@ describe("InMemoryStorage", () => {
       it("should enforce storage limits and remove oldest messages", async () => {
         // Arrange
         const limitedStorage = new InMemoryStorage({ storageLimit: 2 });
+
+        // Create conversation first
+        await limitedStorage.createConversation({
+          id: "conversation1",
+          resourceId: "test-resource",
+          userId: "user1",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
         const message1 = createMessage({
           content: "First message",
           createdAt: new Date(Date.now() - 3000).toISOString(),
@@ -126,9 +145,9 @@ describe("InMemoryStorage", () => {
         });
 
         // Act
-        await limitedStorage.addMessage(message1, "user1", "conversation1");
-        await limitedStorage.addMessage(message2, "user1", "conversation1");
-        await limitedStorage.addMessage(message3, "user1", "conversation1");
+        await limitedStorage.addMessage(message1, "conversation1");
+        await limitedStorage.addMessage(message2, "conversation1");
+        await limitedStorage.addMessage(message3, "conversation1");
 
         // Assert
         const messages = await limitedStorage.getMessages({
@@ -144,32 +163,35 @@ describe("InMemoryStorage", () => {
         // Arrange
         const limitedStorage = new InMemoryStorage({ storageLimit: 2 });
 
+        // Create conversations first
+        await limitedStorage.createConversation({
+          id: "conversation1",
+          resourceId: "test-resource",
+          userId: "user1",
+          title: "Test Conversation 1",
+          metadata: {},
+        });
+
+        await limitedStorage.createConversation({
+          id: "conversation2",
+          resourceId: "test-resource",
+          userId: "user1",
+          title: "Test Conversation 2",
+          metadata: {},
+        });
+
         // Add messages to first conversation
-        await limitedStorage.addMessage(
-          createMessage({ content: "Conv1 First" }),
-          "user1",
-          "conversation1",
-        );
+        await limitedStorage.addMessage(createMessage({ content: "Conv1 First" }), "conversation1");
         await limitedStorage.addMessage(
           createMessage({ content: "Conv1 Second" }),
-          "user1",
           "conversation1",
         );
-        await limitedStorage.addMessage(
-          createMessage({ content: "Conv1 Third" }),
-          "user1",
-          "conversation1",
-        );
+        await limitedStorage.addMessage(createMessage({ content: "Conv1 Third" }), "conversation1");
 
         // Add messages to second conversation
-        await limitedStorage.addMessage(
-          createMessage({ content: "Conv2 First" }),
-          "user1",
-          "conversation2",
-        );
+        await limitedStorage.addMessage(createMessage({ content: "Conv2 First" }), "conversation2");
         await limitedStorage.addMessage(
           createMessage({ content: "Conv2 Second" }),
-          "user1",
           "conversation2",
         );
 
@@ -197,13 +219,29 @@ describe("InMemoryStorage", () => {
         // Setup test messages with predictable timestamps for testing
         const now = Date.now();
 
+        // Create conversations first
+        await storage.createConversation({
+          id: "conversation1",
+          resourceId: "test-resource",
+          userId: "user1",
+          title: "Test Conversation 1",
+          metadata: {},
+        });
+
+        await storage.createConversation({
+          id: "conversation2",
+          resourceId: "test-resource",
+          userId: "user1",
+          title: "Test Conversation 2",
+          metadata: {},
+        });
+
         await storage.addMessage(
           createMessage({
             role: "system",
             content: "System message",
             createdAt: new Date(now - 5000).toISOString(),
           }),
-          "user1",
           "conversation1",
         );
 
@@ -213,7 +251,6 @@ describe("InMemoryStorage", () => {
             content: "User question",
             createdAt: new Date(now - 4000).toISOString(),
           }),
-          "user1",
           "conversation1",
         );
 
@@ -223,7 +260,6 @@ describe("InMemoryStorage", () => {
             content: "Assistant response",
             createdAt: new Date(now - 3000).toISOString(),
           }),
-          "user1",
           "conversation1",
         );
 
@@ -233,19 +269,25 @@ describe("InMemoryStorage", () => {
             content: "Follow-up question",
             createdAt: new Date(now - 2000).toISOString(),
           }),
-          "user1",
           "conversation1",
         );
 
-        // Different user, same conversation
+        // Different user, same conversation - create separate conversation
+        await storage.createConversation({
+          id: "user2-conversation1",
+          resourceId: "test-resource",
+          userId: "user2",
+          title: "User2 Conversation 1",
+          metadata: {},
+        });
+
         await storage.addMessage(
           createMessage({
             role: "user",
             content: "Another user's message",
             createdAt: new Date(now - 1000).toISOString(),
           }),
-          "user2",
-          "conversation1",
+          "user2-conversation1",
         );
 
         // Same user, different conversation
@@ -255,7 +297,6 @@ describe("InMemoryStorage", () => {
             content: "Different conversation",
             createdAt: new Date(now).toISOString(),
           }),
-          "user1",
           "conversation2",
         );
       });
@@ -343,10 +384,10 @@ describe("InMemoryStorage", () => {
         };
 
         // Add all messages to storage
-        await timeFilterStorage.addMessage(msg1, "testuser", "testconv");
-        await timeFilterStorage.addMessage(msg2, "testuser", "testconv");
-        await timeFilterStorage.addMessage(msg3, "testuser", "testconv");
-        await timeFilterStorage.addMessage(msg4, "testuser", "testconv");
+        await timeFilterStorage.addMessage(msg1, "testconv");
+        await timeFilterStorage.addMessage(msg2, "testconv");
+        await timeFilterStorage.addMessage(msg3, "testconv");
+        await timeFilterStorage.addMessage(msg4, "testconv");
 
         // Verify all messages were added
         const allMessages = await timeFilterStorage.getMessages({
@@ -399,9 +440,34 @@ describe("InMemoryStorage", () => {
     describe("clearMessages", () => {
       beforeEach(async () => {
         // Setup test data
-        await storage.addMessage(createMessage(), "user1", "conversation1");
-        await storage.addMessage(createMessage(), "user1", "conversation2");
-        await storage.addMessage(createMessage(), "user2", "conversation1");
+        // Create conversations first
+        await storage.createConversation({
+          id: "conversation1",
+          resourceId: "test-resource",
+          userId: "user1",
+          title: "Test Conversation 1",
+          metadata: {},
+        });
+
+        await storage.createConversation({
+          id: "conversation2",
+          resourceId: "test-resource",
+          userId: "user1",
+          title: "Test Conversation 2",
+          metadata: {},
+        });
+
+        await storage.createConversation({
+          id: "user2-conversation1",
+          resourceId: "test-resource",
+          userId: "user2",
+          title: "User2 Conversation 1",
+          metadata: {},
+        });
+
+        await storage.addMessage(createMessage(), "conversation1");
+        await storage.addMessage(createMessage(), "conversation2");
+        await storage.addMessage(createMessage(), "user2-conversation1");
       });
 
       it("should clear messages for a specific user and conversation", async () => {
@@ -424,7 +490,7 @@ describe("InMemoryStorage", () => {
 
         const otherMessages2 = await storage.getMessages({
           userId: "user2",
-          conversationId: "conversation1",
+          conversationId: "user2-conversation1",
         });
         expect(otherMessages2).toHaveLength(1);
       });
@@ -449,7 +515,7 @@ describe("InMemoryStorage", () => {
         // Other users should be unaffected
         const otherUserMessages = await storage.getMessages({
           userId: "user2",
-          conversationId: "conversation1",
+          conversationId: "user2-conversation1",
         });
         expect(otherUserMessages).toHaveLength(1);
       });
@@ -693,7 +759,6 @@ describe("InMemoryStorage", () => {
 
         await storage.addMessage(
           createMessage({ content: "This will be deleted" }),
-          "user1",
           existingConversation.id,
         );
       });
@@ -736,14 +801,19 @@ describe("InMemoryStorage", () => {
       // Arrange
       const customStorage = new InMemoryStorage({ storageLimit: 1 });
 
-      // Act - Add two messages
-      await customStorage.addMessage(createMessage({ content: "First" }), "user1", "conversation1");
+      // Create conversation first
+      await customStorage.createConversation({
+        id: "conversation1",
+        resourceId: "test-resource",
+        userId: "user1",
+        title: "Test Conversation",
+        metadata: {},
+      });
 
-      await customStorage.addMessage(
-        createMessage({ content: "Second" }),
-        "user1",
-        "conversation1",
-      );
+      // Act - Add two messages
+      await customStorage.addMessage(createMessage({ content: "First" }), "conversation1");
+
+      await customStorage.addMessage(createMessage({ content: "Second" }), "conversation1");
 
       // Assert - Should only keep the most recent message
       const messages = await customStorage.getMessages({
