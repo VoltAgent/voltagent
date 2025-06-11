@@ -273,8 +273,13 @@ app.openapi(textRoute, async (c) => {
     const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
     const response = await agent.generateText(input, options);
+
+    // TODO: Fix this once we can force a change to the response type
+    const fixBadResponseTypeForBackwardsCompatibility = response as any;
     return c.json(
-      { success: true, data: response.text } satisfies z.infer<typeof TextResponseSchema>,
+      { success: true, data: fixBadResponseTypeForBackwardsCompatibility } satisfies z.infer<
+        typeof TextResponseSchema
+      >,
       200,
     );
   } catch (error) {
@@ -466,8 +471,14 @@ app.openapi(objectRoute, async (c) => {
     const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
 
     const response = await agent.generateObject(input, schemaInZodObject, options);
+
+    // TODO: Fix this once we can force a change to the response type
+    const fixBadResponseTypeForBackwardsCompatibility = response as any;
     return c.json(
-      { success: true, data: response.object } satisfies z.infer<typeof ObjectResponseSchema>,
+      {
+        success: true,
+        data: fixBadResponseTypeForBackwardsCompatibility,
+      } satisfies z.infer<typeof ObjectResponseSchema>,
       200,
     );
   } catch (error) {
