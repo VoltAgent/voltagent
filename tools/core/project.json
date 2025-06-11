@@ -1,0 +1,48 @@
+{
+  "name": "core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/core/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/core",
+        "main": "tools/core/src/index.ts",
+        "tsConfig": "tools/core/tsconfig.lib.json",
+        "assets": [
+          "tools/core/*.md",
+          {
+            "input": "./tools/core/src",
+            "glob": "**/!(*.ts)",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/core/src",
+            "glob": "**/*.d.ts",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/core",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./tools/core",
+            "glob": "executors.json",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/tools/core"
+      }
+    }
+  }
+}
