@@ -56,7 +56,7 @@ Unlike `LibSQLStorage`, `SupabaseMemory` **does not automatically create databas
 CREATE TABLE IF NOT EXISTS voltagent_memory_conversations (
     id TEXT PRIMARY KEY,
     resource_id TEXT NOT NULL,
-    user_id TEXT NOT NULL DEFAULT 'default',  -- NEW: Associates conversation with user
+    user_id TEXT,  -- Associates conversation with user (nullable)
     title TEXT,
     metadata JSONB, -- Use JSONB for efficient querying
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -71,6 +71,14 @@ ON voltagent_memory_conversations(resource_id);
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user
 ON voltagent_memory_conversations(user_id);
 
+-- Composite index for user_id + resource_id queries
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user_resource
+ON voltagent_memory_conversations(user_id, resource_id);
+
+-- Index for ordering by updated_at (most common query pattern)
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_updated_at
+ON voltagent_memory_conversations(updated_at DESC);
+
 -- Messages Table
 CREATE TABLE IF NOT EXISTS voltagent_memory_messages (
     conversation_id TEXT NOT NULL REFERENCES voltagent_memory_conversations(id) ON DELETE CASCADE,
@@ -79,13 +87,17 @@ CREATE TABLE IF NOT EXISTS voltagent_memory_messages (
     content TEXT NOT NULL, -- Consider JSONB if content is often structured
     type TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    -- Primary key changed: user_id removed, now derived through conversation relationship
+    -- Primary key: conversation_id + message_id ensures uniqueness within conversation
     PRIMARY KEY (conversation_id, message_id)
 );
 
--- Index for faster message retrieval
+-- Index for faster message retrieval (most common query pattern)
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_lookup
 ON voltagent_memory_messages(conversation_id, created_at);
+
+-- Index for message role filtering
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_role
+ON voltagent_memory_messages(conversation_id, role, created_at);
 
 -- Agent History Table (New Structured Format)
 CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history (

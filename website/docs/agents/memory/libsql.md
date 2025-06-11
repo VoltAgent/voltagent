@@ -69,7 +69,7 @@ const agent = new Agent({
 - `storageLimit` (number, optional): The maximum number of messages to retain per user/conversation thread. Older messages are automatically pruned when the limit is exceeded. Defaults to `100`.
 - `debug` (boolean, optional): Enables detailed logging from the storage provider to the console. Defaults to `false`.
 
-## User-Centric Conversation Management
+## Conversation Management
 
 The LibSQL provider includes enhanced support for managing conversations across multiple users:
 

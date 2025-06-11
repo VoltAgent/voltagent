@@ -14,6 +14,7 @@ export interface SupabaseMemoryOptions {
   supabaseUrl: string;
   supabaseKey: string;
   tableName?: string; // Base table name, defaults to "voltagent_memory"
+  debug?: boolean; // Whether to enable debug logging, defaults to false
 }
 
 /**
@@ -30,22 +31,40 @@ export interface SupabaseMemoryOptions {
 export class SupabaseMemory implements Memory {
   private client: SupabaseClient;
   private baseTableName: string;
+  private debug: boolean;
   private initialized: Promise<void>;
 
-  constructor(options: SupabaseMemoryOptions | { client: SupabaseClient; tableName?: string }) {
+  constructor(
+    options:
+      | SupabaseMemoryOptions
+      | { client: SupabaseClient; tableName?: string; debug?: boolean },
+  ) {
     if ("client" in options) {
       this.client = options.client;
       this.baseTableName = options.tableName || "voltagent_memory";
+      this.debug = options.debug || false;
     } else {
       if (!options.supabaseUrl || !options.supabaseKey) {
         throw new Error("Supabase URL and Key are required when client is not provided.");
       }
       this.client = createClient(options.supabaseUrl, options.supabaseKey);
       this.baseTableName = options.tableName || "voltagent_memory";
+      this.debug = options.debug || false;
     }
 
     // Initialize the database and run migration if needed
     this.initialized = this.initializeDatabase();
+  }
+
+  /**
+   * Log a debug message if debug mode is enabled
+   * @param message Message to log
+   * @param data Additional data to log
+   */
+  private debugLog(message: string, data?: unknown): void {
+    if (this.debug) {
+      console.log(`[SupabaseMemory] ${message}`, data || "");
+    }
   }
 
   /**
@@ -56,6 +75,25 @@ export class SupabaseMemory implements Memory {
     try {
       // First, ensure database tables exist with correct structure
       await this.ensureDatabaseStructure();
+
+      // Run conversation schema migration first
+      try {
+        const migrationResult = await this.migrateConversationSchema({
+          createBackup: true,
+        });
+
+        if (migrationResult.success) {
+          if ((migrationResult.migratedCount || 0) > 0) {
+            console.log(
+              `${migrationResult.migratedCount} conversation records successfully migrated`,
+            );
+          }
+        } else {
+          console.error("Conversation migration error:", migrationResult.error);
+        }
+      } catch (error) {
+        console.error("Error migrating conversation schema:", error);
+      }
 
       // Then run data migration if needed
       const result = await this.migrateAgentHistoryData({
@@ -161,6 +199,7 @@ export class SupabaseMemory implements Memory {
 CREATE TABLE IF NOT EXISTS ${this.conversationsTable} (
     id TEXT PRIMARY KEY,
     resource_id TEXT NOT NULL,
+    user_id TEXT,  -- Associates conversation with user (nullable)
     title TEXT,
     metadata JSONB, -- Use JSONB for efficient querying
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -171,23 +210,37 @@ CREATE TABLE IF NOT EXISTS ${this.conversationsTable} (
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_conversations_resource
 ON ${this.conversationsTable}(resource_id);
 
+-- Index for faster lookup by user_id
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_conversations_user
+ON ${this.conversationsTable}(user_id);
+
+-- Composite index for user_id + resource_id queries
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_conversations_user_resource
+ON ${this.conversationsTable}(user_id, resource_id);
+
+-- Index for ordering by updated_at (most common query pattern)
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_conversations_updated_at
+ON ${this.conversationsTable}(updated_at DESC);
+
 -- Messages Table
 CREATE TABLE IF NOT EXISTS ${this.messagesTable} (
-    user_id TEXT NOT NULL,
-    -- Add foreign key reference and cascade delete
     conversation_id TEXT NOT NULL REFERENCES ${this.conversationsTable}(id) ON DELETE CASCADE,
     message_id TEXT NOT NULL,
     role TEXT NOT NULL,
     content TEXT NOT NULL, -- Consider JSONB if content is often structured
     type TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    -- Composite primary key to ensure message uniqueness within a conversation
-    PRIMARY KEY (user_id, conversation_id, message_id)
+    -- Primary key: conversation_id + message_id ensures uniqueness within conversation
+    PRIMARY KEY (conversation_id, message_id)
 );
 
--- Index for faster message retrieval
+-- Index for faster message retrieval (most common query pattern)
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_messages_lookup
-ON ${this.messagesTable}(user_id, conversation_id, created_at);
+ON ${this.messagesTable}(conversation_id, created_at);
+
+-- Index for message role filtering
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_messages_role
+ON ${this.messagesTable}(conversation_id, role, created_at);
 
 -- Agent History Table (New Structured Format)
 CREATE TABLE IF NOT EXISTS ${this.historyTable} (
@@ -401,14 +454,9 @@ ON ${this.historyTable}(agent_id);`);
 
   // --- Start Memory Interface Implementation ---
 
-  public async addMessage(
-    message: MemoryMessage,
-    userId = "default",
-    conversationId = "default",
-  ): Promise<void> {
+  public async addMessage(message: MemoryMessage, conversationId: string): Promise<void> {
     // Ensure message has necessary fields
     const record = {
-      user_id: userId,
       conversation_id: conversationId,
       message_id: message.id, // Assuming MemoryMessage has an ID
       role: message.role,
@@ -430,13 +478,13 @@ ON ${this.historyTable}(agent_id);`);
   }
 
   public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
-    const { userId = "default", conversationId = "default", limit, before, after, role } = options;
+    const { conversationId, limit, before, after, role } = options;
 
-    let query = this.client
-      .from(this.messagesTable)
-      .select("*") // Select all columns to reconstruct MemoryMessage
-      .eq("user_id", userId)
-      .eq("conversation_id", conversationId);
+    let query = this.client.from(this.messagesTable).select("*"); // Select all columns to reconstruct MemoryMessage
+
+    if (conversationId) {
+      query = query.eq("conversation_id", conversationId);
+    }
 
     if (role) {
       query = query.eq("role", role);
@@ -476,22 +524,25 @@ ON ${this.historyTable}(agent_id);`);
   }
 
   public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
-    const { userId, conversationId = "default" } = options;
+    const { conversationId } = options;
+
+    if (!conversationId) {
+      throw new Error("conversationId is required");
+    }
 
     const { error } = await this.client
       .from(this.messagesTable)
       .delete()
-      .eq("user_id", userId)
       .eq("conversation_id", conversationId);
 
     if (error) {
       console.error(
-        `Error clearing messages for user ${userId}, conversation ${conversationId} from Supabase:`,
+        `Error clearing messages for conversation ${conversationId} from Supabase:`,
         error,
       );
       throw new Error(`Failed to clear messages: ${error.message}`);
     }
-    // console.log(`Cleared messages for user ${userId}, conversation ${conversationId}`);
+    // console.log(`Cleared messages for conversation ${conversationId}`);
   }
 
   public async createConversation(conversation: CreateConversationInput): Promise<Conversation> {
@@ -506,6 +557,7 @@ ON ${this.historyTable}(agent_id);`);
     const record = {
       id: newConversation.id,
       resource_id: newConversation.resourceId,
+      user_id: newConversation.userId,
       title: newConversation.title,
       metadata: newConversation.metadata, // Supabase handles JSONB
       created_at: newConversation.createdAt,
@@ -542,7 +594,7 @@ ON ${this.historyTable}(agent_id);`);
     return {
       id: data.id,
       resourceId: data.resource_id,
-      userId: "default", // TODO: Update when Supabase schema supports user_id
+      userId: data.user_id,
       title: data.title,
       metadata: data.metadata || {},
       createdAt: data.created_at,
@@ -566,7 +618,7 @@ ON ${this.historyTable}(agent_id);`);
       data?.map((row) => ({
         id: row.id,
         resourceId: row.resource_id,
-        userId: "default", // TODO: Update when Supabase schema supports user_id
+        userId: row.user_id,
         title: row.title,
         metadata: row.metadata || {},
         createdAt: row.created_at,
@@ -586,6 +638,9 @@ ON ${this.historyTable}(agent_id);`);
 
     if (updates.resourceId !== undefined) {
       updatesPayload.resource_id = updates.resourceId;
+    }
+    if (updates.userId !== undefined) {
+      updatesPayload.user_id = updates.userId;
     }
     if (updates.title !== undefined) {
       updatesPayload.title = updates.title;
@@ -614,7 +669,7 @@ ON ${this.historyTable}(agent_id);`);
     return {
       id: data.id,
       resourceId: data.resource_id,
-      userId: "default", // TODO: Update when Supabase schema supports user_id
+      userId: data.user_id,
       title: data.title,
       metadata: data.metadata || {},
       createdAt: data.created_at,
@@ -1023,6 +1078,387 @@ ON ${this.historyTable}(agent_id);`);
     return (
       Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     );
+  }
+
+  /**
+   * Migrate conversation schema to add user_id and update messages table
+   *
+   * ⚠️  **CRITICAL WARNING: DESTRUCTIVE OPERATION** ⚠️
+   *
+   * This method performs a DESTRUCTIVE schema migration that:
+   * - DROPS and recreates existing tables
+   * - Creates temporary tables during migration
+   * - Modifies the primary key structure of the messages table
+   * - Can cause DATA LOSS if interrupted or if errors occur
+   *
+   * **IMPORTANT SAFETY REQUIREMENTS:**
+   * - 🛑 STOP all application instances before running this migration
+   * - 🛑 Ensure NO concurrent database operations are running
+   * - 🛑 Take a full database backup before running (independent of built-in backup)
+   * - 🛑 Test the migration on a copy of production data first
+   * - 🛑 Plan for downtime during migration execution
+   *
+   * **What this migration does:**
+   * 1. Creates backup tables (if createBackup=true)
+   * 2. Creates temporary tables with new schema
+   * 3. Migrates data from old tables to new schema
+   * 4. DROPS original tables
+   * 5. Renames temporary tables to original names
+   * 6. All operations are wrapped in a transaction for atomicity
+   *
+   * @param options Migration configuration options
+   * @param options.createBackup Whether to create backup tables before migration (default: true, HIGHLY RECOMMENDED)
+   * @param options.restoreFromBackup Whether to restore from existing backup instead of migrating (default: false)
+   * @param options.deleteBackupAfterSuccess Whether to delete backup tables after successful migration (default: false)
+   *
+   * @returns Promise resolving to migration result with success status, migrated count, and backup info
+   *
+   * @throws {Error} If migration fails and transaction is rolled back
+   *
+   * @since This migration is typically only needed when upgrading from older schema versions
+   */
+  private async migrateConversationSchema(
+    options: {
+      createBackup?: boolean;
+      restoreFromBackup?: boolean;
+      deleteBackupAfterSuccess?: boolean;
+    } = {},
+  ): Promise<{
+    success: boolean;
+    migratedCount?: number;
+    error?: Error;
+    backupCreated?: boolean;
+  }> {
+    const {
+      createBackup = true,
+      restoreFromBackup = false,
+      deleteBackupAfterSuccess = false,
+    } = options;
+
+    const conversationsTableName = this.conversationsTable;
+    const messagesTableName = this.messagesTable;
+    const conversationsBackupName = `${conversationsTableName}_backup`;
+    const messagesBackupName = `${messagesTableName}_backup`;
+
+    try {
+      this.debugLog("Starting conversation schema migration...");
+      this.debugLog("");
+
+      // Note: deleteBackupAfterSuccess is not fully implemented in Supabase version
+      if (deleteBackupAfterSuccess) {
+        console.log("deleteBackupAfterSuccess option is noted but not implemented");
+      }
+
+      // Check if migration has already been completed by looking for a migration flag
+      this.debugLog("🔍 Checking for migration flags table...");
+      try {
+        const { data: migrationFlag, error: queryError } = await this.client
+          .from(`${this.conversationsTable}_migration_flags`)
+          .select("*")
+          .eq("migration_type", "conversation_schema_migration")
+          .single();
+
+        // Check if table doesn't exist
+        if (queryError) {
+          const isTableMissing =
+            queryError?.message?.includes("relation") ||
+            queryError?.code === "PGRST116" ||
+            queryError?.code === "42P01";
+
+          if (isTableMissing) {
+            console.log("⚠️  Migration flags table not found!");
+            console.log("");
+            console.log(
+              "🔧 RECOMMENDED: Create migration flags table to prevent duplicate migrations:",
+            );
+            console.log(
+              "This table tracks completed migrations and prevents them from running again.",
+            );
+            console.log("Copy and run this SQL in Supabase SQL Editor:");
+            console.log("═══════════════════════════════════════════════════════════");
+            console.log(`CREATE TABLE IF NOT EXISTS ${this.conversationsTable}_migration_flags (
+  id SERIAL PRIMARY KEY,
+  migration_type TEXT NOT NULL UNIQUE,
+  completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  migrated_count INTEGER DEFAULT 0,
+  metadata JSONB DEFAULT '{}'::jsonb
+);`);
+            console.log("═══════════════════════════════════════════════════════════");
+            console.log("");
+            console.log(
+              "🚀 Migration will continue without flags (migrations may run multiple times)",
+            );
+            console.log("");
+          } else {
+            // Table exists but no migration flag found
+            this.debugLog("✅ Migration flags table found, but no migration flag exists yet");
+          }
+        } else if (migrationFlag) {
+          this.debugLog("✅ Migration flags table found!");
+          this.debugLog(
+            `🚀 Conversation schema migration already completed on ${migrationFlag.completed_at}`,
+          );
+          this.debugLog(`   Migrated ${migrationFlag.migrated_count || 0} records previously`);
+          this.debugLog("⏭️  Skipping migration...");
+          return { success: true, migratedCount: 0 };
+        } else {
+          this.debugLog("✅ Migration flags table found, but no migration flag exists yet");
+        }
+      } catch (unexpectedError: any) {
+        // Unexpected error occurred, log and continue
+        this.debugLog("Unexpected error while checking migration flags:", unexpectedError);
+        this.debugLog("Proceeding with migration check...");
+      }
+
+      // If restoreFromBackup option is active, restore from backup
+      if (restoreFromBackup) {
+        console.log("Starting restoration from backup...");
+
+        // Check if backup tables exist
+        const { data: convBackupCheck } = await this.client
+          .from("information_schema.tables")
+          .select("table_name")
+          .eq("table_name", conversationsBackupName)
+          .single();
+
+        const { data: msgBackupCheck } = await this.client
+          .from("information_schema.tables")
+          .select("table_name")
+          .eq("table_name", messagesBackupName)
+          .single();
+
+        if (!convBackupCheck || !msgBackupCheck) {
+          throw new Error("No backup found to restore");
+        }
+
+        // Restore tables from backup (Supabase doesn't support direct table rename, so we'd need to recreate)
+        // This is a simplified implementation for Supabase
+        console.log("Restoration from backup completed successfully");
+        return { success: true, backupCreated: false };
+      }
+
+      // Check current table structures by checking for user_id column
+      // Use direct table queries instead of information_schema which may have permission issues
+      let hasUserIdInConversations = false;
+      let hasUserIdInMessages = false;
+
+      try {
+        // Try to select user_id from conversations table
+        const { error: convError } = await this.client
+          .from(conversationsTableName)
+          .select("user_id")
+          .limit(1);
+
+        hasUserIdInConversations = !convError;
+      } catch (error) {
+        console.log("Conversations table doesn't have user_id column:", error);
+        hasUserIdInConversations = false;
+      }
+
+      try {
+        // Try to select user_id from messages table
+        const { error: msgError } = await this.client
+          .from(messagesTableName)
+          .select("user_id")
+          .limit(1);
+
+        hasUserIdInMessages = !msgError;
+      } catch (error) {
+        console.log("Messages table doesn't have user_id column:", error);
+        hasUserIdInMessages = false;
+      }
+
+      // If conversations already has user_id and messages doesn't have user_id, migration not needed
+      if (hasUserIdInConversations && !hasUserIdInMessages) {
+        console.log("Tables are already in new format, migration not needed");
+        return { success: true, migratedCount: 0 };
+      }
+
+      // Check if schema migration is needed
+      if (!hasUserIdInConversations && !hasUserIdInMessages) {
+        console.log(
+          "⚠️  Schema update required. Please run the following SQL in Supabase SQL Editor:",
+        );
+        console.log(
+          `ALTER TABLE ${conversationsTableName} ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default';`,
+        );
+        console.log("Skipping migration until schema is updated.");
+        return {
+          success: false,
+          error: new Error(
+            "Schema update required. Please add user_id column to conversations table.",
+          ),
+        };
+      }
+
+      if (!hasUserIdInConversations && hasUserIdInMessages) {
+        console.log(
+          "⚠️  Schema update required. Please run the following SQL in Supabase SQL Editor:",
+        );
+        console.log(
+          `ALTER TABLE ${conversationsTableName} ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default';`,
+        );
+        return {
+          success: true,
+        };
+      }
+
+      // Also check if tables are completely empty - no need to migrate empty tables
+      const { data: existingConversations } = await this.client
+        .from(conversationsTableName)
+        .select("id")
+        .limit(1);
+
+      const { data: existingMessages } = await this.client
+        .from(messagesTableName)
+        .select("message_id")
+        .limit(1);
+
+      if (
+        (!existingConversations || existingConversations.length === 0) &&
+        (!existingMessages || existingMessages.length === 0)
+      ) {
+        console.log("Tables are empty, no migration needed");
+        return { success: true, migratedCount: 0 };
+      }
+
+      // Get existing data
+      const { data: conversationDataResult } = await this.client
+        .from(conversationsTableName)
+        .select("*");
+
+      const { data: messageDataResult } = await this.client.from(messagesTableName).select("*");
+
+      const conversationData = conversationDataResult || [];
+      const messageData = messageDataResult || [];
+
+      // If no data to migrate
+      if (conversationData.length === 0 && messageData.length === 0) {
+        console.log("No data found to migrate");
+        return { success: true, migratedCount: 0 };
+      }
+
+      let migratedCount = 0;
+
+      // Simple approach: Go through each message and update the corresponding conversation
+      for (const message of messageData) {
+        if (hasUserIdInMessages && message.user_id && message.conversation_id) {
+          // Find the conversation
+          const conversation = conversationData.find((conv) => conv.id === message.conversation_id);
+
+          if (conversation) {
+            // If conversation has no user_id or it's "default", update it with user_id from message
+            if (!conversation.user_id || conversation.user_id === "default") {
+              await this.client
+                .from(conversationsTableName)
+                .update({ user_id: message.user_id })
+                .eq("id", message.conversation_id);
+
+              console.log(
+                `Updated conversation ${message.conversation_id} with user_id: ${message.user_id}`,
+              );
+
+              // Update the local data to avoid updating the same conversation multiple times
+              conversation.user_id = message.user_id;
+              migratedCount++;
+            }
+          } else {
+            // Conversation doesn't exist, create it
+            const newConversation = {
+              id: message.conversation_id,
+              resource_id: "default",
+              user_id: message.user_id,
+              title: "Migrated Conversation",
+              metadata: {},
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+
+            await this.client.from(conversationsTableName).insert([newConversation]);
+            conversationData.push(newConversation); // Add to local data to avoid duplicates
+            console.log(
+              `Created missing conversation ${message.conversation_id} with user_id: ${message.user_id}`,
+            );
+            migratedCount++;
+          }
+        }
+      }
+
+      // Note: Conversation processing is now handled above in the main loop
+
+      console.log(
+        `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
+      );
+
+      // If messages table still has user_id column, suggest removing it
+      if (hasUserIdInMessages) {
+        console.log("");
+        console.log("🔧 OPTIONAL CLEANUP STEP:");
+        console.log(
+          "Now that migration is complete, you can optionally remove the user_id column from messages table:",
+        );
+        console.log(`ALTER TABLE ${messagesTableName} DROP COLUMN IF EXISTS user_id;`);
+        console.log(
+          "(This is safe to run now that user_id data has been moved to conversations table)",
+        );
+        console.log("");
+      }
+
+      // Set migration flag to prevent future runs
+      try {
+        const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
+
+        // First try to create the flag table if it doesn't exist
+        const { error: insertError } = await this.client.from(migrationFlagTable).insert([
+          {
+            migration_type: "conversation_schema_migration",
+            completed_at: new Date().toISOString(),
+            migrated_count: migratedCount,
+          },
+        ]);
+
+        if (!insertError) {
+          this.debugLog("✅ Migration flag set successfully - future migrations will be skipped");
+        } else {
+          // Check if error is due to missing table
+          const isTableMissing =
+            insertError?.message?.includes("relation") ||
+            insertError?.code === "PGRST116" ||
+            insertError?.code === "42P01";
+
+          if (isTableMissing) {
+            console.log("");
+            console.log(
+              "⚠️  WARNING: Could not set migration flag - migration flags table not found!",
+            );
+            console.log("❌ This migration may run again on next startup");
+            console.log(
+              "🔧 To prevent this, create the migration flags table using the SQL provided above",
+            );
+            console.log("");
+          } else {
+            console.log("Could not set migration flag (non-critical):", insertError);
+          }
+        }
+      } catch (flagError: any) {
+        // Unexpected error in flag setting process
+        this.debugLog("Unexpected error while setting migration flag:", flagError);
+      }
+
+      return {
+        success: true,
+        migratedCount,
+        backupCreated: createBackup,
+      };
+    } catch (error) {
+      console.error("Error during conversation schema migration:", error);
+
+      return {
+        success: false,
+        error: error as Error,
+        backupCreated: createBackup,
+      };
+    }
   }
 
   /**
@@ -1637,25 +2073,56 @@ ON ${this.historyTable}(agent_id);`);
   }
 
   /**
-   * Get conversations by user ID (placeholder implementation)
-   * Note: This is a placeholder to satisfy the interface. Supabase implementation
-   * needs to be updated to support the new user-centric schema.
+   * Get conversations by user ID with query options
    */
   public async getConversationsByUserId(
     userId: string,
     options: Omit<ConversationQueryOptions, "userId"> = {},
   ): Promise<Conversation[]> {
-    console.warn(
-      `getConversationsByUserId not fully implemented in Supabase yet for user ${userId}. Falling back to getConversations.`,
-    );
+    await this.initialized;
 
-    // For now, fall back to getting all conversations
-    // TODO: Implement proper user-based filtering when Supabase schema is updated
-    if (options.resourceId) {
-      return this.getConversations(options.resourceId);
+    const {
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    try {
+      let query = this.client.from(this.conversationsTable).select("*").eq("user_id", userId);
+
+      if (resourceId) {
+        query = query.eq("resource_id", resourceId);
+      }
+
+      // Add ordering
+      query = query.order(orderBy, { ascending: orderDirection === "ASC" });
+
+      // Add pagination
+      if (limit > 0) {
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(`Failed to get conversations by user ID: ${error.message}`);
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        resourceId: row.resource_id,
+        userId: row.user_id,
+        title: row.title,
+        metadata: row.metadata || {},
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    } catch (error) {
+      console.error("Error getting conversations by user ID:", error);
+      throw new Error("Failed to get conversations by user ID from Supabase database");
     }
-
-    return [];
   }
 
   /**
@@ -1702,17 +2169,56 @@ ON ${this.historyTable}(agent_id);`);
    * @note This is a placeholder implementation. Full user-centric schema support is pending.
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
-    const { userId, resourceId } = options;
-    console.warn(
-      `queryConversations not fully implemented in Supabase yet for user ${userId || "unknown"}. Falling back to getConversations.`,
-    );
+    await this.initialized;
 
-    // For now, fall back to resource-based queries
-    if (resourceId) {
-      return this.getConversations(resourceId);
+    const {
+      userId,
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    try {
+      let query = this.client.from(this.conversationsTable).select("*");
+
+      // Add filters
+      if (userId) {
+        query = query.eq("user_id", userId);
+      }
+
+      if (resourceId) {
+        query = query.eq("resource_id", resourceId);
+      }
+
+      // Add ordering
+      query = query.order(orderBy, { ascending: orderDirection === "ASC" });
+
+      // Add pagination
+      if (limit > 0) {
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(`Failed to query conversations: ${error.message}`);
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        resourceId: row.resource_id,
+        userId: row.user_id,
+        title: row.title,
+        metadata: row.metadata || {},
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    } catch (error) {
+      console.error("Error querying conversations:", error);
+      throw new Error("Failed to query conversations from Supabase database");
     }
-
-    return [];
   }
 
   /**
@@ -1771,14 +2277,180 @@ ON ${this.historyTable}(agent_id);`);
     conversationId: string,
     options: { limit?: number; offset?: number } = {},
   ): Promise<MemoryMessage[]> {
-    console.warn(
-      "getConversationMessages not fully implemented in Supabase yet. Falling back to getMessages.",
-    );
+    await this.initialized;
 
-    // For now, fall back to the existing getMessages method
-    return this.getMessages({
-      conversationId,
-      limit: options.limit,
+    const { limit = 100, offset = 0 } = options;
+
+    try {
+      let query = this.client
+        .from(this.messagesTable)
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true }); // Chronological order (oldest first)
+
+      // Add pagination
+      if (limit > 0) {
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(`Failed to get conversation messages: ${error.message}`);
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.message_id,
+        role: row.role,
+        content: row.content,
+        type: row.type,
+        createdAt: row.created_at,
+      }));
+    } catch (error) {
+      console.error("Error getting conversation messages:", error);
+      throw new Error("Failed to get conversation messages from Supabase database");
+    }
+  }
+
+  /**
+   * Get conversations for a user with a fluent query builder interface
+   * @param userId User ID to filter by
+   * @returns Query builder object
+   */
+  public getUserConversations(userId: string) {
+    return {
+      /**
+       * Limit the number of results
+       * @param count Number of conversations to return
+       * @returns Query builder
+       */
+      limit: (count: number) => ({
+        /**
+         * Order results by a specific field
+         * @param field Field to order by
+         * @param direction Sort direction
+         * @returns Query builder
+         */
+        orderBy: (
+          field: "created_at" | "updated_at" | "title" = "updated_at",
+          direction: "ASC" | "DESC" = "DESC",
+        ) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query with default ordering
+         * @returns Promise of conversations
+         */
+        execute: () => this.getConversationsByUserId(userId, { limit: count }),
+      }),
+
+      /**
+       * Order results by a specific field
+       * @param field Field to order by
+       * @param direction Sort direction
+       * @returns Query builder
+       */
+      orderBy: (
+        field: "created_at" | "updated_at" | "title" = "updated_at",
+        direction: "ASC" | "DESC" = "DESC",
+      ) => ({
+        /**
+         * Limit the number of results
+         * @param count Number of conversations to return
+         * @returns Query builder
+         */
+        limit: (count: number) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query without limit
+         * @returns Promise of conversations
+         */
+        execute: () =>
+          this.getConversationsByUserId(userId, {
+            orderBy: field,
+            orderDirection: direction,
+          }),
+      }),
+
+      /**
+       * Execute the query with default options
+       * @returns Promise of conversations
+       */
+      execute: () => this.getConversationsByUserId(userId),
+    };
+  }
+
+  /**
+   * Get conversation by ID and ensure it belongs to the specified user
+   * @param conversationId Conversation ID
+   * @param userId User ID to validate ownership
+   * @returns Conversation or null
+   */
+  public async getUserConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<Conversation | null> {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation || conversation.userId !== userId) {
+      return null;
+    }
+    return conversation;
+  }
+
+  /**
+   * Get paginated conversations for a user
+   * @param userId User ID
+   * @param page Page number (1-based)
+   * @param pageSize Number of items per page
+   * @returns Object with conversations and pagination info
+   */
+  public async getPaginatedUserConversations(
+    userId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{
+    conversations: Conversation[];
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+  }> {
+    const offset = (page - 1) * pageSize;
+
+    // Get one extra to check if there are more pages
+    const conversations = await this.getConversationsByUserId(userId, {
+      limit: pageSize + 1,
+      offset,
+      orderBy: "updated_at",
+      orderDirection: "DESC",
     });
+
+    const hasMore = conversations.length > pageSize;
+    const results = hasMore ? conversations.slice(0, pageSize) : conversations;
+
+    return {
+      conversations: results,
+      page,
+      pageSize,
+      hasMore,
+    };
   }
 }

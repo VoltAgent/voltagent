@@ -284,11 +284,28 @@ export class PostgresStorage implements Memory {
         ON ${this.options.tablePrefix}_conversations(resource_id)
       `);
 
-      // Create index for conversations by user_id
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_conversations_user
-        ON ${this.options.tablePrefix}_conversations(user_id)
-      `);
+      // Create index for conversations by user_id (only if user_id column exists)
+      try {
+        const columnCheck = await client.query(
+          `
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = $1 AND column_name = 'user_id'
+          `,
+          [`${this.options.tablePrefix}_conversations`],
+        );
+
+        const hasUserIdColumn = columnCheck.rows.length > 0;
+
+        if (hasUserIdColumn) {
+          await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_conversations_user
+            ON ${this.options.tablePrefix}_conversations(user_id)
+          `);
+        }
+      } catch (error) {
+        this.debug("Error creating user_id index, will be created after migration:", error);
+      }
 
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_messages_lookup
@@ -466,6 +483,46 @@ export class PostgresStorage implements Memory {
     try {
       this.debug("Starting conversation schema migration...");
 
+      // Check if migration has already been completed by looking for a migration flag
+      try {
+        const migrationFlagTable = `${conversationsTableName}_migration_flags`;
+
+        const result = await client.query(
+          `SELECT * FROM ${migrationFlagTable} WHERE migration_type = $1`,
+          ["conversation_schema_migration"],
+        );
+
+        if (result.rows.length > 0) {
+          const migrationFlag = result.rows[0];
+          this.debug("Conversation schema migration already completed");
+          this.debug(`Migration completed on: ${migrationFlag.completed_at}`);
+          this.debug(`Migrated ${migrationFlag.migrated_count || 0} records previously`);
+          return { success: true, migratedCount: 0 };
+        }
+
+        this.debug("Migration flags table found, but no migration flag exists yet");
+      } catch (flagError) {
+        // Migration flag table doesn't exist, create it
+        this.debug("Migration flag table not found, creating it...");
+        this.debug("Original error:", flagError);
+
+        try {
+          await client.query(`
+            CREATE TABLE IF NOT EXISTS ${conversationsTableName}_migration_flags (
+              id SERIAL PRIMARY KEY,
+              migration_type TEXT NOT NULL UNIQUE,
+              completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+              migrated_count INTEGER DEFAULT 0,
+              metadata JSONB DEFAULT '{}'::jsonb
+            )
+          `);
+          this.debug("Migration flags table created successfully");
+        } catch (createError) {
+          this.debug("Failed to create migration flags table:", createError);
+          // Continue with migration even if flag table creation fails
+        }
+      }
+
       // If restoreFromBackup option is active, restore from backup
       if (restoreFromBackup) {
         this.debug("Starting restoration from backup...");
@@ -506,7 +563,7 @@ export class PostgresStorage implements Memory {
         `
         SELECT column_name 
         FROM information_schema.columns 
-        WHERE table_name = $1 AND column_name = "user_id"
+        WHERE table_name = $1 AND column_name = 'user_id'
       `,
         [conversationsTableName],
       );
@@ -515,7 +572,7 @@ export class PostgresStorage implements Memory {
         `
         SELECT column_name 
         FROM information_schema.columns 
-        WHERE table_name = $1 AND column_name = "user_id"
+        WHERE table_name = $1 AND column_name = 'user_id'
       `,
         [messagesTableName],
       );
@@ -616,41 +673,107 @@ export class PostgresStorage implements Memory {
       `);
 
       let migratedCount = 0;
+      const createdConversations = new Set<string>();
 
-      // Migrate conversations data
-      for (const row of conversationData) {
-        let userId = "default"; // Default user_id for existing conversations
+      // Process each message and create conversation if needed
+      for (const row of messageData) {
+        const conversationId = row.conversation_id;
+        let userId = "default";
 
-        // If the table already has user_id, use it
-        if (hasUserIdInConversations && row.user_id) {
+        // Get user_id from message if old schema has it
+        if (hasUserIdInMessages && row.user_id) {
           userId = row.user_id;
         }
 
-        await client.query(
-          `INSERT INTO ${tempConversationsTable} 
-           (id, resource_id, user_id, title, metadata, created_at, updated_at) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [
-            row.id,
-            row.resource_id,
-            userId,
-            row.title,
-            row.metadata,
-            row.created_at,
-            row.updated_at,
-          ],
-        );
-        migratedCount++;
-      }
+        // Check if conversation already exists (either migrated or auto-created)
+        if (!createdConversations.has(conversationId)) {
+          // Check if conversation exists in original conversations data
+          const existingConversation = conversationData.find((conv) => conv.id === conversationId);
 
-      // Migrate messages data
-      for (const row of messageData) {
+          if (existingConversation) {
+            // Migrate existing conversation
+            let convUserId = userId; // Use user_id from message
+
+            // If conversation already has user_id, use it instead
+            if (hasUserIdInConversations && existingConversation.user_id) {
+              convUserId = existingConversation.user_id;
+            }
+
+            await client.query(
+              `INSERT INTO ${tempConversationsTable} 
+               (id, resource_id, user_id, title, metadata, created_at, updated_at) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                existingConversation.id,
+                existingConversation.resource_id,
+                convUserId,
+                existingConversation.title,
+                existingConversation.metadata,
+                existingConversation.created_at,
+                existingConversation.updated_at,
+              ],
+            );
+          } else {
+            // Create new conversation from message data
+            const now = new Date().toISOString();
+
+            await client.query(
+              `INSERT INTO ${tempConversationsTable} 
+               (id, resource_id, user_id, title, metadata, created_at, updated_at) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                conversationId,
+                "default", // Default resource_id for auto-created conversations
+                userId,
+                "Migrated Conversation", // Default title
+                JSON.stringify({}), // Empty metadata
+                now,
+                now,
+              ],
+            );
+          }
+
+          createdConversations.add(conversationId);
+          migratedCount++;
+        }
+
+        // Migrate the message (without user_id column)
         await client.query(
           `INSERT INTO ${tempMessagesTable} 
            (conversation_id, message_id, role, content, type, created_at) 
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [row.conversation_id, row.message_id, row.role, row.content, row.type, row.created_at],
         );
+      }
+
+      // Handle any conversations that exist but have no messages
+      for (const row of conversationData) {
+        const conversationId = row.id;
+
+        if (!createdConversations.has(conversationId)) {
+          let userId = "default";
+
+          // If conversation already has user_id, use it
+          if (hasUserIdInConversations && row.user_id) {
+            userId = row.user_id;
+          }
+
+          await client.query(
+            `INSERT INTO ${tempConversationsTable} 
+             (id, resource_id, user_id, title, metadata, created_at, updated_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              row.id,
+              row.resource_id,
+              userId,
+              row.title,
+              row.metadata,
+              row.created_at,
+              row.updated_at,
+            ],
+          );
+          migratedCount++;
+        }
       }
 
       // Replace old tables with new ones
@@ -670,6 +793,22 @@ export class PostgresStorage implements Memory {
         ON DELETE CASCADE
       `);
 
+      // Create indexes for the new schema
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_conversations_resource
+        ON ${conversationsTableName}(resource_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_conversations_user
+        ON ${conversationsTableName}(user_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_messages_lookup
+        ON ${messagesTableName}(conversation_id, created_at)
+      `);
+
       // Commit transaction
       await client.query("COMMIT");
 
@@ -677,6 +816,24 @@ export class PostgresStorage implements Memory {
       if (deleteBackupAfterSuccess) {
         await client.query(`DROP TABLE IF EXISTS ${conversationsBackupName} CASCADE`);
         await client.query(`DROP TABLE IF EXISTS ${messagesBackupName} CASCADE`);
+      }
+
+      // Set migration flag to prevent future runs
+      try {
+        const migrationFlagTable = `${conversationsTableName}_migration_flags`;
+
+        await client.query(
+          `INSERT INTO ${migrationFlagTable} 
+           (migration_type, migrated_count) 
+           VALUES ($1, $2)
+           ON CONFLICT (migration_type) DO UPDATE 
+           SET migrated_count = $2, completed_at = timezone('utc'::text, now())`,
+          ["conversation_schema_migration", migratedCount],
+        );
+
+        this.debug("Migration flag set successfully");
+      } catch (flagSetError) {
+        this.debug("Could not set migration flag (non-critical):", flagSetError);
       }
 
       this.debug(
