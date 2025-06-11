@@ -1,5 +1,43 @@
 # @voltagent/core
 
+## 0.1.33
+
+### Patch Changes
+
+- [#236](https://github.com/VoltAgent/voltagent/pull/236) [`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Remove userId parameter from addMessage method
+
+  Simplified the `addMessage` method signature by removing the `userId` parameter. This change makes the API cleaner and more consistent with the conversation-based approach where user context is handled at the conversation level.
+
+  ### Changes
+
+  - **Removed**: `userId` parameter from `addMessage` method
+  - **Before**: `addMessage(message: MemoryMessage, userId: string, conversationId: string)`
+  - **After**: `addMessage(message: MemoryMessage, conversationId: string)`
+
+  ### Migration Guide
+
+  If you were calling `addMessage` with a `userId` parameter, simply remove it:
+
+  ```typescript
+  // Before
+  await memory.addMessage(message, conversationId, userId);
+
+  // After
+  await memory.addMessage(message, conversationId);
+  ```
+
+  ### Rationale
+
+  User context is now properly managed at the conversation level, making the API more intuitive and reducing parameter complexity. The user association is handled through the conversation's `userId` property instead of requiring it on every message operation.
+
+  **Breaking Change:**
+
+  This is a minor breaking change. Update your `addMessage` calls to remove the `userId` parameter.
+
+- [#235](https://github.com/VoltAgent/voltagent/pull/235) [`16c2a86`](https://github.com/VoltAgent/voltagent/commit/16c2a863d3ecdc09f09219bd40f2dbf1d789194d) Thanks [@alasano](https://github.com/alasano)! - fix: onHandoff hook invocation to pass arguments as object instead of positional parameters
+
+- [#233](https://github.com/VoltAgent/voltagent/pull/233) [`0d85f0e`](https://github.com/VoltAgent/voltagent/commit/0d85f0e960dbc6e8df6a79a16c775ca7a34043bb) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: adding in missing changeset from [PR #226](https://github.com/VoltAgent/voltagent/pull/226)
+
 ## 0.1.32
 
 ### Patch Changes

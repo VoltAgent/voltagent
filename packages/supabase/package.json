@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/supabase",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "VoltAgent Supabase - Supabase Memory provider integration for VoltAgent",
   "license": "MIT",
   "exports": {
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
-    "@voltagent/core": "^0.1.32"
+    "@voltagent/core": "^0.1.33"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

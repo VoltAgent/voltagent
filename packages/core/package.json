@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/core",
-  "version": "0.1.32",
+  "version": "0.1.33",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
   "license": "MIT",
   "exports": {
