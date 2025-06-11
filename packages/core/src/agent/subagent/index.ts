@@ -163,7 +163,7 @@ ${agentsMemory || "No previous agent interactions available."}
     try {
       // Call onHandoff hook if source agent is provided
       if (sourceAgent && targetAgent.hooks) {
-        await targetAgent.hooks.onHandoff?.(targetAgent, sourceAgent);
+        await targetAgent.hooks.onHandoff?.({ agent: targetAgent, source: sourceAgent });
       }
 
       // Get relevant context from memory (to be passed from Agent class)
