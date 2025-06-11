@@ -251,9 +251,9 @@ Alternatively, you can pass an existing Supabase client:
 - `client` (SupabaseClient, required when not using supabaseUrl/supabaseKey): An existing Supabase client instance.
 - `tableName` (string, optional): Table name prefix when using existing client.
 
-## User-Centric Conversation Management
+## Conversation Management
 
-The Supabase provider supports user-centric conversation management similar to other storage providers:
+The Supabase provider supports conversation management similar to other storage providers:
 
 ```typescript
 // Get conversations for a specific user
@@ -367,58 +367,6 @@ while (hasMore) {
 - `offset` (optional): Number of messages to skip for pagination (default: 0)
 
 Messages are returned in chronological order (oldest first) for natural conversation flow.
-
-## Row Level Security (RLS)
-
-For production applications, especially if using the `anon` key, it is **highly recommended** to enable Row Level Security (RLS) on the VoltAgent memory tables (`voltagent_memory_messages`, `voltagent_memory_conversations`, etc.) and define appropriate policies. This ensures users can only access their own conversation data.
-
-Example RLS policies:
-
-```sql
--- Enable RLS on conversations table
-ALTER TABLE voltagent_memory_conversations ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see their own conversations
-CREATE POLICY "Users can view own conversations" ON voltagent_memory_conversations
-  FOR SELECT USING (auth.uid()::text = user_id);
-
--- Policy: Users can insert their own conversations
-CREATE POLICY "Users can insert own conversations" ON voltagent_memory_conversations
-  FOR INSERT WITH CHECK (auth.uid()::text = user_id);
-
--- Enable RLS on messages table
-ALTER TABLE voltagent_memory_messages ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see messages from their conversations
-CREATE POLICY "Users can view own messages" ON voltagent_memory_messages
-  FOR SELECT USING (
-    conversation_id IN (
-      SELECT id FROM voltagent_memory_conversations
-      WHERE user_id = auth.uid()::text
-    )
-  );
-
--- Policy: Users can insert messages to their conversations
-CREATE POLICY "Users can insert own messages" ON voltagent_memory_messages
-  FOR INSERT WITH CHECK (
-    conversation_id IN (
-      SELECT id FROM voltagent_memory_conversations
-      WHERE user_id = auth.uid()::text
-    )
-  );
-```
-
-Refer to the [Supabase RLS documentation](https://supabase.com/docs/guides/auth/row-level-security) for detailed guidance on setting up policies.
-
-## Current Limitations
-
-**Note:** The Supabase provider is currently in development and has some limitations:
-
-- `getConversationsByUserId()` is not fully implemented and falls back to `getConversations()`
-- `queryConversations()` is not fully implemented and falls back to `getConversations()`
-- `getConversationMessages()` is not fully implemented and falls back to `getMessages()`
-
-These methods will be fully implemented in future releases. The basic memory functionality (adding/getting messages, creating conversations) works as expected.
 
 ## Use Cases
 

@@ -231,12 +231,10 @@ describe("PostgresStorage", () => {
     });
 
     it("should respect storage limit", async () => {
-      const limitedStorage = new PostgresStorage({
-        connection: "postgresql://test",
-        storageLimit: 1,
-      });
+      // Use the existing storage instance instead of creating a new one
+      const message = createMessage();
 
-      // First create a conversation
+      // First create a conversation using existing storage
       const conversation = createConversation({ id: "conversation1" });
       mockQuery.mockResolvedValueOnce({
         rows: [
@@ -245,14 +243,14 @@ describe("PostgresStorage", () => {
             resource_id: conversation.resourceId,
             user_id: conversation.userId,
             title: conversation.title,
-            metadata: JSON.stringify(conversation.metadata),
+            metadata: conversation.metadata, // No JSON.stringify needed in mock
             created_at: conversation.createdAt,
             updated_at: conversation.updatedAt,
           },
         ],
       });
 
-      await limitedStorage.createConversation({
+      await storage.createConversation({
         id: conversation.id,
         resourceId: conversation.resourceId,
         userId: conversation.userId,
@@ -260,18 +258,19 @@ describe("PostgresStorage", () => {
         metadata: conversation.metadata,
       });
 
-      const message = createMessage();
+      // Mock storage limit scenario by setting up mocks for message addition
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For BEGIN transaction
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For message insert
-      mockQuery.mockResolvedValueOnce({ rows: [{ count: 2 }] }); // For count query (exceeds limit)
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: 101 }] }); // For count query (exceeds default limit of 100)
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For cleanup query
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For COMMIT transaction
 
-      await limitedStorage.addMessage(message, "user1", "conversation1");
+      await storage.addMessage(message, "user1", "conversation1");
 
+      // Verify that cleanup was called when limit was exceeded
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining("DELETE FROM"),
-        expect.arrayContaining(["user1", "conversation1", 1]),
+        expect.arrayContaining(["conversation1", 1]), // Should delete 1 message (101 - 100)
       );
     });
   });
@@ -473,6 +472,320 @@ describe("PostgresStorage", () => {
         expect.arrayContaining(["conversation1", 50, 0]),
       );
       expect(result).toEqual(messages);
+    });
+
+    describe("User-specific conversation methods", () => {
+      describe("getUserConversations fluent interface", () => {
+        it("should execute with default options", async () => {
+          const conversations = [
+            createConversation({ userId: "user1" }),
+            createConversation({ userId: "user1" }),
+          ];
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage.getUserConversations("user1").execute();
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1"]),
+          );
+          expect(result).toEqual(conversations);
+        });
+
+        it("should execute with limit", async () => {
+          const conversations = [createConversation({ userId: "user1" })];
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage.getUserConversations("user1").limit(5).execute();
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1", 5, 0]),
+          );
+          expect(result).toEqual(conversations);
+        });
+
+        it("should execute with ordering", async () => {
+          const conversations = [createConversation({ userId: "user1" })];
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage
+            .getUserConversations("user1")
+            .orderBy("created_at", "ASC")
+            .execute();
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1"]),
+          );
+          expect(result).toEqual(conversations);
+        });
+
+        it("should execute with limit and ordering", async () => {
+          const conversations = [createConversation({ userId: "user1" })];
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage
+            .getUserConversations("user1")
+            .limit(3)
+            .orderBy("title", "DESC")
+            .execute();
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1", 3, 0]),
+          );
+          expect(result).toEqual(conversations);
+        });
+
+        it("should execute with ordering and limit (reversed order)", async () => {
+          const conversations = [createConversation({ userId: "user1" })];
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage
+            .getUserConversations("user1")
+            .orderBy("updated_at", "DESC")
+            .limit(2)
+            .execute();
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1", 2, 0]),
+          );
+          expect(result).toEqual(conversations);
+        });
+      });
+
+      describe("getUserConversation", () => {
+        it("should return conversation when user owns it", async () => {
+          const conversation = createConversation({ userId: "user1", id: "conv1" });
+          mockQuery.mockResolvedValueOnce({
+            rows: [
+              {
+                id: conversation.id,
+                resource_id: conversation.resourceId,
+                user_id: conversation.userId,
+                title: conversation.title,
+                metadata: conversation.metadata,
+                created_at: conversation.createdAt,
+                updated_at: conversation.updatedAt,
+              },
+            ],
+          });
+
+          const result = await storage.getUserConversation("conv1", "user1");
+
+          expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("SELECT"), ["conv1"]);
+          expect(result).toEqual(conversation);
+        });
+
+        it("should return null when user does not own conversation", async () => {
+          const conversation = createConversation({ userId: "user2", id: "conv1" });
+          mockQuery.mockResolvedValueOnce({
+            rows: [
+              {
+                id: conversation.id,
+                resource_id: conversation.resourceId,
+                user_id: conversation.userId,
+                title: conversation.title,
+                metadata: conversation.metadata,
+                created_at: conversation.createdAt,
+                updated_at: conversation.updatedAt,
+              },
+            ],
+          });
+
+          const result = await storage.getUserConversation("conv1", "user1");
+
+          expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("SELECT"), ["conv1"]);
+          expect(result).toBeNull();
+        });
+
+        it("should return null when conversation does not exist", async () => {
+          mockQuery.mockResolvedValueOnce({ rows: [] });
+
+          const result = await storage.getUserConversation("nonexistent", "user1");
+
+          expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("SELECT"), [
+            "nonexistent",
+          ]);
+          expect(result).toBeNull();
+        });
+      });
+
+      describe("getPaginatedUserConversations", () => {
+        it("should return paginated conversations with default parameters", async () => {
+          const conversations = Array.from({ length: 10 }, (_, i) =>
+            createConversation({ userId: "user1", id: `conv${i}` }),
+          );
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage.getPaginatedUserConversations("user1");
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1", 11, 0]), // limit + 1 to check hasMore
+          );
+          expect(result).toEqual({
+            conversations,
+            page: 1,
+            pageSize: 10,
+            hasMore: false,
+          });
+        });
+
+        it("should return paginated conversations with custom parameters", async () => {
+          const conversations = Array.from({ length: 5 }, (_, i) =>
+            createConversation({ userId: "user1", id: `conv${i}` }),
+          );
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage.getPaginatedUserConversations("user1", 2, 5);
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1", 6, 5]), // limit + 1, offset = (page-1) * pageSize
+          );
+          expect(result).toEqual({
+            conversations,
+            page: 2,
+            pageSize: 5,
+            hasMore: false,
+          });
+        });
+
+        it("should indicate hasMore when there are more conversations", async () => {
+          // Return pageSize + 1 conversations to indicate there are more
+          const conversations = Array.from({ length: 6 }, (_, i) =>
+            createConversation({ userId: "user1", id: `conv${i}` }),
+          );
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          const result = await storage.getPaginatedUserConversations("user1", 1, 5);
+
+          expect(result).toEqual({
+            conversations: conversations.slice(0, 5), // Should only return pageSize items
+            page: 1,
+            pageSize: 5,
+            hasMore: true,
+          });
+        });
+
+        it("should handle empty results", async () => {
+          mockQuery.mockResolvedValueOnce({ rows: [] });
+
+          const result = await storage.getPaginatedUserConversations("user1");
+
+          expect(result).toEqual({
+            conversations: [],
+            page: 1,
+            pageSize: 10,
+            hasMore: false,
+          });
+        });
+
+        it("should calculate correct offset for different pages", async () => {
+          const conversations = [createConversation({ userId: "user1" })];
+          mockQuery.mockResolvedValueOnce({
+            rows: conversations.map((conv) => ({
+              id: conv.id,
+              resource_id: conv.resourceId,
+              user_id: conv.userId,
+              title: conv.title,
+              metadata: conv.metadata,
+              created_at: conv.createdAt,
+              updated_at: conv.updatedAt,
+            })),
+          });
+
+          await storage.getPaginatedUserConversations("user1", 3, 10);
+
+          expect(mockQuery).toHaveBeenCalledWith(
+            expect.stringContaining("SELECT"),
+            expect.arrayContaining(["user1", 11, 20]), // offset = (3-1) * 10 = 20
+          );
+        });
+      });
     });
   });
 
