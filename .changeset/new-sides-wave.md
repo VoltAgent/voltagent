@@ -4,17 +4,7 @@
 "@voltagent/core": patch
 ---
 
-# Conversation Management - [#146](https://github.com/VoltAgent/voltagent/issues/146)
-
 This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
-
-## 🚀 New Features
-
-### Enhanced Conversation Retrieval
-
-- **`getUserConversations(userId)`** - Fluent query builder for user conversations
-- **`getUserConversation(conversationId, userId)`** - Get conversation with user ownership validation
-- **`getPaginatedUserConversations(userId, page?, pageSize?)`** - Built-in pagination support
 
 ### Simple Usage Example
 
