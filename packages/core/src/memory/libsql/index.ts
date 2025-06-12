@@ -476,7 +476,7 @@ export class LibSQLStorage implements Memory {
     await debugDelay();
 
     const tableName = `${this.options.tablePrefix}_messages`;
-
+    const contentString = JSON.stringify(message.content);
     try {
       await this.client.execute({
         sql: `INSERT INTO ${tableName} (conversation_id, message_id, role, content, type, created_at)
@@ -485,7 +485,7 @@ export class LibSQLStorage implements Memory {
           conversationId,
           message.id,
           message.role,
-          message.content as string,
+          contentString,
           message.type,
           message.createdAt,
         ],

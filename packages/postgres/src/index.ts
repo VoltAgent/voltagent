@@ -886,7 +886,7 @@ export class PostgresStorage implements Memory {
           conversationId,
           message.id || this.generateId(),
           message.role,
-          message.content,
+          typeof message.content === "string" ? message.content : JSON.stringify(message.content),
           message.type,
           message.createdAt,
         ],
