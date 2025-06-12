@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.35
+
+### Patch Changes
+
+- [#240](https://github.com/VoltAgent/voltagent/pull/240) [`8605863`](https://github.com/VoltAgent/voltagent/commit/860586377bff11b9e7ba80e06fd26b0098bd334a) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - trim the system prompt so we don't have extra newlines and offset text
+
 ## 0.1.34
 
 ### Patch Changes
