@@ -149,3 +149,5 @@ dist
 
 # cursor
 .cursor
+vite.config.*.timestamp*
+vitest.config.*.timestamp*

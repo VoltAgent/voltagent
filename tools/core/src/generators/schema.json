@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "Package",
+  "title": "",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Provide a name in kebab-case for the package, this will be used to generate the package name and the directory name",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "What name would you like to use? (kebab-case)"
+    },
+    "description": {
+      "type": "string",
+      "description": "The description of the package, this will be used to generate the package description & README",
+      "x-prompt": "What description would you like to use?"
+    }
+  },
+  "required": ["name", "description"]
+}
