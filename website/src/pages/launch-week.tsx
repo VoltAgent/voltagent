@@ -13,7 +13,7 @@ const LaunchWeek = () => {
         "Universal tracing and monitoring that works with any framework - React, Vue, Angular, or vanilla JavaScript. No more vendor lock-in.",
       type: "image",
       content: "/img/framework-agnostic.png", // placeholder image path
-      date: "Monday, Dec 9",
+      date: "Monday, June 16, 2025",
     },
     {
       day: 2,
@@ -44,7 +44,7 @@ const response = await agent.generate({
   validateAgainst: ["knowledge_base", "policy_docs"],
   onHallucination: "flag_for_review"
 });`,
-      date: "Tuesday, Dec 10",
+      date: "Tuesday, June 17, 2025",
     },
     {
       day: 3,
@@ -53,7 +53,7 @@ const response = await agent.generate({
         "Beautiful, responsive UI components that integrate seamlessly with Vercel AI SDK. Build conversational interfaces in minutes.",
       type: "image",
       content: "/img/volt-agent-ui.png", // placeholder image path
-      date: "Wednesday, Dec 11",
+      date: "Wednesday, June 18, 2025",
     },
     {
       day: 4,
@@ -97,7 +97,7 @@ export async function POST(
 
   return Response.json(response);
 }`,
-      date: "Thursday, Dec 12",
+      date: "Thursday, June 19, 2025",
     },
     {
       day: 5,
@@ -106,7 +106,7 @@ export async function POST(
         "Model Context Protocol integration and a comprehensive showcase of real-world implementations and use cases.",
       type: "image",
       content: "/img/mcp-showcase.png", // placeholder image path
-      date: "Friday, Dec 13",
+      date: "Friday, June 20, 2025",
     },
   ];
 
@@ -125,16 +125,16 @@ export async function POST(
                 <BoltIcon className="w-10 h-10  text-main-emerald" />
               </div>
             </div>
-            <div className="text-5xl mb-3 font-bold text-emerald-400 ">
-              Launch Week
+            <div className="text-5xl mb-3 font-bold  text-emerald-400 ">
+              Launch Week #1
             </div>
             <div className=" text-emerald-400 font-semibold text-lg mb-3">
-              December 9-13, 2024
+              June 16-20, 2025
             </div>
 
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              5 days of groundbreaking features that will transform how you
-              build and monitor AI agents
+              5 days of features to transform how you build and monitor AI
+              agents.
             </p>
           </div>
 
