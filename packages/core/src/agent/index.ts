@@ -31,6 +31,7 @@ import type {
   LLMProvider,
   StepWithContent,
   ToolExecuteOptions,
+  MessageRole,
 } from "./providers";
 import { SubAgentManager } from "./subagent";
 import type {
@@ -369,8 +370,19 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         agentsMemory,
       );
 
+      // Check if this is a Gemini model and running as a subagent
+      const isGeminiModel = this.getModelName().toLowerCase().includes("gemini");
+      const isSubagent = Boolean(operationContext?.parentAgentId);
+      let role: MessageRole = "system";
+
+      // For Gemini models we always must have a message with "user" role
+      // only system messages will be rejected by Gemini API
+      if (isGeminiModel && isSubagent) {
+        role = "user";
+      }
+
       return {
-        role: "system",
+        role,
         content: finalInstructions,
       };
     }
@@ -414,18 +426,34 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     messages: BaseMessage[],
     input: string | BaseMessage[],
   ): Promise<BaseMessage[]> {
+    let result: BaseMessage[];
     if (typeof input === "string") {
       // Add user message to the messages array
-      return [
+      result = [
         ...messages,
         {
           role: "user",
           content: input,
         },
       ];
+    } else {
+      // Add all message objects directly
+      result = [...messages, ...input];
     }
-    // Add all message objects directly
-    return [...messages, ...input];
+
+    // Ensure that a message with system role never happens after index 0
+    // Otherwise gemini will throw an error like this:
+    // {
+    //   message: "'system messages are only supported at the beginning of the conversation' functionality not supported."
+    //   stage: "llm_generate"
+    //   originalError: "AI_UnsupportedFunctionalityError: 'system messages are only supported at the beginning of the conversation' functionality not supported."
+    // }
+    return result.map((msg, idx) => {
+      if (idx > 0 && msg.role === "system") {
+        return { ...msg, role: "assistant" };
+      }
+      return msg;
+    });
   }
 
   /**

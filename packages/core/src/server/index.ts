@@ -123,7 +123,7 @@ const printServerStartup = (port: number) => {
   console.log(divider);
 };
 
-const tryStartServer = (port: number): Promise<ReturnType<typeof serve>> => {
+const tryStartServer = (port?: number): Promise<ReturnType<typeof serve>> => {
   return new Promise((resolve, reject) => {
     try {
       // Start the HTTP server
@@ -153,7 +153,7 @@ const tryStartServer = (port: number): Promise<ReturnType<typeof serve>> => {
 };
 
 // Function to start the server
-export const startServer = async (): Promise<ServerReturn> => {
+export const startServer = async (opts: { port?: number }): Promise<ServerReturn> => {
   // Collect all ports in an array - first preferred ports, then fallback ports
   const portsToTry: Array<PortConfig> = [
     ...preferredPorts,
@@ -166,7 +166,11 @@ export const startServer = async (): Promise<ServerReturn> => {
 
   // Try each port in sequence
   for (const portConfig of portsToTry) {
-    const { port } = portConfig;
+    let { port } = opts;
+    if (!port) {
+      // If no port is provided, use the preferred port
+      port = portConfig.port;
+    }
 
     try {
       // Try to start the server and wait until successful

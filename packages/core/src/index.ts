@@ -122,7 +122,9 @@ export class VoltAgent {
 
     // Auto-start server if enabled
     if (options.autoStart !== false) {
-      this.startServer().catch((err) => {
+      this.startServer({
+        port: options.port,
+      }).catch((err) => {
         devLogger.error("Failed to start server:", err);
         process.exit(1);
       });
@@ -174,7 +176,7 @@ export class VoltAgent {
   /**
    * Start the server
    */
-  public async startServer(): Promise<void> {
+  public async startServer(opts: { port?: number }): Promise<void> {
     if (this.serverStarted) {
       devLogger.info("Server is already running");
       return;
@@ -186,7 +188,7 @@ export class VoltAgent {
         registerCustomEndpoints(this.customEndpoints);
       }
 
-      await startServer();
+      await startServer(opts);
       this.serverStarted = true;
     } catch (error) {
       devLogger.error(
