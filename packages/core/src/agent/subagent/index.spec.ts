@@ -167,6 +167,18 @@ describe("SubAgentManager", () => {
       expect(result).toContain("Agent 2: No purpose provided");
       expect(result).toContain("<agents_memory>");
     });
+
+    it("should match snapshot", () => {
+      const subAgentAgent1 = {
+        id: "agent1",
+        name: "Agent 1",
+        purpose: "First agent",
+      } as Agent<any>;
+      const subAgentManager = new SubAgentManager("TestAgent", [subAgentAgent1]);
+      const description = "Some base instructions";
+      const result = subAgentManager.generateSupervisorSystemMessage(description);
+      expect(result).toMatchSnapshot();
+    });
   });
 
   describe("handoffTask", () => {
