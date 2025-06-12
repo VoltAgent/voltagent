@@ -7,11 +7,11 @@ import type { BaseVoiceProviderOptions } from "../base/types";
 /* ------------------------------------------------------------------ */
 /*  Provider‑level options                                             */
 /* ------------------------------------------------------------------ */
-export type XsaiVoiceOptions = BaseVoiceProviderOptions & {
-  /** xsAI dashboard key */
+export type XSAIVoiceOptions = BaseVoiceProviderOptions & {
+  /** XSAI dashboard key */
   apiKey: string;
 
-  /** xsAI base URL – defaults to `"https://api.openai.com/v1"` */
+  /** XSAI base URL – defaults to `"https://api.openai.com/v1"` */
   baseURL?: string;
 
   /** Model *id* for TTS (required by xsAI) – default `"tts-1"` */
@@ -32,7 +32,7 @@ export type XsaiVoiceOptions = BaseVoiceProviderOptions & {
 /* ------------------------------------------------------------------ */
 /*  speak & listen option helpers                                      */
 /* ------------------------------------------------------------------ */
-export type XsaiSpeakOptions = {
+export type XSAISpeakOptions = {
   voice?: string;
   /** @default `"mp3"` */
   format?: "aac" | "flac" | "mp3" | "opus" | "pcm" | "wav";
@@ -40,7 +40,7 @@ export type XsaiSpeakOptions = {
   speed?: number;
 };
 
-export type XsaiListenOptions = {
+export type XSAIListenOptions = {
   language?: string;
   prompt?: string;
   temperature?: string;

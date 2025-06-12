@@ -11,6 +11,7 @@ export const BraintrustLogo2 = ({ className }: { className?: string }) => (
     data-sentry-component="Icon"
     data-sentry-source-file="braintrust-2/index.tsx"
   >
+    <title>Braintrust logo</title>
     <path
       fill="currentColor"
       fillRule="evenodd"

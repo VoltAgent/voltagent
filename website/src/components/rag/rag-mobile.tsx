@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { AnimatedBeam } from "../magicui/animated-beam";
 import { FingerPrintIcon } from "@heroicons/react/24/outline";
+import React, { useState, useEffect, useRef } from "react";
 import {
   CohereLogo,
   PineconeLogo,
@@ -9,12 +8,9 @@ import {
 } from "../../../static/img/logos/integrations";
 import { OpenAILogo } from "../../../static/img/logos/openai";
 import { SupabaseLogo } from "../../../static/img/logos/supabase";
+import { AnimatedBeam } from "../magicui/animated-beam";
 
-interface WorkflowCodeExampleProps {
-  isVisible: boolean;
-}
-
-export function RagMobile({ isVisible }: WorkflowCodeExampleProps) {
+export function RagMobile() {
   const [animationStep, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [activeNodes, setActiveNodes] = useState<string[]>([]);
@@ -141,7 +137,8 @@ export function RagMobile({ isVisible }: WorkflowCodeExampleProps) {
           ? "shadow-[0_0_15px_rgba(245,158,11,0.6)]"
           : "shadow-[0_0_15px_rgba(156,163,175,0.6)]"
       }`;
-    } else if (isAnyNodeActive) {
+    }
+    if (isAnyNodeActive) {
       return `${baseClasses} opacity-70`;
     }
 
@@ -349,7 +346,7 @@ export function RagMobile({ isVisible }: WorkflowCodeExampleProps) {
                   <div className="text-white text-md font-[monospace] self-center">
                     .rerank()
                   </div>
-                  <div className="w-[120px]"></div>
+                  <div className="w-[120px]" />
                 </div>
 
                 {/* Output Node */}
@@ -366,7 +363,7 @@ export function RagMobile({ isVisible }: WorkflowCodeExampleProps) {
                       </span>
                     </div>
                   </div>
-                  <div className="w-[120px]"></div>
+                  <div className="w-[120px]" />
                 </div>
               </div>
 

@@ -1,13 +1,15 @@
 import { existsSync } from "node:fs";
+import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import fs from "node:fs";
-import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
 import { safeJsonParse } from "../../utils";
+import devLogger from "../../utils/internal/dev-logger";
+import type { BaseMessage } from "../../agent/providers/base/types";
 import type {
   Conversation,
+  ConversationQueryOptions,
   CreateConversationInput,
   Memory,
   MemoryMessage,
@@ -16,6 +18,15 @@ import type {
 } from "../types";
 
 /**
+ * LibSQL Storage for VoltAgent
+ *
+ * This implementation provides:
+ * - Conversation management with user support
+ * - Automatic migration from old schema to new schema
+ * - Query builder pattern for flexible data retrieval
+ * - Pagination support
+ *
+ * @see {@link https://voltagent.ai/docs/agents/memory/libsql | LibSQL Storage Documentation}
  * Function to add a delay between 0-0 seconds for debugging
  */
 async function debugDelay(): Promise<void> {
@@ -143,7 +154,7 @@ export class LibSQLStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options?.debug) {
-      console.log(`[LibSQLStorage] ${message}`, data || "");
+      devLogger.info(`[LibSQLStorage] ${message}`, data || "");
     }
   }
 
@@ -159,6 +170,7 @@ export class LibSQLStorage implements Memory {
         CREATE TABLE IF NOT EXISTS ${conversationsTableName} (
           id TEXT PRIMARY KEY,
           resource_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
           title TEXT NOT NULL,
           metadata TEXT NOT NULL,
           created_at TEXT NOT NULL,
@@ -171,14 +183,13 @@ export class LibSQLStorage implements Memory {
 
     await this.client.execute(`
         CREATE TABLE IF NOT EXISTS ${messagesTableName} (
-          user_id TEXT NOT NULL,
           conversation_id TEXT NOT NULL,
           message_id TEXT NOT NULL,
           role TEXT NOT NULL,
           content TEXT NOT NULL,
           type TEXT NOT NULL,
           created_at TEXT NOT NULL,
-          PRIMARY KEY (user_id, conversation_id, message_id)
+          PRIMARY KEY (conversation_id, message_id)
         )
       `);
 
@@ -235,7 +246,7 @@ export class LibSQLStorage implements Memory {
     // Create index for faster queries
     await this.client.execute(`
         CREATE INDEX IF NOT EXISTS idx_${messagesTableName}_lookup
-        ON ${messagesTableName}(user_id, conversation_id, created_at)
+        ON ${messagesTableName}(conversation_id, created_at)
       `);
 
     // Create index for conversations
@@ -243,6 +254,22 @@ export class LibSQLStorage implements Memory {
         CREATE INDEX IF NOT EXISTS idx_${conversationsTableName}_resource
         ON ${conversationsTableName}(resource_id)
       `);
+
+    // Create index for conversations by user_id (only if user_id column exists)
+    try {
+      const tableInfo = await this.client.execute(`PRAGMA table_info(${conversationsTableName})`);
+
+      const hasUserIdColumn = tableInfo.rows.some((row) => row.name === "user_id");
+
+      if (hasUserIdColumn) {
+        await this.client.execute(`
+          CREATE INDEX IF NOT EXISTS idx_${conversationsTableName}_user
+          ON ${conversationsTableName}(user_id)
+        `);
+      }
+    } catch (error) {
+      this.debug("Error creating user_id index, will be created after migration:", error);
+    }
 
     // Create indexes for history tables
 
@@ -295,6 +322,26 @@ export class LibSQLStorage implements Memory {
 
     this.debug("Database initialized successfully");
 
+    // Run conversation schema migration first
+    try {
+      const migrationResult = await this.migrateConversationSchema({
+        createBackup: true,
+        deleteBackupAfterSuccess: true,
+      });
+
+      if (migrationResult.success) {
+        if ((migrationResult.migratedCount || 0) > 0) {
+          devLogger.info(
+            `${migrationResult.migratedCount} conversation records successfully migrated`,
+          );
+        }
+      } else {
+        devLogger.error("Conversation migration error:", migrationResult.error);
+      }
+    } catch (error) {
+      this.debug("Error migrating conversation schema:", error);
+    }
+
     try {
       const result = await this.migrateAgentHistoryData({
         restoreFromBackup: false,
@@ -302,16 +349,16 @@ export class LibSQLStorage implements Memory {
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
-          console.log(`${result.migratedCount} records successfully migrated`);
+          devLogger.info(`${result.migratedCount} records successfully migrated`);
         }
       } else {
-        console.error("Migration error:", result.error);
+        devLogger.error("Migration error:", result.error);
 
         // Restore from backup in case of error
         const restoreResult = await this.migrateAgentHistoryData({});
 
         if (restoreResult.success) {
-          console.log("Successfully restored from backup");
+          devLogger.info("Successfully restored from backup");
         }
       }
     } catch (error) {
@@ -342,71 +389,76 @@ export class LibSQLStorage implements Memory {
     // Add delay for debugging
     await debugDelay();
 
-    const {
-      userId = "default",
-      conversationId = "default",
-      limit = this.options.storageLimit,
-      before,
-      after,
-      role,
-    } = options;
+    const { userId = "default", conversationId = "default", limit, before, after, role } = options;
 
-    this.debug(
-      `Getting messages for user ${userId} and conversation ${conversationId} with options`,
-      options,
-    );
-
-    const tableName = `${this.options.tablePrefix}_messages`;
-
-    // Build the SQL query with filters
-    let sql = `SELECT role, content, type, created_at FROM ${tableName} WHERE user_id = ? AND conversation_id = ?`;
-    const params: any[] = [userId, conversationId];
-
-    // Add role filter if specified
-    if (role) {
-      sql += " AND role = ?";
-      params.push(role);
-    }
-
-    // Add created_at filters if specified
-    if (before) {
-      sql += " AND created_at < ?";
-      params.push(before);
-    }
-
-    if (after) {
-      sql += " AND created_at > ?";
-      params.push(after);
-    }
-
-    // Order by created_at
-    sql += " ORDER BY created_at ASC";
-
-    // Add limit if specified
-    if (limit && limit > 0) {
-      sql += " LIMIT ?";
-      params.push(limit);
-    }
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
 
     try {
+      let sql = `
+        SELECT m.message_id, m.role, m.content, m.type, m.created_at, m.conversation_id
+        FROM ${messagesTableName} m
+      `;
+      const args: any[] = [];
+      const conditions: string[] = [];
+
+      // If userId is specified, we need to join with conversations table
+      if (userId !== "default") {
+        sql += ` INNER JOIN ${conversationsTableName} c ON m.conversation_id = c.id`;
+        conditions.push("c.user_id = ?");
+        args.push(userId);
+      }
+
+      // Add conversation_id filter
+      if (conversationId !== "default") {
+        conditions.push("m.conversation_id = ?");
+        args.push(conversationId);
+      }
+
+      // Add time-based filters
+      if (before) {
+        conditions.push("m.created_at < ?");
+        args.push(new Date(before).toISOString());
+      }
+
+      if (after) {
+        conditions.push("m.created_at > ?");
+        args.push(new Date(after).toISOString());
+      }
+
+      // Add role filter
+      if (role) {
+        conditions.push("m.role = ?");
+        args.push(role);
+      }
+
+      // Add WHERE clause if we have conditions
+      if (conditions.length > 0) {
+        sql += ` WHERE ${conditions.join(" AND ")}`;
+      }
+
+      // Add ordering and limit
+      sql += " ORDER BY m.created_at ASC";
+      if (limit && limit > 0) {
+        sql += " LIMIT ?";
+        args.push(limit);
+      }
+
       const result = await this.client.execute({
         sql,
-        args: params,
+        args,
       });
 
-      // Convert the database rows to BaseMessage objects
-      return result.rows.map((row: Row) => {
-        return {
-          id: row.message_id as string,
-          role: row.role as BaseMessage["role"],
-          content: row.content as string,
-          type: row.type as "text" | "tool-call" | "tool-result",
-          createdAt: row.created_at as string,
-        };
-      });
+      return result.rows.map((row) => ({
+        id: row.message_id as string,
+        role: row.role as BaseMessage["role"],
+        content: row.content as string,
+        type: row.type as "text" | "tool-call" | "tool-result",
+        createdAt: row.created_at as string,
+      }));
     } catch (error) {
-      this.debug("Error fetching messages:", error);
-      throw new Error("Failed to fetch messages from LibSQL database");
+      this.debug("Error getting messages:", error);
+      throw new Error("Failed to get messages from LibSQL database");
     }
   }
 
@@ -416,34 +468,22 @@ export class LibSQLStorage implements Memory {
    * @param userId User identifier (optional, defaults to "default")
    * @param conversationId Conversation identifier (optional, defaults to "default")
    */
-  async addMessage(
-    message: MemoryMessage,
-    userId = "default",
-    conversationId = "default",
-  ): Promise<void> {
+  async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
     // Wait for database initialization
     await this.initialized;
 
     // Add delay for debugging
     await debugDelay();
 
-    this.debug(`Adding message for user ${userId} and conversation ${conversationId}`, message);
-
     const tableName = `${this.options.tablePrefix}_messages`;
-    const messageId = this.generateId();
-
-    // Convert the message content to a JSON string
     const contentString = JSON.stringify(message.content);
-
     try {
-      // Insert the message into the database
       await this.client.execute({
-        sql: `INSERT INTO ${tableName} (user_id, conversation_id, message_id, role, content, type, created_at) 
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO ${tableName} (conversation_id, message_id, role, content, type, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
         args: [
-          userId,
           conversationId,
-          messageId,
+          message.id,
           message.role,
           contentString,
           message.type,
@@ -451,36 +491,14 @@ export class LibSQLStorage implements Memory {
         ],
       });
 
-      // If we have a storage limit, clean up old messages
-      if (this.options.storageLimit && this.options.storageLimit > 0) {
-        // Get the count of messages for this user/conversation
-        const countResult = await this.client.execute({
-          sql: `SELECT COUNT(*) as count FROM ${tableName} WHERE user_id = ? AND conversation_id = ?`,
-          args: [userId, conversationId],
-        });
+      this.debug("Message added successfully", { conversationId, messageId: message.id });
 
-        const count = countResult.rows[0].count as number;
-
-        // If we have more messages than the limit, delete the oldest ones
-        if (count > this.options.storageLimit) {
-          await this.client.execute({
-            sql: `DELETE FROM ${tableName} 
-                  WHERE user_id = ? AND conversation_id = ? 
-                  AND message_id IN (
-                    SELECT message_id FROM ${tableName} 
-                    WHERE user_id = ? AND conversation_id = ?
-                    ORDER BY created_at ASC
-                    LIMIT ?
-                  )`,
-            args: [
-              userId,
-              conversationId,
-              userId,
-              conversationId,
-              count - this.options.storageLimit,
-            ],
-          });
-        }
+      // Optionally, prune old messages to respect storage limit
+      try {
+        await this.pruneOldMessages(conversationId);
+      } catch (pruneError) {
+        this.debug("Error pruning old messages:", pruneError);
+        // Don't throw error for pruning failure
       }
     } catch (error) {
       this.debug("Error adding message:", error);
@@ -489,28 +507,83 @@ export class LibSQLStorage implements Memory {
   }
 
   /**
+   * Prune old messages to respect storage limit
+   * @param conversationId Conversation ID to prune messages for
+   */
+  private async pruneOldMessages(conversationId: string): Promise<void> {
+    const limit = this.options.storageLimit || 100;
+    const tableName = `${this.options.tablePrefix}_messages`;
+
+    try {
+      // Get the count of messages for this conversation
+      const countResult = await this.client.execute({
+        sql: `SELECT COUNT(*) as count FROM ${tableName} WHERE conversation_id = ?`,
+        args: [conversationId],
+      });
+
+      const messageCount = countResult.rows[0]?.count as number;
+
+      if (messageCount > limit) {
+        // Delete the oldest messages beyond the limit
+        const deleteCount = messageCount - limit;
+
+        await this.client.execute({
+          sql: `DELETE FROM ${tableName} 
+                WHERE conversation_id = ? 
+                AND message_id IN (
+                  SELECT message_id FROM ${tableName} 
+                  WHERE conversation_id = ? 
+                  ORDER BY created_at ASC 
+                  LIMIT ?
+                )`,
+          args: [conversationId, conversationId, deleteCount],
+        });
+
+        this.debug(`Pruned ${deleteCount} old messages for conversation ${conversationId}`);
+      }
+    } catch (error) {
+      this.debug("Error pruning old messages:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Clear messages from memory
    */
-  async clearMessages(options: {
-    userId: string;
-    conversationId?: string;
-  }): Promise<void> {
+  async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
     // Wait for database initialization
     await this.initialized;
 
     // Add delay for debugging
     await debugDelay();
 
-    const { userId, conversationId = "default" } = options;
-    const tableName = `${this.options.tablePrefix}_messages`;
+    const { userId, conversationId } = options;
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
 
     try {
-      await this.client.execute({
-        sql: `DELETE FROM ${tableName} WHERE user_id = ? AND conversation_id = ?`,
-        args: [userId, conversationId],
-      });
-
-      this.debug(`Cleared messages for user ${userId} and conversation ${conversationId}`);
+      if (conversationId) {
+        // Clear messages for a specific conversation (with user validation)
+        await this.client.execute({
+          sql: `DELETE FROM ${messagesTableName} 
+                WHERE conversation_id = ? 
+                AND conversation_id IN (
+                  SELECT id FROM ${conversationsTableName} WHERE user_id = ?
+                )`,
+          args: [conversationId, userId],
+        });
+        this.debug(`Cleared messages for conversation ${conversationId} for user ${userId}`);
+      } else {
+        // Clear all messages for the user across all their conversations
+        await this.client.execute({
+          sql: `DELETE FROM ${messagesTableName} 
+                WHERE conversation_id IN (
+                  SELECT id FROM ${conversationsTableName} WHERE user_id = ?
+                )`,
+          args: [userId],
+        });
+        this.debug(`Cleared all messages for user ${userId}`);
+      }
     } catch (error) {
       this.debug("Error clearing messages:", error);
       throw new Error("Failed to clear messages from LibSQL database");
@@ -841,11 +914,12 @@ export class LibSQLStorage implements Memory {
 
     try {
       await this.client.execute({
-        sql: `INSERT INTO ${tableName} (id, resource_id, title, metadata, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO ${tableName} (id, resource_id, user_id, title, metadata, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
         args: [
           conversation.id,
           conversation.resourceId,
+          conversation.userId,
           conversation.title,
           metadataString,
           now,
@@ -856,6 +930,7 @@ export class LibSQLStorage implements Memory {
       return {
         id: conversation.id,
         resourceId: conversation.resourceId,
+        userId: conversation.userId,
         title: conversation.title,
         metadata: conversation.metadata,
         createdAt: now,
@@ -889,6 +964,7 @@ export class LibSQLStorage implements Memory {
       return {
         id: row.id as string,
         resourceId: row.resource_id as string,
+        userId: row.user_id as string,
         title: row.title as string,
         metadata: row.metadata ? safeJsonParse(row.metadata as string) : {},
         createdAt: row.created_at as string,
@@ -917,6 +993,7 @@ export class LibSQLStorage implements Memory {
       return result.rows.map((row) => ({
         id: row.id as string,
         resourceId: row.resource_id as string,
+        userId: row.user_id as string,
         title: row.title as string,
         metadata: safeJsonParse(row.metadata as string),
         createdAt: row.created_at as string,
@@ -925,6 +1002,178 @@ export class LibSQLStorage implements Memory {
     } catch (error) {
       this.debug("Error getting conversations:", error);
       throw new Error("Failed to get conversations from LibSQL database");
+    }
+  }
+
+  public async getConversationsByUserId(
+    userId: string,
+    options: Omit<ConversationQueryOptions, "userId"> = {},
+  ): Promise<Conversation[]> {
+    await this.initialized;
+
+    // Add delay for debugging
+    await debugDelay();
+
+    const {
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    const tableName = `${this.options.tablePrefix}_conversations`;
+
+    try {
+      let sql = `SELECT * FROM ${tableName} WHERE user_id = ?`;
+      const args: any[] = [userId];
+
+      if (resourceId) {
+        sql += " AND resource_id = ?";
+        args.push(resourceId);
+      }
+
+      sql += ` ORDER BY ${orderBy} ${orderDirection}`;
+
+      if (limit > 0) {
+        sql += " LIMIT ? OFFSET ?";
+        args.push(limit, offset);
+      }
+
+      const result = await this.client.execute({
+        sql,
+        args,
+      });
+
+      return result.rows.map((row) => ({
+        id: row.id as string,
+        resourceId: row.resource_id as string,
+        userId: row.user_id as string,
+        title: row.title as string,
+        metadata: safeJsonParse(row.metadata as string),
+        createdAt: row.created_at as string,
+        updatedAt: row.updated_at as string,
+      }));
+    } catch (error) {
+      this.debug("Error getting conversations by user ID:", error);
+      throw new Error("Failed to get conversations by user ID from LibSQL database");
+    }
+  }
+
+  /**
+   * Query conversations with filtering and pagination options
+   *
+   * @param options Query options for filtering and pagination
+   * @returns Promise that resolves to an array of conversations matching the criteria
+   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#querying-conversations | Querying Conversations}
+   */
+  public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
+    await this.initialized;
+
+    // Add delay for debugging
+    await debugDelay();
+
+    const {
+      userId,
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    const tableName = `${this.options.tablePrefix}_conversations`;
+
+    try {
+      let sql = `SELECT * FROM ${tableName}`;
+      const args: any[] = [];
+      const conditions: string[] = [];
+
+      if (userId) {
+        conditions.push("user_id = ?");
+        args.push(userId);
+      }
+
+      if (resourceId) {
+        conditions.push("resource_id = ?");
+        args.push(resourceId);
+      }
+
+      if (conditions.length > 0) {
+        sql += ` WHERE ${conditions.join(" AND ")}`;
+      }
+
+      sql += ` ORDER BY ${orderBy} ${orderDirection}`;
+
+      if (limit > 0) {
+        sql += " LIMIT ? OFFSET ?";
+        args.push(limit, offset);
+      }
+
+      const result = await this.client.execute({
+        sql,
+        args,
+      });
+
+      return result.rows.map((row) => ({
+        id: row.id as string,
+        resourceId: row.resource_id as string,
+        userId: row.user_id as string,
+        title: row.title as string,
+        metadata: safeJsonParse(row.metadata as string),
+        createdAt: row.created_at as string,
+        updatedAt: row.updated_at as string,
+      }));
+    } catch (error) {
+      this.debug("Error querying conversations:", error);
+      throw new Error("Failed to query conversations from LibSQL database");
+    }
+  }
+
+  /**
+   * Get messages for a specific conversation with pagination support
+   *
+   * @param conversationId The unique identifier of the conversation to retrieve messages from
+   * @param options Optional pagination and filtering options
+   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
+   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#conversation-messages | Getting Conversation Messages}
+   */
+  public async getConversationMessages(
+    conversationId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<MemoryMessage[]> {
+    await this.initialized;
+
+    // Add delay for debugging
+    await debugDelay();
+
+    const { limit = 100, offset = 0 } = options;
+    const tableName = `${this.options.tablePrefix}_messages`;
+
+    try {
+      let sql = `SELECT * FROM ${tableName} WHERE conversation_id = ? ORDER BY created_at ASC`;
+      const args: any[] = [conversationId];
+
+      if (limit > 0) {
+        sql += " LIMIT ? OFFSET ?";
+        args.push(limit, offset);
+      }
+
+      const result = await this.client.execute({
+        sql,
+        args,
+      });
+
+      return result.rows.map((row) => ({
+        id: row.message_id as string,
+        role: row.role as BaseMessage["role"],
+        content: row.content as string,
+        type: row.type as "text" | "tool-call" | "tool-result",
+        createdAt: row.created_at as string,
+      }));
+    } catch (error) {
+      this.debug("Error getting conversation messages:", error);
+      throw new Error("Failed to get conversation messages from LibSQL database");
     }
   }
 
@@ -947,6 +1196,11 @@ export class LibSQLStorage implements Memory {
       if (updates.resourceId !== undefined) {
         updatesList.push("resource_id = ?");
         args.push(updates.resourceId);
+      }
+
+      if (updates.userId !== undefined) {
+        updatesList.push("user_id = ?");
+        args.push(updates.userId);
       }
 
       if (updates.title !== undefined) {
@@ -1161,6 +1415,12 @@ export class LibSQLStorage implements Memory {
     try {
       this.debug("Starting agent history migration...");
 
+      // Check if migration has already been completed by looking for a migration flag
+      const flagCheck = await this.checkMigrationFlag("agent_history_data_migration");
+      if (flagCheck.alreadyCompleted) {
+        return { success: true, migratedCount: 0 };
+      }
+
       // If restoreFromBackup option is active, restore from backup
       if (restoreFromBackup) {
         this.debug("Starting restoration from backup...");
@@ -1196,10 +1456,7 @@ export class LibSQLStorage implements Memory {
       }
 
       // First check the structure of the old table
-      const tableInfoQuery = await this.client.execute({
-        sql: "PRAGMA table_info('voltagent_memory_agent_history')",
-        args: [oldTableName],
-      });
+      const tableInfoQuery = await this.client.execute(`PRAGMA table_info(${oldTableName})`);
 
       // If the table is empty or doesn't exist, migration is not needed
       if (tableInfoQuery.rows.length === 0) {
@@ -1403,7 +1660,7 @@ export class LibSQLStorage implements Memory {
                       event.parentEventId || null,
                       null, // tags
                       inputData,
-                      event.data.output ? JSON.stringify({ text: event.data.output }) : null,
+                      event.data.output ? JSON.stringify(event.data.output) : null,
                       eventName === "agent:error" ? JSON.stringify(event.data.error) : null,
                       metadata,
                     ],
@@ -1698,6 +1955,9 @@ export class LibSQLStorage implements Memory {
         this.debug("Unnecessary backup deleted");
       }
 
+      // Set migration flag to prevent future runs
+      await this.setMigrationFlag("agent_history_data_migration", migratedCount);
+
       return {
         success: true,
         migratedCount,
@@ -1714,6 +1974,626 @@ export class LibSQLStorage implements Memory {
         error: error instanceof Error ? error : new Error(String(error)),
         backupCreated: options.createBackup,
       };
+    }
+  }
+
+  /**
+   * Migrate conversation schema to add user_id and update messages table
+   *
+   * ⚠️  **CRITICAL WARNING: DESTRUCTIVE OPERATION** ⚠️
+   *
+   * This method performs a DESTRUCTIVE schema migration that:
+   * - DROPS and recreates existing tables
+   * - Creates temporary tables during migration
+   * - Modifies the primary key structure of the messages table
+   * - Can cause DATA LOSS if interrupted or if errors occur
+   *
+   * **IMPORTANT SAFETY REQUIREMENTS:**
+   * - 🛑 STOP all application instances before running this migration
+   * - 🛑 Ensure NO concurrent database operations are running
+   * - 🛑 Take a full database backup before running (independent of built-in backup)
+   * - 🛑 Test the migration on a copy of production data first
+   * - 🛑 Plan for downtime during migration execution
+   *
+   * **What this migration does:**
+   * 1. Creates backup tables (if createBackup=true)
+   * 2. Creates temporary tables with new schema
+   * 3. Migrates data from old tables to new schema
+   * 4. DROPS original tables
+   * 5. Renames temporary tables to original names
+   * 6. All operations are wrapped in a transaction for atomicity
+   *
+   * @param options Migration configuration options
+   * @param options.createBackup Whether to create backup tables before migration (default: true, HIGHLY RECOMMENDED)
+   * @param options.restoreFromBackup Whether to restore from existing backup instead of migrating (default: false)
+   * @param options.deleteBackupAfterSuccess Whether to delete backup tables after successful migration (default: false)
+   *
+   * @returns Promise resolving to migration result with success status, migrated count, and backup info
+   *
+   * @example
+   * ```typescript
+   * // RECOMMENDED: Run with backup creation (default)
+   * const result = await storage.migrateConversationSchema({
+   *   createBackup: true,
+   *   deleteBackupAfterSuccess: false // Keep backup for safety
+   * });
+   *
+   * if (result.success) {
+   *   console.log(`Migrated ${result.migratedCount} conversations successfully`);
+   * } else {
+   *   console.error('Migration failed:', result.error);
+   *   // Consider restoring from backup
+   * }
+   *
+   * // If migration fails, restore from backup:
+   * const restoreResult = await storage.migrateConversationSchema({
+   *   restoreFromBackup: true
+   * });
+   * ```
+   *
+   * @throws {Error} If migration fails and transaction is rolled back
+   *
+   * @since This migration is typically only needed when upgrading from older schema versions
+   */
+  private async migrateConversationSchema(
+    options: {
+      createBackup?: boolean;
+      restoreFromBackup?: boolean;
+      deleteBackupAfterSuccess?: boolean;
+    } = {},
+  ): Promise<{
+    success: boolean;
+    migratedCount?: number;
+    error?: Error;
+    backupCreated?: boolean;
+  }> {
+    const {
+      createBackup = true,
+      restoreFromBackup = false,
+      deleteBackupAfterSuccess = false,
+    } = options;
+
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const conversationsBackupName = `${conversationsTableName}_backup`;
+    const messagesBackupName = `${messagesTableName}_backup`;
+
+    try {
+      this.debug("Starting conversation schema migration...");
+
+      // Check if migration has already been completed by looking for a migration flag
+      const flagCheck = await this.checkMigrationFlag("conversation_schema_migration");
+      if (flagCheck.alreadyCompleted) {
+        return { success: true, migratedCount: 0 };
+      }
+
+      // If restoreFromBackup option is active, restore from backup
+      if (restoreFromBackup) {
+        this.debug("Starting restoration from backup...");
+
+        // Check if backup tables exist
+        const convBackupCheck = await this.client.execute({
+          sql: "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+          args: [conversationsBackupName],
+        });
+
+        const msgBackupCheck = await this.client.execute({
+          sql: "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+          args: [messagesBackupName],
+        });
+
+        if (convBackupCheck.rows.length === 0 || msgBackupCheck.rows.length === 0) {
+          throw new Error("No backup found to restore");
+        }
+
+        // Start transaction
+        await this.client.execute("BEGIN TRANSACTION;");
+
+        // Restore tables from backup
+        await this.client.execute(`DROP TABLE IF EXISTS ${conversationsTableName};`);
+        await this.client.execute(`DROP TABLE IF EXISTS ${messagesTableName};`);
+        await this.client.execute(
+          `ALTER TABLE ${conversationsBackupName} RENAME TO ${conversationsTableName};`,
+        );
+        await this.client.execute(
+          `ALTER TABLE ${messagesBackupName} RENAME TO ${messagesTableName};`,
+        );
+
+        // Complete transaction
+        await this.client.execute("COMMIT;");
+
+        this.debug("Restoration from backup completed successfully");
+        return { success: true, backupCreated: false };
+      }
+
+      // Check current table structures
+      const convTableInfo = await this.client.execute(
+        `PRAGMA table_info(${conversationsTableName})`,
+      );
+
+      const msgTableInfo = await this.client.execute(`PRAGMA table_info(${messagesTableName})`);
+
+      // Check if conversations table has user_id column
+      const hasUserIdInConversations = convTableInfo.rows.some((row) => row.name === "user_id");
+
+      // Check if messages table has user_id column
+      const hasUserIdInMessages = msgTableInfo.rows.some((row) => row.name === "user_id");
+
+      // If conversations already has user_id and messages doesn't have user_id, migration not needed
+      if (hasUserIdInConversations && !hasUserIdInMessages) {
+        this.debug("Tables are already in new format, migration not needed");
+        return { success: true, migratedCount: 0 };
+      }
+
+      // If neither table exists, no migration needed
+      if (convTableInfo.rows.length === 0 && msgTableInfo.rows.length === 0) {
+        this.debug("Tables don't exist, migration not needed");
+        return { success: true, migratedCount: 0 };
+      }
+
+      // Create backups if requested
+      if (createBackup) {
+        this.debug("Creating backups...");
+
+        // Remove existing backups
+        await this.client.execute(`DROP TABLE IF EXISTS ${conversationsBackupName};`);
+        await this.client.execute(`DROP TABLE IF EXISTS ${messagesBackupName};`);
+
+        // Create backups
+        if (convTableInfo.rows.length > 0) {
+          await this.client.execute(
+            `CREATE TABLE ${conversationsBackupName} AS SELECT * FROM ${conversationsTableName};`,
+          );
+        }
+
+        if (msgTableInfo.rows.length > 0) {
+          await this.client.execute(
+            `CREATE TABLE ${messagesBackupName} AS SELECT * FROM ${messagesTableName};`,
+          );
+        }
+
+        this.debug("Backups created successfully");
+      }
+
+      // Get existing data
+      let conversationData: Row[] = [];
+      let messageData: Row[] = [];
+
+      if (convTableInfo.rows.length > 0) {
+        const convResult = await this.client.execute(`SELECT * FROM ${conversationsTableName}`);
+        conversationData = convResult.rows;
+      }
+
+      if (msgTableInfo.rows.length > 0) {
+        const msgResult = await this.client.execute(`SELECT * FROM ${messagesTableName}`);
+        messageData = msgResult.rows;
+      }
+
+      // Start transaction for migration
+      await this.client.execute("BEGIN TRANSACTION;");
+
+      // Create temporary tables with new schemas
+      const tempConversationsTable = `${conversationsTableName}_temp`;
+      const tempMessagesTable = `${messagesTableName}_temp`;
+
+      await this.client.execute(`
+        CREATE TABLE ${tempConversationsTable} (
+          id TEXT PRIMARY KEY,
+          resource_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          metadata TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `);
+
+      await this.client.execute(`
+        CREATE TABLE ${tempMessagesTable} (
+          conversation_id TEXT NOT NULL,
+          message_id TEXT NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          type TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (conversation_id, message_id)
+        )
+      `);
+
+      let migratedCount = 0;
+      const createdConversations = new Set<string>();
+
+      // Process each message and create conversation if needed
+      for (const row of messageData) {
+        const conversationId = row.conversation_id as string;
+        let userId = "default";
+
+        // Get user_id from message if old schema has it
+        if (hasUserIdInMessages && row.user_id) {
+          userId = row.user_id as string;
+        }
+
+        // Check if conversation already exists (either migrated or auto-created)
+        if (!createdConversations.has(conversationId)) {
+          // Check if conversation exists in original conversations data
+          const existingConversation = conversationData.find((conv) => conv.id === conversationId);
+
+          if (existingConversation) {
+            // Migrate existing conversation
+            let convUserId = userId; // Use user_id from message
+
+            // If conversation already has user_id, use it instead
+            if (hasUserIdInConversations && existingConversation.user_id) {
+              convUserId = existingConversation.user_id as string;
+            }
+
+            await this.client.execute({
+              sql: `INSERT INTO ${tempConversationsTable} 
+                    (id, resource_id, user_id, title, metadata, created_at, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              args: [
+                existingConversation.id,
+                existingConversation.resource_id,
+                convUserId,
+                existingConversation.title,
+                existingConversation.metadata,
+                existingConversation.created_at,
+                existingConversation.updated_at,
+              ],
+            });
+          } else {
+            // Create new conversation from message data
+            const now = new Date().toISOString();
+
+            await this.client.execute({
+              sql: `INSERT INTO ${tempConversationsTable} 
+                    (id, resource_id, user_id, title, metadata, created_at, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              args: [
+                conversationId,
+                "default", // Default resource_id for auto-created conversations
+                userId,
+                "Migrated Conversation", // Default title
+                JSON.stringify({}), // Empty metadata
+                now,
+                now,
+              ],
+            });
+          }
+
+          createdConversations.add(conversationId);
+          migratedCount++;
+        }
+
+        // Migrate the message (without user_id column)
+        await this.client.execute({
+          sql: `INSERT INTO ${tempMessagesTable} 
+                (conversation_id, message_id, role, content, type, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?)`,
+          args: [
+            row.conversation_id,
+            row.message_id,
+            row.role,
+            row.content,
+            row.type,
+            row.created_at,
+          ],
+        });
+      }
+
+      // Handle any conversations that exist but have no messages
+      for (const row of conversationData) {
+        const conversationId = row.id as string;
+
+        if (!createdConversations.has(conversationId)) {
+          let userId = "default";
+
+          // If conversation already has user_id, use it
+          if (hasUserIdInConversations && row.user_id) {
+            userId = row.user_id as string;
+          }
+
+          await this.client.execute({
+            sql: `INSERT INTO ${tempConversationsTable} 
+                  (id, resource_id, user_id, title, metadata, created_at, updated_at) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+              row.id,
+              row.resource_id,
+              userId,
+              row.title,
+              row.metadata,
+              row.created_at,
+              row.updated_at,
+            ],
+          });
+          migratedCount++;
+        }
+      }
+
+      // Replace old tables with new ones
+      await this.client.execute(`DROP TABLE IF EXISTS ${conversationsTableName};`);
+      await this.client.execute(`DROP TABLE IF EXISTS ${messagesTableName};`);
+      await this.client.execute(
+        `ALTER TABLE ${tempConversationsTable} RENAME TO ${conversationsTableName};`,
+      );
+      await this.client.execute(`ALTER TABLE ${tempMessagesTable} RENAME TO ${messagesTableName};`);
+
+      // Create indexes for the new schema
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${messagesTableName}_lookup
+        ON ${messagesTableName}(conversation_id, created_at)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${conversationsTableName}_resource
+        ON ${conversationsTableName}(resource_id)
+      `);
+
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${conversationsTableName}_user
+        ON ${conversationsTableName}(user_id)
+      `);
+
+      // Commit transaction
+      await this.client.execute("COMMIT;");
+
+      // Delete backups if requested
+      if (deleteBackupAfterSuccess) {
+        await this.client.execute(`DROP TABLE IF EXISTS ${conversationsBackupName};`);
+        await this.client.execute(`DROP TABLE IF EXISTS ${messagesBackupName};`);
+      }
+
+      // Set migration flag to prevent future runs
+      await this.setMigrationFlag("conversation_schema_migration", migratedCount);
+
+      this.debug(
+        `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
+      );
+
+      return {
+        success: true,
+        migratedCount,
+        backupCreated: createBackup,
+      };
+    } catch (error) {
+      this.debug("Error during conversation schema migration:", error);
+
+      // Rollback transaction if still active
+      try {
+        await this.client.execute("ROLLBACK;");
+      } catch (rollbackError) {
+        this.debug("Error rolling back transaction:", rollbackError);
+      }
+
+      return {
+        success: false,
+        error: error as Error,
+        backupCreated: createBackup,
+      };
+    }
+  }
+
+  /**
+   * Get conversations for a user with a fluent query builder interface
+   * @param userId User ID to filter by
+   * @returns Query builder object
+   */
+  public getUserConversations(userId: string) {
+    return {
+      /**
+       * Limit the number of results
+       * @param count Number of conversations to return
+       * @returns Query builder
+       */
+      limit: (count: number) => ({
+        /**
+         * Order results by a specific field
+         * @param field Field to order by
+         * @param direction Sort direction
+         * @returns Query builder
+         */
+        orderBy: (
+          field: "created_at" | "updated_at" | "title" = "updated_at",
+          direction: "ASC" | "DESC" = "DESC",
+        ) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query with default ordering
+         * @returns Promise of conversations
+         */
+        execute: () => this.getConversationsByUserId(userId, { limit: count }),
+      }),
+
+      /**
+       * Order results by a specific field
+       * @param field Field to order by
+       * @param direction Sort direction
+       * @returns Query builder
+       */
+      orderBy: (
+        field: "created_at" | "updated_at" | "title" = "updated_at",
+        direction: "ASC" | "DESC" = "DESC",
+      ) => ({
+        /**
+         * Limit the number of results
+         * @param count Number of conversations to return
+         * @returns Query builder
+         */
+        limit: (count: number) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query without limit
+         * @returns Promise of conversations
+         */
+        execute: () =>
+          this.getConversationsByUserId(userId, {
+            orderBy: field,
+            orderDirection: direction,
+          }),
+      }),
+
+      /**
+       * Execute the query with default options
+       * @returns Promise of conversations
+       */
+      execute: () => this.getConversationsByUserId(userId),
+    };
+  }
+
+  /**
+   * Get conversation by ID and ensure it belongs to the specified user
+   * @param conversationId Conversation ID
+   * @param userId User ID to validate ownership
+   * @returns Conversation or null
+   */
+  public async getUserConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<Conversation | null> {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation || conversation.userId !== userId) {
+      return null;
+    }
+    return conversation;
+  }
+
+  /**
+   * Get paginated conversations for a user
+   * @param userId User ID
+   * @param page Page number (1-based)
+   * @param pageSize Number of items per page
+   * @returns Object with conversations and pagination info
+   */
+  public async getPaginatedUserConversations(
+    userId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{
+    conversations: Conversation[];
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+  }> {
+    const offset = (page - 1) * pageSize;
+
+    // Get one extra to check if there are more pages
+    const conversations = await this.getConversationsByUserId(userId, {
+      limit: pageSize + 1,
+      offset,
+      orderBy: "updated_at",
+      orderDirection: "DESC",
+    });
+
+    const hasMore = conversations.length > pageSize;
+    const results = hasMore ? conversations.slice(0, pageSize) : conversations;
+
+    return {
+      conversations: results,
+      page,
+      pageSize,
+      hasMore,
+    };
+  }
+
+  /**
+   * Check and create migration flag table, return if migration already completed
+   * @param migrationType Type of migration to check
+   * @returns Object with completion status and details
+   */
+  private async checkMigrationFlag(migrationType: string): Promise<{
+    alreadyCompleted: boolean;
+    migrationCount?: number;
+    completedAt?: string;
+  }> {
+    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
+    const migrationFlagTable = `${conversationsTableName}_migration_flags`;
+
+    try {
+      const result = await this.client.execute({
+        sql: `SELECT * FROM ${migrationFlagTable} WHERE migration_type = ?`,
+        args: [migrationType],
+      });
+
+      if (result.rows.length > 0) {
+        const migrationFlag = result.rows[0];
+        this.debug(`${migrationType} migration already completed`);
+        this.debug(`Migration completed on: ${migrationFlag.completed_at}`);
+        this.debug(`Migrated ${migrationFlag.migrated_count || 0} records previously`);
+        return {
+          alreadyCompleted: true,
+          migrationCount: migrationFlag.migrated_count as number,
+          completedAt: migrationFlag.completed_at as string,
+        };
+      }
+
+      this.debug("Migration flags table found, but no migration flag exists yet");
+      return { alreadyCompleted: false };
+    } catch (flagError) {
+      // Migration flag table doesn't exist, create it
+      this.debug("Migration flag table not found, creating it...");
+      this.debug("Original error:", flagError);
+
+      try {
+        await this.client.execute(`
+          CREATE TABLE IF NOT EXISTS ${migrationFlagTable} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            migration_type TEXT NOT NULL UNIQUE,
+            completed_at TEXT NOT NULL DEFAULT (datetime('now')),
+            migrated_count INTEGER DEFAULT 0,
+            metadata TEXT DEFAULT '{}'
+          )
+        `);
+        this.debug("Migration flags table created successfully");
+      } catch (createError) {
+        this.debug("Failed to create migration flags table:", createError);
+        // Continue with migration even if flag table creation fails
+      }
+
+      return { alreadyCompleted: false };
+    }
+  }
+
+  /**
+   * Set migration flag after successful completion
+   * @param migrationType Type of migration completed
+   * @param migratedCount Number of records migrated
+   */
+  private async setMigrationFlag(migrationType: string, migratedCount: number): Promise<void> {
+    try {
+      const conversationsTableName = `${this.options.tablePrefix}_conversations`;
+      const migrationFlagTable = `${conversationsTableName}_migration_flags`;
+
+      await this.client.execute({
+        sql: `INSERT OR REPLACE INTO ${migrationFlagTable} 
+              (migration_type, completed_at, migrated_count) 
+              VALUES (?, datetime('now'), ?)`,
+        args: [migrationType, migratedCount],
+      });
+
+      this.debug("Migration flag set successfully");
+    } catch (flagSetError) {
+      this.debug("Could not set migration flag (non-critical):", flagSetError);
     }
   }
 }

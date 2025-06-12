@@ -20,7 +20,7 @@ export default function prismIncludeLanguages(
   // long as you don't re-assign it
   globalThis.Prism = PrismObject;
 
-  additionalLanguages.forEach((lang) => {
+  for (const lang of additionalLanguages) {
     const langMatch = DIFF_LANGUAGE_REGEX.exec(lang);
     if (!langMatch) {
       require(`prismjs/components/prism-${lang}`); // not a language specific diff
@@ -33,9 +33,10 @@ export default function prismIncludeLanguages(
       }
       PrismObject.languages[lang] = PrismObject.languages.diff;
     }
-  });
+  }
 
   diffHighlight(PrismObject);
 
+  // biome-ignore lint/performance/noDelete:
   delete globalThis.Prism;
 }

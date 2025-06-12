@@ -1,19 +1,19 @@
-import React, { useState } from "react";
-import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import Link from "@docusaurus/Link";
+import { ChevronRightIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 import {
-  VercelLogo,
-  OllamaLogo,
-  SemanticKernelLogo,
-  LangflowLogo,
-  DifyLogo,
   AutogenLogo,
   CrewAILogo,
+  DifyLogo,
   LangChainLogo,
+  LangflowLogo,
   LlamaIndexLogo,
+  OllamaLogo,
   OpenTelemetryLogo,
   PydanticLogo,
+  SemanticKernelLogo,
   SmoleAgentsLogo,
+  VercelLogo,
   VoltAgentLogo,
 } from "../../../static/img/logos/integrations";
 

@@ -1,7 +1,7 @@
-import path from "node:path";
-/* import fs from "fs"; */
-import * as ncuPackage from "npm-check-updates";
 import fs from "node:fs";
+import path from "node:path";
+import * as ncuPackage from "npm-check-updates";
+import devLogger from "../internal/dev-logger";
 
 type UpdateOptions = {
   filter?: string;
@@ -144,7 +144,7 @@ export const checkForUpdates = async (
       message: "All packages are up to date",
     };
   } catch (error) {
-    console.error("Error checking for updates:", error);
+    devLogger.error("Error checking for updates:", error);
     return {
       hasUpdates: false,
       updates: [],
@@ -207,7 +207,7 @@ export const updateAllPackages = async (
     // 3. Prepare the package list for security
     const packagesToUpdate = updateCheckResult.updates.map((pkg) => pkg.name);
 
-    console.log(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
+    devLogger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
 
     // Use npm-check-updates API to perform the update
     // Use the filter parameter to only update our packages
@@ -238,7 +238,7 @@ export const updateAllPackages = async (
       updatedPackages,
     };
   } catch (error) {
-    console.error("Error updating packages:", error);
+    devLogger.error("Error updating packages:", error);
     return {
       success: false,
       message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`,
@@ -287,7 +287,7 @@ export const updateSinglePackage = async (
     const rootDir = packagePath ? path.dirname(packagePath) : process.cwd();
     const packageJsonPath = packagePath || path.join(rootDir, "package.json");
 
-    console.log(`Updating package ${packageName} in ${rootDir}`);
+    devLogger.info(`Updating package ${packageName} in ${rootDir}`);
 
     // Use npm-check-updates API to update only the specified package
     const ncuResult = await ncuPackage.run({
@@ -315,7 +315,7 @@ export const updateSinglePackage = async (
       packageName,
     };
   } catch (error) {
-    console.error(`Error updating package ${packageName}:`, error);
+    devLogger.error(`Error updating package ${packageName}:`, error);
     return {
       success: false,
       message: `Failed to update ${packageName}: ${error instanceof Error ? error.message : String(error)}`,

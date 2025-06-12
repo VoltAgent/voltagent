@@ -27,8 +27,8 @@ const tokenStreamToString = (tokenStream: TokenStream): string => {
 
 export function diffHighlight(Prism: PrismLib) {
   Prism.hooks.add("after-tokenize", (env: EnvConfig) => {
-    let diffLanguage;
-    let diffGrammar;
+    let diffLanguage: string | undefined;
+    let diffGrammar: Prism.Languages[string];
     const language = env.language;
     if (language !== "diff") {
       const langMatch = LANGUAGE_REGEX.exec(language);
@@ -48,7 +48,7 @@ export function diffHighlight(Prism: PrismLib) {
     } else return;
 
     const newTokens = [];
-    env.tokens.forEach((token) => {
+    for (const token of env.tokens) {
       if (typeof token === "string") {
         newTokens.push(...Prism.tokenize(token, diffGrammar));
       } else if (token.type === "unchanged") {
@@ -66,24 +66,22 @@ export function diffHighlight(Prism: PrismLib) {
           const newTokenContent: Array<string | Token> = [];
           // preserve prefixes and don't parse them again
           // subTokens from diff parser are of type Token
-          (token.content as Array<string | Token>).forEach(
-            (subToken: Token) => {
-              if (subToken.type === "prefix") {
-                newTokenContent.push(subToken);
-              } else {
-                newTokenContent.push(
-                  ...Prism.tokenize(tokenStreamToString(subToken), diffGrammar),
-                );
-              }
-            },
-          );
+          for (const subToken of token.content as Array<Token>) {
+            if (subToken.type === "prefix") {
+              newTokenContent.push(subToken);
+            } else {
+              newTokenContent.push(
+                ...Prism.tokenize(tokenStreamToString(subToken), diffGrammar),
+              );
+            }
+          }
           token.content = newTokenContent;
         }
         newTokens.push(token);
       } else if (token.type === "coord") {
         newTokens.push(token);
       }
-    });
+    }
     env.tokens = newTokens;
   });
 }

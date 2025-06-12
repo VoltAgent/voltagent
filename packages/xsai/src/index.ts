@@ -13,6 +13,7 @@ import type {
   ProviderTextStreamResponse,
   StepWithContent,
 } from "@voltagent/core";
+import { createAsyncIterableStream } from "@voltagent/core";
 import type {
   GenerateObjectResult,
   GenerateTextResult,
@@ -27,12 +28,12 @@ import type {
 } from "xsai";
 import type { z } from "zod";
 
-export class XsAIProvider implements LLMProvider<string> {
+export class XSAIProvider implements LLMProvider<string> {
   private apiKey: string;
   private baseURL: string;
 
   /**
-   * Creates a new XsAIProvider instance
+   * Creates a new XSAIProvider instance
    * @param options - Configuration options
    * @param options.apiKey - The API key for authentication
    * @param options.baseURL - The base URL for API requests. Defaults to "https://api.openai.com/v1/"
@@ -58,7 +59,7 @@ export class XsAIProvider implements LLMProvider<string> {
 
   toMessage = (message: BaseMessage): Message => {
     if (typeof message.content === "string") return message as Message;
-    else if (Array.isArray(message.content)) {
+    if (Array.isArray(message.content)) {
       const content: (TextPart | ImagePart)[] = [];
 
       for (const part of message.content) {
@@ -72,26 +73,25 @@ export class XsAIProvider implements LLMProvider<string> {
             } satisfies ImagePart);
           } else {
             console.warn(
-              `[XsAIProvider] Message (role: ${message.role}) contained unsupported image part format...`,
+              `[XSAIProvider] Message (role: ${message.role}) contained unsupported image part format...`,
             );
           }
         } else {
           console.warn(
-            `[XsAIProvider] Message (role: ${message.role}) contained unsupported content parts...`,
+            `[XSAIProvider] Message (role: ${message.role}) contained unsupported content parts...`,
           );
         }
       }
 
       return { role: message.role, content } as Message;
-    } else {
-      // Handle unexpected content types (null, undefined, etc.)
-      console.warn(
-        `[XsAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
-        message.content,
-      );
-
-      return { role: message.role, content: "" } as Message; // Fallback to empty string
     }
+    // Handle unexpected content types (null, undefined, etc.)
+    console.warn(
+      `[XSAIProvider] Unknown or unsupported content type for message (role: ${message.role}):`,
+      message.content,
+    );
+
+    return { role: message.role, content: "" } as Message; // Fallback to empty string
   };
 
   convertTools = async (tools: BaseTool[]): Promise<ToolResult[] | undefined> => {
@@ -193,6 +193,7 @@ export class XsAIProvider implements LLMProvider<string> {
               {
                 type: "tool-result",
                 toolCallId: toolResult.toolCallId,
+                toolName: toolResult.toolName,
                 result: toolResult.result,
               },
             ]),
@@ -281,7 +282,7 @@ export class XsAIProvider implements LLMProvider<string> {
     // Return only provider and textStream - usage, toolCalls, etc. come in the stream
     return {
       provider: result,
-      textStream: result.textStream,
+      textStream: createAsyncIterableStream(result.textStream),
     };
   }
 
@@ -394,7 +395,7 @@ export class XsAIProvider implements LLMProvider<string> {
     // Return only provider and objectStream - other data comes in the stream
     return {
       provider: result,
-      objectStream: result.partialObjectStream,
+      objectStream: createAsyncIterableStream(result.partialObjectStream),
     };
   }
 }

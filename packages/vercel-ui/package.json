@@ -1,0 +1,41 @@
+{
+  "name": "@voltagent/vercel-ui",
+  "version": "0.0.2",
+  "description": "VoltAgent Vercel UI - Vercel UI integration for VoltAgent",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "jest --coverage"
+  },
+  "dependencies": {
+    "@voltagent/core": "^0.1.31",
+    "ai": "^4.2.11",
+    "ai-v5": "npm:ai@5.0.0-alpha.11",
+    "ts-pattern": "^5.7.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.19.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.2.6",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4",
+    "zod": "3.24.2"
+  }
+}

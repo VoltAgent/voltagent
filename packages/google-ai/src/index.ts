@@ -1,19 +1,20 @@
 import {
   type Content,
+  type FunctionCall,
+  type FunctionResponse,
   type GenerateContentConfig,
   type GenerateContentParameters,
   type GenerateContentResponse,
   type GenerateContentResponseUsageMetadata,
   GoogleGenAI,
   type GoogleGenAIOptions,
-  type Schema,
   type Part,
-  type FunctionCall,
+  type Schema,
   createPartFromFunctionResponse,
-  type FunctionResponse,
 } from "@google/genai";
 import type {
   BaseMessage,
+  BaseTool,
   GenerateObjectOptions,
   LLMProvider,
   MessageRole,
@@ -21,18 +22,18 @@ import type {
   ProviderTextStreamResponse,
   StepWithContent,
   UsageInfo,
-  BaseTool,
 } from "@voltagent/core";
+import { createAsyncIterableStream } from "@voltagent/core";
 import type { z } from "zod";
 import type {
   GoogleGenerateContentStreamResult,
-  GoogleProviderRuntimeOptions,
-  GoogleStreamTextOptions,
   GoogleGenerateTextOptions,
+  GoogleProviderRuntimeOptions,
   GoogleProviderTextResponse,
+  GoogleStreamTextOptions,
 } from "./types";
+import { executeFunctionCalls, prepareToolsForGoogleSDK } from "./utils/function-calling";
 import { isZodObject, responseSchemaFromZodType } from "./utils/schema_helper";
-import { prepareToolsForGoogleSDK, executeFunctionCalls } from "./utils/function-calling";
 
 type StreamProcessingState = {
   accumulatedText: string;
@@ -208,6 +209,7 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
           {
             type: "tool-result",
             toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
             result: chunk.result,
           },
         ]),
@@ -700,35 +702,37 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       isPausedForFunctionCalling: false,
     };
 
-    const readableStream = new ReadableStream<string>({
-      async start(controller) {
-        try {
-          await state._processStreamWithFunctionCalls(
-            streamIterator,
-            controller,
-            streamState,
-            options,
-            availableTools,
-            currentApiCallContents,
-            model,
-            initialConfig,
-          );
-          await state._finalizeStream(streamState, options, controller);
-        } catch (error) {
-          console.error(
-            "[GoogleGenAIProvider] Error during Google GenAI stream processing:",
-            error,
-          );
-          if (options.onError) {
-            await options.onError(error);
+    const readableStream = createAsyncIterableStream(
+      new ReadableStream<string>({
+        async start(controller) {
+          try {
+            await state._processStreamWithFunctionCalls(
+              streamIterator,
+              controller,
+              streamState,
+              options,
+              availableTools,
+              currentApiCallContents,
+              model,
+              initialConfig,
+            );
+            await state._finalizeStream(streamState, options, controller);
+          } catch (error) {
+            console.error(
+              "[GoogleGenAIProvider] Error during Google GenAI stream processing:",
+              error,
+            );
+            if (options.onError) {
+              await options.onError(error);
+            }
+            controller.error(error);
           }
-          controller.error(error);
-        }
-      },
-      cancel(reason) {
-        console.debug("[GoogleGenAIProvider] Google GenAI Stream cancelled:", reason);
-      },
-    });
+        },
+        cancel(reason) {
+          console.debug("[GoogleGenAIProvider] Google GenAI Stream cancelled:", reason);
+        },
+      }),
+    );
 
     return {
       provider: initialStreamResult,

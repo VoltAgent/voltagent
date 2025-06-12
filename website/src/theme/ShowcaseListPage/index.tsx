@@ -1,8 +1,7 @@
-import React from "react";
 import Head from "@docusaurus/Head";
 import Layout from "@theme/Layout";
+import React from "react";
 import { ShowcaseList } from "../../components/showcase";
-import { Footer } from "../../components/footer";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
 interface ShowcaseListPageProps {
@@ -49,7 +48,6 @@ export default function ShowcaseListPage({
       <main className="flex-1">
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
         <ShowcaseList projects={projects} />
-        <Footer />
       </main>
     </Layout>
   );

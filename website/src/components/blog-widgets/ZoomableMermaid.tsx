@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
 import mermaid from "mermaid";
+import React, { useState, useEffect } from "react";
 import styles from "./ZoomableMermaid.module.css";
 
 interface ZoomableMermaidProps {
@@ -33,12 +33,14 @@ export default function ZoomableMermaid({
 
   return (
     <div className={styles.container}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
       <div
         className={`${styles.mermaidWrapper} ${isZoomed ? styles.zoomed : ""}`}
         onClick={() => setIsZoomed(!isZoomed)}
       >
         <div
           className={styles.diagram}
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: ignore
           dangerouslySetInnerHTML={{ __html: svg }}
         />
         <div className={styles.zoomHint}>
@@ -46,6 +48,7 @@ export default function ZoomableMermaid({
         </div>
       </div>
       {isZoomed && (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: ignore
         <div className={styles.overlay} onClick={() => setIsZoomed(false)} />
       )}
     </div>

@@ -1,15 +1,15 @@
-import React from "react";
-import { motion } from "framer-motion";
 import Link from "@docusaurus/Link";
-import AgentList from "./agent-list";
-import AgentDetail from "./agent-detail";
-import { BoltIcon } from "@heroicons/react/24/solid";
 import {
   ArrowTopRightOnSquareIcon,
   PlusCircleIcon as PlusCircleOutlineIcon,
 } from "@heroicons/react/24/outline";
-import { DotPattern } from "../ui/dot-pattern";
+import { BoltIcon } from "@heroicons/react/24/solid";
+import { motion } from "framer-motion";
+import React from "react";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { DotPattern } from "../ui/dot-pattern";
+import AgentDetail from "./agent-detail";
+import AgentList from "./agent-list";
 
 export const Marketplace = () => {
   return (

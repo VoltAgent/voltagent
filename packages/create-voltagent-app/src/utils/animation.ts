@@ -1,8 +1,8 @@
+import boxen from "boxen";
+import chalk from "chalk";
 import figlet from "figlet";
 import gradient from "gradient-string";
 import ora from "ora";
-import boxen from "boxen";
-import chalk from "chalk";
 
 // Nice colorful gradient palette
 const voltageGradient = gradient([
@@ -112,6 +112,7 @@ export const showSuccessMessage = (projectName: string): void => {
   console.log("\n");
   console.log(
     boxen(
+      // biome-ignore lint/style/useTemplate: disable due to readability
       voltageGradient.multiline(figlet.textSync("Success!", { horizontalLayout: "fitted" })) +
         "\n\n" +
         chalk.green(`Your project ${chalk.bold.white(projectName)} has been created!`) +

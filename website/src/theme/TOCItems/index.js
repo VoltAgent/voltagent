@@ -1,10 +1,10 @@
-import React, { useMemo } from "react";
 import { useThemeConfig } from "@docusaurus/theme-common";
 import {
-  useTOCHighlight,
   useFilteredAndTreeifiedTOC,
+  useTOCHighlight,
 } from "@docusaurus/theme-common/internal";
 import TOCItemTree from "@theme/TOCItems/Tree";
+import React, { useMemo } from "react";
 
 export default function TOCItems({
   toc,

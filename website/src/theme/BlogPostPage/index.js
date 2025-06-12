@@ -15,7 +15,6 @@ import BlogPostPaginator from "@theme/BlogPostPaginator";
 import TOC from "@theme/TOC";
 import Unlisted from "@theme/Unlisted";
 import clsx from "clsx";
-import { Footer } from "@site/src/components/footer";
 
 function BlogPostPageContent({ children }) {
   const { metadata, toc } = useBlogPost();
@@ -64,9 +63,6 @@ export default function BlogPostPage(props) {
           <BlogPostContent />
         </BlogPostPageContent>
       </HtmlClassNameProvider>
-      <div className="mt-20">
-        <Footer />
-      </div>
     </BlogPostProvider>
   );
 }

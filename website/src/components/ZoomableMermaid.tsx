@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, type FC } from "react";
-import mermaid from "mermaid";
 import Panzoom from "@panzoom/panzoom";
+import mermaid from "mermaid";
+import React, { useEffect, useRef, useState, type FC } from "react";
 
 interface ZoomableMermaidProps {
   chart: string;

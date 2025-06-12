@@ -1,10 +1,10 @@
 import type {
+  ReadableStreamType,
   Voice,
   VoiceEventData,
   VoiceEventType,
   VoiceMetadata,
   VoiceOptions,
-  ReadableStreamType,
 } from "@voltagent/core";
 
 // Re-export all voice types from core

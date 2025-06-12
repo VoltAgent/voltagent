@@ -8,6 +8,7 @@ export const LangWatchLogo = ({ className }: { className?: string }) => (
     xmlns="http://www.w3.org/2000/svg"
     xmlnsXlink="http://www.w3.org/1999/xlink"
   >
+    <title>LangWatch logo</title>
     <g clipPath="url(#langwatch_clip)" fill="none">
       <path
         d="M29.868 23.81V8.39h2.53v13.268h6.55v2.151h-9.08Z"

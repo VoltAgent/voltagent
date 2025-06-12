@@ -17,9 +17,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
-    "@voltagent/anthropic-ai": "^0.1.8",
-    "@voltagent/cli": "^0.1.6",
-    "@voltagent/core": "^0.1.27",
+    "@voltagent/anthropic-ai": "^0.1.11",
+    "@voltagent/cli": "^0.1.7",
+    "@voltagent/core": "^0.1.34",
     "zod": "3.24.2"
   },
   "devDependencies": {

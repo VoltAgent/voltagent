@@ -1,10 +1,10 @@
-import { useState } from "react";
 import {
   CpuChipIcon,
-  UserPlusIcon,
   EyeIcon,
+  UserPlusIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import { useState } from "react";
 
 type Feature = "centralized" | "specialized" | "memory" | "dynamic";
 
@@ -120,13 +120,16 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Centralized Coordination */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "centralized",
                 )} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("centralized", e)}
               >
-                <span className="text-gray-300">// Add individual agents</span>
+                <span className="text-gray-300">
+                  {"// Add individual agents"}
+                </span>
                 <br />
                 <span>orchestrator.addAgent(</span>
                 <span className="text-blue-400">new</span>
@@ -148,6 +151,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Specialized Agent Roles */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "specialized",
@@ -155,7 +159,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 onClick={(e) => handleFeatureClick("specialized", e)}
               >
                 <span className="text-gray-300">
-                  // Add a SupervisorAgent for complex support tasks
+                  {"// Add a SupervisorAgent for complex support tasks"}
                 </span>
                 <br />
                 <span>orchestrator.addAgent(</span>
@@ -199,6 +203,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Shared Memory System */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "memory",
@@ -206,7 +211,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 onClick={(e) => handleFeatureClick("memory", e)}
               >
                 <span className="text-gray-300">
-                  // Add another SupervisorAgent for product development
+                  {"// Add another SupervisorAgent for product development"}
                 </span>
                 <br />
                 <span>orchestrator.addAgent(</span>
@@ -240,6 +245,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Dynamic Agent Selection */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "dynamic",
@@ -247,7 +253,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 onClick={(e) => handleFeatureClick("dynamic", e)}
               >
                 <span className="text-gray-300">
-                  // Process through classifier
+                  {"// Process through classifier"}
                 </span>
                 <br />
                 <span className="text-blue-400">const</span>

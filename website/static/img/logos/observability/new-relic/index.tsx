@@ -6,6 +6,7 @@ export const NewRelicLogo = ({ className }: { className?: string }) => (
     width="2500"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>New Relic logo</title>
     <path
       d="m133.2 65.8 31.8-18.3v95l-82.5 47.5v-36.6l50.7-29.2z"
       fill="#cccccc"

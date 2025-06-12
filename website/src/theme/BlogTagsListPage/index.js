@@ -1,3 +1,4 @@
+import Link from "@docusaurus/Link";
 import {
   HtmlClassNameProvider,
   PageMetadata,
@@ -7,8 +8,6 @@ import BlogLayout from "@theme/BlogLayout";
 import SearchMetadata from "@theme/SearchMetadata";
 import clsx from "clsx";
 import React from "react";
-import Link from "@docusaurus/Link";
-import { Footer } from "@site/src/components/footer";
 
 export default function BlogTagsListPage({ tags }) {
   const allTags = tags || [];
@@ -73,7 +72,6 @@ export default function BlogTagsListPage({ tags }) {
           </div>
         </div>
       </BlogLayout>
-      <Footer />
     </HtmlClassNameProvider>
   );
 }

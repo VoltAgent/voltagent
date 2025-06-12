@@ -1,9 +1,9 @@
-// @ts-ignore - To prevent errors when loading Jest mocks
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
-import type { MemoryMessage, Memory } from "../memory/types";
+import type { Memory, MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
 import { createTool } from "../tool";
+import { createAsyncIterableStream } from "../utils/async-iterable-stream";
 import { Agent } from "./index";
 import type {
   BaseMessage,
@@ -18,12 +18,12 @@ import type {
 
 // @ts-ignore - To simplify test types
 import type { AgentHistoryEntry } from "../agent/history";
-import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
-import { createHooks } from "./hooks";
-import { HistoryManager } from "./history";
-import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { NewTimelineEvent } from "../events/types";
 import type { BaseRetriever } from "../retriever/retriever";
+import type { VoltAgentExporter } from "../telemetry/exporter";
+import { HistoryManager } from "./history";
+import { createHooks } from "./hooks";
+import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: unknown };
@@ -125,6 +125,11 @@ const mockMemory = {
       },
     ),
 
+  // Add missing user-centric conversation methods
+  getConversationsByUserId: jest.fn().mockImplementation(async () => []),
+  queryConversations: jest.fn().mockImplementation(async () => []),
+  getConversationMessages: jest.fn().mockImplementation(async () => []),
+
   // Special test requirements
   getHistoryEntries: jest.fn().mockImplementation(async () => {
     return [createMockHistoryEntry("Test input")];
@@ -179,6 +184,8 @@ class MockProvider implements LLMProvider<MockModelType> {
           role: "assistant",
           content: "Using test-tool",
           id: "test-tool-call-id",
+          name: "test-tool",
+          arguments: {},
         });
       }
 
@@ -189,11 +196,24 @@ class MockProvider implements LLMProvider<MockModelType> {
           role: "tool",
           content: "tool result",
           id: "test-tool-call-id",
+          name: "test-tool",
+          result: "tool result",
         });
       }
     }
 
     const result = { text: "Hello, I am a test agent!" };
+
+    // Simulate final text response step like real providers do
+    if (options.onStepFinish) {
+      await options.onStepFinish({
+        type: "text",
+        role: "assistant",
+        content: result.text,
+        id: "final-text-step",
+      });
+    }
+
     return {
       provider: result,
       text: result.text,
@@ -217,27 +237,31 @@ class MockProvider implements LLMProvider<MockModelType> {
     this.streamTextCalls++;
     this.lastMessages = options.messages;
 
-    const stream = new ReadableStream<{
-      type: "text-delta";
-      textDelta: string;
-    }>({
-      start(controller) {
-        controller.enqueue({ type: "text-delta", textDelta: "Hello" });
-        controller.enqueue({ type: "text-delta", textDelta: ", " });
-        controller.enqueue({ type: "text-delta", textDelta: "world!" });
-        controller.close();
-      },
-    });
+    const stream = createAsyncIterableStream(
+      new ReadableStream<{
+        type: "text-delta";
+        textDelta: string;
+      }>({
+        start(controller) {
+          controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+          controller.enqueue({ type: "text-delta", textDelta: ", " });
+          controller.enqueue({ type: "text-delta", textDelta: "world!" });
+          controller.close();
+        },
+      }),
+    );
 
     // Create a text stream
-    const textStream = new ReadableStream<string>({
-      start(controller) {
-        controller.enqueue("Hello");
-        controller.enqueue(", ");
-        controller.enqueue("world!");
-        controller.close();
-      },
-    });
+    const textStream = createAsyncIterableStream(
+      new ReadableStream<string>({
+        start(controller) {
+          controller.enqueue("Hello");
+          controller.enqueue(", ");
+          controller.enqueue("world!");
+          controller.close();
+        },
+      }),
+    );
 
     return {
       provider: stream,
@@ -249,6 +273,7 @@ class MockProvider implements LLMProvider<MockModelType> {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
+    onStepFinish?: (step: StepWithContent) => Promise<void>;
   }): Promise<ProviderObjectResponse<MockGenerateObjectResult<z.infer<T>>, z.infer<T>>> {
     this.generateObjectCalls++;
     this.lastMessages = options.messages;
@@ -260,6 +285,16 @@ class MockProvider implements LLMProvider<MockModelType> {
         hobbies: ["reading", "gaming"],
       } as z.infer<T>,
     };
+
+    // Simulate final object response step like real providers do
+    if (options.onStepFinish) {
+      await options.onStepFinish({
+        type: "text",
+        role: "assistant",
+        content: JSON.stringify(result.object),
+        id: "final-object-step",
+      });
+    }
 
     return {
       provider: result,
@@ -313,7 +348,7 @@ class MockProvider implements LLMProvider<MockModelType> {
 
     return {
       provider: result,
-      objectStream: partialObjectStream,
+      objectStream: createAsyncIterableStream(partialObjectStream),
     };
   }
 }
@@ -936,6 +971,7 @@ describe("Agent", () => {
       const mockRetriever = {
         retrieveCalls: 0,
         expectedContext: "This is retrieved context",
+        lastRetrieveOptions: null as any,
 
         // Add required BaseRetriever properties
         options: {},
@@ -947,10 +983,32 @@ describe("Agent", () => {
           execute: async () => "tool execution result",
         },
 
-        retrieve: jest.fn().mockImplementation(async () => {
-          mockRetriever.retrieveCalls++;
-          return mockRetriever.expectedContext;
-        }),
+        retrieve: jest
+          .fn()
+          .mockImplementation(async (_input: string | BaseMessage[], options?: any) => {
+            mockRetriever.retrieveCalls++;
+            mockRetriever.lastRetrieveOptions = options;
+
+            // Store references in userContext if available - simple test case
+            if (options?.userContext) {
+              const references = [
+                {
+                  id: "doc-1",
+                  title: "VoltAgent Usage Guide",
+                  source: "Official Documentation",
+                },
+                {
+                  id: "doc-2",
+                  title: "API Reference",
+                  source: "Technical Documentation",
+                },
+              ];
+
+              options.userContext.set("references", references);
+            }
+
+            return mockRetriever.expectedContext;
+          }),
       };
 
       return mockRetriever;
@@ -1037,6 +1095,177 @@ describe("Agent", () => {
         `retriever_mock-retriever_${testAgentWithRetriever.id}`,
       );
       expect(state.retriever?.description).toBe(mockRetriever.tool.description);
+    });
+
+    it("should store references in userContext", async () => {
+      const mockRetriever = createMockRetriever();
+
+      // Use onEnd hook to capture the final userContext
+      let capturedUserContext: Map<string | symbol, unknown> | undefined;
+      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+        capturedUserContext = context.userContext;
+      });
+
+      const testAgentWithRetriever = new TestAgent({
+        id: "references-test-agent",
+        name: "References Test Agent",
+        description: "A test agent with retriever for references testing",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        hooks: createHooks({ onEnd: onEndHook }),
+        instructions: "References Test Agent instructions",
+      });
+
+      await testAgentWithRetriever.generateText("What is VoltAgent?");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify onEnd hook was called and captured userContext
+      expect(onEndHook).toHaveBeenCalled();
+      expect(capturedUserContext).toBeInstanceOf(Map);
+
+      const references = capturedUserContext?.get("references") as Array<{
+        id: string;
+        title: string;
+        source: string;
+      }>;
+      expect(references).toBeDefined();
+      expect(Array.isArray(references)).toBe(true);
+    });
+
+    it("should pass userContext to retriever during generation", async () => {
+      const mockRetriever = createMockRetriever();
+
+      const testAgentWithRetriever = new TestAgent({
+        id: "usercontext-retriever-test-agent",
+        name: "UserContext Retriever Test Agent",
+        description: "A test agent with retriever for userContext testing",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: "UserContext Retriever Test Agent instructions",
+      });
+
+      const initialUserContext = new Map<string | symbol, unknown>();
+      initialUserContext.set("initial_data", "test_value");
+
+      await testAgentWithRetriever.generateText("Test query for retrieval", {
+        userContext: initialUserContext,
+      });
+
+      // Verify retriever was called with options containing userContext
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+      expect(mockRetriever.lastRetrieveOptions).toBeDefined();
+      expect(mockRetriever.lastRetrieveOptions.userContext).toBeInstanceOf(Map);
+      expect(mockRetriever.lastRetrieveOptions.userContext.get("initial_data")).toBe("test_value");
+    });
+
+    it("should work without userContext in options", async () => {
+      const mockRetriever = createMockRetriever();
+
+      // Use onEnd hook to capture the final userContext
+      let capturedUserContext: Map<string | symbol, unknown> | undefined;
+      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+        capturedUserContext = context.userContext;
+      });
+
+      const testAgentWithRetriever = new TestAgent({
+        id: "no-context-retriever-test-agent",
+        name: "No Context Retriever Test Agent",
+        description: "A test agent with retriever for no context testing",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        hooks: createHooks({ onEnd: onEndHook }),
+        instructions: "No Context Retriever Test Agent instructions",
+      });
+
+      await testAgentWithRetriever.generateText("Test without initial context");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify onEnd hook was called and captured userContext
+      expect(onEndHook).toHaveBeenCalled();
+      expect(capturedUserContext).toBeInstanceOf(Map);
+
+      const references = capturedUserContext?.get("references");
+      expect(references).toBeDefined();
+      expect(Array.isArray(references)).toBe(true);
+    });
+  });
+
+  describe("onEnd hook", () => {
+    it("should call onEnd hook with conversationId", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Test Agent instructions",
+      });
+
+      const userInput = "Hello, how are you?";
+      await agentWithOnEnd.generateText(userInput);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Check basic structure
+      expect(callArgs).toHaveProperty("agent");
+      expect(callArgs).toHaveProperty("output");
+      expect(callArgs).toHaveProperty("error");
+      expect(callArgs).toHaveProperty("conversationId");
+      expect(callArgs).toHaveProperty("context");
+
+      // Check other properties
+      expect(callArgs.agent).toBe(agentWithOnEnd);
+      expect(callArgs.output).toBeDefined();
+      expect(callArgs.error).toBeUndefined();
+      expect(callArgs.context).toBeDefined();
+      expect(callArgs.conversationId).toEqual(expect.any(String));
+    });
+
+    it("should call onEnd hook with userContext passed correctly", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Context Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Context Test Agent instructions",
+      });
+
+      const userContext = new Map<string | symbol, unknown>();
+      userContext.set("testKey", "testValue");
+
+      await agentWithOnEnd.generateText("Test with context", { userContext });
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      expect(callArgs.context.userContext).toBeInstanceOf(Map);
+      expect(callArgs.context.userContext.get("testKey")).toBe("testValue");
+    });
+
+    it("should call streamText without errors", async () => {
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Stream Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "OnEnd Stream Test Agent instructions",
+      });
+
+      const userInput = "Stream test";
+      const result = await agentWithOnEnd.streamText(userInput);
+
+      // Verify that streamText was called and returns expected structure
+      expect(mockProvider.streamTextCalls).toBe(1);
+      expect(result).toBeDefined();
+      expect(result.textStream).toBeDefined();
     });
   });
 

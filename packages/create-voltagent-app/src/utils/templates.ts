@@ -1,8 +1,5 @@
-console.log("--- Loading utils/templates.ts ---"); // Add log at the very top
-
 import path from "node:path";
-import type { Feature, ProjectOptions, TemplateFile } from "../types";
-import fs from "node:fs/promises"; // Use node:fs/promises for async fs operations
+import type { ProjectOptions, TemplateFile } from "../types";
 
 // Determine the correct base path for templates.
 // Assumes the templates directory is either:

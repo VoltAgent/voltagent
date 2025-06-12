@@ -1,5 +1,5 @@
-import React, { useState } from "react";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 
 type Requirement = {
   question: string;

@@ -1,12 +1,12 @@
-import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import { RagExample } from "./rag-animation";
 import {
-  ServerStackIcon,
+  AdjustmentsHorizontalIcon,
   FunnelIcon,
+  ServerStackIcon,
   SparklesIcon,
   Square3Stack3DIcon,
-  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
+import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import { RagExample } from "./rag-animation";
 import { RagMobile } from "./rag-mobile";
 
 export function Rag() {

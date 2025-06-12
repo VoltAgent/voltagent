@@ -1,5 +1,22 @@
 # @voltagent/vercel-ai
 
+## 0.1.11
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
+
+  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
+
+## 0.1.10
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
 ## 0.1.9
 
 ### Patch Changes

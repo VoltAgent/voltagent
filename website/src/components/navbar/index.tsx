@@ -1,19 +1,19 @@
-import React, { useState } from "react";
-import styles from "./styles.module.css";
 import Link from "@docusaurus/Link";
 import { useLocation } from "@docusaurus/router";
-import { DiscordLogo } from "../../../static/img/logos/discord";
-import { GitHubLogo } from "../../../static/img/logos/github";
-import { BoltIcon, StarIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
-import {} from "@heroicons/react/24/solid";
 import {
-  ServerIcon,
   CommandLineIcon,
   ComputerDesktopIcon,
+  ServerIcon,
   ShoppingCartIcon,
 } from "@heroicons/react/24/outline";
-import { useGitHubStars } from "../../contexts/GitHubStarsContext";
+import { BoltIcon, ChevronDownIcon, StarIcon } from "@heroicons/react/24/solid";
+import {} from "@heroicons/react/24/solid";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import React, { useState } from "react";
+import { DiscordLogo } from "../../../static/img/logos/discord";
+import { GitHubLogo } from "../../../static/img/logos/github";
+import { useGitHubStars } from "../../contexts/GitHubStarsContext";
+import styles from "./styles.module.css";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

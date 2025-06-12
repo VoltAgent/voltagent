@@ -1,5 +1,5 @@
-import { GroqTools } from "@/types";
-import { Groq } from "groq-sdk";
+import type { GroqTools } from "@/types";
+import type { Groq } from "groq-sdk";
 
 /**
  * Convert VoltAgent tools to Groq SDK format

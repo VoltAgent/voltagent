@@ -1,13 +1,13 @@
 ---
-title: Introduction
+title: VoltOps LLM Observability Platform
 slug: /
 ---
 
-import VoltOpsDemo from '@site/src/components/blog-widgets/VoltOpsDemo';
+# VoltOps LLM Observability Platform
 
-# VoltOps
+Voltops is a **framework-agnostic** platform designed to help you monitor, debug, and improve AI agents across any framework or technology stack.
 
-**VoltOps** is a **n8n-style LLM Observability platform** - providing visual, node-based monitoring for AI agents across any framework or technology stack.
+![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
 Unlike traditional text-based logging tools, VoltOps visualizes your agent workflows as interactive flowcharts, making it easy to understand complex multi-agent interactions, tool usage patterns, and decision flows at a glance.
 

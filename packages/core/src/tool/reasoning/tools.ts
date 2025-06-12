@@ -1,7 +1,8 @@
-import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
 import { createTool } from "..";
 import type { ToolExecuteOptions } from "../../agent/providers/base/types";
+import devLogger from "../../utils/internal/dev-logger";
 import {
   NextAction,
   type ReasoningStep,
@@ -36,7 +37,7 @@ export const thinkTool = createTool({
     const { agentId, historyEntryId } = reasoningOptions || {};
 
     if (!agentId || !historyEntryId) {
-      console.error("Think tool requires agentId and historyEntryId in options.");
+      devLogger.error("Think tool requires agentId and historyEntryId in options.");
       return "Error: Missing required agentId or historyEntryId in execution options.";
     }
 
@@ -58,7 +59,7 @@ export const thinkTool = createTool({
 
       return `Thought step "${title}" recorded successfully.`;
     } catch (error) {
-      console.error("Error processing or emitting thought step:", error);
+      devLogger.error("Error processing or emitting thought step:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       return `Error recording thought step: ${errorMessage}`;
     }
@@ -98,7 +99,7 @@ export const analyzeTool = createTool({
     const { agentId, historyEntryId } = reasoningOptions || {};
 
     if (!agentId || !historyEntryId) {
-      console.error("Analyze tool requires agentId and historyEntryId in options.");
+      devLogger.error("Analyze tool requires agentId and historyEntryId in options.");
       return "Error: Missing required agentId or historyEntryId in execution options.";
     }
 
@@ -121,7 +122,7 @@ export const analyzeTool = createTool({
 
       return `Analysis step "${title}" recorded successfully. Next action: ${next_action}.`;
     } catch (error) {
-      console.error("Error processing or emitting analysis step:", error);
+      devLogger.error("Error processing or emitting analysis step:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       return `Error recording analysis step: ${errorMessage}`;
     }

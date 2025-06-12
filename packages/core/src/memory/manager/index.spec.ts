@@ -1,10 +1,10 @@
 import { MemoryManager } from ".";
-import type { BaseMessage } from "../../agent/providers/base/types";
-import type { Memory, MemoryMessage } from "../types";
-import type { OperationContext } from "../../agent/types";
 import type { AgentHistoryEntry } from "../../agent/history";
-import type { NewTimelineEvent } from "../../events/types";
+import type { BaseMessage } from "../../agent/providers/base/types";
+import type { OperationContext } from "../../agent/types";
 import { AgentEventEmitter } from "../../events";
+import type { NewTimelineEvent } from "../../events/types";
+import type { Memory, MemoryMessage } from "../types";
 
 // Mock the AgentRegistry
 jest.mock("../../server/registry", () => {
@@ -69,12 +69,15 @@ class MockMemory implements Memory {
   private historyEvents: Record<string, any> = {};
   private historySteps: Record<string, any> = {};
   private timelineEvents: Record<string, any> = {};
+  public currentUserId: string | undefined;
 
   async addMessage(
     message: BaseMessage | MemoryMessage,
-    userId: string,
     conversationId = "default",
   ): Promise<void> {
+    // For testing purposes, we need to track which user this message belongs to
+    // We'll extract it from the current test context or use a default
+    const userId = this.currentUserId || "default-user";
     const key = `${userId}:${conversationId}`;
     if (!this.messages[key]) {
       this.messages[key] = [];
@@ -256,6 +259,40 @@ class MockMemory implements Memory {
     this.timelineEvents[key] = { ...value, history_id: historyId, _agentId: agentId };
   }
 
+  // Add the missing user-centric conversation methods
+  async getConversationsByUserId(userId: string, _options: any = {}): Promise<any[]> {
+    return Object.values(this.conversations).filter((c) => c.userId === userId);
+  }
+
+  async queryConversations(options: any): Promise<any[]> {
+    let conversations = Object.values(this.conversations);
+
+    if (options.userId) {
+      conversations = conversations.filter((c) => c.userId === options.userId);
+    }
+    if (options.resourceId) {
+      conversations = conversations.filter((c) => c.resourceId === options.resourceId);
+    }
+
+    return conversations;
+  }
+
+  async getConversationMessages(conversationId: string, options: any = {}): Promise<any[]> {
+    // Find messages for this conversation across all user-conversation keys
+    const allMessages: any[] = [];
+    for (const [key, messages] of Object.entries(this.messages)) {
+      if (key.endsWith(`:${conversationId}`)) {
+        allMessages.push(...messages);
+      }
+    }
+
+    // Sort by creation time
+    allMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    const { limit = 100, offset = 0 } = options;
+    return allMessages.slice(offset, offset + limit);
+  }
+
   // Getter helper functions for tests
   getHistoryEntries(): Record<string, any> {
     return this.historyEntries;
@@ -272,6 +309,11 @@ class MockMemory implements Memory {
   getTimelineEvents(): Record<string, any> {
     return this.timelineEvents;
   }
+
+  // Helper method for tests to set current user
+  setCurrentUserId(userId: string): void {
+    this.currentUserId = userId;
+  }
 }
 
 describe("MemoryManager", () => {
@@ -281,6 +323,7 @@ describe("MemoryManager", () => {
 
   beforeEach(() => {
     mockMemory = new MockMemory();
+    mockMemory.setCurrentUserId("user1"); // Set default user for tests
     memoryManager = new MemoryManager("test-agent", mockMemory);
     mockContext = createMockContext();
   });
@@ -324,13 +367,10 @@ describe("MemoryManager", () => {
   describe("prepareConversationContext", () => {
     beforeEach(async () => {
       // Add some test messages
-      await mockMemory.addMessage({ role: "user", content: "Message 1" }, "user1", "conversation1");
-      await mockMemory.addMessage(
-        { role: "assistant", content: "Response 1" },
-        "user1",
-        "conversation1",
-      );
-      await mockMemory.addMessage({ role: "user", content: "Message 2" }, "user1", "conversation1");
+      mockMemory.setCurrentUserId("user1");
+      await mockMemory.addMessage({ role: "user", content: "Message 1" }, "conversation1");
+      await mockMemory.addMessage({ role: "assistant", content: "Response 1" }, "conversation1");
+      await mockMemory.addMessage({ role: "user", content: "Message 2" }, "conversation1");
     });
 
     it("should retrieve messages from memory during context preparation", async () => {
@@ -517,14 +557,13 @@ describe("MemoryManager", () => {
         metadata: {},
       });
 
+      mockMemory.setCurrentUserId("user1");
       await mockMemory.addMessage(
         { role: "user", content: "Previous message 1" },
-        "user1",
         "existing-conversation",
       );
       await mockMemory.addMessage(
         { role: "assistant", content: "Previous response 1" },
-        "user1",
         "existing-conversation",
       );
 

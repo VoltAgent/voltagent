@@ -151,7 +151,7 @@ What you'll find in the guide:
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 20+
 - Vercel AI SDK 3.0+
 - OpenTelemetry SDK
 

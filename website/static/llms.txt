@@ -437,9 +437,9 @@ new VoltAgent({ agents: { coordinator: supervisor } });
 *   **Purpose:** Lightweight provider for OpenAI and compatible APIs (e.g., local models via Ollama). Minimal bundle size, suitable for edge environments.
 *   **Usage:**
     ```typescript
-    import { XsAIProvider } from "@voltagent/xsai";
+    import { XSAIProvider } from "@voltagent/xsai";
 
-    const provider = new XsAIProvider({
+    const provider = new XSAIProvider({
       apiKey: process.env.OPENAI_API_KEY!, // Or other compatible key
       // baseURL: "http://localhost:11434/v1" // Optional: for local models
     });

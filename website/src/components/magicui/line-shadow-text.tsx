@@ -1,5 +1,5 @@
 import { cn } from "@site/src/utils/index";
-import { motion, MotionProps } from "motion/react";
+import { type MotionProps, motion } from "motion/react";
 
 interface LineShadowTextProps
   extends Omit<React.HTMLAttributes<HTMLElement>, keyof MotionProps>,

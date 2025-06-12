@@ -1,6 +1,6 @@
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import * as React from "react";
 import { useState } from "react";
-import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 // Import logo mapping as needed
 type LogoMapType = {

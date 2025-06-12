@@ -1,5 +1,5 @@
+import { AnimatePresence, motion } from "framer-motion";
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 type CodeExampleProps = {
   // isVisible: boolean; // TODO: Prop 'isVisible' is declared but never used. Remove or utilize it.
@@ -369,6 +369,7 @@ export const CodeExample = ({
               {/* Dynamically generate line numbers based on the longest example */}
               {/* Using index as key is acceptable here as the list is static and has no stable IDs */}
               {Array.from({ length: 18 }, (_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: I have no choice
                 <div key={i}>{i + 1}</div>
               ))}
             </div>

@@ -1,7 +1,6 @@
-import React from "react";
 import Layout from "@theme/Layout";
+import React from "react";
 import { Manifesto } from "../components/about";
-import { Footer } from "../components/footer";
 
 export default function ManifestoPage() {
   return (
@@ -11,7 +10,6 @@ export default function ManifestoPage() {
           <Manifesto />
         </div>
       </main>
-      <Footer />
     </Layout>
   );
 }

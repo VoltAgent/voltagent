@@ -1,11 +1,12 @@
-import React, { useState } from "react";
-import styles from "./styles.module.css";
 import Link from "@docusaurus/Link";
 import { useLocation } from "@docusaurus/router";
-import { DiscordLogo } from "../../../static/img/logos/discord";
-import { GitHubLogo } from "../../../static/img/logos/github";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import SearchBar from "@theme/SearchBar";
+import React, { useState } from "react";
+import { DiscordLogo } from "../../../static/img/logos/discord";
+import { GitHubLogo } from "../../../static/img/logos/github";
+import styles from "./styles.module.css";
 
 import NavbarMobileSidebarSecondaryMenu from "@theme/Navbar/MobileSidebar/SecondaryMenu";
 import { cn } from "../../utils";

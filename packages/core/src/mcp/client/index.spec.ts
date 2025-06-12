@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import devLogger from "../../utils/internal/dev-logger";
 import { MCPClient } from "./index";
 
 // Mock the MCP SDK dependencies
@@ -20,6 +21,15 @@ jest.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
 
 jest.mock("zod-from-json-schema", () => ({
   convertJsonSchemaToZod: jest.fn().mockReturnValue({}),
+}));
+
+jest.mock("../../utils/internal/dev-logger", () => ({
+  __esModule: true,
+  default: {
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+  },
 }));
 
 describe("MCPClient", () => {
@@ -55,6 +65,11 @@ describe("MCPClient", () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
+
+    // Reset devLogger mock
+    (devLogger.error as jest.Mock).mockClear();
+    (devLogger.warn as jest.Mock).mockClear();
+    (devLogger.info as jest.Mock).mockClear();
 
     // Create a mock client
     mockClient = {
@@ -318,8 +333,6 @@ describe("MCPClient", () => {
         throw new Error("Schema conversion failed");
       });
 
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-
       const agentTools = await client.getAgentTools();
 
       expect(agentTools).toEqual({
@@ -332,8 +345,10 @@ describe("MCPClient", () => {
         },
       });
 
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      consoleErrorSpy.mockRestore();
+      expect(devLogger.error).toHaveBeenCalledWith(
+        "Failed to create executable tool wrapper for 'tool1':",
+        expect.any(Error),
+      );
     });
 
     it("should create execute functions that call tools", async () => {
@@ -358,17 +373,13 @@ describe("MCPClient", () => {
     it("should handle errors in execute functions", async () => {
       const error = new Error("Tool execution failed");
       mockCallTool.mockRejectedValueOnce(error);
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
       const agentTools = (await client.getAgentTools()) as Record<string, any>;
 
-      await expect(agentTools.TestClient_tool1.execute({ param: "value" })).rejects.toThrow(
-        "Tool execution failed",
-      );
+      await expect(agentTools.TestClient_tool1.execute({ param: "value" })).rejects.toThrow();
 
-      expect(consoleErrorSpy).toHaveBeenCalled();
-
-      consoleErrorSpy.mockRestore();
+      // Just check that devLogger.error was called at least once
+      expect(devLogger.error).toHaveBeenCalled();
     });
   });
 

@@ -75,7 +75,7 @@ async function basicTraceExample() {
         "You are a weather agent. You are responsible for providing weather information to the user.",
       metadata: {
         modelParameters: {
-          model: "test-model",
+          model: "gpt-4o-mini",
         },
       },
     });
@@ -160,9 +160,9 @@ async function basicTraceExample() {
         sources: ["weather-api"],
       },
       usage: {
-        promptTokens: 45,
-        completionTokens: 25,
-        totalTokens: 70,
+        promptTokens: 450,
+        completionTokens: 250,
+        totalTokens: 700,
       },
     });
 
@@ -176,9 +176,9 @@ async function basicTraceExample() {
       },
       status: "completed",
       usage: {
-        promptTokens: 45,
-        completionTokens: 25,
-        totalTokens: 70,
+        promptTokens: 450,
+        completionTokens: 250,
+        totalTokens: 700,
       },
       metadata: {
         totalOperations: 3,
@@ -414,6 +414,11 @@ async function complexHierarchyExample() {
       metadata: {
         totalPapersProcessed: 3,
         analysisAccuracy: 0.94,
+      },
+      usage: {
+        promptTokens: 120,
+        completionTokens: 80,
+        totalTokens: 200,
       },
     });
 

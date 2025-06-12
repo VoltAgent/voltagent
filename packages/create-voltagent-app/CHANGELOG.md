@@ -1,5 +1,11 @@
 # create-voltagent-app
 
+## 0.1.26
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
 ## 0.1.21
 
 ### Patch Changes

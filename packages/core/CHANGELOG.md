@@ -1,5 +1,187 @@
 # @voltagent/core
 
+## 0.1.34
+
+### Patch Changes
+
+- [#238](https://github.com/VoltAgent/voltagent/pull/238) [`ccdba7a`](https://github.com/VoltAgent/voltagent/commit/ccdba7ac58e284dcda9f6b7bec2c8d2e69892940) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: user messages saving with proper content serialization
+
+  Fixed an issue where user messages were not being saved correctly to storage due to improper content formatting. The message content is now properly stringified when it's not already a string, ensuring consistent storage format across PostgreSQL and LibSQL implementations.
+
+## 0.1.33
+
+### Patch Changes
+
+- [#236](https://github.com/VoltAgent/voltagent/pull/236) [`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Remove userId parameter from addMessage method
+
+  Simplified the `addMessage` method signature by removing the `userId` parameter. This change makes the API cleaner and more consistent with the conversation-based approach where user context is handled at the conversation level.
+
+  ### Changes
+
+  - **Removed**: `userId` parameter from `addMessage` method
+  - **Before**: `addMessage(message: MemoryMessage, userId: string, conversationId: string)`
+  - **After**: `addMessage(message: MemoryMessage, conversationId: string)`
+
+  ### Migration Guide
+
+  If you were calling `addMessage` with a `userId` parameter, simply remove it:
+
+  ```typescript
+  // Before
+  await memory.addMessage(message, conversationId, userId);
+
+  // After
+  await memory.addMessage(message, conversationId);
+  ```
+
+  ### Rationale
+
+  User context is now properly managed at the conversation level, making the API more intuitive and reducing parameter complexity. The user association is handled through the conversation's `userId` property instead of requiring it on every message operation.
+
+  **Breaking Change:**
+
+  This is a minor breaking change. Update your `addMessage` calls to remove the `userId` parameter.
+
+- [#235](https://github.com/VoltAgent/voltagent/pull/235) [`16c2a86`](https://github.com/VoltAgent/voltagent/commit/16c2a863d3ecdc09f09219bd40f2dbf1d789194d) Thanks [@alasano](https://github.com/alasano)! - fix: onHandoff hook invocation to pass arguments as object instead of positional parameters
+
+- [#233](https://github.com/VoltAgent/voltagent/pull/233) [`0d85f0e`](https://github.com/VoltAgent/voltagent/commit/0d85f0e960dbc6e8df6a79a16c775ca7a34043bb) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: adding in missing changeset from [PR #226](https://github.com/VoltAgent/voltagent/pull/226)
+
+## 0.1.32
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+## 0.1.31
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- [#223](https://github.com/VoltAgent/voltagent/pull/223) [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6) Thanks [@omeraplak](https://github.com/omeraplak)! - Add userContext support to retrievers for tracking references and metadata
+
+  Retrievers can now store additional information (like references, sources, citations) in userContext that can be accessed from agent responses. This enables tracking which documents were used to generate responses, perfect for citation systems and audit trails.
+
+  ```ts
+  class MyRetriever extends BaseRetriever {
+    async retrieve(input: string, options: RetrieveOptions): Promise<string> {
+      // Find relevant documents
+      const docs = this.findRelevantDocs(input);
+
+      const references = docs.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        source: doc.source,
+      }));
+      options.userContext.set("references", references);
+
+      return docs.map((doc) => doc.content).join("\n");
+    }
+  }
+
+  // Access references from response
+  const response = await agent.generateText("What is VoltAgent?");
+  const references = response.userContext?.get("references");
+  ```
+
+## 0.1.30
+
+### Patch Changes
+
+- [#201](https://github.com/VoltAgent/voltagent/pull/201) [`04dd320`](https://github.com/VoltAgent/voltagent/commit/04dd3204455b09dc490d1bdfbd0cfeea13c3c409) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: include modelParameters in agent event metadata
+
+  This adds the `modelParameters` field to agent event metadata to improve observability and debugging of model-specific behavior during agent execution.
+
+## 0.1.29
+
+### Patch Changes
+
+- [#191](https://github.com/VoltAgent/voltagent/pull/191) [`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Remove console based logging in favor of a dev-only logger that will not output logs in production environments by leveraging the NODE_ENV
+
+- [#196](https://github.com/VoltAgent/voltagent/pull/196) [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `systemPrompt` and `messages` array to metadata for display on VoltOps Platform
+
+## 0.1.28
+
+### Patch Changes
+
+- [#189](https://github.com/VoltAgent/voltagent/pull/189) [`07138fc`](https://github.com/VoltAgent/voltagent/commit/07138fc85ef27c9136d303233559f6b358ad86de) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Added the 'purpose' field to agents (subagents) to provide a limited description of the purpose of the agent to the supervisor instead of passing the instructions for the subagent directly to the supervisor
+
+  ```ts
+  const storyAgent = new Agent({
+    name: "Story Agent",
+    purpose: "A story writer agent that creates original, engaging short stories.",
+    instructions: "You are a creative story writer. Create original, engaging short stories.",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  > The supervisor agent's system prompt is automatically modified to include instructions on how to manage its subagents effectively. It lists the available subagents and their `purpose` and provides guidelines for delegation, communication, and response aggregation.
+
+- [#186](https://github.com/VoltAgent/voltagent/pull/186) [`adad41a`](https://github.com/VoltAgent/voltagent/commit/adad41a930e338c4683306b9dbffec22096eba5c) Thanks [@necatiozmen](https://github.com/necatiozmen)! - chore: update "VoltAgent Console" -> "VoltOps Platform"
+
 ## 0.1.27
 
 ### Patch Changes

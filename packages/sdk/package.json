@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/sdk",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "VoltAgent SDK - Client SDK for interacting with VoltAgent API",
   "license": "MIT",
   "exports": {
@@ -22,11 +22,11 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.24"
+    "@voltagent/core": "^0.1.31"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
-    "@types/node": "^18.15.11",
+    "@types/node": "^20.19.0",
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",
     "tsup": "^6.7.0",

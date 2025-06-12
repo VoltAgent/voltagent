@@ -1,5 +1,5 @@
-import React, { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 
 // Expanded roles list
 const roles = [

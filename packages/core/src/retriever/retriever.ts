@@ -1,7 +1,7 @@
+import type { BaseMessage } from "../agent/providers";
 import type { AgentTool } from "../tool";
 import { createRetrieverTool } from "./tools";
-import type { BaseMessage } from "../agent/providers";
-import type { Retriever, RetrieverOptions } from "./types";
+import type { Retriever, RetrieverOptions, RetrieveOptions } from "./types";
 
 /**
  * Abstract base class for Retriever implementations.
@@ -56,19 +56,18 @@ export abstract class BaseRetriever {
 
     // Explicitly bind all methods to 'this' to support destructuring
     if (this.retrieve) {
-      const originalRetrieve = this.retrieve;
-      this.retrieve = (input: string | BaseMessage[]) => {
-        return originalRetrieve.call(this, input);
-      };
+      const originalRetrieve = this.retrieve.bind(this);
+      this.retrieve = originalRetrieve as any;
     }
   }
 
   /**
-   * Retrieve information based on input.
-   * This method must be implemented by all concrete subclasses.
+   * Abstract method that must be implemented by concrete retriever classes.
+   * Retrieves relevant information based on the input text or messages.
    *
-   * @param input - The input to base the retrieval on, can be string or BaseMessage array
-   * @returns A Promise that resolves to a formatted context string
+   * @param input - The input to use for retrieval (string or BaseMessage array)
+   * @param options - Configuration and context for the retrieval
+   * @returns Promise resolving to a string with the retrieved content
    */
-  abstract retrieve(input: string | BaseMessage[]): Promise<string>;
+  abstract retrieve(input: string | BaseMessage[], options: RetrieveOptions): Promise<string>;
 }

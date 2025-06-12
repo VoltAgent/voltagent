@@ -1,14 +1,14 @@
+import {
+  CircleStackIcon,
+  CpuChipIcon,
+  FingerPrintIcon,
+  LightBulbIcon,
+  QueueListIcon,
+  Square3Stack3DIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatedBeam } from "../magicui/animated-beam";
-import {
-  UserIcon,
-  CpuChipIcon,
-  LightBulbIcon,
-  CircleStackIcon,
-  Square3Stack3DIcon,
-  QueueListIcon,
-  FingerPrintIcon,
-} from "@heroicons/react/24/outline";
 
 import {
   CohereLogo,
@@ -18,14 +18,8 @@ import {
 } from "../../../static/img/logos/integrations";
 import { OpenAILogo } from "../../../static/img/logos/openai";
 import { SupabaseLogo } from "../../../static/img/logos/supabase";
-import { MistralLogo } from "../../../static/img/logos/mistral";
-import { Claude37Logo } from "../../../static/img/logos/claudie";
 
-interface WorkflowCodeExampleProps {
-  isVisible: boolean;
-}
-
-export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
+export function RagExample() {
   const [animationStep, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [activeNodes, setActiveNodes] = useState<string[]>([]);
@@ -187,7 +181,8 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
           ? "shadow-[0_0_15px_rgba(245,158,11,0.6)]"
           : "shadow-[0_0_15px_rgba(156,163,175,0.6)]"
       }`;
-    } else if (isAnyNodeActive) {
+    }
+    if (isAnyNodeActive) {
       return `${baseClasses} opacity-70`;
     }
 
@@ -210,7 +205,7 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
               <div className="border border-gray-800 rounded-xl  mx-auto max-w-6xl">
                 {/* Section Headers */}
                 <div className="grid grid-cols-5 mb-12">
-                  <div className="col-span-1"></div>
+                  <div className="col-span-1" />
                   <div className="col-span-1 flex justify-center">
                     <div className="text-white text-md font-[monospace]">
                       .embed()
@@ -226,7 +221,7 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
                       .rerank()
                     </div>
                   </div>
-                  <div className="col-span-1"></div>
+                  <div className="col-span-1" />
                 </div>
 
                 {/* Top Row Nodes - Gray */}
@@ -324,9 +319,9 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
 
                 {/* Top Row Logos */}
                 <div className="grid grid-cols-5 gap-8 mb-20">
-                  <div className="col-span-1"></div>
-                  <div className="col-span-1"></div>
-                  <div className="col-span-1"></div>
+                  <div className="col-span-1" />
+                  <div className="col-span-1" />
+                  <div className="col-span-1" />
                   <div className="flex justify-center">
                     <div className="flex gap-4">
                       <div className="relative group cursor-pointer">
@@ -355,7 +350,7 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-1"></div>
+                  <div className="col-span-1" />
                 </div>
 
                 {/* Bottom Row Nodes - Red */}
@@ -422,12 +417,12 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-2"></div>
+                  <div className="col-span-2" />
                 </div>
 
                 {/* Bottom Row Logos */}
                 <div className="grid grid-cols-5 gap-8">
-                  <div className="col-span-1"></div>
+                  <div className="col-span-1" />
                   <div className="flex justify-center">
                     <div className="flex gap-4">
                       <div className="relative group cursor-pointer">
@@ -473,7 +468,7 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-2"></div>
+                  <div className="col-span-2" />
                 </div>
               </div>
 

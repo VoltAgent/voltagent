@@ -1,18 +1,17 @@
+import Link from "@docusaurus/Link";
+import { useLocation } from "@docusaurus/router";
 import {
   HtmlClassNameProvider,
   PageMetadata,
   ThemeClassNames,
 } from "@docusaurus/theme-common";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import { Footer } from "@site/src/components/footer";
 import BlogLayout from "@theme/BlogLayout";
 import BlogListPaginator from "@theme/BlogListPaginator";
 import BlogPostItems from "@theme/BlogPostItems";
 import SearchMetadata from "@theme/SearchMetadata";
 import clsx from "clsx";
 import React from "react";
-import Link from "@docusaurus/Link";
-import { useLocation } from "@docusaurus/router";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
 function BlogListPageMetadata(props) {
@@ -124,7 +123,6 @@ export default function BlogListPage(props) {
     >
       <BlogListPageMetadata {...props} />
       <BlogListPageContent {...props} />
-      <Footer />
     </HtmlClassNameProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { VoltAgent, Agent } from "@voltagent/core";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { openai } from "@ai-sdk/openai";

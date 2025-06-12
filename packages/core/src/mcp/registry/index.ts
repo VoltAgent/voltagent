@@ -1,6 +1,6 @@
+import type { Tool } from "../../tool";
 import { MCPClient } from "../client/index";
 import type { AnyToolConfig, MCPServerConfig, ToolsetWithTools } from "../types";
-import type { Tool } from "../../tool";
 
 // Removed global configurationRegistry Map
 
@@ -39,9 +39,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
    * Creates a new, independent MCP configuration instance.
    * @param options Configuration options including server definitions.
    */
-  constructor(options: {
-    servers: Record<TServerKeys, MCPServerConfig>;
-  }) {
+  constructor(options: { servers: Record<TServerKeys, MCPServerConfig> }) {
     this.serverConfigs = options.servers;
   }
 
@@ -202,11 +200,10 @@ export class MCPConfiguration<TServerKeys extends string = string> {
               serverName,
               rawToolsResult: rawToolsResult as Record<string, AnyToolConfig>,
             };
-          } else {
-            console.warn(
-              `Not all tools from server '${serverName}' have the expected structure, skipping toolset.`,
-            );
           }
+          console.warn(
+            `Not all tools from server '${serverName}' have the expected structure, skipping toolset.`,
+          );
         }
       } catch (error) {
         console.error(`Error fetching raw toolset for server ${serverName}:`, error);
@@ -237,7 +234,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
     }
     try {
       return await this.getConnectedClient(serverName, serverConfig);
-    } catch (error) {
+    } catch {
       // Errors are logged within getConnectedClient, return undefined on failure
       return undefined;
     }
@@ -255,7 +252,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
       try {
         const client = await this.getConnectedClient(serverName, serverConfig);
         return { serverName, client };
-      } catch (error) {
+      } catch {
         // Error already logged by getConnectedClient
         return null; // Indicate failure for this client
       }

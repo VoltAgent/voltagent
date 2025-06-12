@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
-import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 import type { z } from "zod";
+import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
+import devLogger from "../utils/internal/dev-logger";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
@@ -79,7 +80,7 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
       throw new Error("Tool name is required");
     }
     if (!options.description) {
-      console.warn(`Tool '${options.name}' created without a description.`);
+      devLogger.warn(`Tool '${options.name}' created without a description.`);
     }
     if (!options.parameters) {
       throw new Error(`Tool '${options.name}' parameters schema is required`);

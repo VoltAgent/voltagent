@@ -1,4 +1,4 @@
-import { z, createRoute } from "@hono/zod-openapi";
+import { createRoute, z } from "@hono/zod-openapi";
 
 export const ParamsSchema = z.object({
   id: z.string().openapi({

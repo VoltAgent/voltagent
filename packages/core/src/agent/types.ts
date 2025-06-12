@@ -1,14 +1,21 @@
-import type { BaseMessage } from "../agent/providers/base/types";
+import type { Span } from "@opentelemetry/api";
+import type { z } from "zod";
+import type {
+  BaseMessage,
+  ProviderObjectResponse,
+  ProviderObjectStreamResponse,
+  ProviderTextResponse,
+  ProviderTextStreamResponse,
+} from "../agent/providers/base/types";
 import type { Memory, MemoryOptions } from "../memory/types";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
+import type { AgentHistoryEntry } from "./history";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
-import type { AgentHistoryEntry } from "./history";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
-import type { Span } from "@opentelemetry/api";
-import type { VoltAgentExporter } from "../telemetry/exporter";
 
 /**
  * Provider options type for LLM configurations
@@ -60,6 +67,13 @@ export type AgentOptions = {
    * Agent name
    */
   name: string;
+
+  /**
+   * Agent purpose. This is the purpose of the agent, that will be used to generate the system message for the supervisor agent, if not provided, the agent will use the `instructions` field to generate the system message.
+   *
+   * @example 'An agent for customer support'
+   */
+  purpose?: string;
 
   /**
    * Memory storage for the agent (optional)
@@ -133,29 +147,35 @@ export type ModelType<T> = T extends { llm: LLMProvider<any> }
 /**
  * Infer generate text response type
  */
-export type InferGenerateTextResponse<T extends { llm: LLMProvider<any> }> = Awaited<
-  ReturnType<T["llm"]["generateText"]>
->;
+export type InferGenerateTextResponseFromProvider<TProvider extends { llm: LLMProvider<any> }> =
+  ProviderTextResponse<InferOriginalResponseFromProvider<TProvider, "generateText">>;
 
 /**
  * Infer stream text response type
  */
-export type InferStreamTextResponse<T extends { llm: LLMProvider<any> }> = Awaited<
-  ReturnType<T["llm"]["streamText"]>
->;
+export type InferStreamTextResponseFromProvider<TProvider extends { llm: LLMProvider<any> }> =
+  ProviderTextStreamResponse<InferOriginalResponseFromProvider<TProvider, "streamText">>;
 
 /**
  * Infer generate object response type
  */
-export type InferGenerateObjectResponse<T extends { llm: LLMProvider<any> }> = Awaited<
-  ReturnType<T["llm"]["generateObject"]>
+export type InferGenerateObjectResponseFromProvider<
+  TProvider extends { llm: LLMProvider<any> },
+  TSchema extends z.ZodType,
+> = ProviderObjectResponse<
+  InferOriginalResponseFromProvider<TProvider, "generateObject">,
+  z.infer<TSchema>
 >;
 
 /**
  * Infer stream object response type
  */
-export type InferStreamObjectResponse<T extends { llm: LLMProvider<any> }> = Awaited<
-  ReturnType<T["llm"]["streamObject"]>
+export type InferStreamObjectResponseFromProvider<
+  TProvider extends { llm: LLMProvider<any> },
+  TSchema extends z.ZodType,
+> = ProviderObjectStreamResponse<
+  InferOriginalResponseFromProvider<TProvider, "streamObject">,
+  z.infer<TSchema>
 >;
 
 /**
@@ -384,6 +404,9 @@ export type OperationContext = {
 
   /** Map to store active OpenTelemetry spans for tool calls within this operation */
   toolSpans?: Map<string, Span>; // Key: toolCallId
+
+  /** Conversation steps for building full message history including tool calls/results */
+  conversationSteps?: StepWithContent[];
 };
 
 /**
@@ -466,6 +489,9 @@ export interface StreamTextFinishResult {
 
   /** Any warnings generated during the completion (if available). */
   warnings?: unknown[];
+
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -493,6 +519,9 @@ export interface StreamObjectFinishResult<TObject> {
 
   /** The reason the stream finished (if available). Although less common for object streams. */
   finishReason?: string;
+
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -517,6 +546,8 @@ export interface StandardizedTextResult {
   finishReason?: string;
   /** Warnings (if available from provider). */
   warnings?: unknown[];
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -534,6 +565,8 @@ export interface StandardizedObjectResult<TObject> {
   finishReason?: string;
   /** Warnings (if available from provider). */
   warnings?: unknown[];
+  /** User context containing any custom metadata from the operation. */
+  userContext?: Map<string | symbol, unknown>;
 }
 
 /**
@@ -547,3 +580,13 @@ export type AgentOperationOutput =
   | StreamTextFinishResult
   | StandardizedObjectResult<unknown> // Object type generalized
   | StreamObjectFinishResult<unknown>; // Object type generalized
+
+type InferResponseFromProvider<
+  TProvider extends { llm: LLMProvider<any> },
+  TMethod extends "generateText" | "streamText" | "generateObject" | "streamObject",
+> = Awaited<ReturnType<TProvider["llm"][TMethod]>>;
+
+type InferOriginalResponseFromProvider<
+  TProvider extends { llm: LLMProvider<any> },
+  TMethod extends "generateText" | "streamText" | "generateObject" | "streamObject",
+> = InferResponseFromProvider<TProvider, TMethod>["provider"];

@@ -76,7 +76,7 @@
   },
   "packageManager": "pnpm@8.10.5",
   "engines": {
-    "node": ">=18",
+    "node": ">=20",
     "pnpm": ">=8"
   },
   "nx": {}

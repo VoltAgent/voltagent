@@ -1,5 +1,123 @@
 # @voltagent/xsai
 
+## 0.2.3
+
+### Patch Changes
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.2.2
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
+
+  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
+
+## 0.2.1
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
+## 0.2.0
+
+### Minor Changes
+
+- [#195](https://github.com/VoltAgent/voltagent/pull/195) [`0c4e941`](https://github.com/VoltAgent/voltagent/commit/0c4e9418ae75c82b20a503678e75277729c0174b) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - 🚨 Breaking Change: Renamed XsAI and Xsai to XSAI
+
+  We’ve renamed the XsAI and Xsai classes to XSAI to keep naming consistent across the framework.
+
+  What changed?
+
+  If you’re using the XsAIProvider or XsAIVoiceProvider, you now need to update your code to use XSAIProvider and XSAIVoiceProvider.
+
+  Before:
+
+  ```ts
+  import { XsAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XsAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XsAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  After:
+
+  ```ts
+  import { XSAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XSAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XSAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  This change resolves [#140](https://github.com/your-repo/issues/140).
+
+### Patch Changes
+
+- Updated dependencies [[`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944), [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153)]:
+  - @voltagent/core@0.1.29
+
 ## 0.1.9
 
 ### Patch Changes

@@ -1,8 +1,9 @@
-import type { VoltAgentExporterOptions } from "../exporter";
 import type { AgentHistoryEntry, HistoryStep } from "../../agent/history";
-import type { AgentStatus } from "../../agent/types";
 import type { UsageInfo } from "../../agent/providers";
+import type { AgentStatus } from "../../agent/types";
 import type { NewTimelineEvent } from "../../events/types";
+import devLogger from "../../utils/internal/dev-logger";
+import type { VoltAgentExporterOptions } from "../exporter";
 
 export interface ExportAgentHistoryPayload {
   agent_id: string;
@@ -101,7 +102,7 @@ export class TelemetryServiceApiClient {
 
       return await response.json();
     } catch (error) {
-      console.error("API request error:", error);
+      devLogger.error("API request error:", error);
       throw error;
     }
   }
@@ -137,7 +138,7 @@ export class TelemetryServiceApiClient {
   public async exportTimelineEvent(
     timelineEventData: ExportTimelineEventPayload,
   ): Promise<{ id: string }> {
-    // Timeline eventlerini history-events endpoint'ine taşıyoruz
+    // NOTE: We are moving timeline events to the history-events endpoint
     const { event, history_id, event_id, agent_id } = timelineEventData;
 
     const payload = {
@@ -165,7 +166,7 @@ export class TelemetryServiceApiClient {
   }
 
   public async exportHistorySteps(history_id: string, steps: HistoryStep[]): Promise<void> {
-    // History güncelleyerek steps bilgisini metadata'ya ekle
+    // NOTE: We are updating the history by adding the steps information to the metadata
     const payload = {
       metadata: {
         steps,
@@ -179,7 +180,7 @@ export class TelemetryServiceApiClient {
     history_id: string,
     updates: AgentHistoryUpdatableFields,
   ): Promise<void> {
-    // Güncellemeleri history endpoint'ine gönder
+    // NOTE: We are updating the history by adding the steps information to the metadata
     const payload: Record<string, unknown> = {};
 
     if (updates.input) payload.input = updates.input;
@@ -188,7 +189,7 @@ export class TelemetryServiceApiClient {
     if (updates.usage) payload.usage = updates.usage;
     if (updates.endTime) payload.endTime = updates.endTime;
 
-    // agent_snapshot'ı metadata olarak ekle
+    // NOTE: We are adding the agent_snapshot to the metadata
     if (updates.metadata) {
       payload.metadata = {
         ...updates.metadata,

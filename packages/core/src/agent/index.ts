@@ -1,10 +1,28 @@
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
+import type { StandardEventData } from "../events/types";
+import type {
+  AgentErrorEvent,
+  AgentStartEvent,
+  AgentSuccessEvent,
+  RetrieverErrorEvent,
+  RetrieverStartEvent,
+  RetrieverSuccessEvent,
+  ToolErrorEvent,
+  ToolStartEvent,
+  ToolSuccessEvent,
+} from "../events/types";
 import { MemoryManager } from "../memory";
+import type { BaseRetriever } from "../retriever/retriever";
+import { AgentRegistry } from "../server/registry";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
+import devLogger from "../utils/internal/dev-logger";
+import { NodeType, createNodeId } from "../utils/node-utils";
+import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
 import type {
@@ -19,45 +37,28 @@ import type {
   AgentOptions,
   AgentStatus,
   CommonGenerateOptions,
-  InferGenerateObjectResponse,
-  InferGenerateTextResponse,
-  InferStreamObjectResponse,
-  InferStreamTextResponse,
+  InferGenerateObjectResponseFromProvider,
+  InferGenerateTextResponseFromProvider,
+  InferStreamObjectResponseFromProvider,
+  InferStreamTextResponseFromProvider,
   InternalGenerateOptions,
   ModelType,
+  OperationContext,
   ProviderInstance,
   PublicGenerateOptions,
-  OperationContext,
-  ToolExecutionContext,
-  VoltAgentError,
+  StandardizedObjectResult,
+  StandardizedTextResult,
+  StreamObjectFinishResult,
+  StreamObjectOnFinishCallback,
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
-  StreamObjectFinishResult,
-  StreamObjectOnFinishCallback,
-  StandardizedTextResult,
-  StandardizedObjectResult,
+  ToolExecutionContext,
+  VoltAgentError,
 } from "./types";
-import type { BaseRetriever } from "../retriever/retriever";
-import { NodeType, createNodeId } from "../utils/node-utils";
-import type { StandardEventData } from "../events/types";
-import type {
-  AgentStartEvent,
-  AgentSuccessEvent,
-  AgentErrorEvent,
-  ToolStartEvent,
-  ToolSuccessEvent,
-  ToolErrorEvent,
-  RetrieverStartEvent,
-  RetrieverSuccessEvent,
-  RetrieverErrorEvent,
-} from "../events/types";
-import type { Voice } from "../voice";
-import { AgentRegistry } from "../server/registry";
-import type { VoltAgentExporter } from "../telemetry/exporter";
 
-import { startOperationSpan, endOperationSpan, startToolSpan, endToolSpan } from "./open-telemetry";
 import type { Span } from "@opentelemetry/api";
+import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 
 /**
  * Agent class for interacting with AI models
@@ -72,6 +73,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Agent name
    */
   readonly name: string;
+
+  /**
+   * (sub)agent purpose. This is the purpose of a (sub)agent, that will be used to generate the system message for the supervisor agent, if not provided, the agent will use the `instructions` field to generate the system message.
+   *
+   * @example 'An agent for customer support'
+   */
+  readonly purpose?: string;
 
   /**
    * @deprecated Use `instructions` instead. Will be removed in a future version.
@@ -151,7 +159,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   ) {
     this.id = options.id || options.name;
     this.name = options.name;
-    this.instructions = options.instructions ?? options.description ?? "A helpful AI assistant";
+    this.purpose = options.purpose;
+    this.instructions = options.instructions ?? options.description ?? "";
     this.description = this.instructions;
     this.llm = options.llm as ProviderInstance<TProvider>;
     this.model = options.model;
@@ -193,10 +202,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input,
     historyEntryId,
     contextMessages,
+    operationContext,
   }: {
     input?: string | BaseMessage[];
     historyEntryId: string;
     contextMessages: BaseMessage[];
+    operationContext?: OperationContext;
   }): Promise<BaseMessage> {
     let baseInstructions = this.instructions || ""; // Ensure baseInstructions is a string
 
@@ -252,7 +263,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       try {
-        const context = await this.retriever.retrieve(input);
+        const context = await this.retriever.retrieve(input, {
+          userContext: operationContext?.userContext,
+        });
         if (context?.trim()) {
           finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
 
@@ -341,7 +354,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           event: retrieverErrorEvent,
         });
 
-        console.warn("Failed to retrieve context:", error);
+        devLogger.warn("Failed to retrieve context:", error);
       }
     }
 
@@ -389,7 +402,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       return formattedMemory || "No previous agent interactions found.";
     } catch (error) {
-      console.warn("Error preparing agents memory:", error);
+      devLogger.warn("Error preparing agents memory:", error);
       return "Error retrieving agent history.";
     }
   }
@@ -434,7 +447,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Ensure operationContext exists before proceeding
     if (!operationContext) {
-      console.warn(
+      devLogger.warn(
         `[Agent ${this.id}] Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.`,
       );
       // Potentially handle this case more gracefully, e.g., throw an error or create a default context
@@ -469,7 +482,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               finalExecOptions as ReasoningToolExecuteOptions; // Cast should be safe here
 
             if (!reasoningOptions.historyEntryId || reasoningOptions.historyEntryId === "unknown") {
-              console.warn(
+              devLogger.warn(
                 `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`,
               );
             }
@@ -568,6 +581,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
       otelSpan: otelSpan,
+      conversationSteps: [],
     };
 
     return opContext;
@@ -622,10 +636,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Add step to history immediately
+   * Add step to history immediately and to conversation steps
    */
   private addStepToHistory(step: StepWithContent, context: OperationContext): void {
     this.historyManager.addStepsToEntry(context.historyEntry.id, [step]);
+
+    // Also track in conversation steps for hook messages
+    if (!context.conversationSteps) {
+      context.conversationSteps = [];
+    }
+    context.conversationSteps.push(step);
   }
 
   /**
@@ -656,7 +676,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     if (toolCallId && status === "working") {
       if (context.toolSpans.has(toolCallId)) {
-        console.warn(`[VoltAgentCore] OTEL tool span already exists for toolCallId: ${toolCallId}`);
+        devLogger.warn(`OTEL tool span already exists for toolCallId: ${toolCallId}`);
       } else {
         // Call the helper function
         const toolSpan = startToolSpan({
@@ -691,8 +711,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         data,
       });
     } else {
-      console.warn(
-        `[VoltAgentCore] OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
+      devLogger.warn(
+        `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
       );
     }
   };
@@ -712,8 +732,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       endToolSpan({ span: toolSpan, resultData });
       context.toolSpans?.delete(toolCallId); // Remove from map after ending
     } else {
-      console.warn(
-        `[VoltAgentCore] OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
+      devLogger.warn(
+        `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
       );
     }
   }
@@ -724,7 +744,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateTextResponse<TProvider>> {
+  ): Promise<InferGenerateTextResponseFromProvider<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -767,6 +787,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
+        operationContext,
       });
 
       messages = [systemMessage, ...contextMessages];
@@ -790,6 +811,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          systemPrompt: systemMessage,
+          messages,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -998,6 +1029,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
 
         traceId: operationContext.historyEntry.id,
@@ -1025,8 +1064,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         usage: response.usage,
         finishReason: response.finishReason,
         providerResponse: response,
+        userContext: new Map(operationContext.userContext),
       };
+
       await this.hooks.onEnd?.({
+        conversationId: finalConversationId,
         agent: this,
         output: standardizedOutput,
         error: undefined,
@@ -1040,8 +1082,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed" as any,
       });
 
-      const typedResponse = response as InferGenerateTextResponse<TProvider>;
-      return typedResponse;
+      return response;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
@@ -1106,10 +1147,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       operationContext.isActive = false;
+
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
+        conversationId: finalConversationId,
         context: operationContext,
       });
 
@@ -1127,7 +1170,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   async streamText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<InferStreamTextResponse<TProvider>> {
+  ): Promise<InferStreamTextResponseFromProvider<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1168,6 +1211,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       input,
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
+      operationContext,
     });
     let messages = [systemMessage, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
@@ -1190,6 +1234,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           string,
           unknown
         >,
+        systemPrompt: systemMessage,
+        messages,
+        modelParameters: {
+          model: this.getModelName(),
+          maxTokens: internalOptions.provider?.maxTokens,
+          temperature: internalOptions.provider?.temperature,
+          topP: internalOptions.provider?.topP,
+          frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+          presencePenalty: internalOptions.provider?.presencePenalty,
+        },
       },
       traceId: operationContext.historyEntry.id,
     };
@@ -1413,6 +1467,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               string,
               unknown
             >,
+            modelParameters: {
+              model: this.getModelName(),
+              maxTokens: internalOptions.provider?.maxTokens,
+              temperature: internalOptions.provider?.temperature,
+              topP: internalOptions.provider?.topP,
+              frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+              presencePenalty: internalOptions.provider?.presencePenalty,
+            },
           },
           traceId: operationContext.historyEntry.id,
           parentEventId: agentStartInfo.eventId, // Link to the agent:start event
@@ -1438,14 +1500,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           },
         });
         operationContext.isActive = false;
+
+        // Add userContext to result
+        const resultWithContext = {
+          ...result,
+          userContext: new Map(operationContext.userContext),
+        };
+
         await this.hooks.onEnd?.({
           agent: this,
-          output: result,
+          output: resultWithContext,
           error: undefined,
+          conversationId: finalConversationId,
           context: operationContext,
         });
         if (internalOptions.provider?.onFinish) {
-          await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(result);
+          await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(
+            resultWithContext,
+          );
         }
       },
       onError: async (error: VoltAgentError) => {
@@ -1489,7 +1561,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               event: toolErrorEvent,
             });
           } catch (updateError) {
-            console.error(
+            devLogger.error(
               `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
               updateError,
             );
@@ -1573,26 +1645,27 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (internalOptions.provider?.onError) {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
+
         await this.hooks.onEnd?.({
           agent: this,
           output: undefined,
           error: error,
+          conversationId: finalConversationId,
           context: operationContext,
         });
       },
     });
-    const typedResponse = response as InferStreamTextResponse<TProvider>;
-    return typedResponse;
+    return response;
   }
 
   /**
    * Generate a structured object response
    */
-  async generateObject<T extends z.ZodType>(
+  async generateObject<TSchema extends z.ZodType>(
     input: string | BaseMessage[],
-    schema: T,
+    schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateObjectResponse<TProvider>> {
+  ): Promise<InferGenerateObjectResponseFromProvider<TProvider, TSchema>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1635,6 +1708,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
+        operationContext,
       });
       messages = [systemMessage, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
@@ -1657,6 +1731,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          systemPrompt: systemMessage,
+          messages,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
         traceId: operationContext.historyEntry.id,
       };
@@ -1726,6 +1810,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             string,
             unknown
           >,
+          modelParameters: {
+            model: this.getModelName(),
+            maxTokens: internalOptions.provider?.maxTokens,
+            temperature: internalOptions.provider?.temperature,
+            topP: internalOptions.provider?.topP,
+            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+            presencePenalty: internalOptions.provider?.presencePenalty,
+          },
         },
         traceId: operationContext.historyEntry.id,
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
@@ -1737,8 +1829,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         historyId: operationContext.historyEntry.id,
         event: agentSuccessEvent,
       });
-      const responseStr =
-        typeof response === "string" ? response : JSON.stringify(response?.object);
+
+      const responseStr = JSON.stringify(response.object);
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
         output: responseStr,
         usage: response.usage,
@@ -1754,20 +1846,22 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed" as any,
       });
 
-      const standardizedOutput: StandardizedObjectResult<z.infer<T>> = {
+      const standardizedOutput: StandardizedObjectResult<z.infer<TSchema>> = {
         object: response.object,
         usage: response.usage,
         finishReason: response.finishReason,
         providerResponse: response,
+        userContext: new Map(operationContext.userContext),
       };
+
       await this.hooks.onEnd?.({
         agent: this,
         output: standardizedOutput,
         error: undefined,
+        conversationId: finalConversationId,
         context: operationContext,
       });
-      const typedResponse = response as InferGenerateObjectResponse<TProvider>;
-      return typedResponse;
+      return response;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
@@ -1840,6 +1934,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         agent: this,
         output: undefined,
         error: voltagentError,
+        conversationId: finalConversationId,
         context: operationContext,
       });
       throw voltagentError;
@@ -1849,11 +1944,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<T extends z.ZodType>(
+  async streamObject<TSchema extends z.ZodType>(
     input: string | BaseMessage[],
-    schema: T,
+    schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<InferStreamObjectResponse<TProvider>> {
+  ): Promise<InferStreamObjectResponseFromProvider<TProvider, TSchema>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1895,6 +1990,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       input,
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
+      operationContext,
     });
     let messages = [systemMessage, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
@@ -1917,6 +2013,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           string,
           unknown
         >,
+        systemPrompt: systemMessage,
+        messages,
+        modelParameters: {
+          model: this.getModelName(),
+          maxTokens: internalOptions.provider?.maxTokens,
+          temperature: internalOptions.provider?.temperature,
+          topP: internalOptions.provider?.topP,
+          frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+          presencePenalty: internalOptions.provider?.presencePenalty,
+        },
       },
       traceId: operationContext.historyEntry.id,
     };
@@ -1957,7 +2063,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
           }
         },
-        onFinish: async (result: StreamObjectFinishResult<z.infer<T>>) => {
+        onFinish: async (result: StreamObjectFinishResult<z.infer<TSchema>>) => {
           if (!operationContext.isActive) {
             return;
           }
@@ -1988,6 +2094,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 string,
                 unknown
               >,
+              modelParameters: {
+                model: this.getModelName(),
+                maxTokens: internalOptions.provider?.maxTokens,
+                temperature: internalOptions.provider?.temperature,
+                topP: internalOptions.provider?.topP,
+                frequencyPenalty: internalOptions.provider?.frequencyPenalty,
+                presencePenalty: internalOptions.provider?.presencePenalty,
+              },
             },
             traceId: operationContext.historyEntry.id,
             parentEventId: agentStartInfo.eventId, // Link to the agent:start event
@@ -2020,14 +2134,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           });
 
           operationContext.isActive = false;
+
+          // Add userContext to result
+          const resultWithContext = {
+            ...result,
+            userContext: new Map(operationContext.userContext),
+          };
+
           await this.hooks.onEnd?.({
             agent: this,
-            output: result,
+            output: resultWithContext,
             error: undefined,
+            conversationId: finalConversationId,
             context: operationContext,
           });
           if (provider?.onFinish) {
-            await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<T>>)(result);
+            await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<TSchema>>)(
+              resultWithContext,
+            );
           }
         },
         onError: async (error: VoltAgentError) => {
@@ -2110,22 +2234,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           if (provider?.onError) {
             await (provider.onError as StreamOnErrorCallback)(error);
           }
+
           await this.hooks.onEnd?.({
             agent: this,
             output: undefined,
             error: error,
+            conversationId: finalConversationId,
             context: operationContext,
           });
         },
       });
-      const typedResponse = response as InferStreamObjectResponse<TProvider>;
-      return typedResponse;
+      return response;
     } catch (error) {
       operationContext.isActive = false;
       await this.hooks.onEnd?.({
         agent: this,
         output: undefined,
         error: error as VoltAgentError,
+        conversationId: finalConversationId,
         context: operationContext,
       });
       throw error;

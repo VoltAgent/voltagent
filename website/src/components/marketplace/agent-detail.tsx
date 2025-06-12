@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowLeftIcon,
-  CheckCircleIcon,
   ChartBarIcon,
-  FilmIcon,
   ChatBubbleLeftRightIcon,
+  CheckCircleIcon,
+  CheckIcon,
   CommandLineIcon,
   ComputerDesktopIcon,
-  CheckIcon,
+  FilmIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon as BoltSolidIcon } from "@heroicons/react/24/solid";
+import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
 
-// Import avatar images
-import michaelAvatar from "../../../static/img/avatars/the-office/michael.png";
 import dwightAvatar from "../../../static/img/avatars/the-office/dwight.png";
 import jimAvatar from "../../../static/img/avatars/the-office/jim.png";
+// Import avatar images
+import michaelAvatar from "../../../static/img/avatars/the-office/michael.png";
 import pamAvatar from "../../../static/img/avatars/the-office/pam.png";
 
 // Sample reviews data

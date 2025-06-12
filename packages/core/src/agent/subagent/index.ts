@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { AgentRegistry } from "../../server/registry";
+import { createTool } from "../../tool";
+import devLogger from "../../utils/internal/dev-logger";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
 import type { AgentHandoffOptions, AgentHandoffResult } from "../types";
-import { createTool } from "../../tool";
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -92,7 +93,7 @@ export class SubAgentManager {
     }
 
     const subAgentList = this.subAgents
-      .map((agent) => `- ${agent.name}: ${agent.instructions}`)
+      .map((agent) => `- ${agent.name}: ${agent.purpose ?? agent.instructions}`)
       .join("\n");
 
     return `
@@ -162,7 +163,7 @@ ${agentsMemory || "No previous agent interactions available."}
     try {
       // Call onHandoff hook if source agent is provided
       if (sourceAgent && targetAgent.hooks) {
-        await targetAgent.hooks.onHandoff?.(targetAgent, sourceAgent);
+        await targetAgent.hooks.onHandoff?.({ agent: targetAgent, source: sourceAgent });
       }
 
       // Get relevant context from memory (to be passed from Agent class)
@@ -192,7 +193,7 @@ Context: ${JSON.stringify(context)}`,
         status: "success",
       };
     } catch (error) {
-      console.error(`Error in handoffTask to ${targetAgent.name}:`, error);
+      devLogger.error(`Error in handoffTask to ${targetAgent.name}:`, error);
 
       // Get error message safely whether error is Error object or string
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -247,7 +248,7 @@ Context: ${JSON.stringify(context)}`,
             userContext,
           });
         } catch (error) {
-          console.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
+          devLogger.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
 
           // Get error message safely whether error is Error object or string
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -301,7 +302,7 @@ Context: ${JSON.stringify(context)}`,
             .map((name: string) => {
               const agent = this.subAgents.find((a: Agent<any>) => a.name === name);
               if (!agent) {
-                console.warn(
+                devLogger.warn(
                   `Agent "${name}" not found. Available agents: ${this.subAgents.map((a) => a.name).join(", ")}`,
                 );
               }
@@ -358,7 +359,7 @@ Context: ${JSON.stringify(context)}`,
             };
           });
         } catch (error) {
-          console.error("Error in delegate_task tool execution:", error);
+          devLogger.error("Error in delegate_task tool execution:", error);
 
           // Return structured error to the LLM
           return {

@@ -1,5 +1,5 @@
-import type { AgentStatus } from "../types";
 import type { UsageInfo } from "../providers/base/types";
+import type { AgentStatus } from "../types";
 
 // History status values used in actual history operations
 export type HistoryStatus = "working" | "completed" | "error";

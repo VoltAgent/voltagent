@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
-import { createTool, type AgentTool } from "../../tool";
+import { type AgentTool, createTool } from "../../tool";
 import { Agent } from "../index";
 // Import only OperationContext and VoltAgentError
 import type { OperationContext, VoltAgentError } from "../types";
@@ -81,7 +81,10 @@ describe("Agent Hooks Functionality", () => {
       // Verify onStart was called with the correct object structure
       expect(onStartSpy).toHaveBeenCalledWith({
         agent: agent,
-        context: expect.objectContaining({ operationId: expect.any(String) }), // Check for context object
+        context: expect.objectContaining({
+          operationId: expect.any(String),
+          isActive: expect.any(Boolean),
+        }), // Check for context object
       });
     });
   });
@@ -93,21 +96,21 @@ describe("Agent Hooks Functionality", () => {
 
       const response = await agent.generateText("Test input"); // Assuming success
 
-      // Construct the expected standardized output for the hook
-      const expectedOutput = {
-        text: response.text,
-        usage: response.usage,
-        finishReason: response.finishReason,
-        providerResponse: response,
-        // warnings: response.warnings, // If response includes warnings
-      };
-
-      // Verify onEnd was called with the agent, standardized output, undefined error, and context
+      // Verify onEnd was called with the correct structure using objectContaining
       expect(onEndSpy).toHaveBeenCalledWith({
         agent: agent,
-        output: expectedOutput,
+        output: expect.objectContaining({
+          text: response.text,
+          usage: response.usage,
+          finishReason: response.finishReason,
+          providerResponse: response,
+        }),
         error: undefined,
-        context: expect.objectContaining({ operationId: expect.any(String) }),
+        conversationId: expect.any(String),
+        context: expect.objectContaining({
+          operationId: expect.any(String),
+          isActive: expect.any(Boolean),
+        }),
       });
     });
 
@@ -137,8 +140,12 @@ describe("Agent Hooks Functionality", () => {
       expect(onEndSpy).toHaveBeenCalledWith({
         agent: errorAgent,
         output: undefined,
+        conversationId: expect.any(String),
         error: expect.objectContaining({ message: "LLM Error" }), // Check for VoltAgentError structure
-        context: expect.objectContaining({ operationId: expect.any(String) }),
+        context: expect.objectContaining({
+          operationId: expect.any(String),
+          isActive: expect.any(Boolean),
+        }),
       });
     });
   });

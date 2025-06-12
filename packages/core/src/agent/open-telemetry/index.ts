@@ -1,12 +1,13 @@
 import {
-  trace,
+  type Attributes,
   type Span,
   SpanKind,
   SpanStatusCode,
-  type Attributes,
   context as apiContext,
+  trace,
 } from "@opentelemetry/api";
 import type { EventStatus, StandardEventData } from "../../events/types";
+import devLogger from "../../utils/internal/dev-logger";
 import type { UsageInfo } from "../providers/base/types";
 
 // Get a tracer instance for this library
@@ -120,12 +121,12 @@ export function endOperationSpan(options: EndOperationSpanOptions): void {
       }
     }
   } catch (e) {
-    console.error("[VoltAgentCore OTEL] Error enriching operation span:", e);
+    devLogger.error("[OTEL] Error enriching operation span:", e);
     try {
       span.setAttribute("otel.enrichment.error", true);
       span.setStatus({ code: SpanStatusCode.ERROR, message: "Span enrichment failed" });
     } catch (safeSetError) {
-      console.error("[VoltAgentCore OTEL] Error setting enrichment error status:", safeSetError);
+      devLogger.error("[OTEL] Error setting enrichment error status:", safeSetError);
     }
   } finally {
     span.end();
@@ -192,15 +193,12 @@ export function endToolSpan(options: EndToolSpanOptions): void {
       span.setStatus({ code: SpanStatusCode.OK });
     }
   } catch (e) {
-    console.error("[VoltAgentCore OTEL] Error enriching tool span:", e);
+    devLogger.error("[OTEL] Error enriching tool span:", e);
     try {
       span.setAttribute("otel.enrichment.error", true);
       span.setStatus({ code: SpanStatusCode.ERROR, message: "Tool span enrichment failed" });
     } catch (safeSetError) {
-      console.error(
-        "[VoltAgentCore OTEL] Error setting tool enrichment error status:",
-        safeSetError,
-      );
+      devLogger.error("[OTEL] Error setting tool enrichment error status:", safeSetError);
     }
   } finally {
     span.end();

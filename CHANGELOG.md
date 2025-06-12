@@ -1,5 +1,59 @@
 ## Package: @voltagent/core
 
+## 0.1.29
+
+### Patch Changes
+
+- [#191](https://github.com/VoltAgent/voltagent/pull/191) [`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Remove console based logging in favor of a dev-only logger that will not output logs in production environments by leveraging the NODE_ENV
+
+- [#196](https://github.com/VoltAgent/voltagent/pull/196) [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `systemPrompt` and `messages` array to metadata for display on VoltOps Platform
+
+## 0.1.28
+
+### Patch Changes
+
+- [#189](https://github.com/VoltAgent/voltagent/pull/189) [`07138fc`](https://github.com/VoltAgent/voltagent/commit/07138fc85ef27c9136d303233559f6b358ad86de) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Added the 'purpose' field to agents (subagents) to provide a limited description of the purpose of the agent to the supervisor instead of passing the instructions for the subagent directly to the supervisor
+
+  ```ts
+  const storyAgent = new Agent({
+    name: "Story Agent",
+    purpose: "A story writer agent that creates original, engaging short stories.",
+    instructions: "You are a creative story writer. Create original, engaging short stories.",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  > The supervisor agent's system prompt is automatically modified to include instructions on how to manage its subagents effectively. It lists the available subagents and their `purpose` and provides guidelines for delegation, communication, and response aggregation.
+
+- [#186](https://github.com/VoltAgent/voltagent/pull/186) [`adad41a`](https://github.com/VoltAgent/voltagent/commit/adad41a930e338c4683306b9dbffec22096eba5c) Thanks [@necatiozmen](https://github.com/necatiozmen)! - chore: update "VoltAgent Console" -> "VoltOps Platform"
+
+## 0.1.27
+
+### Patch Changes
+
+- [#126](https://github.com/VoltAgent/voltagent/pull/126) [`2c47bc1`](https://github.com/VoltAgent/voltagent/commit/2c47bc1e9cd845cc60e6e9d7e86df40c98b82614) Thanks [@fav-devs](https://github.com/fav-devs)! - feat: add custom endpoints feature to VoltAgent API server, allowing developers to extend the API with their own endpoints
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+
+  new VoltAgent({
+    agents: { myAgent },
+    customEndpoints: [
+      {
+        path: "/api/health",
+        method: "get",
+        handler: async (c) => {
+          return c.json({
+            success: true,
+            data: { status: "healthy" },
+          });
+        },
+      },
+    ],
+  });
+  ```
+
 ## 0.1.26
 
 ### Patch Changes
@@ -801,6 +855,12 @@
 ---
 
 ## Package: @voltagent/anthropic-ai
+
+## 0.1.9
+
+### Patch Changes
+
+- [#199](https://github.com/VoltAgent/voltagent/pull/199) [`a6c0d8e`](https://github.com/VoltAgent/voltagent/commit/a6c0d8e1618f1b6ae300490e151a8ded2e2ced82) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: optional chaining `usage` in callback handlers to prevent runtime errors when options are undefined
 
 ## 0.1.8
 
@@ -1861,6 +1921,63 @@
 
 ## Package: @voltagent/voice
 
+## 0.2.0
+
+### Minor Changes
+
+- [#195](https://github.com/VoltAgent/voltagent/pull/195) [`0c4e941`](https://github.com/VoltAgent/voltagent/commit/0c4e9418ae75c82b20a503678e75277729c0174b) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - 🚨 Breaking Change: Renamed XsAI and Xsai to XSAI
+
+  We’ve renamed the XsAI and Xsai classes to XSAI to keep naming consistent across the framework.
+
+  What changed?
+
+  If you’re using the XsAIProvider or XsAIVoiceProvider, you now need to update your code to use XSAIProvider and XSAIVoiceProvider.
+
+  Before:
+
+  ```ts
+  import { XsAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XsAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XsAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  After:
+
+  ```ts
+  import { XSAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XSAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XSAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  This change resolves [#140](https://github.com/your-repo/issues/140).
+
+### Patch Changes
+
+- Updated dependencies [[`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944), [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153)]:
+  - @voltagent/core@0.1.29
+
 ## 0.1.7
 
 ### Patch Changes
@@ -1955,6 +2072,63 @@
 ---
 
 ## Package: @voltagent/xsai
+
+## 0.2.0
+
+### Minor Changes
+
+- [#195](https://github.com/VoltAgent/voltagent/pull/195) [`0c4e941`](https://github.com/VoltAgent/voltagent/commit/0c4e9418ae75c82b20a503678e75277729c0174b) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - 🚨 Breaking Change: Renamed XsAI and Xsai to XSAI
+
+  We’ve renamed the XsAI and Xsai classes to XSAI to keep naming consistent across the framework.
+
+  What changed?
+
+  If you’re using the XsAIProvider or XsAIVoiceProvider, you now need to update your code to use XSAIProvider and XSAIVoiceProvider.
+
+  Before:
+
+  ```ts
+  import { XsAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XsAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XsAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  After:
+
+  ```ts
+  import { XSAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XSAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XSAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  This change resolves [#140](https://github.com/your-repo/issues/140).
+
+### Patch Changes
+
+- Updated dependencies [[`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944), [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153)]:
+  - @voltagent/core@0.1.29
 
 ## 0.1.9
 

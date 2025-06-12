@@ -17,9 +17,6 @@ import path from "node:path"; // Used for filesystem path example
 
 // Create MCP Configuration with multiple types of servers
 const mcpConfig = new MCPConfiguration({
-  // Optional unique identifier for this configuration instance
-  id: "my-mcp-config",
-
   servers: {
     // Example 1: HTTP-based server (e.g., external web service or API gateway)
     reddit: {
@@ -116,14 +113,6 @@ if (clients.reddit) {
   // Example: Handle errors centrally for the 'reddit' client
   clients.reddit.on("error", (error) => {
     console.error("Reddit MCP server connection error:", error.message);
-  });
-
-  // Example: Listen for specific MCP messages (raw interaction)
-  clients.reddit.on("message", (message) => {
-    // console.log("Received MCP message from Reddit:", message);
-    if (message.type === "tool_call") {
-      console.log(`MCP Log: Tool ${message.tool_name} called`);
-    }
   });
 }
 ```

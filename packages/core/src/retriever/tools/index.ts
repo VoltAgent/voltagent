@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createTool, type AgentTool } from "../../tool";
+import { type AgentTool, createTool } from "../../tool";
+import type { ToolExecuteOptions } from "../../agent/providers";
 import type { Retriever } from "../types";
 
 /**
@@ -39,8 +40,13 @@ export const createRetrieverTool = (
     parameters: z.object({
       query: z.string().describe("The search query to find relevant information"),
     }),
-    execute: async ({ query }) => {
-      const result = await retriever.retrieve(query);
+    execute: async ({ query }, executeOptions?: ToolExecuteOptions) => {
+      // Extract userContext from tool execution context
+      const userContext = executeOptions?.operationContext?.userContext;
+
+      const result = await retriever.retrieve(query, {
+        userContext,
+      });
 
       return result;
     },

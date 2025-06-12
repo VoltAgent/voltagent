@@ -1,33 +1,33 @@
-import { z } from "zod";
 import type { BaseMessage, BaseTool } from "@voltagent/core";
-import { XsAIProvider } from "./index";
+import { z } from "zod";
+import { XSAIProvider } from "./index";
 
-// Mock the xsai library functions
-const mockXsaiGenerateText = jest.fn();
-const mockXsaiStreamText = jest.fn();
-const mockXsaiGenerateObject = jest.fn();
-const mockXsaiStreamObject = jest.fn();
-const mockXsaiTool = jest.fn().mockImplementation(async (toolDef) => {
+// Mock the xsAI library functions
+const mockXSAIGenerateText = jest.fn();
+const mockXSAIStreamText = jest.fn();
+const mockXSAIGenerateObject = jest.fn();
+const mockXSAIStreamObject = jest.fn();
+const mockXSAITool = jest.fn().mockImplementation(async (toolDef) => {
   // Simple mock implementation: return the definition
   // In a real scenario, this might return a wrapped function or object
   return toolDef;
 });
 
 jest.mock("xsai", () => ({
-  generateText: mockXsaiGenerateText,
-  streamText: mockXsaiStreamText,
-  generateObject: mockXsaiGenerateObject,
-  streamObject: mockXsaiStreamObject,
-  tool: mockXsaiTool,
+  generateText: mockXSAIGenerateText,
+  streamText: mockXSAIStreamText,
+  generateObject: mockXSAIGenerateObject,
+  streamObject: mockXSAIStreamObject,
+  tool: mockXSAITool,
 }));
 
-describe("XsAIProvider", () => {
-  let provider: XsAIProvider;
+describe("XSAIProvider", () => {
+  let provider: XSAIProvider;
   const apiKey = "test-xsai-api-key";
 
   beforeEach(() => {
     jest.clearAllMocks();
-    provider = new XsAIProvider({ apiKey });
+    provider = new XSAIProvider({ apiKey });
   });
 
   describe("toMessage", () => {
@@ -119,12 +119,12 @@ describe("XsAIProvider", () => {
         parameters: expect.any(Object),
         execute: expect.any(Function),
       };
-      mockXsaiTool.mockResolvedValue(mockToolResultFromXsai);
+      mockXSAITool.mockResolvedValue(mockToolResultFromXsai);
 
       const result = await provider.convertTools(baseTools);
 
-      expect(mockXsaiTool).toHaveBeenCalledTimes(1);
-      expect(mockXsaiTool).toHaveBeenCalledWith(
+      expect(mockXSAITool).toHaveBeenCalledTimes(1);
+      expect(mockXSAITool).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "get_weather",
           description: "Get current weather",
@@ -150,14 +150,14 @@ describe("XsAIProvider", () => {
         usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
         finishReason: "stop",
       };
-      mockXsaiGenerateText.mockResolvedValue(mockResult);
+      mockXSAIGenerateText.mockResolvedValue(mockResult);
 
       const result = await provider.generateText({
         messages,
         model: "test-model",
       });
 
-      expect(mockXsaiGenerateText).toHaveBeenCalledWith(
+      expect(mockXSAIGenerateText).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Hello" }],
@@ -192,8 +192,8 @@ describe("XsAIProvider", () => {
         parameters: {},
         execute: expect.any(Function),
       };
-      mockXsaiTool.mockResolvedValue(mockToolResult);
-      mockXsaiGenerateText.mockResolvedValue({
+      mockXSAITool.mockResolvedValue(mockToolResult);
+      mockXSAIGenerateText.mockResolvedValue({
         text: "Used tool.",
         usage: {},
         finishReason: "stop",
@@ -201,8 +201,8 @@ describe("XsAIProvider", () => {
 
       await provider.generateText({ messages, model: "test-model", tools });
 
-      expect(mockXsaiTool).toHaveBeenCalledTimes(1);
-      expect(mockXsaiGenerateText).toHaveBeenCalledWith(
+      expect(mockXSAITool).toHaveBeenCalledTimes(1);
+      expect(mockXSAIGenerateText).toHaveBeenCalledWith(
         expect.objectContaining({
           tools: [mockToolResult],
           maxSteps: undefined,
@@ -225,8 +225,8 @@ describe("XsAIProvider", () => {
         id: "tool-step-test-789",
         name: "step_test_tool" /* other fields */,
       };
-      mockXsaiTool.mockResolvedValue(mockToolResult);
-      mockXsaiGenerateText.mockResolvedValue({
+      mockXSAITool.mockResolvedValue(mockToolResult);
+      mockXSAIGenerateText.mockResolvedValue({
         text: "Used tool with steps.",
         usage: {},
         finishReason: "stop",
@@ -240,7 +240,7 @@ describe("XsAIProvider", () => {
         maxSteps: testMaxSteps,
       });
 
-      expect(mockXsaiGenerateText).toHaveBeenCalledWith(
+      expect(mockXSAIGenerateText).toHaveBeenCalledWith(
         expect.objectContaining({
           tools: [mockToolResult],
           maxSteps: testMaxSteps, // Expect the provided maxSteps value
@@ -259,14 +259,14 @@ describe("XsAIProvider", () => {
       const mockResult = {
         textStream: mockStream /* other potential fields from xsai */,
       };
-      mockXsaiStreamText.mockResolvedValue(mockResult);
+      mockXSAIStreamText.mockResolvedValue(mockResult);
 
       const result = await provider.streamText({
         messages,
         model: "test-model",
       });
 
-      expect(mockXsaiStreamText).toHaveBeenCalledWith(
+      expect(mockXSAIStreamText).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Stream this" }],
@@ -275,10 +275,185 @@ describe("XsAIProvider", () => {
         }),
       );
       expect(result.provider).toBe(mockResult);
-      expect(result.textStream).toBe(mockStream);
+      expect(result.textStream).toBeInstanceOf(ReadableStream);
+      expect(result.textStream).toHaveProperty([Symbol.asyncIterator]);
     });
 
     // TODO: Add tests for onStepFinish and onFinish callback wrapping within streamText
+  });
+
+  describe("tool handling", () => {
+    it("should include toolName in tool-result steps via createStepFinishHandler", async () => {
+      const onStepFinishMock = jest.fn();
+
+      // Mock XsAI response with tool calls and results
+      const mockXsAIResult = {
+        text: "Tool execution completed",
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+        },
+        finishReason: "stop",
+        stepType: "text" as const,
+        toolCalls: [
+          {
+            toolCallId: "test-tool-call-id",
+            toolName: "test_tool",
+            args: { param: "value" },
+          },
+        ],
+        toolResults: [
+          {
+            toolCallId: "test-tool-call-id",
+            toolName: "test_tool",
+            result: "tool result",
+          },
+        ],
+      };
+
+      mockXSAIGenerateText.mockResolvedValue(mockXsAIResult);
+
+      // Test the stepFinishHandler directly
+      const stepFinishHandler = provider.createStepFinishHandler(onStepFinishMock);
+      expect(stepFinishHandler).toBeDefined();
+      if (stepFinishHandler) {
+        await stepFinishHandler(mockXsAIResult as any);
+      }
+
+      // Should be called 3 times: text, tool_call, tool_result
+      expect(onStepFinishMock).toHaveBeenCalledTimes(3);
+
+      // Check tool_call step
+      const toolCallStep = onStepFinishMock.mock.calls[1][0]; // Second call (after text)
+      expect(toolCallStep.type).toBe("tool_call");
+      expect(toolCallStep.name).toBe("test_tool");
+      expect(JSON.parse(toolCallStep.content)[0].toolName).toBe("test_tool");
+
+      // Check tool_result step
+      const toolResultStep = onStepFinishMock.mock.calls[2][0]; // Third call
+      expect(toolResultStep.type).toBe("tool_result");
+      expect(toolResultStep.name).toBe("test_tool");
+      expect(JSON.parse(toolResultStep.content)[0].toolName).toBe("test_tool");
+    });
+
+    it("should create proper step content format for tool calls", async () => {
+      const onStepFinishMock = jest.fn();
+      const stepFinishHandler = provider.createStepFinishHandler(onStepFinishMock);
+
+      const mockResult = {
+        text: "",
+        usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+        finishReason: "stop",
+        stepType: "text" as const,
+        toolCalls: [
+          {
+            toolCallId: "test-call-123",
+            toolName: "calculator",
+            args: { operation: "add", a: 1, b: 2 },
+          },
+        ],
+        toolResults: [],
+      };
+
+      if (stepFinishHandler) {
+        await stepFinishHandler(mockResult as any);
+      }
+
+      expect(onStepFinishMock).toHaveBeenCalledTimes(1); // only tool_call (text is empty string, so no text step)
+
+      const toolCallStep = onStepFinishMock.mock.calls[0][0]; // First call is tool_call
+      expect(toolCallStep).toEqual({
+        id: "test-call-123",
+        type: "tool_call",
+        name: "calculator",
+        arguments: { operation: "add", a: 1, b: 2 },
+        content: JSON.stringify([
+          {
+            type: "tool-call",
+            toolCallId: "test-call-123",
+            toolName: "calculator",
+            args: { operation: "add", a: 1, b: 2 },
+          },
+        ]),
+        role: "assistant",
+        usage: { promptTokens: 5, completionTokens: 3, totalTokens: 8 },
+      });
+    });
+
+    it("should create proper step content format for tool results", async () => {
+      const onStepFinishMock = jest.fn();
+      const stepFinishHandler = provider.createStepFinishHandler(onStepFinishMock);
+
+      const mockResult = {
+        text: "",
+        usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+        finishReason: "stop",
+        stepType: "text" as const,
+        toolCalls: [],
+        toolResults: [
+          {
+            toolCallId: "test-call-123",
+            toolName: "calculator",
+            result: { answer: 3 },
+          },
+        ],
+      };
+
+      if (stepFinishHandler) {
+        await stepFinishHandler(mockResult as any);
+      }
+
+      expect(onStepFinishMock).toHaveBeenCalledTimes(1); // only tool_result (text is empty string, so no text step)
+
+      const toolResultStep = onStepFinishMock.mock.calls[0][0]; // First call is tool_result
+      expect(toolResultStep).toEqual({
+        id: "test-call-123",
+        type: "tool_result",
+        name: "calculator",
+        result: { answer: 3 },
+        content: JSON.stringify([
+          {
+            type: "tool-result",
+            toolCallId: "test-call-123",
+            toolName: "calculator",
+            result: { answer: 3 },
+          },
+        ]),
+        role: "assistant",
+        usage: { promptTokens: 5, completionTokens: 3, totalTokens: 8 },
+      });
+    });
+
+    it("should handle empty or undefined tool arrays", async () => {
+      const onStepFinishMock = jest.fn();
+      const stepFinishHandler = provider.createStepFinishHandler(onStepFinishMock);
+
+      const mockResult = {
+        text: "No tools used",
+        usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+        finishReason: "stop",
+        stepType: "text" as const,
+        toolCalls: [],
+        toolResults: [],
+      };
+
+      if (stepFinishHandler) {
+        await stepFinishHandler(mockResult as any);
+      }
+
+      // Only text step should be called
+      expect(onStepFinishMock).toHaveBeenCalledTimes(1);
+
+      const textStep = onStepFinishMock.mock.calls[0][0];
+      expect(textStep.type).toBe("text");
+      expect(textStep.content).toBe("No tools used");
+    });
+
+    it("should return undefined when onStepFinish is not provided", () => {
+      const stepFinishHandler = provider.createStepFinishHandler(undefined);
+      expect(stepFinishHandler).toBeUndefined();
+    });
   });
 
   describe("generateObject", () => {
@@ -290,7 +465,7 @@ describe("XsAIProvider", () => {
         usage: {},
         finishReason: "stop",
       };
-      mockXsaiGenerateObject.mockResolvedValue(mockResult);
+      mockXSAIGenerateObject.mockResolvedValue(mockResult);
 
       const result = await provider.generateObject({
         messages,
@@ -298,7 +473,7 @@ describe("XsAIProvider", () => {
         schema,
       });
 
-      expect(mockXsaiGenerateObject).toHaveBeenCalledWith(
+      expect(mockXSAIGenerateObject).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Generate JSON" }],
@@ -320,7 +495,7 @@ describe("XsAIProvider", () => {
       const mockResult = {
         partialObjectStream: mockStream /* other potential fields */,
       };
-      mockXsaiStreamObject.mockResolvedValue(mockResult);
+      mockXSAIStreamObject.mockResolvedValue(mockResult);
 
       const result = await provider.streamObject({
         messages,
@@ -328,7 +503,7 @@ describe("XsAIProvider", () => {
         schema,
       });
 
-      expect(mockXsaiStreamObject).toHaveBeenCalledWith(
+      expect(mockXSAIStreamObject).toHaveBeenCalledWith(
         expect.objectContaining({
           apiKey,
           messages: [{ role: "user", content: "Stream JSON" }],
@@ -337,7 +512,8 @@ describe("XsAIProvider", () => {
         }),
       );
       expect(result.provider).toBe(mockResult);
-      expect(result.objectStream).toBe(mockStream);
+      expect(result.objectStream).toBeInstanceOf(ReadableStream);
+      expect(result.objectStream).toHaveProperty([Symbol.asyncIterator]);
     });
 
     // TODO: Add tests for onStepFinish and onFinish callback wrapping within streamObject

@@ -116,10 +116,23 @@ export type AgentStartEventMetadata = {
     system?: string;
     toolChoice?: string;
   };
+  systemPrompt?: string | BaseMessage | BaseMessage[];
+  messages?: BaseMessage[];
 } & Record<string, unknown>;
 
 export interface AgentSuccessEventMetadata extends BaseEventMetadata {
   usage?: Usage;
+  modelParameters?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
+    stop?: string[];
+    system?: string;
+    toolChoice?: string;
+  };
 }
 
 export interface MemoryEventMetadata extends BaseEventMetadata {

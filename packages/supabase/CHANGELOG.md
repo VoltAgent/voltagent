@@ -1,5 +1,106 @@
 # @voltagent/supabase
 
+## 0.1.10
+
+### Patch Changes
+
+- [#236](https://github.com/VoltAgent/voltagent/pull/236) [`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Enhanced fresh installation detection and migration reliability
+
+  This release significantly improves the fresh installation experience and migration system reliability for SupabaseMemory. These changes ensure cleaner setups, prevent unnecessary migration attempts, and resolve PostgreSQL compatibility issues.
+
+  ### Fresh Installation Experience
+
+  The system now properly detects fresh installations and skips migrations when no data exists to migrate. This eliminates confusing migration warnings during initial setup and improves startup performance.
+
+  ```typescript
+  // Fresh installation now automatically:
+  // ✅ Detects empty database
+  // ✅ Skips unnecessary migrations
+  // ✅ Sets migration flags to prevent future runs
+  // ✅ Shows clean SQL setup instructions
+
+  const storage = new SupabaseMemory({
+    supabaseUrl: "your-url",
+    supabaseKey: "your-key",
+  });
+  // No more migration warnings on fresh installs!
+  ```
+
+  ### Migration System Improvements
+
+  - **Fixed PostgreSQL syntax error**: Resolved `level TEXT DEFAULT "INFO"` syntax issue by using single quotes for string literals
+  - **Enhanced migration flag detection**: Improved handling of multiple migration flags without causing "multiple rows returned" errors
+  - **Better error differentiation**: System now correctly distinguishes between "table missing" and "multiple records" scenarios
+  - **Automatic flag management**: Fresh installations automatically set migration flags to prevent duplicate runs
+
+  ### Database Setup
+
+  The fresh installation SQL now includes migration flags table creation, ensuring future application restarts won't trigger unnecessary migrations:
+
+  ```sql
+  -- Migration flags are now automatically created
+  CREATE TABLE IF NOT EXISTS voltagent_memory_conversations_migration_flags (
+      id SERIAL PRIMARY KEY,
+      migration_type TEXT NOT NULL UNIQUE,
+      completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+      migrated_count INTEGER DEFAULT 0,
+      metadata JSONB DEFAULT '{}'::jsonb
+  );
+  ```
+
+  **Migration Notes:**
+
+  - Existing installations will benefit from improved migration flag detection
+  - Fresh installations will have a cleaner, faster setup experience
+  - PostgreSQL syntax errors in timeline events table creation are resolved
+  - No action required - improvements are automatic
+
+- Updated dependencies [[`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416), [`16c2a86`](https://github.com/VoltAgent/voltagent/commit/16c2a863d3ecdc09f09219bd40f2dbf1d789194d), [`0d85f0e`](https://github.com/VoltAgent/voltagent/commit/0d85f0e960dbc6e8df6a79a16c775ca7a34043bb)]:
+  - @voltagent/core@0.1.33
+
+## 0.1.9
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.1.8
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
 ## 0.1.7
 
 ### Patch Changes

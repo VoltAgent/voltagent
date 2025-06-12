@@ -29,6 +29,7 @@ import { openai } from "@ai-sdk/openai";
 // Create a specialized agent for writing stories
 const storyAgent = new Agent({
   name: "Story Agent",
+  purpose: "A story writer agent that creates original, engaging short stories.",
   instructions: "You are a creative story writer. Create original, engaging short stories.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
@@ -37,6 +38,7 @@ const storyAgent = new Agent({
 // Create a specialized agent for translation
 const translatorAgent = new Agent({
   name: "Translator Agent",
+  purpose: "A translator agent that translates text accurately.",
   instructions: "You are a skilled translator. Translate text accurately.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
@@ -65,7 +67,7 @@ const supervisorAgent = new Agent({
 
 When you initialize an agent with subagents, several things happen automatically:
 
-1.  **Supervisor Prompt Enhancement**: The supervisor agent's system prompt is automatically modified (`generateSupervisorSystemMessage`) to include instructions on how to manage its subagents effectively. It lists the available subagents and their descriptions and provides guidelines for delegation, communication, and response aggregation.
+1.  **Supervisor Prompt Enhancement**: The supervisor agent's system prompt is automatically modified (`generateSupervisorSystemMessage`) to include instructions on how to manage its subagents effectively. It lists the available subagents and their purpose and provides guidelines for delegation, communication, and response aggregation.
 2.  **`delegate_task` Tool**: A `delegate_task` tool is automatically added to the supervisor agent's available tools. This tool allows the supervisor LLM to decide when and how to delegate tasks.
 3.  **Agent Registry**: The parent-child relationship between the supervisor and its subagents is registered in the `AgentRegistry`, enabling discoverability and management within the broader system.
 
@@ -121,6 +123,7 @@ import { openai } from "@ai-sdk/openai";
 // Create specialized agents
 const storyAgent = new Agent({
   name: "Story Agent",
+  purpose: "A story writer agent that creates original, engaging short stories.",
   instructions: "You are a creative story writer. Create original, engaging short stories.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
@@ -128,6 +131,7 @@ const storyAgent = new Agent({
 
 const translatorAgent = new Agent({
   name: "Translator Agent",
+  purpose: "A translator agent that translates text accurately.",
   instructions: "You are a skilled translator. Translate text accurately.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
@@ -208,6 +212,7 @@ import { openai } from "@ai-sdk/openai";
 // Create a new specialized agent
 const factCheckerAgent = new Agent({
   name: "Fact Checker Agent",
+  purpose: "A fact checker agent that verifies facts and provides accurate information.",
   instructions: "You verify facts and provide accurate information.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),

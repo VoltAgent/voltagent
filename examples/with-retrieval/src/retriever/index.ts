@@ -1,4 +1,4 @@
-import { BaseRetriever, type BaseMessage } from "@voltagent/core";
+import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
 import { documents } from "../data/documents.js";
 
 /**
@@ -32,9 +32,11 @@ export class SimpleRetriever extends BaseRetriever {
   /**
    * Retrieve documents based on keyword matching with the input
    * @param input - The input to use for retrieval (string or BaseMessage[])
+   * @param options - Configuration and context for the retrieval
    * @returns Promise resolving to a formatted context string
    */
-  async retrieve(input: string | BaseMessage[]): Promise<string> {
+  async retrieve(input: string | BaseMessage[], options: RetrieveOptions): Promise<string> {
+    // Convert input to searchable string
     let searchText = "";
 
     if (typeof input === "string") {
@@ -55,39 +57,42 @@ export class SimpleRetriever extends BaseRetriever {
       }
     }
 
-    const keywords = searchText.toLowerCase().split(/\s+/);
+    // Simple keyword-based search
+    const searchTerms = searchText.toLowerCase().split(/\s+/);
+    const matchedDocs = this.documents.filter((doc) => {
+      const content = doc.content.toLowerCase();
+      return searchTerms.some((term) => content.includes(term));
+    });
 
-    const results = this.documents
-      .map((doc) => {
-        const content = doc.content.toLowerCase();
+    // Add references to userContext if available
+    if (options.userContext) {
+      const references = [
+        {
+          id: "doc-1",
+          title: "VoltAgent Usage Guide",
+          source: "Official Documentation",
+        },
+        {
+          id: "doc-2",
+          title: "API Reference",
+          source: "Technical Documentation",
+        },
+        {
+          id: "doc-3",
+          title: "Example Projects",
+          source: "GitHub Repository",
+        },
+      ];
 
-        // Calculate a simple score based on keyword matches
-        const matchCount = keywords.filter((keyword: string) =>
-          content.includes(keyword.toLowerCase()),
-        ).length;
-
-        const score = matchCount / keywords.length;
-
-        return {
-          content: doc.content,
-          title: doc.title,
-          source: doc.source,
-          score,
-        };
-      })
-      .filter((result) => result.score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    // Format results as a context string
-    if (results.length === 0) {
-      return "No relevant information found.";
+      options.userContext.set("references", references);
     }
 
-    return results
-      .map((doc, i) => {
-        return `[${i + 1}] ${doc.content}\nSource: ${doc.title} (${doc.source})`;
-      })
-      .join("\n\n");
+    // Return the concatenated content for the LLM
+    if (matchedDocs.length === 0) {
+      return "No relevant documents found for the query.";
+    }
+
+    return matchedDocs.map((doc) => `Title: ${doc.title}\nContent: ${doc.content}`).join("\n\n");
   }
 }
 

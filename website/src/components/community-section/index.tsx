@@ -1,9 +1,9 @@
-import React from "react";
 import { DocumentTextIcon } from "@heroicons/react/24/solid";
-import { GitHubLogo } from "../../../static/img/logos/github";
-import { DiscordLogo } from "../../../static/img/logos/discord";
-import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import { GitHubStarsProvider } from "@site/src/contexts/GitHubStarsContext";
+import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import React from "react";
+import { DiscordLogo } from "../../../static/img/logos/discord";
+import { GitHubLogo } from "../../../static/img/logos/github";
 import { GitHubStargazersAnimation } from "./GitHubStargazersAnimation";
 
 interface CommunityLink {
@@ -13,10 +13,6 @@ interface CommunityLink {
   url: string;
   tooltip: string;
   showLabel?: boolean;
-}
-
-interface CommunitySectionProps {
-  className?: string;
 }
 
 const MobileDiscordAnimation = () => {
@@ -38,7 +34,7 @@ const MobileDiscordAnimation = () => {
         const distance = 60;
         return (
           <div
-            key={i}
+            key={label}
             className="absolute px-2 py-1 text-xs font-medium bg-[#5865F2]/10 text-main-emerald rounded
               animate-[twinkle_10s_ease-in-out_infinite] opacity-0
               transition-all duration-2000 whitespace-nowrap"
@@ -76,7 +72,7 @@ const DiscordAnimation = () => {
         const distance = 60;
         return (
           <div
-            key={i}
+            key={label}
             className="absolute px-2 py-1 text-xs font-medium bg-[#5865F2]/10 text-main-emerald rounded opacity-0 
               group-hover:animate-[fadeInOut_4s_ease-in-out_infinite] group-hover:opacity-0
               transition-all duration-300 whitespace-nowrap"
@@ -148,7 +144,7 @@ const COMMUNITY_LINKS: CommunityLink[] = [
   },
 ];
 
-export function CommunitySection({ className }: CommunitySectionProps) {
+export function CommunitySection() {
   React.useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `

@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
-import { AnimatedBeam } from "../magicui/animated-beam";
 import {
-  UserIcon,
-  CpuChipIcon,
   ArrowPathIcon,
+  CpuChipIcon,
   FingerPrintIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import { OpenAILogo } from "@site/static/img/logos/openai";
 import { Claude37Logo } from "@site/static/img/logos/claudie";
+import { OpenAILogo } from "@site/static/img/logos/openai";
+import React, { useState, useEffect, useRef } from "react";
+import { AnimatedBeam } from "../magicui/animated-beam";
 
 interface WorkflowCodeExampleProps {
   isVisible: boolean;
@@ -211,6 +211,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
   };
 
   // Auto-replay animation after completing
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   useEffect(() => {
     if (animationStep === totalSteps && !isAnimating) {
       const timer = setTimeout(() => {
@@ -222,6 +223,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
   }, [animationStep, isAnimating]);
 
   // Reset animation when isVisible changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   useEffect(() => {
     if (isVisible) {
       startAnimation();
@@ -381,7 +383,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                       <div
                         className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1"
                         ref={leadAgentBeamAnchorRef}
-                      ></div>
+                      />
                     </div>
                   </div>
 
@@ -592,7 +594,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                       <div
                         className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1"
                         ref={teamBeamAnchorRef}
-                      ></div>
+                      />
                     </div>
                   </div>
                 </div>
@@ -606,7 +608,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                     <div
                       ref={knowledgeLogRef}
                       className="w-full lg:w-[450px] md:w-[400px] h-[150px]"
-                    ></div>
+                    />
                   </div>
 
                   {/* Memory Boxes with Border - Center Column */}

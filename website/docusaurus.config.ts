@@ -1,6 +1,5 @@
 import type * as Preset from "@docusaurus/preset-classic";
 import type { Config } from "@docusaurus/types";
-import { themes as prismThemes } from "prism-react-renderer";
 import "dotenv/config";
 
 const config: Config = {
@@ -161,6 +160,14 @@ const config: Config = {
   ],
   themeConfig: {
     image: "img/social2.png",
+    announcementBar: {
+      id: "support_us",
+      content:
+        "<a target='_blank' rel='noopener noreferrer' href='https://github.com/voltagent/voltagent'>⭐️ You can support us by giving a star on GitHub to help us reach more developers!</a>",
+      backgroundColor: "#10b981",
+      textColor: "#000000",
+      isCloseable: true,
+    },
     colorMode: {
       disableSwitch: true,
       defaultMode: "dark",

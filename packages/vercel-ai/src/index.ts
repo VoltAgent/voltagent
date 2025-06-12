@@ -9,12 +9,12 @@ import type {
   ProviderTextResponse,
   ProviderTextStreamResponse,
   StepWithContent,
+  StreamObjectFinishResult,
   StreamObjectOptions,
   StreamTextOptions,
-  VoltAgentError,
   ToolErrorInfo,
-  StreamObjectFinishResult,
   UsageInfo,
+  VoltAgentError,
 } from "@voltagent/core";
 // Import directly from the types file path within the dist folder
 import type {
@@ -101,6 +101,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
           {
             type: "tool-result",
             toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
             result: chunk.result,
           },
         ]),

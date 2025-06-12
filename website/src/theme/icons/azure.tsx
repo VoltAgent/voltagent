@@ -9,6 +9,7 @@ export const AzureIcon = (props: React.SVGProps<SVGSVGElement>) => (
     {...props}
     fill="none"
   >
+    <title>Azure</title>
     <defs>
       <linearGradient
         id="a"

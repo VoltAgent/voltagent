@@ -9,6 +9,7 @@ export const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
     {...props}
     fill="none"
   >
+    <title>GitHub logo</title>
     <path
       fillRule="evenodd"
       clipRule="evenodd"
@@ -27,6 +28,7 @@ export const GithubIconOutlined = (props: React.SVGProps<SVGSVGElement>) => (
     fill="none"
     {...props}
   >
+    <title>GitHub logo</title>
     <path
       fill="currentColor"
       fillRule="evenodd"

@@ -1,12 +1,12 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { BoltIcon } from "@heroicons/react/24/solid";
-import { DotPattern } from "../ui/dot-pattern";
-import PricingSection from "./PricingSection";
-import FrameworkIntegration from "./FrameworkIntegration";
-import ObservabilityFeatures from "./ObservabilityFeatures";
 import Link from "@docusaurus/Link";
+import { BoltIcon } from "@heroicons/react/24/solid";
+import { motion } from "framer-motion";
+import React from "react";
+import { DotPattern } from "../ui/dot-pattern";
+import FrameworkIntegration from "./FrameworkIntegration";
 import { HowToGetStarted } from "./HowToGetStarted";
+import ObservabilityFeatures from "./ObservabilityFeatures";
+import PricingSection from "./PricingSection";
 
 export const Console = () => {
   return (

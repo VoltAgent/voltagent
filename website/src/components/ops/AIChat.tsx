@@ -1,9 +1,9 @@
-import type React from "react";
-import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChatBubbleLeftIcon,
   PaperAirplaneIcon,
 } from "@heroicons/react/24/outline";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { OpenAILogo } from "../../../static/img/logos/openai";
 
 type Message = {
@@ -104,7 +104,7 @@ export default function AIChat() {
   }, [messages, simulateAIResponse]);
 
   // Auto-scroll the chat container to the bottom when messages change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   useEffect(() => {
     if (messagesContainerRef.current) {
       // Using setTimeout to ensure the DOM has updated

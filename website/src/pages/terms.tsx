@@ -1,7 +1,6 @@
-import React from "react";
 import Layout from "@theme/Layout";
+import React from "react";
 import { TermsAndConditions } from "../components/terms";
-import { Footer } from "../components/footer";
 
 export default function TermsPage() {
   return (
@@ -11,7 +10,6 @@ export default function TermsPage() {
     >
       <main className="flex-1 mt-4">
         <TermsAndConditions />
-        <Footer />
       </main>
     </Layout>
   );

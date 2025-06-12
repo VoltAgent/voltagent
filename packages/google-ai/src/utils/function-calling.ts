@@ -1,9 +1,9 @@
-import type { BaseTool } from "@voltagent/core";
 import { FunctionCallingConfigMode } from "@google/genai";
-import type { GoogleTool, GoogleToolConfig } from "../types";
+import type { FunctionCall, FunctionDeclaration, FunctionResponse } from "@google/genai";
+import type { BaseTool } from "@voltagent/core";
 import { z } from "zod";
-import { functionDeclarationFromZodFunction, type ZodFunction } from "./schema_helper";
-import type { FunctionCall, FunctionResponse, FunctionDeclaration } from "@google/genai";
+import type { GoogleTool, GoogleToolConfig } from "../types";
+import { type ZodFunction, functionDeclarationFromZodFunction } from "./schema_helper";
 
 /**
  * Creates a default tool configuration
