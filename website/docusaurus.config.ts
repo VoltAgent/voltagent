@@ -106,20 +106,60 @@ const config: Config = {
             from: "/manifesto/",
           },
           {
-            to: "/voltops-llm-observability-docs/vercel-ai",
-            from: "/docs-observability/vercel-ai",
+            to: "/voltops-llm-observability-docs/vercel-ai/",
+            from: "/docs-observability/vercel-ai/",
           },
           {
-            to: "/voltops-llm-observability-docs/voltagent-framework",
+            to: "/voltops-llm-observability-docs/voltagent-framework/",
             from: "/docs-observability/voltagent-framework",
           },
           {
-            to: "/voltops-llm-observability-docs/js-ts-sdk",
-            from: "/docs-observability/js-ts-sdk",
+            to: "/voltops-llm-observability-docs/js-ts-sdk/",
+            from: "/docs-observability/js-ts-sdk/",
           },
           {
-            to: "/voltops-llm-observability-docs/python-sdk",
-            from: "/docs-observability/python-sdk",
+            to: "/voltops-llm-observability-docs/python-sdk/",
+            from: "/docs-observability/python-sdk/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/openai-sdk/",
+            from: "/docs-observability/openai-sdk/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/langchain/",
+            from: "/docs-observability/langchain/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/llamaindex/",
+            from: "/docs-observability/llamaindex/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/autogen/",
+            from: "/docs-observability/autogen/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/semantic-kernel/",
+            from: "/docs-observability/semantic-kernel/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/pydantic-ai/",
+            from: "/docs-observability/pydantic-ai/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/spring-ai/",
+            from: "/docs-observability/spring-ai/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/agno/",
+            from: "/docs-observability/agno/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/crewai/",
+            from: "/docs-observability/crewai/",
+          },
+          {
+            to: "/voltops-llm-observability-docs/rest-api/",
+            from: "/docs-observability/rest-api/",
           },
         ],
       },

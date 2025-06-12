@@ -123,7 +123,7 @@ export default function Navbar() {
                 <Link to="/docs/" className="no-underline">
                   <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                     <BoltIcon className="w-5 h-5 mr-3 text-[#00d992]" />
-                    <span className="text-sm">Voltagent Docs</span>
+                    <span className="text-sm">VoltAgent Docs</span>
                   </div>
                 </Link>
                 <Link

@@ -45,7 +45,7 @@ export const Console = () => {
               <p className="text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-[#dcdcdc] mb-3 landing-xs:mb-2 landing-sm:mb-4">
                 VoltOps is a n8n-style{" "}
                 <Link
-                  to="https://voltagent.dev/docs/observability/developer-console/"
+                  to="/voltops-llm-observability-docs/"
                   className="text-emerald-500 no-underline font-bold"
                 >
                   LLM Observability
@@ -57,7 +57,7 @@ export const Console = () => {
 
               <div className="flex flex-row justify-center landing-sm:justify-start gap-3 landing-xs:gap-2 landing-sm:gap-4 mt-4 landing-xs:mt-3 landing-sm:mt-6">
                 <Link
-                  to="https://voltagent.dev/voltops-llm-observability-docs/"
+                  to="/voltops-llm-observability-docs/"
                   className="inline-flex items-center justify-center no-underline border-solid border font-semibold rounded transition-colors px-4 landing-xs:px-3 landing-sm:px-5 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20"
                 >
                   Docs

@@ -35,7 +35,7 @@ export default function DocNavbar() {
             <div className={styles.navLinks}>
               {/* Show Framework Docs only when NOT on observability docs */}
               {!isActive("/voltops-llm-observability-docs/") && (
-                <Link to="/docs/" className={`${styles.logoLink}`}>
+                <Link to="/" className={`${styles.logoLink}`}>
                   <div className="flex items-center">
                     <div className="flex items-center justify-center border-2 border-solid border-[#00d992] rounded-full p-1">
                       <BoltIcon className="w-4 h-4 text-[#00d992]" />
@@ -56,10 +56,7 @@ export default function DocNavbar() {
               )}
 
               {!isActive("/docs/") && (
-                <Link
-                  to="/voltops-llm-observability-docs/"
-                  className={`${styles.logoLink}`}
-                >
+                <Link to="/" className={`${styles.logoLink}`}>
                   <div className="flex items-center">
                     <div className="flex items-center justify-center border-2 border-solid border-[#00d992] rounded-full p-1">
                       <BoltIcon className="w-4 h-4 text-[#00d992]" />
