@@ -8,7 +8,7 @@ import { BoltIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 interface DayProps {
   enabled: boolean;
   date: string;
-  title: string;
+  title: React.ReactNode;
   description: string;
   detailsLink?: string;
   children?: React.ReactNode;
@@ -77,9 +77,22 @@ const DayComponent: React.FC<DayProps> = ({
 
 const Day1 = () => (
   <DayComponent
-    enabled={true}
+    enabled={false}
     date="DAY 1 | MONDAY, JUNE 16, 2025"
-    title="Framework Agnostic LLM Observability"
+    title={
+      <>
+        <div className="flex items-baseline justify-start mb-2">
+          <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
+            <BoltIcon className="w-3 h-3 landing-xs:w-3 landing-xs:h-3 landing-sm:w-4 landing-sm:h-4 landing-md:w-5 landing-md:h-5 landing-lg:w-6 landing-lg:h-6 text-[#00d992]" />
+          </div>
+          <span className="text-xl landing-xs:text-lg landing-sm:text-2xl landing-md:text-3xl landing-lg:text-4xl font-bold">
+            <span className="text-[#00d992]">volt</span>
+            <span className="text-gray-500">ops</span>
+          </span>
+        </div>
+        Framework Agnostic LLM Observability
+      </>
+    }
     description="Universal tracing and monitoring that works with various AI Agent frameworks, or vanilla JS/Python."
     detailsLink="https://voltagent.dev/voltops-llm-observability/"
   >
