@@ -3,19 +3,19 @@ import { CustomEndpointError } from "./custom-endpoints";
 
 // Create a mock app
 const mockApp = {
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  patch: jest.fn(),
-  delete: jest.fn(),
-  options: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+  options: vi.fn(),
 };
 
 // Mock only the default export (the app), not the functions
-jest.mock("./api", () => ({
+vi.mock("./api", () => ({
   __esModule: true,
   default: mockApp,
-  ...jest.requireActual("./api"),
+  ...vi.requireActual("./api"),
 }));
 
 // Import the actual functions after mocking
@@ -23,7 +23,7 @@ import { registerCustomEndpoint, registerCustomEndpoints } from "./api";
 
 describe("API Custom Endpoints", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Clear global state before each test
     (global as any).__voltAgentCustomEndpoints = undefined;
   });

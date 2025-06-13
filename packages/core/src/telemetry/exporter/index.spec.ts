@@ -7,16 +7,16 @@ import type {
 import { VoltAgentExporter, type VoltAgentExporterOptions } from "./index";
 
 // Define top-level mocks for each method of TelemetryServiceApiClient
-const mockExportAgentHistory = jest.fn();
-const mockExportTimelineEvent = jest.fn();
-const mockExportHistorySteps = jest.fn();
-const mockUpdateAgentHistory = jest.fn();
+const mockExportAgentHistory = vi.fn();
+const mockExportTimelineEvent = vi.fn();
+const mockExportHistorySteps = vi.fn();
+const mockUpdateAgentHistory = vi.fn();
 
 // Mock TelemetryServiceApiClient
 // The actual TelemetryServiceApiClient class is not imported directly for mocking purposes here,
-// as jest.mock handles the module replacement.
-jest.mock("../client", () => ({
-  TelemetryServiceApiClient: jest.fn().mockImplementation(() => ({
+// as vi.mock handles the module replacement.
+vi.mock("../client", () => ({
+  TelemetryServiceApiClient: vi.fn().mockImplementation(() => ({
     exportAgentHistory: mockExportAgentHistory,
     exportTimelineEvent: mockExportTimelineEvent,
     exportHistorySteps: mockExportHistorySteps,
@@ -45,7 +45,7 @@ describe("VoltAgentExporter", () => {
 
   describe("constructor", () => {
     it("should create an instance of TelemetryServiceApiClient with options", () => {
-      // Access the mocked constructor directly via require, as jest.mock replaces the module.
+      // Access the mocked constructor directly via require, as vi.mock replaces the module.
       const MockedTelemetryServiceApiClient = require("../client").TelemetryServiceApiClient;
       expect(MockedTelemetryServiceApiClient).toHaveBeenCalledWith(mockOptions);
     });

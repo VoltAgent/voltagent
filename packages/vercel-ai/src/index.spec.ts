@@ -121,7 +121,7 @@ describe("VercelAIProvider", () => {
       };
 
       // Mock the onStepFinish callback
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // Create a mock model
       const mockModel = new MockLanguageModelV1({
@@ -144,7 +144,7 @@ describe("VercelAIProvider", () => {
       let capturedOptions: any = null;
 
       // Replace the global generateObject function to track if onFinish is passed
-      (global as any).generateObject = jest.fn().mockImplementation((options) => {
+      (global as any).generateObject = vi.fn().mockImplementation((options) => {
         capturedOptions = options;
 
         // Create a result object to return
@@ -270,7 +270,7 @@ describe("VercelAIProvider", () => {
       };
 
       // Mock the onStepFinish callback
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // We need to check if the actual implementation has onFinish for streamObject
       // First, let's create a mock model that will emit a proper stream
@@ -301,7 +301,7 @@ describe("VercelAIProvider", () => {
       let capturedOptions: any = null;
 
       // Replace the global streamObject function to track if onFinish is passed
-      (global as any).streamObject = jest.fn().mockImplementation((options) => {
+      (global as any).streamObject = vi.fn().mockImplementation((options) => {
         capturedOptions = options;
         // Check if onFinish was provided in the options
         if (options.onFinish) {

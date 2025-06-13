@@ -184,7 +184,7 @@ describe("SubAgentManager", () => {
   describe("handoffTask", () => {
     it("should handoff task to target agent", async () => {
       // Spy on generateText
-      const generateTextSpy = jest.spyOn(mockAgent1, "generateText");
+      const generateTextSpy = vi.spyOn(mockAgent1, "generateText");
 
       const options: AgentHandoffOptions = {
         task: "Solve this math problem",
@@ -207,7 +207,7 @@ describe("SubAgentManager", () => {
     });
 
     it("should call onHandoff hook with correct arguments when target agent has hooks", async () => {
-      const onHandoffSpy = jest.fn();
+      const onHandoffSpy = vi.fn();
 
       // Create a mock agent with hooks
       const mockAgentWithHooks = new MockAgent("agent3", "Agent with Hooks") as any;
@@ -237,7 +237,7 @@ describe("SubAgentManager", () => {
 
   describe("handoffToMultiple", () => {
     it("should handoff task to multiple target agents", async () => {
-      const handoffTaskSpy = jest.spyOn(subAgentManager, "handoffTask");
+      const handoffTaskSpy = vi.spyOn(subAgentManager, "handoffTask");
 
       const options = {
         task: "Process this request",
@@ -339,7 +339,7 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent1); // Math Agent
 
       // Spy on mockAgent1.generateText to check the options it receives
-      const generateTextSpy = jest.spyOn(mockAgent1, "generateText");
+      const generateTextSpy = vi.spyOn(mockAgent1, "generateText");
 
       const supervisorUserContext = new Map<string | symbol, unknown>();
       supervisorUserContext.set("supervisorKey", "supervisorValue");

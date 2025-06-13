@@ -91,32 +91,32 @@ const createMockHistoryEntry = (
   };
 };
 
-// Creating a jest mock for Memory interface
+// Creating a vi mock for Memory interface
 // @ts-ignore - This won't be fully compatible with all properties, this is a test
 const mockMemory = {
-  getMessages: jest.fn().mockImplementation(async () => []),
-  addMessage: jest.fn(),
-  clearMessages: jest.fn(),
-  createConversation: jest.fn(),
-  getConversation: jest.fn(),
-  getConversations: jest.fn(),
-  updateConversation: jest.fn(),
-  deleteConversation: jest.fn(),
+  getMessages: vi.fn().mockImplementation(async () => []),
+  addMessage: vi.fn(),
+  clearMessages: vi.fn(),
+  createConversation: vi.fn(),
+  getConversation: vi.fn(),
+  getConversations: vi.fn(),
+  updateConversation: vi.fn(),
+  deleteConversation: vi.fn(),
 
   // Simplified mock methods related to History
-  addHistoryEntry: jest.fn(),
-  updateHistoryEntry: jest.fn(),
-  getHistoryEntry: jest.fn(),
-  addHistoryEvent: jest.fn(),
-  updateHistoryEvent: jest.fn(),
-  getHistoryEvent: jest.fn(),
-  addHistoryStep: jest.fn(),
-  updateHistoryStep: jest.fn(),
-  getHistoryStep: jest.fn(),
-  getAllHistoryEntriesByAgent: jest.fn(),
+  addHistoryEntry: vi.fn(),
+  updateHistoryEntry: vi.fn(),
+  getHistoryEntry: vi.fn(),
+  addHistoryEvent: vi.fn(),
+  updateHistoryEvent: vi.fn(),
+  getHistoryEvent: vi.fn(),
+  addHistoryStep: vi.fn(),
+  updateHistoryStep: vi.fn(),
+  getHistoryStep: vi.fn(),
+  getAllHistoryEntriesByAgent: vi.fn(),
 
   // Added missing addTimelineEvent method
-  addTimelineEvent: jest
+  addTimelineEvent: vi
     .fn()
     .mockImplementation(
       async (_key: string, _value: NewTimelineEvent, _historyId: string, _agentId: string) => {
@@ -126,12 +126,12 @@ const mockMemory = {
     ),
 
   // Add missing user-centric conversation methods
-  getConversationsByUserId: jest.fn().mockImplementation(async () => []),
-  queryConversations: jest.fn().mockImplementation(async () => []),
-  getConversationMessages: jest.fn().mockImplementation(async () => []),
+  getConversationsByUserId: vi.fn().mockImplementation(async () => []),
+  queryConversations: vi.fn().mockImplementation(async () => []),
+  getConversationMessages: vi.fn().mockImplementation(async () => []),
 
   // Special test requirements
-  getHistoryEntries: jest.fn().mockImplementation(async () => {
+  getHistoryEntries: vi.fn().mockImplementation(async () => {
     return [createMockHistoryEntry("Test input")];
   }),
 };
@@ -374,12 +374,12 @@ class TestAgent<TProvider extends { llm: LLMProvider<unknown> }> extends Agent<T
 }
 
 // Mock HistoryManager
-jest.mock("./history", () => ({
-  HistoryManager: jest.fn().mockImplementation(() => {
+vi.mock("./history", () => ({
+  HistoryManager: vi.fn().mockImplementation(() => {
     // createMockHistoryEntry test dosyasının global kapsamında tanımlıdır.
     // Çağrıldığında AgentHistoryEntry'ye benzeyen bir nesne döndürür.
     return {
-      addEntry: jest.fn().mockImplementation(async (input, _output, status, _steps, _options) => {
+      addEntry: vi.fn().mockImplementation(async (input, _output, status, _steps, _options) => {
         let entryInputString = "default_mock_input";
         if (typeof input === "string") {
           entryInputString = input;
@@ -397,15 +397,15 @@ jest.mock("./history", () => ({
         // @ts-ignore createMockHistoryEntry is defined in the outer scope
         return Promise.resolve(createMockHistoryEntry(entryInputString, status || "working"));
       }),
-      getEntries: jest.fn().mockResolvedValue([]),
-      updateEntry: jest
+      getEntries: vi.fn().mockResolvedValue([]),
+      updateEntry: vi
         .fn()
         .mockImplementation(async (id: string, updates: Partial<AgentHistoryEntry>) => {
           // @ts-ignore createMockHistoryEntry is defined in the outer scope
           const baseEntry = createMockHistoryEntry("updated_input_for_mock");
           return Promise.resolve({ ...baseEntry, id, ...updates });
         }),
-      addStepsToEntry: jest
+      addStepsToEntry: vi
         .fn()
         .mockImplementation(async (id: string, newSteps: StepWithContent[]) => {
           // @ts-ignore createMockHistoryEntry is defined in the outer scope
@@ -418,18 +418,16 @@ jest.mock("./history", () => ({
         }),
       // Agent tarafından kullanılan diğer HistoryManager metodları buraya eklenebilir.
       // Örneğin: getEntryById, addEventToEntry
-      getEntryById: jest.fn().mockImplementation(async (id: string) => {
+      getEntryById: vi.fn().mockImplementation(async (id: string) => {
         // @ts-ignore createMockHistoryEntry is defined in the outer scope
         return Promise.resolve(createMockHistoryEntry(`entry_for_${id}`));
       }),
-      addEventToEntry: jest
-        .fn()
-        .mockImplementation(async (id: string, _event: NewTimelineEvent) => {
-          // @ts-ignore createMockHistoryEntry is defined in the outer scope
-          const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
-          // Remove events property since it doesn't exist in AgentHistoryEntry
-          return Promise.resolve({ ...baseEntry, id });
-        }),
+      addEventToEntry: vi.fn().mockImplementation(async (id: string, _event: NewTimelineEvent) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
+        // Remove events property since it doesn't exist in AgentHistoryEntry
+        return Promise.resolve({ ...baseEntry, id });
+      }),
     };
   }),
 }));
@@ -437,30 +435,30 @@ jest.mock("./history", () => ({
 // Mock VoltAgentExporter
 const mockTelemetryExporter = {
   publicKey: "mock-telemetry-public-key",
-  exportHistoryEntry: jest.fn(),
-  exportTimelineEvent: jest.fn(),
-  exportHistorySteps: jest.fn(),
-  updateHistoryEntry: jest.fn(),
-  updateTimelineEvent: jest.fn(),
+  exportHistoryEntry: vi.fn(),
+  exportTimelineEvent: vi.fn(),
+  exportHistorySteps: vi.fn(),
+  updateHistoryEntry: vi.fn(),
+  updateTimelineEvent: vi.fn(),
 } as unknown as VoltAgentExporter;
 
 // Mock AgentEventEmitter globally
 const mockEventEmitter = {
-  getInstance: jest.fn().mockReturnThis(),
-  addHistoryEvent: jest.fn(),
-  emitHistoryEntryCreated: jest.fn(),
-  emitHistoryUpdate: jest.fn(),
-  emitAgentRegistered: jest.fn(),
-  emitAgentUnregistered: jest.fn(),
-  onAgentRegistered: jest.fn(),
-  onAgentUnregistered: jest.fn(),
-  onHistoryEntryCreated: jest.fn(),
-  onHistoryUpdate: jest.fn(),
-  publishTimelineEvent: jest.fn().mockResolvedValue(createMockHistoryEntry("mock_timeline_event")),
-} as unknown as jest.Mocked<AgentEventEmitter>;
+  getInstance: vi.fn().mockReturnThis(),
+  addHistoryEvent: vi.fn(),
+  emitHistoryEntryCreated: vi.fn(),
+  emitHistoryUpdate: vi.fn(),
+  emitAgentRegistered: vi.fn(),
+  emitAgentUnregistered: vi.fn(),
+  onAgentRegistered: vi.fn(),
+  onAgentUnregistered: vi.fn(),
+  onHistoryEntryCreated: vi.fn(),
+  onHistoryUpdate: vi.fn(),
+  publishTimelineEvent: vi.fn().mockResolvedValue(createMockHistoryEntry("mock_timeline_event")),
+} as unknown as vi.Mocked<AgentEventEmitter>;
 
 // Mock AgentEventEmitter.getInstance globally
-jest.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
+vi.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
 
 describe("Agent", () => {
   let agent: TestAgent<{ llm: MockProvider }>;
@@ -472,7 +470,7 @@ describe("Agent", () => {
     mockProvider = new MockProvider(mockModel);
 
     // Reset mock memory before each test
-    // @ts-ignore - To overcome Object.keys and jest mock type issues
+    // @ts-ignore - To overcome Object.keys and vi mock type issues
     for (const key of Object.keys(mockMemory)) {
       // @ts-ignore - To overcome type issues with Jest mocks
       if (
@@ -558,7 +556,7 @@ describe("Agent", () => {
 
     // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
     it("should pass telemetryExporter to HistoryManager if provided", () => {
-      (HistoryManager as jest.Mock).mockClear();
+      (HistoryManager as vi.Mock).mockClear();
 
       new Agent({
         name: "TelemetryAgent",
@@ -579,7 +577,7 @@ describe("Agent", () => {
     });
 
     it("should instantiate HistoryManager without telemetryExporter if not provided", () => {
-      (HistoryManager as jest.Mock).mockClear();
+      (HistoryManager as vi.Mock).mockClear();
 
       new Agent({
         name: "NoTelemetryAgent",
@@ -590,7 +588,7 @@ describe("Agent", () => {
       });
 
       expect(HistoryManager).toHaveBeenCalledTimes(1);
-      const historyManagerArgs = (HistoryManager as jest.Mock).mock.calls[0];
+      const historyManagerArgs = (HistoryManager as vi.Mock).mock.calls[0];
       expect(historyManagerArgs.length).toBeGreaterThanOrEqual(3);
       expect(historyManagerArgs[3]).toBeUndefined();
     });
@@ -776,7 +774,7 @@ describe("Agent", () => {
   describe("history management", () => {
     it("should create history entries during text generation", async () => {
       // Track the addEntry method of HistoryManager with a spy
-      const addEntrySpy = jest.spyOn(agent.getHistoryManager(), "addEntry");
+      const addEntrySpy = vi.spyOn(agent.getHistoryManager(), "addEntry");
 
       // Mock history entry - creating only for reference
       createMockHistoryEntry("Test history management");
@@ -792,7 +790,7 @@ describe("Agent", () => {
 
     it("should handle history updates correctly", async () => {
       // Spy on AgentEventEmitter
-      const emitAgentUnregisteredSpy = jest.spyOn(
+      const emitAgentUnregisteredSpy = vi.spyOn(
         AgentEventEmitter.getInstance(),
         "emitAgentUnregistered",
       );
@@ -817,10 +815,10 @@ describe("Agent", () => {
       const historyManager = agent.getHistoryManager();
 
       // Mock emitHistoryEntryCreated once more to ensure fresh mocks
-      const emitHistoryEntryCreatedMock = jest.fn();
+      const emitHistoryEntryCreatedMock = vi.fn();
       mockEventEmitter.emitHistoryEntryCreated = emitHistoryEntryCreatedMock;
 
-      const historyManagerAddEntrySpy = jest.spyOn(historyManager, "addEntry");
+      const historyManagerAddEntrySpy = vi.spyOn(historyManager, "addEntry");
 
       await agent.generateText("Test input");
 
@@ -908,7 +906,7 @@ describe("Agent", () => {
     });
 
     it("should delegate getHistory to HistoryManager", () => {
-      const historyManagerSpy = jest.spyOn(agent.getHistoryManager(), "getEntries");
+      const historyManagerSpy = vi.spyOn(agent.getHistoryManager(), "getEntries");
 
       agent.getHistory();
 
@@ -919,10 +917,10 @@ describe("Agent", () => {
       const historyManager = agent.getHistoryManager();
 
       // Mock emitHistoryEntryCreated once more to ensure fresh mocks
-      const emitHistoryEntryCreatedMock = jest.fn();
+      const emitHistoryEntryCreatedMock = vi.fn();
       mockEventEmitter.emitHistoryEntryCreated = emitHistoryEntryCreatedMock;
 
-      const historyManagerAddEntrySpy = jest.spyOn(historyManager, "addEntry");
+      const historyManagerAddEntrySpy = vi.spyOn(historyManager, "addEntry");
 
       await agent.generateText("Test input");
 
@@ -934,7 +932,7 @@ describe("Agent", () => {
   describe("stream handling", () => {
     it("should handle streaming errors gracefully", async () => {
       const errorProvider = new MockProvider(mockModel);
-      jest.spyOn(errorProvider, "streamText").mockRejectedValue(new Error("Stream error"));
+      vi.spyOn(errorProvider, "streamText").mockRejectedValue(new Error("Stream error"));
 
       const errorAgent = new TestAgent({
         name: "Error Stream Agent",
@@ -948,7 +946,7 @@ describe("Agent", () => {
 
     it("should handle object streaming errors gracefully", async () => {
       const errorProvider = new MockProvider(mockModel);
-      jest.spyOn(errorProvider, "streamObject").mockRejectedValue(new Error("Object stream error"));
+      vi.spyOn(errorProvider, "streamObject").mockRejectedValue(new Error("Object stream error"));
 
       const errorAgent = new TestAgent({
         name: "Error Object Stream Agent",
@@ -983,7 +981,7 @@ describe("Agent", () => {
           execute: async () => "tool execution result",
         },
 
-        retrieve: jest
+        retrieve: vi
           .fn()
           .mockImplementation(async (_input: string | BaseMessage[], options?: any) => {
             mockRetriever.retrieveCalls++;
@@ -1102,7 +1100,7 @@ describe("Agent", () => {
 
       // Use onEnd hook to capture the final userContext
       let capturedUserContext: Map<string | symbol, unknown> | undefined;
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         capturedUserContext = context.userContext;
       });
 
@@ -1167,7 +1165,7 @@ describe("Agent", () => {
 
       // Use onEnd hook to capture the final userContext
       let capturedUserContext: Map<string | symbol, unknown> | undefined;
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         capturedUserContext = context.userContext;
       });
 
@@ -1199,7 +1197,7 @@ describe("Agent", () => {
 
   describe("onEnd hook", () => {
     it("should call onEnd hook with conversationId", async () => {
-      const onEndSpy = jest.fn();
+      const onEndSpy = vi.fn();
       const agentWithOnEnd = new TestAgent({
         name: "OnEnd Test Agent",
         model: mockModel,
@@ -1230,7 +1228,7 @@ describe("Agent", () => {
     });
 
     it("should call onEnd hook with userContext passed correctly", async () => {
-      const onEndSpy = jest.fn();
+      const onEndSpy = vi.fn();
       const agentWithOnEnd = new TestAgent({
         name: "OnEnd Context Test Agent",
         model: mockModel,
@@ -1272,7 +1270,7 @@ describe("Agent", () => {
   describe("userContext", () => {
     it("should initialize userContext within OperationContext", async () => {
       // Create agent with a spy hook to capture the context
-      const onStartSpy = jest.fn();
+      const onStartSpy = vi.fn();
       const agentWithHook = new TestAgent({
         name: "Context Test Agent",
         model: mockModel,
@@ -1302,7 +1300,7 @@ describe("Agent", () => {
       const initialUserContext = new Map<string | symbol, unknown>();
       initialUserContext.set("initialKey", "initialValue");
 
-      const onStartSpy = jest.fn();
+      const onStartSpy = vi.fn();
       const agentWithInitialContext = new TestAgent({
         name: "Initial Context Agent",
         model: mockModel,
@@ -1327,8 +1325,8 @@ describe("Agent", () => {
     });
 
     it("should pass userContext to onStart and onEnd hooks when provided in options", async () => {
-      const onStartSpy = jest.fn();
-      const onEndSpy = jest.fn();
+      const onStartSpy = vi.fn();
+      const onEndSpy = vi.fn();
       const agentWithHooks = new TestAgent({
         name: "Hook Context Agent",
         model: mockModel,
@@ -1361,11 +1359,11 @@ describe("Agent", () => {
       const testKey = "customKey";
 
       // Update onStartHook to accept a single object argument
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onStartHook = vi.fn(({ context }: { context: OperationContext }) => {
         context.userContext.set(testKey, testValue);
       });
       // Update onEndHook to accept a single object argument
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         expect(context.userContext.get(testKey)).toBe(testValue);
       });
 
@@ -1388,7 +1386,7 @@ describe("Agent", () => {
       const testValue = "data from start via options";
       const testKey = Symbol("toolTestKeyWithOptions");
 
-      const toolExecuteSpy = jest.fn();
+      const toolExecuteSpy = vi.fn();
       const mockTool = createTool({
         id: "context-tool-options",
         name: "context-tool-options",
@@ -1408,7 +1406,7 @@ describe("Agent", () => {
       const providedUserContext = new Map<string | symbol, unknown>();
       providedUserContext.set(testKey, testValue);
 
-      const generateTextSpy = jest.spyOn(mockProvider, "generateText");
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText");
 
       await agentWithToolAndOptions.generateText("Use the context-tool-options", {
         userContext: providedUserContext,
@@ -1445,7 +1443,7 @@ describe("Agent", () => {
       const userContext1 = new Map<string | symbol, unknown>([[key1, value1]]);
       const userContext2 = new Map<string | symbol, unknown>([[key2, value2]]);
 
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onStartHook = vi.fn(({ context }: { context: OperationContext }) => {
         if (context.historyEntry.input === "Operation 1 with options") {
           expect(context.userContext.get(key1)).toBe(value1);
           expect(context.userContext.has(key2)).toBe(false);

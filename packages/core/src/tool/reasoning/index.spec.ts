@@ -1,24 +1,24 @@
 import { DEFAULT_INSTRUCTIONS, FEW_SHOT_EXAMPLES, createReasoningTools } from "./index";
 // No need to import from 'jest' directly; it's usually globally available
 
-// Mock the base tools using jest.mock
+// Mock the base tools using vi.mock
 // Place mocks at the top level before imports if they mock modules used by the tested module itself,
 // but here './index' doesn't directly use the mocked './tools' exports in its top-level code,
 // so placing it before the describe block is fine.
-jest.mock("./tools", () => ({
-  thinkTool: { name: "think", description: "Think tool mock", parameters: {}, execute: jest.fn() },
+vi.mock("./tools", () => ({
+  thinkTool: { name: "think", description: "Think tool mock", parameters: {}, execute: vi.fn() },
   analyzeTool: {
     name: "analyze",
     description: "Analyze tool mock",
     parameters: {},
-    execute: jest.fn(),
+    execute: vi.fn(),
   },
 }));
 
 describe("createReasoningTools", () => {
   // Optional: Clear mocks before each test if needed, though not strictly necessary here
   // beforeEach(() => {
-  //   jest.clearAllMocks();
+  //   vi.clearAllMocks();
   // });
 
   it("should create a toolkit with default options", () => {

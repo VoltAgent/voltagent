@@ -2,8 +2,8 @@ import { z } from "zod";
 import { convertToolsForSDK } from ".";
 
 // Mock the ai tool
-jest.mock("ai", () => ({
-  tool: jest.fn().mockImplementation((config) => config),
+vi.mock("ai", () => ({
+  tool: vi.fn().mockImplementation((config) => config),
 }));
 
 describe("convertToolsForSDK", () => {

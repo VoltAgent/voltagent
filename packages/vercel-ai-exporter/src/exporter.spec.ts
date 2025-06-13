@@ -1,34 +1,34 @@
-import { VoltAgentExporter } from "./exporter";
-import { VoltAgentObservabilitySDK } from "@voltagent/sdk";
-import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import { ExportResultCode } from "@opentelemetry/core";
+import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
+import { VoltAgentObservabilitySDK } from "@voltagent/sdk";
+import { VoltAgentExporter } from "./exporter";
 
 // Mock the SDK
-jest.mock("@voltagent/sdk");
+vi.mock("@voltagent/sdk");
 
 describe("VoltAgentExporter", () => {
   let exporter: VoltAgentExporter;
-  let mockSdk: jest.Mocked<VoltAgentObservabilitySDK>;
+  let mockSdk: vi.Mocked<VoltAgentObservabilitySDK>;
   let mockTrace: any;
 
   beforeEach(() => {
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create mock trace object
     mockTrace = {
-      end: jest.fn().mockResolvedValue(undefined),
+      end: vi.fn().mockResolvedValue(undefined),
     };
 
     // Create mock SDK
     mockSdk = {
-      trace: jest.fn().mockResolvedValue(mockTrace),
-      addEventToTrace: jest.fn().mockResolvedValue(undefined),
-      flush: jest.fn().mockResolvedValue(undefined),
+      trace: vi.fn().mockResolvedValue(mockTrace),
+      addEventToTrace: vi.fn().mockResolvedValue(undefined),
+      flush: vi.fn().mockResolvedValue(undefined),
     } as any;
 
     // Mock the SDK constructor
-    (VoltAgentObservabilitySDK as jest.Mock).mockImplementation(() => mockSdk);
+    (VoltAgentObservabilitySDK as vi.Mock).mockImplementation(() => mockSdk);
 
     // Create exporter with debug enabled for testing
     exporter = new VoltAgentExporter({
@@ -249,7 +249,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       // This should process the tool span immediately with default agent
       exporter.export([toolSpan], callback);
@@ -300,7 +300,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       // Export both spans together
       exporter.export([parentSpan, toolSpan], callback);
@@ -357,7 +357,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([parentSpan, childSpan, toolSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -403,7 +403,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([childAgentSpan, toolSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -438,7 +438,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([errorSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -467,7 +467,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([span], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -576,7 +576,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([mainAgentSpan, subAgentSpan, toolSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -675,7 +675,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([masterSpan, divisionSpan, specialistSpan, toolSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -719,7 +719,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       // This should not crash or cause infinite recursion
       exporter.export([span1, span2], callback);
@@ -759,7 +759,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([specialistSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -851,7 +851,7 @@ describe("VoltAgentExporter", () => {
         },
       });
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export([masterSpan, divisionSpan, teamLeadSpan, specialistSpan, toolSpan], callback);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -908,7 +908,7 @@ describe("VoltAgentExporter", () => {
       });
       spans.push(deepToolSpan);
 
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       exporter.export(spans, callback);
       await new Promise((resolve) => setTimeout(resolve, 20));

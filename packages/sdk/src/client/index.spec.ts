@@ -1,7 +1,7 @@
-import { VoltAgentCoreAPI } from ".";
+import { VoltAgentCoreAPI } from "./index";
 
 // Mock global fetch
-globalThis.fetch = jest.fn() as jest.Mock;
+globalThis.fetch = vi.fn() as unknown as typeof globalThis.fetch;
 
 // Timer ve AbortController mock'ları
 const originalSetTimeout = globalThis.setTimeout;
@@ -10,12 +10,11 @@ const originalAbortController = globalThis.AbortController;
 
 beforeEach(() => {
   // Mock API için gerekli mock'ları ayarla
-  globalThis.setTimeout = jest.fn() as unknown as typeof globalThis.setTimeout;
-  globalThis.clearTimeout = jest.fn() as unknown as typeof globalThis.clearTimeout;
-  globalThis.AbortController = jest.fn(() => ({
-    abort: jest.fn(),
-    signal: {},
-  })) as unknown as typeof AbortController;
+  globalThis.setTimeout = vi.fn() as unknown as typeof globalThis.setTimeout;
+  globalThis.clearTimeout = vi.fn() as unknown as typeof globalThis.clearTimeout;
+  globalThis.AbortController = vi.fn(() => ({
+    abort: vi.fn(),
+  })) as unknown as typeof globalThis.AbortController;
 });
 
 afterEach(() => {
@@ -26,15 +25,46 @@ afterEach(() => {
 });
 
 describe("VoltAgentCoreAPI", () => {
-  let client: VoltAgentCoreAPI;
+  let api: VoltAgentCoreAPI;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
+    api = new VoltAgentCoreAPI("http://test-api");
+  });
 
-    client = new VoltAgentCoreAPI({
-      baseUrl: "https://api.example.com",
-      publicKey: "test-public-key",
-      secretKey: "test-secret-key",
+  describe("getAgent", () => {
+    it("should fetch agent data successfully", async () => {
+      const mockAgent = { id: "test-agent", name: "Test Agent" };
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockAgent,
+      });
+
+      const result = await api.getAgent("test-agent");
+
+      expect(result).toEqual(mockAgent);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "http://test-api/agents/test-agent",
+        expect.any(Object),
+      );
+    });
+
+    it("should handle API errors", async () => {
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+
+      await expect(api.getAgent("test-agent")).rejects.toThrow("Failed to fetch agent");
+    });
+
+    it("should handle network errors", async () => {
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error("Network error"),
+      );
+
+      await expect(api.getAgent("test-agent")).rejects.toThrow("Network error");
     });
   });
 
@@ -53,12 +83,12 @@ describe("VoltAgentCoreAPI", () => {
         message: "Success",
       };
 
-      (globalThis.fetch as jest.Mock).mockResolvedValueOnce({
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
 
-      const result = await client.addHistory({
+      const result = await api.addHistory({
         agent_id: "agent-123",
         userId: "user-123",
         status: "working",
@@ -68,7 +98,7 @@ describe("VoltAgentCoreAPI", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.example.com/history",
+        "http://test-api/history",
         expect.objectContaining({
           method: "POST",
           headers: expect.objectContaining({
@@ -106,12 +136,12 @@ describe("VoltAgentCoreAPI", () => {
         message: "Success",
       };
 
-      (globalThis.fetch as jest.Mock).mockResolvedValueOnce({
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
 
-      const result = await client.updateHistory({
+      const result = await api.updateHistory({
         id: "123",
         status: "completed",
         output: { result: "success" },
@@ -120,7 +150,7 @@ describe("VoltAgentCoreAPI", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.example.com/history/123",
+        "http://test-api/history/123",
         expect.objectContaining({
           method: "PATCH",
           headers: expect.objectContaining({
@@ -156,12 +186,12 @@ describe("VoltAgentCoreAPI", () => {
         message: "Success",
       };
 
-      (globalThis.fetch as jest.Mock).mockResolvedValueOnce({
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
 
-      const result = await client.addEvent({
+      const result = await api.addEvent({
         historyId: "history-123",
         event: {
           id: "event-123",

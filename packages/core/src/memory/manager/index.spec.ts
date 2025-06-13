@@ -7,11 +7,11 @@ import type { NewTimelineEvent } from "../../events/types";
 import type { Memory, MemoryMessage } from "../types";
 
 // Mock the AgentRegistry
-jest.mock("../../server/registry", () => {
+vi.mock("../../server/registry", () => {
   const mockAgent = {
     id: "test-agent",
     name: "Test Agent",
-    getHistory: jest.fn().mockReturnValue([
+    getHistory: vi.fn().mockReturnValue([
       {
         id: "history-1",
         status: "idle",
@@ -22,21 +22,21 @@ jest.mock("../../server/registry", () => {
 
   return {
     AgentRegistry: {
-      getInstance: jest.fn().mockReturnValue({
-        getAgent: jest.fn().mockReturnValue(mockAgent),
+      getInstance: vi.fn().mockReturnValue({
+        getAgent: vi.fn().mockReturnValue(mockAgent),
       }),
     },
   };
 });
 
 // Mock the AgentEventEmitter
-jest.mock("../../events", () => {
+vi.mock("../../events", () => {
   return {
     AgentEventEmitter: {
-      getInstance: jest.fn().mockReturnValue({
-        publishTimelineEvent: jest.fn(),
-        addHistoryEvent: jest.fn(),
-        emitHistoryUpdate: jest.fn(),
+      getInstance: vi.fn().mockReturnValue({
+        publishTimelineEvent: vi.fn(),
+        addHistoryEvent: vi.fn(),
+        emitHistoryUpdate: vi.fn(),
       }),
     },
   };
@@ -815,7 +815,7 @@ describe("MemoryManager - History Management", () => {
   it("should create memory events during operations", async () => {
     const eventEmitter = AgentEventEmitter.getInstance();
     // Create spy for publishTimelineEvent method
-    const publishTimelineEventSpy = jest.spyOn(eventEmitter, "publishTimelineEvent");
+    const publishTimelineEventSpy = vi.spyOn(eventEmitter, "publishTimelineEvent");
 
     // Trigger memory event creation by calling saveMessage
     await memoryManager.saveMessage(

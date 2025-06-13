@@ -64,7 +64,7 @@ describe("Agent Hooks Functionality", () => {
       name: "test-tool",
       description: "A test tool",
       parameters: z.object({}),
-      execute: jest.fn().mockResolvedValue("Tool result"),
+      execute: vi.fn().mockResolvedValue("Tool result"),
     });
 
     // Set hooks on the agent
@@ -73,7 +73,7 @@ describe("Agent Hooks Functionality", () => {
 
   describe("onStart", () => {
     it("should call onStart when agent starts generating", async () => {
-      const onStartSpy = jest.fn();
+      const onStartSpy = vi.fn();
       agent.hooks = createHooks({ onStart: onStartSpy });
 
       await agent.generateText("Test input");
@@ -91,7 +91,7 @@ describe("Agent Hooks Functionality", () => {
 
   describe("onEnd", () => {
     it("should call onEnd when agent completes generating successfully", async () => {
-      const onEndSpy = jest.fn();
+      const onEndSpy = vi.fn();
       agent.hooks = createHooks({ onEnd: onEndSpy });
 
       const response = await agent.generateText("Test input"); // Assuming success
@@ -116,10 +116,10 @@ describe("Agent Hooks Functionality", () => {
 
     // Add a test for the error case (optional but recommended)
     it("should call onEnd with an error when agent fails", async () => {
-      const onEndSpy = jest.fn();
+      const onEndSpy = vi.fn();
       // Mock the LLM to throw an error
       const errorProvider = {
-        generateText: jest.fn().mockRejectedValue(new Error("LLM Error")),
+        generateText: vi.fn().mockRejectedValue(new Error("LLM Error")),
         getModelIdentifier: () => "mock-error-model",
       };
       const errorAgent = new Agent({
@@ -152,7 +152,7 @@ describe("Agent Hooks Functionality", () => {
 
   describe("onHandoff", () => {
     it("should call onHandoff when agent is handed off to", async () => {
-      const onHandoffSpy = jest.fn();
+      const onHandoffSpy = vi.fn();
       agent.hooks = createHooks({ onHandoff: onHandoffSpy });
 
       // Simulate a handoff by calling the hook directly with the object
@@ -165,8 +165,8 @@ describe("Agent Hooks Functionality", () => {
 
   describe("onToolStart & onToolEnd", () => {
     it("should call onToolStart and onToolEnd when using tools", async () => {
-      const onToolStartSpy = jest.fn();
-      const onToolEndSpy = jest.fn();
+      const onToolStartSpy = vi.fn();
+      const onToolEndSpy = vi.fn();
       agent.hooks = createHooks({
         onToolStart: onToolStartSpy,
         onToolEnd: onToolEndSpy,
@@ -203,7 +203,7 @@ describe("Agent Hooks Functionality", () => {
 
     // Add a test for tool error case (optional)
     it("should call onToolEnd with an error when tool fails", async () => {
-      const onToolEndSpy = jest.fn();
+      const onToolEndSpy = vi.fn();
       agent.hooks = createHooks({ onToolEnd: onToolEndSpy });
       const mockContext = createMockContext();
       const toolError = new Error("Tool execution failed");

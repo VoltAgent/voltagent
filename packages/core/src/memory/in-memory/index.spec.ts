@@ -4,12 +4,12 @@ import devLogger from "../../utils/internal/dev-logger";
 import type { Conversation, MemoryMessage } from "../types";
 
 // Mock devLogger
-jest.mock("../../utils/internal/dev-logger", () => ({
+vi.mock("../../utils/internal/dev-logger", () => ({
   __esModule: true,
   default: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -17,7 +17,7 @@ jest.mock("../../utils/internal/dev-logger", () => ({
 const mockRandomValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
 let mockRandomIndex = 0;
 
-jest.spyOn(Math, "random").mockImplementation(() => {
+vi.spyOn(Math, "random").mockImplementation(() => {
   return mockRandomValues[mockRandomIndex++ % mockRandomValues.length];
 });
 
@@ -33,8 +33,8 @@ const mockDates = [
 let mockDateIndex = 0;
 
 const originalDate = global.Date;
-global.Date = jest.fn(() => mockDates[mockDateIndex % mockDates.length]) as any;
-global.Date.now = jest.fn(() => mockDates[mockDateIndex % mockDates.length].getTime());
+global.Date = vi.fn(() => mockDates[mockDateIndex % mockDates.length]) as any;
+global.Date.now = vi.fn(() => mockDates[mockDateIndex % mockDates.length].getTime());
 global.Date.parse = originalDate.parse;
 global.Date.UTC = originalDate.UTC;
 
@@ -66,9 +66,9 @@ describe("InMemoryStorage", () => {
     // Reset the mock random index for each test
     mockRandomIndex = 0;
     // Reset devLogger mocks
-    (devLogger.info as jest.Mock).mockClear();
-    (devLogger.warn as jest.Mock).mockClear();
-    (devLogger.error as jest.Mock).mockClear();
+    (devLogger.info as vi.Mock).mockClear();
+    (devLogger.warn as vi.Mock).mockClear();
+    (devLogger.error as vi.Mock).mockClear();
     // Create a fresh storage instance for each test
     storage = new InMemoryStorage({ debug: false });
   });

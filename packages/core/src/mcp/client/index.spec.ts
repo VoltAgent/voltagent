@@ -6,29 +6,29 @@ import devLogger from "../../utils/internal/dev-logger";
 import { MCPClient } from "./index";
 
 // Mock the MCP SDK dependencies
-jest.mock("@modelcontextprotocol/sdk/client/index.js", () => ({
-  Client: jest.fn(),
+vi.mock("@modelcontextprotocol/sdk/client/index.js", () => ({
+  Client: vi.fn(),
 }));
 
-jest.mock("@modelcontextprotocol/sdk/client/sse.js", () => ({
-  SSEClientTransport: jest.fn(),
+vi.mock("@modelcontextprotocol/sdk/client/sse.js", () => ({
+  SSEClientTransport: vi.fn(),
 }));
 
-jest.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
-  StdioClientTransport: jest.fn(),
-  getDefaultEnvironment: jest.fn().mockReturnValue({}),
+vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
+  StdioClientTransport: vi.fn(),
+  getDefaultEnvironment: vi.fn().mockReturnValue({}),
 }));
 
-jest.mock("zod-from-json-schema", () => ({
-  convertJsonSchemaToZod: jest.fn().mockReturnValue({}),
+vi.mock("zod-from-json-schema", () => ({
+  convertJsonSchemaToZod: vi.fn().mockReturnValue({}),
 }));
 
-jest.mock("../../utils/internal/dev-logger", () => ({
+vi.mock("../../utils/internal/dev-logger", () => ({
   __esModule: true,
   default: {
-    error: jest.fn(),
-    warn: jest.fn(),
-    info: jest.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
@@ -53,23 +53,23 @@ describe("MCPClient", () => {
   };
 
   // Mocks for the Client class methods
-  const mockConnect = jest.fn();
-  const mockClose = jest.fn();
-  const mockListTools = jest.fn();
-  const mockCallTool = jest.fn();
-  const mockRequest = jest.fn();
+  const mockConnect = vi.fn();
+  const mockClose = vi.fn();
+  const mockListTools = vi.fn();
+  const mockCallTool = vi.fn();
+  const mockRequest = vi.fn();
 
   // Mock client setup
   let mockClient: any;
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Reset devLogger mock
-    (devLogger.error as jest.Mock).mockClear();
-    (devLogger.warn as jest.Mock).mockClear();
-    (devLogger.info as jest.Mock).mockClear();
+    (devLogger.error as vi.Mock).mockClear();
+    (devLogger.warn as vi.Mock).mockClear();
+    (devLogger.info as vi.Mock).mockClear();
 
     // Create a mock client
     mockClient = {
@@ -139,7 +139,7 @@ describe("MCPClient", () => {
     });
 
     it("should connect to the server", async () => {
-      const connectSpy = jest.spyOn(client, "emit");
+      const connectSpy = vi.spyOn(client, "emit");
       await client.connect();
 
       expect(mockConnect).toHaveBeenCalled();
@@ -157,7 +157,7 @@ describe("MCPClient", () => {
     it("should emit error if connection fails", async () => {
       const error = new Error("Connection failed");
       mockConnect.mockRejectedValueOnce(error);
-      const errorSpy = jest.spyOn(client, "emit");
+      const errorSpy = vi.spyOn(client, "emit");
 
       await expect(client.connect()).rejects.toThrow("Connection failed");
       expect(errorSpy).toHaveBeenCalledWith("error", error);
@@ -183,7 +183,7 @@ describe("MCPClient", () => {
     });
 
     it("should disconnect from the server and emit event", async () => {
-      const disconnectEmitSpy = jest.spyOn(client, "emit");
+      const disconnectEmitSpy = vi.spyOn(client, "emit");
       const closePromise = client.disconnect();
       expect(mockClose).toHaveBeenCalledTimes(1);
       if (mockClientInstance.onclose) {
@@ -207,7 +207,7 @@ describe("MCPClient", () => {
     it("should emit error if disconnection fails", async () => {
       const error = new Error("Disconnection failed");
       mockClose.mockRejectedValueOnce(error);
-      const errorSpy = jest.spyOn(client, "emit");
+      const errorSpy = vi.spyOn(client, "emit");
       await expect(client.disconnect()).rejects.toThrow("Disconnection failed");
       expect(errorSpy).toHaveBeenCalledWith("error", error);
     });
@@ -260,7 +260,7 @@ describe("MCPClient", () => {
     it("should handle errors when listing tools", async () => {
       const error = new Error("Failed to list tools");
       mockListTools.mockRejectedValueOnce(error);
-      const errorSpy = jest.spyOn(client, "emit");
+      const errorSpy = vi.spyOn(client, "emit");
 
       await expect(client.listTools()).rejects.toThrow("Failed to list tools");
       expect(errorSpy).toHaveBeenCalledWith("error", error);
@@ -322,14 +322,14 @@ describe("MCPClient", () => {
     it("should handle errors when getting agent tools", async () => {
       const error = new Error("Failed to get agent tools");
       mockListTools.mockRejectedValueOnce(error);
-      const errorSpy = jest.spyOn(client, "emit");
+      const errorSpy = vi.spyOn(client, "emit");
 
       await expect(client.getAgentTools()).rejects.toThrow("Failed to get agent tools");
       expect(errorSpy).toHaveBeenCalledWith("error", error);
     });
 
     it("should skip a tool if schema conversion fails", async () => {
-      (convertJsonSchemaToZod as jest.Mock).mockImplementationOnce(() => {
+      (convertJsonSchemaToZod as vi.Mock).mockImplementationOnce(() => {
         throw new Error("Schema conversion failed");
       });
 
@@ -396,7 +396,7 @@ describe("MCPClient", () => {
     });
 
     it("should call a tool on the server", async () => {
-      const toolCallEmitSpy = jest.spyOn(client, "emit");
+      const toolCallEmitSpy = vi.spyOn(client, "emit");
 
       const result = await client.callTool({
         name: "testTool",
@@ -424,7 +424,7 @@ describe("MCPClient", () => {
     it("should handle errors when calling a tool", async () => {
       const error = new Error("Failed to call tool");
       mockCallTool.mockRejectedValueOnce(error);
-      const errorSpy = jest.spyOn(client, "emit");
+      const errorSpy = vi.spyOn(client, "emit");
 
       await expect(
         client.callTool({
@@ -461,7 +461,7 @@ describe("MCPClient", () => {
     it("should handle errors when listing resources", async () => {
       const error = new Error("Failed to list resources");
       mockRequest.mockRejectedValueOnce(error);
-      const errorSpy = jest.spyOn(client, "emit");
+      const errorSpy = vi.spyOn(client, "emit");
 
       await expect(client.listResources()).rejects.toThrow("Failed to list resources");
       expect(errorSpy).toHaveBeenCalledWith("error", error);
@@ -479,16 +479,16 @@ describe("MCPClient", () => {
     });
 
     it("should emit disconnect event when onclose is called", () => {
-      const disconnectSpy = jest.spyOn(client, "emit");
+      const disconnectSpy = vi.spyOn(client, "emit");
       mockClient.onclose();
       expect(disconnectSpy).toHaveBeenCalledWith("disconnect");
     });
 
     it("should register and trigger event listeners", () => {
-      const connectHandler = jest.fn();
-      const disconnectHandler = jest.fn();
-      const errorHandler = jest.fn();
-      const toolCallHandler = jest.fn();
+      const connectHandler = vi.fn();
+      const disconnectHandler = vi.fn();
+      const errorHandler = vi.fn();
+      const toolCallHandler = vi.fn();
 
       client.on("connect", connectHandler);
       client.on("disconnect", disconnectHandler);

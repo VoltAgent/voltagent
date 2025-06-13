@@ -2,21 +2,21 @@ import devLogger from "./index";
 
 describe("devLogger", () => {
   let consoleSpy: {
-    info: jest.SpyInstance;
-    warn: jest.SpyInstance;
-    error: jest.SpyInstance;
+    info: vi.SpyInstance;
+    warn: vi.SpyInstance;
+    error: vi.SpyInstance;
   };
 
   beforeEach(() => {
     consoleSpy = {
-      info: jest.spyOn(console, "info").mockImplementation(() => {}),
-      warn: jest.spyOn(console, "warn").mockImplementation(() => {}),
-      error: jest.spyOn(console, "error").mockImplementation(() => {}),
+      info: vi.spyOn(console, "info").mockImplementation(() => {}),
+      warn: vi.spyOn(console, "warn").mockImplementation(() => {}),
+      error: vi.spyOn(console, "error").mockImplementation(() => {}),
     };
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     process.env.NODE_ENV = undefined;
   });
 
@@ -136,7 +136,7 @@ describe("devLogger", () => {
     describe("log format", () => {
       it("should format log prefix correctly", () => {
         const fixedDate = new Date("2023-01-01T12:00:00.000Z");
-        jest.spyOn(global, "Date").mockImplementation(() => fixedDate as any);
+        vi.spyOn(global, "Date").mockImplementation(() => fixedDate as any);
 
         devLogger.info("test message");
 
@@ -145,7 +145,7 @@ describe("devLogger", () => {
           "test message",
         );
 
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
       });
     });
   });

@@ -2,12 +2,12 @@ import type { Conversation, MemoryMessage } from "@voltagent/core";
 import { PostgresStorage } from ".";
 
 // Mock pg Pool
-const mockQuery = jest.fn();
-const mockConnect = jest.fn();
-const mockEnd = jest.fn();
+const mockQuery = vi.fn();
+const mockConnect = vi.fn();
+const mockEnd = vi.fn();
 
-jest.mock("pg", () => ({
-  Pool: jest.fn().mockImplementation(() => ({
+vi.mock("pg", () => ({
+  Pool: vi.fn().mockImplementation(() => ({
     query: mockQuery,
     connect: mockConnect,
     end: mockEnd,
@@ -18,7 +18,7 @@ jest.mock("pg", () => ({
 const mockRandomValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
 let mockRandomIndex = 0;
 
-jest.spyOn(Math, "random").mockImplementation(() => {
+vi.spyOn(Math, "random").mockImplementation(() => {
   return mockRandomValues[mockRandomIndex++ % mockRandomValues.length];
 });
 
@@ -62,7 +62,7 @@ describe("PostgresStorage", () => {
 
   beforeEach(async () => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockRandomIndex = 0;
 
     // Setup mock query responses
@@ -74,7 +74,7 @@ describe("PostgresStorage", () => {
     mockQuery.mockResolvedValue({ rows: [] });
     mockConnect.mockResolvedValue({
       query: mockQuery,
-      release: jest.fn(),
+      release: vi.fn(),
     });
 
     // Create storage instance with test configuration
@@ -1035,7 +1035,7 @@ describe("PostgresStorage", () => {
         query: jest
           .fn()
           .mockRejectedValue(new Error("Failed to add message to PostgreSQL database")),
-        release: jest.fn(),
+        release: vi.fn(),
       };
 
       // Setup mocks in the correct order
