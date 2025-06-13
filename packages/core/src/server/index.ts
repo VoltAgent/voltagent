@@ -162,15 +162,26 @@ export const startServer = async (config?: ServerConfig): Promise<ServerReturn> 
   // Setup Swagger UI based on config
   setupSwaggerUI(config);
 
-  // Collect all ports in an array - first preferred ports, then fallback ports
-  const portsToTry: Array<PortConfig> = [
+  // Collect all ports in an array - first user specified port, then preferred ports, then fallback ports
+  const portsToTry: Array<PortConfig> = [];
+
+  // If user specified a port, try that first
+  if (config?.port) {
+    portsToTry.push({
+      port: config.port,
+      messages: [`Using custom port: ${config.port}`],
+    });
+  }
+
+  // Then try preferred ports and fallbacks
+  portsToTry.push(
     ...preferredPorts,
     // Add fallback ports between 4300-4400
     ...Array.from({ length: 101 }, (_, i) => ({
       port: 4300 + i,
       messages: ["This port is not a coincidence."],
     })),
-  ];
+  );
 
   // Try each port in sequence
   for (const portConfig of portsToTry) {

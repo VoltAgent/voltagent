@@ -2,6 +2,8 @@ import type { Agent } from "./agent";
 import { startServer } from "./server";
 import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
+import type { ServerConfig } from "./server/api";
+import type { ServerOptions, VoltAgentOptions } from "./types";
 import { AgentRegistry } from "./server/registry";
 import { checkForUpdates } from "./utils/update";
 
@@ -49,28 +51,10 @@ export {
 } from "./server/custom-endpoints";
 export * from "./telemetry/exporter";
 export type { UsageInfo } from "./agent/providers";
+export type { ServerOptions, VoltAgentOptions } from "./types";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;
-
-type VoltAgentOptions = {
-  agents: Record<string, Agent<any>>;
-  port?: number;
-  autoStart?: boolean;
-  checkDependencies?: boolean;
-  /**
-   * Optional array of custom endpoint definitions to register with the API server
-   */
-  customEndpoints?: CustomEndpointDefinition[];
-  /**
-   * Optional OpenTelemetry SpanExporter instance or array of instances.
-   * or a VoltAgentExporter instance or array of instances.
-   * If provided, VoltAgent will attempt to initialize and register
-   * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
-   * It's recommended to only provide this in one VoltAgent instance per application process.
-   */
-  telemetryExporter?: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[];
-};
 
 /**
  * Main VoltAgent class for managing agents and server
@@ -78,16 +62,32 @@ type VoltAgentOptions = {
 export class VoltAgent {
   private registry: AgentRegistry;
   private serverStarted = false;
-
   private customEndpoints: CustomEndpointDefinition[] = [];
+  private serverConfig: ServerConfig = {};
+  private serverOptions: ServerOptions = {};
 
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.registerAgents(options.agents);
 
+    // Merge server options with backward compatibility
+    // New server object takes precedence over deprecated individual options
+    this.serverOptions = {
+      autoStart: options.server?.autoStart ?? options.autoStart ?? true,
+      port: options.server?.port ?? options.port,
+      enableSwaggerUI: options.server?.enableSwaggerUI ?? options.enableSwaggerUI,
+      customEndpoints: options.server?.customEndpoints ?? options.customEndpoints ?? [],
+    };
+
     // Store custom endpoints for registration when the server starts
-    if (options.customEndpoints && Array.isArray(options.customEndpoints)) {
-      this.customEndpoints = [...options.customEndpoints];
+    this.customEndpoints = [...(this.serverOptions.customEndpoints || [])];
+
+    // Store server configuration for startServer
+    if (this.serverOptions.enableSwaggerUI !== undefined) {
+      this.serverConfig.enableSwaggerUI = this.serverOptions.enableSwaggerUI;
+    }
+    if (this.serverOptions.port !== undefined) {
+      this.serverConfig.port = this.serverOptions.port;
     }
 
     if (options.telemetryExporter) {
@@ -121,7 +121,7 @@ export class VoltAgent {
     }
 
     // Auto-start server if enabled
-    if (options.autoStart !== false) {
+    if (this.serverOptions.autoStart !== false) {
       this.startServer().catch((err) => {
         devLogger.error("Failed to start server:", err);
         process.exit(1);
@@ -186,7 +186,7 @@ export class VoltAgent {
         registerCustomEndpoints(this.customEndpoints);
       }
 
-      await startServer();
+      await startServer(this.serverConfig);
       this.serverStarted = true;
     } catch (error) {
       devLogger.error(

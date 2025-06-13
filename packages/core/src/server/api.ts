@@ -38,6 +38,7 @@ import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 // Configuration interface
 export interface ServerConfig {
   enableSwaggerUI?: boolean;
+  port?: number;
 }
 
 const app = new OpenAPIHono();

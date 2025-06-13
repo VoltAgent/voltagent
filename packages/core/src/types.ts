@@ -2,43 +2,71 @@
  * Basic type definitions for VoltAgent Core
  */
 
+import type { Agent } from "./agent";
+import type { CustomEndpointDefinition } from "./server/custom-endpoints";
+
+import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
+import type { VoltAgentExporter } from "./telemetry/exporter";
+
 /**
- * Retry configuration for error handling
+ * Server configuration options for VoltAgent
  */
-export interface RetryConfig {
+export type ServerOptions = {
   /**
-   * Maximum number of retry attempts
-   * @default 3
+   * Whether to automatically start the server
+   * @default true
    */
-  maxRetries?: number;
+  autoStart?: boolean;
+  /**
+   * Port number for the server
+   * @default 3141 (or next available port)
+   */
+  port?: number;
+  /**
+   * Optional flag to enable/disable Swagger UI
+   * By default:
+   * - In development (NODE_ENV !== 'production'): Swagger UI is enabled
+   * - In production (NODE_ENV === 'production'): Swagger UI is disabled
+   */
+  enableSwaggerUI?: boolean;
+  /**
+   * Optional array of custom endpoint definitions to register with the API server
+   */
+  customEndpoints?: CustomEndpointDefinition[];
+};
 
+/**
+ * VoltAgent constructor options
+ */
+export type VoltAgentOptions = {
+  agents: Record<string, Agent<any>>;
   /**
-   * Initial delay between retries in milliseconds
-   * @default 1000
+   * Server configuration options
    */
-  initialDelay?: number;
-
+  server?: ServerOptions;
   /**
-   * Backoff multiplier for exponential backoff
-   * @default 2
+   * @deprecated Use `server.port` instead
    */
-  backoffMultiplier?: number;
-
+  port?: number;
   /**
-   * Maximum delay between retries in milliseconds
-   * @default 30000
+   * @deprecated Use `server.autoStart` instead
    */
-  maxDelay?: number;
-
+  autoStart?: boolean;
+  checkDependencies?: boolean;
   /**
-   * Callback function called when an error occurs
-   * Return true to retry, false to abort
-   * @param error The error that occurred
-   * @param attempt Current attempt number (1-based)
-   * @param maxRetries Maximum number of retries
-   * @returns Boolean indicating whether to retry
+   * @deprecated Use `server.customEndpoints` instead
    */
-  onError?:
-    | ((error: Error, attempt: number, maxRetries: number) => boolean | Promise<boolean>)
-    | null;
-}
+  customEndpoints?: CustomEndpointDefinition[];
+  /**
+   * @deprecated Use `server.enableSwaggerUI` instead
+   */
+  enableSwaggerUI?: boolean;
+  /**
+   * Optional OpenTelemetry SpanExporter instance or array of instances.
+   * or a VoltAgentExporter instance or array of instances.
+   * If provided, VoltAgent will attempt to initialize and register
+   * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
+   * It's recommended to only provide this in one VoltAgent instance per application process.
+   */
+  telemetryExporter?: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[];
+};
