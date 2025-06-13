@@ -10,7 +10,7 @@ describe("ToolManager", () => {
     parameters: z.object({
       param1: z.string().describe("Parameter 1"),
     }),
-    execute: jest.fn().mockResolvedValue("Tool 1 result"),
+    execute: vi.fn().mockResolvedValue("Tool 1 result"),
   });
 
   const mockTool2 = createTool({
@@ -19,12 +19,12 @@ describe("ToolManager", () => {
     parameters: z.object({
       param2: z.number().describe("Parameter 2"),
     }),
-    execute: jest.fn().mockResolvedValue("Tool 2 result"),
+    execute: vi.fn().mockResolvedValue("Tool 2 result"),
   });
 
   beforeEach(() => {
     toolManager = new ToolManager();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("constructor", () => {
@@ -62,7 +62,7 @@ describe("ToolManager", () => {
         parameters: z.object({
           newParam: z.string().describe("New parameter"),
         }),
-        execute: jest.fn().mockResolvedValue("Updated tool 1 result"),
+        execute: vi.fn().mockResolvedValue("Updated tool 1 result"),
       });
 
       const result = toolManager.addTool(updatedTool);

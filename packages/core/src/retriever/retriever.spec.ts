@@ -4,11 +4,11 @@ import * as toolsModule from "./tools";
 import type { RetrieverOptions } from "./types";
 
 // Mock the createRetrieverTool function
-jest.mock("./tools", () => ({
-  createRetrieverTool: jest.fn().mockReturnValue({
+vi.mock("./tools", () => ({
+  createRetrieverTool: vi.fn().mockReturnValue({
     name: "mock_tool",
     description: "Mock tool description",
-    execute: jest.fn(),
+    execute: vi.fn(),
   }),
 }));
 
@@ -36,7 +36,7 @@ describe("BaseRetriever", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should initialize with default options", () => {
@@ -60,7 +60,7 @@ describe("BaseRetriever", () => {
   it("should expose a tool property", () => {
     retriever = new TestRetriever();
     expect(retriever.tool).toBeDefined();
-    // The actual tool value is mocked by jest.mock above
+    // The actual tool value is mocked by vi.mock above
   });
 
   it("should maintain binding when retrieve is called via destructuring", async () => {
@@ -80,7 +80,7 @@ describe("BaseRetriever", () => {
     retriever = new TestRetriever();
 
     // Spy on the retrieve method
-    const retrieveSpy = jest.spyOn(retriever, "retrieve");
+    const retrieveSpy = vi.spyOn(retriever, "retrieve");
 
     // Call retrieve
     await retriever.retrieve("test query");

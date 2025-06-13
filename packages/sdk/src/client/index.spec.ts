@@ -1,38 +1,37 @@
-import { VoltAgentCoreAPI } from ".";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { VoltAgentCoreAPI } from "./index";
 
 // Mock global fetch
-globalThis.fetch = jest.fn() as jest.Mock;
+globalThis.fetch = vi.fn() as unknown as typeof globalThis.fetch;
 
-// Timer ve AbortController mock'ları
+// Timer and AbortController mocks
 const originalSetTimeout = globalThis.setTimeout;
 const originalClearTimeout = globalThis.clearTimeout;
 const originalAbortController = globalThis.AbortController;
 
 beforeEach(() => {
-  // Mock API için gerekli mock'ları ayarla
-  globalThis.setTimeout = jest.fn() as unknown as typeof globalThis.setTimeout;
-  globalThis.clearTimeout = jest.fn() as unknown as typeof globalThis.clearTimeout;
-  globalThis.AbortController = jest.fn(() => ({
-    abort: jest.fn(),
-    signal: {},
-  })) as unknown as typeof AbortController;
+  // Set up necessary mocks for Mock API
+  globalThis.setTimeout = vi.fn() as unknown as typeof globalThis.setTimeout;
+  globalThis.clearTimeout = vi.fn() as unknown as typeof globalThis.clearTimeout;
+  globalThis.AbortController = vi.fn(() => ({
+    abort: vi.fn(),
+  })) as unknown as typeof globalThis.AbortController;
 });
 
 afterEach(() => {
-  // Test sonrası orijinal fonksiyonları geri yükle
+  // Restore original functions after test
   globalThis.setTimeout = originalSetTimeout;
   globalThis.clearTimeout = originalClearTimeout;
   globalThis.AbortController = originalAbortController;
 });
 
 describe("VoltAgentCoreAPI", () => {
-  let client: VoltAgentCoreAPI;
+  let api: VoltAgentCoreAPI;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-
-    client = new VoltAgentCoreAPI({
-      baseUrl: "https://api.example.com",
+    vi.resetAllMocks();
+    api = new VoltAgentCoreAPI({
+      baseUrl: "http://test-api",
       publicKey: "test-public-key",
       secretKey: "test-secret-key",
     });
@@ -53,12 +52,12 @@ describe("VoltAgentCoreAPI", () => {
         message: "Success",
       };
 
-      (globalThis.fetch as jest.Mock).mockResolvedValueOnce({
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
 
-      const result = await client.addHistory({
+      const result = await api.addHistory({
         agent_id: "agent-123",
         userId: "user-123",
         status: "working",
@@ -68,7 +67,7 @@ describe("VoltAgentCoreAPI", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.example.com/history",
+        "http://test-api/history",
         expect.objectContaining({
           method: "POST",
           headers: expect.objectContaining({
@@ -106,12 +105,12 @@ describe("VoltAgentCoreAPI", () => {
         message: "Success",
       };
 
-      (globalThis.fetch as jest.Mock).mockResolvedValueOnce({
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
 
-      const result = await client.updateHistory({
+      const result = await api.updateHistory({
         id: "123",
         status: "completed",
         output: { result: "success" },
@@ -120,7 +119,7 @@ describe("VoltAgentCoreAPI", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.example.com/history/123",
+        "http://test-api/history/123",
         expect.objectContaining({
           method: "PATCH",
           headers: expect.objectContaining({
@@ -156,12 +155,12 @@ describe("VoltAgentCoreAPI", () => {
         message: "Success",
       };
 
-      (globalThis.fetch as jest.Mock).mockResolvedValueOnce({
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
 
-      const result = await client.addEvent({
+      const result = await api.addEvent({
         historyId: "history-123",
         event: {
           id: "event-123",

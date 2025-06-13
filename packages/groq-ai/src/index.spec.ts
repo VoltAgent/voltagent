@@ -4,10 +4,10 @@ import { z } from "zod";
 import { GroqProvider } from "./index";
 
 // Mock the Groq SDK
-const mockCreate = jest.fn();
-jest.mock("groq-sdk", () => {
+const mockCreate = vi.fn();
+vi.mock("groq-sdk", () => {
   return {
-    Groq: jest.fn().mockImplementation(() => {
+    Groq: vi.fn().mockImplementation(() => {
       return {
         chat: {
           completions: {
@@ -16,7 +16,7 @@ jest.mock("groq-sdk", () => {
         },
         // Mock models if needed for getModelIdentifier, though it just accesses id
         models: {
-          retrieve: jest.fn().mockResolvedValue({ id: "mock-model-id" }),
+          retrieve: vi.fn().mockResolvedValue({ id: "mock-model-id" }),
         },
       };
     }),
@@ -27,7 +27,7 @@ describe("GroqProvider", () => {
   let provider: GroqProvider;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     provider = new GroqProvider({ apiKey: "test-groq-api-key" });
   });
 
@@ -257,7 +257,7 @@ describe("GroqProvider", () => {
         usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 },
       };
       mockCreate.mockResolvedValueOnce(mockResponse);
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       await provider.generateText({
         messages: [{ role: "user", content: "Step test" }],
@@ -291,9 +291,9 @@ describe("GroqProvider", () => {
       }
       mockCreate.mockResolvedValueOnce(mockStream());
 
-      const onChunkMock = jest.fn();
-      const onStepFinishMock = jest.fn();
-      const onFinishMock = jest.fn();
+      const onChunkMock = vi.fn();
+      const onStepFinishMock = vi.fn();
+      const onFinishMock = vi.fn();
 
       const result = await provider.streamText({
         messages: [{ role: "user", content: "Stream test" }],
@@ -334,7 +334,7 @@ describe("GroqProvider", () => {
 
   describe("tool handling", () => {
     it("should include toolName in tool-result steps", async () => {
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // Mock response with tool calls
       const mockResponseWithToolCall = {
@@ -400,7 +400,7 @@ describe("GroqProvider", () => {
         parameters: z.object({
           param: z.string().optional(),
         }),
-        execute: jest.fn().mockResolvedValue("tool result"),
+        execute: vi.fn().mockResolvedValue("tool result"),
       };
 
       mockCreate
@@ -624,8 +624,8 @@ describe("GroqProvider", () => {
 
       mockCreate.mockResolvedValueOnce(mockObjectStream());
 
-      const onFinishMock = jest.fn();
-      const onStepFinishMock = jest.fn();
+      const onFinishMock = vi.fn();
+      const onStepFinishMock = vi.fn();
       // onChunk is not a standard callback for streamObject in core, so we won't test it explicitly here,
       // but the raw stream consumption covers the chunking aspect.
 
@@ -693,8 +693,8 @@ describe("GroqProvider", () => {
         };
       }
       mockCreate.mockResolvedValueOnce(mockErrorStream());
-      const onErrorMock = jest.fn();
-      const onFinishMock = jest.fn();
+      const onErrorMock = vi.fn();
+      const onFinishMock = vi.fn();
 
       const result = await provider.streamObject({
         messages: [{ role: "user", content: "stream invalid object" }],

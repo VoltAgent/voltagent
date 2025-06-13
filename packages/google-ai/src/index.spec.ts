@@ -1,15 +1,19 @@
-import { FinishReason, type GenerateContentResponse, type GoogleGenAIOptions } from "@google/genai";
+import type { GenerateContentResponse, GoogleGenAIOptions } from "@google/genai";
 import { z } from "zod";
 import { GoogleGenAIProvider } from "./index";
 
-const mockGenerateContent = jest.fn();
+const mockGenerateContent = vi.fn();
 
-// Mock the GoogleGenAI class and its methods
-jest.mock("@google/genai", () => {
-  const originalModule = jest.requireActual("@google/genai");
+vi.mock("@google/genai", async () => {
+  const originalModule = await vi.importActual("@google/genai");
   return {
     ...originalModule,
-    GoogleGenAI: jest.fn().mockImplementation(() => {
+    FunctionCallingConfigMode: {
+      AUTO: "auto",
+      ANY: "any",
+      NONE: "none",
+    },
+    GoogleGenAI: vi.fn().mockImplementation(() => {
       return {
         models: {
           generateContent: mockGenerateContent,
@@ -19,11 +23,12 @@ jest.mock("@google/genai", () => {
   };
 });
 
-describe("GoogleGenAIProvider", () => {
+describe("GoogleGenAIProvider", async () => {
   let provider: GoogleGenAIProvider;
+  const { FinishReason } = await import("@google/genai");
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     const options: GoogleGenAIOptions = {
       apiKey: "test-api-key",
@@ -62,7 +67,7 @@ describe("GoogleGenAIProvider", () => {
         completionTokens: 20,
         totalTokens: 30,
       });
-      expect(result.finishReason).toBe("STOP");
+      expect(result.finishReason).toBe(FinishReason.STOP);
 
       // Verify the correct parameters were passed to generateContent
       expect(mockGenerateContent).toHaveBeenCalledWith({
@@ -92,7 +97,7 @@ describe("GoogleGenAIProvider", () => {
 
       mockGenerateContent.mockResolvedValueOnce(mockResponse);
 
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       await provider.generateText({
         messages: [{ role: "user", content: "Hello!" }],
@@ -179,7 +184,7 @@ describe("GoogleGenAIProvider", () => {
             return "world!";
           },
           responseId: "chunk3",
-          candidates: [{ finishReason: "STOP" }],
+          candidates: [{ finishReason: FinishReason.STOP }],
         };
         yield {
           get text() {
@@ -194,13 +199,13 @@ describe("GoogleGenAIProvider", () => {
         };
       }
 
-      const mockGenerateContentStream = jest.fn().mockResolvedValue(mockGenerator());
+      const mockGenerateContentStream = vi.fn().mockResolvedValue(mockGenerator());
 
       const provider = new GoogleGenAIProvider({ apiKey: "test-api-key" });
       (provider as any).ai.models.generateContentStream = mockGenerateContentStream;
 
-      const onChunkMock = jest.fn();
-      const onStepFinishMock = jest.fn();
+      const onChunkMock = vi.fn();
+      const onStepFinishMock = vi.fn();
 
       const result = await provider.streamText({
         messages: [{ role: "user", content: "Hello!" }],
@@ -245,7 +250,7 @@ describe("GoogleGenAIProvider", () => {
 
   describe("tool handling", () => {
     it("should include toolName in tool-result steps", async () => {
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // Mock response with function calls
       const mockResponseWithFunctionCall: Partial<GenerateContentResponse> = {
@@ -282,7 +287,7 @@ describe("GoogleGenAIProvider", () => {
         parameters: z.object({
           param: z.string().optional(),
         }),
-        execute: jest.fn().mockResolvedValue("tool result"),
+        execute: vi.fn().mockResolvedValue("tool result"),
       };
 
       mockGenerateContent
@@ -405,7 +410,7 @@ describe("GoogleGenAIProvider", () => {
         completionTokens: 25,
         totalTokens: 40,
       });
-      expect(result.finishReason).toBe("STOP");
+      expect(result.finishReason).toBe(FinishReason.STOP);
 
       // Verify the correct parameters were passed to generateContent
       expect(mockGenerateContent).toHaveBeenCalledWith(
@@ -444,7 +449,7 @@ describe("GoogleGenAIProvider", () => {
 
       mockGenerateContent.mockResolvedValueOnce(mockResponse);
 
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       await provider.generateObject({
         messages: [{ role: "user", content: "Get status" }],

@@ -8,7 +8,7 @@ const mockDataStore = {
 };
 
 // We'll create proper mocks for external dependencies
-jest.mock("@libsql/client", () => {
+vi.mock("@libsql/client", () => {
   // Mock database responses - these simulate what would come from a real database
   const mockData = {
     messages: [
@@ -61,7 +61,7 @@ jest.mock("@libsql/client", () => {
 
   // A smart mock that handles various types of queries
   const createMockExecute = () => {
-    return jest.fn().mockImplementation(({ sql, args }) => {
+    return vi.fn().mockImplementation(({ sql, args }) => {
       // Initialize database queries - just return empty results
       if (sql?.includes("CREATE TABLE") || sql?.includes("CREATE INDEX")) {
         return Promise.resolve({ rows: [] });
@@ -323,11 +323,11 @@ jest.mock("@libsql/client", () => {
   // Create the mock client
   const mockClient = {
     execute: createMockExecute(),
-    close: jest.fn(),
+    close: vi.fn(),
   };
 
   return {
-    createClient: jest.fn().mockReturnValue(mockClient),
+    createClient: vi.fn().mockReturnValue(mockClient),
   };
 });
 
@@ -356,7 +356,7 @@ describe("LibSQLStorage", () => {
 
   afterEach(() => {
     storage.close();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Message Operations", () => {

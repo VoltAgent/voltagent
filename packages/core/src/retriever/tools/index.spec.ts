@@ -5,7 +5,7 @@ describe("createRetrieverTool", () => {
   // Mock retriever for testing
   const createMockRetriever = (results: string) => {
     return {
-      retrieve: jest.fn().mockResolvedValue(results),
+      retrieve: vi.fn().mockResolvedValue(results),
     } as Retriever;
   };
 

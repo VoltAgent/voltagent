@@ -72,7 +72,8 @@
     "rimraf": "^5.0.5",
     "sort-package-json": "^2.15.1",
     "syncpack": "^13.0.2",
-    "typescript": "^5.3.2"
+    "typescript": "^5.3.2",
+    "vitest": "^3.2.3"
   },
   "packageManager": "pnpm@8.10.5",
   "engines": {

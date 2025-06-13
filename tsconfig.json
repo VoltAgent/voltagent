@@ -10,7 +10,8 @@
     "declaration": true,
     "sourceMap": true,
     "outDir": "dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": ["vitest/globals"]
   },
   "exclude": ["node_modules", "dist", "**/node_modules", "**/dist", "website", "**/website"]
 }

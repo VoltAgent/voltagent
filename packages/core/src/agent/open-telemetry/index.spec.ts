@@ -1,43 +1,44 @@
 import { SpanKind, SpanStatusCode, context, trace } from "@opentelemetry/api";
 import type { Span } from "@opentelemetry/api";
+import type { Mock } from "vitest";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./index"; // Assuming the helper functions are exported from './index'
 
 // Mock the OpenTelemetry API
-jest.mock("@opentelemetry/api", () => {
-  const originalApi = jest.requireActual("@opentelemetry/api");
+vi.mock("@opentelemetry/api", async () => {
+  const originalApi = await vi.importActual("@opentelemetry/api");
   const mockSpan = {
-    setAttribute: jest.fn(),
-    setAttributes: jest.fn(),
-    setStatus: jest.fn(),
-    recordException: jest.fn(),
-    end: jest.fn(),
-    spanContext: jest.fn(() => ({ traceId: "mock-trace-id", spanId: "mock-span-id" })),
-    isRecording: jest.fn(() => true), // Default to recording
+    setAttribute: vi.fn(),
+    setAttributes: vi.fn(),
+    setStatus: vi.fn(),
+    recordException: vi.fn(),
+    end: vi.fn(),
+    spanContext: vi.fn(() => ({ traceId: "mock-trace-id", spanId: "mock-span-id" })),
+    isRecording: vi.fn(() => true), // Default to recording
   };
   const mockTracer = {
-    startSpan: jest.fn(() => mockSpan),
+    startSpan: vi.fn(() => mockSpan),
   };
   return {
     ...originalApi, // Keep original enums like SpanKind, SpanStatusCode
     trace: {
-      getTracer: jest.fn(() => mockTracer),
-      setSpan: jest.fn((ctx, span) => ({ ...ctx, span })), // Simple mock context propagation
+      getTracer: vi.fn(() => mockTracer),
+      setSpan: vi.fn((ctx, span) => ({ ...ctx, span })), // Simple mock context propagation
     },
     context: {
-      active: jest.fn(() => ({})), // Mock active context
+      active: vi.fn(() => ({})), // Mock active context
     },
     // Re-export mockSpan creation for easy access in tests if needed
-    _createMockSpan: () => ({ ...mockSpan, isRecording: jest.fn(() => true) }), // Function to get a fresh mock span
+    _createMockSpan: () => ({ ...mockSpan, isRecording: vi.fn(() => true) }), // Function to get a fresh mock span
   };
 });
 
 // Helper function to get the mocked tracer and span functions
-const getOtelMocks = () => {
+const getOtelMocks = async () => {
   // Provide dummy name to satisfy the mocked getTracer call
   const mockTracer = trace.getTracer("test-tracer");
   // Import the mockSpan creator from the mocked module
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { _createMockSpan } = require("@opentelemetry/api");
+  const { _createMockSpan } = (await import("@opentelemetry/api")) as any;
   return {
     mockTracer,
     createMockSpan: _createMockSpan,
@@ -46,13 +47,13 @@ const getOtelMocks = () => {
   };
 };
 
-describe("OpenTelemetry Helpers", () => {
-  let otelMocks: ReturnType<typeof getOtelMocks>;
+describe("OpenTelemetry Helpers", async () => {
+  let otelMocks: Awaited<ReturnType<typeof getOtelMocks>>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks before each test
-    jest.clearAllMocks();
-    otelMocks = getOtelMocks();
+    vi.clearAllMocks();
+    otelMocks = await getOtelMocks();
   });
 
   describe("startOperationSpan", () => {
@@ -105,9 +106,8 @@ describe("OpenTelemetry Helpers", () => {
         expect.any(Object),
       );
       // Ensure optional attributes are not present
-      // Cast to jest.Mock to access .mock property safely
-      const calledAttributes = (otelMocks.mockTracer.startSpan as jest.Mock).mock.calls[0][1]
-        .attributes;
+      // Cast to vi.Mock to access .mock property safely
+      const calledAttributes = (otelMocks.mockTracer.startSpan as Mock).mock.calls[0][1].attributes;
       expect(calledAttributes).not.toHaveProperty("enduser.id");
       expect(calledAttributes).not.toHaveProperty("session.id");
       expect(calledAttributes).not.toHaveProperty("voltagent.parent.agent.id");
