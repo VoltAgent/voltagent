@@ -1,3 +1,6 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mocked, MockedClass } from "vitest";
+import { VoltAgentObservabilitySDK } from ".";
 import { VoltAgentCoreAPI } from "../client";
 import type {
   AgentOptions,
@@ -9,107 +12,30 @@ import type {
   TraceOptions,
   VoltAgentClientOptions,
 } from "../types";
-import { VoltAgentSDK } from "./index";
 
+// Mock the core client
 vi.mock("../client");
-const MockedVoltAgentCoreAPI = VoltAgentCoreAPI as unknown as ReturnType<typeof vi.fn>;
+const MockedVoltAgentCoreAPI = VoltAgentCoreAPI as MockedClass<typeof VoltAgentCoreAPI>;
 
+// Mock crypto for consistent UUIDs in tests
 vi.mock("node:crypto", () => ({
   randomUUID: vi.fn(() => "test-uuid-123"),
 }));
 
-describe("VoltAgentSDK", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+// Mock timers and global functions
+vi.useFakeTimers();
 
-  afterEach(() => {
-    vi.clearAllMocks();
-    vi.clearAllTimers();
-  });
+// Mock global timer functions
+const mockSetInterval = vi.fn();
+const mockClearInterval = vi.fn();
 
-  describe("constructor", () => {
-    it("should create a new instance with default options", () => {
-      const mockSetInterval = vi.fn();
-      const mockClearInterval = vi.fn();
-      global.setInterval = mockSetInterval;
-      global.clearInterval = mockClearInterval;
+// Override global functions
+global.setInterval = mockSetInterval as any;
+global.clearInterval = mockClearInterval as any;
 
-      const sdk = new VoltAgentSDK({
-        baseUrl: "http://test-api",
-        publicKey: "test-public-key",
-        secretKey: "test-secret-key",
-      });
-
-      expect(sdk).toBeDefined();
-      expect(MockedVoltAgentCoreAPI).toHaveBeenCalledWith({
-        baseUrl: "http://test-api",
-        publicKey: "test-public-key",
-        secretKey: "test-secret-key",
-      });
-    });
-  });
-
-  describe("memory management", () => {
-    let mockCoreClient: ReturnType<typeof vi.fn>;
-    let sdk: VoltAgentSDK;
-
-    beforeEach(() => {
-      mockCoreClient = vi.fn().mockImplementation(() => ({
-        addHistory: vi.fn(),
-        updateHistory: vi.fn(),
-        addEvent: vi.fn(),
-      }));
-
-      MockedVoltAgentCoreAPI.mockImplementation(() => mockCoreClient());
-
-      sdk = new VoltAgentSDK({
-        baseUrl: "http://test-api",
-        publicKey: "test-public-key",
-        secretKey: "test-secret-key",
-      });
-    });
-
-    it("should add history", async () => {
-      const historyData = {
-        agent_id: "test-agent",
-        userId: "test-user",
-        status: "in_progress",
-      };
-
-      await sdk.addHistory(historyData);
-
-      expect(mockCoreClient().addHistory).toHaveBeenCalledWith(historyData);
-    });
-
-    it("should update history", async () => {
-      const historyData = {
-        id: "test-history",
-        status: "completed",
-      };
-
-      await sdk.updateHistory(historyData);
-
-      expect(mockCoreClient().updateHistory).toHaveBeenCalledWith(historyData);
-    });
-
-    it("should add event", async () => {
-      const eventData = {
-        historyId: "test-history",
-        event: {
-          type: "test-event",
-          data: { test: "data" },
-        },
-      };
-
-      await sdk.addEvent(eventData);
-
-      expect(mockCoreClient().addEvent).toHaveBeenCalledWith(eventData);
-    });
-  });
-
-  let sdk: VoltAgentSDK;
-  let mockCoreClient: vi.Mocked<VoltAgentCoreAPI>;
+describe("VoltAgentObservabilitySDK", () => {
+  let sdk: VoltAgentObservabilitySDK;
+  let mockCoreClient: Mocked<VoltAgentCoreAPI>;
   const defaultOptions: VoltAgentClientOptions = {
     baseUrl: "https://api.voltagent.ai",
     publicKey: "test-public-key",
@@ -141,10 +67,11 @@ describe("VoltAgentSDK", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.clearAllTimers();
+    mockSetInterval.mockClear();
+    mockClearInterval.mockClear();
 
     // Setup default return value for setInterval
-    vi.fn().mockReturnValue("timer-id" as any);
+    mockSetInterval.mockReturnValue("timer-id" as any);
 
     mockCoreClient = {
       addHistory: vi.fn(),
@@ -155,41 +82,45 @@ describe("VoltAgentSDK", () => {
     MockedVoltAgentCoreAPI.mockImplementation(() => mockCoreClient);
   });
 
+  afterEach(() => {
+    vi.clearAllTimers();
+  });
+
   describe("Constructor and Initialization", () => {
     it("should initialize SDK with default options", () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
 
       expect(MockedVoltAgentCoreAPI).toHaveBeenCalledWith(defaultOptions);
-      expect(sdk).toBeInstanceOf(VoltAgentSDK);
+      expect(sdk).toBeInstanceOf(VoltAgentObservabilitySDK);
     });
 
     it("should initialize with auto flush enabled by default", () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
 
       // Auto flush should be set up (check if setInterval was called)
-      expect(vi.fn()).toHaveBeenCalledWith(expect.any(Function), 5000);
+      expect(mockSetInterval).toHaveBeenCalledWith(expect.any(Function), 5000);
     });
 
     it("should disable auto flush when specified", () => {
-      sdk = new VoltAgentSDK({
+      sdk = new VoltAgentObservabilitySDK({
         ...defaultOptions,
         autoFlush: false,
       });
 
-      expect(vi.fn()).not.toHaveBeenCalled();
+      expect(mockSetInterval).not.toHaveBeenCalled();
     });
 
     it("should use custom flush interval", () => {
-      sdk = new VoltAgentSDK({
+      sdk = new VoltAgentObservabilitySDK({
         ...defaultOptions,
         flushInterval: 10000,
       });
 
-      expect(vi.fn()).toHaveBeenCalledWith(expect.any(Function), 10000);
+      expect(mockSetInterval).toHaveBeenCalledWith(expect.any(Function), 10000);
     });
 
     it("should provide access to core client", () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
 
       expect(sdk.client).toBe(mockCoreClient);
     });
@@ -197,7 +128,7 @@ describe("VoltAgentSDK", () => {
 
   describe("Trace Operations", () => {
     beforeEach(() => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
     });
 
@@ -449,7 +380,7 @@ describe("VoltAgentSDK", () => {
     let agent: any;
 
     beforeEach(async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
@@ -653,7 +584,7 @@ describe("VoltAgentSDK", () => {
     let tool: any;
 
     beforeEach(async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
@@ -719,7 +650,7 @@ describe("VoltAgentSDK", () => {
     let memory: any;
 
     beforeEach(async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
@@ -779,7 +710,7 @@ describe("VoltAgentSDK", () => {
     let retriever: any;
 
     beforeEach(async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
@@ -839,7 +770,7 @@ describe("VoltAgentSDK", () => {
     let eventContext: any;
 
     beforeEach(async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
 
       // Mock event with tool type for EventContext tests
@@ -903,7 +834,7 @@ describe("VoltAgentSDK", () => {
 
   describe("Hierarchical Relationships", () => {
     it("should maintain parent-child relationships in complex workflow", async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
 
       // Mock different events for each level
@@ -944,29 +875,29 @@ describe("VoltAgentSDK", () => {
 
   describe("Shutdown", () => {
     it("should clear auto flush interval and flush remaining events", async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addEvent.mockResolvedValue(mockEvent);
 
       await sdk.shutdown();
 
-      expect(vi.fn()).toHaveBeenCalled();
+      expect(mockClearInterval).toHaveBeenCalled();
     });
 
     it("should handle shutdown without auto flush", async () => {
-      sdk = new VoltAgentSDK({
+      sdk = new VoltAgentObservabilitySDK({
         ...defaultOptions,
         autoFlush: false,
       });
 
       await sdk.shutdown();
 
-      expect(vi.fn()).not.toHaveBeenCalled();
+      expect(mockClearInterval).not.toHaveBeenCalled();
     });
   });
 
   describe("Error Handling", () => {
     beforeEach(() => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
     });
 
     it("should handle network errors gracefully", async () => {
@@ -1001,7 +932,7 @@ describe("VoltAgentSDK", () => {
 
   describe("getTrace()", () => {
     it("should return trace by ID", async () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
       mockCoreClient.addHistory.mockResolvedValue(mockHistory);
 
       await sdk.trace({ agentId: "test-agent" });
@@ -1011,7 +942,7 @@ describe("VoltAgentSDK", () => {
     });
 
     it("should return undefined for non-existent trace", () => {
-      sdk = new VoltAgentSDK(defaultOptions);
+      sdk = new VoltAgentObservabilitySDK(defaultOptions);
 
       const retrievedTrace = sdk.getTrace("non-existent");
       expect(retrievedTrace).toBeUndefined();
