@@ -1,6 +1,8 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import devLogger from "../../utils/internal/dev-logger";
 import { MCPClient } from "./index";
@@ -12,6 +14,10 @@ vi.mock("@modelcontextprotocol/sdk/client/index.js", () => ({
 
 vi.mock("@modelcontextprotocol/sdk/client/sse.js", () => ({
   SSEClientTransport: vi.fn(),
+}));
+
+vi.mock("@modelcontextprotocol/sdk/client/streamableHttp.js", () => ({
+  StreamableHTTPClientTransport: vi.fn(),
 }));
 
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
@@ -95,10 +101,13 @@ describe("MCPClient", () => {
       });
 
       expect(Client).toHaveBeenCalledWith(mockClientInfo, { capabilities: {} });
-      expect(SSEClientTransport).toHaveBeenCalledWith(new URL(mockHttpServerConfig.url), {
-        requestInit: undefined,
-        eventSourceInit: undefined,
-      });
+      // HTTP type now uses StreamableHTTPClientTransport with fallback
+      expect(StreamableHTTPClientTransport).toHaveBeenCalledWith(
+        new URL(mockHttpServerConfig.url),
+        {
+          requestInit: undefined,
+        },
+      );
     });
 
     it("should initialize with stdio server config", () => {
@@ -125,6 +134,46 @@ describe("MCPClient", () => {
           server: { type: "unknown" } as any,
         });
       }).toThrow("Unsupported server configuration type: unknown");
+    });
+
+    it("should initialize with SSE server config", () => {
+      const mockSSEServerConfig = {
+        type: "sse" as const,
+        url: "https://example.com/mcp",
+      };
+
+      new MCPClient({
+        clientInfo: mockClientInfo,
+        server: mockSSEServerConfig,
+      });
+
+      expect(Client).toHaveBeenCalledWith(mockClientInfo, { capabilities: {} });
+      expect(SSEClientTransport).toHaveBeenCalledWith(new URL(mockSSEServerConfig.url), {
+        requestInit: undefined,
+        eventSourceInit: undefined,
+      });
+    });
+
+    it("should initialize with streamable HTTP server config", () => {
+      const mockStreamableHTTPServerConfig = {
+        type: "streamable-http" as const,
+        url: "https://example.com/mcp",
+        sessionId: "test-session",
+      };
+
+      new MCPClient({
+        clientInfo: mockClientInfo,
+        server: mockStreamableHTTPServerConfig,
+      });
+
+      expect(Client).toHaveBeenCalledWith(mockClientInfo, { capabilities: {} });
+      expect(StreamableHTTPClientTransport).toHaveBeenCalledWith(
+        new URL(mockStreamableHTTPServerConfig.url),
+        {
+          requestInit: undefined,
+          sessionId: "test-session",
+        },
+      );
     });
   });
 
@@ -154,13 +203,44 @@ describe("MCPClient", () => {
       expect(mockConnect).not.toHaveBeenCalled();
     });
 
-    it("should emit error if connection fails", async () => {
+    it("should emit error if connection fails for non-http type", async () => {
+      // Create client with stdio config to avoid fallback logic
+      const stdioClient = new MCPClient({
+        clientInfo: mockClientInfo,
+        server: mockStdioServerConfig,
+      });
+
       const error = new Error("Connection failed");
       mockConnect.mockRejectedValueOnce(error);
-      const errorSpy = vi.spyOn(client, "emit");
+      const errorSpy = vi.spyOn(stdioClient, "emit");
 
-      await expect(client.connect()).rejects.toThrow("Connection failed");
+      await expect(stdioClient.connect()).rejects.toThrow("Connection failed");
       expect(errorSpy).toHaveBeenCalledWith("error", error);
+    });
+
+    it("should fallback to SSE when streamable HTTP fails for http type", async () => {
+      const streamableError = new Error("Streamable HTTP failed");
+      mockConnect.mockRejectedValueOnce(streamableError).mockResolvedValueOnce(undefined);
+
+      const connectSpy = vi.spyOn(client, "emit");
+
+      // Reset mocks to check new calls
+      (SSEClientTransport as vi.Mock).mockClear();
+      (Client as vi.Mock).mockClear();
+
+      await client.connect();
+
+      // Should have created SSE transport on fallback
+      expect(SSEClientTransport).toHaveBeenCalledWith(new URL(mockHttpServerConfig.url), {
+        requestInit: undefined,
+        eventSourceInit: undefined,
+      });
+
+      // Should emit connect on successful fallback
+      expect(connectSpy).toHaveBeenCalledWith("connect");
+      expect(devLogger.info).toHaveBeenCalledWith(
+        "Streamable HTTP connection failed, attempting SSE fallback",
+      );
     });
   });
 

@@ -101,10 +101,15 @@ export type MCPClientConfig = {
 /**
  * MCP server configuration options
  */
-export type MCPServerConfig = HTTPServerConfig | StdioServerConfig;
+export type MCPServerConfig =
+  | HTTPServerConfig
+  | SSEServerConfig
+  | StreamableHTTPServerConfig
+  | StdioServerConfig;
 
 /**
- * HTTP-based MCP server configuration via SSE
+ * HTTP-based MCP server configuration with automatic fallback
+ * Tries streamable HTTP first, falls back to SSE if not supported
  */
 export type HTTPServerConfig = {
   /**
@@ -123,9 +128,59 @@ export type HTTPServerConfig = {
   requestInit?: RequestInit;
 
   /**
+   * Event source initialization options (used for SSE fallback)
+   */
+  eventSourceInit?: EventSourceInit;
+};
+
+/**
+ * SSE-based MCP server configuration (explicit SSE transport)
+ */
+export type SSEServerConfig = {
+  /**
+   * Type of server connection
+   */
+  type: "sse";
+
+  /**
+   * URL of the MCP server
+   */
+  url: string;
+
+  /**
+   * Request initialization options
+   */
+  requestInit?: RequestInit;
+
+  /**
    * Event source initialization options
    */
   eventSourceInit?: EventSourceInit;
+};
+
+/**
+ * Streamable HTTP-based MCP server configuration (no fallback)
+ */
+export type StreamableHTTPServerConfig = {
+  /**
+   * Type of server connection
+   */
+  type: "streamable-http";
+
+  /**
+   * URL of the MCP server
+   */
+  url: string;
+
+  /**
+   * Request initialization options
+   */
+  requestInit?: RequestInit;
+
+  /**
+   * Session ID for the connection
+   */
+  sessionId?: string;
 };
 
 /**

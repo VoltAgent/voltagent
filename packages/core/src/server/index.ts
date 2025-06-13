@@ -2,7 +2,7 @@ import type { IncomingMessage } from "node:http";
 import type { Socket } from "node:net";
 import { serve } from "@hono/node-server";
 import type { WebSocketServer } from "ws";
-import app, { createWebSocketServer } from "./api";
+import app, { createWebSocketServer, setupSwaggerUI, type ServerConfig } from "./api";
 
 // Terminal color codes
 const colors = {
@@ -69,8 +69,10 @@ const preferredPorts: PortConfig[] = [
 ];
 
 // To make server startup logs visually more attractive
-const printServerStartup = (port: number) => {
+const printServerStartup = (port: number, config?: ServerConfig) => {
   const divider = `${colors.cyan}${"═".repeat(50)}${colors.reset}`;
+  const isProduction = process.env.NODE_ENV === "production";
+  const shouldEnableSwaggerUI = config?.enableSwaggerUI ?? !isProduction;
 
   console.log("\n");
   console.log(divider);
@@ -81,9 +83,12 @@ const printServerStartup = (port: number) => {
   console.log(
     `${colors.green}  ✓ ${colors.bright}HTTP Server:  ${colors.reset}${colors.white}http://localhost:${port}${colors.reset}`,
   );
-  console.log(
-    `${colors.green}  ✓ ${colors.bright}Swagger UI:   ${colors.reset}${colors.white}http://localhost:${port}/ui${colors.reset}`,
-  );
+
+  if (shouldEnableSwaggerUI) {
+    console.log(
+      `${colors.green}  ✓ ${colors.bright}Swagger UI:   ${colors.reset}${colors.white}http://localhost:${port}/ui${colors.reset}`,
+    );
+  }
 
   // Check if custom endpoints were registered
   const customEndpoints = (global as any).__voltAgentCustomEndpoints;
@@ -153,16 +158,30 @@ const tryStartServer = (port: number): Promise<ReturnType<typeof serve>> => {
 };
 
 // Function to start the server
-export const startServer = async (): Promise<ServerReturn> => {
-  // Collect all ports in an array - first preferred ports, then fallback ports
-  const portsToTry: Array<PortConfig> = [
+export const startServer = async (config?: ServerConfig): Promise<ServerReturn> => {
+  // Setup Swagger UI based on config
+  setupSwaggerUI(config);
+
+  // Collect all ports in an array - first user specified port, then preferred ports, then fallback ports
+  const portsToTry: Array<PortConfig> = [];
+
+  // If user specified a port, try that first
+  if (config?.port) {
+    portsToTry.push({
+      port: config.port,
+      messages: [`Using custom port: ${config.port}`],
+    });
+  }
+
+  // Then try preferred ports and fallbacks
+  portsToTry.push(
     ...preferredPorts,
     // Add fallback ports between 4300-4400
     ...Array.from({ length: 101 }, (_, i) => ({
       port: 4300 + i,
       messages: ["This port is not a coincidence."],
     })),
-  ];
+  );
 
   // Try each port in sequence
   for (const portConfig of portsToTry) {
@@ -191,7 +210,7 @@ export const startServer = async (): Promise<ServerReturn> => {
         }
       });
 
-      printServerStartup(port);
+      printServerStartup(port, config);
 
       return { server, ws, port };
     } catch (error) {

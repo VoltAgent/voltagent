@@ -35,7 +35,23 @@ import {
 import { AgentRegistry } from "./registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 
+// Configuration interface
+export interface ServerConfig {
+  enableSwaggerUI?: boolean;
+  port?: number;
+}
+
 const app = new OpenAPIHono();
+
+// Function to setup Swagger UI based on config
+export const setupSwaggerUI = (config?: ServerConfig) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const shouldEnableSwaggerUI = config?.enableSwaggerUI ?? !isProduction;
+
+  if (shouldEnableSwaggerUI) {
+    app.get("/ui", swaggerUI({ url: "/doc" }));
+  }
+};
 
 // Nerdy landing page
 app.get("/", (c) => {
@@ -751,9 +767,6 @@ app.doc("/doc", {
   },
   servers: [{ url: "http://localhost:3141", description: "Local development server" }],
 });
-
-// Swagger UI endpoint
-app.get("/ui", swaggerUI({ url: "/doc" }));
 
 /**
  * Register a single custom endpoint with the API server
