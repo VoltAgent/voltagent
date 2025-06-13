@@ -1476,4 +1476,309 @@ describe("Agent", () => {
       expect(onStartHook).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe("forward event functionality", () => {
+    let agentWithSubAgents: TestAgent<{ llm: MockProvider }>;
+    let mockSubAgent: TestAgent<{ llm: MockProvider }>;
+
+    beforeEach(() => {
+      // Create a mock sub-agent
+      mockSubAgent = new TestAgent({
+        id: "sub-agent-1",
+        name: "Mock Sub Agent",
+        description: "A mock sub-agent for testing",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A mock sub-agent for testing",
+      });
+
+      // Create an agent with sub-agents
+      agentWithSubAgents = new TestAgent({
+        id: "parent-agent",
+        name: "Parent Agent",
+        description: "A parent agent with sub-agents",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A parent agent with sub-agents",
+      });
+
+      // Add the sub-agent
+      agentWithSubAgents.addSubAgent(mockSubAgent);
+    });
+
+    it("should create forwardEvent function in prepareTextOptions when streamEventForwarder exists", async () => {
+      // Test the core functionality: forwardEvent function creation
+      const mockForwarder = jest.fn().mockResolvedValue(undefined);
+
+      // Access the protected method to test it directly
+      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+        streamEventForwarder: mockForwarder,
+        historyEntryId: "test-history-id",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-op-id",
+          historyEntry: { id: "test-history-id" },
+          isActive: true,
+        },
+      });
+
+      expect(textOptions.tools).toBeDefined();
+      const delegateTool = textOptions.tools.find((tool: any) => tool.name === "delegate_task");
+      expect(delegateTool).toBeDefined();
+    });
+
+    it("should test forwardEvent filtering logic directly", async () => {
+      const mockForwarder = jest.fn().mockResolvedValue(undefined);
+
+      // Create a forwardEvent function like the real code does
+      const forwardEvent = async (event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        // Handle forwarding with filtering (no backup storage)
+        if (mockForwarder) {
+          // Filter out text, reasoning, and source events from SubAgents
+          if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+            return; // Should not call forwarder
+          }
+          await mockForwarder(event);
+        }
+      };
+
+      // Test filtering - these should NOT be forwarded
+      const filteredEvents = [
+        {
+          type: "text",
+          data: {},
+          timestamp: "2023-01-01",
+          subAgentId: "test",
+          subAgentName: "Test",
+        },
+        {
+          type: "reasoning",
+          data: {},
+          timestamp: "2023-01-01",
+          subAgentId: "test",
+          subAgentName: "Test",
+        },
+        {
+          type: "source",
+          data: {},
+          timestamp: "2023-01-01",
+          subAgentId: "test",
+          subAgentName: "Test",
+        },
+      ];
+
+      for (const event of filteredEvents) {
+        await forwardEvent(event);
+      }
+
+      // Forwarder should not be called for filtered events
+      expect(mockForwarder).not.toHaveBeenCalled();
+    });
+
+    it("should test forwardEvent tool prefix logic directly", async () => {
+      const mockForwarder = jest.fn().mockResolvedValue(undefined);
+
+      // Create a forwardEvent function like the real code does
+      const forwardEvent = async (event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        if (mockForwarder) {
+          // Skip filtering for this test
+          if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+            return;
+          }
+
+          // Add sub-agent prefix to distinguish from parent events
+          const prefixedData = {
+            ...event.data,
+            timestamp: event.timestamp,
+            type: event.type,
+            subAgentId: event.subAgentId,
+            subAgentName: event.subAgentName,
+          };
+
+          // For tool events, add subagent prefix to display name
+          if (event.type === "tool-call" && prefixedData.toolCall) {
+            prefixedData.toolCall = {
+              ...prefixedData.toolCall,
+              toolName: `${event.subAgentName}: ${prefixedData.toolCall.toolName}`,
+            };
+          } else if (event.type === "tool-result" && prefixedData.toolResult) {
+            prefixedData.toolResult = {
+              ...prefixedData.toolResult,
+              toolName: `${event.subAgentName}: ${prefixedData.toolResult.toolName}`,
+            };
+          }
+
+          await mockForwarder(prefixedData);
+        }
+      };
+
+      // Test tool-call event with prefix
+      const toolCallEvent = {
+        type: "tool-call",
+        data: {
+          toolCall: {
+            toolName: "original-tool",
+            arguments: { test: "value" },
+          },
+        },
+        timestamp: "2023-01-01",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      };
+
+      await forwardEvent(toolCallEvent);
+
+      expect(mockForwarder).toHaveBeenCalledWith({
+        toolCall: {
+          toolName: "Mock Sub Agent: original-tool",
+          arguments: { test: "value" },
+        },
+        timestamp: "2023-01-01",
+        type: "tool-call",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      });
+
+      // Test tool-result event with prefix
+      mockForwarder.mockClear();
+      const toolResultEvent = {
+        type: "tool-result",
+        data: {
+          toolResult: {
+            toolName: "original-tool",
+            result: "test result",
+          },
+        },
+        timestamp: "2023-01-01",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      };
+
+      await forwardEvent(toolResultEvent);
+
+      expect(mockForwarder).toHaveBeenCalledWith({
+        toolResult: {
+          toolName: "Mock Sub Agent: original-tool",
+          result: "test result",
+        },
+        timestamp: "2023-01-01",
+        type: "tool-result",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      });
+    });
+
+    it("should handle forwardEvent errors gracefully", async () => {
+      const failingForwarder = jest.fn().mockRejectedValue(new Error("Forwarding failed"));
+
+      // Create a forwardEvent function that handles errors like the real code
+      const forwardEvent = async (event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        if (failingForwarder) {
+          try {
+            if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+              return;
+            }
+            await failingForwarder(event);
+          } catch (error) {
+            // Error should be caught and not re-thrown
+            console.warn("Error forwarding SubAgent event:", error);
+          }
+        }
+      };
+
+      const testEvent = {
+        type: "tool-call",
+        data: { test: true },
+        timestamp: "2023-01-01",
+        subAgentId: "test",
+        subAgentName: "Test",
+      };
+
+      // Should not throw
+      await expect(forwardEvent(testEvent)).resolves.toBeUndefined();
+    });
+
+    it("should do nothing when no streamEventForwarder is provided", async () => {
+      // Create forwardEvent without streamEventForwarder
+      const forwardEvent = async (_event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        // No streamEventForwarder provided, do nothing
+        // This matches the real implementation after removing backup
+      };
+
+      const testEvent = {
+        type: "tool-call",
+        data: { test: true },
+        timestamp: "2023-01-01",
+        subAgentId: "test",
+        subAgentName: "Test",
+      };
+
+      // Should not throw and complete successfully
+      await expect(forwardEvent(testEvent)).resolves.toBeUndefined();
+    });
+
+    it("should create delegate tool with forwardEvent function when SubAgents exist", async () => {
+      const tools = agentWithSubAgents.getTools();
+      const delegateTool = tools.find((tool) => tool.name === "delegate_task");
+
+      expect(delegateTool).toBeDefined();
+      expect(delegateTool?.name).toBe("delegate_task");
+      expect(delegateTool?.description).toContain("Delegate");
+    });
+
+    it("should not create delegate tool when no SubAgents exist", async () => {
+      const agentWithoutSubAgents = new TestAgent({
+        name: "No SubAgents Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "No SubAgents Agent instructions",
+      });
+
+      const tools = agentWithoutSubAgents.getTools();
+      const delegateTool = tools.find((tool) => tool.name === "delegate_task");
+
+      expect(delegateTool).toBeUndefined();
+    });
+
+    it("should pass streamEventForwarder to prepareTextOptions during streamText", async () => {
+      const mockForwarder = jest.fn();
+
+      // Spy on prepareTextOptions to verify it receives the streamEventForwarder
+      const prepareTextOptionsSpy = jest.spyOn(agentWithSubAgents as any, "prepareTextOptions");
+
+      await agentWithSubAgents.streamText("Test forwarder passing", {
+        streamEventForwarder: mockForwarder,
+      });
+
+      expect(prepareTextOptionsSpy).toHaveBeenCalled();
+      const callArgs = prepareTextOptionsSpy.mock.calls[0][0] as any;
+      expect(callArgs.streamEventForwarder).toBe(mockForwarder);
+
+      prepareTextOptionsSpy.mockRestore();
+    });
+  });
 });

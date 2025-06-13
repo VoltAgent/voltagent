@@ -361,38 +361,168 @@ app.openapi(streamRoute, async (c) => {
             }
           };
 
+          // Create a real-time SubAgent event forwarder
+          const subAgentEventQueue: any[] = [];
+          let isProcessingQueue = false;
+
+          const processEventQueue = async () => {
+            if (isProcessingQueue || subAgentEventQueue.length === 0) return;
+            isProcessingQueue = true;
+
+            while (subAgentEventQueue.length > 0 && !streamClosed) {
+              const event = subAgentEventQueue.shift();
+              if (event) {
+                const sseMessage = `data: ${JSON.stringify(event)}\n\n`;
+                safeEnqueue(sseMessage);
+              }
+            }
+
+            isProcessingQueue = false;
+          };
+
+          const streamEventForwarder = async (event: any) => {
+            if (!streamClosed) {
+              subAgentEventQueue.push(event);
+              // Process queue asynchronously to avoid blocking SubAgent execution
+              setImmediate(processEventQueue);
+            }
+          };
+
           const response = await agent.streamText(input, {
             ...options,
+            streamEventForwarder, // Pass the real-time forwarder
             provider: {
               maxTokens: options.maxTokens,
               temperature: options.temperature,
-              // Add onError callback to handle streaming errors
-              onError: async (error: any) => {
-                const errorData = {
-                  error: error?.message ?? "Streaming failed",
-                  timestamp: new Date().toISOString(),
-                  type: "error",
-                  code: error.code || "STREAM_ERROR",
-                };
-                const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
-                safeEnqueue(errorMessage);
-                safeClose();
-              },
+              // Note: No onError callback needed - tool errors are handled via fullStream
+              // Stream errors are handled by try/catch blocks around fullStream iteration
             },
           });
 
-          // Iterate through the text stream
+          // Iterate through the full stream if available, otherwise fallback to text stream
           try {
-            for await (const chunk of response.textStream) {
-              if (streamClosed) break;
+            if (response.fullStream) {
+              // Use fullStream for rich events (text, tool calls, reasoning, etc.)
+              for await (const part of response.fullStream) {
+                if (streamClosed) break;
 
-              const data = {
-                text: chunk,
-                timestamp: new Date().toISOString(),
-                type: "text",
-              };
-              const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-              safeEnqueue(sseMessage);
+                switch (part.type) {
+                  case "text-delta": {
+                    const data = {
+                      text: part.textDelta,
+                      timestamp: new Date().toISOString(),
+                      type: "text",
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "reasoning": {
+                    const data = {
+                      reasoning: part.reasoning,
+                      timestamp: new Date().toISOString(),
+                      type: "reasoning",
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "source": {
+                    const data = {
+                      source: part.source,
+                      timestamp: new Date().toISOString(),
+                      type: "source",
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "tool-call": {
+                    const data = {
+                      toolCall: {
+                        toolCallId: part.toolCallId,
+                        toolName: part.toolName,
+                        args: part.args,
+                      },
+                      timestamp: new Date().toISOString(),
+                      type: "tool-call",
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "tool-result": {
+                    // Send appropriate event type based on error status
+                    const data = {
+                      toolResult: {
+                        toolCallId: part.toolCallId,
+                        toolName: part.toolName,
+                        result: part.result,
+                      },
+                      timestamp: new Date().toISOString(),
+                      type: "tool-result",
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+
+                    // Don't close stream for tool errors - continue processing
+                    // Note: SubAgent events are now forwarded in real-time via streamEventForwarder
+                    // No need to parse delegate_task results for batch forwarding
+                    break;
+                  }
+                  case "finish": {
+                    const data = {
+                      finishReason: part.finishReason,
+                      usage: part.usage,
+                      timestamp: new Date().toISOString(),
+                      type: "finish",
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "error": {
+                    // Check if this is a tool error
+                    const error = part.error as any;
+                    const isToolError = error?.constructor?.name === "ToolExecutionError";
+
+                    const errorData = {
+                      error: (part.error as Error)?.message || "Stream error occurred",
+                      timestamp: new Date().toISOString(),
+                      type: "error",
+                      code: isToolError ? "TOOL_ERROR" : "STREAM_ERROR",
+                      // Include tool details if available
+                      ...(isToolError && {
+                        toolName: error?.toolName,
+                        toolCallId: error?.toolCallId,
+                      }),
+                    };
+
+                    const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
+                    safeEnqueue(errorMessage);
+
+                    // Don't close stream for tool errors
+                    if (!isToolError) {
+                      safeClose();
+                      return;
+                    }
+                    break;
+                  }
+                }
+              }
+            } else {
+              // Fallback to textStream for providers that don't support fullStream
+              for await (const textDelta of response.textStream) {
+                if (streamClosed) break;
+
+                const data = {
+                  text: textDelta,
+                  timestamp: new Date().toISOString(),
+                  type: "text",
+                };
+                const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                safeEnqueue(sseMessage);
+              }
             }
 
             // Send completion message if stream completed successfully

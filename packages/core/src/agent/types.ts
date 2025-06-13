@@ -214,6 +214,9 @@ export interface CommonGenerateOptions {
 
   // Optional user-defined context to be passed from a parent operation
   userContext?: Map<string | symbol, unknown>;
+
+  // Optional stream event forwarder for real-time SubAgent event forwarding
+  streamEventForwarder?: (event: any) => Promise<void>;
 }
 
 /**
@@ -345,6 +348,18 @@ export type AgentHandoffOptions = {
    * Optional user-defined context to be passed from the supervisor agent
    */
   userContext?: Map<string | symbol, unknown>;
+
+  /**
+   * Optional real-time event forwarder function
+   * Used to forward SubAgent events to parent stream in real-time
+   */
+  forwardEvent?: (event: {
+    type: string;
+    data: any;
+    timestamp: string;
+    subAgentId: string;
+    subAgentName: string;
+  }) => Promise<void>;
 };
 
 /**
@@ -375,6 +390,17 @@ export interface AgentHandoffResult {
    * Error information if the handoff failed
    */
   error?: Error | string;
+
+  /**
+   * Stream events captured from sub-agent for forwarding to parent
+   */
+  streamEvents?: Array<{
+    type: string;
+    data: any;
+    timestamp: string;
+    subAgentId: string;
+    subAgentName: string;
+  }>;
 }
 
 /**

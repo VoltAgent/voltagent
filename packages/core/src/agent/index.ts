@@ -442,7 +442,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     tools: BaseTool[];
     maxSteps: number;
   } {
-    const { tools: dynamicTools, historyEntryId, operationContext } = options;
+    const { tools: dynamicTools, historyEntryId, operationContext, streamEventForwarder } = options;
     const baseTools = this.toolManager.prepareToolsForGeneration(dynamicTools);
 
     // Ensure operationContext exists before proceeding
@@ -498,11 +498,70 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
     if (this.subAgentManager.hasSubAgents()) {
+      // Create a real-time event forwarder for SubAgent events
+      const forwardEvent = async (event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        // If we have a stream event forwarder, use it for real-time forwarding
+        if (streamEventForwarder) {
+          try {
+            // Filter out text, reasoning, and source events from SubAgents
+            if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+              devLogger.info(
+                `[Agent ${this.id}] Skipping SubAgent ${event.type} event from ${event.subAgentName} (not forwarded to UI)`,
+              );
+              return;
+            }
+
+            devLogger.info(
+              `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
+            );
+
+            // Add sub-agent prefix to distinguish from parent events
+            const prefixedData = {
+              ...event.data,
+              timestamp: event.timestamp,
+              type: event.type,
+              subAgentId: event.subAgentId,
+              subAgentName: event.subAgentName,
+            };
+
+            // For tool events, add subagent prefix to display name
+            if (event.type === "tool-call" && prefixedData.toolCall) {
+              prefixedData.toolCall = {
+                ...prefixedData.toolCall,
+                toolName: `${event.subAgentName}: ${prefixedData.toolCall.toolName}`,
+              };
+            } else if (event.type === "tool-result" && prefixedData.toolResult) {
+              prefixedData.toolResult = {
+                ...prefixedData.toolResult,
+                toolName: `${event.subAgentName}: ${prefixedData.toolResult.toolName}`,
+              };
+            }
+
+            // Forward the event in real-time
+            devLogger.info(`[Agent ${this.id}] Forwarding to stream: ${event.type}`);
+            await streamEventForwarder(prefixedData);
+          } catch (error) {
+            devLogger.error(`Error forwarding SubAgent event: ${error}`);
+          }
+        } else {
+          devLogger.warn(
+            `[Agent ${this.id}] No streamEventForwarder available for SubAgent event: ${event.type}`,
+          );
+        }
+      };
+
       // Always create a delegate tool with the current operationContext
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this,
         currentHistoryEntryId: historyEntryId,
         operationContext: options.operationContext,
+        forwardEvent, // Pass the real-time event forwarder
         ...options,
       });
 
@@ -1264,11 +1323,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       finalConversationId,
     );
+
+    // Create a stream event forwarder that will be passed to delegate tools
+    // This forwarder will be used by SubAgents to send events in real-time
+    const streamEventForwarder = internalOptions.streamEventForwarder;
+
     const { tools, maxSteps } = this.prepareTextOptions({
       ...internalOptions,
       conversationId: finalConversationId,
       historyEntryId: operationContext.historyEntry.id,
       operationContext: operationContext,
+      streamEventForwarder, // Pass the forwarder to tools
     });
 
     const response = await this.llm.streamText({

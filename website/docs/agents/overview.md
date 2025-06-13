@@ -82,6 +82,56 @@ const completeResponse = await agent.generateText("Explain machine learning brie
 console.log("Complete Response:", completeResponse.text);
 ```
 
+#### Enhanced Streaming with `fullStream`
+
+For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the `fullStream` property available in the response:
+
+```ts
+// Example using fullStream for detailed streaming events
+async function enhancedChat(input: string) {
+  console.log(`User: ${input}`);
+  const response = await agent.streamText(input);
+
+  // Check if fullStream is available (provider-dependent)
+  if (response.fullStream) {
+    for await (const chunk of response.fullStream) {
+      switch (chunk.type) {
+        case "text-delta":
+          process.stdout.write(chunk.textDelta); // Stream text in real-time
+          break;
+        case "tool-call":
+          console.log(`\n🔧 Using tool: ${chunk.toolName}`);
+          break;
+        case "tool-result":
+          console.log(`✅ Tool completed: ${chunk.toolName}`);
+          break;
+        case "reasoning":
+          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
+          break;
+        case "finish":
+          console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
+          break;
+      }
+    }
+  } else {
+    // Fallback to standard textStream
+    for await (const chunk of response.textStream) {
+      process.stdout.write(chunk);
+    }
+  }
+}
+
+await enhancedChat("What's the weather like in Istanbul? Explain your process.");
+```
+
+:::note fullStream Support
+
+Currently, `fullStream` is only supported by the `@voltagent/vercel-ai` provider. For other providers (Google AI, Groq, Anthropic, XsAI), the response will fall back to the standard `textStream`.
+
+We're actively looking for community contributions to add `fullStream` support to other providers! If you're interested in helping, please check out our [GitHub repository](https://github.com/VoltAgent/voltagent) or join our [Discord community](https://s.voltagent.dev/discord).
+
+:::
+
 #### Markdown Formatting
 
 **Why?** To have the agent automatically format its text responses using Markdown for better readability and presentation.

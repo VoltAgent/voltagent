@@ -50,7 +50,7 @@ export {
   CustomEndpointError,
 } from "./server/custom-endpoints";
 export * from "./telemetry/exporter";
-export type { UsageInfo } from "./agent/providers";
+export type { UsageInfo, StreamPart } from "./agent/providers";
 export type { ServerOptions, VoltAgentOptions } from "./types";
 
 let isTelemetryInitializedByVoltAgent = false;
