@@ -54,7 +54,7 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
               to={`/mcp/${mcp.slug}`}
               className="rounded-md border border-gray-700 no-underline hover:border-[#00d992] transition-all duration-300 flex items-start p-1 block"
             >
-              <div className="w-7 h-7 mr-2.5 flex-shrink-0 flex items-center justify-center bg-slate-700 rounded-md">
+              <div className="w-7 h-7 mr-2.5 flex items-center justify-center bg-slate-700 rounded-md">
                 {LogoComponent ? (
                   <LogoComponent className="w-4 h-4 text-white" />
                 ) : (
