@@ -7,6 +7,15 @@ slug: /agents/mcp
 
 The [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) provides a **standardized way** for large language models (LLMs) and AI agents to interact with external tools and services. VoltAgent implements MCP client capabilities, enabling your agents to seamlessly access diverse functionalities like filesystem operations, browser automation, database interactions, specific AI models hosted externally, and more, provided they adhere to the MCP specification.
 
+## Transport Types
+
+VoltAgent supports multiple transport types for MCP connections:
+
+- **`streamable-http`**: Modern streamable HTTP transport for efficient bidirectional communication
+- **`http`**: Smart transport that attempts streamable HTTP first and automatically falls back to SSE for compatibility
+- **`sse`**: Server-Sent Events transport for servers that explicitly use SSE
+- **`stdio`**: Standard input/output for local processes and CLI tools
+
 ## Getting Started with MCPConfiguration
 
 The `MCPConfiguration` class is the central point for managing connections to one or more MCP servers. It handles the connection process and makes the tools offered by these servers available to your agents.
@@ -18,9 +27,15 @@ import path from "node:path"; // Used for filesystem path example
 // Create MCP Configuration with multiple types of servers
 const mcpConfig = new MCPConfiguration({
   servers: {
-    // Example 1: HTTP-based server (e.g., external web service or API gateway)
+    // Example 1: Streamable HTTP transport (modern, efficient)
+    github: {
+      type: "streamable-http",
+      url: "https://api.githubcopilot.com/mcp",
+    },
+
+    // Example 2: HTTP with automatic fallback (recommended for compatibility)
     reddit: {
-      type: "http",
+      type: "http", // Tries streamable HTTP first, falls back to SSE if needed
       url: "https://mcp.composio.dev/reddit/your-api-key-here", // URL of the MCP endpoint
       // Optional: Custom headers or options for the initial fetch request
       requestInit: {
@@ -30,7 +45,13 @@ const mcpConfig = new MCPConfiguration({
       eventSourceInit: { withCredentials: true },
     },
 
-    // Example 2: stdio-based server (e.g., a local script or application)
+    // Example 3: SSE transport (explicit Server-Sent Events)
+    linear: {
+      type: "sse",
+      url: "https://mcp.linear.app/sse",
+    },
+
+    // Example 4: stdio-based server (e.g., a local script or application)
     filesystem: {
       type: "stdio", // Connects via standard input/output
       command: "npx", // The command to execute
