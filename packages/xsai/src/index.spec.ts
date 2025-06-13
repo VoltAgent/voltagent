@@ -276,6 +276,7 @@ describe("XSAIProvider", () => {
       );
       expect(result.provider).toBe(mockResult);
       expect(result.textStream).toBeInstanceOf(ReadableStream);
+      // @ts-expect-error
       expect(result.textStream).toHaveProperty([Symbol.asyncIterator]);
     });
 
@@ -513,6 +514,8 @@ describe("XSAIProvider", () => {
       );
       expect(result.provider).toBe(mockResult);
       expect(result.objectStream).toBeInstanceOf(ReadableStream);
+
+      // @ts-expect-error
       expect(result.objectStream).toHaveProperty([Symbol.asyncIterator]);
     });
 

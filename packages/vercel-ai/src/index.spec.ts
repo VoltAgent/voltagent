@@ -1,7 +1,8 @@
 import type { BaseMessage } from "@voltagent/core";
 import { generateObject, streamObject } from "ai";
-// @ts-ignore
+// @ts-expect-error - ai/test is not typed
 import { MockLanguageModelV1, simulateReadableStream } from "ai/test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { VercelAIProvider } from "./index";
 
@@ -261,7 +262,7 @@ describe("VercelAIProvider", () => {
       //expect(result instanceof ReadableStream).toBe(true);
     });
 
-    xit("should format streamed object with JSON format in onStepFinish", async () => {
+    it.todo("should format streamed object with JSON format in onStepFinish", async () => {
       // Expected final object
       const expectedObject = {
         name: "John Doe",

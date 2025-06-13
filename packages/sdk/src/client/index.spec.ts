@@ -3,13 +3,13 @@ import { VoltAgentCoreAPI } from "./index";
 // Mock global fetch
 globalThis.fetch = vi.fn() as unknown as typeof globalThis.fetch;
 
-// Timer ve AbortController mock'ları
+// Timer and AbortController mocks
 const originalSetTimeout = globalThis.setTimeout;
 const originalClearTimeout = globalThis.clearTimeout;
 const originalAbortController = globalThis.AbortController;
 
 beforeEach(() => {
-  // Mock API için gerekli mock'ları ayarla
+  // Set up necessary mocks for Mock API
   globalThis.setTimeout = vi.fn() as unknown as typeof globalThis.setTimeout;
   globalThis.clearTimeout = vi.fn() as unknown as typeof globalThis.clearTimeout;
   globalThis.AbortController = vi.fn(() => ({
@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  // Test sonrası orijinal fonksiyonları geri yükle
+  // Restore original functions after test
   globalThis.setTimeout = originalSetTimeout;
   globalThis.clearTimeout = originalClearTimeout;
   globalThis.AbortController = originalAbortController;
@@ -29,7 +29,11 @@ describe("VoltAgentCoreAPI", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    api = new VoltAgentCoreAPI("http://test-api");
+    api = new VoltAgentCoreAPI({
+      baseUrl: "http://test-api",
+      publicKey: "test-public-key",
+      secretKey: "test-secret-key",
+    });
   });
 
   describe("getAgent", () => {

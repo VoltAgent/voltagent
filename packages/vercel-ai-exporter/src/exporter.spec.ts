@@ -1,6 +1,8 @@
 import { ExportResultCode } from "@opentelemetry/core";
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import { VoltAgentObservabilitySDK } from "@voltagent/sdk";
+import type { Mock, Mocked } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VoltAgentExporter } from "./exporter";
 
 // Mock the SDK
@@ -8,7 +10,7 @@ vi.mock("@voltagent/sdk");
 
 describe("VoltAgentExporter", () => {
   let exporter: VoltAgentExporter;
-  let mockSdk: vi.Mocked<VoltAgentObservabilitySDK>;
+  let mockSdk: Mocked<VoltAgentObservabilitySDK>;
   let mockTrace: any;
 
   beforeEach(() => {
@@ -28,7 +30,7 @@ describe("VoltAgentExporter", () => {
     } as any;
 
     // Mock the SDK constructor
-    (VoltAgentObservabilitySDK as vi.Mock).mockImplementation(() => mockSdk);
+    (VoltAgentObservabilitySDK as Mock).mockImplementation(() => mockSdk);
 
     // Create exporter with debug enabled for testing
     exporter = new VoltAgentExporter({
