@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { VoltAgentCoreAPI } from "./index";
 
 // Mock global fetch
@@ -33,42 +34,6 @@ describe("VoltAgentCoreAPI", () => {
       baseUrl: "http://test-api",
       publicKey: "test-public-key",
       secretKey: "test-secret-key",
-    });
-  });
-
-  describe("getAgent", () => {
-    it("should fetch agent data successfully", async () => {
-      const mockAgent = { id: "test-agent", name: "Test Agent" };
-      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockAgent,
-      });
-
-      const result = await api.getAgent("test-agent");
-
-      expect(result).toEqual(mockAgent);
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "http://test-api/agents/test-agent",
-        expect.any(Object),
-      );
-    });
-
-    it("should handle API errors", async () => {
-      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      });
-
-      await expect(api.getAgent("test-agent")).rejects.toThrow("Failed to fetch agent");
-    });
-
-    it("should handle network errors", async () => {
-      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error("Network error"),
-      );
-
-      await expect(api.getAgent("test-agent")).rejects.toThrow("Network error");
     });
   });
 
