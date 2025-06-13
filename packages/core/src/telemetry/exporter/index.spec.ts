@@ -44,9 +44,9 @@ describe("VoltAgentExporter", () => {
   });
 
   describe("constructor", () => {
-    it("should create an instance of TelemetryServiceApiClient with options", () => {
+    it("should create an instance of TelemetryServiceApiClient with options", async () => {
       // Access the mocked constructor directly via require, as vi.mock replaces the module.
-      const MockedTelemetryServiceApiClient = require("../client").TelemetryServiceApiClient;
+      const MockedTelemetryServiceApiClient = (await import("../client")).TelemetryServiceApiClient;
       expect(MockedTelemetryServiceApiClient).toHaveBeenCalledWith(mockOptions);
     });
 
@@ -54,14 +54,14 @@ describe("VoltAgentExporter", () => {
       expect(exporter.publicKey).toBe(mockOptions.publicKey);
     });
 
-    it("should replace server.voltagent.dev with api.voltagent.dev", () => {
+    it("should replace server.voltagent.dev with api.voltagent.dev", async () => {
       const optionsWithSpecificBaseUrl: VoltAgentExporterOptions = {
         ...mockOptions,
         baseUrl: "https://server.voltagent.dev/some/path",
       };
       // eslint-disable-next-line no-new
       new VoltAgentExporter(optionsWithSpecificBaseUrl);
-      const MockedTelemetryServiceApiClient = require("../client").TelemetryServiceApiClient;
+      const MockedTelemetryServiceApiClient = (await import("../client")).TelemetryServiceApiClient;
       expect(MockedTelemetryServiceApiClient).toHaveBeenCalledWith(
         expect.objectContaining({
           baseUrl: "https://api.voltagent.dev",

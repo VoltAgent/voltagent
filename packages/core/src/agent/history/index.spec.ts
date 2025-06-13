@@ -1,3 +1,5 @@
+import type { Mock, Mocked } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type AddEntryParams, type AgentHistoryEntry, HistoryManager } from ".";
 import { AgentEventEmitter } from "../../events";
 import type { NewTimelineEvent } from "../../events/types";
@@ -26,16 +28,16 @@ vi.mock("../../telemetry/exporter", () => ({
 
 describe("HistoryManager", () => {
   let historyManager: HistoryManager;
-  let mockMemoryManager: vi.Mocked<MemoryManager>;
+  let mockMemoryManager: Mocked<MemoryManager>;
   let mockEntries: AgentHistoryEntry[] = [];
-  let mockVoltAgentExporter: vi.Mocked<VoltAgentExporter>;
+  let mockVoltAgentExporter: Mocked<VoltAgentExporter>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear mock data
     mockEntries = [];
 
     // Mock MemoryManager implementation
-    mockMemoryManager = new MemoryManager("test-memory-manager") as vi.Mocked<MemoryManager>;
+    mockMemoryManager = new MemoryManager("test-memory-manager") as Mocked<MemoryManager>;
     mockMemoryManager.storeHistoryEntry = vi.fn().mockImplementation((_agentId, entry) => {
       mockEntries.unshift(entry); // Add to the beginning (newest first)
       return Promise.resolve(entry);
@@ -59,7 +61,7 @@ describe("HistoryManager", () => {
       return Promise.resolve(undefined);
     });
 
-    mockMemoryManager.addTimelineEvent = jest
+    mockMemoryManager.addTimelineEvent = vi
       .fn()
       .mockImplementation((_agentId, _historyId, _eventId, _event) => {
         const index = mockEntries.findIndex((e) => e.id === _historyId);
@@ -70,26 +72,28 @@ describe("HistoryManager", () => {
         return Promise.resolve(undefined);
       });
 
-    mockMemoryManager.addStepsToHistoryEntry = jest
-      .fn()
-      .mockImplementation((_agentId, id, steps) => {
-        const index = mockEntries.findIndex((e) => e.id === id);
-        if (index !== -1) {
-          if (!mockEntries[index].steps) {
-            mockEntries[index].steps = [];
-          }
-          mockEntries[index].steps = [...mockEntries[index].steps, ...steps];
-          return Promise.resolve(mockEntries[index]);
+    mockMemoryManager.addStepsToHistoryEntry = vi.fn().mockImplementation((_agentId, id, steps) => {
+      const index = mockEntries.findIndex((e) => e.id === id);
+      if (index !== -1) {
+        if (!mockEntries[index].steps) {
+          mockEntries[index].steps = [];
         }
-        return Promise.resolve(undefined);
-      });
+        mockEntries[index].steps = [...mockEntries[index].steps, ...steps];
+        return Promise.resolve(mockEntries[index]);
+      }
+      return Promise.resolve(undefined);
+    });
 
     // Create HistoryManager with mocked dependencies
     historyManager = new HistoryManager("test-agent", mockMemoryManager, 0);
 
     // Initialize mock VoltAgentExporter instance for telemetry tests
-    const { VoltAgentExporter: MockExporterConstructor } = require("../../telemetry/exporter");
-    mockVoltAgentExporter = new MockExporterConstructor() as vi.Mocked<VoltAgentExporter>;
+    const { VoltAgentExporter: MockExporterConstructor } = await import("../../telemetry/exporter");
+    mockVoltAgentExporter = new MockExporterConstructor({
+      publicKey: "mock-public-key",
+      baseUrl: "https://mock-base-url.com",
+      secretKey: "mock-secret-key",
+    }) as Mocked<VoltAgentExporter>;
     // Clear mocks on the instance methods for each test, as the instance is reused if created in beforeEach
     mockVoltAgentExporter.exportHistoryEntry.mockClear();
     mockVoltAgentExporter.exportTimelineEvent.mockClear();
@@ -102,7 +106,7 @@ describe("HistoryManager", () => {
       emitHistoryUpdate: vi.fn(),
       createTrackedEvent: vi.fn(),
     };
-    (AgentEventEmitter.getInstance as vi.Mock).mockReturnValue(mockEmitter);
+    (AgentEventEmitter.getInstance as Mock).mockReturnValue(mockEmitter);
   });
 
   afterEach(() => {

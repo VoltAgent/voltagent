@@ -1032,9 +1032,7 @@ describe("PostgresStorage", () => {
     it("should handle connection errors", async () => {
       // Create a mock client that will throw the wrapped error
       const mockClient = {
-        query: jest
-          .fn()
-          .mockRejectedValue(new Error("Failed to add message to PostgreSQL database")),
+        query: vi.fn().mockRejectedValue(new Error("Failed to add message to PostgreSQL database")),
         release: vi.fn(),
       };
 

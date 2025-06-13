@@ -1,10 +1,11 @@
 import { SpanKind, SpanStatusCode, context, trace } from "@opentelemetry/api";
 import type { Span } from "@opentelemetry/api";
+import type { Mock } from "vitest";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./index"; // Assuming the helper functions are exported from './index'
 
 // Mock the OpenTelemetry API
-vi.mock("@opentelemetry/api", () => {
-  const originalApi = vi.requireActual("@opentelemetry/api");
+vi.mock("@opentelemetry/api", async () => {
+  const originalApi = await vi.importActual("@opentelemetry/api");
   const mockSpan = {
     setAttribute: vi.fn(),
     setAttributes: vi.fn(),
@@ -32,12 +33,12 @@ vi.mock("@opentelemetry/api", () => {
 });
 
 // Helper function to get the mocked tracer and span functions
-const getOtelMocks = () => {
+const getOtelMocks = async () => {
   // Provide dummy name to satisfy the mocked getTracer call
   const mockTracer = trace.getTracer("test-tracer");
   // Import the mockSpan creator from the mocked module
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { _createMockSpan } = require("@opentelemetry/api");
+  const { _createMockSpan } = (await import("@opentelemetry/api")) as any;
   return {
     mockTracer,
     createMockSpan: _createMockSpan,
@@ -46,13 +47,13 @@ const getOtelMocks = () => {
   };
 };
 
-describe("OpenTelemetry Helpers", () => {
-  let otelMocks: ReturnType<typeof getOtelMocks>;
+describe("OpenTelemetry Helpers", async () => {
+  let otelMocks: Awaited<ReturnType<typeof getOtelMocks>>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks before each test
     vi.clearAllMocks();
-    otelMocks = getOtelMocks();
+    otelMocks = await getOtelMocks();
   });
 
   describe("startOperationSpan", () => {
@@ -106,8 +107,7 @@ describe("OpenTelemetry Helpers", () => {
       );
       // Ensure optional attributes are not present
       // Cast to vi.Mock to access .mock property safely
-      const calledAttributes = (otelMocks.mockTracer.startSpan as vi.Mock).mock.calls[0][1]
-        .attributes;
+      const calledAttributes = (otelMocks.mockTracer.startSpan as Mock).mock.calls[0][1].attributes;
       expect(calledAttributes).not.toHaveProperty("enduser.id");
       expect(calledAttributes).not.toHaveProperty("session.id");
       expect(calledAttributes).not.toHaveProperty("voltagent.parent.agent.id");

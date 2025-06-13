@@ -1,3 +1,4 @@
+import type { Mock, Mocked } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { Memory, MemoryMessage } from "../memory/types";
@@ -455,7 +456,7 @@ const mockEventEmitter = {
   onHistoryEntryCreated: vi.fn(),
   onHistoryUpdate: vi.fn(),
   publishTimelineEvent: vi.fn().mockResolvedValue(createMockHistoryEntry("mock_timeline_event")),
-} as unknown as vi.Mocked<AgentEventEmitter>;
+} as unknown as Mocked<AgentEventEmitter>;
 
 // Mock AgentEventEmitter.getInstance globally
 vi.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
@@ -556,7 +557,7 @@ describe("Agent", () => {
 
     // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
     it("should pass telemetryExporter to HistoryManager if provided", () => {
-      (HistoryManager as vi.Mock).mockClear();
+      (HistoryManager as Mock).mockClear();
 
       new Agent({
         name: "TelemetryAgent",
@@ -577,7 +578,7 @@ describe("Agent", () => {
     });
 
     it("should instantiate HistoryManager without telemetryExporter if not provided", () => {
-      (HistoryManager as vi.Mock).mockClear();
+      (HistoryManager as Mock).mockClear();
 
       new Agent({
         name: "NoTelemetryAgent",
@@ -588,7 +589,7 @@ describe("Agent", () => {
       });
 
       expect(HistoryManager).toHaveBeenCalledTimes(1);
-      const historyManagerArgs = (HistoryManager as vi.Mock).mock.calls[0];
+      const historyManagerArgs = (HistoryManager as Mock).mock.calls[0];
       expect(historyManagerArgs.length).toBeGreaterThanOrEqual(3);
       expect(historyManagerArgs[3]).toBeUndefined();
     });

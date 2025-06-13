@@ -1,8 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
-//@ts-ignore
+// @ts-expect-error - for testing
 import { EventSourceParser } from "@anthropic-ai/sdk/lib/streaming";
 import { createTool } from "@voltagent/core";
 import type { BaseMessage } from "@voltagent/core";
+import type { MockedClass } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AnthropicProvider } from ".";
 
@@ -32,7 +34,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as vi.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -76,7 +78,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as vi.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -178,7 +180,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as vi.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -255,7 +257,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as vi.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -322,7 +324,7 @@ describe("AnthropicProvider", () => {
       });
 
       // Create a spy for the createStepFromChunk function from utils
-      const createStepFromChunkSpy = vi.spyOn(require("./utils"), "createStepFromChunk");
+      const createStepFromChunkSpy = vi.spyOn(await import("./utils"), "createStepFromChunk");
       createStepFromChunkSpy.mockReturnValue({
         id: "",
         role: "assistant",
@@ -521,7 +523,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as vi.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -662,7 +664,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as vi.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 

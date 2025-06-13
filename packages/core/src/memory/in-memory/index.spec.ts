@@ -343,7 +343,7 @@ describe("InMemoryStorage", () => {
         ]);
       });
 
-      xit("should filter messages by timestamp range", async () => {
+      it.todo("should filter messages by timestamp range", async () => {
         // Create a completely isolated test with actual timestamps
         const timeFilterStorage = new InMemoryStorage({ debug: false });
 

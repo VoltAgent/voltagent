@@ -25,16 +25,17 @@ describe("AgentEventEmitter", () => {
   });
 
   describe("agentRegistered events", () => {
-    it("should emit and receive agent registered events", (done) => {
-      const agentId = "test-agent";
+    it("should emit and receive agent registered events", () =>
+      new Promise<void>((done) => {
+        const agentId = "test-agent";
 
-      eventEmitter.onAgentRegistered((receivedAgentId) => {
-        expect(receivedAgentId).toBe(agentId);
-        done();
-      });
+        eventEmitter.onAgentRegistered((receivedAgentId) => {
+          expect(receivedAgentId).toBe(agentId);
+          done();
+        });
 
-      eventEmitter.emitAgentRegistered(agentId);
-    });
+        eventEmitter.emitAgentRegistered(agentId);
+      }));
 
     it("should allow unsubscribing from agent registered events", () => {
       const callback = vi.fn();
@@ -110,7 +111,7 @@ describe("AgentEventEmitter", () => {
       mockAgent.getHistoryManager.mockClear();
 
       // Setup publishTimelineEvent spy
-      publishTimelineEventSpy = jest
+      publishTimelineEventSpy = vi
         .spyOn(eventEmitter, "publishTimelineEvent")
         .mockResolvedValue(historyEntry as AgentHistoryEntry);
 
@@ -159,7 +160,7 @@ describe("AgentEventEmitter", () => {
         eventEmitter.publishTimelineEvent = publishSpy;
 
         // Spy on propagateEventToParentAgents for direct verification
-        const propagateSpy = jest
+        const propagateSpy = vi
           .spyOn(eventEmitter as any, "propagateEventToParentAgents")
           .mockResolvedValue(undefined);
 
@@ -196,7 +197,7 @@ describe("AgentEventEmitter", () => {
         eventEmitter.publishTimelineEvent = publishSpy;
 
         // Spy on propagateEventToParentAgents
-        const propagateSpy = jest
+        const propagateSpy = vi
           .spyOn(eventEmitter as any, "propagateEventToParentAgents")
           .mockResolvedValue(undefined);
 
@@ -261,7 +262,7 @@ describe("AgentEventEmitter", () => {
 
         // Setup mock implementation for three-level hierarchy
         const mockRegistry = AgentRegistry.getInstance() as vi.Mocked<any>;
-        const mockGetParentAgentIds = jest
+        const mockGetParentAgentIds = vi
           .fn()
           .mockReturnValueOnce(["parent-agent"]) // child's parent is 'parent-agent'
           .mockReturnValueOnce(["grandparent-agent"]); // parent's parent is 'grandparent-agent'
@@ -271,7 +272,7 @@ describe("AgentEventEmitter", () => {
 
         // Mock propagateEventToParentAgents to let us control behavior
         const propagationHistory: string[] = [];
-        const mockPropagateToParents = jest
+        const mockPropagateToParents = vi
           .fn()
           .mockImplementation(
             async (

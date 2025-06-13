@@ -1,5 +1,5 @@
 import { DEFAULT_INSTRUCTIONS, FEW_SHOT_EXAMPLES, createReasoningTools } from "./index";
-// No need to import from 'jest' directly; it's usually globally available
+// No need to import from 'vi' directly; it's usually globally available
 
 // Mock the base tools using vi.mock
 // Place mocks at the top level before imports if they mock modules used by the tested module itself,

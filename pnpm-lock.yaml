@@ -1054,9 +1054,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.2.3
         version: 3.2.3(vitest@3.2.3)
-      eslint:
-        specifier: ^8.0.0
-        version: 8.57.1
       tsup:
         specifier: ^6.7.0
         version: 6.7.0(typescript@5.8.3)
@@ -1127,18 +1124,18 @@ importers:
       '@types/uuid':
         specifier: ^9.0.8
         version: 9.0.8
-      jest:
-        specifier: ^29.5.0
-        version: 29.7.0(@types/node@20.19.0)
-      ts-jest:
-        specifier: ^29.1.0
-        version: 29.2.6(@babel/core@7.27.1)(esbuild@0.17.19)(jest@29.7.0)(typescript@5.8.2)
+      '@vitest/coverage-v8':
+        specifier: ^3.2.3
+        version: 3.2.3(vitest@3.2.3)
       tsup:
         specifier: ^6.7.0
         version: 6.7.0(typescript@5.8.2)
       typescript:
         specifier: ^5.0.4
         version: 5.8.2
+      vitest:
+        specifier: ^3.2.3
+        version: 3.2.3(@types/node@20.19.0)
 
   packages/core:
     dependencies:
@@ -1267,9 +1264,6 @@ importers:
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.7
-      '@types/jest':
-        specifier: ^29.5.0
-        version: 29.5.14
       '@types/node':
         specifier: ^20.19.0
         version: 20.19.0
@@ -1279,6 +1273,9 @@ importers:
       '@types/uuid':
         specifier: ^9.0.8
         version: 9.0.8
+      '@vitest/coverage-v8':
+        specifier: ^3.2.3
+        version: 3.2.3(vitest@3.2.3)
       jest:
         specifier: ^29.5.0
         version: 29.7.0(@types/node@20.19.0)
@@ -1291,6 +1288,9 @@ importers:
       typescript:
         specifier: ^5.0.4
         version: 5.8.2
+      vitest:
+        specifier: ^3.2.3
+        version: 3.2.3(@types/node@20.19.0)
 
   packages/google-ai:
     dependencies:
@@ -3715,7 +3715,7 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dependencies:
       ajv: 6.12.6
-      debug: 4.4.0
+      debug: 4.4.1
       espree: 9.6.1
       globals: 13.24.0
       ignore: 5.3.2
@@ -3876,7 +3876,7 @@ packages:
     deprecated: Use @eslint/config-array instead
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
-      debug: 4.4.0
+      debug: 4.4.1
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -7008,7 +7008,7 @@ packages:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/node@20.19.0)
+      vitest: 3.2.3(@types/node@20.17.30)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -7037,7 +7037,7 @@ packages:
       '@vitest/spy': 3.2.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 6.3.3(@types/node@20.19.0)
+      vite: 6.3.3(@types/node@20.17.30)
     dev: true
 
   /@vitest/pretty-format@3.2.3:
@@ -16338,7 +16338,7 @@ packages:
       picomatch: 4.0.2
       postcss: 8.5.3
       rollup: 4.40.1
-      tinyglobby: 0.2.13
+      tinyglobby: 0.2.14
     optionalDependencies:
       fsevents: 2.3.3
     dev: true

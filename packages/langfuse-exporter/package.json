@@ -13,14 +13,12 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "test:coverage": "vitest run"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",

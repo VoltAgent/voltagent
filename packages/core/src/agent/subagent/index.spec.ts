@@ -288,7 +288,7 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent1);
       subAgentManager.addSubAgent(mockAgent2);
 
-      const handoffToMultipleSpy = jest
+      const handoffToMultipleSpy = vi
         .spyOn(subAgentManager, "handoffToMultiple")
         .mockResolvedValue([
           {
