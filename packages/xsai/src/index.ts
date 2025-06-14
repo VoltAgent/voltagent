@@ -24,7 +24,7 @@ import type {
   StreamTextResult,
   StreamTextStep,
   TextPart,
-  ToolResult,
+  Tool,
 } from "xsai";
 import type { z } from "zod";
 
@@ -94,7 +94,7 @@ export class XSAIProvider implements LLMProvider<string> {
     return { role: message.role, content: "" } as Message; // Fallback to empty string
   };
 
-  convertTools = async (tools: BaseTool[]): Promise<ToolResult[] | undefined> => {
+  convertTools = async (tools: BaseTool[]): Promise<Tool[] | undefined> => {
     if (!tools || tools.length === 0) {
       return undefined;
     }
