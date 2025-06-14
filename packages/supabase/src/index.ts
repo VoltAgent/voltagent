@@ -105,6 +105,17 @@ export class SupabaseMemory implements Memory {
         console.error("Error migrating conversation schema:", error);
       }
 
+      // Run agent history schema migration
+      try {
+        const migrationResult = await this.migrateAgentHistorySchema();
+
+        if (!migrationResult.success) {
+          console.error("Agent history schema migration error:", migrationResult.error);
+        }
+      } catch (error) {
+        console.error("Error migrating agent history schema:", error);
+      }
+
       // Then run data migration if needed
       const result = await this.migrateAgentHistoryData({
         restoreFromBackup: false,
@@ -262,6 +273,8 @@ CREATE TABLE IF NOT EXISTS ${this.historyTable} (
     output JSONB,
     usage JSONB,
     metadata JSONB,
+    user_id TEXT,
+    conversation_id TEXT,
     -- Legacy columns for migration compatibility
     key TEXT,
     value JSONB
@@ -273,6 +286,14 @@ ON ${this.historyTable}(id);
 
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_agent_id 
 ON ${this.historyTable}(agent_id);
+
+-- Index for user_id
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_user_id
+ON ${this.historyTable}(user_id);
+
+-- Index for conversation_id
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_conversation_id
+ON ${this.historyTable}(conversation_id);
 
 -- Agent History Steps Table
 CREATE TABLE IF NOT EXISTS ${this.historyStepsTable} (
@@ -409,7 +430,9 @@ ADD COLUMN IF NOT EXISTS status TEXT,
 ADD COLUMN IF NOT EXISTS input JSONB,
 ADD COLUMN IF NOT EXISTS output JSONB,
 ADD COLUMN IF NOT EXISTS usage JSONB,
-ADD COLUMN IF NOT EXISTS metadata JSONB;\n`);
+ADD COLUMN IF NOT EXISTS metadata JSONB;
+ADD COLUMN IF NOT EXISTS user_id TEXT;
+ADD COLUMN IF NOT EXISTS conversation_id TEXT;\n`);
         }
 
         console.log("-- 3. Create performance indexes");
@@ -439,7 +462,13 @@ CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_id
 ON ${this.historyTable}(id);
 
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_agent_id 
-ON ${this.historyTable}(agent_id);`);
+ON ${this.historyTable}(agent_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_user_id
+ON ${this.historyTable}(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_conversation_id
+ON ${this.historyTable}(conversation_id);`);
         }
 
         console.log(`\n${"=".repeat(100)}`);
@@ -729,6 +758,8 @@ ON ${this.historyTable}(agent_id);`);
       output: value.output || null,
       usage: value.usage || null,
       metadata: value.metadata || null,
+      user_id: value.userId || null,
+      conversation_id: value.conversationId || null,
     };
 
     const { error } = await this.client.from(this.historyTable).upsert(record, {
@@ -825,7 +856,9 @@ ON ${this.historyTable}(agent_id);`);
     // 1. Get the main history entry using new structured format
     const { data: entryData, error: entryError } = await this.client
       .from(this.historyTable)
-      .select("id, agent_id, timestamp, status, input, output, usage, metadata")
+      .select(
+        "id, agent_id, timestamp, status, input, output, usage, metadata, user_id, conversation_id",
+      )
       .eq("id", key)
       .maybeSingle();
 
@@ -848,6 +881,8 @@ ON ${this.historyTable}(agent_id);`);
       output: entryData.output,
       usage: entryData.usage,
       metadata: entryData.metadata,
+      userId: entryData.user_id,
+      conversationId: entryData.conversation_id,
     };
 
     const agentId = entryData.agent_id;
@@ -953,7 +988,9 @@ ON ${this.historyTable}(agent_id);`);
     // 1. Get all history entries for the agent using new structured format
     const { data: entriesData, error: entriesError } = await this.client
       .from(this.historyTable)
-      .select("id, agent_id, timestamp, status, input, output, usage, metadata")
+      .select(
+        "id, agent_id, timestamp, status, input, output, usage, metadata, user_id, conversation_id",
+      )
       .eq("agent_id", agentId);
 
     if (entriesError) {
@@ -978,6 +1015,8 @@ ON ${this.historyTable}(agent_id);`);
           output: entryRow.output,
           usage: entryRow.usage,
           metadata: entryRow.metadata,
+          userId: entryRow.user_id,
+          conversationId: entryRow.conversation_id,
         };
 
         const key = entryRow.id;
@@ -2520,5 +2559,180 @@ ON ${this.historyTable}(agent_id);`);
       pageSize,
       hasMore,
     };
+  }
+
+  /**
+   * Check and create migration flag table, return if migration already completed
+   * @param migrationType Type of migration to check
+   * @returns Object with completion status and details
+   */
+  private async checkMigrationFlag(migrationType: string): Promise<{
+    alreadyCompleted: boolean;
+    migrationCount?: number;
+    completedAt?: string;
+  }> {
+    const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
+
+    try {
+      const { data, error } = await this.client
+        .from(migrationFlagTable)
+        .select("*")
+        .eq("migration_type", migrationType)
+        .maybeSingle();
+
+      if (error && !error.message?.includes("does not exist")) {
+        this.debugLog("Error checking migration flag:", error);
+        return { alreadyCompleted: false };
+      }
+
+      if (data) {
+        this.debugLog(`${migrationType} migration already completed`);
+        this.debugLog(`Migration completed on: ${data.completed_at}`);
+        this.debugLog(`Migrated ${data.migrated_count || 0} records previously`);
+        return {
+          alreadyCompleted: true,
+          migrationCount: data.migrated_count as number,
+          completedAt: data.completed_at as string,
+        };
+      }
+
+      this.debugLog("Migration flags table found, but no migration flag exists yet");
+      return { alreadyCompleted: false };
+    } catch (_flagError) {
+      // Migration flag table doesn't exist, which is expected for fresh install
+      this.debugLog("Migration flag table not found (expected for fresh install)");
+      return { alreadyCompleted: false };
+    }
+  }
+
+  /**
+   * Set migration flag after successful completion
+   * @param migrationType Type of migration completed
+   * @param migratedCount Number of records migrated
+   */
+  private async setMigrationFlag(migrationType: string, migratedCount: number): Promise<void> {
+    try {
+      const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
+
+      const { error } = await this.client.from(migrationFlagTable).upsert(
+        {
+          migration_type: migrationType,
+          completed_at: new Date().toISOString(),
+          migrated_count: migratedCount,
+        },
+        {
+          onConflict: "migration_type",
+        },
+      );
+
+      if (error) {
+        this.debugLog("Could not set migration flag (non-critical):", error);
+      } else {
+        this.debugLog("Migration flag set successfully");
+      }
+    } catch (flagSetError) {
+      this.debugLog("Could not set migration flag (non-critical):", flagSetError);
+    }
+  }
+
+  /**
+   * Migrate agent history schema to add user_id and conversation_id columns
+   */
+  private async migrateAgentHistorySchema(): Promise<{
+    success: boolean;
+    error?: Error;
+  }> {
+    try {
+      // Check if migration has already been completed
+      const flagCheck = await this.checkMigrationFlag("agent_history_schema_migration");
+      if (flagCheck.alreadyCompleted) {
+        return { success: true };
+      }
+
+      // Check if the table exists first by trying to query it
+      const { error: tableError } = await this.client.from(this.historyTable).select("id").limit(1);
+
+      if (tableError && tableError.message?.includes("does not exist")) {
+        console.log("Agent history table doesn't exist, migration not needed");
+        return { success: true };
+      }
+
+      // Check if columns already exist
+      let hasUserIdColumn = false;
+      let hasConversationIdColumn = false;
+
+      try {
+        const { error: userIdError } = await this.client
+          .from(this.historyTable)
+          .select("user_id")
+          .limit(1);
+        hasUserIdColumn = !userIdError;
+      } catch {
+        hasUserIdColumn = false;
+      }
+
+      try {
+        const { error: conversationIdError } = await this.client
+          .from(this.historyTable)
+          .select("conversation_id")
+          .limit(1);
+        hasConversationIdColumn = !conversationIdError;
+      } catch {
+        hasConversationIdColumn = false;
+      }
+
+      // If both columns already exist, migration not needed
+      if (hasUserIdColumn && hasConversationIdColumn) {
+        console.log("Agent history table already has user_id and conversation_id columns");
+        await this.setMigrationFlag("agent_history_schema_migration", 0);
+        return { success: true };
+      }
+
+      // Show SQL that needs to be run
+      console.log(`\n${"=".repeat(80)}`);
+      console.log("🔄 AGENT HISTORY SCHEMA MIGRATION REQUIRED");
+      console.log("=".repeat(80));
+      console.log("Please run the following SQL in your Supabase SQL Editor:");
+      console.log("(Copy and paste the entire block below)\n");
+
+      console.log(`-- Agent History Schema Migration for ${this.historyTable}
+-- Add user_id and conversation_id columns if they don't exist
+
+-- Add user_id column
+ALTER TABLE ${this.historyTable} 
+ADD COLUMN IF NOT EXISTS user_id TEXT;
+
+-- Add conversation_id column  
+ALTER TABLE ${this.historyTable}
+ADD COLUMN IF NOT EXISTS conversation_id TEXT;
+
+-- Create indexes for new columns
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_user_id
+ON ${this.historyTable}(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_conversation_id
+ON ${this.historyTable}(conversation_id);
+
+-- Set migration flag to prevent future runs
+INSERT INTO ${this.conversationsTable}_migration_flags (migration_type, migrated_count, metadata) 
+VALUES ('agent_history_schema_migration', 0, '{"manual_migration": true}'::jsonb)
+ON CONFLICT (migration_type) DO NOTHING;
+`);
+
+      console.log(`\n${"=".repeat(80)}`);
+      console.log("📋 MIGRATION INSTRUCTIONS:");
+      console.log("1. Go to your Supabase Dashboard");
+      console.log('2. Click on "SQL Editor" in the left sidebar');
+      console.log('3. Click "New Query"');
+      console.log("4. Copy and paste the SQL above");
+      console.log('5. Click "Run" to execute');
+      console.log("6. Restart your application");
+      console.log(`${"=".repeat(80)}\n`);
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error during agent history schema migration:", error);
+      return { success: false, error: error as Error };
+    }
   }
 }
