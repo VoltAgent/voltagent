@@ -99,9 +99,6 @@ importers:
       '@voltagent/vercel-ai':
         specifier: ^0.1.11
         version: link:../../packages/vercel-ai
-      '@voltagent/xsai':
-        specifier: ^0.2.3
-        version: link:../../packages/xsai
       zod:
         specifier: 3.24.2
         version: 3.24.2
