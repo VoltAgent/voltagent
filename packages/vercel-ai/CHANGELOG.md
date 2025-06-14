@@ -1,5 +1,16 @@
 # @voltagent/vercel-ai
 
+## 0.1.12
+
+### Patch Changes
+
+- [#251](https://github.com/VoltAgent/voltagent/pull/251) [`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support for generative UIs
+
+  Added `fullStream` support to the Vercel AI provider for better streaming in generative UI applications.
+
+- Updated dependencies [[`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d), [`a3b4e60`](https://github.com/VoltAgent/voltagent/commit/a3b4e604e6f79281903ff0c28422e6ee2863b340), [`20119ad`](https://github.com/VoltAgent/voltagent/commit/20119ada182ec5f313a7f46956218d593180e096)]:
+  - @voltagent/core@0.1.36
+
 ## 0.1.11
 
 ### Patch Changes

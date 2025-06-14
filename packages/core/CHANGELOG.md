@@ -1,5 +1,135 @@
 # @voltagent/core
 
+## 0.1.36
+
+### Patch Changes
+
+- [#251](https://github.com/VoltAgent/voltagent/pull/251) [`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support and subagent event forwarding
+
+  Added `fullStream` support to the core agent system for enhanced streaming with detailed chunk types (text-delta, tool-call, tool-result, reasoning, finish, error). Also improved event forwarding between subagents for better multi-agent workflows. SubAgent events are now fully forwarded to parent agents, with filtering moved to the client side for better flexibility.
+
+  Real-world example:
+
+  ```typescript
+  const response = await agent.streamText("What's the weather in Istanbul?");
+
+  if (response.fullStream) {
+    for await (const chunk of response.fullStream) {
+      // Filter out SubAgent text, reasoning, and source events for cleaner UI
+      if (chunk.subAgentId && chunk.subAgentName) {
+        if (chunk.type === "text" || chunk.type === "reasoning" || chunk.type === "source") {
+          continue; // Skip these events from sub-agents
+        }
+      }
+
+      switch (chunk.type) {
+        case "text-delta":
+          process.stdout.write(chunk.textDelta); // Stream text in real-time
+          break;
+        case "tool-call":
+          console.log(`🔧 Using tool: ${chunk.toolName}`);
+          break;
+        case "tool-result":
+          console.log(`✅ Tool completed: ${chunk.toolName}`);
+          break;
+        case "reasoning":
+          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
+          break;
+        case "finish":
+          console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
+          break;
+      }
+    }
+  }
+  ```
+
+- [#248](https://github.com/VoltAgent/voltagent/pull/248) [`a3b4e60`](https://github.com/VoltAgent/voltagent/commit/a3b4e604e6f79281903ff0c28422e6ee2863b340) Thanks [@alasano](https://github.com/alasano)! - feat(core): add streamable HTTP transport support for MCP
+
+  - Upgrade @modelcontextprotocol/sdk from 1.10.1 to 1.12.1
+  - Add support for streamable HTTP transport (the newer MCP protocol)
+  - Modified existing `type: "http"` to use automatic selection with streamable HTTP → SSE fallback
+  - Added two new transport types:
+    - `type: "sse"` - Force SSE transport only (legacy)
+    - `type: "streamable-http"` - Force streamable HTTP only (no fallback)
+  - Maintain full backward compatibility - existing `type: "http"` configurations continue to work via automatic fallback
+
+  Fixes #246
+
+- [#247](https://github.com/VoltAgent/voltagent/pull/247) [`20119ad`](https://github.com/VoltAgent/voltagent/commit/20119ada182ec5f313a7f46956218d593180e096) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - feat(core): Enhanced server configuration with unified `server` object and Swagger UI control
+
+  Server configuration options have been enhanced with a new unified `server` object for better organization and flexibility while maintaining full backward compatibility.
+
+  **What's New:**
+
+  - **Unified Server Configuration:** All server-related options (`autoStart`, `port`, `enableSwaggerUI`, `customEndpoints`) are now grouped under a single `server` object.
+  - **Swagger UI Control:** Fine-grained control over Swagger UI availability with environment-specific defaults.
+  - **Backward Compatibility:** Legacy individual options are still supported but deprecated.
+  - **Override Logic:** New `server` object takes precedence over deprecated individual options.
+
+  **Migration Guide:**
+
+  **New Recommended Usage:**
+
+  ```typescript
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "My Assistant",
+    instructions: "A helpful assistant",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  new VoltAgent({
+    agents: { agent },
+    server: {
+      autoStart: true,
+      port: 3000,
+      enableSwaggerUI: true,
+      customEndpoints: [
+        {
+          path: "/health",
+          method: "get",
+          handler: async (c) => c.json({ status: "ok" }),
+        },
+      ],
+    },
+  });
+  ```
+
+  **Legacy Usage (Deprecated but Still Works):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { agent },
+    autoStart: true, // @deprecated - use server.autoStart
+    port: 3000, // @deprecated - use server.port
+    customEndpoints: [], // @deprecated - use server.customEndpoints
+  });
+  ```
+
+  **Mixed Usage (Server Object Overrides):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { agent },
+    autoStart: false, // This will be overridden
+    server: {
+      autoStart: true, // This takes precedence
+    },
+  });
+  ```
+
+  **Swagger UI Defaults:**
+
+  - Development (`NODE_ENV !== 'production'`): Swagger UI enabled
+  - Production (`NODE_ENV === 'production'`): Swagger UI disabled
+  - Override with `server.enableSwaggerUI: true/false`
+
+  Resolves [#241](https://github.com/VoltAgent/voltagent/issues/241)
+
 ## 0.1.35
 
 ### Patch Changes
