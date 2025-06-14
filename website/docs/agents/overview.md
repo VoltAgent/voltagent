@@ -132,6 +132,32 @@ We're actively looking for community contributions to add `fullStream` support t
 
 :::
 
+:::tip SubAgent Event Filtering
+
+When using `fullStream` with sub-agents, all sub-agent events are forwarded to the parent stream. You can filter these events on the client side for a cleaner UI experience:
+
+```ts
+const response = await mainAgent.streamText("Complex task for sub-agents");
+
+if (response.fullStream) {
+  for await (const chunk of response.fullStream) {
+    // Filter out SubAgent text, reasoning, and source events
+    if (chunk.subAgentId && chunk.subAgentName) {
+      if (chunk.type === "text" || chunk.type === "reasoning" || chunk.type === "source") {
+        continue; // Skip these events in your UI
+      }
+    }
+
+    // Process remaining events (tool-call, tool-result, subagent-finish, etc.)
+    handleStreamChunk(chunk);
+  }
+}
+```
+
+This allows you to show only the most relevant sub-agent activities while preserving all events for debugging.
+
+:::
+
 #### Markdown Formatting
 
 **Why?** To have the agent automatically format its text responses using Markdown for better readability and presentation.

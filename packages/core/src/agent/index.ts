@@ -509,14 +509,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // If we have a stream event forwarder, use it for real-time forwarding
         if (streamEventForwarder) {
           try {
-            // Filter out text, reasoning, and source events from SubAgents
-            if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
-              devLogger.info(
-                `[Agent ${this.id}] Skipping SubAgent ${event.type} event from ${event.subAgentName} (not forwarded to UI)`,
-              );
-              return;
-            }
-
             devLogger.info(
               `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
             );
