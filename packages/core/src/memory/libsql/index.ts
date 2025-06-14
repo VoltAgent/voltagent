@@ -342,6 +342,19 @@ export class LibSQLStorage implements Memory {
       this.debug("Error migrating conversation schema:", error);
     }
 
+    // Run agent history schema migration
+    try {
+      const migrationResult = await this.migrateAgentHistorySchema();
+
+      if (migrationResult.success) {
+        devLogger.info("Agent history schema migration completed successfully");
+      } else {
+        devLogger.error("Agent history schema migration error:", migrationResult.error);
+      }
+    } catch (error) {
+      this.debug("Error migrating agent history schema:", error);
+    }
+
     try {
       const result = await this.migrateAgentHistoryData({
         restoreFromBackup: false,
@@ -615,11 +628,11 @@ export class LibSQLStorage implements Memory {
       const usageJSON = value.usage ? JSON.stringify(value.usage) : null;
       const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
 
-      // Insert or replace with the structured format
+      // Insert or replace with the structured format including userId and conversationId
       await this.client.execute({
         sql: `INSERT OR REPLACE INTO ${tableName} 
-					(id, agent_id, timestamp, status, input, output, usage, metadata) 
-					VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+					(id, agent_id, timestamp, status, input, output, usage, metadata, userId, conversationId) 
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           key, // id
           agentId, // agent_id
@@ -629,6 +642,8 @@ export class LibSQLStorage implements Memory {
           outputJSON, // output
           usageJSON, // usage
           metadataJSON, // metadata
+          value.userId || null, // userId
+          value.conversationId || null, // conversationId
         ],
       });
 
@@ -768,9 +783,9 @@ export class LibSQLStorage implements Memory {
     try {
       const tableName = `${this.options.tablePrefix}_agent_history`;
 
-      // Get the entry from the database
+      // Get the entry from the database including userId and conversationId
       const result = await this.client.execute({
-        sql: `SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
+        sql: `SELECT id, agent_id, timestamp, status, input, output, usage, metadata, userId, conversationId 
 				FROM ${tableName} WHERE id = ?`,
         args: [key],
       });
@@ -792,6 +807,8 @@ export class LibSQLStorage implements Memory {
         output: row.output ? safeJsonParse(row.output as string) : null,
         usage: row.usage ? safeJsonParse(row.usage as string) : null,
         metadata: row.metadata ? safeJsonParse(row.metadata as string) : null,
+        userId: row.userId as string | null,
+        conversationId: row.conversationId as string | null,
       };
 
       this.debug(`Got history entry with ID ${key}`);
@@ -1274,7 +1291,7 @@ export class LibSQLStorage implements Memory {
 
       // Get all entries for the specified agent ID using the new schema
       const result = await this.client.execute({
-        sql: `SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
+        sql: `SELECT id, agent_id, timestamp, status, input, output, usage, metadata, userId, conversationId 
 					FROM ${tableName} WHERE agent_id = ?`,
         args: [agentId],
       });
@@ -1289,6 +1306,8 @@ export class LibSQLStorage implements Memory {
         output: row.output ? safeJsonParse(row.output as string) : null,
         usage: row.usage ? safeJsonParse(row.usage as string) : null,
         metadata: row.metadata ? safeJsonParse(row.metadata as string) : null,
+        userId: row.userId as string | null,
+        conversationId: row.conversationId as string | null,
       }));
 
       this.debug(`Got all history entries for agent ${agentId} (${entries.length} items)`);
@@ -2594,6 +2613,79 @@ export class LibSQLStorage implements Memory {
       this.debug("Migration flag set successfully");
     } catch (flagSetError) {
       this.debug("Could not set migration flag (non-critical):", flagSetError);
+    }
+  }
+
+  /**
+   * Migrate agent history schema to add userId and conversationId columns
+   */
+  private async migrateAgentHistorySchema(): Promise<{
+    success: boolean;
+    error?: Error;
+  }> {
+    const historyTableName = `${this.options.tablePrefix}_agent_history`;
+
+    try {
+      this.debug("Starting agent history schema migration...");
+
+      // Check if migration has already been completed
+      const flagCheck = await this.checkMigrationFlag("agent_history_schema_migration");
+      if (flagCheck.alreadyCompleted) {
+        return { success: true };
+      }
+
+      // Check current table structure
+      const tableInfo = await this.client.execute(`PRAGMA table_info(${historyTableName})`);
+
+      // If table doesn't exist, no migration needed
+      if (tableInfo.rows.length === 0) {
+        this.debug("Agent history table doesn't exist, migration not needed");
+        return { success: true };
+      }
+
+      // Check if columns already exist
+      const hasUserIdColumn = tableInfo.rows.some((row) => row.name === "userId");
+      const hasConversationIdColumn = tableInfo.rows.some((row) => row.name === "conversationId");
+
+      // Add userId column if it doesn't exist
+      if (!hasUserIdColumn) {
+        await this.client.execute(`ALTER TABLE ${historyTableName} ADD COLUMN userId TEXT`);
+        this.debug("Added userId column to agent history table");
+      }
+
+      // Add conversationId column if it doesn't exist
+      if (!hasConversationIdColumn) {
+        await this.client.execute(`ALTER TABLE ${historyTableName} ADD COLUMN conversationId TEXT`);
+        this.debug("Added conversationId column to agent history table");
+      }
+
+      // Create indexes for new columns
+      if (!hasUserIdColumn) {
+        await this.client.execute(`
+          CREATE INDEX IF NOT EXISTS idx_${historyTableName}_userId 
+          ON ${historyTableName}(userId)
+        `);
+      }
+
+      if (!hasConversationIdColumn) {
+        await this.client.execute(`
+          CREATE INDEX IF NOT EXISTS idx_${historyTableName}_conversationId 
+          ON ${historyTableName}(conversationId)
+        `);
+      }
+
+      // Set migration flag
+      await this.setMigrationFlag("agent_history_schema_migration", 0);
+
+      this.debug("Agent history schema migration completed successfully");
+
+      return { success: true };
+    } catch (error) {
+      this.debug("Error during agent history schema migration:", error);
+      return {
+        success: false,
+        error: error as Error,
+      };
     }
   }
 }

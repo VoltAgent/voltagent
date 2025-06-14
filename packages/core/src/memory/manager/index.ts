@@ -425,6 +425,8 @@ export class MemoryManager {
         output: entry.output,
         usage: entry.usage,
         metadata: entry.metadata,
+        userId: entry.userId,
+        conversationId: entry.conversationId,
       };
 
       // Save the main record (using addHistoryEntry and passing agentId)

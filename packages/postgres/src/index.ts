@@ -241,7 +241,9 @@ export class PostgresStorage implements Memory {
           input JSONB,
           output JSONB,
           usage JSONB,
-          metadata JSONB
+          metadata JSONB,
+          userid TEXT,
+          conversationid TEXT
         )
       `);
 
@@ -358,6 +360,42 @@ export class PostgresStorage implements Memory {
         ON ${this.options.tablePrefix}_agent_history_timeline_events(status)
       `);
 
+      // Create indexes for userid and conversationid (only if columns exist)
+      try {
+        const columnCheck = await client.query(
+          `
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = $1 AND column_name IN ('userid', 'conversationid')
+          `,
+          [`${this.options.tablePrefix}_agent_history`],
+        );
+
+        const hasUserIdColumn = columnCheck.rows.some((row) => row.column_name === "userid");
+        const hasConversationIdColumn = columnCheck.rows.some(
+          (row) => row.column_name === "conversationid",
+        );
+
+        if (hasUserIdColumn) {
+          await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_userid
+            ON ${this.options.tablePrefix}_agent_history(userid)
+          `);
+          this.debug("Created index for userid column");
+        }
+
+        if (hasConversationIdColumn) {
+          await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_conversationid
+            ON ${this.options.tablePrefix}_agent_history(conversationid)
+          `);
+          this.debug("Created index for conversationid column");
+        }
+      } catch (indexError) {
+        this.debug("Error creating indexes for userid/conversationid columns:", indexError);
+        // Continue without failing - indexes are not critical for basic functionality
+      }
+
       await client.query("COMMIT");
       this.debug("Database initialized successfully");
 
@@ -378,6 +416,17 @@ export class PostgresStorage implements Memory {
         }
       } catch (error) {
         this.debug("Error migrating conversation schema:", error);
+      }
+
+      // Run agent history schema migration
+      try {
+        const migrationResult = await this.migrateAgentHistorySchema();
+
+        if (!migrationResult.success) {
+          console.error("Agent history schema migration error:", migrationResult.error);
+        }
+      } catch (error) {
+        this.debug("Error migrating agent history schema:", error);
       }
     } catch (error) {
       await client.query("ROLLBACK");
@@ -483,44 +532,10 @@ export class PostgresStorage implements Memory {
     try {
       this.debug("Starting conversation schema migration...");
 
-      // Check if migration has already been completed by looking for a migration flag
-      try {
-        const migrationFlagTable = `${conversationsTableName}_migration_flags`;
-
-        const result = await client.query(
-          `SELECT * FROM ${migrationFlagTable} WHERE migration_type = $1`,
-          ["conversation_schema_migration"],
-        );
-
-        if (result.rows.length > 0) {
-          const migrationFlag = result.rows[0];
-          this.debug("Conversation schema migration already completed");
-          this.debug(`Migration completed on: ${migrationFlag.completed_at}`);
-          this.debug(`Migrated ${migrationFlag.migrated_count || 0} records previously`);
-          return { success: true, migratedCount: 0 };
-        }
-
-        this.debug("Migration flags table found, but no migration flag exists yet");
-      } catch (flagError) {
-        // Migration flag table doesn't exist, create it
-        this.debug("Migration flag table not found, creating it...");
-        this.debug("Original error:", flagError);
-
-        try {
-          await client.query(`
-            CREATE TABLE IF NOT EXISTS ${conversationsTableName}_migration_flags (
-              id SERIAL PRIMARY KEY,
-              migration_type TEXT NOT NULL UNIQUE,
-              completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-              migrated_count INTEGER DEFAULT 0,
-              metadata JSONB DEFAULT '{}'::jsonb
-            )
-          `);
-          this.debug("Migration flags table created successfully");
-        } catch (createError) {
-          this.debug("Failed to create migration flags table:", createError);
-          // Continue with migration even if flag table creation fails
-        }
+      // Check if migration has already been completed
+      const flagCheck = await this.checkMigrationFlag("conversation_schema_migration");
+      if (flagCheck.alreadyCompleted) {
+        return { success: true, migratedCount: 0 };
       }
 
       // If restoreFromBackup option is active, restore from backup
@@ -819,22 +834,7 @@ export class PostgresStorage implements Memory {
       }
 
       // Set migration flag to prevent future runs
-      try {
-        const migrationFlagTable = `${conversationsTableName}_migration_flags`;
-
-        await client.query(
-          `INSERT INTO ${migrationFlagTable} 
-           (migration_type, migrated_count) 
-           VALUES ($1, $2)
-           ON CONFLICT (migration_type) DO UPDATE 
-           SET migrated_count = $2, completed_at = timezone('utc'::text, now())`,
-          ["conversation_schema_migration", migratedCount],
-        );
-
-        this.debug("Migration flag set successfully");
-      } catch (flagSetError) {
-        this.debug("Could not set migration flag (non-critical):", flagSetError);
-      }
+      await this.setMigrationFlag("conversation_schema_migration", migratedCount);
 
       this.debug(
         `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
@@ -1487,12 +1487,12 @@ export class PostgresStorage implements Memory {
       const usageJSON = value.usage ? JSON.stringify(value.usage) : null;
       const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
 
-      // Insert or replace with the structured format
+      // Insert or replace with the structured format including userid and conversationid
       await client.query(
         `
         INSERT INTO ${this.options.tablePrefix}_agent_history 
-        (id, agent_id, timestamp, status, input, output, usage, metadata) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (id, agent_id, timestamp, status, input, output, usage, metadata, userid, conversationid) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (id) DO UPDATE SET
           agent_id = $2,
           timestamp = $3,
@@ -1500,7 +1500,9 @@ export class PostgresStorage implements Memory {
           input = $5,
           output = $6,
           usage = $7,
-          metadata = $8
+          metadata = $8,
+          userid = $9,
+          conversationid = $10
         `,
         [
           key, // id
@@ -1511,6 +1513,8 @@ export class PostgresStorage implements Memory {
           outputJSON, // output
           usageJSON, // usage
           metadataJSON, // metadata
+          value.userId || null, // userId
+          value.conversationId || null, // conversationId
         ],
       );
 
@@ -1585,7 +1589,7 @@ export class PostgresStorage implements Memory {
       this.debug("Getting history entry for key:", key);
       const result = await client.query(
         `
-        SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
+        SELECT id, agent_id, timestamp, status, input, output, usage, metadata, userid, conversationid 
         FROM ${this.options.tablePrefix}_agent_history
         WHERE id = $1
         `,
@@ -1612,6 +1616,8 @@ export class PostgresStorage implements Memory {
         output: row.output ? row.output : null,
         usage: row.usage ? row.usage : null,
         metadata: row.metadata ? row.metadata : null,
+        userId: row.userid as string | null,
+        conversationId: row.conversationid as string | null,
       };
 
       this.debug(`Got history entry with ID ${key}`);
@@ -1729,7 +1735,7 @@ export class PostgresStorage implements Memory {
     try {
       const result = await client.query(
         `
-        SELECT id, agent_id, timestamp, status, input, output, usage, metadata 
+        SELECT id, agent_id, timestamp, status, input, output, usage, metadata, userid, conversationid 
         FROM ${this.options.tablePrefix}_agent_history
         WHERE agent_id = $1
         ORDER BY timestamp DESC
@@ -1747,6 +1753,8 @@ export class PostgresStorage implements Memory {
         output: row.output ? row.output : null,
         usage: row.usage ? row.usage : null,
         metadata: row.metadata ? row.metadata : null,
+        userId: row.userid as string | null,
+        conversationId: row.conversationid as string | null,
       }));
 
       this.debug(`Got all history entries for agent ${agentId} (${entries.length} items)`);
@@ -1983,5 +1991,242 @@ export class PostgresStorage implements Memory {
       pageSize,
       hasMore,
     };
+  }
+
+  /**
+   * Check and create migration flag table, return if migration already completed
+   * @param migrationType Type of migration to check
+   * @returns Object with completion status and details
+   */
+  private async checkMigrationFlag(migrationType: string): Promise<{
+    alreadyCompleted: boolean;
+    migrationCount?: number;
+    completedAt?: string;
+  }> {
+    const migrationFlagTable = `${this.options.tablePrefix}_conversations_migration_flags`;
+
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM ${migrationFlagTable} WHERE migration_type = $1`,
+        [migrationType],
+      );
+
+      if (result.rows.length > 0) {
+        const migrationFlag = result.rows[0];
+        this.debug(`${migrationType} migration already completed`);
+        this.debug(`Migration completed on: ${migrationFlag.completed_at}`);
+        this.debug(`Migrated ${migrationFlag.migrated_count || 0} records previously`);
+        return {
+          alreadyCompleted: true,
+          migrationCount: migrationFlag.migrated_count as number,
+          completedAt: migrationFlag.completed_at as string,
+        };
+      }
+
+      this.debug("Migration flags table found, but no migration flag exists yet");
+      return { alreadyCompleted: false };
+    } catch (flagError) {
+      // Migration flag table doesn't exist, create it
+      this.debug("Migration flag table not found, creating it...");
+      this.debug("Original error:", flagError);
+
+      try {
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS ${migrationFlagTable} (
+            id SERIAL PRIMARY KEY,
+            migration_type TEXT NOT NULL UNIQUE,
+            completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+            migrated_count INTEGER DEFAULT 0,
+            metadata JSONB DEFAULT '{}'::jsonb
+          )
+        `);
+        this.debug("Migration flags table created successfully");
+      } catch (createError) {
+        this.debug("Failed to create migration flags table:", createError);
+        // Continue with migration even if flag table creation fails
+      }
+
+      return { alreadyCompleted: false };
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Set migration flag after successful completion
+   * @param migrationType Type of migration completed
+   * @param migratedCount Number of records migrated
+   */
+  private async setMigrationFlag(migrationType: string, migratedCount: number): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      const migrationFlagTable = `${this.options.tablePrefix}_conversations_migration_flags`;
+
+      await client.query(
+        `INSERT INTO ${migrationFlagTable} 
+         (migration_type, migrated_count) 
+         VALUES ($1, $2)
+         ON CONFLICT (migration_type) DO UPDATE 
+         SET migrated_count = $2, completed_at = timezone('utc'::text, now())`,
+        [migrationType, migratedCount],
+      );
+
+      this.debug("Migration flag set successfully");
+    } catch (flagSetError) {
+      this.debug("Could not set migration flag (non-critical):", flagSetError);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Migrate agent history schema to add userid and conversationid columns
+   */
+  private async migrateAgentHistorySchema(): Promise<{
+    success: boolean;
+    error?: Error;
+  }> {
+    const client = await this.pool.connect();
+    try {
+      this.debug("Starting agent history schema migration...");
+
+      // Check if migration has already been completed
+      const flagCheck = await this.checkMigrationFlag("agent_history_schema_migration");
+      if (flagCheck.alreadyCompleted) {
+        return { success: true };
+      }
+
+      // Check if the table exists first
+      const tableCheck = await client.query(
+        `
+        SELECT tablename 
+        FROM pg_tables 
+        WHERE tablename = $1
+        `,
+        [`${this.options.tablePrefix}_agent_history`],
+      );
+
+      if (tableCheck.rows.length === 0) {
+        this.debug("Agent history table doesn't exist, migration not needed");
+        return { success: true };
+      }
+
+      // Check current table structure (PostgreSQL stores column names in lowercase)
+      const columnCheck = await client.query(
+        `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1 AND column_name IN ('userid', 'conversationid')
+        `,
+        [`${this.options.tablePrefix}_agent_history`],
+      );
+
+      const hasUserIdColumn = columnCheck.rows.some((row) => row.column_name === "userid");
+      const hasConversationIdColumn = columnCheck.rows.some(
+        (row) => row.column_name === "conversationid",
+      );
+
+      // If both columns already exist, migration not needed
+      if (hasUserIdColumn && hasConversationIdColumn) {
+        this.debug(
+          "Agent history table already has userId and conversationId columns, migration not needed",
+        );
+        return { success: true };
+      }
+
+      await client.query("BEGIN");
+
+      // Add userId column if it doesn't exist
+      if (!hasUserIdColumn) {
+        try {
+          await client.query(`
+            ALTER TABLE ${this.options.tablePrefix}_agent_history
+            ADD COLUMN userid TEXT
+          `);
+          this.debug("Added userid column to agent history table");
+        } catch (error) {
+          // Column might already exist, check error message
+          if (error instanceof Error && error.message.includes("already exists")) {
+            this.debug("userid column already exists, skipping");
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      // Add conversationId column if it doesn't exist
+      if (!hasConversationIdColumn) {
+        try {
+          await client.query(`
+            ALTER TABLE ${this.options.tablePrefix}_agent_history
+            ADD COLUMN conversationid TEXT
+          `);
+          this.debug("Added conversationid column to agent history table");
+        } catch (error) {
+          // Column might already exist, check error message
+          if (error instanceof Error && error.message.includes("already exists")) {
+            this.debug("conversationid column already exists, skipping");
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      // Create indexes for new columns (verify columns exist after adding them)
+      try {
+        // Re-check column existence after adding them
+        const finalColumnCheck = await client.query(
+          `
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = $1 AND column_name IN ('userid', 'conversationid')
+          `,
+          [`${this.options.tablePrefix}_agent_history`],
+        );
+
+        const finalHasUserIdColumn = finalColumnCheck.rows.some(
+          (row) => row.column_name === "userid",
+        );
+        const finalHasConversationIdColumn = finalColumnCheck.rows.some(
+          (row) => row.column_name === "conversationid",
+        );
+
+        if (finalHasUserIdColumn) {
+          await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_userid
+            ON ${this.options.tablePrefix}_agent_history(userid)
+          `);
+          this.debug("Created index for userid column during migration");
+        }
+
+        if (finalHasConversationIdColumn) {
+          await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_agent_history_conversationid
+            ON ${this.options.tablePrefix}_agent_history(conversationid)
+          `);
+          this.debug("Created index for conversationid column during migration");
+        }
+      } catch (indexError) {
+        this.debug("Error creating indexes during migration:", indexError);
+        // Continue without failing - indexes are not critical for basic functionality
+      }
+
+      // Commit transaction
+      await client.query("COMMIT");
+
+      // Set migration flag
+      await this.setMigrationFlag("agent_history_schema_migration", 0);
+
+      this.debug("Agent history schema migration completed successfully");
+
+      return { success: true };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      this.debug("Error during agent history schema migration:", error);
+      return { success: false, error: error as Error };
+    } finally {
+      client.release();
+    }
   }
 }
