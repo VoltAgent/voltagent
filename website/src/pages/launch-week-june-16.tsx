@@ -47,6 +47,7 @@ const DayComponent: React.FC<DayProps> = ({
           <div className="pt-2 sm:pt-4 text-left">
             <a
               href={detailsLink}
+              target="_blank norefeeer"
               className="bg-emerald-400/10 text-emerald-400 no-underline border border-emerald-400/50 hover:bg-emerald-400/20 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-lg font-medium transition-colors text-xs sm:text-sm lg:text-base cursor-pointer inline-flex items-center"
             >
               Details
@@ -110,8 +111,8 @@ const Day2 = () => (
   <DayComponent
     enabled={false}
     date="DAY 2 | TUESDAY, JUNE 17, 2025"
-    title="No More Hallucination in Subagents"
-    description="Advanced context management ensures your AI agents stay on track and provide accurate responses."
+    title="Enhanced Streaming with fullStream"
+    description="For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the fullStream property available in the response."
     detailsLink="#"
   >
     <div className="w-full">
@@ -122,7 +123,7 @@ const Day2 = () => (
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full" />
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full" />
             <span className="ml-2 sm:ml-3 text-gray-400 text-xs sm:text-sm font-mono">
-              validation.ts
+              streaming.ts
             </span>
           </div>
         </div>
@@ -132,16 +133,22 @@ const Day2 = () => (
             showLineNumbers={false}
             className="!m-0 !p-0 h-full [&>pre]:!m-0 [&>pre]:!p-4 [&>pre]:h-full"
           >
-            {`// Enhanced agent validation
-const agent = await trace.addAgent({
-  name: "Support Agent",
-  instructions: "You are a customer support agent...",
-  validation: {
-    requireSources: true,
-    factCheck: true,
-    confidenceThreshold: 0.8
-  },
-`}
+            {`// Enhanced streaming with fullStream
+const response = await agent.chat({
+  messages: [{ role: "user", content: "Analyze this data" }],
+  stream: true,
+  fullStream: true, // Enable detailed streaming
+});
+
+for await (const chunk of response) {
+  if (chunk.type === 'tool_call') {
+    console.log('Tool being called:', chunk.tool);
+  } else if (chunk.type === 'reasoning') {
+    console.log('Agent reasoning:', chunk.thought);
+  } else if (chunk.type === 'completion') {
+    console.log('Progress:', chunk.progress);
+  }
+}`}
           </CodeBlock>
         </div>
       </div>
@@ -327,12 +334,14 @@ const LaunchWeek = () => {
               Join developers building the future of AI agents
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-5 justify-center items-center w-full">
-              <button
-                type="button"
-                className="w-full sm:w-auto bg-emerald-400/10 text-emerald-400 border border-emerald-400/50 hover:bg-emerald-400/20 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 text-sm"
+              <a
+                href="https://voltagent.dev/docs/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto bg-emerald-400/10 text-emerald-400 no-underline border border-emerald-400/50 hover:bg-emerald-400/20 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 text-sm cursor-pointer"
               >
                 View Documentation
-              </button>
+              </a>
             </div>
           </div>
         </div>
