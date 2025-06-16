@@ -292,25 +292,7 @@ Context: ${JSON.stringify(context)}`,
             }
             break;
           }
-          case "finish": {
-            const eventData = {
-              type: "subagent-finish", // Use different type to avoid stopping parent stream
-              data: {
-                finishReason: part.finishReason,
-                usage: part.usage,
-                response: finalText, // Include the final response text
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            };
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
-            }
-            break;
-          }
           case "error": {
             const eventData = {
               type: "error",

@@ -482,19 +482,6 @@ app.openapi(streamRoute, async (c) => {
                     safeEnqueue(sseMessage);
                     break;
                   }
-                  case "subagent-finish": {
-                    const data = {
-                      finishReason: part.finishReason,
-                      usage: part.usage,
-                      timestamp: new Date().toISOString(),
-                      type: "subagent-finish",
-                      subAgentId: part.subAgentId,
-                      subAgentName: part.subAgentName,
-                    };
-                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                    safeEnqueue(sseMessage);
-                    break;
-                  }
                   case "error": {
                     // Check if this is a tool error
                     const error = part.error as any;

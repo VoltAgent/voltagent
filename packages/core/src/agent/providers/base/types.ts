@@ -118,14 +118,6 @@ export type FinishStreamPart = {
   subAgentName?: string;
 };
 
-export type SubAgentFinishStreamPart = {
-  type: "subagent-finish";
-  finishReason?: string;
-  usage?: UsageInfo;
-  subAgentId: string;
-  subAgentName: string;
-};
-
 export type ErrorStreamPart = {
   type: "error";
   error: Error;
@@ -142,7 +134,6 @@ export type StreamPart =
   | ToolCallStreamPart
   | ToolResultStreamPart
   | FinishStreamPart
-  | SubAgentFinishStreamPart
   | ErrorStreamPart;
 
 /**

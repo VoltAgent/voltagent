@@ -496,19 +496,6 @@ describe("SubAgentManager", () => {
         subAgentId: "test-agent",
         subAgentName: "Test Agent",
       });
-
-      // Verify subagent-finish event
-      expect(forwardEventSpy).toHaveBeenCalledWith({
-        type: "subagent-finish",
-        data: {
-          finishReason: "stop",
-          usage: { totalTokens: 10 },
-          response: "Hello from Test Agent",
-        },
-        timestamp: expect.any(String),
-        subAgentId: "test-agent",
-        subAgentName: "Test Agent",
-      });
     });
 
     it("should forward error events when stream fails", async () => {
