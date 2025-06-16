@@ -464,8 +464,8 @@ describe("SubAgentManager", () => {
       await subAgentManager.handoffTask(options);
 
       // Verify that events were forwarded
-      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result + 1x finish = 6 events
-      expect(forwardEventSpy).toHaveBeenCalledTimes(6);
+      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
+      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
 
       // Verify tool-call event
       expect(forwardEventSpy).toHaveBeenCalledWith({
@@ -572,18 +572,20 @@ describe("SubAgentManager", () => {
       });
 
       // Verify that events were forwarded through the delegate tool
-      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result + 1x finish = 6 events
-      expect(forwardEventSpy).toHaveBeenCalledTimes(6);
+      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
+      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
 
       // Check that events have the correct structure
       const toolCallEvent = forwardEventSpy.mock.calls.find((call) => call[0].type === "tool-call");
       expect(toolCallEvent).toBeDefined();
-      expect(toolCallEvent![0]).toMatchObject({
-        type: "tool-call",
-        subAgentId: "delegate-agent",
-        subAgentName: "Delegate Agent",
-        timestamp: expect.any(String),
-      });
+      if (toolCallEvent) {
+        expect(toolCallEvent[0]).toMatchObject({
+          type: "tool-call",
+          subAgentId: "delegate-agent",
+          subAgentName: "Delegate Agent",
+          timestamp: expect.any(String),
+        });
+      }
     });
 
     it("should handle multiple agents with event forwarding", async () => {
@@ -608,8 +610,8 @@ describe("SubAgentManager", () => {
       });
 
       // Verify that events from both agents were forwarded
-      // Each agent generates 6 events (3x text-delta + tool-call + tool-result + finish)
-      expect(forwardEventSpy).toHaveBeenCalledTimes(12);
+      // Each agent generates 5 events (3x text-delta + tool-call + tool-result, finish events no longer forwarded)
+      expect(forwardEventSpy).toHaveBeenCalledTimes(10);
 
       // Check that events from both agents are present
       const agent1Events = forwardEventSpy.mock.calls.filter(
@@ -619,8 +621,8 @@ describe("SubAgentManager", () => {
         (call) => call[0].subAgentId === "multi-agent-2",
       );
 
-      expect(agent1Events).toHaveLength(6);
-      expect(agent2Events).toHaveLength(6);
+      expect(agent1Events).toHaveLength(5);
+      expect(agent2Events).toHaveLength(5);
     });
 
     it("should include correct timestamp format in forwarded events", async () => {
