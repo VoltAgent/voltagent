@@ -268,6 +268,14 @@ export type ModelToolCall = {
 };
 
 /**
+ * Model tool result format
+ */
+export type ModelToolResult = Omit<ModelToolCall, "type"> & {
+  type: "tool-result";
+  result: unknown;
+};
+
+/**
  * Agent response format
  */
 export type AgentResponse = {
@@ -390,6 +398,11 @@ export interface AgentHandoffResult {
    * Error information if the handoff failed
    */
   error?: Error | string;
+
+  /**
+   * Tool calls made by the sub-agent
+   */
+  toolCalls?: Array<ModelToolCall | ModelToolResult>;
 
   /**
    * Stream events captured from sub-agent for forwarding to parent

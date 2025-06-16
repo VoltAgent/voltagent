@@ -5,7 +5,12 @@ import devLogger from "../../utils/internal/dev-logger";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
-import type { AgentHandoffOptions, AgentHandoffResult } from "../types";
+import type {
+  AgentHandoffOptions,
+  AgentHandoffResult,
+  ModelToolCall,
+  ModelToolResult,
+} from "../types";
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -168,6 +173,7 @@ ${agentsMemory || "No previous agent interactions available."}
 
       // Get relevant context from memory (to be passed from Agent class)
       const sharedContext: BaseMessage[] = options.sharedContext || [];
+      const toolCalls: Array<ModelToolCall | ModelToolResult> = [];
 
       // Prepare the handoff message with task context
       const handoffMessage: BaseMessage = {
@@ -208,6 +214,13 @@ Context: ${JSON.stringify(context)}`,
             break;
           }
           case "tool-call": {
+            toolCalls.push({
+              type: "tool-call",
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              args: part.args,
+            });
+
             const eventData = {
               type: "tool-call",
               data: {
@@ -229,6 +242,28 @@ Context: ${JSON.stringify(context)}`,
             break;
           }
           case "tool-result": {
+            const existingToolCallIdx = toolCalls.findIndex(
+              (toolCall) => toolCall.toolCallId === part.toolCallId,
+            );
+
+            if (existingToolCallIdx === -1) {
+              toolCalls.push({
+                type: "tool-result",
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                args: {},
+                result: part.result,
+              });
+            } else {
+              toolCalls[existingToolCallIdx] = {
+                type: "tool-result",
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                args: toolCalls[existingToolCallIdx].args,
+                result: part.result,
+              };
+            }
+
             const eventData = {
               type: "tool-result",
               data: {
@@ -293,6 +328,7 @@ Context: ${JSON.stringify(context)}`,
         result: finalText,
         conversationId: handoffConversationId,
         messages: [handoffMessage, { role: "assistant", content: finalText }],
+        toolCalls,
         status: "success",
       };
     } catch (error) {
@@ -311,6 +347,7 @@ Context: ${JSON.stringify(context)}`,
             content: `Error occurred during task handoff: ${errorMessage}`,
           },
         ],
+        toolCalls: [],
         status: "error",
         error: error instanceof Error ? error : String(error),
       };
