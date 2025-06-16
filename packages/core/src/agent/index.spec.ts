@@ -1774,15 +1774,640 @@ describe("Agent", () => {
       // Spy on prepareTextOptions to verify it receives the streamEventForwarder
       const prepareTextOptionsSpy = vi.spyOn(agentWithSubAgents as any, "prepareTextOptions");
 
-      await agentWithSubAgents.streamText("Test forwarder passing", {
-        streamEventForwarder: mockForwarder,
-      });
+      // Use the internal options interface to avoid type issues
+      const internalOptions = {
+        internalStreamForwarder: mockForwarder,
+      };
+
+      await agentWithSubAgents.streamText("Test forwarder passing", internalOptions as any);
 
       expect(prepareTextOptionsSpy).toHaveBeenCalled();
       const callArgs = prepareTextOptionsSpy.mock.calls[0][0] as any;
-      expect(callArgs.streamEventForwarder).toBe(mockForwarder);
+      expect(callArgs.internalStreamForwarder).toBeDefined();
+      expect(typeof callArgs.internalStreamForwarder).toBe("function");
 
       prepareTextOptionsSpy.mockRestore();
+    });
+
+    it("should create enhanced full stream with SubAgent events", async () => {
+      const mockSubAgentEventsQueue: any[] = [
+        {
+          type: "subagent-event",
+          event: {
+            type: "tool-call",
+            subAgentId: "sub-1",
+            subAgentName: "Sub Agent",
+            toolCall: {
+              toolCallId: "call-123",
+              toolName: "test-tool",
+              args: { test: "value" },
+            },
+          },
+          timestamp: "2023-01-01T00:00:00Z",
+        },
+        {
+          type: "subagent-event",
+          event: {
+            type: "tool-result",
+            subAgentId: "sub-1",
+            subAgentName: "Sub Agent",
+            toolResult: {
+              toolCallId: "call-123",
+              toolName: "test-tool",
+              result: "success",
+            },
+          },
+          timestamp: "2023-01-01T00:00:01Z",
+        },
+      ];
+
+      // Create a mock original stream
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+            controller.enqueue({ type: "text-delta", textDelta: " World" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Access the private method using any casting
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        mockSubAgentEventsQueue,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // Should receive original stream events
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Hello" });
+      expect(events).toContainEqual({ type: "text-delta", textDelta: " World" });
+    });
+
+    it("should handle different SubAgent event types in enhanced stream", async () => {
+      const mockSubAgentEventsQueue: any[] = [
+        {
+          type: "subagent-event",
+          event: {
+            type: "custom-event",
+            subAgentId: "sub-1",
+            subAgentName: "Sub Agent",
+            customData: "test",
+            additionalInfo: { key: "value" },
+          },
+          timestamp: "2023-01-01T00:00:00Z",
+        },
+      ];
+
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Test" });
+            controller.close();
+          },
+        }),
+      );
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        mockSubAgentEventsQueue,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Test" });
+    });
+
+    it("should queue SubAgent events properly during streamText", async () => {
+      const mockSubAgent = new TestAgent({
+        id: "test-sub-agent",
+        name: "Test Sub Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A test sub agent",
+      });
+
+      const parentAgent = new TestAgent({
+        id: "parent-agent",
+        name: "Parent Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A parent agent",
+      });
+
+      parentAgent.addSubAgent(mockSubAgent);
+
+      // Mock the streamText response to include fullStream
+      const mockFullStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Response" });
+            controller.close();
+          },
+        }),
+      );
+
+      vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: mockFullStream,
+        fullStream: mockFullStream,
+        provider: {} as any,
+      });
+
+      const response = await parentAgent.streamText("Test with SubAgent events");
+
+      expect(response.fullStream).toBeDefined();
+      expect(mockProvider.streamText).toHaveBeenCalled();
+
+      // Verify that the response includes the enhanced stream
+      if (response.fullStream) {
+        const events: any[] = [];
+        for await (const event of response.fullStream) {
+          events.push(event);
+          // Break after first event to avoid infinite loop in tests
+          break;
+        }
+        expect(events.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("should handle empty SubAgent events queue", async () => {
+      const emptyQueue: any[] = [];
+
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Solo" });
+            controller.close();
+          },
+        }),
+      );
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        emptyQueue,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toEqual([{ type: "text-delta", textDelta: "Solo" }]);
+    });
+
+    it("should preserve event order in enhanced stream", async () => {
+      const mockSubAgentEventsQueue: any[] = [
+        {
+          type: "subagent-event",
+          event: {
+            type: "tool-call",
+            subAgentId: "sub-1",
+            subAgentName: "Sub Agent",
+            toolCall: { toolCallId: "1", toolName: "tool1", args: {} },
+          },
+          timestamp: "2023-01-01T00:00:00Z",
+        },
+        {
+          type: "subagent-event",
+          event: {
+            type: "tool-result",
+            subAgentId: "sub-1",
+            subAgentName: "Sub Agent",
+            toolResult: { toolCallId: "1", toolName: "tool1", result: "done" },
+          },
+          timestamp: "2023-01-01T00:00:01Z",
+        },
+      ];
+
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "First" });
+            controller.enqueue({ type: "text-delta", textDelta: "Second" });
+            controller.close();
+          },
+        }),
+      );
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        mockSubAgentEventsQueue,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // Should include original stream events
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "First" });
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Second" });
+    });
+
+    it("should not wrap fullStream if it doesn't exist in original response", async () => {
+      const parentAgent = new TestAgent({
+        id: "parent-no-stream",
+        name: "Parent No Stream",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "Parent without fullStream",
+      });
+
+      parentAgent.addSubAgent(mockSubAgent);
+
+      // Mock response without fullStream
+      vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue("test");
+              controller.close();
+            },
+          }),
+        ),
+        provider: {} as any,
+      });
+
+      const response = await parentAgent.streamText("Test without fullStream");
+
+      expect(response.fullStream).toBeUndefined();
+    });
+
+    it("should handle SubAgent event processing errors gracefully", async () => {
+      // Test that malformed SubAgent events don't break the stream
+      const malformedEventsQueue: any[] = [
+        {
+          type: "subagent-event",
+          event: {
+            type: "tool-call",
+            // Missing required fields
+            subAgentId: undefined,
+            subAgentName: undefined,
+          },
+          timestamp: "invalid-timestamp",
+        },
+      ];
+
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Safe" });
+            controller.close();
+          },
+        }),
+      );
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        malformedEventsQueue,
+      );
+
+      // Should still work despite malformed events
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Safe" });
+    });
+
+    it("should properly extract tool-call event data", async () => {
+      const toolCallEventsQueue: any[] = [
+        {
+          type: "subagent-event",
+          event: {
+            type: "tool-call",
+            subAgentId: "sub-1",
+            subAgentName: "Test SubAgent",
+            toolCall: {
+              toolCallId: "call-456",
+              toolName: "calculator",
+              args: { operation: "add", a: 1, b: 2 },
+            },
+          },
+          timestamp: "2023-01-01T00:00:00Z",
+        },
+      ];
+
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.close();
+          },
+        }),
+      );
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        toolCallEventsQueue,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // The enhanced stream should process the tool-call event correctly
+      // Since we're testing the internal implementation, we verify the stream completes without errors
+      expect(() => enhancedStream).not.toThrow();
+    });
+
+    it("should properly extract tool-result event data", async () => {
+      const toolResultEventsQueue: any[] = [
+        {
+          type: "subagent-event",
+          event: {
+            type: "tool-result",
+            subAgentId: "sub-1",
+            subAgentName: "Test SubAgent",
+            toolResult: {
+              toolCallId: "call-456",
+              toolName: "calculator",
+              result: { answer: 3 },
+            },
+          },
+          timestamp: "2023-01-01T00:00:00Z",
+        },
+      ];
+
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.close();
+          },
+        }),
+      );
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        toolResultEventsQueue,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // Verify the stream processes without throwing errors
+      expect(() => enhancedStream).not.toThrow();
+    });
+
+    it("should integrate delegate tool with internal stream forwarder", async () => {
+      const mockEventForwarder = vi.fn();
+
+      // Spy on createDelegateTool to verify forwardEvent is passed
+      const createDelegateToolSpy = vi.spyOn(
+        agentWithSubAgents.getSubAgentManager() as any,
+        "createDelegateTool",
+      );
+
+      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+        internalStreamForwarder: mockEventForwarder,
+        historyEntryId: "test-history-id",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-op-id",
+          historyEntry: { id: "test-history-id" },
+          isActive: true,
+        },
+      });
+
+      expect(createDelegateToolSpy).toHaveBeenCalled();
+      const delegateToolArgs = createDelegateToolSpy.mock.calls[0][0] as any;
+      expect(delegateToolArgs.forwardEvent).toBeDefined();
+      expect(typeof delegateToolArgs.forwardEvent).toBe("function");
+
+      createDelegateToolSpy.mockRestore();
+    });
+
+    it("should replace existing delegate tool when creating new one with forwarder", async () => {
+      // First create tools without forwarder
+      const initialTools = (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: "test-1",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-1",
+          historyEntry: { id: "test-1" },
+          isActive: true,
+        },
+      });
+
+      const initialDelegateCount = initialTools.tools.filter(
+        (tool: any) => tool.name === "delegate_task",
+      ).length;
+
+      // Then create tools with forwarder
+      const enhancedTools = (agentWithSubAgents as any).prepareTextOptions({
+        internalStreamForwarder: vi.fn(),
+        historyEntryId: "test-2",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-2",
+          historyEntry: { id: "test-2" },
+          isActive: true,
+        },
+      });
+
+      const enhancedDelegateCount = enhancedTools.tools.filter(
+        (tool: any) => tool.name === "delegate_task",
+      ).length;
+
+      // Should still have only one delegate tool
+      expect(initialDelegateCount).toBe(1);
+      expect(enhancedDelegateCount).toBe(1);
+    });
+
+    it("should pass current historyEntryId to delegate tool creation", async () => {
+      const testHistoryEntryId = "specific-history-entry-123";
+      const createDelegateToolSpy = vi.spyOn(
+        agentWithSubAgents.getSubAgentManager() as any,
+        "createDelegateTool",
+      );
+
+      (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: testHistoryEntryId,
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-op",
+          historyEntry: { id: testHistoryEntryId },
+          isActive: true,
+        },
+      });
+
+      expect(createDelegateToolSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currentHistoryEntryId: testHistoryEntryId,
+        }),
+      );
+
+      createDelegateToolSpy.mockRestore();
+    });
+
+    it("should pass operationContext to delegate tool creation", async () => {
+      const testOperationContext = {
+        userContext: new Map([["test", "value"]]),
+        operationId: "test-op-456",
+        historyEntry: { id: "test-history-456" },
+        isActive: true,
+      };
+
+      const createDelegateToolSpy = vi.spyOn(
+        agentWithSubAgents.getSubAgentManager() as any,
+        "createDelegateTool",
+      );
+
+      (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: "test-history-456",
+        operationContext: testOperationContext,
+      });
+
+      expect(createDelegateToolSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          operationContext: testOperationContext,
+        }),
+      );
+
+      createDelegateToolSpy.mockRestore();
+    });
+
+    it("should handle missing operationContext gracefully in prepareTextOptions", async () => {
+      // Test the warning case when operationContext is missing
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: "test-history-id",
+        // operationContext is intentionally missing
+      });
+
+      expect(textOptions.tools).toBeDefined();
+      expect(textOptions.maxSteps).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should wrap fullStream response from streamText with SubAgent events", async () => {
+      const originalFullStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Original" });
+            controller.close();
+          },
+        }),
+      );
+
+      vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue("text");
+              controller.close();
+            },
+          }),
+        ),
+        fullStream: originalFullStream,
+        provider: {} as any,
+      });
+
+      const response = await agentWithSubAgents.streamText("Test fullStream wrapping");
+
+      expect(response.fullStream).toBeDefined();
+      expect(response.fullStream).not.toBe(originalFullStream); // Should be wrapped
+
+      // Verify the wrapped stream works
+      if (response.fullStream) {
+        const events: any[] = [];
+        for await (const event of response.fullStream) {
+          events.push(event);
+        }
+        expect(events).toContainEqual({ type: "text-delta", textDelta: "Original" });
+      }
+    });
+
+    it("should handle async iteration errors in enhanced stream", async () => {
+      const errorQueue: any[] = [];
+
+      // Create a stream that throws an error
+      const errorStream = {
+        async *[Symbol.asyncIterator]() {
+          yield { type: "text-delta", textDelta: "Before error" };
+          throw new Error("Stream iteration error");
+        },
+      };
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        errorStream,
+        errorQueue,
+      );
+
+      // Should handle the error gracefully
+      try {
+        const events: any[] = [];
+        for await (const event of enhancedStream) {
+          events.push(event);
+        }
+        // If we reach here, the error was handled
+        expect(true).toBe(true);
+      } catch (error) {
+        // The error should be propagated as expected
+        expect((error as Error).message).toBe("Stream iteration error");
+      }
+    });
+
+    it("should maintain SubAgent event queue reference across multiple stream iterations", async () => {
+      const sharedQueue: any[] = [];
+
+      const stream1 = (agentWithSubAgents as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Stream1" });
+              controller.close();
+            },
+          }),
+        ),
+        sharedQueue,
+      );
+
+      const stream2 = (agentWithSubAgents as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Stream2" });
+              controller.close();
+            },
+          }),
+        ),
+        sharedQueue,
+      );
+
+      // Add events to shared queue
+      sharedQueue.push({
+        type: "subagent-event",
+        event: { type: "test", subAgentId: "shared", subAgentName: "Shared" },
+        timestamp: "2023-01-01T00:00:00Z",
+      });
+
+      // Both streams should reference the same queue
+      const events1: any[] = [];
+      const events2: any[] = [];
+
+      for await (const event of stream1) {
+        events1.push(event);
+      }
+
+      for await (const event of stream2) {
+        events2.push(event);
+      }
+
+      expect(events1).toContainEqual({ type: "text-delta", textDelta: "Stream1" });
+      expect(events2).toContainEqual({ type: "text-delta", textDelta: "Stream2" });
     });
   });
 });

@@ -22,6 +22,7 @@ import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import devLogger from "../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../utils/node-utils";
+import { createMergedStream } from "../utils/stream-merger";
 import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
@@ -787,107 +788,70 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     originalStream: AsyncIterable<any>,
     subAgentEventsQueue: any[],
   ): AsyncIterable<any> {
+    // Transform SubAgent events to the expected format
+    const processedEvents: any[] = [];
+
     return {
       async *[Symbol.asyncIterator]() {
-        let queueIndex = 0;
-        let streamFinished = false;
+        let lastProcessedCount = 0;
 
-        // Create an async iterator for the original stream
-        const originalIterator = originalStream[Symbol.asyncIterator]();
+        const enhancedStream = createMergedStream(originalStream, processedEvents, {
+          pollingInterval: 16, // ~60fps
+          postStreamInterval: 10,
+        });
 
-        try {
-          // Process original stream and SubAgent events concurrently
-          let originalStreamPromise = originalIterator.next();
+        for await (const event of enhancedStream) {
+          // Process new SubAgent events and add them to processedEvents
+          while (lastProcessedCount < subAgentEventsQueue.length) {
+            const subAgentEvent = subAgentEventsQueue[lastProcessedCount];
+            lastProcessedCount++;
 
-          while (true) {
-            // Check for new SubAgent events first
-            while (queueIndex < subAgentEventsQueue.length) {
-              const subAgentEvent = subAgentEventsQueue[queueIndex];
-              queueIndex++;
+            // Extract and flatten the event data properly based on event type
+            let enhancedEvent: any = {
+              type: subAgentEvent.event.type,
+              subAgentId: subAgentEvent.event.subAgentId,
+              subAgentName: subAgentEvent.event.subAgentName,
+              timestamp: subAgentEvent.timestamp,
+            };
 
-              // Extract and flatten the event data properly based on event type
-              let enhancedEvent: any = {
-                type: subAgentEvent.event.type,
-                subAgentId: subAgentEvent.event.subAgentId,
-                subAgentName: subAgentEvent.event.subAgentName,
-                timestamp: subAgentEvent.timestamp,
-              };
-
-              // Handle different event types and their data structures
-              switch (subAgentEvent.event.type) {
-                case "tool-call":
-                  if (subAgentEvent.event.toolCall) {
-                    enhancedEvent = {
-                      ...enhancedEvent,
-                      toolCallId: subAgentEvent.event.toolCall.toolCallId,
-                      toolName: subAgentEvent.event.toolCall.toolName,
-                      args: subAgentEvent.event.toolCall.args,
-                    };
-                  }
-                  break;
-                case "tool-result":
-                  if (subAgentEvent.event.toolResult) {
-                    enhancedEvent = {
-                      ...enhancedEvent,
-                      toolCallId: subAgentEvent.event.toolResult.toolCallId,
-                      toolName: subAgentEvent.event.toolResult.toolName,
-                      result: subAgentEvent.event.toolResult.result,
-                    };
-                  }
-                  break;
-                default: {
-                  // For other event types, spread the event data directly (excluding the metadata)
-                  const { subAgentId, subAgentName, type, timestamp, ...eventData } =
-                    subAgentEvent.event;
+            // Handle different event types and their data structures
+            switch (subAgentEvent.event.type) {
+              case "tool-call":
+                if (subAgentEvent.event.toolCall) {
                   enhancedEvent = {
                     ...enhancedEvent,
-                    ...eventData,
+                    toolCallId: subAgentEvent.event.toolCall.toolCallId,
+                    toolName: subAgentEvent.event.toolCall.toolName,
+                    args: subAgentEvent.event.toolCall.args,
                   };
-                  break;
                 }
+                break;
+              case "tool-result":
+                if (subAgentEvent.event.toolResult) {
+                  enhancedEvent = {
+                    ...enhancedEvent,
+                    toolCallId: subAgentEvent.event.toolResult.toolCallId,
+                    toolName: subAgentEvent.event.toolResult.toolName,
+                    result: subAgentEvent.event.toolResult.result,
+                  };
+                }
+                break;
+              default: {
+                // For other event types, spread the event data directly (excluding the metadata)
+                const { subAgentId, subAgentName, type, timestamp, ...eventData } =
+                  subAgentEvent.event;
+                enhancedEvent = {
+                  ...enhancedEvent,
+                  ...eventData,
+                };
+                break;
               }
-
-              yield enhancedEvent;
             }
 
-            // If stream is finished and no more events, break
-            if (streamFinished && queueIndex >= subAgentEventsQueue.length) {
-              break;
-            }
-
-            // Handle original stream
-            if (!streamFinished) {
-              // Check if original stream promise is ready with a short timeout
-              const timeoutPromise = new Promise<"timeout">(
-                (resolve) => setTimeout(() => resolve("timeout"), 16), // ~60fps
-              );
-
-              const result = await Promise.race([originalStreamPromise, timeoutPromise]);
-
-              if (result === "timeout") {
-                // Continue to next iteration to check SubAgent events
-                continue;
-              }
-
-              // Original stream has data
-              if (result.done) {
-                streamFinished = true;
-                continue;
-              }
-
-              // Yield the original stream value and prepare next promise
-              yield result.value;
-              originalStreamPromise = originalIterator.next();
-            } else {
-              // Stream finished but we might get more SubAgent events
-              await new Promise((resolve) => setTimeout(resolve, 10));
-            }
+            processedEvents.push(enhancedEvent);
           }
-        } finally {
-          // Clean up the original iterator if it has a return method
-          if (originalIterator.return) {
-            await originalIterator.return();
-          }
+
+          yield event;
         }
       },
     };
