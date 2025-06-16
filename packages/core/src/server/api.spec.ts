@@ -12,10 +12,13 @@ const mockApp = {
 };
 
 // Mock only the default export (the app), not the functions
-vi.mock("./api", () => ({
+vi.mock("./api", async () => ({
   __esModule: true,
-  default: mockApp,
-  ...vi.requireActual("./api"),
+  ...((await vi.importActual("./api")) as {
+    default: typeof mockApp;
+    registerCustomEndpoint: typeof registerCustomEndpoint;
+    registerCustomEndpoints: typeof registerCustomEndpoints;
+  }),
 }));
 
 // Import the actual functions after mocking

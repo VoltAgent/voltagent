@@ -672,7 +672,7 @@ describe("VoltAgentExporter", () => {
         }),
         attributes: {
           "ai.toolCall.name": "technicalAnalysis",
-          "ai.toolCall.args": JSON.stringify({ requirement: "test", compleit.todoy: "high" }),
+          "ai.toolCall.args": JSON.stringify({ requirement: "test", complexity: "high" }),
           "ai.toolCall.result": JSON.stringify({ analysis: "complete", hours: 40 }),
         },
       });

@@ -154,6 +154,14 @@ export default function Navbar() {
             >
               BLOG
             </Link>
+            <Link
+              to="/launch-week-june-25/"
+              className={`${styles.navLink}  !text-emerald-400 ${
+                isActive("(launch-week-june-25/") ? styles.active : ""
+              }`}
+            >
+              LAUNCH WEEK #1
+            </Link>
           </div>
         </div>
         <div className={styles.navbarRight}>

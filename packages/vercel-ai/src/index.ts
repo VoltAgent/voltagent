@@ -15,6 +15,7 @@ import type {
   ToolErrorInfo,
   UsageInfo,
   VoltAgentError,
+  StreamPart,
 } from "@voltagent/core";
 // Import directly from the types file path within the dist folder
 import type {
@@ -31,6 +32,7 @@ import type {
   StepResult,
   StreamObjectResult,
   StreamTextResult,
+  TextStreamPart,
 } from "ai";
 import { generateObject, generateText, streamObject, streamText } from "ai";
 import type { z } from "zod";
@@ -246,102 +248,180 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     }
   };
 
+  // Map Vercel AI TextStreamPart to our standard StreamPart
+  private mapToStreamPart(part: TextStreamPart<Record<string, any>>): StreamPart | null {
+    switch (part.type) {
+      case "text-delta":
+        return {
+          type: "text-delta",
+          textDelta: part.textDelta,
+        };
+      case "reasoning":
+        return {
+          type: "reasoning",
+          reasoning: part.textDelta, // Vercel AI uses textDelta for reasoning content
+        };
+      case "source":
+        return {
+          type: "source",
+          source: part.source.url || "", // Extract source URL
+        };
+      case "tool-call":
+        return {
+          type: "tool-call",
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          args: part.args,
+        };
+      case "tool-result":
+        return {
+          type: "tool-result",
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          result: part.result,
+        };
+      case "finish":
+        return {
+          type: "finish",
+          finishReason: part.finishReason,
+          usage: part.usage
+            ? {
+                promptTokens: part.usage.promptTokens,
+                completionTokens: part.usage.completionTokens,
+                totalTokens: part.usage.totalTokens,
+              }
+            : undefined,
+        };
+      case "error":
+        return {
+          type: "error",
+          error: part.error as Error,
+        };
+      default:
+        // Skip unsupported part types
+
+        return null;
+    }
+  }
+
+  // Create mapped fullStream that converts Vercel AI parts to our standard parts
+  private createMappedFullStream(
+    originalStream: AsyncIterable<TextStreamPart<Record<string, any>>>,
+  ): AsyncIterable<StreamPart> {
+    const self = this;
+    return {
+      async *[Symbol.asyncIterator]() {
+        for await (const part of originalStream) {
+          const mappedPart = self.mapToStreamPart(part);
+          if (mappedPart !== null) {
+            yield mappedPart;
+          }
+        }
+      },
+    };
+  }
+
   async streamText(
     options: StreamTextOptions<LanguageModelV1>,
   ): Promise<ProviderTextStreamResponse<StreamTextResult<Record<string, any>, never>>> {
-    const vercelMessages = options.messages.map(this.toMessage);
-    const vercelTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
+    try {
+      const vercelMessages = options.messages.map(this.toMessage);
+      const vercelTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
 
-    // Process onStepFinish if provided
-    const onStepFinish = options.onStepFinish
-      ? async (result: StepResult<Record<string, any>>) => {
-          if (options.onStepFinish) {
-            // Handle text response
-            if (result.text) {
-              const step = this.createStepFromChunk({
-                type: "text",
+      // Process onStepFinish if provided
+      const onStepFinish = options.onStepFinish
+        ? async (result: StepResult<Record<string, any>>) => {
+            if (options.onStepFinish) {
+              // Handle text response
+              if (result.text) {
+                const step = this.createStepFromChunk({
+                  type: "text",
+                  text: result.text,
+                  usage: result.usage,
+                });
+                if (step) await options.onStepFinish(step);
+              }
+
+              // Handle all tool calls - each as a separate step
+              if (result.toolCalls && result.toolCalls.length > 0) {
+                for (const toolCall of result.toolCalls) {
+                  const step = this.createStepFromChunk({
+                    type: "tool-call",
+                    toolCallId: toolCall.toolCallId,
+                    toolName: toolCall.toolName,
+                    args: toolCall.args,
+                    usage: result.usage,
+                  });
+                  if (step) await options.onStepFinish(step);
+                }
+              }
+
+              // Handle all tool results - each as a separate step
+              if (result.toolResults && result.toolResults.length > 0) {
+                for (const toolResult of result.toolResults) {
+                  const step = this.createStepFromChunk({
+                    type: "tool-result",
+                    toolCallId: toolResult.toolCallId,
+                    toolName: toolResult.toolName,
+                    result: toolResult.result,
+                    usage: result.usage,
+                  });
+                  if (step) await options.onStepFinish(step);
+                }
+              }
+            }
+          }
+        : undefined;
+
+      const result = streamText({
+        ...options.provider,
+        messages: vercelMessages,
+        model: options.model,
+        tools: vercelTools,
+        maxSteps: options.maxSteps,
+        abortSignal: options.signal,
+        onStepFinish,
+        onChunk: async ({ chunk }) => {
+          if (options?.onChunk) {
+            // Handle the chunk directly without usage tracking
+            const step = this.createStepFromChunk(chunk);
+            if (step) await options.onChunk(step);
+          }
+        },
+        onFinish: options.onFinish
+          ? async (
+              result: Omit<StepResult<Record<string, any>>, "stepType" | "isContinued"> & {
+                readonly steps: StepResult<Record<string, any>>[];
+              },
+            ) => {
+              options.onFinish?.({
                 text: result.text,
                 usage: result.usage,
+                finishReason: result.finishReason,
+                warnings: result.warnings,
+                providerResponse: result,
               });
-              if (step) await options.onStepFinish(step);
             }
-
-            // Handle all tool calls - each as a separate step
-            if (result.toolCalls && result.toolCalls.length > 0) {
-              for (const toolCall of result.toolCalls) {
-                const step = this.createStepFromChunk({
-                  type: "tool-call",
-                  toolCallId: toolCall.toolCallId,
-                  toolName: toolCall.toolName,
-                  args: toolCall.args,
-                  usage: result.usage,
-                });
-                if (step) await options.onStepFinish(step);
-              }
-            }
-
-            // Handle all tool results - each as a separate step
-            if (result.toolResults && result.toolResults.length > 0) {
-              for (const toolResult of result.toolResults) {
-                const step = this.createStepFromChunk({
-                  type: "tool-result",
-                  toolCallId: toolResult.toolCallId,
-                  toolName: toolResult.toolName,
-                  result: toolResult.result,
-                  usage: result.usage,
-                });
-                if (step) await options.onStepFinish(step);
-              }
-            }
+          : undefined,
+        onError: (sdkError) => {
+          // Create the error using the helper
+          const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_stream");
+          // Call the agent's onError callback if it exists
+          if (options.onError) {
+            options.onError(voltagentErr);
           }
-        }
-      : undefined;
+        },
+      });
 
-    const result = streamText({
-      ...options.provider,
-      messages: vercelMessages,
-      model: options.model,
-      tools: vercelTools,
-      maxSteps: options.maxSteps,
-      abortSignal: options.signal,
-      onStepFinish,
-      onChunk: async ({ chunk }) => {
-        if (options?.onChunk) {
-          // Handle the chunk directly without usage tracking
-          const step = this.createStepFromChunk(chunk);
-          if (step) await options.onChunk(step);
-        }
-      },
-      onFinish: options.onFinish
-        ? async (
-            result: Omit<StepResult<Record<string, any>>, "stepType" | "isContinued"> & {
-              readonly steps: StepResult<Record<string, any>>[];
-            },
-          ) => {
-            options.onFinish?.({
-              text: result.text,
-              usage: result.usage,
-              finishReason: result.finishReason,
-              warnings: result.warnings,
-              providerResponse: result,
-            });
-          }
-        : undefined,
-      onError: (sdkError) => {
-        // Create the error using the helper
-        const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_stream");
-        // Call the agent's onError callback if it exists
-        if (options.onError) {
-          options.onError(voltagentErr);
-        }
-      },
-    });
-
-    // Return only provider and textStream
-    return {
-      provider: result,
-      textStream: result.textStream as any,
-    };
+      // Return provider, textStream, and mapped fullStream
+      return {
+        provider: result,
+        textStream: result.textStream as any,
+        fullStream: this.createMappedFullStream(result.fullStream),
+      };
+    } catch (error) {
+      throw this._createVoltagentErrorFromSdkError(error, "llm_stream");
+    }
   }
 
   generateObject = async <TSchema extends z.ZodType>(

@@ -51,16 +51,17 @@ describe("AgentEventEmitter", () => {
   });
 
   describe("agentUnregistered events", () => {
-    it("should emit and receive agent unregistered events", (done) => {
-      const agentId = "test-agent";
+    it("should emit and receive agent unregistered events", () =>
+      new Promise<void>((done) => {
+        const agentId = "test-agent";
 
-      eventEmitter.onAgentUnregistered((receivedAgentId) => {
-        expect(receivedAgentId).toBe(agentId);
-        done();
-      });
+        eventEmitter.onAgentUnregistered((receivedAgentId) => {
+          expect(receivedAgentId).toBe(agentId);
+          done();
+        });
 
-      eventEmitter.emitAgentUnregistered(agentId);
-    });
+        eventEmitter.emitAgentUnregistered(agentId);
+      }));
 
     it("should allow unsubscribing from agent unregistered events", () => {
       const callback = vi.fn();
