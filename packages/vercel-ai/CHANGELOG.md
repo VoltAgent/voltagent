@@ -1,5 +1,13 @@
 # @voltagent/vercel-ai
 
+## 0.1.13
+
+### Patch Changes
+
+- [`8eced6d`](https://github.com/VoltAgent/voltagent/commit/8eced6dad9c688a33b4700a6fc4be34bfc3ba88b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve onStepFinishHandler issue preventing tool_calls and hooks from functioning properly
+
+  Fixed a critical bug in the Vercel AI provider where the `onStepFinishHandler` was blocking tool calls and agent hooks from executing correctly. This issue was preventing agents from properly utilizing tools and executing lifecycle hooks during operations.
+
 ## 0.1.12
 
 ### Patch Changes

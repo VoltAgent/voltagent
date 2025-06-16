@@ -24,7 +24,7 @@
     "@voltagent/cli": "^0.1.7",
     "@voltagent/core": "^0.1.36",
     "@voltagent/postgres": "^0.1.4",
-    "@voltagent/vercel-ai": "^0.1.12",
+    "@voltagent/vercel-ai": "^0.1.13",
     "zod": "^3.24.2"
   },
   "devDependencies": {
