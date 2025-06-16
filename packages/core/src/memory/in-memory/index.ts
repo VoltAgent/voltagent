@@ -122,8 +122,6 @@ export class InMemoryStorage implements Memory {
     this.historyEntries.set(key, {
       ...value,
       _agentId: agentId,
-      userId: value.userId || null,
-      conversationId: value.conversationId || null,
       updatedAt: new Date().toISOString(),
     });
 
