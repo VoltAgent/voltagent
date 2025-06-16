@@ -174,7 +174,7 @@ if (response.fullStream) {
 - `source`: SubAgent context retrieval results
 - `tool-call`: SubAgent tool execution starts
 - `tool-result`: SubAgent tool execution completes
-- `finish`: SubAgent task completion
+- `subagent-finish`: SubAgent task completion
 
 This filtering approach allows you to create different UI experiences while preserving all events for debugging and monitoring.
 
