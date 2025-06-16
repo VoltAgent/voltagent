@@ -68,16 +68,25 @@ export type ProviderTextResponse<TOriginalResponse> = {
 export type TextDeltaStreamPart = {
   type: "text-delta";
   textDelta: string;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
 };
 
 export type ReasoningStreamPart = {
   type: "reasoning";
   reasoning: string;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
 };
 
 export type SourceStreamPart = {
   type: "source";
   source: string;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
 };
 
 export type ToolCallStreamPart = {
@@ -85,6 +94,9 @@ export type ToolCallStreamPart = {
   toolCallId: string;
   toolName: string;
   args: Record<string, any>;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
 };
 
 export type ToolResultStreamPart = {
@@ -92,17 +104,34 @@ export type ToolResultStreamPart = {
   toolCallId: string;
   toolName: string;
   result: any;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
 };
 
 export type FinishStreamPart = {
   type: "finish";
   finishReason?: string;
   usage?: UsageInfo;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+export type SubAgentFinishStreamPart = {
+  type: "subagent-finish";
+  finishReason?: string;
+  usage?: UsageInfo;
+  subAgentId: string;
+  subAgentName: string;
 };
 
 export type ErrorStreamPart = {
   type: "error";
   error: Error;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
 };
 
 // Union type for all stream parts
@@ -113,6 +142,7 @@ export type StreamPart =
   | ToolCallStreamPart
   | ToolResultStreamPart
   | FinishStreamPart
+  | SubAgentFinishStreamPart
   | ErrorStreamPart;
 
 /**

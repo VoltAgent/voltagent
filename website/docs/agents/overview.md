@@ -84,7 +84,7 @@ console.log("Complete Response:", completeResponse.text);
 
 #### Enhanced Streaming with `fullStream`
 
-For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the `fullStream` property available in the response:
+For more detailed streaming information including tool calls, reasoning steps, SubAgent events, and completion status, you can use the `fullStream` property available in the response:
 
 ```ts
 // Example using fullStream for detailed streaming events
@@ -92,21 +92,48 @@ async function enhancedChat(input: string) {
   console.log(`User: ${input}`);
   const response = await agent.streamText(input);
 
+  // Track which SubAgents have started outputting text
+  const subAgentTextStarted = new Set<string>();
+
   // Check if fullStream is available (provider-dependent)
   if (response.fullStream) {
     for await (const chunk of response.fullStream) {
+      // Check if this event is from a SubAgent using optional fields
+      const isFromSubAgent = chunk.subAgentId && chunk.subAgentName;
+      const agentLabel = isFromSubAgent ? `[${chunk.subAgentName}]` : "[Supervisor]";
+
       switch (chunk.type) {
         case "text-delta":
-          process.stdout.write(chunk.textDelta); // Stream text in real-time
+          if (isFromSubAgent) {
+            // SubAgent text - label with agent name
+            const agentKey = `${chunk.subAgentId}-${chunk.subAgentName}`;
+            if (!subAgentTextStarted.has(agentKey)) {
+              process.stdout.write(`\n\n${agentLabel}: `);
+              subAgentTextStarted.add(agentKey);
+            }
+            process.stdout.write(chunk.textDelta);
+          } else {
+            // Supervisor text - output directly
+            process.stdout.write(chunk.textDelta);
+          }
           break;
         case "tool-call":
-          console.log(`\n🔧 Using tool: ${chunk.toolName}`);
+          console.log(`\n🔧 ${agentLabel} Using tool: ${chunk.toolName}`);
+          if (isFromSubAgent) {
+            console.log(`   └─ SubAgent: ${chunk.subAgentName}`);
+          }
           break;
         case "tool-result":
-          console.log(`✅ Tool completed: ${chunk.toolName}`);
+          console.log(`✅ ${agentLabel} Tool completed: ${chunk.toolName}`);
+          if (isFromSubAgent) {
+            console.log(`   └─ SubAgent: ${chunk.subAgentName}`);
+          }
           break;
         case "reasoning":
-          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
+          console.log(`🤔 ${agentLabel} AI thinking: ${chunk.reasoning}`);
+          break;
+        case "source":
+          console.log(`📚 ${agentLabel} Retrieved context: ${chunk.source}`);
           break;
         case "finish":
           console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
@@ -121,7 +148,7 @@ async function enhancedChat(input: string) {
   }
 }
 
-await enhancedChat("What's the weather like in Istanbul? Explain your process.");
+await enhancedChat("Write a short story about a cat and format it nicely");
 ```
 
 :::note fullStream Support
@@ -134,27 +161,45 @@ We're actively looking for community contributions to add `fullStream` support t
 
 :::tip SubAgent Event Filtering
 
-When using `fullStream` with sub-agents, all sub-agent events are forwarded to the parent stream. You can filter these events on the client side for a cleaner UI experience:
+When using `fullStream` with sub-agents, all sub-agent events are automatically forwarded to the parent stream with `subAgentId` and `subAgentName` metadata. You can filter these events on the client side for different UI experiences:
 
 ```ts
-const response = await mainAgent.streamText("Complex task for sub-agents");
+const response = await supervisorAgent.streamText("Write a story and format it");
 
 if (response.fullStream) {
   for await (const chunk of response.fullStream) {
-    // Filter out SubAgent text, reasoning, and source events
-    if (chunk.subAgentId && chunk.subAgentName) {
-      if (chunk.type === "text" || chunk.type === "reasoning" || chunk.type === "source") {
-        continue; // Skip these events in your UI
-      }
-    }
+    const isSubAgentEvent = chunk.subAgentId && chunk.subAgentName;
 
-    // Process remaining events (tool-call, tool-result, subagent-finish, etc.)
-    handleStreamChunk(chunk);
+    if (isSubAgentEvent) {
+      // Option 1: Skip all SubAgent events for a clean UI
+      continue;
+
+      // Option 2: Show only SubAgent tool activities
+      if (chunk.type === "tool-call" || chunk.type === "tool-result") {
+        console.log(`[${chunk.subAgentName}] Tool: ${chunk.toolName}`);
+      }
+      continue;
+
+      // Option 3: Show all SubAgent events with labels
+      console.log(`[${chunk.subAgentName}] ${chunk.type}:`, chunk);
+    } else {
+      // Process main supervisor events
+      handleMainAgentEvent(chunk);
+    }
   }
 }
 ```
 
-This allows you to show only the most relevant sub-agent activities while preserving all events for debugging.
+**Available SubAgent Event Types:**
+
+- `text-delta`: SubAgent text output (character by character)
+- `reasoning`: SubAgent internal reasoning steps
+- `source`: SubAgent context retrieval results
+- `tool-call`: SubAgent tool execution starts
+- `tool-result`: SubAgent tool execution completes
+- `finish`: SubAgent task completion
+
+This filtering approach allows you to create different UI experiences while preserving all events for debugging and monitoring.
 
 :::
 

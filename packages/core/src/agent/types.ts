@@ -214,9 +214,6 @@ export interface CommonGenerateOptions {
 
   // Optional user-defined context to be passed from a parent operation
   userContext?: Map<string | symbol, unknown>;
-
-  // Optional stream event forwarder for real-time SubAgent event forwarding
-  streamEventForwarder?: (event: any) => Promise<void>;
 }
 
 /**

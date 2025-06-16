@@ -438,11 +438,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Prepare common options for text generation
    */
-  private prepareTextOptions(options: CommonGenerateOptions = {}): {
+  private prepareTextOptions(
+    options: CommonGenerateOptions & {
+      internalStreamForwarder?: (event: any) => Promise<void>;
+    } = {},
+  ): {
     tools: BaseTool[];
     maxSteps: number;
   } {
-    const { tools: dynamicTools, historyEntryId, operationContext, streamEventForwarder } = options;
+    const {
+      tools: dynamicTools,
+      historyEntryId,
+      operationContext,
+      internalStreamForwarder,
+    } = options;
     const baseTools = this.toolManager.prepareToolsForGeneration(dynamicTools);
 
     // Ensure operationContext exists before proceeding
@@ -506,8 +515,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         subAgentId: string;
         subAgentName: string;
       }) => {
-        // If we have a stream event forwarder, use it for real-time forwarding
-        if (streamEventForwarder) {
+        // Always forward events to internal stream forwarder
+        if (internalStreamForwarder) {
           try {
             devLogger.info(
               `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
@@ -522,29 +531,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               subAgentName: event.subAgentName,
             };
 
-            // For tool events, add subagent prefix to display name
-            if (event.type === "tool-call" && prefixedData.toolCall) {
-              prefixedData.toolCall = {
-                ...prefixedData.toolCall,
-                toolName: `${event.subAgentName}: ${prefixedData.toolCall.toolName}`,
-              };
-            } else if (event.type === "tool-result" && prefixedData.toolResult) {
-              prefixedData.toolResult = {
-                ...prefixedData.toolResult,
-                toolName: `${event.subAgentName}: ${prefixedData.toolResult.toolName}`,
-              };
-            }
-
-            // Forward the event in real-time
-            devLogger.info(`[Agent ${this.id}] Forwarding to stream: ${event.type}`);
-            await streamEventForwarder(prefixedData);
+            // Forward the event to be included in the stream
+            await internalStreamForwarder(prefixedData);
           } catch (error) {
             devLogger.error(`Error forwarding SubAgent event: ${error}`);
           }
-        } else {
-          devLogger.warn(
-            `[Agent ${this.id}] No streamEventForwarder available for SubAgent event: ${event.type}`,
-          );
         }
       };
 
@@ -787,6 +778,119 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
       );
     }
+  }
+
+  /**
+   * Create an enhanced fullStream that includes SubAgent events
+   */
+  private createEnhancedFullStream(
+    originalStream: AsyncIterable<any>,
+    subAgentEventsQueue: any[],
+  ): AsyncIterable<any> {
+    return {
+      async *[Symbol.asyncIterator]() {
+        let queueIndex = 0;
+        let streamFinished = false;
+
+        // Create an async iterator for the original stream
+        const originalIterator = originalStream[Symbol.asyncIterator]();
+
+        try {
+          // Process original stream and SubAgent events concurrently
+          let originalStreamPromise = originalIterator.next();
+
+          while (true) {
+            // Check for new SubAgent events first
+            while (queueIndex < subAgentEventsQueue.length) {
+              const subAgentEvent = subAgentEventsQueue[queueIndex];
+              queueIndex++;
+
+              // Extract and flatten the event data properly based on event type
+              let enhancedEvent: any = {
+                type: subAgentEvent.event.type,
+                subAgentId: subAgentEvent.event.subAgentId,
+                subAgentName: subAgentEvent.event.subAgentName,
+                timestamp: subAgentEvent.timestamp,
+              };
+
+              // Handle different event types and their data structures
+              switch (subAgentEvent.event.type) {
+                case "tool-call":
+                  if (subAgentEvent.event.toolCall) {
+                    enhancedEvent = {
+                      ...enhancedEvent,
+                      toolCallId: subAgentEvent.event.toolCall.toolCallId,
+                      toolName: subAgentEvent.event.toolCall.toolName,
+                      args: subAgentEvent.event.toolCall.args,
+                    };
+                  }
+                  break;
+                case "tool-result":
+                  if (subAgentEvent.event.toolResult) {
+                    enhancedEvent = {
+                      ...enhancedEvent,
+                      toolCallId: subAgentEvent.event.toolResult.toolCallId,
+                      toolName: subAgentEvent.event.toolResult.toolName,
+                      result: subAgentEvent.event.toolResult.result,
+                    };
+                  }
+                  break;
+                default: {
+                  // For other event types, spread the event data directly (excluding the metadata)
+                  const { subAgentId, subAgentName, type, timestamp, ...eventData } =
+                    subAgentEvent.event;
+                  enhancedEvent = {
+                    ...enhancedEvent,
+                    ...eventData,
+                  };
+                  break;
+                }
+              }
+
+              yield enhancedEvent;
+            }
+
+            // If stream is finished and no more events, break
+            if (streamFinished && queueIndex >= subAgentEventsQueue.length) {
+              break;
+            }
+
+            // Handle original stream
+            if (!streamFinished) {
+              // Check if original stream promise is ready with a short timeout
+              const timeoutPromise = new Promise<"timeout">(
+                (resolve) => setTimeout(() => resolve("timeout"), 16), // ~60fps
+              );
+
+              const result = await Promise.race([originalStreamPromise, timeoutPromise]);
+
+              if (result === "timeout") {
+                // Continue to next iteration to check SubAgent events
+                continue;
+              }
+
+              // Original stream has data
+              if (result.done) {
+                streamFinished = true;
+                continue;
+              }
+
+              // Yield the original stream value and prepare next promise
+              yield result.value;
+              originalStreamPromise = originalIterator.next();
+            } else {
+              // Stream finished but we might get more SubAgent events
+              await new Promise((resolve) => setTimeout(resolve, 10));
+            }
+          }
+        } finally {
+          // Clean up the original iterator if it has a return method
+          if (originalIterator.return) {
+            await originalIterator.return();
+          }
+        }
+      },
+    };
   }
 
   /**
@@ -1316,16 +1420,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       finalConversationId,
     );
 
-    // Create a stream event forwarder that will be passed to delegate tools
-    // This forwarder will be used by SubAgents to send events in real-time
-    const streamEventForwarder = internalOptions.streamEventForwarder;
+    // Create an internal event forwarder that integrates SubAgent events into the fullStream automatically
+    const subAgentEventsQueue: any[] = [];
+
+    const streamEventForwarder = async (event: any) => {
+      // Queue SubAgent events to be included in the stream
+      subAgentEventsQueue.push({
+        type: "subagent-event",
+        event,
+        timestamp: new Date().toISOString(),
+      });
+    };
 
     const { tools, maxSteps } = this.prepareTextOptions({
       ...internalOptions,
       conversationId: finalConversationId,
       historyEntryId: operationContext.historyEntry.id,
       operationContext: operationContext,
-      streamEventForwarder, // Pass the forwarder to tools
+      internalStreamForwarder: streamEventForwarder, // Pass the internal forwarder to tools
     });
 
     const response = await this.llm.streamText({
@@ -1712,7 +1824,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
       },
     });
-    return response;
+
+    // Always wrap the response to include SubAgent events
+    const wrappedResponse = {
+      ...response,
+      fullStream: response.fullStream
+        ? this.createEnhancedFullStream(response.fullStream, subAgentEventsQueue)
+        : undefined,
+    };
+
+    return wrappedResponse;
   }
 
   /**
