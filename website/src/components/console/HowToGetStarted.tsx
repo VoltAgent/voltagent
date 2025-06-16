@@ -222,7 +222,7 @@ export const HowToGetStarted = () => {
           {/* Header Section */}
           <div className="bg-[#191c24] rounded-t-md text-left">
             <div className="flex flex-col landing-sm:flex-row items-start landing-sm:items-center justify-between px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6">
-              <div className="flex flex-col justify-between py-3 landing-xs:py-2 landing-sm:py-4 ">
+              <div className="flex flex-col justify-between py-3 landing-xs:py-2 landing-sm:py-4 w-full landing-sm:w-auto">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 w-7 h-7 landing-xs:w-6 landing-xs:h-6 landing-sm:w-8 landing-sm:h-8 landing-md:w-9 landing-md:h-9 rounded-full flex items-center justify-center text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg font-bold transition-colors cursor-pointer hover:bg-emerald-400/20">
                     3
@@ -241,8 +241,8 @@ export const HowToGetStarted = () => {
               </div>
               <Link
                 to="https://console.voltagent.dev/demo"
-                className="inline-flex items-center no-underline bg-emerald-400/10 text-emerald-400 
-                border-solid border border-emerald-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 landing-md:py-3 mt-2 landing-sm:mt-0"
+                className="inline-flex items-center justify-center no-underline bg-emerald-400/10 text-emerald-400 
+                border-solid border border-emerald-400/20 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-base font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-6 py-1.5 landing-xs:py-1 landing-sm:py-2 landing-md:py-3 mt-2 landing-sm:mt-0 w-full landing-sm:w-auto"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -260,16 +260,11 @@ export const HowToGetStarted = () => {
                 />
               </Link>
             </div>
-            <div className="h-[250px] landing-xs:h-[200px] landing-sm:h-[350px] landing-md:h-[500px] landing-lg:h-[600px] landing-xl:h-[800px]">
-              <iframe
-                src="https://console.voltagent.dev/demo"
-                title="Voltage Agent Console"
-                className="w-full h-full"
-                style={{
-                  height: "100%",
-                  backdropFilter: "blur(4px)",
-                  WebkitBackdropFilter: "blur(4px)",
-                }}
+            <div className="h-[250px] landing-xs:h-[200px] landing-sm:h-[350px] mt-4 landing-md:h-[500px] landing-lg:h-[600px] landing-xl:h-[800px]">
+              <img
+                src="/img/ops/flow-1.png"
+                alt="VoltOps Platform Flow"
+                className="w-full h-full object-cover rounded-b-md p-1"
               />
             </div>
           </div>
