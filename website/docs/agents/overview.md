@@ -84,7 +84,7 @@ console.log("Complete Response:", completeResponse.text);
 
 #### Enhanced Streaming with `fullStream`
 
-For more detailed streaming information including tool calls, reasoning steps, SubAgent events, and completion status, you can use the `fullStream` property available in the response:
+For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the `fullStream` property available in the response:
 
 ```ts
 // Example using fullStream for detailed streaming events
@@ -92,48 +92,25 @@ async function enhancedChat(input: string) {
   console.log(`User: ${input}`);
   const response = await agent.streamText(input);
 
-  // Track which SubAgents have started outputting text
-  const subAgentTextStarted = new Set<string>();
-
   // Check if fullStream is available (provider-dependent)
   if (response.fullStream) {
     for await (const chunk of response.fullStream) {
-      // Check if this event is from a SubAgent using optional fields
-      const isFromSubAgent = chunk.subAgentId && chunk.subAgentName;
-      const agentLabel = isFromSubAgent ? `[${chunk.subAgentName}]` : "[Supervisor]";
-
       switch (chunk.type) {
         case "text-delta":
-          if (isFromSubAgent) {
-            // SubAgent text - label with agent name
-            const agentKey = `${chunk.subAgentId}-${chunk.subAgentName}`;
-            if (!subAgentTextStarted.has(agentKey)) {
-              process.stdout.write(`\n\n${agentLabel}: `);
-              subAgentTextStarted.add(agentKey);
-            }
-            process.stdout.write(chunk.textDelta);
-          } else {
-            // Supervisor text - output directly
-            process.stdout.write(chunk.textDelta);
-          }
+          // Output text as it's generated
+          process.stdout.write(chunk.textDelta);
           break;
         case "tool-call":
-          console.log(`\n🔧 ${agentLabel} Using tool: ${chunk.toolName}`);
-          if (isFromSubAgent) {
-            console.log(`   └─ SubAgent: ${chunk.subAgentName}`);
-          }
+          console.log(`\n🔧 Using tool: ${chunk.toolName}`);
           break;
         case "tool-result":
-          console.log(`✅ ${agentLabel} Tool completed: ${chunk.toolName}`);
-          if (isFromSubAgent) {
-            console.log(`   └─ SubAgent: ${chunk.subAgentName}`);
-          }
+          console.log(`✅ Tool completed: ${chunk.toolName}`);
           break;
         case "reasoning":
-          console.log(`🤔 ${agentLabel} AI thinking: ${chunk.reasoning}`);
+          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
           break;
         case "source":
-          console.log(`📚 ${agentLabel} Retrieved context: ${chunk.source}`);
+          console.log(`📚 Retrieved context: ${chunk.source}`);
           break;
         case "finish":
           console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
