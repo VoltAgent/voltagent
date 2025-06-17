@@ -36,6 +36,52 @@ Examples of unacceptable behavior include:
 - Other conduct which could reasonably be considered inappropriate in a
   professional setting
 
+## Coding Standards
+
+Contributors are expected to follow these coding standards to maintain a
+high-quality, maintainable codebase:
+
+### Configuration Over Hardcoding
+
+**Avoid hardcoded values in favor of configurable defaults:**
+
+- **Do not** embed magic numbers, timeouts, limits, or other configuration
+  values directly in the code
+- **Do** use the centralized configuration system (see `defaults.ts`)
+- **Do** make values configurable through environment variables or command-line options
+- **Do** document default values and their purpose
+
+Examples of what **not** to do:
+
+```typescript
+// ❌ Hardcoded timeout
+await page.waitForSelector(selector, { timeout: 30000 });
+
+// ❌ Magic numbers
+setTimeout(() => hideExecuting("agent-a"), 2000);
+
+// ❌ Hardcoded limits
+const maxRetries = 3;
+```
+
+Examples of what **to** do:
+
+```typescript
+// ✅ Configurable values
+await page.waitForSelector(selector, {
+  timeout: defaults.playwright.defaultTimeout,
+});
+
+// ✅ Named constants from configuration
+setTimeout(() => hideExecuting("agent-a"), defaults.ui.animationDelay);
+
+// ✅ Environment-configurable limits
+const maxRetries = defaults.network.maxRetries;
+```
+
+This approach ensures that users can customize behavior without modifying code,
+making the framework more flexible and maintainable.
+
 ## Enforcement Responsibilities
 
 Community leaders are responsible for clarifying and enforcing our standards of
