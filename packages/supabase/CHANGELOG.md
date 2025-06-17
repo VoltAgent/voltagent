@@ -1,5 +1,36 @@
 # @voltagent/supabase
 
+## 0.1.11
+
+### Patch Changes
+
+- [#252](https://github.com/VoltAgent/voltagent/pull/252) [`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add userId and conversationId support to agent history tables
+
+  This release adds comprehensive support for `userId` and `conversationId` fields in agent history tables across all memory storage implementations, enabling better conversation tracking and user-specific history management.
+
+  ### New Features
+
+  - **Agent History Enhancement**: Added `userId` and `conversationId` columns to agent history tables
+  - **Cross-Implementation Support**: Consistent implementation across PostgreSQL, Supabase, LibSQL, and In-Memory storage
+  - **Automatic Migration**: Safe schema migrations for existing installations
+  - **Backward Compatibility**: Existing history entries remain functional
+
+  ### Migration Notes
+
+  **PostgreSQL & Supabase**: Automatic schema migration with user-friendly SQL scripts
+  **LibSQL**: Seamless column addition with proper indexing
+  **In-Memory**: No migration required, immediate support
+
+  ### Technical Details
+
+  - **Database Schema**: Added `userid TEXT` and `conversationid TEXT` columns (PostgreSQL uses lowercase)
+  - **Indexing**: Performance-optimized indexes for new columns
+  - **Migration Safety**: Non-destructive migrations with proper error handling
+  - **API Consistency**: Unified interface across all storage implementations
+
+- Updated dependencies [[`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547), [`b63fe67`](https://github.com/VoltAgent/voltagent/commit/b63fe675dfca9121862a9dd67a0fae5d39b9db90)]:
+  - @voltagent/core@0.1.37
+
 ## 0.1.10
 
 ### Patch Changes
