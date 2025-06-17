@@ -19,6 +19,7 @@ import { createTool, type ToolExecuteOptions } from "@voltagent/core";
 import { safeBrowserOperation } from "./browserBaseTools";
 import type { ToolExecutionContext } from "@voltagent/core";
 import { resetBrowserState as resetBrowserStateInternal } from "./playwrightToolHandler";
+import { defaults } from "../../../../defaults";
 
 /**
  * Tool for navigating to URLs
@@ -31,7 +32,13 @@ export const navigationTool = createTool({
       .string()
       .url({ message: "Please provide a valid URL" })
       .describe("The URL to navigate to"),
-    timeout: z.number().positive().optional().default(60000).describe("Timeout in milliseconds"),
+    // Use configurable timeout from centralized defaults
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.navigationTimeout)
+      .describe("Timeout in milliseconds"),
     waitUntil: z
       .enum(["load", "domcontentloaded", "networkidle", "commit"])
       .optional()

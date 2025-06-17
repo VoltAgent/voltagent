@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createTool, type ToolExecuteOptions } from "@voltagent/core";
 import { safeBrowserOperation } from "./browserBaseTools";
 import type { ToolExecutionContext } from "@voltagent/core";
+import { defaults } from "../../../../defaults";
 
 /**
  * Tool for setting up response wait operations
@@ -22,7 +23,7 @@ export const expectResponseTool = createTool({
       .number()
       .positive()
       .optional()
-      .default(30000)
+      .default(defaults.playwright.defaultTimeout)
       .describe("Maximum time in milliseconds to wait for the response."),
     // status: z.number().optional().describe("Expected status code of the response."), // Predicate function is more flexible
   }),

@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { createTool, type ToolExecuteOptions } from "@voltagent/core";
 import type { ToolExecutionContext } from "@voltagent/core";
+import { defaults } from "../../../../defaults";
 import { safeBrowserOperation } from "./browserBaseTools";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
@@ -20,7 +21,7 @@ export const saveToFileTool = createTool({
     content: z.string().describe("Content to save to the file"),
     filePath: z.string().describe("Path where the file should be saved"),
     overwrite: z.boolean().optional().default(false).describe("Whether to overwrite existing file"),
-    timeout: z.number().positive().optional().default(30000),
+    timeout: z.number().positive().optional().default(defaults.playwright.defaultTimeout),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
     const context = options as ToolExecutionContext;
@@ -86,7 +87,7 @@ export const exportPdfTool = createTool({
       .optional()
       .default("A4"),
     printBackground: z.boolean().optional().default(true),
-    timeout: z.number().positive().optional().default(60000),
+    timeout: z.number().positive().optional().default(defaults.playwright.navigationTimeout),
     // Add other Playwright PDF options as needed (scale, margins, etc.)
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
