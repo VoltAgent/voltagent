@@ -115,7 +115,7 @@ export const assertResponseTool = createTool({
       }
 
       let assertionsPassed = true;
-      let failureMessages: string[] = [];
+      const failureMessages: string[] = [];
 
       // Assert Status Code
       if (args.expectedStatus !== undefined) {
