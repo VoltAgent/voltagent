@@ -63,6 +63,7 @@
     "@changesets/cli": "^2.28.1",
     "@commitlint/cli": "^18.2.0",
     "@commitlint/config-conventional": "^18.2.0",
+    "@types/node": "^24.0.3",
     "husky": "^8.0.3",
     "lerna": "^7.4.2",
     "lint-staged": "^15.4.3",
