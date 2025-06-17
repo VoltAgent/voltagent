@@ -1,0 +1,149 @@
+{
+  "id": 4,
+  "slug": "google-calendar",
+  "name": "Google Calendar",
+  "short_description": "Manage your calendar events and schedules efficiently.",
+  "title": "Google Calendar MCP Server",
+  "description": "The Google Calendar MCP server helps your AI agents manage your calendar. It can create events, update schedules, and handle all your calendar tasks automatically.",
+  "category": ["Calendar & Scheduling"],
+  "logoKey": "googleCalendar",
+  "avaliable_providers": ["zapier"],
+  "total_tools": [
+    {
+      "id": "add_attendees",
+      "name": "Add Attendee(s) to Event",
+      "description": "Invites one or more person to an existing event.",
+      "providers": {
+        "zapier": { "id": "add_attendees" }
+      },
+      "mcp_content": {
+        "heading": "Manage Event Attendees Effortlessly",
+        "description": "Add people to your calendar events easily. Just tell your AI who to invite, and it will send all the invitations for you."
+      }
+    },
+    {
+      "id": "create_calendar",
+      "name": "Create Calendar",
+      "description": "Creates a new calendar.",
+      "providers": {
+        "zapier": { "id": "create_calendar" }
+      },
+      "mcp_content": {
+        "heading": "How to Create and Organize New Calendars?",
+        "description": "Make new calendars for different needs with Google Calendar MCP. Your AI helps you set up and organize them without any extra work."
+      }
+    },
+    {
+      "id": "delete_event",
+      "name": "Delete Event",
+      "description": "Deletes an event.",
+      "providers": {
+        "zapier": { "id": "delete_event" }
+      },
+      "mcp_content": {
+        "heading": "Remove Unwanted Calendar Events",
+        "description": "Keep your calendar tidy by removing events you don't need anymore. Your AI helps you delete events and keep everything organized."
+      }
+    },
+    {
+      "id": "create_detailed_event",
+      "name": "Create Detailed Event",
+      "description": "Create an event by defining each field.",
+      "providers": {
+        "zapier": { "id": "create_detailed_event" }
+      },
+      "mcp_content": {
+        "heading": "How to Create Detailed Calendar Events?",
+        "description": "Make complete calendar events with Google Calendar MCP. Your AI adds all the important details like time, place, and who's coming."
+      }
+    },
+    {
+      "id": "quick_add_event",
+      "name": "Quick Add Event",
+      "description": "Create an event from a piece of text. Google parses the text for date, time, and description info.",
+      "providers": {
+        "zapier": { "id": "quick_add_event" }
+      },
+      "mcp_content": {
+        "heading": "Add Events Using Natural Language",
+        "description": "Just type what you want in normal words. Your AI reads it and creates the event with the right date, time, and details."
+      }
+    },
+    {
+      "id": "api_request",
+      "name": "API Request (Beta)",
+      "description": "This is an advanced action which makes a raw HTTP request that includes this integration's authentication.",
+      "providers": {
+        "zapier": { "id": "api_request_beta" }
+      },
+      "mcp_content": {
+        "heading": "How to Access Advanced Calendar Features?",
+        "description": "Use more powerful calendar features with Google Calendar MCP's API. Perfect for special tasks that need extra options."
+      }
+    },
+    {
+      "id": "find_event",
+      "name": "Find Event",
+      "description": "Finds an event in your calendar.",
+      "providers": {
+        "zapier": { "id": "find_event" }
+      },
+      "mcp_content": {
+        "heading": "Locate Specific Calendar Events",
+        "description": "Find any event in your calendar quickly. Your AI can search using different details to find exactly what you're looking for."
+      }
+    },
+    {
+      "id": "find_or_create_event",
+      "name": "Find or Create Event",
+      "description": "Finds or creates a specific event v2.",
+      "providers": {
+        "zapier": { "id": "find_or_create_event" }
+      },
+      "mcp_content": {
+        "heading": "How to Prevent Duplicate Calendar Events?",
+        "description": "Google Calendar MCP first checks if an event exists before making a new one. This keeps your calendar clean with no repeat events."
+      }
+    },
+    {
+      "id": "retrieve_event_by_id",
+      "name": "Retrieve Event by ID",
+      "description": "Finds a specific event by its ID in your calendar.",
+      "providers": {
+        "zapier": { "id": "retrieve_event_by_id" }
+      },
+      "mcp_content": {
+        "heading": "Access Specific Event Details",
+        "description": "Look up any event using its ID number. Quick and easy way to check or update event information."
+      }
+    },
+    {
+      "id": "find_busy_periods",
+      "name": "Find Busy Periods in Calendar",
+      "description": "Finds busy time periods in your calendar for a specific timeframe.",
+      "providers": {
+        "zapier": { "id": "find_busy_periods" }
+      },
+      "mcp_content": {
+        "heading": "How to Check Calendar Availability?",
+        "description": "See when you're busy or free. Google Calendar MCP helps you find open time slots for planning new meetings."
+      }
+    },
+    {
+      "id": "update_event",
+      "name": "Update Event",
+      "description": "Updates an event. Only filled fields are updated.",
+      "providers": {
+        "zapier": { "id": "update_event" }
+      },
+      "mcp_content": {
+        "heading": "Modify Existing Events",
+        "description": "Change event details easily. Your AI updates only what you want to change and keeps everything else the same."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How Can Your AI Agents Use the Google Calendar MCP Server?",
+    "description": "Make your schedule management easier with AI-powered calendar tools. Your AI assistant helps with everything from creating events to finding free time slots, so you can focus on what's important."
+  }
+}
