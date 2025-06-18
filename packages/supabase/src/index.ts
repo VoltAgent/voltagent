@@ -617,7 +617,7 @@ ON ${this.historyTable}(conversation_id);`);
   }
 
   public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
-    const { conversationId, limit = this.options.storageLimit, before, after, role } = options;
+    const { conversationId, before, after, role } = options;
     // Handle the case where limit is explicitly set to 0 (unlimited)
     const actualLimit = options.limit !== undefined ? options.limit : this.options.storageLimit;
 
