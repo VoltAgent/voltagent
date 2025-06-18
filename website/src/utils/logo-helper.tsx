@@ -30,6 +30,7 @@ import { OneDriveLogo } from "../../static/img/logos/integrations/one-drive";
 import { PineconeLogo } from "../../static/img/logos/integrations/pinecone";
 import { SlackLogo } from "../../static/img/logos/integrations/slack";
 import { ZapierLogo } from "../../static/img/logos/integrations/zapier";
+import { CalendlyLogo } from "../../static/img/logos/integrations/calendy";
 
 // Map logo components by key
 export const logoMap = {
@@ -61,6 +62,7 @@ export const logoMap = {
   server: ServerIcon,
   slack: SlackLogo,
   discord: DiscordLogo2,
+  calendly: CalendlyLogo,
 };
 
 /**
