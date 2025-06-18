@@ -35,6 +35,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/ws": "^8.18.1",
+    "@voltagent/internal": "workspace:^",
     "hono": "^4.7.7",
     "npm-check-updates": "^17.1.18",
     "uuid": "^9.0.1",

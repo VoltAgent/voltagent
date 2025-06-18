@@ -2,9 +2,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { devLogger } from "@voltagent/internal/dev";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
-import devLogger from "../../utils/internal/dev-logger";
 import { MCPClient } from "./index";
 
 // Mock the MCP SDK dependencies
@@ -29,9 +29,8 @@ vi.mock("zod-from-json-schema", () => ({
   convertJsonSchemaToZod: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock("../../utils/internal/dev-logger", () => ({
-  __esModule: true,
-  default: {
+vi.mock("@voltagent/internal/dev", () => ({
+  devLogger: {
     error: vi.fn(),
     warn: vi.fn(),
     info: vi.fn(),

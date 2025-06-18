@@ -1,4 +1,4 @@
-import devLogger from "../internal/dev-logger";
+import { devLogger } from "@voltagent/internal/dev";
 
 export interface SubAgentEvent {
   type: string;

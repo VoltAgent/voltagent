@@ -1,5 +1,5 @@
+import { devLogger } from "@voltagent/internal/dev";
 import type { ToolSchema } from "../agent/providers/base/types";
-import devLogger from "../utils/internal/dev-logger";
 import type { Tool } from "./index";
 
 /**

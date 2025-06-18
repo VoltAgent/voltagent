@@ -1,3 +1,4 @@
+import { devLogger } from "@voltagent/internal/dev";
 import type { StepWithContent } from "../../agent/providers";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { OperationContext } from "../../agent/types";
@@ -10,7 +11,6 @@ import type {
   MemoryWriteSuccessEvent,
   NewTimelineEvent,
 } from "../../events/types";
-import devLogger from "../../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import { LibSQLStorage } from "../index";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";

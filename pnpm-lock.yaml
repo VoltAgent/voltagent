@@ -369,7 +369,7 @@ importers:
         version: link:../../../packages/vercel-ai
       composio-core:
         specifier: ^0.5.33
-        version: 0.5.35(@ai-sdk/openai@1.3.10)(@cloudflare/workers-types@4.20250618.0)(@langchain/core@0.3.59)(@langchain/openai@0.5.13)(ai@4.3.16)(langchain@0.3.28)(openai@5.5.1)
+        version: 0.5.35(@ai-sdk/openai@1.3.10)(@cloudflare/workers-types@4.20250618.0)(@langchain/core@0.3.59)(@langchain/openai@0.5.13)(ai@4.3.16)(langchain@0.3.28)(openai@4.104.0)
       hono:
         specifier: ^4.7.7
         version: 4.7.7
@@ -1220,6 +1220,9 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
+      '@voltagent/internal':
+        specifier: workspace:^
+        version: link:../internal
       hono:
         specifier: ^4.7.7
         version: 4.7.7
@@ -1598,7 +1601,7 @@ importers:
         version: link:../sdk
       ai:
         specifier: ^3.0.0 || ^4.0.0
-        version: 4.3.14(react@19.1.0)(zod@3.25.67)
+        version: 4.3.14(react@19.1.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: ^20.19.0
@@ -1797,18 +1800,6 @@ packages:
       zod: 3.24.2
     dev: false
 
-  /@ai-sdk/provider-utils@2.2.7(zod@3.25.67):
-    resolution: {integrity: sha512-kM0xS3GWg3aMChh9zfeM+80vEZfXzR3JEUBdycZLtbRZ2TRT8xOj3WodGHPb06sUK5yD7pAXC/P7ctsi2fvUGQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.23.8
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      nanoid: 3.3.8
-      secure-json-parse: 2.7.0
-      zod: 3.25.67
-    dev: false
-
   /@ai-sdk/provider-utils@2.2.8(zod@3.24.2):
     resolution: {integrity: sha512-fqhG+4sCVv8x7nFzYnFo19ryhAa3w096Kmc3hWxMQfW/TubPOmt3A6tYZhl4mUfQWWQMsuSkLrtjlWuXBVSGQA==}
     engines: {node: '>=18'}
@@ -1879,24 +1870,6 @@ packages:
       zod: 3.24.2
     dev: false
 
-  /@ai-sdk/react@1.2.11(react@19.1.0)(zod@3.25.67):
-    resolution: {integrity: sha512-+kPqLkJ3TWP6czaJPV+vzAKSUcKQ1598BUrcLHt56sH99+LhmIIW3ylZp0OfC3O6TR3eO1Lt0Yzw4R0mK6g9Gw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      react: ^18 || ^19 || ^19.0.0-rc
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      zod:
-        optional: true
-    dependencies:
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.25.67)
-      '@ai-sdk/ui-utils': 1.2.10(zod@3.25.67)
-      react: 19.1.0
-      swr: 2.3.3(react@19.1.0)
-      throttleit: 2.1.0
-      zod: 3.25.67
-    dev: false
-
   /@ai-sdk/react@1.2.12(react@19.1.0)(zod@3.24.2):
     resolution: {integrity: sha512-jK1IZZ22evPZoQW3vlkZ7wvjYGYF+tRBKXtrcolduIkQ/m/sOAVcVeVDUDvh1T91xCnWCdUGCPZg2avZ90mv3g==}
     engines: {node: '>=18'}
@@ -1943,18 +1916,6 @@ packages:
       '@ai-sdk/provider-utils': 2.2.7(zod@3.24.2)
       zod: 3.24.2
       zod-to-json-schema: 3.24.5(zod@3.24.2)
-    dev: false
-
-  /@ai-sdk/ui-utils@1.2.10(zod@3.25.67):
-    resolution: {integrity: sha512-GUj+LBoAlRQF1dL/M49jtufGqtLOMApxTpCmVjoRpIPt/dFALVL9RfqfvxwztyIwbK+IxGzcYjSGRsrWrj+86g==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.23.8
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.25.67)
-      zod: 3.25.67
-      zod-to-json-schema: 3.24.5(zod@3.25.67)
     dev: false
 
   /@ai-sdk/ui-utils@1.2.11(zod@3.24.2):
@@ -6240,7 +6201,7 @@ packages:
       '@jridgewell/sourcemap-codec': 1.5.0
     dev: true
 
-  /@langchain/core@0.3.59(openai@5.5.1):
+  /@langchain/core@0.3.59(openai@4.104.0):
     resolution: {integrity: sha512-YAvnx0z3A8z5MvyjZzjC9ZxXZYM20ivFdUeLzANSPCoPCNIQ1/EppWP82RI24PcmWkNtuXsFVaj5juWiIpZvxg==}
     engines: {node: '>=18'}
     dependencies:
@@ -6249,7 +6210,7 @@ packages:
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.20
-      langsmith: 0.3.33(openai@5.5.1)
+      langsmith: 0.3.33(openai@4.104.0)
       mustache: 4.2.0
       p-queue: 6.6.2
       p-retry: 4.6.2
@@ -6266,7 +6227,7 @@ packages:
     peerDependencies:
       '@langchain/core': '>=0.3.58 <0.4.0'
     dependencies:
-      '@langchain/core': 0.3.59(openai@5.5.1)
+      '@langchain/core': 0.3.59(openai@4.104.0)
       js-tiktoken: 1.0.20
       openai: 4.104.0(zod@3.25.32)
       zod: 3.25.32
@@ -6281,7 +6242,7 @@ packages:
     peerDependencies:
       '@langchain/core': '>=0.2.21 <0.4.0'
     dependencies:
-      '@langchain/core': 0.3.59(openai@5.5.1)
+      '@langchain/core': 0.3.59(openai@4.104.0)
       js-tiktoken: 1.0.20
     dev: false
 
@@ -9632,7 +9593,7 @@ packages:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/node@20.17.30)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -9671,7 +9632,7 @@ packages:
       '@vitest/spy': 3.2.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 5.4.19(@types/node@18.16.9)
+      vite: 5.4.19(@types/node@20.19.0)
     dev: true
 
   /@vitest/mocker@3.2.4(vite@6.3.3):
@@ -10084,26 +10045,6 @@ packages:
       jsondiffpatch: 0.6.0
       react: 19.1.0
       zod: 3.24.2
-    dev: false
-
-  /ai@4.3.14(react@19.1.0)(zod@3.25.67):
-    resolution: {integrity: sha512-YAL7T7OIf6+nr0rT3kB+W4UU8lw3QZH+xtGud7sdOJHFufdn+4K5xSO3isXAM+5sxG0RgR4G9uD0ZoLPzuRTGg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      react: ^18 || ^19 || ^19.0.0-rc
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      react:
-        optional: true
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.25.67)
-      '@ai-sdk/react': 1.2.11(react@19.1.0)(zod@3.25.67)
-      '@ai-sdk/ui-utils': 1.2.10(zod@3.25.67)
-      '@opentelemetry/api': 1.9.0
-      jsondiffpatch: 0.6.0
-      react: 19.1.0
-      zod: 3.25.67
     dev: false
 
   /ai@4.3.16(react@19.1.0)(zod@3.24.2):
@@ -11236,7 +11177,7 @@ packages:
       dot-prop: 5.3.0
     dev: true
 
-  /composio-core@0.5.35(@ai-sdk/openai@1.3.10)(@cloudflare/workers-types@4.20250618.0)(@langchain/core@0.3.59)(@langchain/openai@0.5.13)(ai@4.3.16)(langchain@0.3.28)(openai@5.5.1):
+  /composio-core@0.5.35(@ai-sdk/openai@1.3.10)(@cloudflare/workers-types@4.20250618.0)(@langchain/core@0.3.59)(@langchain/openai@0.5.13)(ai@4.3.16)(langchain@0.3.28)(openai@4.104.0):
     resolution: {integrity: sha512-k6PmBLn8bBj4bQZHIJEc7DLvFHZrDfxWwMDhZDtozdcLGGIgr+LnnZNbepuW6soVMWxF8cxKqV1zvVI2deUySg==}
     hasBin: true
     peerDependencies:
@@ -11252,7 +11193,7 @@ packages:
       '@cloudflare/workers-types': 4.20250618.0
       '@composio/mcp': 1.0.3-0
       '@hey-api/client-axios': 0.2.12(axios@1.8.4)
-      '@langchain/core': 0.3.59(openai@5.5.1)
+      '@langchain/core': 0.3.59(openai@4.104.0)
       '@langchain/openai': 0.5.13(@langchain/core@0.3.59)
       ai: 4.3.16(react@19.1.0)(zod@3.24.2)
       axios: 1.8.4
@@ -11260,9 +11201,9 @@ packages:
       cli-progress: 3.12.0
       commander: 12.1.0
       inquirer: 10.2.2
-      langchain: 0.3.28(@langchain/core@0.3.59)(axios@1.8.4)(openai@5.5.1)
+      langchain: 0.3.28(@langchain/core@0.3.59)(axios@1.8.4)(openai@4.104.0)
       open: 8.4.2
-      openai: 5.5.1(zod@3.24.2)
+      openai: 4.104.0(zod@3.24.2)
       pusher-js: 8.4.0-rc2
       resolve-package-path: 4.0.3
       uuid: 10.0.0
@@ -15003,7 +14944,7 @@ packages:
       - ws
     dev: false
 
-  /langchain@0.3.28(@langchain/core@0.3.59)(axios@1.8.4)(openai@5.5.1):
+  /langchain@0.3.28(@langchain/core@0.3.59)(axios@1.8.4)(openai@4.104.0):
     resolution: {integrity: sha512-h4GGlBJNGU/Sj2PipW9kL+ewj7To3c+SnnNKH3HZaVHEqGPMHVB96T1lLjtCLcZCyUfabMr/zFIkLNI4War+Xg==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -15061,14 +15002,14 @@ packages:
       typeorm:
         optional: true
     dependencies:
-      '@langchain/core': 0.3.59(openai@5.5.1)
+      '@langchain/core': 0.3.59(openai@4.104.0)
       '@langchain/openai': 0.5.13(@langchain/core@0.3.59)
       '@langchain/textsplitters': 0.1.0(@langchain/core@0.3.59)
       axios: 1.8.4
       js-tiktoken: 1.0.20
       js-yaml: 4.1.0
       jsonpointer: 5.0.1
-      langsmith: 0.3.33(openai@5.5.1)
+      langsmith: 0.3.33(openai@4.104.0)
       openapi-types: 12.1.3
       p-retry: 4.6.2
       uuid: 10.0.0
@@ -15094,7 +15035,7 @@ packages:
       langfuse-core: 3.37.2
     dev: false
 
-  /langsmith@0.3.33(openai@5.5.1):
+  /langsmith@0.3.33(openai@4.104.0):
     resolution: {integrity: sha512-imNIaBL6+ElE5eMzNHYwFxo6W/6rHlqcaUjCYoIeGdCYWlARxE3CTGKul5DJnaUgGP2CTLFeNXyvRx5HWC/4KQ==}
     peerDependencies:
       openai: '*'
@@ -15105,7 +15046,7 @@ packages:
       '@types/uuid': 10.0.0
       chalk: 4.1.2
       console-table-printer: 2.14.3
-      openai: 5.5.1(zod@3.24.2)
+      openai: 4.104.0(zod@3.24.2)
       p-queue: 6.6.2
       p-retry: 4.6.2
       semver: 7.7.2
@@ -16908,6 +16849,30 @@ packages:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
+  /openai@4.104.0(zod@3.24.2):
+    resolution: {integrity: sha512-p99EFNsA/yX6UhVO93f5kJsDRLAg+CTA2RBqdHK4RtK8u5IJw32Hyb2dTGKbnnFmnuoBv5r7Z2CURI9sGZpSuA==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.23.8
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      '@types/node': 18.16.9
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+      zod: 3.24.2
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /openai@4.104.0(zod@3.25.32):
     resolution: {integrity: sha512-p99EFNsA/yX6UhVO93f5kJsDRLAg+CTA2RBqdHK4RtK8u5IJw32Hyb2dTGKbnnFmnuoBv5r7Z2CURI9sGZpSuA==}
     hasBin: true
@@ -16920,7 +16885,7 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@types/node': 18.19.112
+      '@types/node': 18.16.9
       '@types/node-fetch': 2.6.12
       abort-controller: 3.0.0
       agentkeepalive: 4.6.0
@@ -16978,21 +16943,6 @@ packages:
       zod: 3.24.2
     transitivePeerDependencies:
       - encoding
-    dev: false
-
-  /openai@5.5.1(zod@3.24.2):
-    resolution: {integrity: sha512-5i19097mGotHA1eFsM6Tjd/tJ8uo9sa5Ysv4Q6bKJ2vtN6rc0MzMrUefXnLXYAJcmMQrC1Efhj0AvfIkXrQamw==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-    dependencies:
-      zod: 3.24.2
     dev: false
 
   /openapi-types@12.1.3:

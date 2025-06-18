@@ -1,12 +1,11 @@
+import { devLogger } from "@voltagent/internal/dev";
 import { InMemoryStorage } from ".";
 import type { NewTimelineEvent } from "../../events/types";
-import devLogger from "../../utils/internal/dev-logger";
 import type { Conversation, MemoryMessage } from "../types";
 
 // Mock devLogger
-vi.mock("../../utils/internal/dev-logger", () => ({
-  __esModule: true,
-  default: {
+vi.mock("@voltagent/internal/dev", () => ({
+  devLogger: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),

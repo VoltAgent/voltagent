@@ -2,7 +2,7 @@ import {
   convertArrayToReadableStream,
   convertAsyncIterableToArray,
   convertReadableStreamToArray,
-} from "../internal/test";
+} from "@voltagent/internal/test";
 import { createAsyncIterableStream } from "./index";
 
 describe("createAsyncIterableStream()", () => {

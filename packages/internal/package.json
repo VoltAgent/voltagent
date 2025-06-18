@@ -1,0 +1,48 @@
+{
+  "name": "@voltagent/internal",
+  "version": "0.0.1",
+  "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/main/index.d.ts",
+      "import": "./dist/main/index.mjs",
+      "require": "./dist/main/index.js"
+    },
+    "./dev": {
+      "types": "./dist/dev/index.d.ts",
+      "import": "./dist/dev/index.mjs",
+      "require": "./dist/dev/index.js"
+    },
+    "./test": {
+      "types": "./dist/test/index.d.ts",
+      "import": "./dist/test/index.mjs",
+      "require": "./dist/test/index.js"
+    }
+  },
+  "main": "dist/main/index.js",
+  "module": "dist/main/index.mjs",
+  "types": "dist/main/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "dev/dist/**/*",
+    "test/dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@voltagent/core": "^0.1.31"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "tsup": "^8.5.0",
+    "typescript": "^5.0.4",
+    "vitest": "^3.2.4"
+  }
+}

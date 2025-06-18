@@ -148,7 +148,10 @@ dist
 !packages/create-voltagent-app/templates/base/.env
 
 # cursor
-.cursor
+.cursor/rules/*
+!.cursor/rules/voltagent-*.mdc
+
+# vite and vitest
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
 

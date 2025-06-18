@@ -3,7 +3,7 @@
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

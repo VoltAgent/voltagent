@@ -12,10 +12,10 @@ import {
   CallToolResultSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { devLogger } from "@voltagent/internal/dev";
 import type * as z from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { type Tool, createTool } from "../../tool";
-import devLogger from "../../utils/internal/dev-logger";
 import type {
   ClientInfo,
   HTTPServerConfig,
