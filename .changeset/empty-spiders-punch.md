@@ -1,5 +1,5 @@
 ---
-"@voltagent/supabase": major
+"@voltagent/supabase": patch
 ---
 
 feat(supabase): Implement storage limit
