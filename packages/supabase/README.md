@@ -225,7 +225,7 @@ The Supabase memory provider supports automatic message pruning to manage storag
 const memory = new SupabaseMemory({
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseKey: process.env.SUPABASE_KEY,
-  storageLimit: 100, // Keep only the latest 100 messages per conversation
+  storageLimit: 100, // Keep only the latest 100 messages per conversation. default: 100
 });
 
 // For unlimited storage (no automatic pruning)
