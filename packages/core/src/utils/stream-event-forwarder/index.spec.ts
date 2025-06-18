@@ -8,7 +8,7 @@ import {
 import devLogger from "../internal/dev-logger";
 
 // Mock devLogger
-vi.mock("./internal/dev-logger", () => ({
+vi.mock("../internal/dev-logger", () => ({
   default: {
     info: vi.fn(),
     warn: vi.fn(),
