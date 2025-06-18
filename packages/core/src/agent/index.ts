@@ -22,6 +22,7 @@ import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import devLogger from "../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../utils/node-utils";
+import { type SubAgentEvent, streamEventForwarder } from "../utils/stream-event-forwarder";
 
 import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
@@ -509,35 +510,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
     if (this.subAgentManager.hasSubAgents()) {
       // Create a real-time event forwarder for SubAgent events
-      const forwardEvent = async (event: {
-        type: string;
-        data: any;
-        timestamp: string;
-        subAgentId: string;
-        subAgentName: string;
-      }) => {
-        // Always forward events to internal stream forwarder
-        if (internalStreamForwarder) {
-          try {
-            devLogger.info(
-              `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
-            );
+      const forwardEvent = async (event: SubAgentEvent) => {
+        devLogger.info(
+          `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
+        );
 
-            // Add sub-agent prefix to distinguish from parent events
-            const prefixedData = {
-              ...event.data,
-              timestamp: event.timestamp,
-              type: event.type,
-              subAgentId: event.subAgentId,
-              subAgentName: event.subAgentName,
-            };
-
-            // Forward the event to be included in the stream
-            await internalStreamForwarder(prefixedData);
-          } catch (error) {
-            devLogger.error(`Error forwarding SubAgent event: ${error}`);
-          }
-        }
+        // Use the utility function to forward events
+        await streamEventForwarder(event, {
+          forwarder: internalStreamForwarder,
+          filterTypes: [], // Don't filter any events in this context
+          addSubAgentPrefix: true,
+        });
       };
 
       // Always create a delegate tool with the current operationContext

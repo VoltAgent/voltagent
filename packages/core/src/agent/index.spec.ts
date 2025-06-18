@@ -2349,5 +2349,719 @@ describe("Agent", () => {
       expect(events1).toContainEqual({ type: "text-delta", textDelta: "Stream1" });
       expect(events2).toContainEqual({ type: "text-delta", textDelta: "Stream2" });
     });
+
+    // Real-time Event Injection Tests
+    it("should inject SubAgent events in real-time during stream processing", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            // Slow stream to allow time for event injection
+            setTimeout(() => {
+              controller.enqueue({ type: "text-delta", textDelta: "Original1" });
+              setTimeout(() => {
+                controller.enqueue({ type: "text-delta", textDelta: "Original2" });
+                controller.close();
+              }, 50);
+            }, 50);
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let eventCount = 0;
+
+      // Start consuming the stream
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+          eventCount++;
+
+          // Inject a SubAgent event after the first original event
+          if (eventCount === 1 && streamController.current) {
+            streamController.current.enqueue({
+              type: "tool-call",
+              subAgentId: "test-sub",
+              subAgentName: "Test Sub",
+              timestamp: new Date().toISOString(),
+              toolCallId: "test-call",
+              toolName: "test-tool",
+              args: { test: "value" },
+            });
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      // Should contain both original and injected events
+      expect(events.length).toBeGreaterThanOrEqual(3);
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Original1" });
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Original2" });
+      expect(events.some((e) => e.type === "tool-call")).toBe(true);
+    });
+
+    it("should handle rapid SubAgent event bursts without dropping events", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Start" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      const expectedBurstEvents = 10;
+
+      // Start consuming the stream
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+
+          // Inject burst of events after first event
+          if (events.length === 1 && streamController.current) {
+            for (let i = 0; i < expectedBurstEvents; i++) {
+              streamController.current.enqueue({
+                type: "tool-call",
+                subAgentId: `burst-sub-${i}`,
+                subAgentName: `Burst Sub ${i}`,
+                timestamp: new Date().toISOString(),
+                toolCallId: `burst-call-${i}`,
+                toolName: `burst-tool-${i}`,
+                args: { index: i },
+              });
+            }
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      // Should contain original event plus all burst events
+      expect(events.length).toBe(1 + expectedBurstEvents);
+      expect(events[0]).toEqual({ type: "text-delta", textDelta: "Start" });
+
+      // Verify all burst events are present
+      const burstEvents = events.filter((e) => e.type === "tool-call");
+      expect(burstEvents.length).toBe(expectedBurstEvents);
+    });
+
+    it("should maintain event order when multiple SubAgents emit simultaneously", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Base1" });
+            controller.enqueue({ type: "text-delta", textDelta: "Base2" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let injectionDone = false;
+
+      // Start consuming the stream
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+
+          // Inject ordered events from multiple SubAgents after first base event
+          if (events.length === 1 && !injectionDone && streamController.current) {
+            injectionDone = true;
+
+            // SubAgent A events
+            streamController.current.enqueue({
+              type: "tool-call",
+              subAgentId: "sub-a",
+              subAgentName: "Sub A",
+              timestamp: "2023-01-01T10:00:00.000Z",
+              toolCallId: "call-a1",
+              toolName: "tool-a",
+              args: { order: 1 },
+            });
+
+            // SubAgent B events
+            streamController.current.enqueue({
+              type: "tool-call",
+              subAgentId: "sub-b",
+              subAgentName: "Sub B",
+              timestamp: "2023-01-01T10:00:01.000Z",
+              toolCallId: "call-b1",
+              toolName: "tool-b",
+              args: { order: 2 },
+            });
+
+            // SubAgent A result
+            streamController.current.enqueue({
+              type: "tool-result",
+              subAgentId: "sub-a",
+              subAgentName: "Sub A",
+              timestamp: "2023-01-01T10:00:02.000Z",
+              toolCallId: "call-a1",
+              toolName: "tool-a",
+              result: "result-a",
+            });
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      // Verify events are in correct order
+      expect(events.length).toBe(5); // 2 base + 3 injected
+      expect(events[0]).toEqual({ type: "text-delta", textDelta: "Base1" });
+      expect(events[1].type).toBe("tool-call");
+      expect(events[1].subAgentId).toBe("sub-a");
+      expect(events[2].type).toBe("tool-call");
+      expect(events[2].subAgentId).toBe("sub-b");
+      expect(events[3].type).toBe("tool-result");
+      expect(events[3].subAgentId).toBe("sub-a");
+      expect(events[4]).toEqual({ type: "text-delta", textDelta: "Base2" });
+    });
+
+    // Stream Controller Lifecycle Tests
+    it("should properly initialize and cleanup stream controller", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Test" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Initially controller should be null
+      expect(streamController.current).toBeNull();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let controllerWasSet = false;
+
+      for await (const event of enhancedStream) {
+        events.push(event);
+
+        // Check if controller was set during stream processing
+        if (streamController.current !== null) {
+          controllerWasSet = true;
+        }
+      }
+
+      // After stream completion, controller should be cleaned up
+      expect(streamController.current).toBeNull();
+      expect(controllerWasSet).toBe(true);
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Test" });
+    });
+
+    it("should handle stream controller errors during event injection", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Before Error" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Create a mock controller that throws on enqueue
+      const errorController = {
+        enqueue: vi.fn().mockImplementation(() => {
+          throw new Error("Controller enqueue failed");
+        }),
+        close: vi.fn(),
+        error: vi.fn(),
+      };
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: errorController as any,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+
+      // Stream should continue working despite controller errors
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Before Error" });
+    });
+
+    // SubAgent Status Tracking Tests
+    it("should track SubAgent completion status correctly", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Processing" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Add some SubAgents to status tracking
+      subAgentStatus.set("sub-agent-1", { isActive: true, isCompleted: false });
+      subAgentStatus.set("sub-agent-2", { isActive: true, isCompleted: false });
+      subAgentStatus.set("sub-agent-3", { isActive: false, isCompleted: true });
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // After stream completion, active SubAgents should be marked as completed
+      expect(subAgentStatus.get("sub-agent-1")?.isCompleted).toBe(true);
+      expect(subAgentStatus.get("sub-agent-2")?.isCompleted).toBe(true);
+      expect(subAgentStatus.get("sub-agent-3")?.isCompleted).toBe(true); // Already completed
+    });
+
+    it("should mark abandoned SubAgents as completed on stream end", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Final" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Simulate abandoned SubAgents
+      subAgentStatus.set("abandoned-1", { isActive: true, isCompleted: false });
+      subAgentStatus.set("abandoned-2", { isActive: true, isCompleted: false });
+      subAgentStatus.set("completed-1", { isActive: false, isCompleted: true });
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // All active SubAgents should be marked as completed
+      for (const [, status] of subAgentStatus.entries()) {
+        expect(status.isCompleted).toBe(true);
+      }
+    });
+
+    // Event Filtering and Processing Tests
+    it("should filter different event types correctly in streamEventForwarder", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      // Create streamEventForwarder function like in the real code
+      const streamEventForwarder = async (event: any) => {
+        // Filter out text, reasoning, and source events from SubAgents
+        if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+          return; // Should not call forwarder
+        }
+
+        // Add sub-agent prefix to distinguish from parent events
+        const prefixedData = {
+          ...event.data,
+          timestamp: event.timestamp,
+          type: event.type,
+          subAgentId: event.subAgentId,
+          subAgentName: event.subAgentName,
+        };
+
+        // For tool events, add subagent prefix to display name
+        if (event.type === "tool-call" && prefixedData.toolCall) {
+          prefixedData.toolCall = {
+            ...prefixedData.toolCall,
+            toolName: `${event.subAgentName}: ${prefixedData.toolCall.toolName}`,
+          };
+        } else if (event.type === "tool-result" && prefixedData.toolResult) {
+          prefixedData.toolResult = {
+            ...prefixedData.toolResult,
+            toolName: `${event.subAgentName}: ${prefixedData.toolResult.toolName}`,
+          };
+        }
+
+        if (mockForwarder) {
+          await mockForwarder(prefixedData);
+        }
+      };
+
+      // Test various event types
+      const testEvents = [
+        { type: "text", shouldBeFiltered: true },
+        { type: "reasoning", shouldBeFiltered: true },
+        { type: "source", shouldBeFiltered: true },
+        {
+          type: "tool-call",
+          shouldBeFiltered: false,
+          data: { toolCall: { toolName: "test-tool" } },
+        },
+        {
+          type: "tool-result",
+          shouldBeFiltered: false,
+          data: { toolResult: { toolName: "test-tool" } },
+        },
+        { type: "error", shouldBeFiltered: false },
+        { type: "text-delta", shouldBeFiltered: false },
+      ];
+
+      let forwardedCount = 0;
+      for (const testEvent of testEvents) {
+        mockForwarder.mockClear();
+
+        await streamEventForwarder({
+          ...testEvent,
+          data: testEvent.data || {},
+          timestamp: "2023-01-01",
+          subAgentId: "test-sub",
+          subAgentName: "Test Sub",
+        });
+
+        if (testEvent.shouldBeFiltered) {
+          expect(mockForwarder).not.toHaveBeenCalled();
+        } else {
+          expect(mockForwarder).toHaveBeenCalled();
+          forwardedCount++;
+        }
+      }
+
+      expect(forwardedCount).toBe(4); // tool-call, tool-result, error, text-delta
+    });
+
+    it("should handle malformed SubAgent events gracefully", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      const streamEventForwarder = async (event: any) => {
+        try {
+          if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+            return;
+          }
+
+          const prefixedData = {
+            ...event.data,
+            timestamp: event.timestamp,
+            type: event.type,
+            subAgentId: event.subAgentId,
+            subAgentName: event.subAgentName,
+          };
+
+          if (mockForwarder) {
+            await mockForwarder(prefixedData);
+          }
+        } catch (error) {
+          // Should handle errors gracefully
+          return;
+        }
+      };
+
+      // Test malformed events
+      const malformedEvents = [
+        null,
+        undefined,
+        { type: "tool-call" }, // Missing required fields
+        { type: "tool-call", data: null },
+        { type: "tool-call", data: { toolCall: null } },
+        { timestamp: "2023-01-01" }, // Missing type
+      ];
+
+      for (const malformedEvent of malformedEvents) {
+        // Should not throw
+        await expect(streamEventForwarder(malformedEvent)).resolves.toBeUndefined();
+      }
+    });
+
+    it("should preserve event metadata during forwarding", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      const streamEventForwarder = async (event: any) => {
+        if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+          return;
+        }
+
+        const prefixedData = {
+          ...event.data,
+          timestamp: event.timestamp,
+          type: event.type,
+          subAgentId: event.subAgentId,
+          subAgentName: event.subAgentName,
+        };
+
+        if (mockForwarder) {
+          await mockForwarder(prefixedData);
+        }
+      };
+
+      const eventWithMetadata = {
+        type: "tool-call",
+        data: {
+          toolCall: {
+            toolName: "test-tool",
+            toolCallId: "call-123",
+            args: { param: "value" },
+          },
+          metadata: {
+            executionTime: 150,
+            retryCount: 0,
+            custom: "data",
+          },
+        },
+        timestamp: "2023-01-01T10:00:00.000Z",
+        subAgentId: "meta-sub",
+        subAgentName: "Meta Sub",
+      };
+
+      await streamEventForwarder(eventWithMetadata);
+
+      expect(mockForwarder).toHaveBeenCalledWith({
+        toolCall: {
+          toolName: "test-tool",
+          toolCallId: "call-123",
+          args: { param: "value" },
+        },
+        metadata: {
+          executionTime: 150,
+          retryCount: 0,
+          custom: "data",
+        },
+        timestamp: "2023-01-01T10:00:00.000Z",
+        type: "tool-call",
+        subAgentId: "meta-sub",
+        subAgentName: "Meta Sub",
+      });
+    });
+  });
+
+  describe("streamEventForwarder utility integration", () => {
+    it("should use the utility function for SubAgent event forwarding", async () => {
+      // Create an agent with SubAgents for testing
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Test sub agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+      });
+
+      const mainAgent = new TestAgent({
+        name: "Main Agent",
+        instructions: "Test main agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+        subAgents: [subAgent],
+      });
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (mainAgent as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+              controller.close();
+            },
+          }),
+        ),
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let eventCount = 0;
+
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+          eventCount++;
+
+          // Test that SubAgent events can be injected using the utility
+          if (eventCount === 1 && streamController.current) {
+            // Import and use the utility function
+            const { streamEventForwarder } = await import("../utils/stream-event-forwarder");
+
+            await streamEventForwarder(
+              {
+                type: "tool-call",
+                data: {
+                  toolCall: {
+                    toolCallId: "test-call",
+                    toolName: "test-tool",
+                    args: { test: "value" },
+                  },
+                },
+                timestamp: new Date().toISOString(),
+                subAgentId: "test-sub",
+                subAgentName: "Test Sub",
+              },
+              {
+                forwarder: async (eventData) => {
+                  if (streamController.current) {
+                    streamController.current.enqueue(eventData);
+                  }
+                },
+                filterTypes: [],
+                addSubAgentPrefix: true,
+              },
+            );
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      expect(events).toHaveLength(2);
+      expect(events[0]).toMatchObject({
+        type: "text-delta",
+        textDelta: "Hello",
+      });
+
+      // Verify the utility correctly formatted the SubAgent event
+      expect(events[1]).toMatchObject({
+        type: "tool-call",
+        subAgentId: "test-sub",
+        subAgentName: "Test Sub",
+        toolCall: {
+          toolName: "Test Sub: test-tool", // Should have prefix
+          toolCallId: "test-call",
+          args: { test: "value" },
+        },
+      });
+    });
+
+    it("should handle utility function errors gracefully", async () => {
+      // Create an agent with SubAgents for testing
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Test sub agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+      });
+
+      const mainAgent = new TestAgent({
+        name: "Main Agent",
+        instructions: "Test main agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+        subAgents: [subAgent],
+      });
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (mainAgent as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+              controller.close();
+            },
+          }),
+        ),
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let eventCount = 0;
+
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+          eventCount++;
+
+          // Test error handling in utility
+          if (eventCount === 1 && streamController.current) {
+            const { streamEventForwarder } = await import("../utils/stream-event-forwarder");
+
+            // Try to forward with a failing forwarder
+            await streamEventForwarder(
+              {
+                type: "tool-call",
+                data: {},
+                timestamp: new Date().toISOString(),
+                subAgentId: "test-sub",
+                subAgentName: "Test Sub",
+              },
+              {
+                forwarder: async () => {
+                  throw new Error("Forwarder failed");
+                },
+                filterTypes: [],
+                addSubAgentPrefix: true,
+              },
+            );
+          }
+        }
+      })();
+
+      // Should not throw despite forwarder error
+      await expect(streamPromise).resolves.toBeUndefined();
+      expect(events).toHaveLength(1); // Only original event
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { generateMessageId, generateToolCallId, hasKey } from "./index";
+import { generateMessageId, generateToolCallId, hasKey } from "./identifiers";
 
 describe("generateMessageId", () => {
   it("should generate a message ID with correct format", () => {

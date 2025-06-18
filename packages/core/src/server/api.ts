@@ -526,15 +526,9 @@ app.openapi(streamRoute, async (c) => {
               }
             }
 
-            // Send completion message if stream completed successfully
+            // Stream completed successfully - close without additional event
+            // The finish event should already have been sent with usage information
             if (!streamClosed) {
-              const completionData = {
-                done: true,
-                timestamp: new Date().toISOString(),
-                type: "completion",
-              };
-              const completionMessage = `data: ${JSON.stringify(completionData)}\n\n`;
-              safeEnqueue(completionMessage);
               safeClose();
             }
           } catch (iterationError) {

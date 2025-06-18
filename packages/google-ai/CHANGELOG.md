@@ -1,5 +1,18 @@
 # @voltagent/google-ai
 
+## 0.4.0
+
+### Minor Changes
+
+- [#268](https://github.com/VoltAgent/voltagent/pull/268) [`c5733b9`](https://github.com/VoltAgent/voltagent/commit/c5733b9d2ccb50e807335985362c655c4870072e) Thanks [@luixaviles](https://github.com/luixaviles)! - fix(google-ai): update additionalProperties to avoid zod errors on subagents
+
+  Fixes #114
+
+### Patch Changes
+
+- Updated dependencies [[`f7e5a34`](https://github.com/VoltAgent/voltagent/commit/f7e5a344a5bcb63d1a225e580f01dfa5886b6a01)]:
+  - @voltagent/core@0.1.38
+
 ## 0.3.14
 
 ### Patch Changes
