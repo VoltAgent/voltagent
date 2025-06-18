@@ -42,3 +42,4 @@ export * from "./opentelemetry";
 export * from "./pydantic";
 export * from "./smoleagents";
 export * from "./voltagent";
+export * from "./calendy";

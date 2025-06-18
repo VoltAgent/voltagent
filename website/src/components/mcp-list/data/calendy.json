@@ -1,0 +1,101 @@
+{
+  "id": 5,
+  "slug": "calendly",
+  "name": "Calendly",
+  "short_description": "Schedule meetings and manage appointments efficiently.",
+  "title": "Calendly MCP Server",
+  "description": "The Calendly MCP server helps your AI agents manage your meeting schedules. It can create meetings, handle cancellations, and manage all your scheduling tasks automatically.",
+  "category": ["Calendar & Scheduling"],
+  "logoKey": "calendly",
+  "avaliable_providers": ["zapier", "composio"],
+  "total_tools": [
+    {
+      "id": "cancel_event",
+      "name": "Cancel an Event",
+      "description": "Cancels an event.",
+      "providers": {
+        "zapier": { "id": "cancel_event" }
+      },
+      "mcp_content": {
+        "heading": "How to Cancel Your Meetings?",
+        "description": "Calendly MCP helps you cancel any meeting quickly. Just pick the meeting and your AI will handle the cancellation."
+      }
+    },
+    {
+      "id": "create_one_off",
+      "name": "Create One-Off Meeting",
+      "description": "Creates a new one-off meeting in Calendly.",
+      "providers": {
+        "zapier": { "id": "create_one_off" }
+      },
+      "mcp_content": {
+        "heading": "Create Single Meeting Sessions",
+        "description": "Make quick, one-time meeting slots. Perfect for setting up individual sessions without repeat schedules."
+      }
+    },
+    {
+      "id": "cancel_scheduled_event",
+      "name": "Cancel Scheduled Event",
+      "description": "Cancels a scheduled event with a specified reason for the cancellation.",
+      "providers": {
+        "zapier": { "id": "cancel_scheduled" }
+      },
+      "mcp_content": {
+        "heading": "How to Cancel with a Reason?",
+        "description": "Calendly MCP lets you cancel meetings and tell people why. Your AI sends the message to everyone in the meeting."
+      }
+    },
+    {
+      "id": "mark_no_show",
+      "name": "Mark Invitee as No Show",
+      "description": "Marks a specific invitee as a no show.",
+      "providers": {
+        "zapier": { "id": "mark_no_show" }
+      },
+      "mcp_content": {
+        "heading": "Track Missing Attendees",
+        "description": "Mark when someone misses a meeting. Helps you keep track of who shows up and who doesn't."
+      }
+    },
+    {
+      "id": "find_event",
+      "name": "Find Event",
+      "description": "Finds an event based on UUID.",
+      "providers": {
+        "zapier": { "id": "find_event" }
+      },
+      "mcp_content": {
+        "heading": "How to Find Specific Meetings?",
+        "description": "Calendly MCP helps you find any meeting using its ID number. Quick and simple way to check meeting details."
+      }
+    },
+    {
+      "id": "find_user",
+      "name": "Find User",
+      "description": "Searches for a User by name or email.",
+      "providers": {
+        "zapier": { "id": "find_user" }
+      },
+      "mcp_content": {
+        "heading": "Find Calendly Users",
+        "description": "Search for people by their name or email. Easy way to find someone's schedule."
+      }
+    },
+    {
+      "id": "get_user",
+      "name": "Get User",
+      "description": "Retrieves comprehensive details for an existing calendly user.",
+      "providers": {
+        "composio": { "id": "get_user" }
+      },
+      "mcp_content": {
+        "heading": "How to View User Information?",
+        "description": "Calendly MCP shows you all details about a user. See their settings and schedule in one place."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How Can Your AI Agents Use the Calendly MCP Server?",
+    "description": "Make meeting scheduling simple with AI tools. Your assistant helps with everything from creating meetings to handling cancellations, so you can focus on the important stuff."
+  }
+}

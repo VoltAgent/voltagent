@@ -1,0 +1,210 @@
+{
+  "id": 6,
+  "slug": "mailchimp",
+  "name": "Mailchimp",
+  "short_description": "Manage your email marketing campaigns and subscribers efficiently.",
+  "title": "Mailchimp MCP Server",
+  "description": "The Mailchimp MCP server helps your AI agents manage email campaigns and subscribers. From creating campaigns to managing lists and tracking performance, your AI can handle all email marketing tasks.",
+  "category": ["Email Marketing"],
+  "logoKey": "mailchimp",
+  "avaliable_providers": ["zapier", "composio"],
+  "total_tools": [
+    {
+      "id": "archive_subscriber",
+      "name": "Archive Subscriber",
+      "description": "Archives an existing subscriber.",
+      "providers": {
+        "zapier": { "id": "archive_subscriber" }
+      },
+      "mcp_content": {
+        "heading": "How to Archive Subscribers?",
+        "description": "Mailchimp MCP helps you archive subscribers you no longer need. Keep your lists clean and organized automatically."
+      }
+    },
+    {
+      "id": "create_campaign",
+      "name": "Create Campaign",
+      "description": "Creates a campaign draft.",
+      "providers": {
+        "zapier": { "id": "create_campaign" }
+      },
+      "mcp_content": {
+        "heading": "Create Email Campaigns",
+        "description": "Make new email campaign drafts quickly. Your AI sets up the campaign structure ready for your content."
+      }
+    },
+    {
+      "id": "campaign_report",
+      "name": "Campaign Report",
+      "description": "Get report details for a specific sent campaign.",
+      "providers": {
+        "zapier": { "id": "campaign_report" }
+      },
+      "mcp_content": {
+        "heading": "How to Check Campaign Performance?",
+        "description": "Mailchimp MCP gives you detailed campaign reports. Track opens, clicks, and other important metrics easily."
+      }
+    },
+    {
+      "id": "click_report",
+      "name": "Click Report",
+      "description": "Get report details for a specific link clicks.",
+      "providers": {
+        "zapier": { "id": "click_report" }
+      },
+      "mcp_content": {
+        "heading": "Track Link Performance",
+        "description": "See how your email links are performing. Track clicks and engagement for any link in your campaigns."
+      }
+    },
+    {
+      "id": "create_tag",
+      "name": "Create Tag",
+      "description": "Creates a new tag.",
+      "providers": {
+        "zapier": { "id": "create_tag" }
+      },
+      "mcp_content": {
+        "heading": "How to Create New Tags?",
+        "description": "Mailchimp MCP makes tag creation simple. Organize and segment your audience with custom tags."
+      }
+    },
+    {
+      "id": "create_custom_event",
+      "name": "Create Custom Event",
+      "description": "Creates a custom event for an existing subscriber.",
+      "providers": {
+        "zapier": { "id": "create_custom_event" }
+      },
+      "mcp_content": {
+        "heading": "Track Custom Subscriber Actions",
+        "description": "Add special events to track subscriber activities. Keep track of important customer interactions."
+      }
+    },
+    {
+      "id": "create_audience",
+      "name": "Create Audience",
+      "description": "Creates a new audience in your MailChimp account.",
+      "providers": {
+        "zapier": { "id": "create_audience" }
+      },
+      "mcp_content": {
+        "heading": "How to Create New Audiences?",
+        "description": "Mailchimp MCP guides you through setting up new audience lists. Organize your subscribers into different groups easily."
+      }
+    },
+    {
+      "id": "add_update_subscriber",
+      "name": "Add/Update Subscriber",
+      "description": "Add a new subscriber to an audience of your choosing. Can be used to update an existing subscriber too.",
+      "providers": {
+        "zapier": { "id": "add_update_subscriber" }
+      },
+      "mcp_content": {
+        "heading": "Manage Subscriber Information",
+        "description": "Add new subscribers or update existing ones. Keep your subscriber data current and accurate."
+      }
+    },
+    {
+      "id": "unsubscribe_delete_contact",
+      "name": "Unsubscribe or Delete Contact",
+      "description": "Unsubscribe or delete a contact by email address within an audience.",
+      "providers": {
+        "zapier": { "id": "unsubscribe_delete_contact" }
+      },
+      "mcp_content": {
+        "heading": "How to Remove Subscribers?",
+        "description": "Mailchimp MCP manages subscriber removal properly. Handle unsubscribes and deletions with just one click."
+      }
+    },
+    {
+      "id": "send_campaign",
+      "name": "Send Campaign",
+      "description": "Sends a campaign to all subscribers in an audience, segment, or tag.",
+      "providers": {
+        "zapier": { "id": "send_campaign" },
+        "composio": { "id": "send_campaign" }
+      },
+      "mcp_content": {
+        "heading": "Send Email Campaigns",
+        "description": "Let your AI send campaigns to your subscribers. Works with regular and RSS-driven campaigns."
+      }
+    },
+    {
+      "id": "add_subscriber_to_tag",
+      "name": "Add Subscriber to Tag",
+      "description": "Add an email address to a tag within an audience.",
+      "providers": {
+        "zapier": { "id": "add_subscriber_to_tag" }
+      },
+      "mcp_content": {
+        "heading": "Tag Your Subscribers",
+        "description": "Add tags to your subscribers for better organization. Group similar subscribers together easily."
+      }
+    },
+    {
+      "id": "find_campaign",
+      "name": "Find Campaign",
+      "description": "Finds an existing campaign.",
+      "providers": {
+        "zapier": { "id": "find_campaign" }
+      },
+      "mcp_content": {
+        "heading": "How to Find Campaigns?",
+        "description": "Mailchimp MCP makes campaign search easy. Find any campaign in your account instantly."
+      }
+    },
+    {
+      "id": "find_tag",
+      "name": "Find Tag",
+      "description": "Find a tag.",
+      "providers": {
+        "zapier": { "id": "find_tag" }
+      },
+      "mcp_content": {
+        "heading": "Locate Tags",
+        "description": "Find any tag in your account quickly. Makes managing subscriber groups easier."
+      }
+    },
+    {
+      "id": "find_or_create_campaign",
+      "name": "Find or Create Campaign",
+      "description": "Finds an existing campaign or creates a new one if not found.",
+      "providers": {
+        "zapier": { "id": "find_or_create_campaign" }
+      },
+      "mcp_content": {
+        "heading": "Smart Campaign Management",
+        "description": "Let Mailchimp MCP find your campaign or create a new one if needed. Prevents duplicate campaigns."
+      }
+    },
+    {
+      "id": "get_campaign_info",
+      "name": "Get Campaign Info",
+      "description": "Get information about a specific campaign.",
+      "providers": {
+        "composio": { "id": "get_campaign_info" }
+      },
+      "mcp_content": {
+        "heading": "How to Get Campaign Details?",
+        "description": "Mailchimp MCP provides complete campaign information. Check settings, content, and status in one place."
+      }
+    },
+    {
+      "id": "get_lists_info",
+      "name": "Get Lists Info",
+      "description": "Get information about all lists in the account.",
+      "providers": {
+        "composio": { "id": "get_lists_info" }
+      },
+      "mcp_content": {
+        "heading": "View All List Information",
+        "description": "See details about all your mailing lists at once. Get a complete overview of your audiences."
+      }
+    }
+  ],
+  "mcp_page_content": {
+    "title": "How Can Your AI Agents Use the Mailchimp MCP Server?",
+    "description": "Make email marketing easier with AI-powered tools. Your AI assistant helps with everything from managing subscribers to sending campaigns, so you can focus on creating great content."
+  }
+}
