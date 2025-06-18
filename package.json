@@ -39,10 +39,10 @@
     "sp": "syncpack",
     "start": "lerna run start",
     "start:example": "lerna run start --scope voltagent-basic-example",
-    "test": "lerna run test --stream -- --run",
-    "test:all": "lerna run test --stream --scope @voltagent/* -- --run",
-    "test:all:coverage": "pnpm test:all -- -- --coverage --run",
-    "test:coverage": "pnpm test -- -- --coverage --run",
+    "test": "lerna run test --stream",
+    "test:all": "lerna run test --stream --scope @voltagent/*",
+    "test:all:coverage": "pnpm test:all -- -- --coverage",
+    "test:coverage": "pnpm test -- -- --coverage",
     "version-packages": "changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile && git add pnpm-lock.yaml"
   },
   "lint-staged": {
