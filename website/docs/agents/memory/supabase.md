@@ -236,6 +236,10 @@ const memory = new SupabaseMemory({
   // Optional: Specify a custom base table name prefix
   // This MUST match the prefix used in your SQL setup if customized.
   tableName: "voltagent_memory", // Defaults to 'voltagent_memory'
+  // Optional: Limit the number of messages stored per conversation
+  storageLimit: 100, // Defaults to 100
+  // Optional: Enable verbose debug logging from the memory provider
+  debug: true, // Defaults to false
 });
 
 // Alternative: Use existing Supabase client
@@ -245,6 +249,8 @@ const supabaseClient = createClient(supabaseUrl, supabaseKey);
 const memory = new SupabaseMemory({
   client: supabaseClient,
   tableName: "voltagent_memory", // Optional
+  storageLimit: 150, // Optional: Custom storage limit
+  debug: false, // Optional: Debug logging
 });
 
 const agent = new Agent({
@@ -261,11 +267,15 @@ const agent = new Agent({
 - `supabaseUrl` (string, required): Your Supabase project URL.
 - `supabaseKey` (string, required): Your Supabase project `anon` key (or a service role key if used in a secure backend environment, though `anon` key with appropriate RLS policies is often sufficient).
 - `tableName` (string, optional): A prefix for the database table names. Defaults to `voltagent_memory`. If you change this, ensure your SQL table creation script uses the same prefix.
+- `storageLimit` (number, optional): The maximum number of messages to retain per conversation. When the limit is reached, the oldest messages are automatically deleted to make room for new ones. Defaults to `100`.
+- `debug` (boolean, optional): Enables detailed logging from the `SupabaseMemory` provider to the console, useful for understanding memory operations during development. Defaults to `false`.
 
 Alternatively, you can pass an existing Supabase client:
 
 - `client` (SupabaseClient, required when not using supabaseUrl/supabaseKey): An existing Supabase client instance.
 - `tableName` (string, optional): Table name prefix when using existing client.
+- `storageLimit` (number, optional): Storage limit when using existing client. Defaults to `100`.
+- `debug` (boolean, optional): Debug logging when using existing client. Defaults to `false`.
 
 ## Conversation Management
 

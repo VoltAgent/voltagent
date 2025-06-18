@@ -198,7 +198,10 @@ const memory = new SupabaseMemory({
   supabaseUrl,
   supabaseKey,
   // Optional: Specify a custom base table name prefix
-  // tableName: 'my_custom_prefix'
+  // tableName: 'my_custom_prefix',
+  // Optional: Configure storage limits and debugging
+  storageLimit: 100, // Maximum messages per conversation (default: 100, set to 0 for unlimited)
+  debug: false, // Enable debug logging (default: false)
 });
 
 // Pass the memory instance to your Agent
@@ -210,6 +213,61 @@ const agent = new Agent({
 });
 
 // ... rest of your VoltAgent setup
+```
+
+## Configuration Options
+
+### Storage Limits
+
+The Supabase memory provider supports automatic message pruning to manage storage efficiently:
+
+```typescript
+const memory = new SupabaseMemory({
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseKey: process.env.SUPABASE_KEY,
+  storageLimit: 100, // Keep only the latest 100 messages per conversation
+});
+
+// For unlimited storage (no automatic pruning)
+const unlimitedMemory = new SupabaseMemory({
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseKey: process.env.SUPABASE_KEY,
+  storageLimit: 0, // No limit - messages are never automatically deleted
+});
+```
+
+When a storage limit is set, the provider automatically removes the oldest messages when the limit is exceeded. This helps:
+
+- Control database storage costs
+- Maintain conversation performance
+- Manage memory usage for long-running conversations
+
+### Debug Mode
+
+Enable debug logging to troubleshoot issues:
+
+```typescript
+const memory = new SupabaseMemory({
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseKey: process.env.SUPABASE_KEY,
+  debug: true, // Enables detailed logging
+});
+```
+
+### Using an Existing Supabase Client
+
+If you already have a Supabase client instance:
+
+```typescript
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+const memory = new SupabaseMemory({
+  client: supabaseClient,
+  storageLimit: 50,
+  debug: true,
+});
 ```
 
 ## What is VoltAgent?
