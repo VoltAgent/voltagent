@@ -137,17 +137,18 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-
 # NX
 .nx
 
-
+# VoltAgent
 .voltagent
 
 # Create VoltAgent App
 !packages/create-voltagent-app/templates/base/.env
 
 # cursor
+.cursor/*
+!.cursor/rules/
 .cursor/rules/*
 !.cursor/rules/voltagent-*.mdc
 
