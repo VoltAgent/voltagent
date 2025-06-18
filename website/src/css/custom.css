@@ -4120,8 +4120,8 @@ code .token.coord {
   padding: 0 !important;
 }
 
-.menu__link--sublist-caret:after {
-  display: none;
+.menu__link--sublist-caret::after {
+  width: 0.9rem !important;
 }
 
 .menu__link {
@@ -4170,15 +4170,18 @@ code .token.coord {
   position: relative !important;
   padding-left: 1.5rem !important;
 }
+
+/* .menu__list-item-collapsible .menu__link::before {
+  content:"-" !important;
 .menu__list-item-collapsible .menu__link::before {
   content: "•" !important;
   position: absolute !important;
-  left: 0.5rem !important;
+  left: 0.1rem !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   color: rgb(16, 185, 129) !important;
   font-size: 1rem !important;
-}
+}  */
 
 .menu__list-item-collapsible .menu__link--active {
   color: rgb(16, 185, 129) !important;
@@ -4306,7 +4309,7 @@ aside.theme-doc-sidebar-container {
 /* Documentation Images */
 .markdown img {
   border-radius: 12px !important;
-  padding: 6px !important;
+  padding: 4px !important;
 
   /*   border: 1px solid rgba(226, 232, 240, 0.8) !important; 
   background-color: rgba(236, 228, 232, 0.334) !important; 
@@ -4314,9 +4317,9 @@ aside.theme-doc-sidebar-container {
 }
 
 [data-theme="dark"] .markdown img {
-  border: 1px solid rgba(51, 65, 85, 0.8) !important;
+  border: 1px solid rgba(70, 76, 85, 0.8) !important;
   /* slate-700 with opacity */
-  background-color: rgba(31, 41, 55, 0.25) !important;
+  background-color: rgba(19, 19, 20, 0.25) !important;
   /* bg-gray-800/25 */
 }
 

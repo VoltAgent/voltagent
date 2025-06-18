@@ -5,7 +5,9 @@ import React from "react";
 
 export default function Navbar() {
   const location = useLocation();
-  const isDocsPage = location.pathname.includes("/docs");
+  const isDocsPage =
+    location.pathname.includes("/docs") ||
+    location.pathname.includes("/voltops-llm-observability-docs");
 
   if (isDocsPage) {
     return <DocNavbar />;

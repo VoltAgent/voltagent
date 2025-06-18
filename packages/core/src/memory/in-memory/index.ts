@@ -2,6 +2,7 @@ import type { NewTimelineEvent } from "../../events/types";
 import devLogger from "../../utils/internal/dev-logger";
 import type {
   Conversation,
+  ConversationQueryOptions,
   CreateConversationInput,
   Memory,
   MemoryMessage,
@@ -54,7 +55,7 @@ export class InMemoryStorage implements Memory {
    * @param historyId Related history entry ID
    * @param agentId Agent ID for filtering
    */
-  async addTimelineEvent(
+  public async addTimelineEvent(
     key: string,
     value: NewTimelineEvent,
     historyId: string,
@@ -90,7 +91,7 @@ export class InMemoryStorage implements Memory {
   /**
    * Get a history entry by ID
    */
-  async getHistoryEntry(key: string): Promise<any | undefined> {
+  public async getHistoryEntry(key: string): Promise<any | undefined> {
     this.debug(`Getting history entry with key ${key}`);
     const entry = this.historyEntries.get(key);
 
@@ -101,7 +102,7 @@ export class InMemoryStorage implements Memory {
   /**
    * Get a history step by ID
    */
-  async getHistoryStep(key: string): Promise<any | undefined> {
+  public async getHistoryStep(key: string): Promise<any | undefined> {
     this.debug(`Getting history step with key ${key}`);
     const step = this.historySteps.get(key);
     return step ? JSON.parse(JSON.stringify(step)) : undefined;
@@ -110,14 +111,14 @@ export class InMemoryStorage implements Memory {
   /**
    * Add a history entry
    */
-  async addHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
+  public async addHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
     this.debug(`Adding history entry with key ${key} for agent ${agentId}`, value);
 
     // Make sure events and steps arrays exist
     if (!value.events) value.events = [];
     if (!value.steps) value.steps = [];
 
-    // Store the entry directly
+    // Store the entry directly with userId and conversationId support
     this.historyEntries.set(key, {
       ...value,
       _agentId: agentId,
@@ -137,7 +138,7 @@ export class InMemoryStorage implements Memory {
   /**
    * Update a history entry
    */
-  async updateHistoryEntry(key: string, value: any, agentId?: string): Promise<void> {
+  public async updateHistoryEntry(key: string, value: any, agentId?: string): Promise<void> {
     this.debug(`Updating history entry with key ${key}`, value);
 
     const existingEntry = this.historyEntries.get(key);
@@ -160,7 +161,12 @@ export class InMemoryStorage implements Memory {
   /**
    * Add a history step
    */
-  async addHistoryStep(key: string, value: any, historyId: string, agentId: string): Promise<void> {
+  public async addHistoryStep(
+    key: string,
+    value: any,
+    historyId: string,
+    agentId: string,
+  ): Promise<void> {
     this.debug(
       `Adding history step with key ${key} for history ${historyId} and agent ${agentId}`,
       value,
@@ -204,7 +210,7 @@ export class InMemoryStorage implements Memory {
   /**
    * Update a history step
    */
-  async updateHistoryStep(
+  public async updateHistoryStep(
     key: string,
     value: any,
     historyId: string,
@@ -249,7 +255,7 @@ export class InMemoryStorage implements Memory {
   /**
    * Get all history entries for an agent
    */
-  async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
+  public async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
     this.debug(`Getting all history entries for agent ${agentId}`);
 
     // Get all entry keys for this agent
@@ -285,7 +291,7 @@ export class InMemoryStorage implements Memory {
    * @param options Filtering options
    * @returns Filtered messages
    */
-  async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
+  public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
     const {
       userId = "default",
       conversationId = "default",
@@ -343,15 +349,21 @@ export class InMemoryStorage implements Memory {
   /**
    * Add a message to the conversation history
    * @param message Message to add
-   * @param userId User identifier (optional, defaults to "default")
    * @param conversationId Conversation identifier (optional, defaults to "default")
    */
-  async addMessage(
-    message: MemoryMessage,
-    userId = "default",
-    conversationId = "default",
-  ): Promise<void> {
-    this.debug(`Adding message for user ${userId} and conversation ${conversationId}`, message);
+  public async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
+    this.debug(`Adding message for conversation ${conversationId}`, message);
+
+    // Get the conversation to find the userId
+    const conversation = await this.getConversation(conversationId);
+    let userId = "default";
+
+    if (conversation) {
+      userId = conversation.userId;
+    } else {
+      // If conversation doesn't exist, use default user
+      this.debug(`Conversation ${conversationId} not found, using default user`);
+    }
 
     // Create user's messages container if it doesn't exist
     if (!this.storage[userId]) {
@@ -380,7 +392,7 @@ export class InMemoryStorage implements Memory {
    * Clear all messages for a user and optionally a specific conversation
    * @param options Options specifying which messages to clear
    */
-  async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
+  public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
     const { userId, conversationId } = options;
 
     this.debug(
@@ -406,12 +418,13 @@ export class InMemoryStorage implements Memory {
    * @param conversation Conversation to create
    * @returns Created conversation
    */
-  async createConversation(conversation: CreateConversationInput): Promise<Conversation> {
+  public async createConversation(conversation: CreateConversationInput): Promise<Conversation> {
     const now = new Date().toISOString();
 
     const newConversation: Conversation = {
       id: conversation.id,
       resourceId: conversation.resourceId,
+      userId: conversation.userId,
       title: conversation.title,
       metadata: conversation.metadata,
       createdAt: now,
@@ -429,7 +442,7 @@ export class InMemoryStorage implements Memory {
    * @param id Conversation ID
    * @returns Conversation or null if not found
    */
-  async getConversation(id: string): Promise<Conversation | null> {
+  public async getConversation(id: string): Promise<Conversation | null> {
     this.debug(`Getting conversation ${id}`);
     return this.conversations.get(id) || null;
   }
@@ -439,7 +452,7 @@ export class InMemoryStorage implements Memory {
    * @param resourceId Resource ID
    * @returns Array of conversations
    */
-  async getConversations(resourceId: string): Promise<Conversation[]> {
+  public async getConversations(resourceId: string): Promise<Conversation[]> {
     this.debug(`Getting conversations for resource ${resourceId}`);
 
     // Filter and sort conversations (newest first)
@@ -451,12 +464,260 @@ export class InMemoryStorage implements Memory {
   }
 
   /**
+   * Get conversations by user ID with query options
+   * @param userId User ID
+   * @param options Query options
+   * @returns Array of conversations
+   */
+  public async getConversationsByUserId(
+    userId: string,
+    options: Omit<ConversationQueryOptions, "userId"> = {},
+  ): Promise<Conversation[]> {
+    this.debug(`Getting conversations for user ${userId}`, options);
+
+    const {
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    // Filter conversations by user ID
+    let filtered = Array.from(this.conversations.values()).filter((c) => c.userId === userId);
+
+    // Apply resource filter if specified
+    if (resourceId) {
+      filtered = filtered.filter((c) => c.resourceId === resourceId);
+    }
+
+    // Sort conversations
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (orderBy) {
+        case "created_at":
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case "updated_at":
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+          break;
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        default:
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+      }
+
+      if (orderDirection === "ASC") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      }
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    });
+
+    // Apply pagination
+    if (limit > 0) {
+      filtered = filtered.slice(offset, offset + limit);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Query conversations with flexible filtering and pagination options
+   *
+   * This method provides a powerful way to search and filter conversations
+   * with support for user-based filtering, resource filtering, pagination,
+   * and custom sorting.
+   *
+   * @param options Query options for filtering and pagination
+   * @param options.userId Optional user ID to filter conversations by specific user
+   * @param options.resourceId Optional resource ID to filter conversations by specific resource
+   * @param options.limit Maximum number of conversations to return (default: 50)
+   * @param options.offset Number of conversations to skip for pagination (default: 0)
+   * @param options.orderBy Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
+   * @param options.orderDirection Sort direction: 'ASC' or 'DESC' (default: 'DESC')
+   *
+   * @returns Promise that resolves to an array of conversations matching the criteria
+   *
+   * @example
+   * ```typescript
+   * // Get all conversations for a specific user
+   * const userConversations = await storage.queryConversations({
+   *   userId: 'user123',
+   *   limit: 20
+   * });
+   *
+   * // Get conversations for a resource with pagination
+   * const resourceConversations = await storage.queryConversations({
+   *   resourceId: 'chatbot-v1',
+   *   limit: 10,
+   *   offset: 20,
+   *   orderBy: 'created_at',
+   *   orderDirection: 'ASC'
+   * });
+   *
+   * // Get all conversations (admin view)
+   * const allConversations = await storage.queryConversations({
+   *   limit: 100,
+   *   orderBy: 'updated_at'
+   * });
+   * ```
+   */
+  public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
+    this.debug("Querying conversations", options);
+
+    const {
+      userId,
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    // Start with all conversations
+    let filtered = Array.from(this.conversations.values());
+
+    // Apply user filter if specified
+    if (userId) {
+      filtered = filtered.filter((c) => c.userId === userId);
+    }
+
+    // Apply resource filter if specified
+    if (resourceId) {
+      filtered = filtered.filter((c) => c.resourceId === resourceId);
+    }
+
+    // Sort conversations
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (orderBy) {
+        case "created_at":
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case "updated_at":
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+          break;
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        default:
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+      }
+
+      if (orderDirection === "ASC") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      }
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    });
+
+    // Apply pagination
+    if (limit > 0) {
+      filtered = filtered.slice(offset, offset + limit);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Get messages for a specific conversation with pagination support
+   *
+   * This method retrieves all messages within a conversation, ordered chronologically
+   * from oldest to newest. It supports pagination to handle large conversations
+   * efficiently and avoid memory issues.
+   *
+   * @param conversationId The unique identifier of the conversation to retrieve messages from
+   * @param options Optional pagination and filtering options
+   * @param options.limit Maximum number of messages to return (default: 100)
+   * @param options.offset Number of messages to skip for pagination (default: 0)
+   *
+   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
+   *
+   * @example
+   * ```typescript
+   * // Get the first 50 messages in a conversation
+   * const messages = await storage.getConversationMessages('conv-123', {
+   *   limit: 50
+   * });
+   *
+   * // Get messages with pagination (skip first 20, get next 30)
+   * const olderMessages = await storage.getConversationMessages('conv-123', {
+   *   limit: 30,
+   *   offset: 20
+   * });
+   *
+   * // Get all messages (use with caution for large conversations)
+   * const allMessages = await storage.getConversationMessages('conv-123');
+   *
+   * // Process messages in batches
+   * const batchSize = 100;
+   * let offset = 0;
+   * let hasMore = true;
+   *
+   * while (hasMore) {
+   *   const batch = await storage.getConversationMessages('conv-123', {
+   *     limit: batchSize,
+   *     offset: offset
+   *   });
+   *
+   *   // Process batch
+   *   processBatch(batch);
+   *
+   *   hasMore = batch.length === batchSize;
+   *   offset += batchSize;
+   * }
+   * ```
+   *
+   * @throws {Error} If the conversation ID is invalid or operation fails
+   */
+  public async getConversationMessages(
+    conversationId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<MemoryMessage[]> {
+    this.debug(`Getting messages for conversation ${conversationId}`, options);
+
+    const { limit = 100, offset = 0 } = options;
+
+    // Find messages across all users for this conversation
+    const allMessages: MemoryMessage[] = [];
+
+    for (const userId in this.storage) {
+      const userMessages = this.storage[userId][conversationId] || [];
+      allMessages.push(...userMessages);
+    }
+
+    // Sort by creation time
+    allMessages.sort((a, b) => {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
+    // Apply pagination
+    if (limit > 0) {
+      return allMessages.slice(offset, offset + limit);
+    }
+
+    return allMessages;
+  }
+
+  /**
    * Update a conversation
    * @param id Conversation ID
    * @param updates Updates to apply
    * @returns Updated conversation
    */
-  async updateConversation(
+  public async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
   ): Promise<Conversation> {
@@ -482,7 +743,7 @@ export class InMemoryStorage implements Memory {
    * Delete a conversation by ID
    * @param id Conversation ID
    */
-  async deleteConversation(id: string): Promise<void> {
+  public async deleteConversation(id: string): Promise<void> {
     // Delete all messages in the conversation
     for (const userId in this.storage) {
       delete this.storage[userId][id];

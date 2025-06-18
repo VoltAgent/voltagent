@@ -36,7 +36,7 @@
 
   Add support for Vercel AI SDK observability with automated tracing and monitoring capabilities.
 
-  Documentation: https://voltagent.dev/docs-observability/vercel-ai/
+  Documentation: https://voltagent.dev/voltops-llm-observability-docs/vercel-ai/
 
 - Updated dependencies [[`1cd2a93`](https://github.com/VoltAgent/voltagent/commit/1cd2a9307d10bf5c90083138655aca9614d8053b)]:
   - @voltagent/sdk@0.1.3

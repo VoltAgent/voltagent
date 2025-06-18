@@ -5,6 +5,7 @@ import {
   StdioClientTransport,
   getDefaultEnvironment,
 } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
@@ -23,7 +24,9 @@ import type {
   MCPServerConfig,
   MCPToolCall,
   MCPToolResult,
+  SSEServerConfig,
   StdioServerConfig,
+  StreamableHTTPServerConfig,
 } from "../types";
 
 /**
@@ -58,6 +61,21 @@ export class MCPClient extends EventEmitter {
   private readonly clientInfo: ClientInfo; // Renamed back from identity
 
   /**
+   * Server configuration for fallback attempts.
+   */
+  private readonly serverConfig: MCPServerConfig;
+
+  /**
+   * Whether to attempt SSE fallback if streamable HTTP fails.
+   */
+  private shouldAttemptFallback = false;
+
+  /**
+   * Client capabilities for re-initialization.
+   */
+  private readonly capabilities: Record<string, unknown>;
+
+  /**
    * Creates a new MCP client instance.
    * @param config Configuration for the client, including server details and client identity.
    */
@@ -65,18 +83,32 @@ export class MCPClient extends EventEmitter {
     super();
 
     this.clientInfo = config.clientInfo;
+    this.serverConfig = config.server;
+    this.capabilities = config.capabilities || {};
     this.client = new Client(this.clientInfo, {
-      capabilities: config.capabilities || {},
+      capabilities: this.capabilities,
     });
 
     if (this.isHTTPServer(config.server)) {
-      // Use original type guard name
+      // HTTP type: Try streamable HTTP first with SSE fallback
+      this.transport = new StreamableHTTPClientTransport(new URL(config.server.url), {
+        requestInit: config.server.requestInit,
+      });
+      this.shouldAttemptFallback = true;
+    } else if (this.isSSEServer(config.server)) {
+      // Explicit SSE transport
       this.transport = new SSEClientTransport(new URL(config.server.url), {
         requestInit: config.server.requestInit,
         eventSourceInit: config.server.eventSourceInit,
       });
+    } else if (this.isStreamableHTTPServer(config.server)) {
+      // Explicit streamable HTTP transport (no fallback)
+      this.transport = new StreamableHTTPClientTransport(new URL(config.server.url), {
+        requestInit: config.server.requestInit,
+        sessionId: config.server.sessionId,
+      });
     } else if (this.isStdioServer(config.server)) {
-      // Use original type guard name
+      // Stdio transport
       this.transport = new StdioClientTransport({
         command: config.server.command,
         args: config.server.args || [],
@@ -119,9 +151,55 @@ export class MCPClient extends EventEmitter {
       this.connected = true;
       this.emit("connect");
     } catch (error) {
+      // If this is an HTTP config with fallback enabled, try SSE
+      if (this.shouldAttemptFallback && this.isHTTPServer(this.serverConfig)) {
+        await this.attemptSSEFallback(error);
+        return;
+      }
+
       this.emitError(error); // Use original error handler name
       throw new Error(
         `MCP connection failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Attempts to connect using SSE transport as a fallback.
+   * @param originalError The error from the initial connection attempt.
+   */
+  private async attemptSSEFallback(originalError: unknown): Promise<void> {
+    devLogger.info("Streamable HTTP connection failed, attempting SSE fallback");
+
+    // Create new SSE transport
+    if (!this.isHTTPServer(this.serverConfig)) {
+      throw new Error("Invalid server config for SSE fallback");
+    }
+
+    this.transport = new SSEClientTransport(new URL(this.serverConfig.url), {
+      requestInit: this.serverConfig.requestInit,
+      eventSourceInit: this.serverConfig.eventSourceInit,
+    });
+
+    // Create new client instance for the new transport
+    this.client = new Client(this.clientInfo, {
+      capabilities: this.capabilities,
+    });
+
+    // Disable further fallback attempts
+    this.shouldAttemptFallback = false;
+
+    // Re-setup event handlers
+    this.setupEventHandlers();
+
+    try {
+      await this.client.connect(this.transport);
+      this.connected = true;
+      this.emit("connect");
+    } catch (fallbackError) {
+      this.emitError(fallbackError);
+      throw new Error(
+        `MCP connection failed with both transports: ${originalError instanceof Error ? originalError.message : String(originalError)}, SSE: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
       );
     }
   }
@@ -315,6 +393,24 @@ export class MCPClient extends EventEmitter {
   private isHTTPServer(server: MCPServerConfig): server is HTTPServerConfig {
     // Renamed back from isHttpConfig
     return server.type === "http";
+  }
+
+  /**
+   * Type guard to check if a server configuration is for an SSE server.
+   * @param server The server configuration object.
+   * @returns True if the configuration type is 'sse', false otherwise.
+   */
+  private isSSEServer(server: MCPServerConfig): server is SSEServerConfig {
+    return server.type === "sse";
+  }
+
+  /**
+   * Type guard to check if a server configuration is for a Streamable HTTP server.
+   * @param server The server configuration object.
+   * @returns True if the configuration type is 'streamable-http', false otherwise.
+   */
+  private isStreamableHTTPServer(server: MCPServerConfig): server is StreamableHTTPServerConfig {
+    return server.type === "streamable-http";
   }
 
   /**

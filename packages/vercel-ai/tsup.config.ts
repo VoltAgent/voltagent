@@ -6,7 +6,7 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: false,
-  target: "es2015",
+  target: "es2022",
   outDir: "dist",
   minify: false,
   dts: true,

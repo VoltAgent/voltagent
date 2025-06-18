@@ -1,5 +1,62 @@
 # @voltagent/google-ai
 
+## 0.4.0
+
+### Minor Changes
+
+- [#268](https://github.com/VoltAgent/voltagent/pull/268) [`c5733b9`](https://github.com/VoltAgent/voltagent/commit/c5733b9d2ccb50e807335985362c655c4870072e) Thanks [@luixaviles](https://github.com/luixaviles)! - fix(google-ai): update additionalProperties to avoid zod errors on subagents
+
+  Fixes #114
+
+### Patch Changes
+
+- Updated dependencies [[`f7e5a34`](https://github.com/VoltAgent/voltagent/commit/f7e5a344a5bcb63d1a225e580f01dfa5886b6a01)]:
+  - @voltagent/core@0.1.38
+
+## 0.3.14
+
+### Patch Changes
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
 ## 0.3.13
 
 ### Patch Changes

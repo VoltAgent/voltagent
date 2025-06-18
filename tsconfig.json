@@ -16,7 +16,8 @@
       "generate-package": ["tools/generate-package/src/index.ts"],
       "generators": ["tools/generators/src/index.ts"],
       "tools": ["tools/src/index.ts"]
-    }
+    },
+    "types": ["vitest/globals"]
   },
   "exclude": ["node_modules", "dist", "**/node_modules", "**/dist", "website", "**/website"]
 }

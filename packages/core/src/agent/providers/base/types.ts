@@ -64,6 +64,78 @@ export type ProviderTextResponse<TOriginalResponse> = {
   finishReason?: string;
 };
 
+// Standard stream part types for fullStream
+export type TextDeltaStreamPart = {
+  type: "text-delta";
+  textDelta: string;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+export type ReasoningStreamPart = {
+  type: "reasoning";
+  reasoning: string;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+export type SourceStreamPart = {
+  type: "source";
+  source: string;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+export type ToolCallStreamPart = {
+  type: "tool-call";
+  toolCallId: string;
+  toolName: string;
+  args: Record<string, any>;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+export type ToolResultStreamPart = {
+  type: "tool-result";
+  toolCallId: string;
+  toolName: string;
+  result: any;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+export type FinishStreamPart = {
+  type: "finish";
+  finishReason?: string;
+  usage?: UsageInfo;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+export type ErrorStreamPart = {
+  type: "error";
+  error: Error;
+  // SubAgent fields (optional)
+  subAgentId?: string;
+  subAgentName?: string;
+};
+
+// Union type for all stream parts
+export type StreamPart =
+  | TextDeltaStreamPart
+  | ReasoningStreamPart
+  | SourceStreamPart
+  | ToolCallStreamPart
+  | ToolResultStreamPart
+  | FinishStreamPart
+  | ErrorStreamPart;
+
 /**
  * Response type for text streaming operations
  */
@@ -77,6 +149,13 @@ export type ProviderTextStreamResponse<TOriginalResponse> = {
    * Text stream for consuming the response
    */
   textStream: AsyncIterableStream<string>;
+
+  /**
+   * Full stream for consuming all events (text, tool calls, reasoning, etc.)
+   * This provides access to the complete stream of events from the provider
+   * Optional - only available in providers that support it
+   */
+  fullStream?: AsyncIterable<StreamPart>;
 };
 
 /**

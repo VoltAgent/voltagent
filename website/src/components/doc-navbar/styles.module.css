@@ -78,8 +78,9 @@
 }
 
 .navLink.active {
-  font-weight: 500;
-  color: #ffffff;
+  font-weight: 600;
+  color: #00d992;
+  box-shadow: 0 0 20px rgba(0, 217, 146, 0.1);
 }
 
 .docNavbarRight {

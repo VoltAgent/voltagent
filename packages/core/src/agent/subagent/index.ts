@@ -97,7 +97,7 @@ export class SubAgentManager {
       .join("\n");
 
     return `
-    You are a supervisor agent that coordinates between specialized agents:
+You are a supervisor agent that coordinates between specialized agents:
 
 <specialized_agents>
 ${subAgentList}
@@ -131,7 +131,7 @@ ${baseInstructions}
 <agents_memory>
 ${agentsMemory || "No previous agent interactions available."}
 </agents_memory>
-`;
+`.trim();
   }
 
   /**
@@ -163,7 +163,7 @@ ${agentsMemory || "No previous agent interactions available."}
     try {
       // Call onHandoff hook if source agent is provided
       if (sourceAgent && targetAgent.hooks) {
-        await targetAgent.hooks.onHandoff?.(targetAgent, sourceAgent);
+        await targetAgent.hooks.onHandoff?.({ agent: targetAgent, source: sourceAgent });
       }
 
       // Get relevant context from memory (to be passed from Agent class)
@@ -177,8 +177,11 @@ ${task}
 Context: ${JSON.stringify(context)}`,
       };
 
-      // Send the handoff to the target agent, INCLUDING PARENT CONTEXT and USERCONTEXT
-      const response = await targetAgent.generateText([handoffMessage, ...sharedContext], {
+      // Get the real-time event forwarder from options (passed from delegate tool)
+      const forwardEvent = options.forwardEvent;
+
+      // Use streamText instead of generateText to capture tool calls in real-time
+      const streamResponse = await targetAgent.streamText([handoffMessage, ...sharedContext], {
         conversationId: handoffConversationId,
         userId,
         parentAgentId: sourceAgent?.id || parentAgentId,
@@ -186,10 +189,135 @@ Context: ${JSON.stringify(context)}`,
         userContext,
       });
 
+      // Collect all stream chunks for final result
+      let finalText = "";
+
+      // Consume the full stream to capture all events
+      for await (const part of streamResponse.fullStream) {
+        const timestamp = new Date().toISOString();
+
+        switch (part.type) {
+          case "text-delta": {
+            finalText += part.textDelta;
+
+            const eventData = {
+              type: "text-delta",
+              data: {
+                textDelta: part.textDelta,
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
+            break;
+          }
+          case "reasoning": {
+            const eventData = {
+              type: "reasoning",
+              data: {
+                reasoning: part.reasoning,
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
+            break;
+          }
+          case "source": {
+            const eventData = {
+              type: "source",
+              data: {
+                source: part.source,
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
+            break;
+          }
+          case "tool-call": {
+            const eventData = {
+              type: "tool-call",
+              data: {
+                toolCall: {
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  args: part.args,
+                },
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
+            break;
+          }
+          case "tool-result": {
+            const eventData = {
+              type: "tool-result",
+              data: {
+                toolResult: {
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  result: part.result,
+                },
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
+            break;
+          }
+
+          case "error": {
+            const eventData = {
+              type: "error",
+              data: {
+                error: part.error?.message || "Stream error occurred",
+                code: "STREAM_ERROR",
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
+            break;
+          }
+        }
+      }
+
       return {
-        result: response.text,
+        result: finalText,
         conversationId: handoffConversationId,
-        messages: [handoffMessage, { role: "assistant", content: response.text }],
+        messages: [handoffMessage, { role: "assistant", content: finalText }],
         status: "success",
       };
     } catch (error) {
@@ -325,6 +453,17 @@ Context: ${JSON.stringify(context)}`,
           // This is passed from the Agent class via options when the tool is called
           const currentHistoryEntryId = options.currentHistoryEntryId;
 
+          // Create real-time event forwarder function
+          const forwardEvent = options.forwardEvent as
+            | ((event: {
+                type: string;
+                data: any;
+                timestamp: string;
+                subAgentId: string;
+                subAgentName: string;
+              }) => Promise<void>)
+            | undefined;
+
           // Wait for all agent tasks to complete using Promise.all
           const results = await this.handoffToMultiple({
             task,
@@ -336,11 +475,13 @@ Context: ${JSON.stringify(context)}`,
             parentHistoryEntryId: currentHistoryEntryId,
             // Pass the supervisor's userContext to the handoff options
             userContext: supervisorUserContext,
+            // Pass the real-time event forwarder
+            forwardEvent,
             ...options,
           });
 
           // Return structured results with agent names, their responses, and status
-          return results.map((result, index) => {
+          const structuredResults = results.map((result, index) => {
             // Get status and error in a type-safe way
             const status = result.status || "success";
             const errorInfo =
@@ -358,6 +499,8 @@ Context: ${JSON.stringify(context)}`,
               error: errorInfo,
             };
           });
+
+          return structuredResults;
         } catch (error) {
           devLogger.error("Error in delegate_task tool execution:", error);
 

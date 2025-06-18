@@ -35,7 +35,23 @@ import {
 import { AgentRegistry } from "./registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 
+// Configuration interface
+export interface ServerConfig {
+  enableSwaggerUI?: boolean;
+  port?: number;
+}
+
 const app = new OpenAPIHono();
+
+// Function to setup Swagger UI based on config
+export const setupSwaggerUI = (config?: ServerConfig) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const shouldEnableSwaggerUI = config?.enableSwaggerUI ?? !isProduction;
+
+  if (shouldEnableSwaggerUI) {
+    app.get("/ui", swaggerUI({ url: "/doc" }));
+  }
+};
 
 // Nerdy landing page
 app.get("/", (c) => {
@@ -347,47 +363,172 @@ app.openapi(streamRoute, async (c) => {
 
           const response = await agent.streamText(input, {
             ...options,
+            // No need to pass streamEventForwarder - SubAgent events are now handled automatically
             provider: {
               maxTokens: options.maxTokens,
               temperature: options.temperature,
-              // Add onError callback to handle streaming errors
-              onError: async (error: any) => {
-                const errorData = {
-                  error: error?.message ?? "Streaming failed",
-                  timestamp: new Date().toISOString(),
-                  type: "error",
-                  code: error.code || "STREAM_ERROR",
-                };
-                const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
-                safeEnqueue(errorMessage);
-                safeClose();
-              },
+              // Note: No onError callback needed - tool errors are handled via fullStream
+              // Stream errors are handled by try/catch blocks around fullStream iteration
             },
           });
 
-          // Iterate through the text stream
+          // Iterate through the full stream if available, otherwise fallback to text stream
           try {
-            for await (const chunk of response.textStream) {
-              if (streamClosed) break;
+            if (response.fullStream) {
+              // Use fullStream for rich events (text, tool calls, reasoning, etc.)
+              for await (const part of response.fullStream) {
+                if (streamClosed) break;
 
-              const data = {
-                text: chunk,
-                timestamp: new Date().toISOString(),
-                type: "text",
-              };
-              const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-              safeEnqueue(sseMessage);
+                switch (part.type) {
+                  case "text-delta": {
+                    const data = {
+                      text: part.textDelta,
+                      timestamp: new Date().toISOString(),
+                      type: "text",
+                      // Forward SubAgent metadata if present
+                      ...(part.subAgentId &&
+                        part.subAgentName && {
+                          subAgentId: part.subAgentId,
+                          subAgentName: part.subAgentName,
+                        }),
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "reasoning": {
+                    const data = {
+                      reasoning: part.reasoning,
+                      timestamp: new Date().toISOString(),
+                      type: "reasoning",
+                      // Forward SubAgent metadata if present
+                      ...(part.subAgentId &&
+                        part.subAgentName && {
+                          subAgentId: part.subAgentId,
+                          subAgentName: part.subAgentName,
+                        }),
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "source": {
+                    const data = {
+                      source: part.source,
+                      timestamp: new Date().toISOString(),
+                      type: "source",
+                      // Forward SubAgent metadata if present
+                      ...(part.subAgentId &&
+                        part.subAgentName && {
+                          subAgentId: part.subAgentId,
+                          subAgentName: part.subAgentName,
+                        }),
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "tool-call": {
+                    const data = {
+                      toolCall: {
+                        toolCallId: part.toolCallId,
+                        toolName: part.toolName,
+                        args: part.args,
+                      },
+                      timestamp: new Date().toISOString(),
+                      type: "tool-call",
+                      // Forward SubAgent metadata if present
+                      ...(part.subAgentId &&
+                        part.subAgentName && {
+                          subAgentId: part.subAgentId,
+                          subAgentName: part.subAgentName,
+                        }),
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "tool-result": {
+                    // Send appropriate event type based on error status
+                    const data = {
+                      toolResult: {
+                        toolCallId: part.toolCallId,
+                        toolName: part.toolName,
+                        result: part.result,
+                      },
+                      timestamp: new Date().toISOString(),
+                      type: "tool-result",
+                      // Forward SubAgent metadata if present
+                      ...(part.subAgentId &&
+                        part.subAgentName && {
+                          subAgentId: part.subAgentId,
+                          subAgentName: part.subAgentName,
+                        }),
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+
+                    // Don't close stream for tool errors - continue processing
+                    break;
+                  }
+                  case "finish": {
+                    const data = {
+                      finishReason: part.finishReason,
+                      usage: part.usage,
+                      timestamp: new Date().toISOString(),
+                      type: "finish",
+                    };
+                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                    safeEnqueue(sseMessage);
+                    break;
+                  }
+                  case "error": {
+                    // Check if this is a tool error
+                    const error = part.error as any;
+                    const isToolError = error?.constructor?.name === "ToolExecutionError";
+
+                    const errorData = {
+                      error: (part.error as Error)?.message || "Stream error occurred",
+                      timestamp: new Date().toISOString(),
+                      type: "error",
+                      code: isToolError ? "TOOL_ERROR" : "STREAM_ERROR",
+                      // Include tool details if available
+                      ...(isToolError && {
+                        toolName: error?.toolName,
+                        toolCallId: error?.toolCallId,
+                      }),
+                    };
+
+                    const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
+                    safeEnqueue(errorMessage);
+
+                    // Don't close stream for tool errors
+                    if (!isToolError) {
+                      safeClose();
+                      return;
+                    }
+                    break;
+                  }
+                }
+              }
+            } else {
+              // Fallback to textStream for providers that don't support fullStream
+              for await (const textDelta of response.textStream) {
+                if (streamClosed) break;
+
+                const data = {
+                  text: textDelta,
+                  timestamp: new Date().toISOString(),
+                  type: "text",
+                };
+                const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
+                safeEnqueue(sseMessage);
+              }
             }
 
-            // Send completion message if stream completed successfully
+            // Stream completed successfully - close without additional event
+            // The finish event should already have been sent with usage information
             if (!streamClosed) {
-              const completionData = {
-                done: true,
-                timestamp: new Date().toISOString(),
-                type: "completion",
-              };
-              const completionMessage = `data: ${JSON.stringify(completionData)}\n\n`;
-              safeEnqueue(completionMessage);
               safeClose();
             }
           } catch (iterationError) {
@@ -751,9 +892,6 @@ app.doc("/doc", {
   },
   servers: [{ url: "http://localhost:3141", description: "Local development server" }],
 });
-
-// Swagger UI endpoint
-app.get("/ui", swaggerUI({ url: "/doc" }));
 
 /**
  * Register a single custom endpoint with the API server

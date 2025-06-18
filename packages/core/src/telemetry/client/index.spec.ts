@@ -7,7 +7,7 @@ import {
   TelemetryServiceApiClient,
 } from "./index";
 
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 const mockOptions: VoltAgentExporterOptions = {
   baseUrl: "http://localhost:8000/functions/v1",
@@ -20,7 +20,7 @@ describe("TelemetryServiceApiClient", () => {
   let apiClient: TelemetryServiceApiClient;
 
   beforeEach(() => {
-    (global.fetch as jest.Mock).mockClear();
+    (global.fetch as vi.Mock).mockClear();
     apiClient = new TelemetryServiceApiClient(mockOptions);
   });
 
@@ -39,7 +39,7 @@ describe("TelemetryServiceApiClient", () => {
     });
 
     it("should use provided fetch implementation", async () => {
-      const mockFetch = jest.fn().mockResolvedValueOnce({
+      const mockFetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         json: async () => ({ id: "test-id" }),
       });
@@ -61,7 +61,7 @@ describe("TelemetryServiceApiClient", () => {
 
   describe("request", () => {
     it("should make a request with correct headers and body", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -83,7 +83,7 @@ describe("TelemetryServiceApiClient", () => {
     it("should throw an error if response is not ok", async () => {
       const errorResponse = { status: 500, statusText: "Internal Server Error" };
       const errorBody = { message: "Something went wrong" };
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         ...errorResponse,
         json: async () => errorBody,
@@ -100,7 +100,7 @@ describe("TelemetryServiceApiClient", () => {
     it("should handle non-JSON error response text", async () => {
       const errorResponse = { status: 500, statusText: "Internal Server Error" };
       const errorText = "Non-JSON error output";
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         ...errorResponse,
         json: async () => {
@@ -118,7 +118,7 @@ describe("TelemetryServiceApiClient", () => {
 
     it("should re-throw network or other errors", async () => {
       const networkError = new Error("Network failed");
-      (global.fetch as jest.Mock).mockRejectedValueOnce(networkError);
+      (global.fetch as vi.Mock).mockRejectedValueOnce(networkError);
 
       const client = apiClient as any;
 
@@ -131,7 +131,7 @@ describe("TelemetryServiceApiClient", () => {
   describe("exportAgentHistory", () => {
     it('should call request with "POST /history" and the payload', async () => {
       const mockResult = { id: "new-id" };
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
+      (global.fetch as vi.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
       const historyData: ExportAgentHistoryPayload = {
         agent_id: "agent-1",
         project_id: "proj-1",
@@ -160,7 +160,7 @@ describe("TelemetryServiceApiClient", () => {
   describe("exportTimelineEvent", () => {
     it('should call request with "POST /history-events" and the payload', async () => {
       const mockResult = { id: "event-id-1" };
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
+      (global.fetch as vi.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResult });
       const eventData: ExportTimelineEventPayload = {
         history_id: "hist-1",
         event_id: "evt-1",
@@ -200,7 +200,7 @@ describe("TelemetryServiceApiClient", () => {
 
   describe("exportHistorySteps", () => {
     it('should call request with "PATCH /history/{id}" and the steps in metadata', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+      (global.fetch as vi.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
       const history_id = "hist-1";
       const steps: HistoryStep[] = [{ type: "text", content: "Step 1" }];
       await apiClient.exportHistorySteps(history_id, steps);
@@ -221,7 +221,7 @@ describe("TelemetryServiceApiClient", () => {
 
   describe("updateAgentHistory", () => {
     it('should call request with "PATCH /history/{id}" and the updates', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+      (global.fetch as vi.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
       const history_id = "hist-1";
       const updates: AgentHistoryUpdatableFields = { output: "new output" };
       await apiClient.updateAgentHistory(history_id, updates);

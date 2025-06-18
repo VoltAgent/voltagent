@@ -1,5 +1,24 @@
 # @voltagent/vercel-ai
 
+## 0.1.13
+
+### Patch Changes
+
+- [`8eced6d`](https://github.com/VoltAgent/voltagent/commit/8eced6dad9c688a33b4700a6fc4be34bfc3ba88b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve onStepFinishHandler issue preventing tool_calls and hooks from functioning properly
+
+  Fixed a critical bug in the Vercel AI provider where the `onStepFinishHandler` was blocking tool calls and agent hooks from executing correctly. This issue was preventing agents from properly utilizing tools and executing lifecycle hooks during operations.
+
+## 0.1.12
+
+### Patch Changes
+
+- [#251](https://github.com/VoltAgent/voltagent/pull/251) [`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support for generative UIs
+
+  Added `fullStream` support to the Vercel AI provider for better streaming in generative UI applications.
+
+- Updated dependencies [[`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d), [`a3b4e60`](https://github.com/VoltAgent/voltagent/commit/a3b4e604e6f79281903ff0c28422e6ee2863b340), [`20119ad`](https://github.com/VoltAgent/voltagent/commit/20119ada182ec5f313a7f46956218d593180e096)]:
+  - @voltagent/core@0.1.36
+
 ## 0.1.11
 
 ### Patch Changes

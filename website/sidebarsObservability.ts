@@ -7,9 +7,107 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 const sidebars: SidebarsConfig = {
   docs: [
     {
+      type: "category",
+      label: "Getting Started",
+      items: ["overview", "concept", "why"],
+    },
+    {
+      type: "category",
+      label: "Tracing",
+      items: [
+        "tracing/overview",
+        "tracing/concept",
+        {
+          type: "category",
+          label: "Features",
+          items: [
+            {
+              type: "doc",
+              id: "tracing/agent-visualization",
+              label: "Agent Flow Charts",
+            },
+
+            {
+              type: "doc",
+              id: "tracing/metadata",
+              label: "Metadata",
+            },
+            {
+              type: "doc",
+              id: "tracing/multimodal-tracing",
+              label: "Multimodal Tracing",
+            },
+            {
+              type: "doc",
+              id: "tracing/sessions",
+              label: "Sessions",
+            },
+            {
+              type: "doc",
+              id: "tracing/tags",
+              label: "Tags",
+            },
+            {
+              type: "doc",
+              id: "tracing/trace-id",
+              label: "Trace ID",
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      type: "category",
+      label: "Analytics Dashboard",
+      items: [
+        {
+          type: "doc",
+          id: "dashboard/trace-metrics",
+          label: "Trace Metrics",
+        },
+        {
+          type: "doc",
+          id: "dashboard/trace-counts",
+          label: "Trace Counts Over Time",
+        },
+        {
+          type: "doc",
+          id: "dashboard/llm-call-overview",
+          label: "LLM Call Overview",
+        },
+        {
+          type: "doc",
+          id: "dashboard/llm-call-success-rates",
+          label: "LLM Call Success Rates",
+        },
+        {
+          type: "doc",
+          id: "dashboard/llm-cost-overview",
+          label: "LLM Cost Overview",
+        },
+        {
+          type: "doc",
+          id: "dashboard/user-cost-overview",
+          label: "User Cost Overview",
+        },
+      ],
+    },
+    {
       type: "doc",
-      id: "overview",
-      label: "Overview",
+      id: "llm-usage-and-costs",
+      label: "LLM Usage & Costs",
+    },
+
+    {
+      type: "doc",
+      id: "prompting/index",
+      label: "Prompting (Soon)",
+    },
+    {
+      type: "doc",
+      id: "evaluation/index",
+      label: "Evaluation (Soon)",
     },
     {
       type: "category",

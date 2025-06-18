@@ -205,7 +205,7 @@ const jsonSchemaValidator: jsonSchemaValidatorType = z.lazy(() => {
       // --- Additional Properties --- This field is not included in the
       // JSONSchema, will not be communicated to the model, it is here purely
       // for enabling the zod validation strict mode.
-      additionalProperties: z.boolean().optional(),
+      additionalProperties: z.union([z.boolean(), z.object({})]).optional(),
     })
     .strict();
 });

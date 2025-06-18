@@ -1,7 +1,8 @@
 import type { BaseMessage } from "@voltagent/core";
 import { generateObject, streamObject } from "ai";
-// @ts-ignore
+// @ts-expect-error - ai/test is not typed
 import { MockLanguageModelV1, simulateReadableStream } from "ai/test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { VercelAIProvider } from "./index";
 
@@ -121,7 +122,7 @@ describe("VercelAIProvider", () => {
       };
 
       // Mock the onStepFinish callback
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // Create a mock model
       const mockModel = new MockLanguageModelV1({
@@ -144,7 +145,7 @@ describe("VercelAIProvider", () => {
       let capturedOptions: any = null;
 
       // Replace the global generateObject function to track if onFinish is passed
-      (global as any).generateObject = jest.fn().mockImplementation((options) => {
+      (global as any).generateObject = vi.fn().mockImplementation((options) => {
         capturedOptions = options;
 
         // Create a result object to return
@@ -261,7 +262,7 @@ describe("VercelAIProvider", () => {
       //expect(result instanceof ReadableStream).toBe(true);
     });
 
-    xit("should format streamed object with JSON format in onStepFinish", async () => {
+    it.todo("should format streamed object with JSON format in onStepFinish", async () => {
       // Expected final object
       const expectedObject = {
         name: "John Doe",
@@ -270,7 +271,7 @@ describe("VercelAIProvider", () => {
       };
 
       // Mock the onStepFinish callback
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // We need to check if the actual implementation has onFinish for streamObject
       // First, let's create a mock model that will emit a proper stream
@@ -301,7 +302,7 @@ describe("VercelAIProvider", () => {
       let capturedOptions: any = null;
 
       // Replace the global streamObject function to track if onFinish is passed
-      (global as any).streamObject = jest.fn().mockImplementation((options) => {
+      (global as any).streamObject = vi.fn().mockImplementation((options) => {
         capturedOptions = options;
         // Check if onFinish was provided in the options
         if (options.onFinish) {

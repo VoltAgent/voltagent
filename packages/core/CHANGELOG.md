@@ -1,5 +1,295 @@
 # @voltagent/core
 
+## 0.1.38
+
+### Patch Changes
+
+- [#267](https://github.com/VoltAgent/voltagent/pull/267) [`f7e5a34`](https://github.com/VoltAgent/voltagent/commit/f7e5a344a5bcb63d1a225e580f01dfa5886b6a01) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: subagent event ordering and stream injection
+
+  Fixed an issue where subagent events were not being properly included in the main agent's stream before subagent completion. Previously, subagent events (text-delta, tool-call, tool-result, etc.) would sometimes miss being included in the parent agent's real-time stream, causing incomplete event visibility for monitoring and debugging.
+
+## 0.1.37
+
+### Patch Changes
+
+- [#252](https://github.com/VoltAgent/voltagent/pull/252) [`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add userId and conversationId support to agent history tables
+
+  This release adds comprehensive support for `userId` and `conversationId` fields in agent history tables across all memory storage implementations, enabling better conversation tracking and user-specific history management.
+
+  ### New Features
+
+  - **Agent History Enhancement**: Added `userId` and `conversationId` columns to agent history tables
+  - **Cross-Implementation Support**: Consistent implementation across PostgreSQL, Supabase, LibSQL, and In-Memory storage
+  - **Automatic Migration**: Safe schema migrations for existing installations
+  - **Backward Compatibility**: Existing history entries remain functional
+
+  ### Migration Notes
+
+  **PostgreSQL & Supabase**: Automatic schema migration with user-friendly SQL scripts
+  **LibSQL**: Seamless column addition with proper indexing
+  **In-Memory**: No migration required, immediate support
+
+  ### Technical Details
+
+  - **Database Schema**: Added `userid TEXT` and `conversationid TEXT` columns (PostgreSQL uses lowercase)
+  - **Indexing**: Performance-optimized indexes for new columns
+  - **Migration Safety**: Non-destructive migrations with proper error handling
+  - **API Consistency**: Unified interface across all storage implementations
+
+- [#261](https://github.com/VoltAgent/voltagent/pull/261) [`b63fe67`](https://github.com/VoltAgent/voltagent/commit/b63fe675dfca9121862a9dd67a0fae5d39b9db90) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: subAgent event propagation in fullStream for enhanced streaming experience
+
+  Fixed an issue where SubAgent events (text-delta, tool-call, tool-result, reasoning, source, finish) were not being properly forwarded to the parent agent's fullStream. This enhancement improves the streaming experience by ensuring all SubAgent activities are visible in the parent stream with proper metadata (subAgentId, subAgentName) for UI filtering and display.
+
+## 0.1.36
+
+### Patch Changes
+
+- [#251](https://github.com/VoltAgent/voltagent/pull/251) [`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support and subagent event forwarding
+
+  Added `fullStream` support to the core agent system for enhanced streaming with detailed chunk types (text-delta, tool-call, tool-result, reasoning, finish, error). Also improved event forwarding between subagents for better multi-agent workflows. SubAgent events are now fully forwarded to parent agents, with filtering moved to the client side for better flexibility.
+
+  Real-world example:
+
+  ```typescript
+  const response = await agent.streamText("What's the weather in Istanbul?");
+
+  if (response.fullStream) {
+    for await (const chunk of response.fullStream) {
+      // Filter out SubAgent text, reasoning, and source events for cleaner UI
+      if (chunk.subAgentId && chunk.subAgentName) {
+        if (chunk.type === "text" || chunk.type === "reasoning" || chunk.type === "source") {
+          continue; // Skip these events from sub-agents
+        }
+      }
+
+      switch (chunk.type) {
+        case "text-delta":
+          process.stdout.write(chunk.textDelta); // Stream text in real-time
+          break;
+        case "tool-call":
+          console.log(`🔧 Using tool: ${chunk.toolName}`);
+          break;
+        case "tool-result":
+          console.log(`✅ Tool completed: ${chunk.toolName}`);
+          break;
+        case "reasoning":
+          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
+          break;
+        case "finish":
+          console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
+          break;
+      }
+    }
+  }
+  ```
+
+- [#248](https://github.com/VoltAgent/voltagent/pull/248) [`a3b4e60`](https://github.com/VoltAgent/voltagent/commit/a3b4e604e6f79281903ff0c28422e6ee2863b340) Thanks [@alasano](https://github.com/alasano)! - feat(core): add streamable HTTP transport support for MCP
+
+  - Upgrade @modelcontextprotocol/sdk from 1.10.1 to 1.12.1
+  - Add support for streamable HTTP transport (the newer MCP protocol)
+  - Modified existing `type: "http"` to use automatic selection with streamable HTTP → SSE fallback
+  - Added two new transport types:
+    - `type: "sse"` - Force SSE transport only (legacy)
+    - `type: "streamable-http"` - Force streamable HTTP only (no fallback)
+  - Maintain full backward compatibility - existing `type: "http"` configurations continue to work via automatic fallback
+
+  Fixes #246
+
+- [#247](https://github.com/VoltAgent/voltagent/pull/247) [`20119ad`](https://github.com/VoltAgent/voltagent/commit/20119ada182ec5f313a7f46956218d593180e096) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - feat(core): Enhanced server configuration with unified `server` object and Swagger UI control
+
+  Server configuration options have been enhanced with a new unified `server` object for better organization and flexibility while maintaining full backward compatibility.
+
+  **What's New:**
+
+  - **Unified Server Configuration:** All server-related options (`autoStart`, `port`, `enableSwaggerUI`, `customEndpoints`) are now grouped under a single `server` object.
+  - **Swagger UI Control:** Fine-grained control over Swagger UI availability with environment-specific defaults.
+  - **Backward Compatibility:** Legacy individual options are still supported but deprecated.
+  - **Override Logic:** New `server` object takes precedence over deprecated individual options.
+
+  **Migration Guide:**
+
+  **New Recommended Usage:**
+
+  ```typescript
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "My Assistant",
+    instructions: "A helpful assistant",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  new VoltAgent({
+    agents: { agent },
+    server: {
+      autoStart: true,
+      port: 3000,
+      enableSwaggerUI: true,
+      customEndpoints: [
+        {
+          path: "/health",
+          method: "get",
+          handler: async (c) => c.json({ status: "ok" }),
+        },
+      ],
+    },
+  });
+  ```
+
+  **Legacy Usage (Deprecated but Still Works):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { agent },
+    autoStart: true, // @deprecated - use server.autoStart
+    port: 3000, // @deprecated - use server.port
+    customEndpoints: [], // @deprecated - use server.customEndpoints
+  });
+  ```
+
+  **Mixed Usage (Server Object Overrides):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { agent },
+    autoStart: false, // This will be overridden
+    server: {
+      autoStart: true, // This takes precedence
+    },
+  });
+  ```
+
+  **Swagger UI Defaults:**
+
+  - Development (`NODE_ENV !== 'production'`): Swagger UI enabled
+  - Production (`NODE_ENV === 'production'`): Swagger UI disabled
+  - Override with `server.enableSwaggerUI: true/false`
+
+  Resolves [#241](https://github.com/VoltAgent/voltagent/issues/241)
+
+## 0.1.35
+
+### Patch Changes
+
+- [#240](https://github.com/VoltAgent/voltagent/pull/240) [`8605863`](https://github.com/VoltAgent/voltagent/commit/860586377bff11b9e7ba80e06fd26b0098bd334a) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - trim the system prompt so we don't have extra newlines and offset text
+
+## 0.1.34
+
+### Patch Changes
+
+- [#238](https://github.com/VoltAgent/voltagent/pull/238) [`ccdba7a`](https://github.com/VoltAgent/voltagent/commit/ccdba7ac58e284dcda9f6b7bec2c8d2e69892940) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: user messages saving with proper content serialization
+
+  Fixed an issue where user messages were not being saved correctly to storage due to improper content formatting. The message content is now properly stringified when it's not already a string, ensuring consistent storage format across PostgreSQL and LibSQL implementations.
+
+## 0.1.33
+
+### Patch Changes
+
+- [#236](https://github.com/VoltAgent/voltagent/pull/236) [`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Remove userId parameter from addMessage method
+
+  Simplified the `addMessage` method signature by removing the `userId` parameter. This change makes the API cleaner and more consistent with the conversation-based approach where user context is handled at the conversation level.
+
+  ### Changes
+
+  - **Removed**: `userId` parameter from `addMessage` method
+  - **Before**: `addMessage(message: MemoryMessage, userId: string, conversationId: string)`
+  - **After**: `addMessage(message: MemoryMessage, conversationId: string)`
+
+  ### Migration Guide
+
+  If you were calling `addMessage` with a `userId` parameter, simply remove it:
+
+  ```typescript
+  // Before
+  await memory.addMessage(message, conversationId, userId);
+
+  // After
+  await memory.addMessage(message, conversationId);
+  ```
+
+  ### Rationale
+
+  User context is now properly managed at the conversation level, making the API more intuitive and reducing parameter complexity. The user association is handled through the conversation's `userId` property instead of requiring it on every message operation.
+
+  **Breaking Change:**
+
+  This is a minor breaking change. Update your `addMessage` calls to remove the `userId` parameter.
+
+- [#235](https://github.com/VoltAgent/voltagent/pull/235) [`16c2a86`](https://github.com/VoltAgent/voltagent/commit/16c2a863d3ecdc09f09219bd40f2dbf1d789194d) Thanks [@alasano](https://github.com/alasano)! - fix: onHandoff hook invocation to pass arguments as object instead of positional parameters
+
+- [#233](https://github.com/VoltAgent/voltagent/pull/233) [`0d85f0e`](https://github.com/VoltAgent/voltagent/commit/0d85f0e960dbc6e8df6a79a16c775ca7a34043bb) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: adding in missing changeset from [PR #226](https://github.com/VoltAgent/voltagent/pull/226)
+
+## 0.1.32
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
 ## 0.1.31
 
 ### Patch Changes

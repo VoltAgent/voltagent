@@ -52,24 +52,26 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
             <Link
               key={mcp.id}
               to={`/mcp/${mcp.slug}`}
-              className="rounded-md border border-gray-700 no-underline hover:border-[#00d992] transition-all duration-300 flex items-start p-1 block"
+              className="block rounded-lg border border-gray-700 no-underline hover:border-[#00d992] hover:bg-gray-800/30 transition-all duration-300 p-3"
             >
-              <div className="w-7 h-7 mr-2.5 flex-shrink-0 flex items-center justify-center bg-slate-700 rounded-md">
-                {LogoComponent ? (
-                  <LogoComponent className="w-4 h-4 text-white" />
-                ) : (
-                  <span className="text-xs font-bold text-white">
-                    {mcp.name?.substring(0, 2) || "MCP"}
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-col">
-                <div className="text-white font-medium text-sm mb-0.5">
-                  {mcp.name}
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center bg-slate-700 rounded-lg shrink-0">
+                  {LogoComponent ? (
+                    <LogoComponent className="w-5 h-5 text-white" />
+                  ) : (
+                    <span className="text-sm font-bold text-white">
+                      {mcp.name?.substring(0, 2) || "MCP"}
+                    </span>
+                  )}
                 </div>
-                <span className="text-xs text-gray-400">
-                  {mcp.short_description || mcp.category}
-                </span>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <div className="text-white font-semibold text-sm mb-1 truncate">
+                    {mcp.name}
+                  </div>
+                  <div className="text-xs text-gray-400 line-clamp-2">
+                    {mcp.short_description || mcp.category}
+                  </div>
+                </div>
               </div>
             </Link>
           );

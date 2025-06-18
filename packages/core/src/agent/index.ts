@@ -22,6 +22,8 @@ import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import devLogger from "../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../utils/node-utils";
+import { streamEventForwarder, type SubAgentEvent } from "../utils/stream-event-forwarder";
+
 import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
@@ -438,11 +440,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Prepare common options for text generation
    */
-  private prepareTextOptions(options: CommonGenerateOptions = {}): {
+  private prepareTextOptions(
+    options: CommonGenerateOptions & {
+      internalStreamForwarder?: (event: any) => Promise<void>;
+    } = {},
+  ): {
     tools: BaseTool[];
     maxSteps: number;
   } {
-    const { tools: dynamicTools, historyEntryId, operationContext } = options;
+    const {
+      tools: dynamicTools,
+      historyEntryId,
+      operationContext,
+      internalStreamForwarder,
+    } = options;
     const baseTools = this.toolManager.prepareToolsForGeneration(dynamicTools);
 
     // Ensure operationContext exists before proceeding
@@ -498,11 +509,26 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
     if (this.subAgentManager.hasSubAgents()) {
+      // Create a real-time event forwarder for SubAgent events
+      const forwardEvent = async (event: SubAgentEvent) => {
+        devLogger.info(
+          `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
+        );
+
+        // Use the utility function to forward events
+        await streamEventForwarder(event, {
+          forwarder: internalStreamForwarder,
+          filterTypes: [], // Don't filter any events in this context
+          addSubAgentPrefix: true,
+        });
+      };
+
       // Always create a delegate tool with the current operationContext
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this,
         currentHistoryEntryId: historyEntryId,
         operationContext: options.operationContext,
+        forwardEvent, // Pass the real-time event forwarder
         ...options,
       });
 
@@ -736,6 +762,66 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
       );
     }
+  }
+
+  /**
+   * Create an enhanced fullStream with real-time SubAgent event injection
+   */
+  private createEnhancedFullStream(
+    originalStream: AsyncIterable<any>,
+    streamController: { current: ReadableStreamDefaultController<any> | null },
+    subAgentStatus: Map<string, { isActive: boolean; isCompleted: boolean }>,
+  ): AsyncIterable<any> {
+    return {
+      async *[Symbol.asyncIterator]() {
+        // Create a merged stream using ReadableStream for real-time injection
+        const mergedStream = new ReadableStream({
+          start(controller) {
+            // Set the controller reference for real-time injection
+            streamController.current = controller;
+
+            // Start processing original stream
+            (async () => {
+              try {
+                for await (const chunk of originalStream) {
+                  controller.enqueue(chunk);
+                }
+
+                // Wait a bit for any remaining SubAgent events
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                // Mark all active SubAgents as completed
+                for (const [subAgentId, status] of subAgentStatus.entries()) {
+                  if (status.isActive && !status.isCompleted) {
+                    status.isCompleted = true;
+                    devLogger.info(`[Enhanced Stream] SubAgent ${subAgentId} marked as completed`);
+                  }
+                }
+
+                controller.close();
+              } catch (error) {
+                controller.error(error);
+              } finally {
+                // Clear controller reference
+                streamController.current = null;
+              }
+            })();
+          },
+        });
+
+        // Convert ReadableStream to async iterable and yield chunks
+        const reader = mergedStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            yield value;
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      },
+    };
   }
 
   /**
@@ -1264,11 +1350,121 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       finalConversationId,
     );
+
+    // Create real-time SubAgent event tracking
+    const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+    const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+      current: null,
+    };
+
+    const streamEventForwarder = async (event: any) => {
+      devLogger.info("[Real-time Stream] Received SubAgent event:", {
+        eventType: event.type,
+        subAgentId: event.subAgentId,
+        subAgentName: event.subAgentName,
+      });
+
+      // Update SubAgent status
+      if (!subAgentStatus.has(event.subAgentId)) {
+        subAgentStatus.set(event.subAgentId, { isActive: true, isCompleted: false });
+      }
+
+      // Check if this is a completion event (last meaningful event from SubAgent)
+      if (
+        event.type === "finish" ||
+        event.type === "error" ||
+        (event.type === "text-delta" && event.data?.textDelta?.includes("."))
+      ) {
+        // This might indicate SubAgent completion, but we'll handle it gracefully
+        devLogger.info(
+          `[Real-time Stream] Potential completion event from ${event.subAgentId}:`,
+          event.type,
+        );
+      }
+
+      // Format event for stream - handle nested data structures properly
+      let streamEvent: any = {
+        type: event.type,
+        subAgentId: event.subAgentId,
+        subAgentName: event.subAgentName,
+        timestamp: event.timestamp,
+      };
+
+      // Handle different event types with proper data extraction
+      switch (event.type) {
+        case "tool-call":
+          if (event?.toolCall) {
+            streamEvent = {
+              ...streamEvent,
+              toolCallId: event.toolCall.toolCallId,
+              toolName: event.toolCall.toolName,
+              args: event.toolCall.args,
+            };
+          }
+          break;
+        case "tool-result":
+          if (event?.toolResult) {
+            streamEvent = {
+              ...streamEvent,
+              toolCallId: event.toolResult.toolCallId,
+              toolName: event.toolResult.toolName,
+              result: event.toolResult.result,
+            };
+          }
+          break;
+        case "text-delta":
+          if (event?.textDelta) {
+            streamEvent = {
+              ...streamEvent,
+              textDelta: event.data.textDelta,
+            };
+          }
+          break;
+        case "reasoning":
+          if (event?.reasoning) {
+            streamEvent = {
+              ...streamEvent,
+              reasoning: event.reasoning,
+            };
+          }
+          break;
+        case "source":
+          if (event?.source) {
+            streamEvent = {
+              ...streamEvent,
+              source: event.source,
+            };
+          }
+          break;
+        default:
+          // For any other event types, spread the data
+          streamEvent = {
+            ...streamEvent,
+            ...(event || {}),
+          };
+          break;
+      }
+
+      // Immediately inject into stream if controller is available
+      if (streamController.current) {
+        try {
+          streamController.current.enqueue(streamEvent);
+          devLogger.info("[Real-time Stream] Event injected into stream:", {
+            eventType: event.type,
+            subAgentId: event.subAgentId,
+          });
+        } catch (error) {
+          devLogger.error("[Real-time Stream] Failed to inject event:", error);
+        }
+      }
+    };
+
     const { tools, maxSteps } = this.prepareTextOptions({
       ...internalOptions,
       conversationId: finalConversationId,
       historyEntryId: operationContext.historyEntry.id,
       operationContext: operationContext,
+      internalStreamForwarder: streamEventForwarder, // Pass the internal forwarder to tools
     });
 
     const response = await this.llm.streamText({
@@ -1655,7 +1851,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
       },
     });
-    return response;
+
+    // Create enhanced stream with real-time SubAgent event injection
+    const wrappedResponse = {
+      ...response,
+      fullStream: response.fullStream
+        ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
+        : undefined,
+    };
+
+    return wrappedResponse;
   }
 
   /**

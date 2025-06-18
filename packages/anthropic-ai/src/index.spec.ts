@@ -1,23 +1,25 @@
 import Anthropic from "@anthropic-ai/sdk";
-//@ts-ignore
+// @ts-expect-error - for testing
 import { EventSourceParser } from "@anthropic-ai/sdk/lib/streaming";
 import { createTool } from "@voltagent/core";
 import type { BaseMessage } from "@voltagent/core";
+import type { MockedClass } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AnthropicProvider } from ".";
 
-jest.mock("@anthropic-ai/sdk");
+vi.mock("@anthropic-ai/sdk");
 
 describe("AnthropicProvider", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("generateText", () => {
     it("should generate text", async () => {
       const mockAnthropicClient = {
         messages: {
-          create: jest.fn().mockResolvedValue({
+          create: vi.fn().mockResolvedValue({
             id: "msg_123456789",
             type: "message",
             role: "assistant",
@@ -32,7 +34,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -61,7 +63,7 @@ describe("AnthropicProvider", () => {
     it("should accept tools", async () => {
       const mockAnthropicClient = {
         messages: {
-          create: jest.fn().mockResolvedValue({
+          create: vi.fn().mockResolvedValue({
             id: "msg_123456789",
             type: "message",
             role: "assistant",
@@ -76,7 +78,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -90,7 +92,7 @@ describe("AnthropicProvider", () => {
         parameters: z.object({
           name: z.string(),
         }),
-        execute: jest.fn().mockResolvedValue("test-tool-response"),
+        execute: vi.fn().mockResolvedValue("test-tool-response"),
       });
 
       const tool = createTool({
@@ -100,7 +102,7 @@ describe("AnthropicProvider", () => {
         parameters: z.object({
           name: z.string(),
         }),
-        execute: jest.fn().mockResolvedValue("test-tool-response"),
+        execute: vi.fn().mockResolvedValue("test-tool-response"),
       });
 
       const result = await provider.generateText({
@@ -123,7 +125,7 @@ describe("AnthropicProvider", () => {
   describe("streamText", () => {
     it("should stream text", async () => {
       // Create a mock stream function for Anthropic's streaming response
-      const mockStreamFn = jest.fn().mockImplementation(() => {
+      const mockStreamFn = vi.fn().mockImplementation(() => {
         let mockIndex = 0;
         let isControllerClosed = false;
         // Mock response chunks
@@ -169,7 +171,7 @@ describe("AnthropicProvider", () => {
       // Set up our mock Anthropic client
       const mockAnthropicClient = {
         messages: {
-          create: jest.fn().mockImplementation((params) => {
+          create: vi.fn().mockImplementation((params) => {
             if (params.stream) {
               return mockStreamFn();
             }
@@ -178,7 +180,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -240,7 +242,7 @@ describe("AnthropicProvider", () => {
       };
       const mockAnthropicClient = {
         messages: {
-          create: jest.fn().mockResolvedValue({
+          create: vi.fn().mockResolvedValue({
             id: "msg_123456789",
             type: "message",
             role: "assistant",
@@ -255,7 +257,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -295,12 +297,12 @@ describe("AnthropicProvider", () => {
       };
 
       // Mock the onStepFinish callback
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // Create a mock for Anthropic client
       const mockAnthropicClient = {
         messages: {
-          create: jest.fn().mockResolvedValue({
+          create: vi.fn().mockResolvedValue({
             content: [
               {
                 type: "text",
@@ -322,7 +324,7 @@ describe("AnthropicProvider", () => {
       });
 
       // Create a spy for the createStepFromChunk function from utils
-      const createStepFromChunkSpy = jest.spyOn(require("./utils"), "createStepFromChunk");
+      const createStepFromChunkSpy = vi.spyOn(await import("./utils"), "createStepFromChunk");
       createStepFromChunkSpy.mockReturnValue({
         id: "",
         role: "assistant",
@@ -393,7 +395,7 @@ describe("AnthropicProvider", () => {
         age: 30,
         hobbies: ["reading", "gaming"],
       };
-      const mockStreamFn = jest.fn().mockImplementation(() => {
+      const mockStreamFn = vi.fn().mockImplementation(() => {
         let mockIndex = 0;
         let isControllerClosed = false;
         // Mock response chunks
@@ -512,7 +514,7 @@ describe("AnthropicProvider", () => {
       // Set up our mock Anthropic client
       const mockAnthropicClient = {
         messages: {
-          create: jest.fn().mockImplementation((params) => {
+          create: vi.fn().mockImplementation((params) => {
             if (params.stream) {
               return mockStreamFn();
             }
@@ -521,7 +523,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -592,10 +594,10 @@ describe("AnthropicProvider", () => {
       };
 
       // Mock the onStepFinish callback
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // Create a mock stream function for Anthropic's streaming response
-      const mockStreamFn = jest.fn().mockImplementation(() => {
+      const mockStreamFn = vi.fn().mockImplementation(() => {
         let mockIndex = 0;
         let isControllerClosed = false;
         // Mock response chunks that will form a valid JSON
@@ -653,7 +655,7 @@ describe("AnthropicProvider", () => {
       // Set up our mock Anthropic client
       const mockAnthropicClient = {
         messages: {
-          create: jest.fn().mockImplementation((params) => {
+          create: vi.fn().mockImplementation((params) => {
             if (params.stream) {
               return mockStreamFn();
             }
@@ -662,7 +664,7 @@ describe("AnthropicProvider", () => {
         },
       };
 
-      (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(() => {
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
         return mockAnthropicClient as unknown as Anthropic;
       });
 
@@ -882,7 +884,7 @@ describe("AnthropicProvider", () => {
           query: z.string().describe("The search query"),
           limit: z.number().optional().describe("Maximum number of results to return"),
         }),
-        execute: jest.fn().mockResolvedValue("search results"),
+        execute: vi.fn().mockResolvedValue("search results"),
       });
 
       const tool = createTool(toolOptions);

@@ -8,11 +8,15 @@ class MockAgent {
   id: string;
   name: string;
   description: string;
+  instructions: string;
+  purpose?: string;
+  hooks?: any;
 
   constructor(id: string, name: string, description = "Mock agent description") {
     this.id = id;
     this.name = name;
     this.description = description;
+    this.instructions = description;
   }
 
   getStatus() {
@@ -41,6 +45,40 @@ class MockAgent {
   async generateText(_messages: any[], _options: any) {
     return {
       text: `Response from ${this.name}`,
+    };
+  }
+
+  // Mock streamText method for event forwarding tests
+  async streamText(_messages: any[], _options: any) {
+    const mockEvents = [
+      { type: "text-delta", textDelta: "Hello " },
+      { type: "text-delta", textDelta: "from " },
+      { type: "text-delta", textDelta: this.name },
+      {
+        type: "tool-call",
+        toolCallId: "tool-1",
+        toolName: "mock_tool",
+        args: { input: "test" },
+      },
+      {
+        type: "tool-result",
+        toolCallId: "tool-1",
+        toolName: "mock_tool",
+        result: "mock result",
+      },
+      {
+        type: "finish",
+        finishReason: "stop",
+        usage: { totalTokens: 10 },
+      },
+    ];
+
+    return {
+      fullStream: (async function* () {
+        for (const event of mockEvents) {
+          yield event;
+        }
+      })(),
     };
   }
 }
@@ -167,12 +205,24 @@ describe("SubAgentManager", () => {
       expect(result).toContain("Agent 2: No purpose provided");
       expect(result).toContain("<agents_memory>");
     });
+
+    it("should match snapshot", () => {
+      const subAgentAgent1 = {
+        id: "agent1",
+        name: "Agent 1",
+        purpose: "First agent",
+      } as Agent<any>;
+      const subAgentManager = new SubAgentManager("TestAgent", [subAgentAgent1]);
+      const description = "Some base instructions";
+      const result = subAgentManager.generateSupervisorSystemMessage(description);
+      expect(result).toMatchSnapshot();
+    });
   });
 
   describe("handoffTask", () => {
     it("should handoff task to target agent", async () => {
       // Spy on generateText
-      const generateTextSpy = jest.spyOn(mockAgent1, "generateText");
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
 
       const options: AgentHandoffOptions = {
         task: "Solve this math problem",
@@ -183,21 +233,50 @@ describe("SubAgentManager", () => {
 
       const result = await subAgentManager.handoffTask(options);
 
-      // Verify generateText was called with handoff message
-      expect(generateTextSpy).toHaveBeenCalled();
-      const messages = generateTextSpy.mock.calls[0][0] as any[];
+      // Verify streamText was called with handoff message
+      expect(streamTextSpy).toHaveBeenCalled();
+      const messages = streamTextSpy.mock.calls[0][0] as any[];
       expect(messages[0].role).toBe("system");
       expect(messages[0].content).toContain("Task handed off from Main Agent to Math Agent");
 
-      // Verify result
-      expect(result.result).toBe("Response from Math Agent");
+      // Verify result - should contain text from stream
+      expect(result.result).toBe("Hello from Math Agent");
       expect(result.messages.length).toBe(2);
+      expect(result.status).toBe("success");
+    });
+
+    it("should call onHandoff hook with correct arguments when target agent has hooks", async () => {
+      const onHandoffSpy = vi.fn();
+
+      // Create a mock agent with hooks
+      const mockAgentWithHooks = new MockAgent("agent3", "Agent with Hooks") as any;
+      mockAgentWithHooks.hooks = {
+        onHandoff: onHandoffSpy,
+      };
+
+      const sourceAgent = new MockAgent("source", "Source Agent") as any;
+
+      const options: AgentHandoffOptions = {
+        task: "Test handoff with hooks",
+        targetAgent: mockAgentWithHooks,
+        sourceAgent: sourceAgent,
+        context: { test: "data" },
+        sharedContext: [],
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Verify onHandoff was called with the correct object structure
+      expect(onHandoffSpy).toHaveBeenCalledWith({
+        agent: mockAgentWithHooks,
+        source: sourceAgent,
+      });
     });
   });
 
   describe("handoffToMultiple", () => {
     it("should handoff task to multiple target agents", async () => {
-      const handoffTaskSpy = jest.spyOn(subAgentManager, "handoffTask");
+      const handoffTaskSpy = vi.spyOn(subAgentManager, "handoffTask");
 
       const options = {
         task: "Process this request",
@@ -248,7 +327,7 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent1);
       subAgentManager.addSubAgent(mockAgent2);
 
-      const handoffToMultipleSpy = jest
+      const handoffToMultipleSpy = vi
         .spyOn(subAgentManager, "handoffToMultiple")
         .mockResolvedValue([
           {
@@ -296,10 +375,10 @@ describe("SubAgentManager", () => {
     });
 
     it("should pass supervisor's userContext to sub-agents via handoffOptions", async () => {
-      subAgentManager.addSubAgent(mockAgent1); // Math Agent
+      subAgentManager.addSubAgent(mockAgent1 as any); // Math Agent
 
-      // Spy on mockAgent1.generateText to check the options it receives
-      const generateTextSpy = jest.spyOn(mockAgent1, "generateText");
+      // Spy on mockAgent1.streamText to check the options it receives
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
 
       const supervisorUserContext = new Map<string | symbol, unknown>();
       supervisorUserContext.set("supervisorKey", "supervisorValue");
@@ -327,14 +406,14 @@ describe("SubAgentManager", () => {
       });
 
       // Check if handoffToMultiple was called (it internally calls handoffTask)
-      // We are more interested in what generateText of the sub-agent receives
-      expect(generateTextSpy).toHaveBeenCalled();
+      // We are more interested in what streamText of the sub-agent receives
+      expect(streamTextSpy).toHaveBeenCalled();
 
-      // Check the options passed to mockAgent1.generateText
-      const generateTextCallArgs = generateTextSpy.mock.calls[0];
+      // Check the options passed to mockAgent1.streamText
+      const streamTextCallArgs = streamTextSpy.mock.calls[0];
       // Define types for the arguments received by the spy
-      const messagesPassedToSubAgent = generateTextCallArgs[0] as BaseMessage[];
-      const optionsPassedToSubAgent = generateTextCallArgs[1] as {
+      const messagesPassedToSubAgent = streamTextCallArgs[0] as BaseMessage[];
+      const optionsPassedToSubAgent = streamTextCallArgs[1] as {
         userContext?: Map<string | symbol, unknown>;
       };
 
@@ -350,7 +429,7 @@ describe("SubAgentManager", () => {
       // It should be the same instance as it's directly passed through options in createDelegateTool to handoffToMultiple
       expect(optionsPassedToSubAgent.userContext).toBe(supervisorUserContext);
 
-      generateTextSpy.mockRestore();
+      streamTextSpy.mockRestore();
     });
   });
 
@@ -366,6 +445,225 @@ describe("SubAgentManager", () => {
       expect(details[0].name).toBe("Math Agent");
       expect(details[0].status).toBe("idle");
       expect(details[0].model).toBe("mock-model");
+    });
+  });
+
+  describe("event forwarding", () => {
+    it("should forward events during handoffTask", async () => {
+      const forwardEventSpy = vi.fn();
+      const mockAgent = new MockAgent("test-agent", "Test Agent");
+
+      const options: AgentHandoffOptions = {
+        task: "Test task with events",
+        targetAgent: mockAgent,
+        context: { test: true },
+        sharedContext: [],
+        forwardEvent: forwardEventSpy,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Verify that events were forwarded
+      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
+      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
+
+      // Verify tool-call event
+      expect(forwardEventSpy).toHaveBeenCalledWith({
+        type: "tool-call",
+        data: {
+          toolCall: {
+            toolCallId: "tool-1",
+            toolName: "mock_tool",
+            args: { input: "test" },
+          },
+        },
+        timestamp: expect.any(String),
+        subAgentId: "test-agent",
+        subAgentName: "Test Agent",
+      });
+
+      // Verify tool-result event
+      expect(forwardEventSpy).toHaveBeenCalledWith({
+        type: "tool-result",
+        data: {
+          toolResult: {
+            toolCallId: "tool-1",
+            toolName: "mock_tool",
+            result: "mock result",
+          },
+        },
+        timestamp: expect.any(String),
+        subAgentId: "test-agent",
+        subAgentName: "Test Agent",
+      });
+    });
+
+    it("should forward error events when stream fails", async () => {
+      const forwardEventSpy = vi.fn();
+      const mockAgent = new MockAgent("error-agent", "Error Agent");
+
+      // Mock streamText to throw an error in the stream
+      mockAgent.streamText = vi.fn().mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "Starting..." };
+          yield {
+            type: "error",
+            error: new Error("Stream processing failed"),
+          };
+        })(),
+      });
+
+      const options: AgentHandoffOptions = {
+        task: "Task that will fail",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        forwardEvent: forwardEventSpy,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Verify that error event was forwarded
+      expect(forwardEventSpy).toHaveBeenCalledWith({
+        type: "error",
+        data: {
+          error: "Stream processing failed",
+          code: "STREAM_ERROR",
+        },
+        timestamp: expect.any(String),
+        subAgentId: "error-agent",
+        subAgentName: "Error Agent",
+      });
+    });
+
+    it("should not forward events when forwardEvent is not provided", async () => {
+      const mockAgent = new MockAgent("no-forward-agent", "No Forward Agent");
+
+      const options: AgentHandoffOptions = {
+        task: "Task without event forwarding",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        // No forwardEvent provided
+      };
+
+      // This should not throw an error
+      const result = await subAgentManager.handoffTask(options);
+      expect(result.status).toBe("success");
+    });
+
+    it("should forward events through delegate tool", async () => {
+      const forwardEventSpy = vi.fn();
+      const mockAgent = new MockAgent("delegate-agent", "Delegate Agent");
+
+      subAgentManager.addSubAgent(mockAgent as any);
+
+      const tool = subAgentManager.createDelegateTool({
+        sourceAgent: { id: "supervisor-agent" },
+        operationContext: { userContext: new Map() },
+        currentHistoryEntryId: "history-123",
+        forwardEvent: forwardEventSpy,
+      });
+
+      await tool.execute({
+        task: "Test delegation with events",
+        targetAgents: ["Delegate Agent"],
+        context: { delegated: true },
+      });
+
+      // Verify that events were forwarded through the delegate tool
+      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
+      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
+
+      // Check that events have the correct structure
+      const toolCallEvent = forwardEventSpy.mock.calls.find((call) => call[0].type === "tool-call");
+      expect(toolCallEvent).toBeDefined();
+      if (toolCallEvent) {
+        expect(toolCallEvent[0]).toMatchObject({
+          type: "tool-call",
+          subAgentId: "delegate-agent",
+          subAgentName: "Delegate Agent",
+          timestamp: expect.any(String),
+        });
+      }
+    });
+
+    it("should handle multiple agents with event forwarding", async () => {
+      const forwardEventSpy = vi.fn();
+      const mockAgent1 = new MockAgent("multi-agent-1", "Multi Agent 1");
+      const mockAgent2 = new MockAgent("multi-agent-2", "Multi Agent 2");
+
+      subAgentManager.addSubAgent(mockAgent1 as any);
+      subAgentManager.addSubAgent(mockAgent2 as any);
+
+      const tool = subAgentManager.createDelegateTool({
+        sourceAgent: { id: "supervisor-agent" },
+        operationContext: { userContext: new Map() },
+        currentHistoryEntryId: "history-456",
+        forwardEvent: forwardEventSpy,
+      });
+
+      await tool.execute({
+        task: "Test multiple agents with events",
+        targetAgents: ["Multi Agent 1", "Multi Agent 2"],
+        context: { multiple: true },
+      });
+
+      // Verify that events from both agents were forwarded
+      // Each agent generates 5 events (3x text-delta + tool-call + tool-result, finish events no longer forwarded)
+      expect(forwardEventSpy).toHaveBeenCalledTimes(10);
+
+      // Check that events from both agents are present
+      const agent1Events = forwardEventSpy.mock.calls.filter(
+        (call) => call[0].subAgentId === "multi-agent-1",
+      );
+      const agent2Events = forwardEventSpy.mock.calls.filter(
+        (call) => call[0].subAgentId === "multi-agent-2",
+      );
+
+      expect(agent1Events).toHaveLength(5);
+      expect(agent2Events).toHaveLength(5);
+    });
+
+    it("should include correct timestamp format in forwarded events", async () => {
+      const forwardEventSpy = vi.fn();
+      const mockAgent = new MockAgent("timestamp-agent", "Timestamp Agent");
+
+      const options: AgentHandoffOptions = {
+        task: "Test timestamp format",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        forwardEvent: forwardEventSpy,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Verify that all forwarded events have valid ISO timestamp
+      forwardEventSpy.mock.calls.forEach((call) => {
+        const event = call[0];
+        expect(event.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        expect(new Date(event.timestamp)).toBeInstanceOf(Date);
+      });
+    });
+
+    it("should handle event forwarding errors by treating them as regular errors", async () => {
+      const failingForwardEvent = vi.fn().mockRejectedValue(new Error("Event forwarding failed"));
+      const mockAgent = new MockAgent("failing-forward-agent", "Failing Forward Agent");
+
+      const options: AgentHandoffOptions = {
+        task: "Test failing event forward",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        forwardEvent: failingForwardEvent,
+      };
+
+      // When event forwarding fails, the whole handoff fails
+      const result = await subAgentManager.handoffTask(options);
+      expect(result.status).toBe("error");
+      expect((result.error as Error).message).toContain("Event forwarding failed");
+      expect(failingForwardEvent).toHaveBeenCalled();
     });
   });
 });

@@ -2,13 +2,13 @@ import { z } from "zod";
 import { zodSchemaToJsonUI } from "./index";
 
 // Mock the crypto module
-jest.mock("crypto", () => ({
-  randomUUID: jest.fn().mockReturnValue("mock-uuid"),
+vi.mock("crypto", () => ({
+  randomUUID: vi.fn().mockReturnValue("mock-uuid"),
 }));
 
 // Mock the ai tool
-jest.mock("ai", () => ({
-  tool: jest.fn().mockImplementation((config) => config),
+vi.mock("ai", () => ({
+  tool: vi.fn().mockImplementation((config) => config),
 }));
 
 describe("Tool Parser Utilities", () => {

@@ -32,46 +32,91 @@ export default function DocNavbar() {
       <nav className={styles.docNavbar}>
         <div className={styles.docNavbarInner}>
           <div className={styles.docNavbarLeft}>
-            <Link to="/" className={styles.logoLink}>
-              <div className="flex items-center border-solid border-1 border-main-emerald rounded-full  p-1">
-                <BoltIcon className="w-4 h-4  text-main-emerald" />
-              </div>
-              <span className={styles.logoText}>voltagent</span>
-            </Link>
-            <div className={styles.separator} />
             <div className={styles.navLinks}>
-              <Link
-                to="/docs/"
-                className={`${styles.navLink} ${
-                  isActive("/docs/") ? styles.active : ""
-                }`}
-              >
-                Framework Docs
-              </Link>
-              <Link
-                to="/docs-observability/"
-                className={`${styles.navLink} ${
-                  isActive("/docs-observability/") ? styles.active : ""
-                }`}
-              >
-                LLM Observability Platform Docs
-              </Link>
+              {/* Show Framework Docs only when NOT on observability docs */}
+              {!isActive("/voltops-llm-observability-docs/") && (
+                <Link to="/" className={`${styles.logoLink}`}>
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center border-2 border-solid border-[#00d992] rounded-full p-1">
+                      <BoltIcon className="w-4 h-4 text-[#00d992]" />
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-xl landing-xs:text-lg landing-sm:text-2xl font-bold text-[#00d992] ml-2">
+                        voltagent
+                      </span>
+                    </div>
+                    <span className="text-gray-400 mx-2 mt-1 text-base">
+                      Framework
+                    </span>
+                    <span className="text-main-emerald  mt-1 font-semibold text-base">
+                      Docs
+                    </span>
+                  </div>
+                </Link>
+              )}
+
+              {!isActive("/docs/") && (
+                <Link to="/" className={`${styles.logoLink}`}>
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center border-2 border-solid border-[#00d992] rounded-full p-1">
+                      <BoltIcon className="w-4 h-4 text-[#00d992]" />
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-xl landing-xs:text-lg landing-sm:text-2xl font-bold text-[#00d992] ml-2">
+                        volt
+                      </span>
+                      <span className="text-xl landing-xs:text-lg landing-sm:text-2xl font-bold text-gray-500">
+                        ops
+                      </span>
+                    </div>
+                    <span className="text-gray-400 mt-1 mx-2 text-base ">
+                      LLM Observability
+                    </span>
+                    <span className="text-main-emerald mt-1 font-semibold text-base">
+                      Docs
+                    </span>
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
 
           <div className={styles.docNavbarRight}>
             <div className={styles.navLinks}>
-              <Link
-                to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-                className={`${styles.navLink}`}
-              >
-                Changelog
-              </Link>
+              {/* Show link to VoltOps docs when on regular docs */}
+              {isActive("/docs/") && (
+                <Link
+                  to="/voltops-llm-observability-docs/"
+                  className={`${styles.navLink}`}
+                >
+                  VoltOps Docs
+                </Link>
+              )}
+
+              {/* Show link to Voltagent docs when on observability docs */}
+              {isActive("/voltops-llm-observability-docs/") && (
+                <Link to="/docs/" className={`${styles.navLink}`}>
+                  Voltagent Docs
+                </Link>
+              )}
+
+              {/* Show changelog only when NOT on observability docs */}
+              {!isActive("/voltops-llm-observability-docs/") && (
+                <Link
+                  to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
+                  className={`${styles.navLink}`}
+                >
+                  Changelog
+                </Link>
+              )}
             </div>
             <div className={styles.searchBarContainer}>
               <SearchBar />
             </div>
-            <div className={styles.versionBadge}>v0.1.x</div>
+            {/* Show version badge only when NOT on observability docs */}
+            {!isActive("/voltops-llm-observability-docs/") && (
+              <div className={styles.versionBadge}>v0.1.x</div>
+            )}
             <Link
               to="https://s.voltagent.dev/discord"
               className={styles.socialButton}
@@ -122,33 +167,46 @@ export default function DocNavbar() {
           <NavbarMobileSidebarSecondaryMenu />
           <div className={cn("h-px", "bg-gray-600/50", "w-full")} />
           <div className={cn("flex", "flex-col", "items-start", "gap-4")}>
-            <div className={styles.versionBadgeMobile}>v0.1.x</div>
-            <Link
-              to="/docs/"
-              className={`${styles.mobileNavLink} ${
-                isActive("/docs/") ? styles.active : ""
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Framework Docs
-            </Link>
-            <Link
-              to="/docs-observability/"
-              className={`${styles.mobileNavLink} ${
-                isActive("/docs-observability/") ? styles.active : ""
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              VoltOps LLM Observability Platform
-            </Link>
-            <Link
-              to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-              className={`${styles.navLink} ${
-                isActive("/changelog/") ? styles.active : ""
-              }`}
-            >
-              Changelog
-            </Link>
+            {/* Show mobile version badge only when NOT on observability docs */}
+            {!isActive("/voltops-llm-observability-docs/") && (
+              <div className={styles.versionBadgeMobile}>v0.1.x</div>
+            )}
+            {!isActive("/voltops-llm-observability-docs/") && (
+              <Link
+                to="/docs/"
+                className={`${styles.mobileNavLink} ${
+                  isActive("/docs/") ? styles.active : ""
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Framework Docs
+              </Link>
+            )}
+
+            {!isActive("/docs/") && (
+              <Link
+                to="/voltops-llm-observability-docs/"
+                className={`${styles.mobileNavLink} ${
+                  isActive("/voltops-llm-observability-docs/")
+                    ? styles.active
+                    : ""
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                VoltOps LLM Observability Platform
+              </Link>
+            )}
+            {/* Show changelog only when NOT on observability docs */}
+            {!isActive("/voltops-llm-observability-docs/") && (
+              <Link
+                to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
+                className={`${styles.navLink} ${
+                  isActive("/changelog/") ? styles.active : ""
+                }`}
+              >
+                Changelog
+              </Link>
+            )}
           </div>
         </div>
       )}

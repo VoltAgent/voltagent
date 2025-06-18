@@ -1,6 +1,9 @@
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
-import { ArrowLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  ArrowTopRightOnSquareIcon,
+} from "@heroicons/react/24/outline";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import React from "react";

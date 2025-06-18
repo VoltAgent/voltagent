@@ -44,6 +44,55 @@ This is the recommended way to explore the API's capabilities.
 Links to the Swagger UI (`/ui`) is also conveniently available on the API server's root page (`/`) and printed in the console logs when the server starts.
 :::
 
+### Swagger UI Configuration
+
+You can control the availability of Swagger UI using the `enableSwaggerUI` option in your VoltAgent configuration:
+
+```typescript
+import { Agent, VoltAgent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "My Assistant",
+  instructions: "A helpful assistant",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+new VoltAgent({
+  agents: { agent },
+  server: {
+    enableSwaggerUI: true, // default true in development, false in production
+  },
+});
+```
+
+**Default Behavior:**
+
+- **Development** (`NODE_ENV !== 'production'`): Swagger UI is **enabled**
+- **Production** (`NODE_ENV === 'production'`): Swagger UI is **disabled**
+
+**Override Examples:**
+
+```typescript
+// Force enable in production
+new VoltAgent({
+  agents: { agent },
+  server: {
+    enableSwaggerUI: true, // Always enabled, even in production
+  },
+});
+
+// Force disable in development
+new VoltAgent({
+  agents: { agent },
+  server: {
+    enableSwaggerUI: false, // Always disabled, even in development
+  },
+});
+```
+
 ## Common Generation Options
 
 When using the generation endpoints (`/text`, `/stream`, `/object`, `/stream-object`), you can provide an `options` object in the request body to customize the generation process. All options are optional.
@@ -98,6 +147,30 @@ Custom endpoints are regular REST API routes that you can define with:
 
 All custom endpoints are automatically displayed in the server startup banner and are included in your API server alongside the core VoltAgent endpoints.
 
+### Server Configuration
+
+VoltAgent uses a unified `server` object to configure all server-related options including custom endpoints, Swagger UI, port, and auto-start behavior:
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: {
+    autoStart: true, // default true
+    port: 3000, // default 3141
+    enableSwaggerUI: true, // default true in development, false in production
+    customEndpoints: [
+      // Custom API endpoints
+      {
+        path: "/api/health",
+        method: "get" as const,
+        handler: async (c) => c.json({ status: "healthy" }),
+        description: "Health check endpoint",
+      },
+    ],
+  },
+});
+```
+
 ### Registration Methods
 
 You can register custom endpoints using two different methods:
@@ -149,20 +222,22 @@ Pass endpoints directly to the VoltAgent constructor - the most convenient metho
 ```typescript
 new VoltAgent({
   agents: { myAgent },
-  customEndpoints: [
-    {
-      path: "/api/users/:id",
-      method: "get" as const,
-      handler: async (c) => {
-        const userId = c.req.param("id");
-        return c.json({
-          success: true,
-          data: { id: userId, name: "John Doe" },
-        });
+  server: {
+    customEndpoints: [
+      {
+        path: "/api/users/:id",
+        method: "get" as const,
+        handler: async (c) => {
+          const userId = c.req.param("id");
+          return c.json({
+            success: true,
+            data: { id: userId, name: "John Doe" },
+          });
+        },
+        description: "Get user by ID",
       },
-      description: "Get user by ID",
-    },
-  ],
+    ],
+  },
 });
 ```
 
@@ -172,6 +247,27 @@ new VoltAgent({
 - Most common use cases
 - Clean, declarative configuration
 - Single registration point
+
+:::note[Legacy Support]
+The legacy `customEndpoints` option (directly on VoltAgent constructor) is still supported but deprecated:
+
+```typescript
+// ❌ Deprecated (but still works)
+new VoltAgent({
+  agents: { myAgent },
+  customEndpoints: endpoints, // @deprecated
+});
+
+// ✅ Recommended
+new VoltAgent({
+  agents: { myAgent },
+  server: {
+    customEndpoints: endpoints,
+  },
+});
+```
+
+:::
 
 </TabItem>
 </Tabs>
@@ -187,7 +283,9 @@ registerCustomEndpoints(authEndpoints);
 // Constructor: Register others via constructor
 new VoltAgent({
   agents: { myAgent },
-  customEndpoints: dataEndpoints,
+  server: {
+    customEndpoints: dataEndpoints,
+  },
 });
 
 // Result: Both authEndpoints and dataEndpoints are registered

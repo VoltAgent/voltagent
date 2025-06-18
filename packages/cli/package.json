@@ -21,7 +21,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "start": "node dist/index.js",
-    "test": "jest --passWithNoTests"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "boxen": "^5.1.2",
@@ -45,10 +46,10 @@
     "@types/semver": "^7.5.6",
     "@types/update-notifier": "^6.0.8",
     "@types/uuid": "^9.0.8",
-    "jest": "^29.5.0",
-    "ts-jest": "^29.1.0",
+    "@vitest/coverage-v8": "^3.2.3",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "vitest": "^3.2.3"
   },
   "engines": {
     "node": ">=20"

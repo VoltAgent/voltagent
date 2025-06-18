@@ -139,7 +139,7 @@ export class MemoryManager {
     try {
       // Perform the operation
       const memoryMessage = convertToMemoryMessage(message, type);
-      await this.memory.addMessage(memoryMessage, userId, conversationId);
+      await this.memory.addMessage(memoryMessage, conversationId);
 
       // Create memory write success event for new timeline
       const memoryWriteSuccessEvent: MemoryWriteSuccessEvent = {
@@ -247,6 +247,10 @@ export class MemoryManager {
     // Use the provided conversationId or generate a new one
     const conversationId = conversationIdParam || crypto.randomUUID();
 
+    if (contextLimit === 0) {
+      return { messages: [], conversationId };
+    }
+
     // Get history from memory if available
     let messages: BaseMessage[] = [];
     if (this.memory && userId) {
@@ -257,6 +261,7 @@ export class MemoryManager {
         await this.memory.createConversation({
           id: conversationId,
           resourceId: this.resourceId,
+          userId: userId,
           title: `New Chat ${new Date().toISOString()}`,
           metadata: {},
         });
@@ -420,6 +425,8 @@ export class MemoryManager {
         output: entry.output,
         usage: entry.usage,
         metadata: entry.metadata,
+        userId: entry.userId,
+        conversationId: entry.conversationId,
       };
 
       // Save the main record (using addHistoryEntry and passing agentId)

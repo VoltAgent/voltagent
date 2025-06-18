@@ -2,8 +2,8 @@ import { z } from "zod";
 import { Tool } from "./index";
 
 // Mock UUID generation
-jest.mock("uuid", () => ({
-  v4: jest.fn().mockReturnValue("mock-uuid"),
+vi.mock("uuid", () => ({
+  v4: vi.fn().mockReturnValue("mock-uuid"),
 }));
 
 describe("Tool", () => {
@@ -17,7 +17,7 @@ describe("Tool", () => {
           param1: z.string(),
           param2: z.number().optional(),
         }),
-        execute: jest.fn(),
+        execute: vi.fn(),
       };
 
       const tool = new Tool(options);
@@ -34,7 +34,7 @@ describe("Tool", () => {
         name: "testTool",
         parameters: z.object({}),
         description: "A test tool",
-        execute: jest.fn(),
+        execute: vi.fn(),
       };
 
       const tool = new Tool(options);
@@ -47,7 +47,7 @@ describe("Tool", () => {
         name: "testTool",
         parameters: z.object({}),
         description: "A test tool",
-        execute: jest.fn(),
+        execute: vi.fn(),
       };
 
       const tool = new Tool(options);
@@ -62,7 +62,7 @@ describe("Tool", () => {
       const options = {
         parameters: z.object({}),
         description: "A test tool",
-        execute: jest.fn(),
+        execute: vi.fn(),
       } as any;
 
       expect(() => new Tool(options)).toThrow("Tool name is required");
@@ -72,7 +72,7 @@ describe("Tool", () => {
       const options = {
         name: "testTool",
         description: "A test tool",
-        execute: jest.fn(),
+        execute: vi.fn(),
       } as any;
 
       expect(() => new Tool(options)).toThrow("Tool 'testTool' parameters schema is required");

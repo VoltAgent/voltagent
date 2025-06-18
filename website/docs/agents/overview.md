@@ -82,6 +82,103 @@ const completeResponse = await agent.generateText("Explain machine learning brie
 console.log("Complete Response:", completeResponse.text);
 ```
 
+#### Enhanced Streaming with `fullStream`
+
+For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the `fullStream` property available in the response:
+
+```ts
+// Example using fullStream for detailed streaming events
+async function enhancedChat(input: string) {
+  console.log(`User: ${input}`);
+  const response = await agent.streamText(input);
+
+  // Check if fullStream is available (provider-dependent)
+  if (response.fullStream) {
+    for await (const chunk of response.fullStream) {
+      switch (chunk.type) {
+        case "text-delta":
+          // Output text as it's generated
+          process.stdout.write(chunk.textDelta);
+          break;
+        case "tool-call":
+          console.log(`\n🔧 Using tool: ${chunk.toolName}`);
+          break;
+        case "tool-result":
+          console.log(`✅ Tool completed: ${chunk.toolName}`);
+          break;
+        case "reasoning":
+          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
+          break;
+        case "source":
+          console.log(`📚 Retrieved context: ${chunk.source}`);
+          break;
+        case "finish":
+          console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
+          break;
+      }
+    }
+  } else {
+    // Fallback to standard textStream
+    for await (const chunk of response.textStream) {
+      process.stdout.write(chunk);
+    }
+  }
+}
+
+await enhancedChat("Write a short story about a cat and format it nicely");
+```
+
+:::note fullStream Support
+
+Currently, `fullStream` is only supported by the `@voltagent/vercel-ai` provider. For other providers (Google AI, Groq, Anthropic, XsAI), the response will fall back to the standard `textStream`.
+
+We're actively looking for community contributions to add `fullStream` support to other providers! If you're interested in helping, please check out our [GitHub repository](https://github.com/VoltAgent/voltagent) or join our [Discord community](https://s.voltagent.dev/discord).
+
+:::
+
+:::tip SubAgent Event Filtering
+
+When using `fullStream` with sub-agents, all sub-agent events are automatically forwarded to the parent stream with `subAgentId` and `subAgentName` metadata. You can filter these events on the client side for different UI experiences:
+
+```ts
+const response = await supervisorAgent.streamText("Write a story and format it");
+
+if (response.fullStream) {
+  for await (const chunk of response.fullStream) {
+    const isSubAgentEvent = chunk.subAgentId && chunk.subAgentName;
+
+    if (isSubAgentEvent) {
+      // Option 1: Skip all SubAgent events for a clean UI
+      continue;
+
+      // Option 2: Show only SubAgent tool activities
+      if (chunk.type === "tool-call" || chunk.type === "tool-result") {
+        console.log(`[${chunk.subAgentName}] Tool: ${chunk.toolName}`);
+      }
+      continue;
+
+      // Option 3: Show all SubAgent events with labels
+      console.log(`[${chunk.subAgentName}] ${chunk.type}:`, chunk);
+    } else {
+      // Process main supervisor events
+      handleMainAgentEvent(chunk);
+    }
+  }
+}
+```
+
+**Available SubAgent Event Types:**
+
+- `text-delta`: SubAgent text output (character by character)
+- `reasoning`: SubAgent internal reasoning steps
+- `source`: SubAgent context retrieval results
+- `tool-call`: SubAgent tool execution starts
+- `tool-result`: SubAgent tool execution completes
+
+This filtering approach allows you to create different UI experiences while preserving all events for debugging and monitoring.
+
+:::
+
 #### Markdown Formatting
 
 **Why?** To have the agent automatically format its text responses using Markdown for better readability and presentation.

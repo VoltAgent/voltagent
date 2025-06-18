@@ -1,3 +1,5 @@
+import type { Mock, Mocked } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type AddEntryParams, type AgentHistoryEntry, HistoryManager } from ".";
 import { AgentEventEmitter } from "../../events";
 import type { NewTimelineEvent } from "../../events/types";
@@ -12,45 +14,45 @@ import type { StepWithContent } from "../providers/base/types";
 import type { AgentStatus } from "../types";
 
 // Mock dependencies
-jest.mock("../../events");
-jest.mock("../../memory");
-jest.mock("../../telemetry/exporter", () => ({
-  VoltAgentExporter: jest.fn().mockImplementation(() => ({
-    exportHistoryEntry: jest.fn(),
-    exportTimelineEvent: jest.fn(),
-    exportHistorySteps: jest.fn(),
-    updateHistoryEntry: jest.fn(),
+vi.mock("../../events");
+vi.mock("../../memory");
+vi.mock("../../telemetry/exporter", () => ({
+  VoltAgentExporter: vi.fn().mockImplementation(() => ({
+    exportHistoryEntry: vi.fn(),
+    exportTimelineEvent: vi.fn(),
+    exportHistorySteps: vi.fn(),
+    updateHistoryEntry: vi.fn(),
     publicKey: "mock-public-key",
   })),
 }));
 
 describe("HistoryManager", () => {
   let historyManager: HistoryManager;
-  let mockMemoryManager: jest.Mocked<MemoryManager>;
+  let mockMemoryManager: Mocked<MemoryManager>;
   let mockEntries: AgentHistoryEntry[] = [];
-  let mockVoltAgentExporter: jest.Mocked<VoltAgentExporter>;
+  let mockVoltAgentExporter: Mocked<VoltAgentExporter>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear mock data
     mockEntries = [];
 
     // Mock MemoryManager implementation
-    mockMemoryManager = new MemoryManager("test-memory-manager") as jest.Mocked<MemoryManager>;
-    mockMemoryManager.storeHistoryEntry = jest.fn().mockImplementation((_agentId, entry) => {
+    mockMemoryManager = new MemoryManager("test-memory-manager") as Mocked<MemoryManager>;
+    mockMemoryManager.storeHistoryEntry = vi.fn().mockImplementation((_agentId, entry) => {
       mockEntries.unshift(entry); // Add to the beginning (newest first)
       return Promise.resolve(entry);
     });
 
-    mockMemoryManager.getAllHistoryEntries = jest.fn().mockImplementation(() => {
+    mockMemoryManager.getAllHistoryEntries = vi.fn().mockImplementation(() => {
       return Promise.resolve([...mockEntries]); // Return a copy
     });
 
-    mockMemoryManager.getHistoryEntryById = jest.fn().mockImplementation((_agentId, id) => {
+    mockMemoryManager.getHistoryEntryById = vi.fn().mockImplementation((_agentId, id) => {
       const entry = mockEntries.find((e) => e.id === id);
       return Promise.resolve(entry);
     });
 
-    mockMemoryManager.updateHistoryEntry = jest.fn().mockImplementation((_agentId, id, updates) => {
+    mockMemoryManager.updateHistoryEntry = vi.fn().mockImplementation((_agentId, id, updates) => {
       const index = mockEntries.findIndex((e) => e.id === id);
       if (index !== -1) {
         mockEntries[index] = { ...mockEntries[index], ...updates };
@@ -59,7 +61,7 @@ describe("HistoryManager", () => {
       return Promise.resolve(undefined);
     });
 
-    mockMemoryManager.addTimelineEvent = jest
+    mockMemoryManager.addTimelineEvent = vi
       .fn()
       .mockImplementation((_agentId, _historyId, _eventId, _event) => {
         const index = mockEntries.findIndex((e) => e.id === _historyId);
@@ -70,26 +72,28 @@ describe("HistoryManager", () => {
         return Promise.resolve(undefined);
       });
 
-    mockMemoryManager.addStepsToHistoryEntry = jest
-      .fn()
-      .mockImplementation((_agentId, id, steps) => {
-        const index = mockEntries.findIndex((e) => e.id === id);
-        if (index !== -1) {
-          if (!mockEntries[index].steps) {
-            mockEntries[index].steps = [];
-          }
-          mockEntries[index].steps = [...mockEntries[index].steps, ...steps];
-          return Promise.resolve(mockEntries[index]);
+    mockMemoryManager.addStepsToHistoryEntry = vi.fn().mockImplementation((_agentId, id, steps) => {
+      const index = mockEntries.findIndex((e) => e.id === id);
+      if (index !== -1) {
+        if (!mockEntries[index].steps) {
+          mockEntries[index].steps = [];
         }
-        return Promise.resolve(undefined);
-      });
+        mockEntries[index].steps = [...mockEntries[index].steps, ...steps];
+        return Promise.resolve(mockEntries[index]);
+      }
+      return Promise.resolve(undefined);
+    });
 
     // Create HistoryManager with mocked dependencies
     historyManager = new HistoryManager("test-agent", mockMemoryManager, 0);
 
     // Initialize mock VoltAgentExporter instance for telemetry tests
-    const { VoltAgentExporter: MockExporterConstructor } = require("../../telemetry/exporter");
-    mockVoltAgentExporter = new MockExporterConstructor() as jest.Mocked<VoltAgentExporter>;
+    const { VoltAgentExporter: MockExporterConstructor } = await import("../../telemetry/exporter");
+    mockVoltAgentExporter = new MockExporterConstructor({
+      publicKey: "mock-public-key",
+      baseUrl: "https://mock-base-url.com",
+      secretKey: "mock-secret-key",
+    }) as Mocked<VoltAgentExporter>;
     // Clear mocks on the instance methods for each test, as the instance is reused if created in beforeEach
     mockVoltAgentExporter.exportHistoryEntry.mockClear();
     mockVoltAgentExporter.exportTimelineEvent.mockClear();
@@ -98,15 +102,15 @@ describe("HistoryManager", () => {
 
     // Mock AgentEventEmitter
     const mockEmitter = {
-      emitHistoryEntryCreated: jest.fn(),
-      emitHistoryUpdate: jest.fn(),
-      createTrackedEvent: jest.fn(),
+      emitHistoryEntryCreated: vi.fn(),
+      emitHistoryUpdate: vi.fn(),
+      createTrackedEvent: vi.fn(),
     };
-    (AgentEventEmitter.getInstance as jest.Mock).mockReturnValue(mockEmitter);
+    (AgentEventEmitter.getInstance as Mock).mockReturnValue(mockEmitter);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("constructor", () => {
@@ -347,7 +351,7 @@ describe("HistoryManager", () => {
       mockMemoryManager.updateHistoryEntry.mockClear();
       mockMemoryManager.addTimelineEvent.mockClear();
       mockMemoryManager.addStepsToHistoryEntry.mockClear();
-      console.warn = jest.fn(); // Mock console.warn for error handling tests
+      console.warn = vi.fn(); // Mock console.warn for error handling tests
     });
 
     describe("addEntry with telemetry", () => {

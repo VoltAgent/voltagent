@@ -1,4 +1,4 @@
-import { Calculator } from "./components/calculator";
+import { CalculatorChat } from "./components/calculator-chat";
 
 export default function Home() {
   return (
@@ -22,7 +22,7 @@ export default function Home() {
           <p className="text-gray-400">AI-powered calculation made simple</p>
         </div>
 
-        <Calculator />
+        <CalculatorChat />
 
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>Built with Next.js and VoltAgent</p>

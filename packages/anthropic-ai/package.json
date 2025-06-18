@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/anthropic-ai",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Anthropic AI provider for VoltAgent",
   "exports": {
     ".": {
@@ -20,21 +20,20 @@
     "dev": "tsup --watch",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
-    "test": "jest --passWithNoTests"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
-    "@voltagent/core": "^0.1.31",
+    "@voltagent/core": "^0.1.32",
     "zod": "3.24.2"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.24",
-    "eslint": "^8.0.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.2",
+    "@vitest/coverage-v8": "^3.2.3",
     "tsup": "^6.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.3"
   },
   "peerDependencies": {
     "@voltagent/core": "^0.1.0"

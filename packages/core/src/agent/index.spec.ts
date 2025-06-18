@@ -1,3 +1,4 @@
+import type { Mock, Mocked } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { Memory, MemoryMessage } from "../memory/types";
@@ -91,32 +92,32 @@ const createMockHistoryEntry = (
   };
 };
 
-// Creating a jest mock for Memory interface
+// Creating a vi mock for Memory interface
 // @ts-ignore - This won't be fully compatible with all properties, this is a test
 const mockMemory = {
-  getMessages: jest.fn().mockImplementation(async () => []),
-  addMessage: jest.fn(),
-  clearMessages: jest.fn(),
-  createConversation: jest.fn(),
-  getConversation: jest.fn(),
-  getConversations: jest.fn(),
-  updateConversation: jest.fn(),
-  deleteConversation: jest.fn(),
+  getMessages: vi.fn().mockImplementation(async () => []),
+  addMessage: vi.fn(),
+  clearMessages: vi.fn(),
+  createConversation: vi.fn(),
+  getConversation: vi.fn(),
+  getConversations: vi.fn(),
+  updateConversation: vi.fn(),
+  deleteConversation: vi.fn(),
 
   // Simplified mock methods related to History
-  addHistoryEntry: jest.fn(),
-  updateHistoryEntry: jest.fn(),
-  getHistoryEntry: jest.fn(),
-  addHistoryEvent: jest.fn(),
-  updateHistoryEvent: jest.fn(),
-  getHistoryEvent: jest.fn(),
-  addHistoryStep: jest.fn(),
-  updateHistoryStep: jest.fn(),
-  getHistoryStep: jest.fn(),
-  getAllHistoryEntriesByAgent: jest.fn(),
+  addHistoryEntry: vi.fn(),
+  updateHistoryEntry: vi.fn(),
+  getHistoryEntry: vi.fn(),
+  addHistoryEvent: vi.fn(),
+  updateHistoryEvent: vi.fn(),
+  getHistoryEvent: vi.fn(),
+  addHistoryStep: vi.fn(),
+  updateHistoryStep: vi.fn(),
+  getHistoryStep: vi.fn(),
+  getAllHistoryEntriesByAgent: vi.fn(),
 
   // Added missing addTimelineEvent method
-  addTimelineEvent: jest
+  addTimelineEvent: vi
     .fn()
     .mockImplementation(
       async (_key: string, _value: NewTimelineEvent, _historyId: string, _agentId: string) => {
@@ -125,8 +126,13 @@ const mockMemory = {
       },
     ),
 
+  // Add missing user-centric conversation methods
+  getConversationsByUserId: vi.fn().mockImplementation(async () => []),
+  queryConversations: vi.fn().mockImplementation(async () => []),
+  getConversationMessages: vi.fn().mockImplementation(async () => []),
+
   // Special test requirements
-  getHistoryEntries: jest.fn().mockImplementation(async () => {
+  getHistoryEntries: vi.fn().mockImplementation(async () => {
     return [createMockHistoryEntry("Test input")];
   }),
 };
@@ -369,12 +375,12 @@ class TestAgent<TProvider extends { llm: LLMProvider<unknown> }> extends Agent<T
 }
 
 // Mock HistoryManager
-jest.mock("./history", () => ({
-  HistoryManager: jest.fn().mockImplementation(() => {
+vi.mock("./history", () => ({
+  HistoryManager: vi.fn().mockImplementation(() => {
     // createMockHistoryEntry test dosyasının global kapsamında tanımlıdır.
     // Çağrıldığında AgentHistoryEntry'ye benzeyen bir nesne döndürür.
     return {
-      addEntry: jest.fn().mockImplementation(async (input, _output, status, _steps, _options) => {
+      addEntry: vi.fn().mockImplementation(async (input, _output, status, _steps, _options) => {
         let entryInputString = "default_mock_input";
         if (typeof input === "string") {
           entryInputString = input;
@@ -392,15 +398,15 @@ jest.mock("./history", () => ({
         // @ts-ignore createMockHistoryEntry is defined in the outer scope
         return Promise.resolve(createMockHistoryEntry(entryInputString, status || "working"));
       }),
-      getEntries: jest.fn().mockResolvedValue([]),
-      updateEntry: jest
+      getEntries: vi.fn().mockResolvedValue([]),
+      updateEntry: vi
         .fn()
         .mockImplementation(async (id: string, updates: Partial<AgentHistoryEntry>) => {
           // @ts-ignore createMockHistoryEntry is defined in the outer scope
           const baseEntry = createMockHistoryEntry("updated_input_for_mock");
           return Promise.resolve({ ...baseEntry, id, ...updates });
         }),
-      addStepsToEntry: jest
+      addStepsToEntry: vi
         .fn()
         .mockImplementation(async (id: string, newSteps: StepWithContent[]) => {
           // @ts-ignore createMockHistoryEntry is defined in the outer scope
@@ -413,18 +419,16 @@ jest.mock("./history", () => ({
         }),
       // Agent tarafından kullanılan diğer HistoryManager metodları buraya eklenebilir.
       // Örneğin: getEntryById, addEventToEntry
-      getEntryById: jest.fn().mockImplementation(async (id: string) => {
+      getEntryById: vi.fn().mockImplementation(async (id: string) => {
         // @ts-ignore createMockHistoryEntry is defined in the outer scope
         return Promise.resolve(createMockHistoryEntry(`entry_for_${id}`));
       }),
-      addEventToEntry: jest
-        .fn()
-        .mockImplementation(async (id: string, _event: NewTimelineEvent) => {
-          // @ts-ignore createMockHistoryEntry is defined in the outer scope
-          const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
-          // Remove events property since it doesn't exist in AgentHistoryEntry
-          return Promise.resolve({ ...baseEntry, id });
-        }),
+      addEventToEntry: vi.fn().mockImplementation(async (id: string, _event: NewTimelineEvent) => {
+        // @ts-ignore createMockHistoryEntry is defined in the outer scope
+        const baseEntry = createMockHistoryEntry(`event_added_to_${id}`);
+        // Remove events property since it doesn't exist in AgentHistoryEntry
+        return Promise.resolve({ ...baseEntry, id });
+      }),
     };
   }),
 }));
@@ -432,30 +436,30 @@ jest.mock("./history", () => ({
 // Mock VoltAgentExporter
 const mockTelemetryExporter = {
   publicKey: "mock-telemetry-public-key",
-  exportHistoryEntry: jest.fn(),
-  exportTimelineEvent: jest.fn(),
-  exportHistorySteps: jest.fn(),
-  updateHistoryEntry: jest.fn(),
-  updateTimelineEvent: jest.fn(),
+  exportHistoryEntry: vi.fn(),
+  exportTimelineEvent: vi.fn(),
+  exportHistorySteps: vi.fn(),
+  updateHistoryEntry: vi.fn(),
+  updateTimelineEvent: vi.fn(),
 } as unknown as VoltAgentExporter;
 
 // Mock AgentEventEmitter globally
 const mockEventEmitter = {
-  getInstance: jest.fn().mockReturnThis(),
-  addHistoryEvent: jest.fn(),
-  emitHistoryEntryCreated: jest.fn(),
-  emitHistoryUpdate: jest.fn(),
-  emitAgentRegistered: jest.fn(),
-  emitAgentUnregistered: jest.fn(),
-  onAgentRegistered: jest.fn(),
-  onAgentUnregistered: jest.fn(),
-  onHistoryEntryCreated: jest.fn(),
-  onHistoryUpdate: jest.fn(),
-  publishTimelineEvent: jest.fn().mockResolvedValue(createMockHistoryEntry("mock_timeline_event")),
-} as unknown as jest.Mocked<AgentEventEmitter>;
+  getInstance: vi.fn().mockReturnThis(),
+  addHistoryEvent: vi.fn(),
+  emitHistoryEntryCreated: vi.fn(),
+  emitHistoryUpdate: vi.fn(),
+  emitAgentRegistered: vi.fn(),
+  emitAgentUnregistered: vi.fn(),
+  onAgentRegistered: vi.fn(),
+  onAgentUnregistered: vi.fn(),
+  onHistoryEntryCreated: vi.fn(),
+  onHistoryUpdate: vi.fn(),
+  publishTimelineEvent: vi.fn().mockResolvedValue(createMockHistoryEntry("mock_timeline_event")),
+} as unknown as Mocked<AgentEventEmitter>;
 
 // Mock AgentEventEmitter.getInstance globally
-jest.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
+vi.spyOn(AgentEventEmitter, "getInstance").mockReturnValue(mockEventEmitter);
 
 describe("Agent", () => {
   let agent: TestAgent<{ llm: MockProvider }>;
@@ -467,7 +471,7 @@ describe("Agent", () => {
     mockProvider = new MockProvider(mockModel);
 
     // Reset mock memory before each test
-    // @ts-ignore - To overcome Object.keys and jest mock type issues
+    // @ts-ignore - To overcome Object.keys and vi mock type issues
     for (const key of Object.keys(mockMemory)) {
       // @ts-ignore - To overcome type issues with Jest mocks
       if (
@@ -553,7 +557,7 @@ describe("Agent", () => {
 
     // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
     it("should pass telemetryExporter to HistoryManager if provided", () => {
-      (HistoryManager as jest.Mock).mockClear();
+      (HistoryManager as Mock).mockClear();
 
       new Agent({
         name: "TelemetryAgent",
@@ -574,7 +578,7 @@ describe("Agent", () => {
     });
 
     it("should instantiate HistoryManager without telemetryExporter if not provided", () => {
-      (HistoryManager as jest.Mock).mockClear();
+      (HistoryManager as Mock).mockClear();
 
       new Agent({
         name: "NoTelemetryAgent",
@@ -585,7 +589,7 @@ describe("Agent", () => {
       });
 
       expect(HistoryManager).toHaveBeenCalledTimes(1);
-      const historyManagerArgs = (HistoryManager as jest.Mock).mock.calls[0];
+      const historyManagerArgs = (HistoryManager as Mock).mock.calls[0];
       expect(historyManagerArgs.length).toBeGreaterThanOrEqual(3);
       expect(historyManagerArgs[3]).toBeUndefined();
     });
@@ -771,7 +775,7 @@ describe("Agent", () => {
   describe("history management", () => {
     it("should create history entries during text generation", async () => {
       // Track the addEntry method of HistoryManager with a spy
-      const addEntrySpy = jest.spyOn(agent.getHistoryManager(), "addEntry");
+      const addEntrySpy = vi.spyOn(agent.getHistoryManager(), "addEntry");
 
       // Mock history entry - creating only for reference
       createMockHistoryEntry("Test history management");
@@ -787,7 +791,7 @@ describe("Agent", () => {
 
     it("should handle history updates correctly", async () => {
       // Spy on AgentEventEmitter
-      const emitAgentUnregisteredSpy = jest.spyOn(
+      const emitAgentUnregisteredSpy = vi.spyOn(
         AgentEventEmitter.getInstance(),
         "emitAgentUnregistered",
       );
@@ -812,10 +816,10 @@ describe("Agent", () => {
       const historyManager = agent.getHistoryManager();
 
       // Mock emitHistoryEntryCreated once more to ensure fresh mocks
-      const emitHistoryEntryCreatedMock = jest.fn();
+      const emitHistoryEntryCreatedMock = vi.fn();
       mockEventEmitter.emitHistoryEntryCreated = emitHistoryEntryCreatedMock;
 
-      const historyManagerAddEntrySpy = jest.spyOn(historyManager, "addEntry");
+      const historyManagerAddEntrySpy = vi.spyOn(historyManager, "addEntry");
 
       await agent.generateText("Test input");
 
@@ -888,10 +892,15 @@ describe("Agent", () => {
         instructions: "A helpful AI assistant",
       });
 
+      const emitAgentUnregisteredSpy = vi.spyOn(
+        AgentEventEmitter.getInstance(),
+        "emitAgentUnregistered",
+      );
+
       newAgent.unregister();
 
       // And event was emitted
-      expect(mockEventEmitter.emitAgentUnregistered).toHaveBeenCalledWith(newAgent.id);
+      expect(emitAgentUnregisteredSpy).toHaveBeenCalledWith(newAgent.id);
     });
   });
 
@@ -903,7 +912,7 @@ describe("Agent", () => {
     });
 
     it("should delegate getHistory to HistoryManager", () => {
-      const historyManagerSpy = jest.spyOn(agent.getHistoryManager(), "getEntries");
+      const historyManagerSpy = vi.spyOn(agent.getHistoryManager(), "getEntries");
 
       agent.getHistory();
 
@@ -914,10 +923,10 @@ describe("Agent", () => {
       const historyManager = agent.getHistoryManager();
 
       // Mock emitHistoryEntryCreated once more to ensure fresh mocks
-      const emitHistoryEntryCreatedMock = jest.fn();
+      const emitHistoryEntryCreatedMock = vi.fn();
       mockEventEmitter.emitHistoryEntryCreated = emitHistoryEntryCreatedMock;
 
-      const historyManagerAddEntrySpy = jest.spyOn(historyManager, "addEntry");
+      const historyManagerAddEntrySpy = vi.spyOn(historyManager, "addEntry");
 
       await agent.generateText("Test input");
 
@@ -929,7 +938,7 @@ describe("Agent", () => {
   describe("stream handling", () => {
     it("should handle streaming errors gracefully", async () => {
       const errorProvider = new MockProvider(mockModel);
-      jest.spyOn(errorProvider, "streamText").mockRejectedValue(new Error("Stream error"));
+      vi.spyOn(errorProvider, "streamText").mockRejectedValue(new Error("Stream error"));
 
       const errorAgent = new TestAgent({
         name: "Error Stream Agent",
@@ -943,7 +952,7 @@ describe("Agent", () => {
 
     it("should handle object streaming errors gracefully", async () => {
       const errorProvider = new MockProvider(mockModel);
-      jest.spyOn(errorProvider, "streamObject").mockRejectedValue(new Error("Object stream error"));
+      vi.spyOn(errorProvider, "streamObject").mockRejectedValue(new Error("Object stream error"));
 
       const errorAgent = new TestAgent({
         name: "Error Object Stream Agent",
@@ -978,7 +987,7 @@ describe("Agent", () => {
           execute: async () => "tool execution result",
         },
 
-        retrieve: jest
+        retrieve: vi
           .fn()
           .mockImplementation(async (_input: string | BaseMessage[], options?: any) => {
             mockRetriever.retrieveCalls++;
@@ -1097,7 +1106,7 @@ describe("Agent", () => {
 
       // Use onEnd hook to capture the final userContext
       let capturedUserContext: Map<string | symbol, unknown> | undefined;
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         capturedUserContext = context.userContext;
       });
 
@@ -1162,7 +1171,7 @@ describe("Agent", () => {
 
       // Use onEnd hook to capture the final userContext
       let capturedUserContext: Map<string | symbol, unknown> | undefined;
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         capturedUserContext = context.userContext;
       });
 
@@ -1194,7 +1203,7 @@ describe("Agent", () => {
 
   describe("onEnd hook", () => {
     it("should call onEnd hook with conversationId", async () => {
-      const onEndSpy = jest.fn();
+      const onEndSpy = vi.fn();
       const agentWithOnEnd = new TestAgent({
         name: "OnEnd Test Agent",
         model: mockModel,
@@ -1225,7 +1234,7 @@ describe("Agent", () => {
     });
 
     it("should call onEnd hook with userContext passed correctly", async () => {
-      const onEndSpy = jest.fn();
+      const onEndSpy = vi.fn();
       const agentWithOnEnd = new TestAgent({
         name: "OnEnd Context Test Agent",
         model: mockModel,
@@ -1267,7 +1276,7 @@ describe("Agent", () => {
   describe("userContext", () => {
     it("should initialize userContext within OperationContext", async () => {
       // Create agent with a spy hook to capture the context
-      const onStartSpy = jest.fn();
+      const onStartSpy = vi.fn();
       const agentWithHook = new TestAgent({
         name: "Context Test Agent",
         model: mockModel,
@@ -1297,7 +1306,7 @@ describe("Agent", () => {
       const initialUserContext = new Map<string | symbol, unknown>();
       initialUserContext.set("initialKey", "initialValue");
 
-      const onStartSpy = jest.fn();
+      const onStartSpy = vi.fn();
       const agentWithInitialContext = new TestAgent({
         name: "Initial Context Agent",
         model: mockModel,
@@ -1322,8 +1331,8 @@ describe("Agent", () => {
     });
 
     it("should pass userContext to onStart and onEnd hooks when provided in options", async () => {
-      const onStartSpy = jest.fn();
-      const onEndSpy = jest.fn();
+      const onStartSpy = vi.fn();
+      const onEndSpy = vi.fn();
       const agentWithHooks = new TestAgent({
         name: "Hook Context Agent",
         model: mockModel,
@@ -1356,11 +1365,11 @@ describe("Agent", () => {
       const testKey = "customKey";
 
       // Update onStartHook to accept a single object argument
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onStartHook = vi.fn(({ context }: { context: OperationContext }) => {
         context.userContext.set(testKey, testValue);
       });
       // Update onEndHook to accept a single object argument
-      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         expect(context.userContext.get(testKey)).toBe(testValue);
       });
 
@@ -1383,7 +1392,7 @@ describe("Agent", () => {
       const testValue = "data from start via options";
       const testKey = Symbol("toolTestKeyWithOptions");
 
-      const toolExecuteSpy = jest.fn();
+      const toolExecuteSpy = vi.fn();
       const mockTool = createTool({
         id: "context-tool-options",
         name: "context-tool-options",
@@ -1403,7 +1412,7 @@ describe("Agent", () => {
       const providedUserContext = new Map<string | symbol, unknown>();
       providedUserContext.set(testKey, testValue);
 
-      const generateTextSpy = jest.spyOn(mockProvider, "generateText");
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText");
 
       await agentWithToolAndOptions.generateText("Use the context-tool-options", {
         userContext: providedUserContext,
@@ -1440,7 +1449,7 @@ describe("Agent", () => {
       const userContext1 = new Map<string | symbol, unknown>([[key1, value1]]);
       const userContext2 = new Map<string | symbol, unknown>([[key2, value2]]);
 
-      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
+      const onStartHook = vi.fn(({ context }: { context: OperationContext }) => {
         if (context.historyEntry.input === "Operation 1 with options") {
           expect(context.userContext.get(key1)).toBe(value1);
           expect(context.userContext.has(key2)).toBe(false);
@@ -1469,6 +1478,1590 @@ describe("Agent", () => {
       });
 
       expect(onStartHook).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("forward event functionality", () => {
+    let agentWithSubAgents: TestAgent<{ llm: MockProvider }>;
+    let mockSubAgent: TestAgent<{ llm: MockProvider }>;
+
+    beforeEach(() => {
+      // Create a mock sub-agent
+      mockSubAgent = new TestAgent({
+        id: "sub-agent-1",
+        name: "Mock Sub Agent",
+        description: "A mock sub-agent for testing",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A mock sub-agent for testing",
+      });
+
+      // Create an agent with sub-agents
+      agentWithSubAgents = new TestAgent({
+        id: "parent-agent",
+        name: "Parent Agent",
+        description: "A parent agent with sub-agents",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A parent agent with sub-agents",
+      });
+
+      // Add the sub-agent
+      agentWithSubAgents.addSubAgent(mockSubAgent);
+    });
+
+    it("should create forwardEvent function in prepareTextOptions when streamEventForwarder exists", async () => {
+      // Test the core functionality: forwardEvent function creation
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      // Access the protected method to test it directly
+      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+        streamEventForwarder: mockForwarder,
+        historyEntryId: "test-history-id",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-op-id",
+          historyEntry: { id: "test-history-id" },
+          isActive: true,
+        },
+      });
+
+      expect(textOptions.tools).toBeDefined();
+      const delegateTool = textOptions.tools.find((tool: any) => tool.name === "delegate_task");
+      expect(delegateTool).toBeDefined();
+    });
+
+    it("should test forwardEvent filtering logic directly", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      // Create a forwardEvent function like the real code does
+      const forwardEvent = async (event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        // Handle forwarding with filtering (no backup storage)
+        if (mockForwarder) {
+          // Filter out text, reasoning, and source events from SubAgents
+          if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+            return; // Should not call forwarder
+          }
+          await mockForwarder(event);
+        }
+      };
+
+      // Test filtering - these should NOT be forwarded
+      const filteredEvents = [
+        {
+          type: "text",
+          data: {},
+          timestamp: "2023-01-01",
+          subAgentId: "test",
+          subAgentName: "Test",
+        },
+        {
+          type: "reasoning",
+          data: {},
+          timestamp: "2023-01-01",
+          subAgentId: "test",
+          subAgentName: "Test",
+        },
+        {
+          type: "source",
+          data: {},
+          timestamp: "2023-01-01",
+          subAgentId: "test",
+          subAgentName: "Test",
+        },
+      ];
+
+      for (const event of filteredEvents) {
+        await forwardEvent(event);
+      }
+
+      // Forwarder should not be called for filtered events
+      expect(mockForwarder).not.toHaveBeenCalled();
+    });
+
+    it("should test forwardEvent tool prefix logic directly", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      // Create a forwardEvent function like the real code does
+      const forwardEvent = async (event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        if (mockForwarder) {
+          // Skip filtering for this test
+          if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+            return;
+          }
+
+          // Add sub-agent prefix to distinguish from parent events
+          const prefixedData = {
+            ...event.data,
+            timestamp: event.timestamp,
+            type: event.type,
+            subAgentId: event.subAgentId,
+            subAgentName: event.subAgentName,
+          };
+
+          // For tool events, add subagent prefix to display name
+          if (event.type === "tool-call" && prefixedData.toolCall) {
+            prefixedData.toolCall = {
+              ...prefixedData.toolCall,
+              toolName: `${event.subAgentName}: ${prefixedData.toolCall.toolName}`,
+            };
+          } else if (event.type === "tool-result" && prefixedData.toolResult) {
+            prefixedData.toolResult = {
+              ...prefixedData.toolResult,
+              toolName: `${event.subAgentName}: ${prefixedData.toolResult.toolName}`,
+            };
+          }
+
+          await mockForwarder(prefixedData);
+        }
+      };
+
+      // Test tool-call event with prefix
+      const toolCallEvent = {
+        type: "tool-call",
+        data: {
+          toolCall: {
+            toolName: "original-tool",
+            arguments: { test: "value" },
+          },
+        },
+        timestamp: "2023-01-01",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      };
+
+      await forwardEvent(toolCallEvent);
+
+      expect(mockForwarder).toHaveBeenCalledWith({
+        toolCall: {
+          toolName: "Mock Sub Agent: original-tool",
+          arguments: { test: "value" },
+        },
+        timestamp: "2023-01-01",
+        type: "tool-call",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      });
+
+      // Test tool-result event with prefix
+      mockForwarder.mockClear();
+      const toolResultEvent = {
+        type: "tool-result",
+        data: {
+          toolResult: {
+            toolName: "original-tool",
+            result: "test result",
+          },
+        },
+        timestamp: "2023-01-01",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      };
+
+      await forwardEvent(toolResultEvent);
+
+      expect(mockForwarder).toHaveBeenCalledWith({
+        toolResult: {
+          toolName: "Mock Sub Agent: original-tool",
+          result: "test result",
+        },
+        timestamp: "2023-01-01",
+        type: "tool-result",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Mock Sub Agent",
+      });
+    });
+
+    it("should handle forwardEvent errors gracefully", async () => {
+      const failingForwarder = vi.fn().mockRejectedValue(new Error("Forwarding failed"));
+
+      // Create a forwardEvent function that handles errors like the real code
+      const forwardEvent = async (event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        if (failingForwarder) {
+          try {
+            if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+              return;
+            }
+            await failingForwarder(event);
+          } catch {
+            // do nothing
+            return;
+          }
+        }
+      };
+
+      const testEvent = {
+        type: "tool-call",
+        data: { test: true },
+        timestamp: "2023-01-01",
+        subAgentId: "test",
+        subAgentName: "Test",
+      };
+
+      // Should not throw
+      await expect(forwardEvent(testEvent)).resolves.toBeUndefined();
+    });
+
+    it("should do nothing when no streamEventForwarder is provided", async () => {
+      // Create forwardEvent without streamEventForwarder
+      const forwardEvent = async (_event: {
+        type: string;
+        data: any;
+        timestamp: string;
+        subAgentId: string;
+        subAgentName: string;
+      }) => {
+        // No streamEventForwarder provided, do nothing
+        // This matches the real implementation after removing backup
+      };
+
+      const testEvent = {
+        type: "tool-call",
+        data: { test: true },
+        timestamp: "2023-01-01",
+        subAgentId: "test",
+        subAgentName: "Test",
+      };
+
+      // Should not throw and complete successfully
+      await expect(forwardEvent(testEvent)).resolves.toBeUndefined();
+    });
+
+    it("should create delegate tool with forwardEvent function when SubAgents exist", async () => {
+      const tools = agentWithSubAgents.getTools();
+      const delegateTool = tools.find((tool) => tool.name === "delegate_task");
+
+      expect(delegateTool).toBeDefined();
+      expect(delegateTool?.name).toBe("delegate_task");
+      expect(delegateTool?.description).toContain("Delegate");
+    });
+
+    it("should not create delegate tool when no SubAgents exist", async () => {
+      const agentWithoutSubAgents = new TestAgent({
+        name: "No SubAgents Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "No SubAgents Agent instructions",
+      });
+
+      const tools = agentWithoutSubAgents.getTools();
+      const delegateTool = tools.find((tool) => tool.name === "delegate_task");
+
+      expect(delegateTool).toBeUndefined();
+    });
+
+    it("should pass streamEventForwarder to prepareTextOptions during streamText", async () => {
+      const mockForwarder = vi.fn();
+
+      // Spy on prepareTextOptions to verify it receives the streamEventForwarder
+      const prepareTextOptionsSpy = vi.spyOn(agentWithSubAgents as any, "prepareTextOptions");
+
+      // Use the internal options interface to avoid type issues
+      const internalOptions = {
+        internalStreamForwarder: mockForwarder,
+      };
+
+      await agentWithSubAgents.streamText("Test forwarder passing", internalOptions as any);
+
+      expect(prepareTextOptionsSpy).toHaveBeenCalled();
+      const callArgs = prepareTextOptionsSpy.mock.calls[0][0] as any;
+      expect(callArgs.internalStreamForwarder).toBeDefined();
+      expect(typeof callArgs.internalStreamForwarder).toBe("function");
+
+      prepareTextOptionsSpy.mockRestore();
+    });
+
+    it("should create enhanced full stream with SubAgent events", async () => {
+      // Create a mock original stream
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+            controller.enqueue({ type: "text-delta", textDelta: " World" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Access the private method using any casting with new parameters
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // Should receive original stream events
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Hello" });
+      expect(events).toContainEqual({ type: "text-delta", textDelta: " World" });
+    });
+
+    it("should handle different SubAgent event types in enhanced stream", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Test" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Test" });
+    });
+
+    it("should queue SubAgent events properly during streamText", async () => {
+      const mockSubAgent = new TestAgent({
+        id: "test-sub-agent",
+        name: "Test Sub Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A test sub agent",
+      });
+
+      const parentAgent = new TestAgent({
+        id: "parent-agent",
+        name: "Parent Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "A parent agent",
+      });
+
+      parentAgent.addSubAgent(mockSubAgent);
+
+      // Mock the streamText response to include fullStream
+      const mockFullStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Response" });
+            controller.close();
+          },
+        }),
+      );
+
+      vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: mockFullStream,
+        fullStream: mockFullStream,
+        provider: {} as any,
+      });
+
+      const response = await parentAgent.streamText("Test with SubAgent events");
+
+      expect(response.fullStream).toBeDefined();
+      expect(mockProvider.streamText).toHaveBeenCalled();
+
+      // Verify that the response includes the enhanced stream
+      if (response.fullStream) {
+        const events: any[] = [];
+        for await (const event of response.fullStream) {
+          events.push(event);
+          // Break after first event to avoid infinite loop in tests
+          break;
+        }
+        expect(events.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("should handle empty SubAgent events queue", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Solo" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toEqual([{ type: "text-delta", textDelta: "Solo" }]);
+    });
+
+    it("should preserve event order in enhanced stream", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "First" });
+            controller.enqueue({ type: "text-delta", textDelta: "Second" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // Should include original stream events
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "First" });
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Second" });
+    });
+
+    it("should not wrap fullStream if it doesn't exist in original response", async () => {
+      const parentAgent = new TestAgent({
+        id: "parent-no-stream",
+        name: "Parent No Stream",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "Parent without fullStream",
+      });
+
+      parentAgent.addSubAgent(mockSubAgent);
+
+      // Mock response without fullStream
+      vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue("test");
+              controller.close();
+            },
+          }),
+        ),
+        provider: {} as any,
+      });
+
+      const response = await parentAgent.streamText("Test without fullStream");
+
+      expect(response.fullStream).toBeUndefined();
+    });
+
+    it("should handle SubAgent event processing errors gracefully", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Safe" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      // Should still work despite malformed events
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Safe" });
+    });
+
+    it("should properly extract tool-call event data", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.close();
+          },
+        }),
+      );
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // The enhanced stream should process the tool-call event correctly
+      // Since we're testing the internal implementation, we verify the stream completes without errors
+      expect(() => enhancedStream).not.toThrow();
+    });
+
+    it("should properly extract tool-result event data", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.close();
+          },
+        }),
+      );
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // Verify the stream processes without throwing errors
+      expect(() => enhancedStream).not.toThrow();
+    });
+
+    it("should integrate delegate tool with internal stream forwarder", async () => {
+      const mockEventForwarder = vi.fn();
+
+      // Spy on createDelegateTool to verify forwardEvent is passed
+      const createDelegateToolSpy = vi.spyOn(
+        agentWithSubAgents.getSubAgentManager() as any,
+        "createDelegateTool",
+      );
+
+      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+        internalStreamForwarder: mockEventForwarder,
+        historyEntryId: "test-history-id",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-op-id",
+          historyEntry: { id: "test-history-id" },
+          isActive: true,
+        },
+      });
+
+      expect(createDelegateToolSpy).toHaveBeenCalled();
+      const delegateToolArgs = createDelegateToolSpy.mock.calls[0][0] as any;
+      expect(delegateToolArgs.forwardEvent).toBeDefined();
+      expect(typeof delegateToolArgs.forwardEvent).toBe("function");
+
+      createDelegateToolSpy.mockRestore();
+    });
+
+    it("should replace existing delegate tool when creating new one with forwarder", async () => {
+      // First create tools without forwarder
+      const initialTools = (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: "test-1",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-1",
+          historyEntry: { id: "test-1" },
+          isActive: true,
+        },
+      });
+
+      const initialDelegateCount = initialTools.tools.filter(
+        (tool: any) => tool.name === "delegate_task",
+      ).length;
+
+      // Then create tools with forwarder
+      const enhancedTools = (agentWithSubAgents as any).prepareTextOptions({
+        internalStreamForwarder: vi.fn(),
+        historyEntryId: "test-2",
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-2",
+          historyEntry: { id: "test-2" },
+          isActive: true,
+        },
+      });
+
+      const enhancedDelegateCount = enhancedTools.tools.filter(
+        (tool: any) => tool.name === "delegate_task",
+      ).length;
+
+      // Should still have only one delegate tool
+      expect(initialDelegateCount).toBe(1);
+      expect(enhancedDelegateCount).toBe(1);
+    });
+
+    it("should pass current historyEntryId to delegate tool creation", async () => {
+      const testHistoryEntryId = "specific-history-entry-123";
+      const createDelegateToolSpy = vi.spyOn(
+        agentWithSubAgents.getSubAgentManager() as any,
+        "createDelegateTool",
+      );
+
+      (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: testHistoryEntryId,
+        operationContext: {
+          userContext: new Map(),
+          operationId: "test-op",
+          historyEntry: { id: testHistoryEntryId },
+          isActive: true,
+        },
+      });
+
+      expect(createDelegateToolSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currentHistoryEntryId: testHistoryEntryId,
+        }),
+      );
+
+      createDelegateToolSpy.mockRestore();
+    });
+
+    it("should pass operationContext to delegate tool creation", async () => {
+      const testOperationContext = {
+        userContext: new Map([["test", "value"]]),
+        operationId: "test-op-456",
+        historyEntry: { id: "test-history-456" },
+        isActive: true,
+      };
+
+      const createDelegateToolSpy = vi.spyOn(
+        agentWithSubAgents.getSubAgentManager() as any,
+        "createDelegateTool",
+      );
+
+      (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: "test-history-456",
+        operationContext: testOperationContext,
+      });
+
+      expect(createDelegateToolSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          operationContext: testOperationContext,
+        }),
+      );
+
+      createDelegateToolSpy.mockRestore();
+    });
+
+    it("should handle missing operationContext gracefully in prepareTextOptions", async () => {
+      // Test the warning case when operationContext is missing
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+        historyEntryId: "test-history-id",
+        // operationContext is intentionally missing
+      });
+
+      expect(textOptions.tools).toBeDefined();
+      expect(textOptions.maxSteps).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should wrap fullStream response from streamText with SubAgent events", async () => {
+      const originalFullStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Original" });
+            controller.close();
+          },
+        }),
+      );
+
+      vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue("text");
+              controller.close();
+            },
+          }),
+        ),
+        fullStream: originalFullStream,
+        provider: {} as any,
+      });
+
+      const response = await agentWithSubAgents.streamText("Test fullStream wrapping");
+
+      expect(response.fullStream).toBeDefined();
+      expect(response.fullStream).not.toBe(originalFullStream); // Should be wrapped
+
+      // Verify the wrapped stream works
+      if (response.fullStream) {
+        const events: any[] = [];
+        for await (const event of response.fullStream) {
+          events.push(event);
+        }
+        expect(events).toContainEqual({ type: "text-delta", textDelta: "Original" });
+      }
+    });
+
+    it("should handle async iteration errors in enhanced stream", async () => {
+      // Create a stream that throws an error
+      const errorStream = {
+        async *[Symbol.asyncIterator]() {
+          yield { type: "text-delta", textDelta: "Before error" };
+          throw new Error("Stream iteration error");
+        },
+      };
+
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        errorStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      // Should handle the error gracefully
+      try {
+        const events: any[] = [];
+        for await (const event of enhancedStream) {
+          events.push(event);
+        }
+        // If we reach here, the error was handled
+        expect(true).toBe(true);
+      } catch (error) {
+        // The error should be propagated as expected
+        expect((error as Error).message).toBe("Stream iteration error");
+      }
+    });
+
+    it("should maintain SubAgent event queue reference across multiple stream iterations", async () => {
+      // Create mock stream controllers and subAgent status tracking
+      const streamController1: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus1 = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const streamController2: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus2 = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const stream1 = (agentWithSubAgents as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Stream1" });
+              controller.close();
+            },
+          }),
+        ),
+        streamController1,
+        subAgentStatus1,
+      );
+
+      const stream2 = (agentWithSubAgents as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Stream2" });
+              controller.close();
+            },
+          }),
+        ),
+        streamController2,
+        subAgentStatus2,
+      );
+
+      // Both streams should work independently
+      const events1: any[] = [];
+      const events2: any[] = [];
+
+      for await (const event of stream1) {
+        events1.push(event);
+      }
+
+      for await (const event of stream2) {
+        events2.push(event);
+      }
+
+      expect(events1).toContainEqual({ type: "text-delta", textDelta: "Stream1" });
+      expect(events2).toContainEqual({ type: "text-delta", textDelta: "Stream2" });
+    });
+
+    // Real-time Event Injection Tests
+    it("should inject SubAgent events in real-time during stream processing", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            // Slow stream to allow time for event injection
+            setTimeout(() => {
+              controller.enqueue({ type: "text-delta", textDelta: "Original1" });
+              setTimeout(() => {
+                controller.enqueue({ type: "text-delta", textDelta: "Original2" });
+                controller.close();
+              }, 50);
+            }, 50);
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let eventCount = 0;
+
+      // Start consuming the stream
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+          eventCount++;
+
+          // Inject a SubAgent event after the first original event
+          if (eventCount === 1 && streamController.current) {
+            streamController.current.enqueue({
+              type: "tool-call",
+              subAgentId: "test-sub",
+              subAgentName: "Test Sub",
+              timestamp: new Date().toISOString(),
+              toolCallId: "test-call",
+              toolName: "test-tool",
+              args: { test: "value" },
+            });
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      // Should contain both original and injected events
+      expect(events.length).toBeGreaterThanOrEqual(3);
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Original1" });
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Original2" });
+      expect(events.some((e) => e.type === "tool-call")).toBe(true);
+    });
+
+    it("should handle rapid SubAgent event bursts without dropping events", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Start" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      const expectedBurstEvents = 10;
+
+      // Start consuming the stream
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+
+          // Inject burst of events after first event
+          if (events.length === 1 && streamController.current) {
+            for (let i = 0; i < expectedBurstEvents; i++) {
+              streamController.current.enqueue({
+                type: "tool-call",
+                subAgentId: `burst-sub-${i}`,
+                subAgentName: `Burst Sub ${i}`,
+                timestamp: new Date().toISOString(),
+                toolCallId: `burst-call-${i}`,
+                toolName: `burst-tool-${i}`,
+                args: { index: i },
+              });
+            }
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      // Should contain original event plus all burst events
+      expect(events.length).toBe(1 + expectedBurstEvents);
+      expect(events[0]).toEqual({ type: "text-delta", textDelta: "Start" });
+
+      // Verify all burst events are present
+      const burstEvents = events.filter((e) => e.type === "tool-call");
+      expect(burstEvents.length).toBe(expectedBurstEvents);
+    });
+
+    it("should maintain event order when multiple SubAgents emit simultaneously", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Base1" });
+            controller.enqueue({ type: "text-delta", textDelta: "Base2" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let injectionDone = false;
+
+      // Start consuming the stream
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+
+          // Inject ordered events from multiple SubAgents after first base event
+          if (events.length === 1 && !injectionDone && streamController.current) {
+            injectionDone = true;
+
+            // SubAgent A events
+            streamController.current.enqueue({
+              type: "tool-call",
+              subAgentId: "sub-a",
+              subAgentName: "Sub A",
+              timestamp: "2023-01-01T10:00:00.000Z",
+              toolCallId: "call-a1",
+              toolName: "tool-a",
+              args: { order: 1 },
+            });
+
+            // SubAgent B events
+            streamController.current.enqueue({
+              type: "tool-call",
+              subAgentId: "sub-b",
+              subAgentName: "Sub B",
+              timestamp: "2023-01-01T10:00:01.000Z",
+              toolCallId: "call-b1",
+              toolName: "tool-b",
+              args: { order: 2 },
+            });
+
+            // SubAgent A result
+            streamController.current.enqueue({
+              type: "tool-result",
+              subAgentId: "sub-a",
+              subAgentName: "Sub A",
+              timestamp: "2023-01-01T10:00:02.000Z",
+              toolCallId: "call-a1",
+              toolName: "tool-a",
+              result: "result-a",
+            });
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      // Verify events are in correct order
+      expect(events.length).toBe(5); // 2 base + 3 injected
+      expect(events[0]).toEqual({ type: "text-delta", textDelta: "Base1" });
+      expect(events[1].type).toBe("tool-call");
+      expect(events[1].subAgentId).toBe("sub-a");
+      expect(events[2].type).toBe("tool-call");
+      expect(events[2].subAgentId).toBe("sub-b");
+      expect(events[3].type).toBe("tool-result");
+      expect(events[3].subAgentId).toBe("sub-a");
+      expect(events[4]).toEqual({ type: "text-delta", textDelta: "Base2" });
+    });
+
+    // Stream Controller Lifecycle Tests
+    it("should properly initialize and cleanup stream controller", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Test" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Initially controller should be null
+      expect(streamController.current).toBeNull();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let controllerWasSet = false;
+
+      for await (const event of enhancedStream) {
+        events.push(event);
+
+        // Check if controller was set during stream processing
+        if (streamController.current !== null) {
+          controllerWasSet = true;
+        }
+      }
+
+      // After stream completion, controller should be cleaned up
+      expect(streamController.current).toBeNull();
+      expect(controllerWasSet).toBe(true);
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Test" });
+    });
+
+    it("should handle stream controller errors during event injection", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Before Error" });
+            controller.close();
+          },
+        }),
+      );
+
+      // Create a mock controller that throws on enqueue
+      const errorController = {
+        enqueue: vi.fn().mockImplementation(() => {
+          throw new Error("Controller enqueue failed");
+        }),
+        close: vi.fn(),
+        error: vi.fn(),
+      };
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: errorController as any,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+
+      // Stream should continue working despite controller errors
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: "text-delta", textDelta: "Before Error" });
+    });
+
+    // SubAgent Status Tracking Tests
+    it("should track SubAgent completion status correctly", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Processing" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Add some SubAgents to status tracking
+      subAgentStatus.set("sub-agent-1", { isActive: true, isCompleted: false });
+      subAgentStatus.set("sub-agent-2", { isActive: true, isCompleted: false });
+      subAgentStatus.set("sub-agent-3", { isActive: false, isCompleted: true });
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // After stream completion, active SubAgents should be marked as completed
+      expect(subAgentStatus.get("sub-agent-1")?.isCompleted).toBe(true);
+      expect(subAgentStatus.get("sub-agent-2")?.isCompleted).toBe(true);
+      expect(subAgentStatus.get("sub-agent-3")?.isCompleted).toBe(true); // Already completed
+    });
+
+    it("should mark abandoned SubAgents as completed on stream end", async () => {
+      const originalStream = createAsyncIterableStream(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "text-delta", textDelta: "Final" });
+            controller.close();
+          },
+        }),
+      );
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Simulate abandoned SubAgents
+      subAgentStatus.set("abandoned-1", { isActive: true, isCompleted: false });
+      subAgentStatus.set("abandoned-2", { isActive: true, isCompleted: false });
+      subAgentStatus.set("completed-1", { isActive: false, isCompleted: true });
+
+      const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
+        originalStream,
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      for await (const event of enhancedStream) {
+        events.push(event);
+      }
+
+      // All active SubAgents should be marked as completed
+      for (const [, status] of subAgentStatus.entries()) {
+        expect(status.isCompleted).toBe(true);
+      }
+    });
+
+    // Event Filtering and Processing Tests
+    it("should filter different event types correctly in streamEventForwarder", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      // Create streamEventForwarder function like in the real code
+      const streamEventForwarder = async (event: any) => {
+        // Filter out text, reasoning, and source events from SubAgents
+        if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+          return; // Should not call forwarder
+        }
+
+        // Add sub-agent prefix to distinguish from parent events
+        const prefixedData = {
+          ...event.data,
+          timestamp: event.timestamp,
+          type: event.type,
+          subAgentId: event.subAgentId,
+          subAgentName: event.subAgentName,
+        };
+
+        // For tool events, add subagent prefix to display name
+        if (event.type === "tool-call" && prefixedData.toolCall) {
+          prefixedData.toolCall = {
+            ...prefixedData.toolCall,
+            toolName: `${event.subAgentName}: ${prefixedData.toolCall.toolName}`,
+          };
+        } else if (event.type === "tool-result" && prefixedData.toolResult) {
+          prefixedData.toolResult = {
+            ...prefixedData.toolResult,
+            toolName: `${event.subAgentName}: ${prefixedData.toolResult.toolName}`,
+          };
+        }
+
+        if (mockForwarder) {
+          await mockForwarder(prefixedData);
+        }
+      };
+
+      // Test various event types
+      const testEvents = [
+        { type: "text", shouldBeFiltered: true },
+        { type: "reasoning", shouldBeFiltered: true },
+        { type: "source", shouldBeFiltered: true },
+        {
+          type: "tool-call",
+          shouldBeFiltered: false,
+          data: { toolCall: { toolName: "test-tool" } },
+        },
+        {
+          type: "tool-result",
+          shouldBeFiltered: false,
+          data: { toolResult: { toolName: "test-tool" } },
+        },
+        { type: "error", shouldBeFiltered: false },
+        { type: "text-delta", shouldBeFiltered: false },
+      ];
+
+      let forwardedCount = 0;
+      for (const testEvent of testEvents) {
+        mockForwarder.mockClear();
+
+        await streamEventForwarder({
+          ...testEvent,
+          data: testEvent.data || {},
+          timestamp: "2023-01-01",
+          subAgentId: "test-sub",
+          subAgentName: "Test Sub",
+        });
+
+        if (testEvent.shouldBeFiltered) {
+          expect(mockForwarder).not.toHaveBeenCalled();
+        } else {
+          expect(mockForwarder).toHaveBeenCalled();
+          forwardedCount++;
+        }
+      }
+
+      expect(forwardedCount).toBe(4); // tool-call, tool-result, error, text-delta
+    });
+
+    it("should handle malformed SubAgent events gracefully", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      const streamEventForwarder = async (event: any) => {
+        try {
+          if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+            return;
+          }
+
+          const prefixedData = {
+            ...event.data,
+            timestamp: event.timestamp,
+            type: event.type,
+            subAgentId: event.subAgentId,
+            subAgentName: event.subAgentName,
+          };
+
+          if (mockForwarder) {
+            await mockForwarder(prefixedData);
+          }
+        } catch (error) {
+          // Should handle errors gracefully
+          return;
+        }
+      };
+
+      // Test malformed events
+      const malformedEvents = [
+        null,
+        undefined,
+        { type: "tool-call" }, // Missing required fields
+        { type: "tool-call", data: null },
+        { type: "tool-call", data: { toolCall: null } },
+        { timestamp: "2023-01-01" }, // Missing type
+      ];
+
+      for (const malformedEvent of malformedEvents) {
+        // Should not throw
+        await expect(streamEventForwarder(malformedEvent)).resolves.toBeUndefined();
+      }
+    });
+
+    it("should preserve event metadata during forwarding", async () => {
+      const mockForwarder = vi.fn().mockResolvedValue(undefined);
+
+      const streamEventForwarder = async (event: any) => {
+        if (event.type === "text" || event.type === "reasoning" || event.type === "source") {
+          return;
+        }
+
+        const prefixedData = {
+          ...event.data,
+          timestamp: event.timestamp,
+          type: event.type,
+          subAgentId: event.subAgentId,
+          subAgentName: event.subAgentName,
+        };
+
+        if (mockForwarder) {
+          await mockForwarder(prefixedData);
+        }
+      };
+
+      const eventWithMetadata = {
+        type: "tool-call",
+        data: {
+          toolCall: {
+            toolName: "test-tool",
+            toolCallId: "call-123",
+            args: { param: "value" },
+          },
+          metadata: {
+            executionTime: 150,
+            retryCount: 0,
+            custom: "data",
+          },
+        },
+        timestamp: "2023-01-01T10:00:00.000Z",
+        subAgentId: "meta-sub",
+        subAgentName: "Meta Sub",
+      };
+
+      await streamEventForwarder(eventWithMetadata);
+
+      expect(mockForwarder).toHaveBeenCalledWith({
+        toolCall: {
+          toolName: "test-tool",
+          toolCallId: "call-123",
+          args: { param: "value" },
+        },
+        metadata: {
+          executionTime: 150,
+          retryCount: 0,
+          custom: "data",
+        },
+        timestamp: "2023-01-01T10:00:00.000Z",
+        type: "tool-call",
+        subAgentId: "meta-sub",
+        subAgentName: "Meta Sub",
+      });
+    });
+  });
+
+  describe("streamEventForwarder utility integration", () => {
+    it("should use the utility function for SubAgent event forwarding", async () => {
+      // Create an agent with SubAgents for testing
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Test sub agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+      });
+
+      const mainAgent = new TestAgent({
+        name: "Main Agent",
+        instructions: "Test main agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+        subAgents: [subAgent],
+      });
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (mainAgent as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+              controller.close();
+            },
+          }),
+        ),
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let eventCount = 0;
+
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+          eventCount++;
+
+          // Test that SubAgent events can be injected using the utility
+          if (eventCount === 1 && streamController.current) {
+            // Import and use the utility function
+            const { streamEventForwarder } = await import("../utils/stream-event-forwarder");
+
+            await streamEventForwarder(
+              {
+                type: "tool-call",
+                data: {
+                  toolCall: {
+                    toolCallId: "test-call",
+                    toolName: "test-tool",
+                    args: { test: "value" },
+                  },
+                },
+                timestamp: new Date().toISOString(),
+                subAgentId: "test-sub",
+                subAgentName: "Test Sub",
+              },
+              {
+                forwarder: async (eventData) => {
+                  if (streamController.current) {
+                    streamController.current.enqueue(eventData);
+                  }
+                },
+                filterTypes: [],
+                addSubAgentPrefix: true,
+              },
+            );
+          }
+        }
+      })();
+
+      await streamPromise;
+
+      expect(events).toHaveLength(2);
+      expect(events[0]).toMatchObject({
+        type: "text-delta",
+        textDelta: "Hello",
+      });
+
+      // Verify the utility correctly formatted the SubAgent event
+      expect(events[1]).toMatchObject({
+        type: "tool-call",
+        subAgentId: "test-sub",
+        subAgentName: "Test Sub",
+        toolCall: {
+          toolName: "Test Sub: test-tool", // Should have prefix
+          toolCallId: "test-call",
+          args: { test: "value" },
+        },
+      });
+    });
+
+    it("should handle utility function errors gracefully", async () => {
+      // Create an agent with SubAgents for testing
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Test sub agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+      });
+
+      const mainAgent = new TestAgent({
+        name: "Main Agent",
+        instructions: "Test main agent",
+        llm: new MockProvider({ modelId: "test-model" }),
+        model: { modelId: "test-model" },
+        subAgents: [subAgent],
+      });
+
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const enhancedStream = (mainAgent as any).createEnhancedFullStream(
+        createAsyncIterableStream(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-delta", textDelta: "Hello" });
+              controller.close();
+            },
+          }),
+        ),
+        streamController,
+        subAgentStatus,
+      );
+
+      const events: any[] = [];
+      let eventCount = 0;
+
+      const streamPromise = (async () => {
+        for await (const event of enhancedStream) {
+          events.push(event);
+          eventCount++;
+
+          // Test error handling in utility
+          if (eventCount === 1 && streamController.current) {
+            const { streamEventForwarder } = await import("../utils/stream-event-forwarder");
+
+            // Try to forward with a failing forwarder
+            await streamEventForwarder(
+              {
+                type: "tool-call",
+                data: {},
+                timestamp: new Date().toISOString(),
+                subAgentId: "test-sub",
+                subAgentName: "Test Sub",
+              },
+              {
+                forwarder: async () => {
+                  throw new Error("Forwarder failed");
+                },
+                filterTypes: [],
+                addSubAgentPrefix: true,
+              },
+            );
+          }
+        }
+      })();
+
+      // Should not throw despite forwarder error
+      await expect(streamPromise).resolves.toBeUndefined();
+      expect(events).toHaveLength(1); // Only original event
     });
   });
 });

@@ -1,31 +1,33 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mocked, MockedClass } from "vitest";
 import { VoltAgentObservabilitySDK } from ".";
 import { VoltAgentCoreAPI } from "../client";
 import type {
-  VoltAgentClientOptions,
-  TraceOptions,
   AgentOptions,
-  ToolOptions,
+  Event,
+  History,
   MemoryOptions,
   RetrieverOptions,
-  History,
-  Event,
+  ToolOptions,
+  TraceOptions,
+  VoltAgentClientOptions,
 } from "../types";
 
 // Mock the core client
-jest.mock("../client");
-const MockedVoltAgentCoreAPI = VoltAgentCoreAPI as jest.MockedClass<typeof VoltAgentCoreAPI>;
+vi.mock("../client");
+const MockedVoltAgentCoreAPI = VoltAgentCoreAPI as MockedClass<typeof VoltAgentCoreAPI>;
 
 // Mock crypto for consistent UUIDs in tests
-jest.mock("node:crypto", () => ({
-  randomUUID: jest.fn(() => "test-uuid-123"),
+vi.mock("node:crypto", () => ({
+  randomUUID: vi.fn(() => "test-uuid-123"),
 }));
 
 // Mock timers and global functions
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 // Mock global timer functions
-const mockSetInterval = jest.fn();
-const mockClearInterval = jest.fn();
+const mockSetInterval = vi.fn();
+const mockClearInterval = vi.fn();
 
 // Override global functions
 global.setInterval = mockSetInterval as any;
@@ -33,7 +35,7 @@ global.clearInterval = mockClearInterval as any;
 
 describe("VoltAgentObservabilitySDK", () => {
   let sdk: VoltAgentObservabilitySDK;
-  let mockCoreClient: jest.Mocked<VoltAgentCoreAPI>;
+  let mockCoreClient: Mocked<VoltAgentCoreAPI>;
   const defaultOptions: VoltAgentClientOptions = {
     baseUrl: "https://api.voltagent.ai",
     publicKey: "test-public-key",
@@ -64,7 +66,7 @@ describe("VoltAgentObservabilitySDK", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockSetInterval.mockClear();
     mockClearInterval.mockClear();
 
@@ -72,16 +74,16 @@ describe("VoltAgentObservabilitySDK", () => {
     mockSetInterval.mockReturnValue("timer-id" as any);
 
     mockCoreClient = {
-      addHistory: jest.fn(),
-      updateHistory: jest.fn(),
-      addEvent: jest.fn(),
+      addHistory: vi.fn(),
+      updateHistory: vi.fn(),
+      addEvent: vi.fn(),
     } as any;
 
     MockedVoltAgentCoreAPI.mockImplementation(() => mockCoreClient);
   });
 
   afterEach(() => {
-    jest.clearAllTimers();
+    vi.clearAllTimers();
   });
 
   describe("Constructor and Initialization", () => {

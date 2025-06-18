@@ -3,17 +3,17 @@ import { z } from "zod";
 import { XSAIProvider } from "./index";
 
 // Mock the xsAI library functions
-const mockXSAIGenerateText = jest.fn();
-const mockXSAIStreamText = jest.fn();
-const mockXSAIGenerateObject = jest.fn();
-const mockXSAIStreamObject = jest.fn();
-const mockXSAITool = jest.fn().mockImplementation(async (toolDef) => {
+const mockXSAIGenerateText = vi.fn();
+const mockXSAIStreamText = vi.fn();
+const mockXSAIGenerateObject = vi.fn();
+const mockXSAIStreamObject = vi.fn();
+const mockXSAITool = vi.fn().mockImplementation(async (toolDef) => {
   // Simple mock implementation: return the definition
   // In a real scenario, this might return a wrapped function or object
   return toolDef;
 });
 
-jest.mock("xsai", () => ({
+vi.mock("xsai", () => ({
   generateText: mockXSAIGenerateText,
   streamText: mockXSAIStreamText,
   generateObject: mockXSAIGenerateObject,
@@ -26,7 +26,7 @@ describe("XSAIProvider", () => {
   const apiKey = "test-xsai-api-key";
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     provider = new XSAIProvider({ apiKey });
   });
 
@@ -276,7 +276,7 @@ describe("XSAIProvider", () => {
       );
       expect(result.provider).toBe(mockResult);
       expect(result.textStream).toBeInstanceOf(ReadableStream);
-      expect(result.textStream).toHaveProperty([Symbol.asyncIterator]);
+      expect(Object.hasOwn(result.textStream, Symbol.asyncIterator)).toBe(true);
     });
 
     // TODO: Add tests for onStepFinish and onFinish callback wrapping within streamText
@@ -284,7 +284,7 @@ describe("XSAIProvider", () => {
 
   describe("tool handling", () => {
     it("should include toolName in tool-result steps via createStepFinishHandler", async () => {
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
 
       // Mock XsAI response with tool calls and results
       const mockXsAIResult = {
@@ -338,7 +338,7 @@ describe("XSAIProvider", () => {
     });
 
     it("should create proper step content format for tool calls", async () => {
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
       const stepFinishHandler = provider.createStepFinishHandler(onStepFinishMock);
 
       const mockResult = {
@@ -382,7 +382,7 @@ describe("XSAIProvider", () => {
     });
 
     it("should create proper step content format for tool results", async () => {
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
       const stepFinishHandler = provider.createStepFinishHandler(onStepFinishMock);
 
       const mockResult = {
@@ -426,7 +426,7 @@ describe("XSAIProvider", () => {
     });
 
     it("should handle empty or undefined tool arrays", async () => {
-      const onStepFinishMock = jest.fn();
+      const onStepFinishMock = vi.fn();
       const stepFinishHandler = provider.createStepFinishHandler(onStepFinishMock);
 
       const mockResult = {
@@ -484,7 +484,7 @@ describe("XSAIProvider", () => {
       expect(result.object).toEqual(mockResult.object);
     });
 
-    // TODO: Add tests for onStepFinish callback wrapping within generateObject
+    it.todo("Add tests for onStepFinish callback wrapping within generateObject");
   });
 
   describe("streamObject", () => {
@@ -513,9 +513,9 @@ describe("XSAIProvider", () => {
       );
       expect(result.provider).toBe(mockResult);
       expect(result.objectStream).toBeInstanceOf(ReadableStream);
-      expect(result.objectStream).toHaveProperty([Symbol.asyncIterator]);
+      expect(Object.hasOwn(result.objectStream, Symbol.asyncIterator)).toBe(true);
     });
 
-    // TODO: Add tests for onStepFinish and onFinish callback wrapping within streamObject
+    it.todo("Add tests for onStepFinish and onFinish callback wrapping within streamObject");
   });
 });

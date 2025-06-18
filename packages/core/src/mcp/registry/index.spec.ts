@@ -1,14 +1,14 @@
 import * as configModule from "./index";
 
 // Mock the MCPClient module
-jest.mock("../client", () => {
+vi.mock("../client", () => {
   // Create real mock functions so we can test them
-  const connectMock = jest.fn().mockResolvedValue(undefined);
-  const disconnectMock = jest.fn().mockResolvedValue(undefined);
-  const listToolsMock = jest.fn().mockResolvedValue({});
-  const getAgentToolsMock = jest.fn().mockResolvedValue({});
+  const connectMock = vi.fn().mockResolvedValue(undefined);
+  const disconnectMock = vi.fn().mockResolvedValue(undefined);
+  const listToolsMock = vi.fn().mockResolvedValue({});
+  const getAgentToolsMock = vi.fn().mockResolvedValue({});
 
-  const MCPClientMock = jest.fn().mockImplementation(() => ({
+  const MCPClientMock = vi.fn().mockImplementation(() => ({
     connect: connectMock,
     disconnect: disconnectMock,
     listTools: listToolsMock,
@@ -48,7 +48,7 @@ describe("MCPConfiguration", () => {
 
   // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // Clean up after each test
@@ -97,7 +97,7 @@ describe("MCPConfiguration", () => {
       await config.getClients();
 
       // Spy only on the clear method, as delete is no longer relevant for the global map
-      const clearMapSpy = jest.spyOn(Map.prototype, "clear");
+      const clearMapSpy = vi.spyOn(Map.prototype, "clear");
 
       await config.disconnect();
 
@@ -125,11 +125,11 @@ describe("MCPConfiguration", () => {
       const server2Tools = { tool2: { name: "tool2", function: "test2" } };
 
       // Configure the mock for each client instance
-      (MCPClient.prototype.listTools as jest.Mock)
+      (MCPClient.prototype.listTools as vi.Mock)
         .mockResolvedValueOnce(server1Tools)
         .mockResolvedValueOnce(server2Tools);
 
-      (MCPClient.prototype.getAgentTools as jest.Mock)
+      (MCPClient.prototype.getAgentTools as vi.Mock)
         .mockResolvedValueOnce(server1Tools)
         .mockResolvedValueOnce(server2Tools);
 
@@ -157,18 +157,18 @@ describe("MCPConfiguration", () => {
       configInstances.push(config);
 
       // Configure client.connect method to throw an error for server1
-      (MCPClient.prototype.connect as jest.Mock)
+      (MCPClient.prototype.connect as vi.Mock)
         .mockRejectedValueOnce(new Error("Connection failed"))
         .mockResolvedValueOnce(undefined);
 
       // Configure server2 to work normally
       const server2Tools = { tool2: { name: "tool2", function: "test2" } };
-      (MCPClient.prototype.listTools as jest.Mock).mockResolvedValueOnce(server2Tools);
+      (MCPClient.prototype.listTools as vi.Mock).mockResolvedValueOnce(server2Tools);
 
-      (MCPClient.prototype.getAgentTools as jest.Mock).mockResolvedValueOnce(server2Tools);
+      (MCPClient.prototype.getAgentTools as vi.Mock).mockResolvedValueOnce(server2Tools);
 
       // Spy on console.error
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const tools = await config.getTools();
 
@@ -204,11 +204,11 @@ describe("MCPConfiguration", () => {
       const server2Tools = { tool2: { name: "tool2", function: "test2" } };
 
       // Configure the mock for each client instance
-      (MCPClient.prototype.listTools as jest.Mock)
+      (MCPClient.prototype.listTools as vi.Mock)
         .mockResolvedValueOnce(server1Tools)
         .mockResolvedValueOnce(server2Tools);
 
-      (MCPClient.prototype.getAgentTools as jest.Mock)
+      (MCPClient.prototype.getAgentTools as vi.Mock)
         .mockResolvedValueOnce(server1Tools)
         .mockResolvedValueOnce(server2Tools);
 
@@ -258,11 +258,11 @@ describe("MCPConfiguration", () => {
 
       // First client has tools
       const server1Tools = { tool1: { name: "tool1", function: "test1" } };
-      (MCPClient.prototype.listTools as jest.Mock)
+      (MCPClient.prototype.listTools as vi.Mock)
         .mockResolvedValueOnce(server1Tools)
         .mockResolvedValueOnce({});
 
-      (MCPClient.prototype.getAgentTools as jest.Mock)
+      (MCPClient.prototype.getAgentTools as vi.Mock)
         .mockResolvedValueOnce(server1Tools)
         .mockResolvedValueOnce({});
 
@@ -299,7 +299,7 @@ describe("MCPConfiguration", () => {
       const server2Tools = { tool2: { name: "tool2", function: "test2" } };
 
       // Configure the mock for each client instance
-      (MCPClient.prototype.getAgentTools as jest.Mock)
+      (MCPClient.prototype.getAgentTools as vi.Mock)
         .mockResolvedValueOnce(server1Tools)
         .mockResolvedValueOnce(server2Tools);
 
@@ -337,10 +337,10 @@ describe("MCPConfiguration", () => {
       configInstances.push(config);
 
       // Completely clear all mocks
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       // Configure connect method - throw error on first call, succeed on second
-      (MCPClient.prototype.connect as jest.Mock)
+      (MCPClient.prototype.connect as vi.Mock)
         .mockRejectedValueOnce(new Error("Connection failed"))
         .mockResolvedValueOnce(undefined);
 
@@ -350,13 +350,13 @@ describe("MCPConfiguration", () => {
       // Completely reset the getAgentTools method
       // In previous tests we used mockResolvedValueOnce calls, so
       // those previous test calls could affect this one
-      (MCPClient.prototype.getAgentTools as jest.Mock).mockReset();
-      (MCPClient.prototype.getAgentTools as jest.Mock).mockImplementation(() => {
+      (MCPClient.prototype.getAgentTools as vi.Mock).mockReset();
+      (MCPClient.prototype.getAgentTools as vi.Mock).mockImplementation(() => {
         return Promise.resolve(server2Tools);
       });
 
       // Spy on console.error
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const agentToolsets = await config.getToolsets();
 
@@ -429,7 +429,7 @@ describe("MCPConfiguration", () => {
       const client1 = await config.getClient("server1");
 
       // Reset the spy counters so we can properly count subsequent calls
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       const client2 = await config.getClient("server1");
 

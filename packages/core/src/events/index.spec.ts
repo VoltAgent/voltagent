@@ -4,7 +4,7 @@ import { AgentRegistry } from "../server/registry";
 import { AgentEventEmitter } from "./index";
 
 // Mock AgentRegistry
-jest.mock("../server/registry");
+vi.mock("../server/registry");
 
 describe("AgentEventEmitter", () => {
   let eventEmitter: AgentEventEmitter;
@@ -13,7 +13,7 @@ describe("AgentEventEmitter", () => {
     // Reset the singleton instance before each test
     (AgentEventEmitter as any).instance = null;
     eventEmitter = AgentEventEmitter.getInstance();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("getInstance", () => {
@@ -25,19 +25,20 @@ describe("AgentEventEmitter", () => {
   });
 
   describe("agentRegistered events", () => {
-    it("should emit and receive agent registered events", (done) => {
-      const agentId = "test-agent";
+    it("should emit and receive agent registered events", () =>
+      new Promise<void>((done) => {
+        const agentId = "test-agent";
 
-      eventEmitter.onAgentRegistered((receivedAgentId) => {
-        expect(receivedAgentId).toBe(agentId);
-        done();
-      });
+        eventEmitter.onAgentRegistered((receivedAgentId) => {
+          expect(receivedAgentId).toBe(agentId);
+          done();
+        });
 
-      eventEmitter.emitAgentRegistered(agentId);
-    });
+        eventEmitter.emitAgentRegistered(agentId);
+      }));
 
     it("should allow unsubscribing from agent registered events", () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       const unsubscribe = eventEmitter.onAgentRegistered(callback);
 
       eventEmitter.emitAgentRegistered("test-agent");
@@ -50,19 +51,20 @@ describe("AgentEventEmitter", () => {
   });
 
   describe("agentUnregistered events", () => {
-    it("should emit and receive agent unregistered events", (done) => {
-      const agentId = "test-agent";
+    it("should emit and receive agent unregistered events", () =>
+      new Promise<void>((done) => {
+        const agentId = "test-agent";
 
-      eventEmitter.onAgentUnregistered((receivedAgentId) => {
-        expect(receivedAgentId).toBe(agentId);
-        done();
-      });
+        eventEmitter.onAgentUnregistered((receivedAgentId) => {
+          expect(receivedAgentId).toBe(agentId);
+          done();
+        });
 
-      eventEmitter.emitAgentUnregistered(agentId);
-    });
+        eventEmitter.emitAgentUnregistered(agentId);
+      }));
 
     it("should allow unsubscribing from agent unregistered events", () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       const unsubscribe = eventEmitter.onAgentUnregistered(callback);
 
       eventEmitter.emitAgentUnregistered("test-agent");
@@ -87,22 +89,22 @@ describe("AgentEventEmitter", () => {
 
     // Mock historyManager
     const mockHistoryManager = {
-      persistTimelineEvent: jest.fn().mockResolvedValue(historyEntry as AgentHistoryEntry),
-      updateEntry: jest.fn(),
-      addEventToEntry: jest.fn(),
-      updateTrackedEvent: jest.fn(),
+      persistTimelineEvent: vi.fn().mockResolvedValue(historyEntry as AgentHistoryEntry),
+      updateEntry: vi.fn(),
+      addEventToEntry: vi.fn(),
+      updateTrackedEvent: vi.fn(),
     };
 
     // Mock agent with history and historyManager
     const mockAgent = {
       name: "TestAgent",
-      getHistory: jest.fn().mockResolvedValue([historyEntry as AgentHistoryEntry]),
+      getHistory: vi.fn().mockResolvedValue([historyEntry as AgentHistoryEntry]),
       id: "test-agent",
-      getHistoryManager: jest.fn().mockReturnValue(mockHistoryManager),
+      getHistoryManager: vi.fn().mockReturnValue(mockHistoryManager),
     };
 
     // Setup publishTimelineEvent spy
-    let publishTimelineEventSpy: jest.SpyInstance;
+    let publishTimelineEventSpy: vi.SpyInstance;
 
     beforeEach(() => {
       // Reset mock counts
@@ -110,14 +112,14 @@ describe("AgentEventEmitter", () => {
       mockAgent.getHistoryManager.mockClear();
 
       // Setup publishTimelineEvent spy
-      publishTimelineEventSpy = jest
+      publishTimelineEventSpy = vi
         .spyOn(eventEmitter, "publishTimelineEvent")
         .mockResolvedValue(historyEntry as AgentHistoryEntry);
 
       // Mock AgentRegistry.getInstance().getAgent and getParentAgentIds
-      (AgentRegistry.getInstance as jest.Mock).mockReturnValue({
-        getAgent: jest.fn().mockReturnValue(mockAgent),
-        getParentAgentIds: jest.fn().mockReturnValue(["parent-agent"]),
+      (AgentRegistry.getInstance as vi.Mock).mockReturnValue({
+        getAgent: vi.fn().mockReturnValue(mockAgent),
+        getParentAgentIds: vi.fn().mockReturnValue(["parent-agent"]),
       });
     });
 
@@ -146,7 +148,7 @@ describe("AgentEventEmitter", () => {
         // Rather than spying on the private method, we'll spy on the publish method
         // and track if it's called a second time with the parent agent ID
         const originalPublish = eventEmitter.publishTimelineEvent;
-        const publishSpy = jest.fn().mockImplementation(async (params) => {
+        const publishSpy = vi.fn().mockImplementation(async (params) => {
           // Only mock the parent agent call to avoid recursion
           if (params.agentId === "parent-agent") {
             return historyEntry as AgentHistoryEntry;
@@ -159,7 +161,7 @@ describe("AgentEventEmitter", () => {
         eventEmitter.publishTimelineEvent = publishSpy;
 
         // Spy on propagateEventToParentAgents for direct verification
-        const propagateSpy = jest
+        const propagateSpy = vi
           .spyOn(eventEmitter as any, "propagateEventToParentAgents")
           .mockResolvedValue(undefined);
 
@@ -184,7 +186,7 @@ describe("AgentEventEmitter", () => {
         // Rather than using the private method, check if publishTimelineEvent
         // is called only once when skipPropagation is true
         const originalPublish = eventEmitter.publishTimelineEvent;
-        const publishSpy = jest.fn().mockImplementation(async (params) => {
+        const publishSpy = vi.fn().mockImplementation(async (params) => {
           // For this test, we'll just track the calls without propagating
           if (params.skipPropagation === true) {
             return historyEntry as AgentHistoryEntry;
@@ -196,7 +198,7 @@ describe("AgentEventEmitter", () => {
         eventEmitter.publishTimelineEvent = publishSpy;
 
         // Spy on propagateEventToParentAgents
-        const propagateSpy = jest
+        const propagateSpy = vi
           .spyOn(eventEmitter as any, "propagateEventToParentAgents")
           .mockResolvedValue(undefined);
 
@@ -224,7 +226,7 @@ describe("AgentEventEmitter", () => {
 
         // For this test, we'll mock propagateEventToParentAgents to capture what
         // would be sent to the parent agent without actually calling publish
-        const propagateMock = jest.fn().mockImplementation(async () => {
+        const propagateMock = vi.fn().mockImplementation(async () => {
           // İşlem yapmayan boş bir implementasyon
           return undefined;
         });
@@ -260,8 +262,8 @@ describe("AgentEventEmitter", () => {
         publishTimelineEventSpy.mockRestore();
 
         // Setup mock implementation for three-level hierarchy
-        const mockRegistry = AgentRegistry.getInstance() as jest.Mocked<any>;
-        const mockGetParentAgentIds = jest
+        const mockRegistry = AgentRegistry.getInstance() as vi.Mocked<any>;
+        const mockGetParentAgentIds = vi
           .fn()
           .mockReturnValueOnce(["parent-agent"]) // child's parent is 'parent-agent'
           .mockReturnValueOnce(["grandparent-agent"]); // parent's parent is 'grandparent-agent'
@@ -271,7 +273,7 @@ describe("AgentEventEmitter", () => {
 
         // Mock propagateEventToParentAgents to let us control behavior
         const propagationHistory: string[] = [];
-        const mockPropagateToParents = jest
+        const mockPropagateToParents = vi
           .fn()
           .mockImplementation(
             async (

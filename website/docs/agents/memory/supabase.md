@@ -56,6 +56,7 @@ Unlike `LibSQLStorage`, `SupabaseMemory` **does not automatically create databas
 CREATE TABLE IF NOT EXISTS voltagent_memory_conversations (
     id TEXT PRIMARY KEY,
     resource_id TEXT NOT NULL,
+    user_id TEXT,  -- Associates conversation with user (nullable)
     title TEXT,
     metadata JSONB, -- Use JSONB for efficient querying
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -66,23 +67,37 @@ CREATE TABLE IF NOT EXISTS voltagent_memory_conversations (
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_resource
 ON voltagent_memory_conversations(resource_id);
 
+-- Index for faster lookup by user_id
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user
+ON voltagent_memory_conversations(user_id);
+
+-- Composite index for user_id + resource_id queries
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user_resource
+ON voltagent_memory_conversations(user_id, resource_id);
+
+-- Index for ordering by updated_at (most common query pattern)
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_updated_at
+ON voltagent_memory_conversations(updated_at DESC);
+
 -- Messages Table
 CREATE TABLE IF NOT EXISTS voltagent_memory_messages (
-    user_id TEXT NOT NULL,
-    -- Add foreign key reference and cascade delete
     conversation_id TEXT NOT NULL REFERENCES voltagent_memory_conversations(id) ON DELETE CASCADE,
     message_id TEXT NOT NULL,
     role TEXT NOT NULL,
     content TEXT NOT NULL, -- Consider JSONB if content is often structured
     type TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    -- Composite primary key to ensure message uniqueness within a conversation
-    PRIMARY KEY (user_id, conversation_id, message_id)
+    -- Primary key: conversation_id + message_id ensures uniqueness within conversation
+    PRIMARY KEY (conversation_id, message_id)
 );
 
--- Index for faster message retrieval
+-- Index for faster message retrieval (most common query pattern)
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_lookup
-ON voltagent_memory_messages(user_id, conversation_id, created_at);
+ON voltagent_memory_messages(conversation_id, created_at);
+
+-- Index for message role filtering
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_role
+ON voltagent_memory_messages(conversation_id, role, created_at);
 
 -- Agent History Table (New Structured Format)
 CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history (
@@ -163,6 +178,22 @@ ON voltagent_memory_agent_history_timeline_events(parent_event_id);
 
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_status
 ON voltagent_memory_agent_history_timeline_events(status);
+
+-- Migration Flags Table (Prevents duplicate migrations)
+CREATE TABLE IF NOT EXISTS voltagent_memory_conversations_migration_flags (
+    id SERIAL PRIMARY KEY,
+    migration_type TEXT NOT NULL UNIQUE,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    migrated_count INTEGER DEFAULT 0,
+    metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- Insert fresh installation flags to prevent future migrations
+INSERT INTO voltagent_memory_conversations_migration_flags (migration_type, migrated_count, metadata)
+VALUES
+    ('conversation_schema_migration', 0, '{"fresh_install": true}'::jsonb),
+    ('agent_history_migration', 0, '{"fresh_install": true}'::jsonb)
+ON CONFLICT (migration_type) DO NOTHING;
 ```
 
 Alternatively, integrate these SQL statements into your Supabase migration workflow using the [Supabase CLI](https://supabase.com/docs/guides/cli).
@@ -204,7 +235,16 @@ const memory = new SupabaseMemory({
   supabaseKey,
   // Optional: Specify a custom base table name prefix
   // This MUST match the prefix used in your SQL setup if customized.
-  // tableName: 'my_agent_memory', // Defaults to 'voltagent_memory'
+  tableName: "voltagent_memory", // Defaults to 'voltagent_memory'
+});
+
+// Alternative: Use existing Supabase client
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
+const memory = new SupabaseMemory({
+  client: supabaseClient,
+  tableName: "voltagent_memory", // Optional
 });
 
 const agent = new Agent({
@@ -222,11 +262,127 @@ const agent = new Agent({
 - `supabaseKey` (string, required): Your Supabase project `anon` key (or a service role key if used in a secure backend environment, though `anon` key with appropriate RLS policies is often sufficient).
 - `tableName` (string, optional): A prefix for the database table names. Defaults to `voltagent_memory`. If you change this, ensure your SQL table creation script uses the same prefix.
 
-## Row Level Security (RLS)
+Alternatively, you can pass an existing Supabase client:
 
-For production applications, especially if using the `anon` key, it is **highly recommended** to enable Row Level Security (RLS) on the VoltAgent memory tables (`voltagent_memory_messages`, `voltagent_memory_conversations`, etc.) and define appropriate policies. This ensures users can only access their own conversation data.
+- `client` (SupabaseClient, required when not using supabaseUrl/supabaseKey): An existing Supabase client instance.
+- `tableName` (string, optional): Table name prefix when using existing client.
 
-Refer to the [Supabase RLS documentation](https://supabase.com/docs/guides/auth/row-level-security) for detailed guidance on setting up policies.
+## Conversation Management
+
+The Supabase provider supports conversation management similar to other storage providers:
+
+```typescript
+// Get conversations for a specific user
+const conversations = await memory.getConversationsByUserId("user-123", {
+  limit: 50,
+  orderBy: "updated_at",
+  orderDirection: "DESC",
+});
+
+// Create and update conversations
+const newConversation = await memory.createConversation({
+  id: "conversation-id",
+  resourceId: "app-resource-1",
+  userId: "user-123",
+  title: "New Chat Session",
+  metadata: { source: "web-app" },
+});
+
+await memory.updateConversation("conversation-id", {
+  title: "Updated Title",
+});
+```
+
+## Querying Conversations
+
+The Supabase storage provides conversation querying capabilities with filtering, pagination, and sorting options:
+
+```typescript
+// Query with multiple filters
+const workConversations = await memory.queryConversations({
+  userId: "user-123",
+  resourceId: "work-agent",
+  limit: 25,
+  offset: 0,
+  orderBy: "created_at",
+  orderDirection: "DESC",
+});
+
+// Get all conversations for a user
+const userConversations = await memory.queryConversations({
+  userId: "user-123",
+  limit: 50,
+});
+
+// Get conversations for a specific resource
+const resourceConversations = await memory.queryConversations({
+  resourceId: "chatbot-v1",
+  limit: 100,
+  orderBy: "updated_at",
+});
+
+// Admin view - get all conversations
+const allConversations = await memory.queryConversations({
+  limit: 200,
+  orderBy: "created_at",
+  orderDirection: "ASC",
+});
+```
+
+**Query Options:**
+
+- `userId` (optional): Filter conversations by specific user
+- `resourceId` (optional): Filter conversations by specific resource
+- `limit` (optional): Maximum number of conversations to return (default: 50)
+- `offset` (optional): Number of conversations to skip for pagination (default: 0)
+- `orderBy` (optional): Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
+- `orderDirection` (optional): Sort direction: 'ASC' or 'DESC' (default: 'DESC')
+
+## Getting Conversation Messages
+
+Retrieve messages for a specific conversation with pagination support:
+
+```typescript
+// Get all messages for a conversation
+const messages = await memory.getConversationMessages("conversation-456");
+
+// Get messages with pagination
+const firstBatch = await memory.getConversationMessages("conversation-456", {
+  limit: 50,
+  offset: 0,
+});
+
+// Get next batch
+const nextBatch = await memory.getConversationMessages("conversation-456", {
+  limit: 50,
+  offset: 50,
+});
+
+// Process messages in batches for large conversations
+const batchSize = 100;
+let offset = 0;
+let hasMore = true;
+
+while (hasMore) {
+  const batch = await memory.getConversationMessages("conversation-456", {
+    limit: batchSize,
+    offset: offset,
+  });
+
+  // Process batch
+  processBatch(batch);
+
+  hasMore = batch.length === batchSize;
+  offset += batchSize;
+}
+```
+
+**Message Query Options:**
+
+- `limit` (optional): Maximum number of messages to return (default: 100)
+- `offset` (optional): Number of messages to skip for pagination (default: 0)
+
+Messages are returned in chronological order (oldest first) for natural conversation flow.
 
 ## Use Cases
 

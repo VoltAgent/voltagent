@@ -148,6 +148,16 @@ export interface AgentHistoryEntry {
   metadata?: Record<string, unknown>;
 
   /**
+   * User ID associated with this history entry
+   */
+  userId?: string;
+
+  /**
+   * Conversation ID associated with this history entry
+   */
+  conversationId?: string;
+
+  /**
    * Sequence number for the history entry
    */
   _sequenceNumber?: number;
@@ -247,6 +257,8 @@ export class HistoryManager {
       output: params.output,
       status: params.status,
       steps: params.steps || [],
+      userId: params.userId,
+      conversationId: params.conversationId,
       ...(params.options || {}),
     };
 

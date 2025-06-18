@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/core",
-  "version": "0.1.31",
+  "version": "0.1.38",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
   "license": "MIT",
   "exports": {
@@ -21,7 +21,8 @@
     "dev": "tsup --watch",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
-    "test": "jest"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
@@ -29,7 +30,7 @@
     "@hono/swagger-ui": "^0.5.1",
     "@hono/zod-openapi": "^0.19.6",
     "@libsql/client": "^0.15.0",
-    "@modelcontextprotocol/sdk": "^1.10.1",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
@@ -42,13 +43,12 @@
     "zod-from-json-schema": "^0.0.5"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
     "@types/node": "^20.19.0",
     "@types/uuid": "^9.0.8",
-    "jest": "^29.5.0",
-    "ts-jest": "^29.1.0",
+    "@vitest/coverage-v8": "^3.2.3",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "vitest": "^3.2.3"
   },
   "peerDependencies": {
     "zod": "3.24.2"
