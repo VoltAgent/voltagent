@@ -1790,37 +1790,6 @@ describe("Agent", () => {
     });
 
     it("should create enhanced full stream with SubAgent events", async () => {
-      const mockSubAgentEventsQueue: any[] = [
-        {
-          type: "subagent-event",
-          event: {
-            type: "tool-call",
-            subAgentId: "sub-1",
-            subAgentName: "Sub Agent",
-            toolCall: {
-              toolCallId: "call-123",
-              toolName: "test-tool",
-              args: { test: "value" },
-            },
-          },
-          timestamp: "2023-01-01T00:00:00Z",
-        },
-        {
-          type: "subagent-event",
-          event: {
-            type: "tool-result",
-            subAgentId: "sub-1",
-            subAgentName: "Sub Agent",
-            toolResult: {
-              toolCallId: "call-123",
-              toolName: "test-tool",
-              result: "success",
-            },
-          },
-          timestamp: "2023-01-01T00:00:01Z",
-        },
-      ];
-
       // Create a mock original stream
       const originalStream = createAsyncIterableStream(
         new ReadableStream({
@@ -1832,10 +1801,17 @@ describe("Agent", () => {
         }),
       );
 
-      // Access the private method using any casting
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      // Access the private method using any casting with new parameters
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
-        mockSubAgentEventsQueue,
+        streamController,
+        subAgentStatus,
       );
 
       const events: any[] = [];
@@ -1849,20 +1825,6 @@ describe("Agent", () => {
     });
 
     it("should handle different SubAgent event types in enhanced stream", async () => {
-      const mockSubAgentEventsQueue: any[] = [
-        {
-          type: "subagent-event",
-          event: {
-            type: "custom-event",
-            subAgentId: "sub-1",
-            subAgentName: "Sub Agent",
-            customData: "test",
-            additionalInfo: { key: "value" },
-          },
-          timestamp: "2023-01-01T00:00:00Z",
-        },
-      ];
-
       const originalStream = createAsyncIterableStream(
         new ReadableStream({
           start(controller) {
@@ -1872,9 +1834,16 @@ describe("Agent", () => {
         }),
       );
 
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
-        mockSubAgentEventsQueue,
+        streamController,
+        subAgentStatus,
       );
 
       const events: any[] = [];
@@ -1938,8 +1907,6 @@ describe("Agent", () => {
     });
 
     it("should handle empty SubAgent events queue", async () => {
-      const emptyQueue: any[] = [];
-
       const originalStream = createAsyncIterableStream(
         new ReadableStream({
           start(controller) {
@@ -1949,9 +1916,16 @@ describe("Agent", () => {
         }),
       );
 
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
-        emptyQueue,
+        streamController,
+        subAgentStatus,
       );
 
       const events: any[] = [];
@@ -1963,29 +1937,6 @@ describe("Agent", () => {
     });
 
     it("should preserve event order in enhanced stream", async () => {
-      const mockSubAgentEventsQueue: any[] = [
-        {
-          type: "subagent-event",
-          event: {
-            type: "tool-call",
-            subAgentId: "sub-1",
-            subAgentName: "Sub Agent",
-            toolCall: { toolCallId: "1", toolName: "tool1", args: {} },
-          },
-          timestamp: "2023-01-01T00:00:00Z",
-        },
-        {
-          type: "subagent-event",
-          event: {
-            type: "tool-result",
-            subAgentId: "sub-1",
-            subAgentName: "Sub Agent",
-            toolResult: { toolCallId: "1", toolName: "tool1", result: "done" },
-          },
-          timestamp: "2023-01-01T00:00:01Z",
-        },
-      ];
-
       const originalStream = createAsyncIterableStream(
         new ReadableStream({
           start(controller) {
@@ -1996,9 +1947,16 @@ describe("Agent", () => {
         }),
       );
 
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
-        mockSubAgentEventsQueue,
+        streamController,
+        subAgentStatus,
       );
 
       const events: any[] = [];
@@ -2041,20 +1999,6 @@ describe("Agent", () => {
     });
 
     it("should handle SubAgent event processing errors gracefully", async () => {
-      // Test that malformed SubAgent events don't break the stream
-      const malformedEventsQueue: any[] = [
-        {
-          type: "subagent-event",
-          event: {
-            type: "tool-call",
-            // Missing required fields
-            subAgentId: undefined,
-            subAgentName: undefined,
-          },
-          timestamp: "invalid-timestamp",
-        },
-      ];
-
       const originalStream = createAsyncIterableStream(
         new ReadableStream({
           start(controller) {
@@ -2064,9 +2008,16 @@ describe("Agent", () => {
         }),
       );
 
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
-        malformedEventsQueue,
+        streamController,
+        subAgentStatus,
       );
 
       // Should still work despite malformed events
@@ -2079,23 +2030,6 @@ describe("Agent", () => {
     });
 
     it("should properly extract tool-call event data", async () => {
-      const toolCallEventsQueue: any[] = [
-        {
-          type: "subagent-event",
-          event: {
-            type: "tool-call",
-            subAgentId: "sub-1",
-            subAgentName: "Test SubAgent",
-            toolCall: {
-              toolCallId: "call-456",
-              toolName: "calculator",
-              args: { operation: "add", a: 1, b: 2 },
-            },
-          },
-          timestamp: "2023-01-01T00:00:00Z",
-        },
-      ];
-
       const originalStream = createAsyncIterableStream(
         new ReadableStream({
           start(controller) {
@@ -2104,9 +2038,16 @@ describe("Agent", () => {
         }),
       );
 
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
-        toolCallEventsQueue,
+        streamController,
+        subAgentStatus,
       );
 
       const events: any[] = [];
@@ -2120,23 +2061,6 @@ describe("Agent", () => {
     });
 
     it("should properly extract tool-result event data", async () => {
-      const toolResultEventsQueue: any[] = [
-        {
-          type: "subagent-event",
-          event: {
-            type: "tool-result",
-            subAgentId: "sub-1",
-            subAgentName: "Test SubAgent",
-            toolResult: {
-              toolCallId: "call-456",
-              toolName: "calculator",
-              result: { answer: 3 },
-            },
-          },
-          timestamp: "2023-01-01T00:00:00Z",
-        },
-      ];
-
       const originalStream = createAsyncIterableStream(
         new ReadableStream({
           start(controller) {
@@ -2145,9 +2069,16 @@ describe("Agent", () => {
         }),
       );
 
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
-        toolResultEventsQueue,
+        streamController,
+        subAgentStatus,
       );
 
       const events: any[] = [];
@@ -2331,8 +2262,6 @@ describe("Agent", () => {
     });
 
     it("should handle async iteration errors in enhanced stream", async () => {
-      const errorQueue: any[] = [];
-
       // Create a stream that throws an error
       const errorStream = {
         async *[Symbol.asyncIterator]() {
@@ -2341,9 +2270,16 @@ describe("Agent", () => {
         },
       };
 
+      // Create mock stream controller and subAgent status tracking
+      const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         errorStream,
-        errorQueue,
+        streamController,
+        subAgentStatus,
       );
 
       // Should handle the error gracefully
@@ -2361,7 +2297,16 @@ describe("Agent", () => {
     });
 
     it("should maintain SubAgent event queue reference across multiple stream iterations", async () => {
-      const sharedQueue: any[] = [];
+      // Create mock stream controllers and subAgent status tracking
+      const streamController1: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus1 = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+
+      const streamController2: { current: ReadableStreamDefaultController<any> | null } = {
+        current: null,
+      };
+      const subAgentStatus2 = new Map<string, { isActive: boolean; isCompleted: boolean }>();
 
       const stream1 = (agentWithSubAgents as any).createEnhancedFullStream(
         createAsyncIterableStream(
@@ -2372,7 +2317,8 @@ describe("Agent", () => {
             },
           }),
         ),
-        sharedQueue,
+        streamController1,
+        subAgentStatus1,
       );
 
       const stream2 = (agentWithSubAgents as any).createEnhancedFullStream(
@@ -2384,17 +2330,11 @@ describe("Agent", () => {
             },
           }),
         ),
-        sharedQueue,
+        streamController2,
+        subAgentStatus2,
       );
 
-      // Add events to shared queue
-      sharedQueue.push({
-        type: "subagent-event",
-        event: { type: "test", subAgentId: "shared", subAgentName: "Shared" },
-        timestamp: "2023-01-01T00:00:00Z",
-      });
-
-      // Both streams should reference the same queue
+      // Both streams should work independently
       const events1: any[] = [];
       const events2: any[] = [];
 

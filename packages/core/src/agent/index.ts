@@ -22,7 +22,7 @@ import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import devLogger from "../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../utils/node-utils";
-import { createMergedStream } from "../utils/stream-merger";
+
 import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
@@ -782,76 +782,60 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Create an enhanced fullStream that includes SubAgent events
+   * Create an enhanced fullStream with real-time SubAgent event injection
    */
   private createEnhancedFullStream(
     originalStream: AsyncIterable<any>,
-    subAgentEventsQueue: any[],
+    streamController: { current: ReadableStreamDefaultController<any> | null },
+    subAgentStatus: Map<string, { isActive: boolean; isCompleted: boolean }>,
   ): AsyncIterable<any> {
-    // Transform SubAgent events to the expected format
-    const processedEvents: any[] = [];
-
     return {
       async *[Symbol.asyncIterator]() {
-        let lastProcessedCount = 0;
+        // Create a merged stream using ReadableStream for real-time injection
+        const mergedStream = new ReadableStream({
+          start(controller) {
+            // Set the controller reference for real-time injection
+            streamController.current = controller;
 
-        const enhancedStream = createMergedStream(originalStream, processedEvents, {
-          pollingInterval: 16, // ~60fps
-          postStreamInterval: 10,
+            // Start processing original stream
+            (async () => {
+              try {
+                for await (const chunk of originalStream) {
+                  controller.enqueue(chunk);
+                }
+
+                // Wait a bit for any remaining SubAgent events
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                // Mark all active SubAgents as completed
+                for (const [subAgentId, status] of subAgentStatus.entries()) {
+                  if (status.isActive && !status.isCompleted) {
+                    status.isCompleted = true;
+                    devLogger.info(`[Enhanced Stream] SubAgent ${subAgentId} marked as completed`);
+                  }
+                }
+
+                controller.close();
+              } catch (error) {
+                controller.error(error);
+              } finally {
+                // Clear controller reference
+                streamController.current = null;
+              }
+            })();
+          },
         });
 
-        for await (const event of enhancedStream) {
-          // Process new SubAgent events and add them to processedEvents
-          while (lastProcessedCount < subAgentEventsQueue.length) {
-            const subAgentEvent = subAgentEventsQueue[lastProcessedCount];
-            lastProcessedCount++;
-
-            // Extract and flatten the event data properly based on event type
-            let enhancedEvent: any = {
-              type: subAgentEvent.event.type,
-              subAgentId: subAgentEvent.event.subAgentId,
-              subAgentName: subAgentEvent.event.subAgentName,
-              timestamp: subAgentEvent.timestamp,
-            };
-
-            // Handle different event types and their data structures
-            switch (subAgentEvent.event.type) {
-              case "tool-call":
-                if (subAgentEvent.event.toolCall) {
-                  enhancedEvent = {
-                    ...enhancedEvent,
-                    toolCallId: subAgentEvent.event.toolCall.toolCallId,
-                    toolName: subAgentEvent.event.toolCall.toolName,
-                    args: subAgentEvent.event.toolCall.args,
-                  };
-                }
-                break;
-              case "tool-result":
-                if (subAgentEvent.event.toolResult) {
-                  enhancedEvent = {
-                    ...enhancedEvent,
-                    toolCallId: subAgentEvent.event.toolResult.toolCallId,
-                    toolName: subAgentEvent.event.toolResult.toolName,
-                    result: subAgentEvent.event.toolResult.result,
-                  };
-                }
-                break;
-              default: {
-                // For other event types, spread the event data directly (excluding the metadata)
-                const { subAgentId, subAgentName, type, timestamp, ...eventData } =
-                  subAgentEvent.event;
-                enhancedEvent = {
-                  ...enhancedEvent,
-                  ...eventData,
-                };
-                break;
-              }
-            }
-
-            processedEvents.push(enhancedEvent);
+        // Convert ReadableStream to async iterable and yield chunks
+        const reader = mergedStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            yield value;
           }
-
-          yield event;
+        } finally {
+          reader.releaseLock();
         }
       },
     };
@@ -1384,16 +1368,112 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       finalConversationId,
     );
 
-    // Create an internal event forwarder that integrates SubAgent events into the fullStream automatically
-    const subAgentEventsQueue: any[] = [];
+    // Create real-time SubAgent event tracking
+    const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+    const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+      current: null,
+    };
 
     const streamEventForwarder = async (event: any) => {
-      // Queue SubAgent events to be included in the stream
-      subAgentEventsQueue.push({
-        type: "subagent-event",
-        event,
-        timestamp: new Date().toISOString(),
+      devLogger.info("[Real-time Stream] Received SubAgent event:", {
+        eventType: event.type,
+        subAgentId: event.subAgentId,
+        subAgentName: event.subAgentName,
       });
+
+      // Update SubAgent status
+      if (!subAgentStatus.has(event.subAgentId)) {
+        subAgentStatus.set(event.subAgentId, { isActive: true, isCompleted: false });
+      }
+
+      // Check if this is a completion event (last meaningful event from SubAgent)
+      if (
+        event.type === "finish" ||
+        event.type === "error" ||
+        (event.type === "text-delta" && event.data?.textDelta?.includes("."))
+      ) {
+        // This might indicate SubAgent completion, but we'll handle it gracefully
+        devLogger.info(
+          `[Real-time Stream] Potential completion event from ${event.subAgentId}:`,
+          event.type,
+        );
+      }
+
+      // Format event for stream - handle nested data structures properly
+      let streamEvent: any = {
+        type: event.type,
+        subAgentId: event.subAgentId,
+        subAgentName: event.subAgentName,
+        timestamp: event.timestamp,
+      };
+
+      // Handle different event types with proper data extraction
+      switch (event.type) {
+        case "tool-call":
+          if (event?.toolCall) {
+            streamEvent = {
+              ...streamEvent,
+              toolCallId: event.toolCall.toolCallId,
+              toolName: event.toolCall.toolName,
+              args: event.toolCall.args,
+            };
+          }
+          break;
+        case "tool-result":
+          if (event?.toolResult) {
+            streamEvent = {
+              ...streamEvent,
+              toolCallId: event.toolResult.toolCallId,
+              toolName: event.toolResult.toolName,
+              result: event.toolResult.result,
+            };
+          }
+          break;
+        case "text-delta":
+          if (event?.textDelta) {
+            streamEvent = {
+              ...streamEvent,
+              textDelta: event.data.textDelta,
+            };
+          }
+          break;
+        case "reasoning":
+          if (event?.reasoning) {
+            streamEvent = {
+              ...streamEvent,
+              reasoning: event.reasoning,
+            };
+          }
+          break;
+        case "source":
+          if (event?.source) {
+            streamEvent = {
+              ...streamEvent,
+              source: event.source,
+            };
+          }
+          break;
+        default:
+          // For any other event types, spread the data
+          streamEvent = {
+            ...streamEvent,
+            ...(event || {}),
+          };
+          break;
+      }
+
+      // Immediately inject into stream if controller is available
+      if (streamController.current) {
+        try {
+          streamController.current.enqueue(streamEvent);
+          devLogger.info("[Real-time Stream] Event injected into stream:", {
+            eventType: event.type,
+            subAgentId: event.subAgentId,
+          });
+        } catch (error) {
+          devLogger.error("[Real-time Stream] Failed to inject event:", error);
+        }
+      }
     };
 
     const { tools, maxSteps } = this.prepareTextOptions({
@@ -1789,11 +1869,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       },
     });
 
-    // Always wrap the response to include SubAgent events
+    // Create enhanced stream with real-time SubAgent event injection
     const wrappedResponse = {
       ...response,
       fullStream: response.fullStream
-        ? this.createEnhancedFullStream(response.fullStream, subAgentEventsQueue)
+        ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
         : undefined,
     };
 
