@@ -9,7 +9,7 @@ npm install @voltagent/<%= name %>
 ```
 
 ```typescript
-tbd
+// TODO: Add in an example
 ```
 
 ## 📄 License
