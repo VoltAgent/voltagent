@@ -9,6 +9,7 @@ import * as fs from "node:fs/promises";
 import { createTool, type ToolExecuteOptions } from "@voltagent/core";
 import { safeBrowserOperation } from "./browserBaseTools";
 import type { ToolExecutionContext } from "@voltagent/core";
+import { defaults } from "../../../../defaults";
 
 /**
  * Tool for capturing a screenshot of the current page
@@ -39,7 +40,7 @@ export const screenshotTool = createTool({
       .number()
       .positive()
       .optional()
-      .default(30000)
+      .default(defaults.playwright.defaultTimeout)
       .describe("Maximum time in milliseconds for the screenshot operation."),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {

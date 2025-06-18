@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createTool, type ToolExecuteOptions } from "@voltagent/core";
 import { safeBrowserOperation } from "./browserBaseTools";
 import type { ToolExecutionContext } from "@voltagent/core";
+import { defaults } from "../../../../defaults";
 
 /**
  * Tool for clicking on an element
@@ -16,7 +17,12 @@ export const clickTool = createTool({
   description: "Click on an element on the page",
   parameters: z.object({
     selector: z.string().describe("CSS or XPath selector for the element"),
-    timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.defaultTimeout)
+      .describe("Timeout in milliseconds"),
     button: z
       .enum(["left", "right", "middle"])
       .optional()
@@ -59,7 +65,7 @@ export const typeTool = createTool({
     timeout: z
       .number()
       .optional()
-      .default(30000)
+      .default(defaults.playwright.defaultTimeout)
       .describe("Maximum time in milliseconds to wait for the element."),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
@@ -83,7 +89,12 @@ export const getTextTool = createTool({
   description: "Get text content from an element",
   parameters: z.object({
     selector: z.string().describe("CSS or XPath selector for the element"),
-    timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.defaultTimeout)
+      .describe("Timeout in milliseconds"),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
     if (!options?.operationContext?.userContext) {
@@ -115,7 +126,7 @@ export const selectOptionTool = createTool({
     timeout: z
       .number()
       .optional()
-      .default(30000)
+      .default(defaults.playwright.defaultTimeout)
       .describe("Maximum time in milliseconds to wait for the element."),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
@@ -146,7 +157,12 @@ export const checkTool = createTool({
   description: "Check a checkbox or radio button",
   parameters: z.object({
     selector: z.string().describe("CSS or XPath selector for the checkbox or radio"),
-    timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.defaultTimeout)
+      .describe("Timeout in milliseconds"),
     force: z.boolean().optional().default(false).describe("Bypass actionability checks"),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
@@ -171,7 +187,12 @@ export const uncheckTool = createTool({
   description: "Uncheck a checkbox",
   parameters: z.object({
     selector: z.string().describe("CSS or XPath selector for the checkbox"),
-    timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.defaultTimeout)
+      .describe("Timeout in milliseconds"),
     force: z.boolean().optional().default(false).describe("Bypass actionability checks"),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
@@ -196,7 +217,12 @@ export const hoverTool = createTool({
   description: "Hover over an element",
   parameters: z.object({
     selector: z.string().describe("CSS or XPath selector for the element"),
-    timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.defaultTimeout)
+      .describe("Timeout in milliseconds"),
     force: z.boolean().optional().default(false).describe("Bypass actionability checks"),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
@@ -223,7 +249,12 @@ export const pressKeyTool = createTool({
     key: z.string().describe("Key or key combination to press (e.g., 'Enter', 'Control+A')"),
     selector: z.string().optional().describe("Optional selector to focus before pressing key"),
     delay: z.number().optional().default(0).describe("Delay between keystrokes in milliseconds"),
-    timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.defaultTimeout)
+      .describe("Timeout in milliseconds"),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
     if (!options?.operationContext?.userContext) {
@@ -257,7 +288,12 @@ export const waitForElementTool = createTool({
       .optional()
       .default("visible")
       .describe("Element state to wait for"),
-    timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
+    timeout: z
+      .number()
+      .positive()
+      .optional()
+      .default(defaults.playwright.defaultTimeout)
+      .describe("Timeout in milliseconds"),
   }),
   execute: async (args, options?: ToolExecuteOptions) => {
     if (!options?.operationContext?.userContext) {

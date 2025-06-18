@@ -174,11 +174,51 @@ VoltAgent is versatile and can power a wide range of AI-driven applications:
 - **Real-time Monitoring & Alerting:** Design agents that continuously monitor data streams or systems and trigger actions or notifications based on defined conditions.
 - **And Virtually Anything Else...**: If you can imagine an AI agent doing it, VoltAgent can likely help you build it! ⚡
 
+## Configuration
+
+VoltAgent uses a centralized configuration system to eliminate hardcoded values and make the framework highly customizable. All default values are defined in `defaults.ts` at the root of the project.
+
+### Environment Variables
+
+```bash
+# Server configuration
+export VOLTAGENT_SERVER_PORT=4000
+export VOLTAGENT_NETWORK_TIMEOUT=60000
+
+# Playwright configuration
+export VOLTAGENT_PLAYWRIGHT_DEFAULT_TIMEOUT=45000
+export VOLTAGENT_PLAYWRIGHT_HEADLESS=true
+```
+
+### Command Line Arguments
+
+```bash
+node your-app.js --server-port=4000 --playwright-headless=true
+```
+
+### Programmatic Configuration
+
+```typescript
+import { defaults, withDefaults } from "./defaults";
+
+// Use default values
+const timeout = defaults.network.timeout;
+
+// Override specific values
+const customConfig = withDefaults({
+  server: { port: 4000 },
+  network: { timeout: 60000 },
+});
+```
+
+For comprehensive configuration documentation, see [CONFIGURATION.md](./CONFIGURATION.md).
+
 ## Learning VoltAgent
 
 - **[Documentation](https://voltagent.dev/docs/)**: Dive into guides, concepts, and tutorials.
 - **[Examples](https://github.com/voltagent/voltagent/tree/main/examples)**: Explore practical implementations.
 - **[Blog](https://voltagent.dev/blog/)**: Read more about technical insights, and best practices.
+- **[Configuration Guide](./CONFIGURATION.md)**: Learn how to customize VoltAgent's behavior.
 
 ## Contribution
 
