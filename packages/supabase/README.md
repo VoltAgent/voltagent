@@ -227,13 +227,6 @@ const memory = new SupabaseMemory({
   supabaseKey: process.env.SUPABASE_KEY,
   storageLimit: 100, // Keep only the latest 100 messages per conversation. default: 100
 });
-
-// For unlimited storage (no automatic pruning)
-const unlimitedMemory = new SupabaseMemory({
-  supabaseUrl: process.env.SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_KEY,
-  storageLimit: 0, // No limit - messages are never automatically deleted
-});
 ```
 
 When a storage limit is set, the provider automatically removes the oldest messages when the limit is exceeded. This helps:
