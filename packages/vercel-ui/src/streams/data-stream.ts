@@ -93,7 +93,7 @@ export function toDataStream(
       return options.exclude(streamPart);
     }
 
-    // we ignore sub-agent stream parts here
+    // the Supervisor should be controlling the text stream, the primary idea with fullStream is to surface tool calls and other metadata
     if (isSubAgentStreamPart(streamPart) && streamPart.type === "text-delta") {
       return true;
     }
