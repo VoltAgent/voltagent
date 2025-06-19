@@ -74,11 +74,57 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     this._finalizeStream = this._finalizeStream.bind(this);
     this.generateObject = this.generateObject.bind(this);
     this._handleFunctionCalling = this._handleFunctionCalling.bind(this);
+    this.processSystemMessages = this.processSystemMessages.bind(this);
   }
 
   getModelIdentifier = (model: string): string => {
     return model;
   };
+
+  private processSystemMessages(messages: BaseMessage[]): BaseMessage[] {
+    // If no messages or no system messages, return as is
+    if (!messages.length || !messages.some(m => m.role === "system")) {
+      return messages;
+    }
+
+    const processedMessages: BaseMessage[] = [];
+    let firstSystemMessage: BaseMessage | null = null;
+    
+    // Find the first system message
+    for (const message of messages) {
+      if (message.role === "system" && !firstSystemMessage) {
+        firstSystemMessage = message;
+        break;
+      }
+    }
+
+    // If there's a first system message and it's not at position 0, add it first
+    if (firstSystemMessage && messages[0] !== firstSystemMessage) {
+      processedMessages.push(firstSystemMessage);
+    }
+
+    // Process remaining messages
+    for (const message of messages) {
+      if (message.role === "system") {
+        if (message === firstSystemMessage) {
+          // Skip if we already added it at the beginning
+          if (messages[0] === firstSystemMessage) {
+            processedMessages.push(message);
+          }
+        } else {
+          // Convert subsequent system messages to assistant messages
+          processedMessages.push({
+            ...message,
+            role: "assistant" as MessageRole,
+          });
+        }
+      } else {
+        processedMessages.push(message);
+      }
+    }
+
+    return processedMessages;
+  }
 
   private toGoogleRole(role: MessageRole): "user" | "model" {
     switch (role) {
@@ -341,7 +387,9 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     options: GoogleGenerateTextOptions,
   ): Promise<GoogleProviderTextResponse> => {
     const model = options.model;
-    const currentContents = options.messages.map(this.toMessage);
+    // Process messages to handle system messages according to Gemini requirements
+    const processedMessages = this.processSystemMessages(options.messages);
+    const currentContents = processedMessages.map(this.toMessage);
     const providerOptions: GoogleProviderRuntimeOptions = options.provider || {};
 
     const config: GenerateContentConfig = {
@@ -658,7 +706,9 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     options: GoogleStreamTextOptions,
   ): Promise<ProviderTextStreamResponse<GoogleGenerateContentStreamResult>> {
     const model = options.model;
-    const currentContents = options.messages.map(this.toMessage);
+    // Process messages to handle system messages according to Gemini requirements
+    const processedMessages = this.processSystemMessages(options.messages);
+    const currentContents = processedMessages.map(this.toMessage);
     const providerOptions: GoogleProviderRuntimeOptions = options.provider || {};
 
     const config: GenerateContentConfig = Object.entries({
@@ -744,7 +794,9 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     options: GenerateObjectOptions<string, TSchema>,
   ): Promise<ProviderObjectResponse<GenerateContentResponse, z.infer<TSchema>>> {
     const model = options.model;
-    const contents = options.messages.map(this.toMessage);
+    // Process messages to handle system messages according to Gemini requirements
+    const processedMessages = this.processSystemMessages(options.messages);
+    const contents = processedMessages.map(this.toMessage);
     const providerOptions: GoogleProviderRuntimeOptions = options.provider || {};
 
     if (!isZodObject(options.schema)) {
