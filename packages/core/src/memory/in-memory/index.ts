@@ -1,5 +1,5 @@
+import { devLogger } from "@voltagent/internal/dev";
 import type { NewTimelineEvent } from "../../events/types";
-import devLogger from "../../utils/internal/dev-logger";
 import type {
   Conversation,
   ConversationQueryOptions,

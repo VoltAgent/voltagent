@@ -2,10 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "esnext",
-    "lib": [
-      "dom",
-      "esnext"
-    ],
+    "lib": ["dom", "esnext"],
     "declaration": true,
     "sourceMap": true,
     "moduleResolution": "node",
@@ -23,17 +20,9 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     }
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "test"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "test"]
 }

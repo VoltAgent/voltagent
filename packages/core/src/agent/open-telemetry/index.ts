@@ -6,8 +6,8 @@ import {
   context as apiContext,
   trace,
 } from "@opentelemetry/api";
+import { devLogger } from "@voltagent/internal/dev";
 import type { EventStatus, StandardEventData } from "../../events/types";
-import devLogger from "../../utils/internal/dev-logger";
 import type { UsageInfo } from "../providers/base/types";
 
 // Get a tracer instance for this library

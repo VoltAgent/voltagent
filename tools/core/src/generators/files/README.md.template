@@ -1,0 +1,17 @@
+# `<%= name %>`
+
+<%= description %>
+
+## 🚀 Quick Start
+
+```bash
+npm install @voltagent/<%= name %>
+```
+
+```typescript
+// TODO: Add in an example
+```
+
+## 📄 License
+
+MIT License - see LICENSE file for details.

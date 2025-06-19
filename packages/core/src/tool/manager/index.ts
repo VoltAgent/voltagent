@@ -1,5 +1,5 @@
+import { devLogger } from "@voltagent/internal/dev";
 import type { BaseTool, ToolExecuteOptions } from "../../agent/providers/base/types";
-import devLogger from "../../utils/internal/dev-logger";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import { type AgentTool, createTool } from "../index";
 import type { Toolkit } from "../toolkit";

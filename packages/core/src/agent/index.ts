@@ -1,3 +1,4 @@
+import { devLogger } from "@voltagent/internal/dev";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
@@ -20,7 +21,6 @@ import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
-import devLogger from "../utils/internal/dev-logger";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import { type SubAgentEvent, streamEventForwarder } from "../utils/stream-event-forwarder";
 

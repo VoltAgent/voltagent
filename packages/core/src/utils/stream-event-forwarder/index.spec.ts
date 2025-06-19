@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { devLogger } from "@voltagent/internal/dev";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  streamEventForwarder,
-  createStreamEventForwarder,
-  type SubAgentEvent,
   type StreamEventForwarderOptions,
+  type SubAgentEvent,
+  createStreamEventForwarder,
+  streamEventForwarder,
 } from ".";
-import devLogger from "../internal/dev-logger";
 
 // Mock devLogger
-vi.mock("../internal/dev-logger", () => ({
-  default: {
+vi.mock("@voltagent/internal/dev", () => ({
+  devLogger: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),

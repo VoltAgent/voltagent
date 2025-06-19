@@ -1,7 +1,7 @@
+import { devLogger } from "@voltagent/internal/dev";
 import { z } from "zod";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
-import devLogger from "../../utils/internal/dev-logger";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";

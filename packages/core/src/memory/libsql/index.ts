@@ -3,10 +3,10 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
+import { devLogger } from "@voltagent/internal/dev";
+import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
 import { safeJsonParse } from "../../utils";
-import devLogger from "../../utils/internal/dev-logger";
-import type { BaseMessage } from "../../agent/providers/base/types";
 import type {
   Conversation,
   ConversationQueryOptions,

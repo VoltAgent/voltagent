@@ -1,11 +1,8 @@
-import devLogger from "./index";
+import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import devLogger from "./logger";
 
 describe("devLogger", () => {
-  let consoleSpy: {
-    info: vi.SpyInstance;
-    warn: vi.SpyInstance;
-    error: vi.SpyInstance;
-  };
+  let consoleSpy: { info: MockInstance; warn: MockInstance; error: MockInstance };
 
   beforeEach(() => {
     consoleSpy = {

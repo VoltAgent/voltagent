@@ -11,11 +11,11 @@ import type {
   StepWithContent,
   StreamObjectFinishResult,
   StreamObjectOptions,
+  StreamPart,
   StreamTextOptions,
   ToolErrorInfo,
   UsageInfo,
   VoltAgentError,
-  StreamPart,
 } from "@voltagent/core";
 // Import directly from the types file path within the dist folder
 import type {
