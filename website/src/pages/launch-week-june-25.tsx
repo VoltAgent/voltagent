@@ -207,7 +207,7 @@ const Day3 = () => (
 
 const Day4 = () => (
   <DayComponent
-    enabled={false}
+    enabled={true}
     date="DAY 4 | THURSDAY, JUNE 19, 2025"
     title="Custom API Routes"
     description="Create custom endpoints for your agents with built-in authentication, rate limiting, and monitoring."
