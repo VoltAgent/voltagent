@@ -9,8 +9,8 @@ feat(supabase): Implement storage limit
   ```
   const supabaseClient = createClient(supabaseUrl, supabaseKey);
   const memory = new SupabaseMemory({
-  client: supabaseClient,
-  tableName: "voltagent_memory", // Optional
+    client: supabaseClient,
+    tableName: "voltagent_memory", // Optional
   });
 
   ```
@@ -20,10 +20,10 @@ feat(supabase): Implement storage limit
   ```
   const supabaseClient = createClient(supabaseUrl, supabaseKey);
   const memory = new SupabaseMemory({
-  client: supabaseClient,
-  tableName: "voltagent_memory", // Optional
-  storageLimit: 150, // Optional: Custom storage limit
-  debug: false, // Optional: Debug logging
+    client: supabaseClient,
+    tableName: "voltagent_memory", // Optional
+    storageLimit: 150, // Optional: Custom storage limit
+    debug: false, // Optional: Debug logging
   });
 
 
