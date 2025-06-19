@@ -40,7 +40,7 @@ export class SupabaseMemory implements Memory {
   constructor(
     options:
       | SupabaseMemoryOptions
-      | { client: SupabaseClient; tableName?: string; debug?: boolean; storageLimit?: number },
+      | { client: SupabaseClient; tableName?: string; debug?: boolean },
   ) {
     if ("client" in options) {
       this.client = options.client;
@@ -51,7 +51,7 @@ export class SupabaseMemory implements Memory {
         supabaseKey: "", // Not needed when client is provided
         tableName: options.tableName,
         debug: options.debug,
-        storageLimit: options.storageLimit ?? 100, // Use nullish coalescing to handle 0 properly
+        storageLimit: 100, // Default value
       };
     } else {
       if (!options.supabaseUrl || !options.supabaseKey) {
