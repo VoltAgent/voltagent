@@ -10,6 +10,7 @@ export default defineConfig({
   outDir: "dist",
   minify: false,
   dts: true,
+  external: ["ai", "ai-v5", "@ai-sdk/ui-utils", "@ai-sdk/provider"],
   esbuildOptions(options) {
     options.keepNames = true;
     return options;
