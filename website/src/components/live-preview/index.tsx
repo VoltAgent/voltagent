@@ -31,7 +31,7 @@ export default function LivePreview() {
             }`}
             onClick={() => setActiveTab("code")}
           >
-            Core Framework
+            VoltAgent Framework
           </button>
           <button
             type="button"
