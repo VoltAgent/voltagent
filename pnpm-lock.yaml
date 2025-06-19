@@ -522,6 +522,9 @@ importers:
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
         version: link:../../packages/vercel-ai
+      '@voltagent/vercel-ui':
+        specifier: workspace:^
+        version: link:../../packages/vercel-ui
       ai:
         specifier: ^4.2.11
         version: 4.3.14(react@19.1.0)(zod@3.24.2)
@@ -9691,7 +9694,7 @@ packages:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 6.3.3(@types/node@20.19.1)
+      vite: 6.3.3(@types/node@24.0.3)
     dev: true
 
   /@vitest/pretty-format@3.2.3:

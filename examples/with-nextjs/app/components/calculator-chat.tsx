@@ -1,6 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import type { StreamPart } from "@voltagent/core";
+import type { UIMessage } from "ai";
 import { useEffect, useRef } from "react";
 
 interface ToolCallAnnotation {
@@ -10,6 +12,7 @@ interface ToolCallAnnotation {
     toolName: string;
     args: any;
     status: "calling";
+    subAgentName?: string;
   };
 }
 
@@ -20,6 +23,7 @@ interface ToolResultAnnotation {
     toolName: string;
     result: any;
     status: "completed";
+    subAgentName?: string;
   };
 }
 
@@ -54,12 +58,45 @@ export function CalculatorChat() {
     }
   });
 
+  const formatPartAsAnnotation = (part: UIMessage["parts"][number]): MessageAnnotation | null => {
+    if (part.type === "tool-invocation") {
+      if (part.toolInvocation.state === "result") {
+        return {
+          type: "tool-result",
+          value: {
+            toolCallId: part.toolInvocation.toolCallId,
+            toolName: part.toolInvocation.toolName,
+            result: part.toolInvocation.result,
+            status: "completed",
+            // @ts-expect-error - subAgentName is not typed
+            subAgentName: part.toolInvocation.subAgentName,
+          },
+        };
+      }
+
+      return {
+        type: "tool-call",
+        value: {
+          toolCallId: part.toolInvocation.toolCallId,
+          toolName: part.toolInvocation.toolName,
+          args: part.toolInvocation.args,
+          status: "calling",
+          // @ts-expect-error - subAgentName is not typed
+          subAgentName: part.toolInvocation.subAgentName,
+        },
+      };
+    }
+
+    return null;
+  };
+
   const renderToolCall = (annotation: ToolCallAnnotation) => (
     <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3 my-2">
       <div className="flex items-center space-x-2">
         <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
         <span className="text-sm font-medium text-blue-300">
-          Tool Call: {annotation.value.toolName}
+          Tool Call: {annotation.value.toolName}{" "}
+          {annotation.value.subAgentName ? `(Sub-Agent: ${annotation.value.subAgentName})` : ""}
         </span>
       </div>
       <div className="mt-2 text-xs text-blue-200">
@@ -74,7 +111,8 @@ export function CalculatorChat() {
       <div className="flex items-center space-x-2">
         <div className="w-3 h-3 bg-green-400 rounded-full" />
         <span className="text-sm font-medium text-green-300">
-          Tool Result: {annotation.value.toolName}
+          Tool Result: {annotation.value.toolName}{" "}
+          {annotation.value.subAgentName ? `(Sub-Agent: ${annotation.value.subAgentName})` : ""}
         </span>
       </div>
       <div className="mt-2 text-xs text-green-200">
@@ -96,24 +134,28 @@ export function CalculatorChat() {
     </div>
   );
 
-  const renderAnnotations = (annotations: MessageAnnotation[] = []) => {
-    return annotations.map((annotation, index) => {
-      const key =
-        annotation.type === "tool-call" || annotation.type === "tool-result"
-          ? `${annotation.type}-${annotation.value.toolCallId || index}`
-          : `${annotation.type}-${index}`;
+  const renderAnnotations = (parts: UIMessage["parts"] = []) => {
+    console.log(parts);
+    return parts
+      .map(formatPartAsAnnotation)
+      .filter((annotation): annotation is MessageAnnotation => annotation !== null)
+      .map((annotation, index) => {
+        const key =
+          annotation.type === "tool-call" || annotation.type === "tool-result"
+            ? `${annotation.type}-${annotation.value.toolCallId || index}`
+            : `${annotation.type}-${index}`;
 
-      switch (annotation.type) {
-        case "tool-call":
-          return <div key={key}>{renderToolCall(annotation)}</div>;
-        case "tool-result":
-          return <div key={key}>{renderToolResult(annotation)}</div>;
-        case "error":
-          return <div key={key}>{renderError(annotation)}</div>;
-        default:
-          return null;
-      }
-    });
+        switch (annotation.type) {
+          case "tool-call":
+            return <div key={key}>{renderToolCall(annotation)}</div>;
+          case "tool-result":
+            return <div key={key}>{renderToolResult(annotation)}</div>;
+          case "error":
+            return <div key={key}>{renderError(annotation)}</div>;
+          default:
+            return null;
+        }
+      });
   };
 
   return (
@@ -147,9 +189,7 @@ export function CalculatorChat() {
                   )}
                   <div className="whitespace-pre-wrap">{message.content}</div>
 
-                  {/* Tool call ve result annotation'ları */}
-                  {message.annotations &&
-                    renderAnnotations(message.annotations as unknown as MessageAnnotation[])}
+                  {message.parts && renderAnnotations(message.parts)}
                 </div>
               </div>
             </div>
