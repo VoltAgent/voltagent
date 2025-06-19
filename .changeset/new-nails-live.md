@@ -2,7 +2,7 @@
 "@voltagent/core": patch
 ---
 
-feat: add dynamic agent parameters with userContext support
+feat: add dynamic agent parameters with userContext support - #272
 
 Added dynamic agent parameters functionality that allows agents to adapt their behavior, models, and tools based on runtime context. This enables personalized, multi-tenant, and role-based AI experiences.
 
