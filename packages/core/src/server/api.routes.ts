@@ -102,6 +102,18 @@ export const GenerateOptionsSchema = z
       .record(z.string(), z.unknown())
       .optional()
       .openapi({ description: "Provider-specific options" }),
+    userContext: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .openapi({
+        description: "User context for dynamic agent behavior (role, tier, permissions, etc.)",
+        example: {
+          role: "admin",
+          tier: "premium",
+          language: "English",
+          permissions: ["read", "write", "admin"],
+        },
+      }),
     // Add other relevant options from PublicGenerateOptions if known/needed for API exposure
   })
   .passthrough(); // Allow other provider-specific options not explicitly defined here

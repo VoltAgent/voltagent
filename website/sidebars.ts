@@ -31,6 +31,7 @@ const sidebars: SidebarsConfig = {
         "agents/subagents",
         "agents/voice",
         "agents/context",
+        "agents/dynamic-agents",
       ],
     },
     {

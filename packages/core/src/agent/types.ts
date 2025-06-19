@@ -18,6 +18,19 @@ import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
 
 /**
+ * Options object for dynamic value resolution
+ */
+export type DynamicValueOptions = {
+  /** User-defined context that can be used for dynamic value resolution */
+  userContext: Map<string | symbol, unknown>;
+};
+
+/**
+ * A value that can be either static or dynamically computed based on context
+ */
+export type DynamicValue<T> = T | ((options: DynamicValueOptions) => T | Promise<T>);
+
+/**
  * Provider options type for LLM configurations
  */
 export type ProviderOptions = {
@@ -88,8 +101,9 @@ export type AgentOptions = {
 
   /**
    * Tools and/or Toolkits that the agent can use
+   * Can be static or dynamic based on user context
    */
-  tools?: (Tool<any> | Toolkit)[];
+  tools?: DynamicValue<(Tool<any> | Toolkit)[]>;
 
   /**
    * Sub-agents that this agent can delegate tasks to
@@ -115,8 +129,9 @@ export type AgentOptions = {
       description: string;
       /**
        * Agent instructions. This is the preferred field.
+       * Can be static or dynamic based on user context
        */
-      instructions?: string;
+      instructions?: DynamicValue<string>;
     }
   | {
       /**
@@ -127,8 +142,9 @@ export type AgentOptions = {
       /**
        * Agent instructions. This is the preferred field.
        * Required if description is not provided.
+       * Can be static or dynamic based on user context
        */
-      instructions: string;
+      instructions: DynamicValue<string>;
     }
 );
 

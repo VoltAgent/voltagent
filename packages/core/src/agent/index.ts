@@ -39,6 +39,8 @@ import type {
   AgentOptions,
   AgentStatus,
   CommonGenerateOptions,
+  DynamicValue,
+  DynamicValueOptions,
   InferGenerateObjectResponseFromProvider,
   InferGenerateTextResponseFromProvider,
   InferStreamObjectResponseFromProvider,
@@ -92,6 +94,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Agent instructions. This is the preferred field over `description`.
    */
   readonly instructions: string;
+
+  /**
+   * Dynamic instructions value (internal)
+   */
+  private readonly dynamicInstructions?: DynamicValue<string>;
+
+  /**
+   * Dynamic model value (internal)
+   */
+  private readonly dynamicModel?: DynamicValue<ModelType<TProvider>>;
+
+  /**
+   * Dynamic tools value (internal)
+   */
+  private readonly dynamicTools?: DynamicValue<(Tool<any> | Toolkit)[]>;
 
   /**
    * The LLM provider to use
@@ -149,7 +166,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   constructor(
     options: AgentOptions &
       TProvider & {
-        model: ModelType<TProvider>;
+        model: DynamicValue<ModelType<TProvider>>;
         subAgents?: Agent<any>[]; // Reverted to Agent<any>[] temporarily
         maxHistoryEntries?: number;
         hooks?: AgentHooks;
@@ -162,10 +179,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.id = options.id || options.name;
     this.name = options.name;
     this.purpose = options.purpose;
-    this.instructions = options.instructions ?? options.description ?? "";
+
+    // Store dynamic values separately from resolved values
+    this.dynamicInstructions = options.instructions as DynamicValue<string>;
+    this.dynamicModel = options.model as DynamicValue<ModelType<TProvider>>;
+    this.dynamicTools = options.tools as DynamicValue<(Tool<any> | Toolkit)[]>;
+
+    // Set default static values for backwards compatibility
+    this.instructions =
+      typeof options.instructions === "string" ? options.instructions : (options.description ?? "");
     this.description = this.instructions;
     this.llm = options.llm as ProviderInstance<TProvider>;
-    this.model = options.model;
+    this.model =
+      typeof options.model === "function"
+        ? ({} as ModelType<TProvider>) // Temporary placeholder, will be resolved dynamically
+        : options.model;
     this.retriever = options.retriever;
     this.voice = options.voice;
     this.markdown = options.markdown ?? false;
@@ -180,8 +208,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Initialize memory manager
     this.memoryManager = new MemoryManager(this.id, options.memory, options.memoryOptions || {});
 
-    // Initialize tool manager (tools are now passed directly)
-    this.toolManager = new ToolManager(options.tools || []);
+    // Initialize tool manager with empty array if dynamic, will be resolved later
+    const staticTools = typeof options.tools === "function" ? [] : options.tools || [];
+    this.toolManager = new ToolManager(staticTools);
 
     // Initialize sub-agent manager
     this.subAgentManager = new SubAgentManager(this.name, options.subAgents || []);
@@ -198,6 +227,43 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Resolve dynamic instructions based on user context
+   */
+  private resolveInstructions = async (options: DynamicValueOptions): Promise<string> => {
+    if (!this.dynamicInstructions) return this.instructions;
+    if (typeof this.dynamicInstructions === "function") {
+      return await this.dynamicInstructions(options);
+    }
+    return this.dynamicInstructions;
+  };
+
+  /**
+   * Resolve dynamic model based on user context
+   */
+  private resolveModel = async (options: DynamicValueOptions): Promise<ModelType<TProvider>> => {
+    if (!this.dynamicModel) return this.model;
+    if (typeof this.dynamicModel === "function") {
+      return await (
+        this.dynamicModel as (
+          options: DynamicValueOptions,
+        ) => Promise<ModelType<TProvider>> | ModelType<TProvider>
+      )(options);
+    }
+    return this.dynamicModel;
+  };
+
+  /**
+   * Resolve dynamic tools based on user context
+   */
+  private resolveTools = async (options: DynamicValueOptions): Promise<(Tool<any> | Toolkit)[]> => {
+    if (!this.dynamicTools) return [];
+    if (typeof this.dynamicTools === "function") {
+      return await this.dynamicTools(options);
+    }
+    return this.dynamicTools;
+  };
+
+  /**
    * Get the system message for the agent
    */
   protected async getSystemMessage({
@@ -211,7 +277,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     contextMessages: BaseMessage[];
     operationContext?: OperationContext;
   }): Promise<BaseMessage> {
-    let baseInstructions = this.instructions || ""; // Ensure baseInstructions is a string
+    // Resolve dynamic instructions based on user context
+    const dynamicValueOptions: DynamicValueOptions = {
+      userContext: operationContext?.userContext || new Map(),
+    };
+    const resolvedInstructions = await this.resolveInstructions(dynamicValueOptions);
+    let baseInstructions = resolvedInstructions || ""; // Ensure baseInstructions is a string
 
     // --- Add Instructions from Toolkits --- (Simplified Logic)
     let toolInstructions = "";
@@ -440,21 +511,35 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Prepare common options for text generation
    */
-  private prepareTextOptions(
+  private async prepareTextOptions(
     options: CommonGenerateOptions & {
       internalStreamForwarder?: (event: any) => Promise<void>;
     } = {},
-  ): {
+  ): Promise<{
     tools: BaseTool[];
     maxSteps: number;
-  } {
+  }> {
     const {
       tools: dynamicTools,
       historyEntryId,
       operationContext,
       internalStreamForwarder,
     } = options;
-    const baseTools = this.toolManager.prepareToolsForGeneration(dynamicTools);
+
+    // Resolve dynamic tools if available
+    let resolvedTools: (Tool<any> | Toolkit)[] = [];
+    if (operationContext) {
+      const dynamicValueOptions: DynamicValueOptions = {
+        userContext: operationContext.userContext || new Map(),
+      };
+      resolvedTools = await this.resolveTools(dynamicValueOptions);
+    }
+
+    // Merge resolved tools with any provided dynamic tools
+    const allTools = [...resolvedTools, ...(dynamicTools || [])];
+    const baseTools = this.toolManager.prepareToolsForGeneration(
+      allTools.length > 0 ? (allTools as BaseTool[]) : undefined,
+    );
 
     // Ensure operationContext exists before proceeding
     if (!operationContext) {
@@ -927,16 +1012,22 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         userId,
         finalConversationId,
       );
-      const { tools, maxSteps } = this.prepareTextOptions({
+      const { tools, maxSteps } = await this.prepareTextOptions({
         ...internalOptions,
         conversationId: finalConversationId,
         historyEntryId: operationContext.historyEntry.id,
         operationContext: operationContext,
       });
 
+      // Resolve dynamic model based on user context
+      const dynamicValueOptions: DynamicValueOptions = {
+        userContext: operationContext.userContext || new Map(),
+      };
+      const resolvedModel = await this.resolveModel(dynamicValueOptions);
+
       const response = await this.llm.generateText({
         messages,
-        model: this.model,
+        model: resolvedModel,
         maxSteps,
         tools,
         provider: internalOptions.provider,
@@ -1459,7 +1550,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       }
     };
 
-    const { tools, maxSteps } = this.prepareTextOptions({
+    const { tools, maxSteps } = await this.prepareTextOptions({
       ...internalOptions,
       conversationId: finalConversationId,
       historyEntryId: operationContext.historyEntry.id,
@@ -1467,9 +1558,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       internalStreamForwarder: streamEventForwarder, // Pass the internal forwarder to tools
     });
 
+    // Resolve dynamic model based on user context
+    const dynamicValueOptions: DynamicValueOptions = {
+      userContext: operationContext.userContext || new Map(),
+    };
+    const resolvedModel = await this.resolveModel(dynamicValueOptions);
+
     const response = await this.llm.streamText({
       messages,
-      model: this.model,
+      model: resolvedModel,
       maxSteps,
       tools,
       signal: internalOptions.signal,
@@ -1967,9 +2064,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         finalConversationId,
       );
 
+      // Resolve dynamic model based on user context
+      const dynamicValueOptions: DynamicValueOptions = {
+        userContext: operationContext.userContext || new Map(),
+      };
+      const resolvedModel = await this.resolveModel(dynamicValueOptions);
+
       const response = await this.llm.generateObject({
         messages,
-        model: this.model,
+        model: resolvedModel,
         schema,
         signal: internalOptions.signal,
         provider: internalOptions.provider,
@@ -2249,10 +2352,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       finalConversationId,
     );
 
+    // Resolve dynamic model based on user context
+    const dynamicValueOptions: DynamicValueOptions = {
+      userContext: operationContext.userContext || new Map(),
+    };
+    const resolvedModel = await this.resolveModel(dynamicValueOptions);
+
     try {
       const response = await this.llm.streamObject({
         messages,
-        model: this.model,
+        model: resolvedModel,
         schema,
         provider,
         signal: internalOptions.signal,
