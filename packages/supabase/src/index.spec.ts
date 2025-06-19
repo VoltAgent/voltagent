@@ -192,14 +192,14 @@ describe("SupabaseMemory", () => {
           supabaseUrl: "",
           supabaseKey: "test-key",
         });
-      }).toThrow("Supabase URL and Key are required when client is not provided.");
+      }).toThrow("Either provide a 'client' or both 'supabaseUrl' and 'supabaseKey'");
 
       expect(() => {
         new SupabaseMemory({
           supabaseUrl: "https://test.supabase.co",
           supabaseKey: "",
         });
-      }).toThrow("Supabase URL and Key are required when client is not provided.");
+      }).toThrow("Either provide a 'client' or both 'supabaseUrl' and 'supabaseKey'");
     });
   });
 

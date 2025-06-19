@@ -12,8 +12,9 @@ import {
 import type { NewTimelineEvent } from "@voltagent/core";
 
 export interface SupabaseMemoryOptions extends MemoryOptions {
-  supabaseUrl: string;
-  supabaseKey: string;
+  supabaseUrl?: string;
+  supabaseKey?: string;
+  client?: SupabaseClient;
   tableName?: string; // Base table name, defaults to "voltagent_memory"
   debug?: boolean; // Whether to enable debug logging, defaults to false
 }
@@ -37,37 +38,25 @@ export class SupabaseMemory implements Memory {
   private options: SupabaseMemoryOptions;
   private initialized: Promise<void>;
 
-  constructor(
-    options:
-      | SupabaseMemoryOptions
-      | { client: SupabaseClient; tableName?: string; debug?: boolean },
-  ) {
-    if ("client" in options) {
-      this.client = options.client;
-      this.baseTableName = options.tableName || "voltagent_memory";
-      this.debug = options.debug || false;
-      this.options = {
-        supabaseUrl: "", // Not needed when client is provided
-        supabaseKey: "", // Not needed when client is provided
-        tableName: options.tableName,
-        debug: options.debug,
-        storageLimit: 100, // Default value
-      };
-    } else {
-      if (!options.supabaseUrl || !options.supabaseKey) {
-        throw new Error("Supabase URL and Key are required when client is not provided.");
-      }
-      this.client = createClient(options.supabaseUrl, options.supabaseKey);
-      this.baseTableName = options.tableName || "voltagent_memory";
-      this.debug = options.debug || false;
-      this.options = {
-        storageLimit: options.storageLimit ?? 100, // Use nullish coalescing to handle 0 properly
-        tableName: options.tableName || "voltagent_memory",
-        debug: options.debug || false,
-        supabaseUrl: options.supabaseUrl,
-        supabaseKey: options.supabaseKey,
-      };
+  constructor(options: SupabaseMemoryOptions) {
+    if (!options.client && (!options.supabaseUrl || !options.supabaseKey)) {
+      throw new Error("Either provide a 'client' or both 'supabaseUrl' and 'supabaseKey'");
     }
+
+    if (options.client && (options.supabaseUrl || options.supabaseKey)) {
+      throw new Error(
+        "Cannot provide both 'client' and 'supabaseUrl/supabaseKey'. Choose one approach.",
+      );
+    }
+    this.client = options.client || createClient(options.supabaseUrl!, options.supabaseKey!);
+    this.baseTableName = options.tableName || "voltagent_memory";
+    this.debug = options.debug || false;
+    this.options = {
+      ...options,
+      storageLimit: options.storageLimit ?? 100,
+      tableName: options.tableName || "voltagent_memory",
+      debug: options.debug || false,
+    };
 
     // Initialize the database and run migration if needed
     this.initialized = this.initializeDatabase();
@@ -549,7 +538,7 @@ ON ${this.historyTable}(conversation_id);`);
       throw new Error(`Failed to add message: ${error.message}`);
     }
 
-    // Apply storage limit if specified
+    // Apply storage limit if specified and greater than 0
     if (this.options.storageLimit && this.options.storageLimit > 0) {
       await this.pruneOldMessages(conversationId);
     }
