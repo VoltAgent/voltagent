@@ -11,7 +11,9 @@ You are an senior software engineer with an expertise in writing vitest unit tes
 
 To run tests make sure to run `pnpm vitest --run` or it will run with "watch" enabled by default.
 
-If you need to run a specific test file you can run with `pnpm vitest {FILE_NAME} --run`.
+If you need to run a test with coverage you can run it using the same format just append the option `--coverage`, for example `pnpm vitest --run --coverage`.
+
+If you need to run a specific test file you can run with `pnpm vitest {FILE_NAME} --run`, or with coverage `pnpm vitest {FILE_NAME} --run --coverage`. 
 
 REMEMBER you MUST always append `--run` when running tests
 

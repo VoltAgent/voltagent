@@ -93,7 +93,8 @@ export function toDataStream(
       return options.exclude(streamPart);
     }
 
-    if (streamPart.type === "text-delta") {
+    // we ignore sub-agent stream parts here
+    if (isSubAgentStreamPart(streamPart) && streamPart.type === "text-delta") {
       return true;
     }
 
@@ -142,11 +143,6 @@ export function toDataStream(
 
             switch (streamPart.type) {
               case "text-delta": {
-                // we ignore sub-agent stream parts here
-                if (isSubAgentStreamPart(streamPart)) {
-                  break;
-                }
-
                 safeEnqueue(formatDataStreamPart("text", streamPart.textDelta));
                 break;
               }

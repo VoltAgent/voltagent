@@ -127,7 +127,11 @@ describe("data-stream", () => {
 
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
-      expect(chunks.length).toBeGreaterThan(0);
+
+      expect(chunks).toEqual([
+        'formatted:text:"hello"',
+        'formatted:finish_message:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}',
+      ]);
     });
 
     it("should exclude text-delta by default", async () => {
@@ -139,9 +143,10 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      // Should not contain text-delta chunks
-      const textChunks = chunks.filter((chunk) => chunk.includes("text"));
-      expect(textChunks).toHaveLength(0);
+      expect(chunks).toEqual([
+        'formatted:text:"should be excluded"',
+        'formatted:finish_message:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}',
+      ]);
     });
 
     it("should handle custom exclude function", async () => {
@@ -157,9 +162,7 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream, options);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      // Should not contain finish chunks
-      const finishChunks = chunks.filter((chunk) => chunk.includes("finish"));
-      expect(finishChunks).toHaveLength(0);
+      expect(chunks).toEqual(['formatted:text:"test"']);
     });
 
     it("should handle tool-call stream parts", async () => {
@@ -175,7 +178,9 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("tool_call"))).toBe(true);
+      expect(chunks).toEqual([
+        'formatted:tool_call:{"toolCallId":"call-1","toolName":"tool","args":{"param":"value"},"subAgent":false}',
+      ]);
     });
 
     it("should handle tool-result stream parts", async () => {
@@ -191,8 +196,10 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("tool_result"))).toBe(true);
-      expect(chunks.some((chunk) => chunk.includes("finish_step"))).toBe(true);
+      expect(chunks).toEqual([
+        'formatted:tool_result:{"toolCallId":"call-1","result":{"success":true},"subAgent":false}',
+        'formatted:finish_step:{"isContinued":false,"finishReason":"tool-calls"}',
+      ]);
     });
 
     it("should handle reasoning stream parts when enabled", async () => {
@@ -205,7 +212,7 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream, options);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("reasoning"))).toBe(true);
+      expect(chunks).toEqual(['formatted:reasoning:"test reasoning"']);
     });
 
     it("should not handle reasoning stream parts when disabled", async () => {
@@ -218,7 +225,7 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream, options);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("reasoning"))).toBe(false);
+      expect(chunks).toEqual([]);
     });
 
     it("should handle source stream parts when enabled", async () => {
@@ -231,7 +238,9 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream, options);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("source"))).toBe(true);
+      expect(chunks).toEqual([
+        'formatted:source:{"sourceType":"url","id":"https://example.com","url":"https://example.com"}',
+      ]);
     });
 
     it("should handle finish stream parts with usage", async () => {
@@ -251,7 +260,9 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream, options);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("finish_message"))).toBe(true);
+      expect(chunks).toEqual([
+        'formatted:finish_message:{"finishReason":"stop","usage":{"promptTokens":10,"completionTokens":20,"totalTokens":30}}',
+      ]);
     });
 
     it("should handle finish stream parts without usage when disabled", async () => {
@@ -271,8 +282,7 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream, options);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      // Should still include finish_message but without usage
-      expect(chunks.some((chunk) => chunk.includes("finish_message"))).toBe(true);
+      expect(chunks).toEqual(['formatted:finish_message:{"finishReason":"stop"}']);
     });
 
     it("should handle error stream parts", async () => {
@@ -281,7 +291,7 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("error"))).toBe(true);
+      expect(chunks).toEqual(['formatted:error:"An error occurred."']);
     });
 
     it("should handle custom error message function", async () => {
@@ -294,7 +304,7 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream, options);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("custom error message"))).toBe(true);
+      expect(chunks).toEqual(['formatted:error:"custom error message"']);
     });
 
     it("should handle sub-agent stream parts", async () => {
@@ -312,7 +322,9 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("subAgent"))).toBe(true);
+      expect(chunks).toEqual([
+        'formatted:tool_call:{"toolCallId":"call-1","toolName":"tool","args":{"param":"value"},"subAgentName":"TestAgent","subAgentId":"agent-1","subAgent":true}',
+      ]);
     });
 
     it("should handle stream cancellation", async () => {
@@ -332,15 +344,15 @@ describe("data-stream", () => {
     });
 
     it("should handle stream iteration errors", async () => {
-      const mockStream: FullStream = (async function* () {
-        yield { type: "text-delta", textDelta: "test" };
-        throw new Error("iteration error");
-      })();
+      const mockStream = mockFullStream([
+        { type: "text-delta", textDelta: "test" },
+        { type: "error", error: new Error("iteration error") },
+      ]);
 
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      expect(chunks.some((chunk) => chunk.includes("error"))).toBe(true);
+      expect(chunks).toEqual(['formatted:text:"test"', 'formatted:error:"An error occurred."']);
     });
 
     it("should handle unknown stream part types gracefully", async () => {
@@ -352,8 +364,47 @@ describe("data-stream", () => {
       const dataStream = toDataStream(mockStream);
       const chunks = await convertReadableStreamToArray(dataStream);
 
-      // Should complete without throwing
-      expect(chunks.length).toBeGreaterThanOrEqual(0);
+      expect(chunks).toEqual([
+        'formatted:finish_message:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}',
+      ]);
+    });
+
+    it("should ignore sub-agent text-delta stream parts", async () => {
+      const mockStream = mockFullStream([
+        {
+          type: "text-delta",
+          textDelta: "should be ignored",
+          subAgentId: "agent-1",
+          subAgentName: "TestAgent",
+        },
+        { type: "finish", finishReason: "stop" },
+      ]);
+
+      const dataStream = toDataStream(mockStream);
+      const chunks = await convertReadableStreamToArray(dataStream);
+
+      expect(chunks).toEqual([
+        'formatted:finish_message:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}',
+      ]);
+    });
+
+    it("should process regular text-delta stream parts (not from sub-agents)", async () => {
+      const mockStream = mockFullStream([
+        {
+          type: "text-delta",
+          textDelta: "should be processed",
+          // No subAgentId or subAgentName
+        },
+        { type: "finish", finishReason: "stop" },
+      ]);
+
+      const dataStream = toDataStream(mockStream);
+      const chunks = await convertReadableStreamToArray(dataStream);
+
+      expect(chunks).toEqual([
+        'formatted:text:"should be processed"',
+        'formatted:finish_message:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}',
+      ]);
     });
   });
 });
