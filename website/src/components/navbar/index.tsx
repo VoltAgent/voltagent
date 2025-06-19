@@ -19,7 +19,7 @@ import styles from "./styles.module.css";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)", { defaultValue: true });
 
   const location = useLocation();
   const {
