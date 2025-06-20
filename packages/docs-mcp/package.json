@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/docs-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "VoltAgent docs-mcp - MCP Docs ",
   "license": "MIT",
   "type": "module",
@@ -17,7 +17,11 @@
   "bin": {
     "voltagent-docs-mcp": "dist/server.js"
   },
-  "files": ["dist", "docs", "examples"],
+  "files": [
+    "dist",
+    "docs",
+    "examples"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -29,7 +33,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@voltagent/core": "^0.1.31",
+    "@voltagent/core": "^0.1.39",
     "zod": "^3.23.8"
   },
   "devDependencies": {

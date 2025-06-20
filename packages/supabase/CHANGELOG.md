@@ -1,5 +1,41 @@
 # @voltagent/supabase
 
+## 0.1.12
+
+### Patch Changes
+
+- [#270](https://github.com/VoltAgent/voltagent/pull/270) [`a65069c`](https://github.com/VoltAgent/voltagent/commit/a65069c511713239cf70bdb4d2885df224d1aee2) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - feat(supabase): Implement storage limit
+
+  - BEFORE:
+
+    ```
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    const memory = new SupabaseMemory({
+      client: supabaseClient,
+      tableName: "voltagent_memory", // Optional
+    });
+
+    ```
+
+  - AFTER:
+
+    ```
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    const memory = new SupabaseMemory({
+      client: supabaseClient,
+      tableName: "voltagent_memory", // Optional
+      storageLimit: 150, // Optional: Custom storage limit
+      debug: false, // Optional: Debug logging
+    });
+
+
+    ```
+
+  Fixes: [#256](https://github.com/VoltAgent/voltagent/issues/254)
+
+- Updated dependencies [[`937ccf8`](https://github.com/VoltAgent/voltagent/commit/937ccf8bf84a4261ee9ed2c94aab9f8c49ab69bd)]:
+  - @voltagent/core@0.1.39
+
 ## 0.1.11
 
 ### Patch Changes
