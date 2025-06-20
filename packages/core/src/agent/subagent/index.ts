@@ -169,19 +169,22 @@ ${agentsMemory || "No previous agent interactions available."}
       // Get relevant context from memory (to be passed from Agent class)
       const sharedContext: BaseMessage[] = options.sharedContext || [];
 
-      // Prepare the handoff message with task context
-      const handoffMessage: BaseMessage = {
-        role: "system",
-        content: `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
-${task}
-Context: ${JSON.stringify(context)}`,
-      };
-
       // Get the real-time event forwarder from options (passed from delegate tool)
       const forwardEvent = options.forwardEvent;
 
-      // Use streamText instead of generateText to capture tool calls in real-time
-      const streamResponse = await targetAgent.streamText([handoffMessage, ...sharedContext], {
+      // Include context information if available
+      let taskContent = task;
+      if (context && Object.keys(context).length > 0) {
+        taskContent = `${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
+      }
+
+      const taskMessage: BaseMessage = {
+        role: "user",
+        content: taskContent,
+      };
+
+      // Use streamText without handoff context in system message
+      const streamResponse = await targetAgent.streamText([...sharedContext, taskMessage], {
         conversationId: handoffConversationId,
         userId,
         parentAgentId: sourceAgent?.id || parentAgentId,
@@ -317,7 +320,7 @@ Context: ${JSON.stringify(context)}`,
       return {
         result: finalText,
         conversationId: handoffConversationId,
-        messages: [handoffMessage, { role: "assistant", content: finalText }],
+        messages: [taskMessage, { role: "assistant", content: finalText }],
         status: "success",
       };
     } catch (error) {
