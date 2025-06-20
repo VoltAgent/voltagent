@@ -17,143 +17,37 @@
 
 <br/>
 
-# VoltAgent with Dynamic Parameters
-
-Bu örnek **Dynamic Values** özelliğini basit bir şekilde gösterir. Tek bir agent'in farklı kullanıcı kontekstlerine göre nasıl farklı davrandığını öğrenebilirsin.
-
-## Özellikler
-
-✨ **Dynamic Instructions** - Role-based agent behavior  
-🚀 **Dynamic Models** - Tier-based model selection  
-🔧 **Dynamic Tools** - Role-based tool access  
-🔄 **Context Aware** - Single agent, multiple behaviors
-
-## Neden Dynamic Parameters?
-
-**Eski yöntem (Statik):**
-
-```typescript
-// ❌ Her kontekst için ayrı agent gerekir
-const adminAgent = new Agent({ instructions: "You are an admin" });
-const userAgent = new Agent({ instructions: "You are a user assistant" });
-```
-
-**Yeni yöntem (Dynamic):**
-
-```typescript
-// ✅ Tek agent, farklı kontekstler
-const agent = new Agent({
-  instructions: ({ userContext }) => {
-    const role = userContext.get("role");
-    return role === "admin" ? "You are an admin" : "You are a user assistant";
-  },
-});
-```
-
-## Çalıştırma
-
-1. **Dependencies kur:**
-
-```bash
-npm install
-```
-
-2. **Environment ayarla:**
-   OpenAI API key'ini `.env` dosyasına ekle:
-
-```
-OPENAI_API_KEY=your_api_key_here
-```
-
-3. **Demo çalıştır:**
-
-```bash
-npm run dev
-```
-
-## Test Scenarios
-
-The example demonstrates 3 different user types:
-
-### 1. Basic User (Free Tier)
-
-- **Model:** GPT-3.5 Turbo
-- **Tools:** Only greeting tool
-- **Access:** Basic functionality
-
-### 2. Admin User (Premium Tier)
-
-- **Model:** GPT-4o Mini
-- **Tools:** Greeting + Admin tools
-- **Access:** System management privileges
-
-### 3. Premium User
-
-- **Model:** GPT-4o Mini
-- **Tools:** Greeting tool (premium experience)
-- **Access:** Enhanced service quality
-
-## Kod Örnekleri
-
-### Dynamic Instructions
-
-```typescript
-const dynamicInstructions = ({ userContext }) => {
-  const role = userContext.get("role");
-  if (role === "admin") {
-    return "You are an admin assistant with special privileges.";
-  } else {
-    return "You are a helpful assistant.";
-  }
-};
-```
-
-### Dynamic Model Selection
-
-```typescript
-const dynamicModel = ({ userContext }) => {
-  const tier = userContext.get("tier");
-  return tier === "premium"
-    ? openai("gpt-4o-mini") // Premium model
-    : openai("gpt-3.5-turbo"); // Basic model
-};
-```
-
-### Dynamic Tools
-
-```typescript
-const dynamicTools = ({ userContext }) => {
-  const tools = [basicTool];
-  if (userContext.get("role") === "admin") {
-    tools.push(adminTool);
-  }
-  return tools;
-};
-```
-
-## Use Cases
-
-- **SaaS Applications:** Different service levels based on subscription tiers
-- **Multi-user Systems:** Role-based authorization
-- **Enterprise Applications:** Department-based tool access
-- **Customer Support:** Context-aware assistance
-
----
-
-**Daha fazla örnek için:** [VoltAgent Examples](https://github.com/voltagent/voltagent/tree/main/examples)
-
-## Next Steps
-
-1. **Customize for your use case** - Modify the user context structure
-2. **Add more tools** - Create permission-based tool sets
-3. **Integrate with auth** - Connect with your authentication system
-4. **Deploy to production** - Scale with dynamic parameters
-
----
+<div align="center">
+    <strong>VoltAgent is an open source TypeScript framework for building and orchestrating AI agents.</strong><br>
+Escape the limitations of no-code builders and the complexity of starting from scratch.
+    <br />
+    <br />
+</div>
 
 <div align="center">
-<strong>Ready to build context-aware AI agents?</strong><br>
-<a href="https://voltagent.dev/docs/getting-started">Get Started</a> | 
-<a href="https://s.voltagent.dev/discord">Join Discord</a> | 
-<a href="https://github.com/voltagent/voltagent">Star on GitHub</a>
+    
+[![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
+[![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
+    
 </div>
+
+<br/>
+
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="896" alt="VoltAgent Schema" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+</a>
+
+</div>
+
+## VoltAgent: Build AI Agents Fast and Flexibly
+
+VoltAgent is an open-source TypeScript framework for creating and managing AI agents. It provides modular components to build, customize, and scale agents with ease. From connecting to APIs and memory management to supporting multiple LLMs, VoltAgent simplifies the process of creating sophisticated AI systems. It enables fast development, maintains clean code, and offers flexibility to switch between models and tools without vendor lock-in.
+
+## Try Example
+
+```bash
+npm create voltagent-app@latest -- --example with-dynamic-parameters
+```
