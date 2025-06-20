@@ -1,0 +1,45 @@
+{
+  "name": "@voltagent/docs-mcp",
+  "version": "0.1.0",
+  "description": "VoltAgent docs-mcp - MCP Docs ",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "voltagent-docs-mcp": "dist/server.js"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "examples"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "start": "node dist/server.js",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@voltagent/core": "^0.1.31",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "tsup": "^8.5.0",
+    "typescript": "^5.0.4",
+    "vitest": "^3.2.4"
+  }
+}

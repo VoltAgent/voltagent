@@ -30,6 +30,7 @@
     "commander": "^11.1.0",
     "conf": "^10.2.0",
     "figlet": "^1.7.0",
+    "fs-extra": "^11.1.1",
     "inquirer": "^8.2.6",
     "npm-check-updates": "^17.1.18",
     "ora": "^5.4.1",
@@ -41,6 +42,7 @@
   "devDependencies": {
     "@types/boxen": "^3.0.1",
     "@types/figlet": "^1.5.8",
+    "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.19.0",
     "@types/semver": "^7.5.6",

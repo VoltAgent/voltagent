@@ -70,11 +70,30 @@ export const runCLI = async (): Promise<void> => {
         },
       ]);
 
+      // Select IDE for MCP configuration
+      const { ide } = await inquirer.prompt<{
+        ide: ProjectOptions["ide"];
+      }>([
+        {
+          type: "list",
+          name: "ide",
+          message: "Which IDE are you using? (For MCP Docs Server configuration)",
+          choices: [
+            { name: "Cursor", value: "cursor" },
+            { name: "Windsurf", value: "windsurf" },
+            { name: "VS Code", value: "vscode" },
+            { name: "None / I'll configure later", value: "none" },
+          ],
+          default: "cursor",
+        },
+      ]);
+
       const projectOptions: ProjectOptions = {
         projectName,
         typescript: true, // VoltAgent uses TypeScript by default
         packageManager,
         features: [], // Features aren't used anymore
+        ide,
       };
 
       const targetDir = path.resolve(process.cwd(), projectName);
@@ -86,6 +105,7 @@ export const runCLI = async (): Promise<void> => {
           projectName,
           packageManager,
           typescript: projectOptions.typescript,
+          ide: projectOptions.ide,
         });
 
         await createProject(projectOptions, targetDir);
@@ -107,6 +127,15 @@ export const runCLI = async (): Promise<void> => {
         } else if (packageManager === "pnpm") {
           logger.info(`  ${chalk.cyan("pnpm install")}`);
           logger.info(`  ${chalk.cyan("pnpm dev")}`);
+        }
+
+        // Show MCP configuration info
+        if (ide && ide !== "none") {
+          logger.blank();
+          logger.info(chalk.bold("🤖 MCP Docs Server:"));
+          logger.info(`  ✓ Configured for ${chalk.cyan(ide)}`);
+          logger.info(`  📁 Config files in ${chalk.dim(`.${ide.toLowerCase()}/`)}`);
+          logger.info("  💡 Ask your AI assistant VoltAgent questions!");
         }
 
         logger.blank();

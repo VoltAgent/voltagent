@@ -1,0 +1,8 @@
+{
+  "name": "@voltagent/docs-mcp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/docs-mcp/src",
+  "// targets": "to see all targets run: nx show project docs-mcp --web",
+  "targets": {}
+}

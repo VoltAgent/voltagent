@@ -3,6 +3,7 @@ export type ProjectOptions = {
   typescript: boolean;
   packageManager: "npm" | "yarn" | "pnpm";
   features: Feature[];
+  ide?: "cursor" | "windsurf" | "vscode" | "none";
 };
 
 export type Feature = "voice" | "chat" | "ui" | "vision";

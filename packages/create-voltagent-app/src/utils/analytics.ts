@@ -62,6 +62,7 @@ export const captureProjectCreation = (options: {
   packageManager?: string;
   typescript: boolean;
   fromExample?: string;
+  ide?: string;
 }) => {
   // Skip if telemetry is disabled
   if (isTelemetryDisabled()) return;
@@ -74,6 +75,7 @@ export const captureProjectCreation = (options: {
       package_manager: options.packageManager || "unknown",
       typescript: options.typescript,
       from_example: options.fromExample || null,
+      ide: options.ide || "none",
       machine_id: getMachineId(),
       ...getOSInfo(),
     },

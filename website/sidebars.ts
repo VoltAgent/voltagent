@@ -15,7 +15,11 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Getting Started",
-      items: ["getting-started/overview", "getting-started/quick-start"],
+      items: [
+        "getting-started/overview",
+        "getting-started/quick-start",
+        "getting-started/mcp-docs-server",
+      ],
     },
     {
       type: "category",
