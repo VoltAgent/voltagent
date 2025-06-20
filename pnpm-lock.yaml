@@ -111,7 +111,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -155,7 +155,7 @@ importers:
         specifier: ^20.10.4
         version: 20.17.30
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       tsx:
         specifier: ^4.6.2
@@ -189,7 +189,7 @@ importers:
         specifier: ^0.1.11
         version: link:../../packages/anthropic-ai
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -214,7 +214,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -242,7 +242,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -270,7 +270,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -295,7 +295,7 @@ importers:
   examples/with-google-ai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -421,7 +421,7 @@ importers:
   examples/with-google-vertex-ai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -446,7 +446,7 @@ importers:
   examples/with-groq-ai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -474,7 +474,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -505,7 +505,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -542,7 +542,7 @@ importers:
         specifier: ^4.1.4
         version: 4.1.4
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -594,7 +594,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -634,7 +634,7 @@ importers:
         specifier: ^1.51.1
         version: 1.52.0
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -674,7 +674,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -705,7 +705,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -733,7 +733,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -761,7 +761,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -792,7 +792,7 @@ importers:
         specifier: ^2.49.4
         version: 2.49.4
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -823,7 +823,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -851,7 +851,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -879,7 +879,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -907,7 +907,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -935,7 +935,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -966,7 +966,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -1003,7 +1003,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -1040,7 +1040,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39
@@ -1065,7 +1065,7 @@ importers:
   examples/with-xsai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^0.1.39

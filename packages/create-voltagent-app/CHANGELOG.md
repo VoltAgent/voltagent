@@ -1,5 +1,11 @@
 # create-voltagent-app
 
+## 0.1.31
+
+### Patch Changes
+
+- [`00d70cb`](https://github.com/VoltAgent/voltagent/commit/00d70cbb570e4d748ab37e177e4e5df869d52e03) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: update VoltAgent docs MCP configs
+
 ## 0.1.28
 
 ### Patch Changes

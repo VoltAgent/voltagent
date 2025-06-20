@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/cli",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "CLI tool for VoltAgent applications",
   "keywords": [
     "voltagent",

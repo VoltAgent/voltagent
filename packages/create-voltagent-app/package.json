@@ -1,6 +1,6 @@
 {
   "name": "create-voltagent-app",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "description": "Create VoltAgent applications with one command",
   "license": "MIT",
   "main": "dist/index.js",
@@ -8,7 +8,10 @@
     "create-voltagent": "./dist/index.js",
     "create-voltagent-app": "./dist/index.js"
   },
-  "files": ["dist", "templates"],
+  "files": [
+    "dist",
+    "templates"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.4",
-    "@voltagent/cli": "^0.1.8",
+    "@voltagent/cli": "^0.1.9",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   }
