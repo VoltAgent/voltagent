@@ -383,23 +383,30 @@ vi.mock("./history", () => ({
     // createMockHistoryEntry test dosyasının global kapsamında tanımlıdır.
     // Çağrıldığında AgentHistoryEntry'ye benzeyen bir nesne döndürür.
     return {
-      addEntry: vi.fn().mockImplementation(async (input, _output, status, _steps, _options) => {
+      addEntry: vi.fn().mockImplementation(async (params: any) => {
         let entryInputString = "default_mock_input";
-        if (typeof input === "string") {
-          entryInputString = input;
+        if (params && typeof params.input === "string") {
+          entryInputString = params.input;
         } else if (
-          Array.isArray(input) &&
-          input.length > 0 &&
-          input[0] &&
-          typeof input[0].content === "string"
+          params &&
+          Array.isArray(params.input) &&
+          params.input.length > 0 &&
+          params.input[0] &&
+          typeof params.input[0].content === "string"
         ) {
-          entryInputString = input[0].content;
-        } else if (input && typeof input === "object" && !Array.isArray(input)) {
-          entryInputString = JSON.stringify(input);
+          entryInputString = params.input[0].content;
+        } else if (
+          params?.input &&
+          typeof params.input === "object" &&
+          !Array.isArray(params.input)
+        ) {
+          entryInputString = JSON.stringify(params.input);
         }
         // createMockHistoryEntry, bu test dosyasında daha önce tanımlanmıştır.
         // @ts-ignore createMockHistoryEntry is defined in the outer scope
-        return Promise.resolve(createMockHistoryEntry(entryInputString, status || "working"));
+        return Promise.resolve(
+          createMockHistoryEntry(entryInputString, params?.status || "working"),
+        );
       }),
       getEntries: vi.fn().mockResolvedValue([]),
       updateEntry: vi
@@ -1453,28 +1460,7 @@ describe("Agent", () => {
       const userContext2 = new Map<string | symbol, unknown>([[key2, value2]]);
 
       const onStartHook = vi.fn(({ context }: { context: OperationContext }) => {
-        // historyEntry.input is directly the input parameter passed to generateText
-        const historyInput = context.historyEntry.input;
-        let inputString: string;
-
-        if (typeof historyInput === "string") {
-          // historyInput might be a JSON string, try to parse it
-          try {
-            const parsed = JSON.parse(historyInput);
-            if (parsed && typeof parsed === "object" && "input" in parsed) {
-              inputString = String(parsed.input);
-            } else {
-              inputString = historyInput;
-            }
-          } catch {
-            inputString = historyInput;
-          }
-        } else if (historyInput && typeof historyInput === "object" && "input" in historyInput) {
-          // historyInput is the full history entry object, extract the input field
-          inputString = String((historyInput as any).input);
-        } else {
-          inputString = String(historyInput);
-        }
+        const inputString = String(context.historyEntry.input);
 
         if (inputString === "Operation 1 with options") {
           expect(context.userContext).toBe(userContext1); // Same reference
