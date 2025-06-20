@@ -39,7 +39,7 @@ html[data-theme="dark"] #__docusaurus:has([class*="docsWrapper_"]) {
 
 /* Announcement bar height */
 div[class^="announcementBar_"] {
-  height: 45px;
+  height: 40px;
   display: flex;
   align-items: center;
   font-size: 18px !important;

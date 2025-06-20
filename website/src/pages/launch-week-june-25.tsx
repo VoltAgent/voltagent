@@ -253,23 +253,44 @@ const Day4 = () => (
   </DayComponent>
 );
 
-const Day5 = () => (
-  <DayComponent
-    enabled={false}
-    date="DAY 5 | FRIDAY, JUNE 20, 2025"
-    title="MCP & Showcase"
-    description="Model Context Protocol integration and a comprehensive showcase of real-world implementations and use cases."
-    detailsLink="#"
-  >
-    <div className="w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 bg-gray-900 rounded-2xl sm:rounded-3xl border border-gray-800 flex items-center justify-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-emerald-400/20" />
-      <div className="text-center z-10">
-        <div className="text-2xl sm:text-3xl lg:text-4xl mb-3 sm:mb-4">🚀</div>
-        <div className="text-gray-400 text-xs sm:text-sm">Feature Preview</div>
+const Day5 = () => {
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const images = [
+    "https://cdn.voltagent.dev/website/showcase/showcase-overview.png",
+    "https://cdn.voltagent.dev/website/showcase/mcp-overview.png",
+  ];
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <DayComponent
+      enabled={true}
+      date="DAY 5 | FRIDAY, JUNE 20, 2025"
+      title="MCP & Showcase"
+      description="Model Context Protocol integration and a new showcase page for anyone who wants to feature their work."
+      detailsLink="https://voltagent.dev/mcp/"
+    >
+      <div className="w-full pb-[56.25%] relative rounded-md border-solid border-2 border-emerald-600 overflow-hidden">
+        {images.map((src, index) => (
+          <img
+            key={src}
+            src={src}
+            alt={`Feature Preview ${index + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover rounded-md transition-opacity duration-500 ${
+              currentImageIndex === index ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
       </div>
-    </div>
-  </DayComponent>
-);
+    </DayComponent>
+  );
+};
 
 const LaunchWeek = () => {
   return (

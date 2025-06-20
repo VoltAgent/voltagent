@@ -5,6 +5,7 @@ import type { ProjectOptions } from "./types";
 import { createSpinner } from "./utils/animation";
 import fileManager from "./utils/file-manager";
 import { getAllTemplates } from "./utils/templates";
+import { configureMcpForIde, showMcpConfigurationMessage } from "./utils/mcp-config";
 
 export const createProject = async (options: ProjectOptions, targetDir: string): Promise<void> => {
   // Check and create folder
@@ -202,6 +203,13 @@ dist
 .cursor
 `,
     );
+
+    // Configure MCP for selected IDE
+    if (options.ide && options.ide !== "none") {
+      spinner.text = `Configuring MCP Docs Server for ${options.ide}...`;
+      await configureMcpForIde(targetDir, options);
+      showMcpConfigurationMessage(options.ide);
+    }
 
     spinner.succeed(chalk.green("VoltAgent project created successfully! 📁"));
   } catch (error) {

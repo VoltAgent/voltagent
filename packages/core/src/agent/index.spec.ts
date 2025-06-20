@@ -1,4 +1,5 @@
 import type { Mock, Mocked } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { Memory, MemoryMessage } from "../memory/types";
@@ -25,6 +26,8 @@ import type { VoltAgentExporter } from "../telemetry/exporter";
 import { HistoryManager } from "./history";
 import { createHooks } from "./hooks";
 import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
+import type { DynamicValueOptions } from "./types";
+import type { Tool, Toolkit } from "../tool";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: unknown };
@@ -1515,8 +1518,8 @@ describe("Agent", () => {
       const mockForwarder = vi.fn().mockResolvedValue(undefined);
 
       // Access the protected method to test it directly
-      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
-        streamEventForwarder: mockForwarder,
+      const textOptions = await (agentWithSubAgents as any).prepareTextOptions({
+        internalStreamForwarder: mockForwarder,
         historyEntryId: "test-history-id",
         operationContext: {
           userContext: new Map(),
@@ -2099,7 +2102,7 @@ describe("Agent", () => {
         "createDelegateTool",
       );
 
-      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+      const textOptions = await (agentWithSubAgents as any).prepareTextOptions({
         internalStreamForwarder: mockEventForwarder,
         historyEntryId: "test-history-id",
         operationContext: {
@@ -2120,7 +2123,7 @@ describe("Agent", () => {
 
     it("should replace existing delegate tool when creating new one with forwarder", async () => {
       // First create tools without forwarder
-      const initialTools = (agentWithSubAgents as any).prepareTextOptions({
+      const initialTools = await (agentWithSubAgents as any).prepareTextOptions({
         historyEntryId: "test-1",
         operationContext: {
           userContext: new Map(),
@@ -2135,7 +2138,7 @@ describe("Agent", () => {
       ).length;
 
       // Then create tools with forwarder
-      const enhancedTools = (agentWithSubAgents as any).prepareTextOptions({
+      const enhancedTools = await (agentWithSubAgents as any).prepareTextOptions({
         internalStreamForwarder: vi.fn(),
         historyEntryId: "test-2",
         operationContext: {
@@ -2162,7 +2165,7 @@ describe("Agent", () => {
         "createDelegateTool",
       );
 
-      (agentWithSubAgents as any).prepareTextOptions({
+      await (agentWithSubAgents as any).prepareTextOptions({
         historyEntryId: testHistoryEntryId,
         operationContext: {
           userContext: new Map(),
@@ -2194,7 +2197,7 @@ describe("Agent", () => {
         "createDelegateTool",
       );
 
-      (agentWithSubAgents as any).prepareTextOptions({
+      await (agentWithSubAgents as any).prepareTextOptions({
         historyEntryId: "test-history-456",
         operationContext: testOperationContext,
       });
@@ -2212,7 +2215,7 @@ describe("Agent", () => {
       // Test the warning case when operationContext is missing
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const textOptions = (agentWithSubAgents as any).prepareTextOptions({
+      const textOptions = await (agentWithSubAgents as any).prepareTextOptions({
         historyEntryId: "test-history-id",
         // operationContext is intentionally missing
       });
@@ -3062,6 +3065,500 @@ describe("Agent", () => {
       // Should not throw despite forwarder error
       await expect(streamPromise).resolves.toBeUndefined();
       expect(events).toHaveLength(1); // Only original event
+    });
+  });
+});
+
+// Dynamic Values Tests
+describe("Agent Dynamic Values", () => {
+  let mockLLM: MockProvider;
+  let agent: Agent<{ llm: MockProvider }>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLLM = new MockProvider({ modelId: "test-model" });
+  });
+
+  describe("Dynamic Instructions", () => {
+    it("should use static instructions when provided as string", () => {
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: "Static instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+      });
+
+      expect(agent.instructions).toBe("Static instructions");
+    });
+
+    it("should resolve dynamic instructions based on user context", async () => {
+      const dynamicInstructions = ({ userContext }: DynamicValueOptions) => {
+        const userRole = userContext.get("userRole");
+        return userRole === "admin" ? "Admin instructions" : "User instructions";
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: dynamicInstructions,
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+      });
+
+      // Test with admin role
+      const adminContext = new Map([["userRole", "admin"]]);
+      const adminResult = await (agent as any).resolveInstructions({ userContext: adminContext });
+      expect(adminResult).toBe("Admin instructions");
+
+      // Test with user role
+      const userContext = new Map([["userRole", "user"]]);
+      const userResult = await (agent as any).resolveInstructions({ userContext: userContext });
+      expect(userResult).toBe("User instructions");
+    });
+
+    it("should handle async dynamic instructions", async () => {
+      const asyncInstructions = async ({ userContext }: DynamicValueOptions) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        const tier = userContext.get("tier");
+        return `Instructions for ${tier} tier`;
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: asyncInstructions,
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+      });
+
+      const context = new Map([["tier", "premium"]]);
+      const result = await (agent as any).resolveInstructions({ userContext: context });
+      expect(result).toBe("Instructions for premium tier");
+    });
+  });
+
+  describe("Dynamic Model", () => {
+    it("should use static model when provided as object", () => {
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "static-model" },
+        llm: mockLLM,
+      });
+
+      expect(agent.model).toEqual({ modelId: "static-model" });
+    });
+
+    it("should resolve dynamic model based on user context", async () => {
+      const dynamicModel = ({ userContext }: DynamicValueOptions) => {
+        const tier = userContext.get("tier");
+        return tier === "enterprise" ? { modelId: "gpt-4" } : { modelId: "gpt-3.5-turbo" };
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: dynamicModel,
+        llm: mockLLM,
+      });
+
+      // Test with enterprise tier
+      const enterpriseContext = new Map([["tier", "enterprise"]]);
+      const enterpriseModel = await (agent as any).resolveModel({ userContext: enterpriseContext });
+      expect(enterpriseModel).toEqual({ modelId: "gpt-4" });
+
+      // Test with basic tier
+      const basicContext = new Map([["tier", "basic"]]);
+      const basicModel = await (agent as any).resolveModel({ userContext: basicContext });
+      expect(basicModel).toEqual({ modelId: "gpt-3.5-turbo" });
+    });
+  });
+
+  describe("Dynamic Tools", () => {
+    it("should resolve dynamic tools based on user context", async () => {
+      const basicTool = createTool({
+        name: "basic-tool",
+        description: "A basic tool",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("basic result"),
+      });
+
+      const adminTool = createTool({
+        name: "admin-tool",
+        description: "An admin tool",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("admin result"),
+      });
+
+      const dynamicTools = ({ userContext }: DynamicValueOptions) => {
+        const permissions = userContext.get("permissions") as string[];
+        const tools = [basicTool];
+        if (permissions?.includes("admin")) {
+          tools.push(adminTool);
+        }
+        return tools;
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        tools: dynamicTools,
+        llm: mockLLM,
+      });
+
+      // Test with admin permissions
+      const adminContext = new Map([["permissions", ["admin", "user"]]]);
+      const adminTools = await (agent as any).resolveTools({ userContext: adminContext });
+      expect(adminTools).toHaveLength(2);
+      expect(adminTools[0].name).toBe("basic-tool");
+      expect(adminTools[1].name).toBe("admin-tool");
+
+      // Test with user permissions only
+      const userContext = new Map([["permissions", ["user"]]]);
+      const userTools = await (agent as any).resolveTools({ userContext: userContext });
+      expect(userTools).toHaveLength(1);
+      expect(userTools[0].name).toBe("basic-tool");
+    });
+
+    it("should handle toolkits in dynamic tools", async () => {
+      const mockToolkit: Toolkit = {
+        name: "test-toolkit",
+        description: "A test toolkit",
+        tools: [],
+        addInstructions: false,
+      };
+
+      const dynamicTools = ({ userContext }: DynamicValueOptions) => {
+        const hasToolkits = userContext.get("hasToolkits");
+        return hasToolkits ? [mockToolkit] : [];
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        tools: dynamicTools,
+        llm: mockLLM,
+      });
+
+      const context = new Map([["hasToolkits", true]]);
+      const result = await (agent as any).resolveTools({ userContext: context });
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe("test-toolkit");
+    });
+  });
+
+  describe("Integration Tests", () => {
+    it("should use dynamic values during text generation", async () => {
+      const dynamicInstructions = ({ userContext }: DynamicValueOptions) => {
+        const role = userContext.get("role");
+        return `You are a ${role} assistant.`;
+      };
+
+      const dynamicTools = ({ userContext }: DynamicValueOptions) => {
+        const permissions = userContext.get("permissions") as string[];
+        const tools: Tool<any>[] = [];
+        if (permissions?.includes("search")) {
+          tools.push(
+            createTool({
+              name: "search",
+              description: "Search tool",
+              parameters: z.object({}),
+              execute: vi.fn().mockResolvedValue("search result"),
+            }),
+          );
+        }
+        return tools;
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: dynamicInstructions,
+        model: { modelId: "test-model" },
+        tools: dynamicTools,
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const userContext = new Map<string | symbol, unknown>([
+        ["role", "support"],
+        ["permissions", ["search", "read"]],
+      ]);
+
+      const result = await agent.generateText("Hello", { userContext });
+      // Mock'un döndürdüğü sabit string (her zaman 'Hello, I am a test agent!' dönüyor)
+      expect(result.text).toBe("Hello, I am a test agent!");
+    });
+
+    it("should handle empty user context gracefully", async () => {
+      const dynamicInstructions = ({ userContext }: DynamicValueOptions) => {
+        const role = userContext.get("role") || "default";
+        return `You are a ${role} assistant.`;
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: dynamicInstructions,
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+      });
+
+      const result = await (agent as any).resolveInstructions({ userContext: new Map() });
+      expect(result).toBe("You are a default assistant.");
+    });
+
+    it("should resolve dynamic instructions during getSystemMessage", async () => {
+      const dynamicInstructions = ({ userContext }: DynamicValueOptions) => {
+        const role = userContext.get("role");
+        return `You are a ${role} assistant with special privileges.`;
+      };
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: dynamicInstructions,
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+      });
+
+      const operationContext = {
+        userContext: new Map([["role", "admin"]]),
+        operationId: "test-op",
+        historyEntry: { id: "test-history" },
+        isActive: true,
+      } as any;
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history",
+        contextMessages: [],
+        operationContext,
+      });
+
+      expect(systemMessage.content).toContain(
+        "You are Test Agent. You are a admin assistant with special privileges.",
+      );
+    });
+
+    it("should resolve dynamic model during text generation", async () => {
+      const dynamicModel = ({ userContext }: DynamicValueOptions) => {
+        const tier = userContext.get("tier");
+        return tier === "premium" ? { modelId: "premium-model" } : { modelId: "basic-model" };
+      };
+
+      const generateTextSpy = vi.spyOn(mockLLM, "generateText");
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: dynamicModel,
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const userContext = new Map([["tier", "premium"]]);
+      await agent.generateText("Hello", { userContext });
+
+      // Verify that the resolved model was used
+      expect(generateTextSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: { modelId: "premium-model" },
+        }),
+      );
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should resolve dynamic tools during text generation", async () => {
+      const adminTool = createTool({
+        name: "admin-panel",
+        description: "Admin panel access",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("admin accessed"),
+      });
+
+      const dynamicTools = ({ userContext }: DynamicValueOptions) => {
+        const isAdmin = userContext.get("isAdmin");
+        return isAdmin ? [adminTool] : [];
+      };
+
+      const generateTextSpy = vi.spyOn(mockLLM, "generateText");
+
+      agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        tools: dynamicTools,
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const userContext = new Map([["isAdmin", true]]);
+      await agent.generateText("Hello", { userContext });
+
+      // Verify that the resolved tools were passed to LLM
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.tools).toBeDefined();
+      expect(callArgs.tools?.some((tool) => tool.name === "admin-panel")).toBe(true);
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should resolve all dynamic values together in complex scenario", async () => {
+      const dynamicInstructions = ({ userContext }: DynamicValueOptions) => {
+        const department = userContext.get("department");
+        return `You are a ${department} department assistant.`;
+      };
+
+      const dynamicModel = ({ userContext }: DynamicValueOptions) => {
+        const priority = userContext.get("priority");
+        return priority === "high" ? { modelId: "fast-model" } : { modelId: "standard-model" };
+      };
+
+      const hrTool = createTool({
+        name: "hr-tool",
+        description: "HR operations",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("hr result"),
+      });
+
+      const finTool = createTool({
+        name: "finance-tool",
+        description: "Finance operations",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("finance result"),
+      });
+
+      const dynamicTools = ({ userContext }: DynamicValueOptions) => {
+        const department = userContext.get("department");
+        return department === "hr" ? [hrTool] : department === "finance" ? [finTool] : [];
+      };
+
+      const generateTextSpy = vi.spyOn(mockLLM, "generateText");
+
+      agent = new Agent({
+        name: "Corporate Agent",
+        instructions: dynamicInstructions,
+        model: dynamicModel,
+        tools: dynamicTools,
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const userContext = new Map([
+        ["department", "hr"],
+        ["priority", "high"],
+        ["userId", "emp123"],
+      ]);
+
+      await agent.generateText("What can I help you with?", { userContext });
+
+      const callArgs = generateTextSpy.mock.calls[0][0];
+
+      // Verify dynamic model was resolved
+      expect(callArgs.model).toEqual({ modelId: "fast-model" });
+
+      // Verify dynamic tools were resolved
+      expect(callArgs.tools?.some((tool) => tool.name === "hr-tool")).toBe(true);
+      expect(callArgs.tools?.some((tool) => tool.name === "finance-tool")).toBe(false);
+
+      // Verify dynamic instructions were used in system message
+      const systemMessage = callArgs.messages[0];
+      expect(systemMessage.content).toContain(
+        "You are Corporate Agent. You are a hr department assistant.",
+      );
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should work with streamText and dynamic values", async () => {
+      const dynamicModel = ({ userContext }: DynamicValueOptions) => {
+        const model = userContext.get("preferredModel") as string;
+        return { modelId: model || "default-model" };
+      };
+
+      const streamTextSpy = vi.spyOn(mockLLM, "streamText");
+
+      agent = new Agent({
+        name: "Streaming Agent",
+        instructions: "I stream responses",
+        model: dynamicModel,
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const userContext = new Map([["preferredModel", "streaming-model"]]);
+      await agent.streamText("Stream this", { userContext });
+
+      // Verify that dynamic model was resolved for streaming
+      expect(streamTextSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: { modelId: "streaming-model" },
+        }),
+      );
+
+      streamTextSpy.mockRestore();
+    });
+
+    it("should resolve dynamic values for generateObject", async () => {
+      const dynamicModel = ({ userContext }: DynamicValueOptions) => {
+        const useAdvanced = userContext.get("useAdvanced");
+        return useAdvanced ? { modelId: "advanced-model" } : { modelId: "basic-model" };
+      };
+
+      const generateObjectSpy = vi.spyOn(mockLLM, "generateObject");
+
+      agent = new Agent({
+        name: "Object Agent",
+        instructions: "I generate objects",
+        model: dynamicModel,
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      const userContext = new Map([["useAdvanced", true]]);
+      await agent.generateObject("Generate person", schema, { userContext });
+
+      // Verify that dynamic model was used
+      expect(generateObjectSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: { modelId: "advanced-model" },
+        }),
+      );
+
+      generateObjectSpy.mockRestore();
+    });
+
+    it("should handle async dynamic model resolution", async () => {
+      const asyncDynamicModel = async ({ userContext }: DynamicValueOptions) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        const tier = userContext.get("tier");
+        return { modelId: `async-${tier}-model` };
+      };
+
+      const generateTextSpy = vi.spyOn(mockLLM, "generateText");
+
+      agent = new Agent({
+        name: "Async Agent",
+        instructions: "I use async model resolution",
+        model: asyncDynamicModel,
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const userContext = new Map([["tier", "enterprise"]]);
+      await agent.generateText("Test async", { userContext });
+
+      expect(generateTextSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: { modelId: "async-enterprise-model" },
+        }),
+      );
+
+      generateTextSpy.mockRestore();
     });
   });
 });

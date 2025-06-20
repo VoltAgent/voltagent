@@ -199,11 +199,11 @@ const config: Config = {
     ],
   ],
   themeConfig: {
-    image: "img/social2.png",
+    image: "img/social3.png",
     announcementBar: {
       id: "support_us",
       content:
-        "<a target='_blank' rel='noopener noreferrer' href='https://github.com/voltagent/voltagent'>⭐️ You can support us by giving a star on GitHub to help us reach more developers!</a>",
+        "<a target='_blank' rel='noopener noreferrer' href='https://github.com/VoltAgent/voltagent/stargazers'>⭐️ Join our GitHub community!</a>",
       backgroundColor: "#10b981",
       textColor: "#000000",
       isCloseable: true,

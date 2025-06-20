@@ -111,10 +111,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -142,7 +142,7 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -155,7 +155,7 @@ importers:
         specifier: ^20.10.4
         version: 20.17.30
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       tsx:
         specifier: ^4.6.2
@@ -189,10 +189,10 @@ importers:
         specifier: ^0.1.11
         version: link:../../packages/anthropic-ai
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       zod:
         specifier: 3.24.2
@@ -214,10 +214,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -242,10 +242,38 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
+        version: link:../../packages/core
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.13
+        version: link:../../packages/vercel-ai
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.15.21
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.3
+
+  examples/with-dynamic-parameters:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^1.3.10
+        version: 1.3.10(zod@3.24.2)
+      '@voltagent/cli':
+        specifier: ^0.1.9
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -267,10 +295,10 @@ importers:
   examples/with-google-ai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.4.0
@@ -393,10 +421,10 @@ importers:
   examples/with-google-vertex-ai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.4.0
@@ -418,10 +446,10 @@ importers:
   examples/with-groq-ai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/groq-ai':
         specifier: ^0.1.13
@@ -446,10 +474,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^0.1.4
@@ -477,10 +505,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -514,10 +542,10 @@ importers:
         specifier: ^4.1.4
         version: 4.1.4
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -569,10 +597,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -609,10 +637,10 @@ importers:
         specifier: ^1.51.1
         version: 1.52.0
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -649,10 +677,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/postgres':
         specifier: ^0.1.5
@@ -680,10 +708,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -708,10 +736,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -736,10 +764,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -767,13 +795,13 @@ importers:
         specifier: ^2.49.4
         version: 2.49.4
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/supabase':
-        specifier: ^0.1.11
+        specifier: ^0.1.12
         version: link:../../packages/supabase
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -798,10 +826,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -826,10 +854,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -854,10 +882,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -882,10 +910,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -910,10 +938,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -941,10 +969,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -978,10 +1006,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -1015,10 +1043,10 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -1040,10 +1068,10 @@ importers:
   examples/with-xsai:
     dependencies:
       '@voltagent/cli':
-        specifier: ^0.1.7
+        specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.38
+        specifier: ^0.1.39
         version: link:../../packages/core
       '@voltagent/xsai':
         specifier: ^0.2.3
@@ -1071,7 +1099,7 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~0.1.38
+        specifier: ~0.1.39
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ~0.1.13
@@ -1135,6 +1163,9 @@ importers:
       figlet:
         specifier: ^1.7.0
         version: 1.8.0
+      fs-extra:
+        specifier: ^11.1.1
+        version: 11.3.0
       inquirer:
         specifier: ^8.2.6
         version: 8.2.6
@@ -1163,6 +1194,9 @@ importers:
       '@types/figlet':
         specifier: ^1.5.8
         version: 1.7.0
+      '@types/fs-extra':
+        specifier: ^11.0.4
+        version: 11.0.4
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.7
@@ -1349,6 +1383,31 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
+  packages/docs-mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.0.0
+        version: 1.12.1
+      '@voltagent/core':
+        specifier: ^0.1.39
+        version: link:../core
+      zod:
+        specifier: ^3.23.8
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.0.3
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(@swc/core@1.5.29)(typescript@5.8.3)
+      typescript:
+        specifier: ^5.0.4
+        version: 5.8.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.0.3)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+
   packages/google-ai:
     dependencies:
       '@google/genai':
@@ -1526,7 +1585,7 @@ importers:
         specifier: ^2.49.4
         version: 2.49.4
       '@voltagent/core':
-        specifier: ^0.1.37
+        specifier: ^0.1.39
         version: link:../core
     devDependencies:
       '@types/node':
@@ -5820,7 +5879,7 @@ packages:
       '@inquirer/figures': 1.0.11
       '@inquirer/type': 2.0.0
       '@types/mute-stream': 0.0.4
-      '@types/node': 22.14.0
+      '@types/node': 22.15.21
       '@types/wrap-ansi': 3.0.0
       ansi-escapes: 4.3.2
       cli-width: 4.1.0
@@ -6028,7 +6087,7 @@ packages:
     dependencies:
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       jest-mock: 29.7.0
     dev: true
 
@@ -6055,7 +6114,7 @@ packages:
     dependencies:
       '@jest/types': 29.6.3
       '@sinonjs/fake-timers': 10.3.0
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       jest-message-util: 29.7.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
@@ -6088,7 +6147,7 @@ packages:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.25
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       chalk: 4.1.2
       collect-v8-coverage: 1.0.2
       exit: 0.1.2
@@ -9120,7 +9179,7 @@ packages:
     dependencies:
       '@types/http-cache-semantics': 4.0.4
       '@types/keyv': 3.1.4
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       '@types/responselike': 1.0.3
     dev: true
 
@@ -9175,7 +9234,7 @@ packages:
   /@types/graceful-fs@4.1.9:
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
     dependencies:
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
     dev: true
 
   /@types/gradient-string@1.1.6:
@@ -9237,7 +9296,7 @@ packages:
   /@types/keyv@3.1.4:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
     dependencies:
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
 
   /@types/mdast@4.0.4:
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
@@ -9260,13 +9319,13 @@ packages:
   /@types/mute-stream@0.0.4:
     resolution: {integrity: sha512-CPM9nzrCPPJHQNA9keH9CVkVI+WR5kMa+7XEs5jcGQ0VoAGnLv242w8lIVgwAEfmE4oufJRaTc9PNLQl0ioAow==}
     dependencies:
-      '@types/node': 22.14.0
+      '@types/node': 20.19.0
     dev: false
 
   /@types/node-fetch@2.6.12:
     resolution: {integrity: sha512-8nneRWKCg3rMtF69nLQJnOYUcbafYeFSjqkw3jCRLsqkWFlHaoQrr5mXmofFGOx3DKn7UfmBMyov8ySvLRVldA==}
     dependencies:
-      '@types/node': 22.14.0
+      '@types/node': 20.19.0
       form-data: 4.0.2
     dev: false
 
@@ -9304,12 +9363,12 @@ packages:
     resolution: {integrity: sha512-Kmpl+z84ILoG+3T/zQFyAJsU6EPTmOCj8/2+83fSN6djd6I4o7uOuGIH6vq3PrjY5BGitSbFuMN18j3iknubbA==}
     dependencies:
       undici-types: 6.21.0
+    dev: true
 
   /@types/node@22.15.21:
     resolution: {integrity: sha512-EV/37Td6c+MgKAbkcLG6vqZ2zEYHD7bvSrzqqs2RIhbA6w3x+Dqz8MZM3sP6kGTeLrdoOgKZe+Xja7tUB2DNkQ==}
     dependencies:
       undici-types: 6.21.0
-    dev: true
 
   /@types/node@22.15.3:
     resolution: {integrity: sha512-lX7HFZeHf4QG/J7tBZqrCAXwz9J5RD56Y6MpP0eJkka8p+K0RY/yBTW7CYFJ4VGCclxqOLKmiGP5juQc6MKgcw==}
@@ -9359,7 +9418,7 @@ packages:
   /@types/responselike@1.0.3:
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
     dependencies:
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
 
   /@types/retry@0.12.0:
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
@@ -10853,7 +10912,7 @@ packages:
       assertion-error: 2.0.1
       check-error: 2.1.1
       deep-eql: 5.0.2
-      loupe: 3.1.3
+      loupe: 3.1.4
       pathval: 2.0.0
     dev: true
 
@@ -13501,7 +13560,7 @@ packages:
   /groq-sdk@0.20.1:
     resolution: {integrity: sha512-I/U7mHDcanKHR/P0oKSSS0M6oHR69G1QgtMplqmF3gSejJ5ihV7l+/0OqbNoqOzYoQKG4XH7O4zCqMoTKCztQQ==}
     dependencies:
-      '@types/node': 18.19.112
+      '@types/node': 18.16.9
       '@types/node-fetch': 2.6.12
       abort-controller: 3.0.0
       agentkeepalive: 4.6.0
@@ -14307,7 +14366,7 @@ packages:
       '@jest/expect': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.5.3
@@ -14471,7 +14530,7 @@ packages:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
     dev: true
@@ -14538,7 +14597,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       jest-util: 29.7.0
     dev: true
 
@@ -14593,7 +14652,7 @@ packages:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       chalk: 4.1.2
       emittery: 0.13.1
       graceful-fs: 4.2.11
@@ -14624,7 +14683,7 @@ packages:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       chalk: 4.1.2
       cjs-module-lexer: 1.4.3
       collect-v8-coverage: 1.0.2
@@ -14713,7 +14772,7 @@ packages:
     resolution: {integrity: sha512-eIz2msL/EzL9UFTFFx7jBTkeZfku0yUAyZZZmJ93H2TYEiroIx2PQjEXcwYtYl8zXCxb+PAmA2hLIt/6ZEkPHw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@types/node': 18.16.9
+      '@types/node': 20.19.0
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -16960,7 +17019,7 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@types/node': 18.19.112
+      '@types/node': 18.16.9
       '@types/node-fetch': 2.6.12
       abort-controller: 3.0.0
       agentkeepalive: 4.6.0
@@ -16984,7 +17043,7 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@types/node': 18.19.112
+      '@types/node': 18.16.9
       '@types/node-fetch': 2.6.12
       abort-controller: 3.0.0
       agentkeepalive: 4.6.0
@@ -19818,7 +19877,7 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
     dependencies:
-      esbuild: 0.25.2
+      esbuild: 0.25.5
       get-tsconfig: 4.10.0
     optionalDependencies:
       fsevents: 2.3.3
@@ -21606,7 +21665,7 @@ packages:
   /zod-from-json-schema@0.4.1:
     resolution: {integrity: sha512-SquQhdDg2176+A3XTha5AcmZt+7V0wjJiZhxkO+mnQsxhRr1VI6gVkOzm0G4J8j/LKdOiXA/9fXYFBk+HZ8I+g==}
     dependencies:
-      zod: 3.25.48
+      zod: 3.25.67
     dev: false
 
   /zod-to-json-schema@3.24.5(zod@3.24.2):
@@ -21639,10 +21698,6 @@ packages:
 
   /zod@3.25.32:
     resolution: {integrity: sha512-OSm2xTIRfW8CV5/QKgngwmQW/8aPfGdaQFlrGoErlgg/Epm7cjb6K6VEyExfe65a3VybUOnu381edLb0dfJl0g==}
-    dev: false
-
-  /zod@3.25.48:
-    resolution: {integrity: sha512-0X1mz8FtgEIvaxGjdIImYpZEaZMrund9pGXm3M6vM7Reba0e2eI71KPjSCGXBfwKDPwPoywf6waUKc3/tFvX2Q==}
     dev: false
 
   /zod@3.25.67:

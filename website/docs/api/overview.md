@@ -110,6 +110,7 @@ When using the generation endpoints (`/text`, `/stream`, `/object`, `/stream-obj
 | `seed`             | Optional integer seed for reproducible results.                               | `number` (integer)  | -       |
 | `stopSequences`    | An array of strings that will stop generation if encountered.                 | `array` of `string` | -       |
 | `extraOptions`     | A key-value object for provider-specific options.                             | `object`            | -       |
+| `userContext`      | A key-value object for dynamic agent context (roles, tiers, etc.).            | `object`            | -       |
 
 ## OpenAPI Specification
 
@@ -449,6 +450,94 @@ Common HTTP status codes:
 
 - `404`: Agent not found
 - `500`: Internal server error (e.g., invalid schema, agent processing error)
+
+## Passing User Context for Dynamic Agents
+
+For dynamic agents that adapt their behavior based on user context, you can pass a `userContext` object in the request options. This allows agents to dynamically adjust their instructions, models, and tools based on user roles, subscription tiers, languages, or any other contextual information.
+
+### User Context Format
+
+The `userContext` should be a flat key-value object where keys are strings and values can be any JSON-serializable data:
+
+```json
+{
+  "input": "Help me with my account",
+  "options": {
+    "userContext": {
+      "role": "premium_user",
+      "language": "Spanish",
+      "tier": "pro",
+      "userId": "user-123",
+      "company": "TechCorp"
+    },
+    "temperature": 0.7,
+    "maxTokens": 500
+  }
+}
+```
+
+### Example API Calls with User Context
+
+**Text Generation with User Context:**
+
+```bash
+curl -X POST http://localhost:3141/agents/dynamic-agent/text \
+     -H "Content-Type: application/json" \
+     -d '{
+       "input": "I need help with system administration",
+       "options": {
+         "userContext": {
+           "role": "admin",
+           "language": "English",
+           "tier": "enterprise"
+         },
+         "temperature": 0.8
+       }
+     }'
+```
+
+**Streaming with User Context:**
+
+```bash
+curl -N -X POST http://localhost:3141/agents/dynamic-agent/stream \
+     -H "Content-Type: application/json" \
+     -d '{
+       "input": "What are my available options?",
+       "options": {
+         "userContext": {
+           "role": "customer",
+           "language": "French",
+           "tier": "basic"
+         }
+       }
+     }'
+```
+
+**Object Generation with User Context:**
+
+```bash
+curl -X POST http://localhost:3141/agents/dynamic-agent/object \
+     -H "Content-Type: application/json" \
+     -d '{
+       "input": "Extract user information from: John is a premium admin from TechCorp",
+       "schema": {
+         "type": "object",
+         "properties": {
+           "name": {"type": "string"},
+           "role": {"type": "string"},
+           "tier": {"type": "string"}
+         }
+       },
+       "options": {
+         "userContext": {
+           "extractionMode": "detailed",
+           "language": "English"
+         }
+       }
+     }'
+```
+
+The dynamic agent will receive this context and adapt its behavior accordingly - using different instructions, models, or tools based on the provided context values.
 
 ### Streaming Endpoints (SSE)
 

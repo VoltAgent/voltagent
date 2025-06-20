@@ -432,6 +432,63 @@ const agent = new Agent({
 
 [Learn more about Hooks](./hooks.md)
 
+### Dynamic Agents
+
+**Why?** To create adaptive AI agents that change their behavior, capabilities, and configuration based on runtime context. Instead of having fixed instructions, models, or tools, you can define functions that dynamically determine these properties based on user context, request parameters, or any other runtime information.
+
+Dynamic agents are perfect for multi-tenant applications, role-based access control, subscription tiers, internationalization, and A/B testing scenarios.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const dynamicAgent = new Agent({
+  name: "Adaptive Assistant",
+
+  // Dynamic instructions based on user context
+  instructions: ({ userContext }) => {
+    const role = (userContext.get("role") as string) || "user";
+    const language = (userContext.get("language") as string) || "English";
+
+    if (role === "admin") {
+      return `You are an admin assistant with special privileges. Respond in ${language}.`;
+    } else {
+      return `You are a helpful assistant. Respond in ${language}.`;
+    }
+  },
+
+  // Dynamic model based on subscription tier
+  model: ({ userContext }) => {
+    const tier = (userContext.get("tier") as string) || "free";
+
+    switch (tier) {
+      case "premium":
+        return openai("gpt-4o");
+      case "pro":
+        return openai("gpt-4o-mini");
+      default:
+        return openai("gpt-3.5-turbo");
+    }
+  },
+
+  llm: new VercelAIProvider(),
+});
+
+// Use with context
+const userContext = new Map<string, unknown>();
+userContext.set("role", "admin");
+userContext.set("language", "Spanish");
+userContext.set("tier", "premium");
+
+const response = await dynamicAgent.generateText("Help me manage the system settings", {
+  userContext: userContext,
+});
+// The agent will respond in Spanish, with admin capabilities, using the premium model
+```
+
+[Learn more about Dynamic Agents](./dynamic-agents.md)
+
 ### Operation Context (`userContext`)
 
 **Why?** To pass custom, request-specific data between different parts of an agent's execution flow (like hooks and tools) for a single operation, without affecting other concurrent or subsequent operations. Useful for tracing, logging, metrics, or passing temporary configuration.

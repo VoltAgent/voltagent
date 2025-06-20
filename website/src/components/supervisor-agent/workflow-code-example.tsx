@@ -184,7 +184,6 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
 
             // Wait 2 seconds then show the final beam to User
             setTimeout(() => {
-              console.log("Setting currentBeam to 8 after thinking"); // Debug
               setCurrentBeam(8); // Show final beam to User AFTER thinking
               setSupervisorProcessing(false);
             }, 2000);

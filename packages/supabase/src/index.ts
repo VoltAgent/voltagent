@@ -5,14 +5,16 @@ import {
   type CreateConversationInput,
   type Memory,
   type MemoryMessage,
+  type MemoryOptions,
   type MessageFilterOptions,
   safeJsonParse,
 } from "@voltagent/core";
 import type { NewTimelineEvent } from "@voltagent/core";
 
-export interface SupabaseMemoryOptions {
-  supabaseUrl: string;
-  supabaseKey: string;
+export interface SupabaseMemoryOptions extends MemoryOptions {
+  supabaseUrl?: string;
+  supabaseKey?: string;
+  client?: SupabaseClient;
   tableName?: string; // Base table name, defaults to "voltagent_memory"
   debug?: boolean; // Whether to enable debug logging, defaults to false
 }
@@ -25,6 +27,7 @@ export interface SupabaseMemoryOptions {
  * - Automatic migration from old schema to new schema
  * - PostgreSQL-optimized queries through Supabase
  * - Real-time capabilities through Supabase subscriptions
+ * - Storage limits for managing message history
  *
  * @see {@link https://voltagent.ai/docs/agents/memory/supabase | Supabase Storage Documentation}
  */
@@ -32,25 +35,28 @@ export class SupabaseMemory implements Memory {
   private client: SupabaseClient;
   private baseTableName: string;
   private debug: boolean;
+  private options: SupabaseMemoryOptions;
   private initialized: Promise<void>;
 
-  constructor(
-    options:
-      | SupabaseMemoryOptions
-      | { client: SupabaseClient; tableName?: string; debug?: boolean },
-  ) {
-    if ("client" in options) {
-      this.client = options.client;
-      this.baseTableName = options.tableName || "voltagent_memory";
-      this.debug = options.debug || false;
-    } else {
-      if (!options.supabaseUrl || !options.supabaseKey) {
-        throw new Error("Supabase URL and Key are required when client is not provided.");
-      }
-      this.client = createClient(options.supabaseUrl, options.supabaseKey);
-      this.baseTableName = options.tableName || "voltagent_memory";
-      this.debug = options.debug || false;
+  constructor(options: SupabaseMemoryOptions) {
+    if (!options.client && (!options.supabaseUrl || !options.supabaseKey)) {
+      throw new Error("Either provide a 'client' or both 'supabaseUrl' and 'supabaseKey'");
     }
+
+    if (options.client && (options.supabaseUrl || options.supabaseKey)) {
+      throw new Error(
+        "Cannot provide both 'client' and 'supabaseUrl/supabaseKey'. Choose one approach.",
+      );
+    }
+    this.client = options.client || createClient(options.supabaseUrl!, options.supabaseKey!);
+    this.baseTableName = options.tableName || "voltagent_memory";
+    this.debug = options.debug || false;
+    this.options = {
+      ...options,
+      storageLimit: options.storageLimit ?? 100,
+      tableName: options.tableName || "voltagent_memory",
+      debug: options.debug || false,
+    };
 
     // Initialize the database and run migration if needed
     this.initialized = this.initializeDatabase();
@@ -511,6 +517,8 @@ ON ${this.historyTable}(conversation_id);`);
   // --- Start Memory Interface Implementation ---
 
   public async addMessage(message: MemoryMessage, conversationId: string): Promise<void> {
+    await this.initialized;
+
     // Ensure message has necessary fields
     const record = {
       conversation_id: conversationId,
@@ -530,11 +538,77 @@ ON ${this.historyTable}(conversation_id);`);
       throw new Error(`Failed to add message: ${error.message}`);
     }
 
-    // TODO: Add logic to handle storage limits similar to LibSQLStorage if needed
+    // Apply storage limit if specified and greater than 0
+    if (this.options.storageLimit && this.options.storageLimit > 0) {
+      await this.pruneOldMessages(conversationId);
+    }
+
+    this.debugLog(`Added message for conversation ${conversationId}`);
+  }
+
+  /**
+   * Prune old messages to respect storage limit
+   * @param conversationId Conversation ID to prune messages for
+   */
+  private async pruneOldMessages(conversationId: string): Promise<void> {
+    const limit = this.options.storageLimit || 100;
+
+    try {
+      // Get the count of messages for this conversation
+      const { count, error: countError } = await this.client
+        .from(this.messagesTable)
+        .select("*", { count: "exact", head: true })
+        .eq("conversation_id", conversationId);
+
+      if (countError) {
+        this.debugLog("Error counting messages:", countError);
+        return;
+      }
+
+      const messageCount = count || 0;
+
+      if (messageCount > limit) {
+        // Get the oldest messages to delete
+        const deleteCount = messageCount - limit;
+
+        const { data: oldestMessages, error: selectError } = await this.client
+          .from(this.messagesTable)
+          .select("message_id")
+          .eq("conversation_id", conversationId)
+          .order("created_at", { ascending: true })
+          .limit(deleteCount);
+
+        if (selectError) {
+          this.debugLog("Error selecting oldest messages:", selectError);
+          return;
+        }
+
+        if (oldestMessages && oldestMessages.length > 0) {
+          const messageIds = oldestMessages.map((msg) => msg.message_id);
+
+          const { error: deleteError } = await this.client
+            .from(this.messagesTable)
+            .delete()
+            .eq("conversation_id", conversationId)
+            .in("message_id", messageIds);
+
+          if (deleteError) {
+            this.debugLog("Error deleting old messages:", deleteError);
+            return;
+          }
+
+          this.debugLog(`Pruned ${deleteCount} old messages for conversation ${conversationId}`);
+        }
+      }
+    } catch (error) {
+      this.debugLog("Error pruning old messages:", error);
+    }
   }
 
   public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
-    const { conversationId, limit, before, after, role } = options;
+    const { conversationId, before, after, role } = options;
+    // Handle the case where limit is explicitly set to 0 (unlimited)
+    const actualLimit = options.limit !== undefined ? options.limit : this.options.storageLimit;
 
     let query = this.client.from(this.messagesTable).select("*"); // Select all columns to reconstruct MemoryMessage
 
@@ -556,8 +630,8 @@ ON ${this.historyTable}(conversation_id);`);
     // Order by creation time, typically ascending for chat history
     query = query.order("created_at", { ascending: true });
 
-    if (limit && limit > 0) {
-      query = query.limit(limit);
+    if (actualLimit && actualLimit > 0) {
+      query = query.limit(actualLimit);
     }
 
     const { data, error } = await query;

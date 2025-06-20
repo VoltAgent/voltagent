@@ -16,8 +16,8 @@
     "volt": "volt"
   },
   "dependencies": {
-    "@voltagent/cli": "^0.1.7",
-    "@voltagent/core": "^0.1.38",
+    "@voltagent/cli": "^0.1.9",
+    "@voltagent/core": "^0.1.39",
     "@voltagent/xsai": "^0.2.3",
     "zod": "3.24.2"
   },

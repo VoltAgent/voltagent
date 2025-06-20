@@ -288,7 +288,15 @@ app.openapi(textRoute, async (c) => {
   try {
     const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
-    const response = await agent.generateText(input, options);
+    // Convert userContext from object to Map if provided
+    const processedOptions = {
+      ...options,
+      ...((options as any).userContext && {
+        userContext: new Map(Object.entries((options as any).userContext)),
+      }),
+    } as any; // Type assertion to bypass userContext type mismatch
+
+    const response = await agent.generateText(input, processedOptions);
 
     // TODO: Fix this once we can force a change to the response type
     const fixBadResponseTypeForBackwardsCompatibility = response as any;
@@ -361,16 +369,21 @@ app.openapi(streamRoute, async (c) => {
             }
           };
 
-          const response = await agent.streamText(input, {
+          // Convert userContext from object to Map if provided
+          const processedStreamOptions = {
             ...options,
-            // No need to pass streamEventForwarder - SubAgent events are now handled automatically
+            ...((options as any).userContext && {
+              userContext: new Map(Object.entries((options as any).userContext)),
+            }),
             provider: {
               maxTokens: options.maxTokens,
               temperature: options.temperature,
               // Note: No onError callback needed - tool errors are handled via fullStream
               // Stream errors are handled by try/catch blocks around fullStream iteration
             },
-          });
+          } as any; // Type assertion to bypass userContext type mismatch
+
+          const response = await agent.streamText(input, processedStreamOptions);
 
           // Iterate through the full stream if available, otherwise fallback to text stream
           try {
@@ -611,7 +624,15 @@ app.openapi(objectRoute, async (c) => {
 
     const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
 
-    const response = await agent.generateObject(input, schemaInZodObject, options);
+    // Convert userContext from object to Map if provided
+    const processedObjectOptions = {
+      ...options,
+      ...((options as any).userContext && {
+        userContext: new Map(Object.entries((options as any).userContext)),
+      }),
+    } as any; // Type assertion to bypass userContext type mismatch
+
+    const response = await agent.generateObject(input, schemaInZodObject, processedObjectOptions);
 
     // TODO: Fix this once we can force a change to the response type
     const fixBadResponseTypeForBackwardsCompatibility = response as any;
@@ -685,8 +706,12 @@ app.openapi(streamObjectRoute, async (c) => {
             }
           };
 
-          const agentStream = await agent.streamObject(input, schemaInZodObject, {
+          // Convert userContext from object to Map if provided
+          const processedStreamObjectOptions = {
             ...options,
+            ...((options as any).userContext && {
+              userContext: new Map(Object.entries((options as any).userContext)),
+            }),
             provider: {
               ...(options as any).provider,
               // Add onError callback to handle streaming errors
@@ -703,7 +728,13 @@ app.openapi(streamObjectRoute, async (c) => {
                 safeClose();
               },
             },
-          });
+          } as any; // Type assertion to bypass userContext type mismatch
+
+          const agentStream = await agent.streamObject(
+            input,
+            schemaInZodObject,
+            processedStreamObjectOptions,
+          );
 
           const reader = agentStream.objectStream.getReader();
 

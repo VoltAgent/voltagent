@@ -1,5 +1,433 @@
 ## Package: @voltagent/core
 
+## 0.1.39
+
+### Patch Changes
+
+- [#276](https://github.com/VoltAgent/voltagent/pull/276) [`937ccf8`](https://github.com/VoltAgent/voltagent/commit/937ccf8bf84a4261ee9ed2c94aab9f8c49ab69bd) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add dynamic agent parameters with userContext support - #272
+
+  Added dynamic agent parameters functionality that allows agents to adapt their behavior, models, and tools based on runtime context. This enables personalized, multi-tenant, and role-based AI experiences.
+
+  ## Features
+
+  - **Dynamic Instructions**: Agent instructions that change based on user context
+  - **Dynamic Models**: Different AI models based on subscription tiers or user roles
+  - **Dynamic Tools**: Role-based tool access and permissions
+  - **REST API Integration**: Full userContext support via REST endpoints
+  - **VoltOps Integration**: Visual testing interface for dynamic agents
+
+  ## Usage
+
+  ```typescript
+  import { Agent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const dynamicAgent = new Agent({
+    name: "Adaptive Assistant",
+
+    // Dynamic instructions based on user context
+    instructions: ({ userContext }) => {
+      const role = (userContext.get("role") as string) || "user";
+      const language = (userContext.get("language") as string) || "English";
+
+      if (role === "admin") {
+        return `You are an admin assistant with special privileges. Respond in ${language}.`;
+      } else {
+        return `You are a helpful assistant. Respond in ${language}.`;
+      }
+    },
+
+    // Dynamic model selection based on subscription tier
+    model: ({ userContext }) => {
+      const tier = (userContext.get("tier") as string) || "free";
+
+      switch (tier) {
+        case "premium":
+          return openai("gpt-4o");
+        case "pro":
+          return openai("gpt-4o-mini");
+        default:
+          return openai("gpt-3.5-turbo");
+      }
+    },
+
+    // Dynamic tools based on user role
+    tools: ({ userContext }) => {
+      const role = (userContext.get("role") as string) || "user";
+
+      if (role === "admin") {
+        return [basicTool, adminTool];
+      } else {
+        return [basicTool];
+      }
+    },
+
+    llm: new VercelAIProvider(),
+  });
+
+  // Usage with userContext
+  const userContext = new Map([
+    ["role", "admin"],
+    ["language", "Spanish"],
+    ["tier", "premium"],
+  ]);
+
+  const response = await dynamicAgent.generateText("Help me manage the system", { userContext });
+  ```
+
+  ## REST API Integration
+
+  Dynamic agents work seamlessly with REST API endpoints:
+
+  ```bash
+  # POST /agents/my-agent/text
+  curl -X POST http://localhost:3141/agents/my-agent/text \
+       -H "Content-Type: application/json" \
+       -d '{
+         "input": "I need admin access",
+         "options": {
+           "userContext": {
+             "role": "admin",
+             "language": "Spanish",
+             "tier": "premium"
+           }
+         }
+       }'
+  ```
+
+  Perfect for multi-tenant applications, role-based access control, subscription tiers, internationalization, and A/B testing scenarios.
+
+## 0.1.38
+
+### Patch Changes
+
+- [#267](https://github.com/VoltAgent/voltagent/pull/267) [`f7e5a34`](https://github.com/VoltAgent/voltagent/commit/f7e5a344a5bcb63d1a225e580f01dfa5886b6a01) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: subagent event ordering and stream injection
+
+  Fixed an issue where subagent events were not being properly included in the main agent's stream before subagent completion. Previously, subagent events (text-delta, tool-call, tool-result, etc.) would sometimes miss being included in the parent agent's real-time stream, causing incomplete event visibility for monitoring and debugging.
+
+## 0.1.37
+
+### Patch Changes
+
+- [#252](https://github.com/VoltAgent/voltagent/pull/252) [`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add userId and conversationId support to agent history tables
+
+  This release adds comprehensive support for `userId` and `conversationId` fields in agent history tables across all memory storage implementations, enabling better conversation tracking and user-specific history management.
+
+  ### New Features
+
+  - **Agent History Enhancement**: Added `userId` and `conversationId` columns to agent history tables
+  - **Cross-Implementation Support**: Consistent implementation across PostgreSQL, Supabase, LibSQL, and In-Memory storage
+  - **Automatic Migration**: Safe schema migrations for existing installations
+  - **Backward Compatibility**: Existing history entries remain functional
+
+  ### Migration Notes
+
+  **PostgreSQL & Supabase**: Automatic schema migration with user-friendly SQL scripts
+  **LibSQL**: Seamless column addition with proper indexing
+  **In-Memory**: No migration required, immediate support
+
+  ### Technical Details
+
+  - **Database Schema**: Added `userid TEXT` and `conversationid TEXT` columns (PostgreSQL uses lowercase)
+  - **Indexing**: Performance-optimized indexes for new columns
+  - **Migration Safety**: Non-destructive migrations with proper error handling
+  - **API Consistency**: Unified interface across all storage implementations
+
+- [#261](https://github.com/VoltAgent/voltagent/pull/261) [`b63fe67`](https://github.com/VoltAgent/voltagent/commit/b63fe675dfca9121862a9dd67a0fae5d39b9db90) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: subAgent event propagation in fullStream for enhanced streaming experience
+
+  Fixed an issue where SubAgent events (text-delta, tool-call, tool-result, reasoning, source, finish) were not being properly forwarded to the parent agent's fullStream. This enhancement improves the streaming experience by ensuring all SubAgent activities are visible in the parent stream with proper metadata (subAgentId, subAgentName) for UI filtering and display.
+
+## 0.1.36
+
+### Patch Changes
+
+- [#251](https://github.com/VoltAgent/voltagent/pull/251) [`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support and subagent event forwarding
+
+  Added `fullStream` support to the core agent system for enhanced streaming with detailed chunk types (text-delta, tool-call, tool-result, reasoning, finish, error). Also improved event forwarding between subagents for better multi-agent workflows. SubAgent events are now fully forwarded to parent agents, with filtering moved to the client side for better flexibility.
+
+  Real-world example:
+
+  ```typescript
+  const response = await agent.streamText("What's the weather in Istanbul?");
+
+  if (response.fullStream) {
+    for await (const chunk of response.fullStream) {
+      // Filter out SubAgent text, reasoning, and source events for cleaner UI
+      if (chunk.subAgentId && chunk.subAgentName) {
+        if (chunk.type === "text" || chunk.type === "reasoning" || chunk.type === "source") {
+          continue; // Skip these events from sub-agents
+        }
+      }
+
+      switch (chunk.type) {
+        case "text-delta":
+          process.stdout.write(chunk.textDelta); // Stream text in real-time
+          break;
+        case "tool-call":
+          console.log(`🔧 Using tool: ${chunk.toolName}`);
+          break;
+        case "tool-result":
+          console.log(`✅ Tool completed: ${chunk.toolName}`);
+          break;
+        case "reasoning":
+          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
+          break;
+        case "finish":
+          console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
+          break;
+      }
+    }
+  }
+  ```
+
+- [#248](https://github.com/VoltAgent/voltagent/pull/248) [`a3b4e60`](https://github.com/VoltAgent/voltagent/commit/a3b4e604e6f79281903ff0c28422e6ee2863b340) Thanks [@alasano](https://github.com/alasano)! - feat(core): add streamable HTTP transport support for MCP
+
+  - Upgrade @modelcontextprotocol/sdk from 1.10.1 to 1.12.1
+  - Add support for streamable HTTP transport (the newer MCP protocol)
+  - Modified existing `type: "http"` to use automatic selection with streamable HTTP → SSE fallback
+  - Added two new transport types:
+    - `type: "sse"` - Force SSE transport only (legacy)
+    - `type: "streamable-http"` - Force streamable HTTP only (no fallback)
+  - Maintain full backward compatibility - existing `type: "http"` configurations continue to work via automatic fallback
+
+  Fixes #246
+
+- [#247](https://github.com/VoltAgent/voltagent/pull/247) [`20119ad`](https://github.com/VoltAgent/voltagent/commit/20119ada182ec5f313a7f46956218d593180e096) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - feat(core): Enhanced server configuration with unified `server` object and Swagger UI control
+
+  Server configuration options have been enhanced with a new unified `server` object for better organization and flexibility while maintaining full backward compatibility.
+
+  **What's New:**
+
+  - **Unified Server Configuration:** All server-related options (`autoStart`, `port`, `enableSwaggerUI`, `customEndpoints`) are now grouped under a single `server` object.
+  - **Swagger UI Control:** Fine-grained control over Swagger UI availability with environment-specific defaults.
+  - **Backward Compatibility:** Legacy individual options are still supported but deprecated.
+  - **Override Logic:** New `server` object takes precedence over deprecated individual options.
+
+  **Migration Guide:**
+
+  **New Recommended Usage:**
+
+  ```typescript
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "My Assistant",
+    instructions: "A helpful assistant",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  new VoltAgent({
+    agents: { agent },
+    server: {
+      autoStart: true,
+      port: 3000,
+      enableSwaggerUI: true,
+      customEndpoints: [
+        {
+          path: "/health",
+          method: "get",
+          handler: async (c) => c.json({ status: "ok" }),
+        },
+      ],
+    },
+  });
+  ```
+
+  **Legacy Usage (Deprecated but Still Works):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { agent },
+    autoStart: true, // @deprecated - use server.autoStart
+    port: 3000, // @deprecated - use server.port
+    customEndpoints: [], // @deprecated - use server.customEndpoints
+  });
+  ```
+
+  **Mixed Usage (Server Object Overrides):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { agent },
+    autoStart: false, // This will be overridden
+    server: {
+      autoStart: true, // This takes precedence
+    },
+  });
+  ```
+
+  **Swagger UI Defaults:**
+
+  - Development (`NODE_ENV !== 'production'`): Swagger UI enabled
+  - Production (`NODE_ENV === 'production'`): Swagger UI disabled
+  - Override with `server.enableSwaggerUI: true/false`
+
+  Resolves [#241](https://github.com/VoltAgent/voltagent/issues/241)
+
+## 0.1.35
+
+### Patch Changes
+
+- [#240](https://github.com/VoltAgent/voltagent/pull/240) [`8605863`](https://github.com/VoltAgent/voltagent/commit/860586377bff11b9e7ba80e06fd26b0098bd334a) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - trim the system prompt so we don't have extra newlines and offset text
+
+## 0.1.34
+
+### Patch Changes
+
+- [#238](https://github.com/VoltAgent/voltagent/pull/238) [`ccdba7a`](https://github.com/VoltAgent/voltagent/commit/ccdba7ac58e284dcda9f6b7bec2c8d2e69892940) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: user messages saving with proper content serialization
+
+  Fixed an issue where user messages were not being saved correctly to storage due to improper content formatting. The message content is now properly stringified when it's not already a string, ensuring consistent storage format across PostgreSQL and LibSQL implementations.
+
+## 0.1.33
+
+### Patch Changes
+
+- [#236](https://github.com/VoltAgent/voltagent/pull/236) [`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Remove userId parameter from addMessage method
+
+  Simplified the `addMessage` method signature by removing the `userId` parameter. This change makes the API cleaner and more consistent with the conversation-based approach where user context is handled at the conversation level.
+
+  ### Changes
+
+  - **Removed**: `userId` parameter from `addMessage` method
+  - **Before**: `addMessage(message: MemoryMessage, userId: string, conversationId: string)`
+  - **After**: `addMessage(message: MemoryMessage, conversationId: string)`
+
+  ### Migration Guide
+
+  If you were calling `addMessage` with a `userId` parameter, simply remove it:
+
+  ```typescript
+  // Before
+  await memory.addMessage(message, conversationId, userId);
+
+  // After
+  await memory.addMessage(message, conversationId);
+  ```
+
+  ### Rationale
+
+  User context is now properly managed at the conversation level, making the API more intuitive and reducing parameter complexity. The user association is handled through the conversation's `userId` property instead of requiring it on every message operation.
+
+  **Breaking Change:**
+
+  This is a minor breaking change. Update your `addMessage` calls to remove the `userId` parameter.
+
+- [#235](https://github.com/VoltAgent/voltagent/pull/235) [`16c2a86`](https://github.com/VoltAgent/voltagent/commit/16c2a863d3ecdc09f09219bd40f2dbf1d789194d) Thanks [@alasano](https://github.com/alasano)! - fix: onHandoff hook invocation to pass arguments as object instead of positional parameters
+
+- [#233](https://github.com/VoltAgent/voltagent/pull/233) [`0d85f0e`](https://github.com/VoltAgent/voltagent/commit/0d85f0e960dbc6e8df6a79a16c775ca7a34043bb) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: adding in missing changeset from [PR #226](https://github.com/VoltAgent/voltagent/pull/226)
+
+## 0.1.32
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+## 0.1.31
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- [#223](https://github.com/VoltAgent/voltagent/pull/223) [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6) Thanks [@omeraplak](https://github.com/omeraplak)! - Add userContext support to retrievers for tracking references and metadata
+
+  Retrievers can now store additional information (like references, sources, citations) in userContext that can be accessed from agent responses. This enables tracking which documents were used to generate responses, perfect for citation systems and audit trails.
+
+  ```ts
+  class MyRetriever extends BaseRetriever {
+    async retrieve(input: string, options: RetrieveOptions): Promise<string> {
+      // Find relevant documents
+      const docs = this.findRelevantDocs(input);
+
+      const references = docs.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        source: doc.source,
+      }));
+      options.userContext.set("references", references);
+
+      return docs.map((doc) => doc.content).join("\n");
+    }
+  }
+
+  // Access references from response
+  const response = await agent.generateText("What is VoltAgent?");
+  const references = response.userContext?.get("references");
+  ```
+
+## 0.1.30
+
+### Patch Changes
+
+- [#201](https://github.com/VoltAgent/voltagent/pull/201) [`04dd320`](https://github.com/VoltAgent/voltagent/commit/04dd3204455b09dc490d1bdfbd0cfeea13c3c409) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: include modelParameters in agent event metadata
+
+  This adds the `modelParameters` field to agent event metadata to improve observability and debugging of model-specific behavior during agent execution.
+
 ## 0.1.29
 
 ### Patch Changes
@@ -856,6 +1284,59 @@
 
 ## Package: @voltagent/anthropic-ai
 
+## 0.1.11
+
+### Patch Changes
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.1.10
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
 ## 0.1.9
 
 ### Patch Changes
@@ -948,6 +1429,59 @@
 
 ## Package: @voltagent/cli
 
+## 0.1.9
+
+### Patch Changes
+
+- [`00d70cb`](https://github.com/VoltAgent/voltagent/commit/00d70cbb570e4d748ab37e177e4e5df869d52e03) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: update VoltAgent docs MCP configs
+
+## 0.1.8
+
+### Patch Changes
+
+- [#278](https://github.com/VoltAgent/voltagent/pull/278) [`85d979d`](https://github.com/VoltAgent/voltagent/commit/85d979d5205f23ab6e3a85e68af6c46fa7c0f648) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce VoltAgent MCP Docs Server for IDE integration
+
+  Added comprehensive MCP (Model Context Protocol) Docs Server integration to enable AI assistants in IDEs to access VoltAgent documentation directly. This feature allows developers to ask their AI assistants questions about VoltAgent directly within their development environment.
+
+  **New Features:**
+
+  - **`@voltagent/docs-mcp`** package: MCP server that provides access to VoltAgent documentation
+  - **CLI MCP commands**: Setup, test, status, and remove MCP configurations
+    - `volt mcp setup` - Interactive setup for Cursor, Windsurf, or VS Code
+    - `volt mcp test` - Test MCP connection and provide usage examples
+    - `volt mcp status` - Show current MCP configuration status
+    - `volt mcp remove` - Remove MCP configuration
+  - **IDE Configuration**: Automatic configuration file generation for supported IDEs
+  - **Multi-IDE Support**: Works with Cursor, Windsurf, and VS Code
+
+  **Usage:**
+
+  ```bash
+  # Setup MCP for your IDE
+  volt mcp setup
+
+  # Test the connection
+  volt mcp test
+
+  # Check status
+  volt mcp status
+  ```
+
+  Once configured, developers can ask their AI assistant questions like:
+
+  - "How do I create an agent in VoltAgent?"
+  - "Is there a VoltAgent example with Next.js?"
+  - "How do I use voice features?"
+  - "What are the latest updates?"
+
+  The MCP server provides real-time access to VoltAgent documentation, examples, and best practices directly within the IDE environment.
+
+## 0.1.7
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
 ## 0.1.6
 
 ### Patch Changes
@@ -1016,6 +1550,59 @@
 
 ## Package: create-voltagent-app
 
+## 0.1.31
+
+### Patch Changes
+
+- [`00d70cb`](https://github.com/VoltAgent/voltagent/commit/00d70cbb570e4d748ab37e177e4e5df869d52e03) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: update VoltAgent docs MCP configs
+
+## 0.1.28
+
+### Patch Changes
+
+- [#278](https://github.com/VoltAgent/voltagent/pull/278) [`85d979d`](https://github.com/VoltAgent/voltagent/commit/85d979d5205f23ab6e3a85e68af6c46fa7c0f648) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce VoltAgent MCP Docs Server for IDE integration
+
+  Added comprehensive MCP (Model Context Protocol) Docs Server integration to enable AI assistants in IDEs to access VoltAgent documentation directly. This feature allows developers to ask their AI assistants questions about VoltAgent directly within their development environment.
+
+  **New Features:**
+
+  - **`@voltagent/docs-mcp`** package: MCP server that provides access to VoltAgent documentation
+  - **CLI MCP commands**: Setup, test, status, and remove MCP configurations
+    - `volt mcp setup` - Interactive setup for Cursor, Windsurf, or VS Code
+    - `volt mcp test` - Test MCP connection and provide usage examples
+    - `volt mcp status` - Show current MCP configuration status
+    - `volt mcp remove` - Remove MCP configuration
+  - **IDE Configuration**: Automatic configuration file generation for supported IDEs
+  - **Multi-IDE Support**: Works with Cursor, Windsurf, and VS Code
+
+  **Usage:**
+
+  ```bash
+  # Setup MCP for your IDE
+  volt mcp setup
+
+  # Test the connection
+  volt mcp test
+
+  # Check status
+  volt mcp status
+  ```
+
+  Once configured, developers can ask their AI assistant questions like:
+
+  - "How do I create an agent in VoltAgent?"
+  - "Is there a VoltAgent example with Next.js?"
+  - "How do I use voice features?"
+  - "What are the latest updates?"
+
+  The MCP server provides real-time access to VoltAgent documentation, examples, and best practices directly within the IDE environment.
+
+## 0.1.26
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
 ## 0.1.21
 
 ### Patch Changes
@@ -1073,7 +1660,135 @@
 
 ---
 
+## Package: @voltagent/docs-mcp
+
+## 0.1.8
+
+### Patch Changes
+
+- [`00d70cb`](https://github.com/VoltAgent/voltagent/commit/00d70cbb570e4d748ab37e177e4e5df869d52e03) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: update VoltAgent docs MCP configs
+
+## 0.1.1
+
+### Patch Changes
+
+- [#278](https://github.com/VoltAgent/voltagent/pull/278) [`85d979d`](https://github.com/VoltAgent/voltagent/commit/85d979d5205f23ab6e3a85e68af6c46fa7c0f648) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce VoltAgent MCP Docs Server for IDE integration
+
+  Added comprehensive MCP (Model Context Protocol) Docs Server integration to enable AI assistants in IDEs to access VoltAgent documentation directly. This feature allows developers to ask their AI assistants questions about VoltAgent directly within their development environment.
+
+  **New Features:**
+
+  - **`@voltagent/docs-mcp`** package: MCP server that provides access to VoltAgent documentation
+  - **CLI MCP commands**: Setup, test, status, and remove MCP configurations
+    - `volt mcp setup` - Interactive setup for Cursor, Windsurf, or VS Code
+    - `volt mcp test` - Test MCP connection and provide usage examples
+    - `volt mcp status` - Show current MCP configuration status
+    - `volt mcp remove` - Remove MCP configuration
+  - **IDE Configuration**: Automatic configuration file generation for supported IDEs
+  - **Multi-IDE Support**: Works with Cursor, Windsurf, and VS Code
+
+  **Usage:**
+
+  ```bash
+  # Setup MCP for your IDE
+  volt mcp setup
+
+  # Test the connection
+  volt mcp test
+
+  # Check status
+  volt mcp status
+  ```
+
+  Once configured, developers can ask their AI assistant questions like:
+
+  - "How do I create an agent in VoltAgent?"
+  - "Is there a VoltAgent example with Next.js?"
+  - "How do I use voice features?"
+  - "What are the latest updates?"
+
+  The MCP server provides real-time access to VoltAgent documentation, examples, and best practices directly within the IDE environment.
+
+- Updated dependencies [[`937ccf8`](https://github.com/VoltAgent/voltagent/commit/937ccf8bf84a4261ee9ed2c94aab9f8c49ab69bd)]:
+  - @voltagent/core@0.1.39
+
+---
+
 ## Package: @voltagent/google-ai
+
+## 0.4.0
+
+### Minor Changes
+
+- [#268](https://github.com/VoltAgent/voltagent/pull/268) [`c5733b9`](https://github.com/VoltAgent/voltagent/commit/c5733b9d2ccb50e807335985362c655c4870072e) Thanks [@luixaviles](https://github.com/luixaviles)! - fix(google-ai): update additionalProperties to avoid zod errors on subagents
+
+  Fixes #114
+
+### Patch Changes
+
+- Updated dependencies [[`f7e5a34`](https://github.com/VoltAgent/voltagent/commit/f7e5a344a5bcb63d1a225e580f01dfa5886b6a01)]:
+  - @voltagent/core@0.1.38
+
+## 0.3.14
+
+### Patch Changes
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.3.13
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
+
+  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
+
+## 0.3.12
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
 
 ## 0.3.11
 
@@ -1249,6 +1964,67 @@
 
 ## Package: @voltagent/groq-ai
 
+## 0.1.13
+
+### Patch Changes
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.1.12
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
+
+  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
+
+## 0.1.11
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
 ## 0.1.10
 
 ### Patch Changes
@@ -1408,6 +2184,15 @@
 
 ## Package: @voltagent/langfuse-exporter
 
+## 0.1.4
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
 ## 0.1.3
 
 ### Patch Changes
@@ -1513,6 +2298,107 @@
 
 ## Package: @voltagent/postgres
 
+## 0.1.5
+
+### Patch Changes
+
+- [#252](https://github.com/VoltAgent/voltagent/pull/252) [`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add userId and conversationId support to agent history tables
+
+  This release adds comprehensive support for `userId` and `conversationId` fields in agent history tables across all memory storage implementations, enabling better conversation tracking and user-specific history management.
+
+  ### New Features
+
+  - **Agent History Enhancement**: Added `userId` and `conversationId` columns to agent history tables
+  - **Cross-Implementation Support**: Consistent implementation across PostgreSQL, Supabase, LibSQL, and In-Memory storage
+  - **Automatic Migration**: Safe schema migrations for existing installations
+  - **Backward Compatibility**: Existing history entries remain functional
+
+  ### Migration Notes
+
+  **PostgreSQL & Supabase**: Automatic schema migration with user-friendly SQL scripts
+  **LibSQL**: Seamless column addition with proper indexing
+  **In-Memory**: No migration required, immediate support
+
+  ### Technical Details
+
+  - **Database Schema**: Added `userid TEXT` and `conversationid TEXT` columns (PostgreSQL uses lowercase)
+  - **Indexing**: Performance-optimized indexes for new columns
+  - **Migration Safety**: Non-destructive migrations with proper error handling
+  - **API Consistency**: Unified interface across all storage implementations
+
+- Updated dependencies [[`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547), [`b63fe67`](https://github.com/VoltAgent/voltagent/commit/b63fe675dfca9121862a9dd67a0fae5d39b9db90)]:
+  - @voltagent/core@0.1.37
+
+## 0.1.4
+
+### Patch Changes
+
+- [#236](https://github.com/VoltAgent/voltagent/pull/236) [`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: PostgreSQL string literal syntax error in timeline events table
+
+  Fixed PostgreSQL syntax error where `level TEXT DEFAULT "INFO"` was using double quotes instead of single quotes for string literals. This resolves table creation failures during fresh installations and migrations.
+
+  ### Changes
+
+  - **Fixed**: `level TEXT DEFAULT "INFO"` → `level TEXT DEFAULT 'INFO'`
+  - **Affects**: Timeline events table creation in both fresh installations and migrations
+  - **Impact**: PostgreSQL database setup now works without syntax errors
+
+  ### Technical Details
+
+  PostgreSQL requires single quotes for string literals and double quotes for identifiers. The timeline events table creation was failing due to incorrect quote usage for the default value.
+
+  **Migration Notes:**
+
+  - Existing installations with timeline events table will not be affected
+  - Fresh installations will now complete successfully
+  - No manual intervention required
+
+- Updated dependencies [[`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416), [`16c2a86`](https://github.com/VoltAgent/voltagent/commit/16c2a863d3ecdc09f09219bd40f2dbf1d789194d), [`0d85f0e`](https://github.com/VoltAgent/voltagent/commit/0d85f0e960dbc6e8df6a79a16c775ca7a34043bb)]:
+  - @voltagent/core@0.1.33
+
+## 0.1.3
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.1.2
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
 ## 0.1.1
 
 ### Patch Changes
@@ -1530,6 +2416,15 @@
 ---
 
 ## Package: @voltagent/sdk
+
+## 0.1.5
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
 
 ## 0.1.4
 
@@ -1597,6 +2492,174 @@
 ---
 
 ## Package: @voltagent/supabase
+
+## 0.1.12
+
+### Patch Changes
+
+- [#270](https://github.com/VoltAgent/voltagent/pull/270) [`a65069c`](https://github.com/VoltAgent/voltagent/commit/a65069c511713239cf70bdb4d2885df224d1aee2) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - feat(supabase): Implement storage limit
+
+  - BEFORE:
+
+    ```
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    const memory = new SupabaseMemory({
+      client: supabaseClient,
+      tableName: "voltagent_memory", // Optional
+    });
+
+    ```
+
+  - AFTER:
+
+    ```
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    const memory = new SupabaseMemory({
+      client: supabaseClient,
+      tableName: "voltagent_memory", // Optional
+      storageLimit: 150, // Optional: Custom storage limit
+      debug: false, // Optional: Debug logging
+    });
+
+
+    ```
+
+  Fixes: [#256](https://github.com/VoltAgent/voltagent/issues/254)
+
+- Updated dependencies [[`937ccf8`](https://github.com/VoltAgent/voltagent/commit/937ccf8bf84a4261ee9ed2c94aab9f8c49ab69bd)]:
+  - @voltagent/core@0.1.39
+
+## 0.1.11
+
+### Patch Changes
+
+- [#252](https://github.com/VoltAgent/voltagent/pull/252) [`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add userId and conversationId support to agent history tables
+
+  This release adds comprehensive support for `userId` and `conversationId` fields in agent history tables across all memory storage implementations, enabling better conversation tracking and user-specific history management.
+
+  ### New Features
+
+  - **Agent History Enhancement**: Added `userId` and `conversationId` columns to agent history tables
+  - **Cross-Implementation Support**: Consistent implementation across PostgreSQL, Supabase, LibSQL, and In-Memory storage
+  - **Automatic Migration**: Safe schema migrations for existing installations
+  - **Backward Compatibility**: Existing history entries remain functional
+
+  ### Migration Notes
+
+  **PostgreSQL & Supabase**: Automatic schema migration with user-friendly SQL scripts
+  **LibSQL**: Seamless column addition with proper indexing
+  **In-Memory**: No migration required, immediate support
+
+  ### Technical Details
+
+  - **Database Schema**: Added `userid TEXT` and `conversationid TEXT` columns (PostgreSQL uses lowercase)
+  - **Indexing**: Performance-optimized indexes for new columns
+  - **Migration Safety**: Non-destructive migrations with proper error handling
+  - **API Consistency**: Unified interface across all storage implementations
+
+- Updated dependencies [[`88f2d06`](https://github.com/VoltAgent/voltagent/commit/88f2d0682413d27a7ac2d1d8cd502fd9c665e547), [`b63fe67`](https://github.com/VoltAgent/voltagent/commit/b63fe675dfca9121862a9dd67a0fae5d39b9db90)]:
+  - @voltagent/core@0.1.37
+
+## 0.1.10
+
+### Patch Changes
+
+- [#236](https://github.com/VoltAgent/voltagent/pull/236) [`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Enhanced fresh installation detection and migration reliability
+
+  This release significantly improves the fresh installation experience and migration system reliability for SupabaseMemory. These changes ensure cleaner setups, prevent unnecessary migration attempts, and resolve PostgreSQL compatibility issues.
+
+  ### Fresh Installation Experience
+
+  The system now properly detects fresh installations and skips migrations when no data exists to migrate. This eliminates confusing migration warnings during initial setup and improves startup performance.
+
+  ```typescript
+  // Fresh installation now automatically:
+  // ✅ Detects empty database
+  // ✅ Skips unnecessary migrations
+  // ✅ Sets migration flags to prevent future runs
+  // ✅ Shows clean SQL setup instructions
+
+  const storage = new SupabaseMemory({
+    supabaseUrl: "your-url",
+    supabaseKey: "your-key",
+  });
+  // No more migration warnings on fresh installs!
+  ```
+
+  ### Migration System Improvements
+
+  - **Fixed PostgreSQL syntax error**: Resolved `level TEXT DEFAULT "INFO"` syntax issue by using single quotes for string literals
+  - **Enhanced migration flag detection**: Improved handling of multiple migration flags without causing "multiple rows returned" errors
+  - **Better error differentiation**: System now correctly distinguishes between "table missing" and "multiple records" scenarios
+  - **Automatic flag management**: Fresh installations automatically set migration flags to prevent duplicate runs
+
+  ### Database Setup
+
+  The fresh installation SQL now includes migration flags table creation, ensuring future application restarts won't trigger unnecessary migrations:
+
+  ```sql
+  -- Migration flags are now automatically created
+  CREATE TABLE IF NOT EXISTS voltagent_memory_conversations_migration_flags (
+      id SERIAL PRIMARY KEY,
+      migration_type TEXT NOT NULL UNIQUE,
+      completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+      migrated_count INTEGER DEFAULT 0,
+      metadata JSONB DEFAULT '{}'::jsonb
+  );
+  ```
+
+  **Migration Notes:**
+
+  - Existing installations will benefit from improved migration flag detection
+  - Fresh installations will have a cleaner, faster setup experience
+  - PostgreSQL syntax errors in timeline events table creation are resolved
+  - No action required - improvements are automatic
+
+- Updated dependencies [[`5d39cdc`](https://github.com/VoltAgent/voltagent/commit/5d39cdc68c4ec36ec2f0bf86a29dbf1225644416), [`16c2a86`](https://github.com/VoltAgent/voltagent/commit/16c2a863d3ecdc09f09219bd40f2dbf1d789194d), [`0d85f0e`](https://github.com/VoltAgent/voltagent/commit/0d85f0e960dbc6e8df6a79a16c775ca7a34043bb)]:
+  - @voltagent/core@0.1.33
+
+## 0.1.9
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.1.8
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
 
 ## 0.1.7
 
@@ -1735,6 +2798,42 @@
 
 ## Package: @voltagent/vercel-ai
 
+## 0.1.13
+
+### Patch Changes
+
+- [`8eced6d`](https://github.com/VoltAgent/voltagent/commit/8eced6dad9c688a33b4700a6fc4be34bfc3ba88b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve onStepFinishHandler issue preventing tool_calls and hooks from functioning properly
+
+  Fixed a critical bug in the Vercel AI provider where the `onStepFinishHandler` was blocking tool calls and agent hooks from executing correctly. This issue was preventing agents from properly utilizing tools and executing lifecycle hooks during operations.
+
+## 0.1.12
+
+### Patch Changes
+
+- [#251](https://github.com/VoltAgent/voltagent/pull/251) [`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support for generative UIs
+
+  Added `fullStream` support to the Vercel AI provider for better streaming in generative UI applications.
+
+- Updated dependencies [[`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d), [`a3b4e60`](https://github.com/VoltAgent/voltagent/commit/a3b4e604e6f79281903ff0c28422e6ee2863b340), [`20119ad`](https://github.com/VoltAgent/voltagent/commit/20119ada182ec5f313a7f46956218d593180e096)]:
+  - @voltagent/core@0.1.36
+
+## 0.1.11
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
+
+  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
+
+## 0.1.10
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+
 ## 0.1.9
 
 ### Patch Changes
@@ -1871,6 +2970,16 @@
 
 ## Package: @voltagent/vercel-ai-exporter
 
+## 0.1.5
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
+  - @voltagent/sdk@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes
@@ -1919,7 +3028,48 @@
 
 ---
 
+## Package: @voltagent/vercel-ui
+
+## 0.0.2
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat: add Vercel UI SDK integration package for converting the `OperationContext` to a list of messages that can be used with the Vercel AI SDK
+
+  Added `convertToUIMessages` function to the `@voltagent/vercel-ui` package that converts the `OperationContext` to a list of messages that can be used with the Vercel AI SDK.
+
+  ```ts
+  import { convertToUIMessages } from "@voltagent/vercel-ui";
+  import { Agent } from "@voltagent/core";
+
+  const uiMessages = convertToUIMessages(context);
+
+  // Semi-realistic example
+  new Agent({
+    hooks: {
+      onEnd: async ({ agent, output, error, conversationId, context }) => {
+        const uiMessages = convertToUIMessages(context);
+        await chatStore.save({
+          conversationId,
+          messages: uiMessages,
+        });
+      },
+    },
+  });
+  ```
+
+---
+
 ## Package: @voltagent/voice
+
+## 0.2.1
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
 
 ## 0.2.0
 
@@ -2072,6 +3222,67 @@
 ---
 
 ## Package: @voltagent/xsai
+
+## 0.2.3
+
+### Patch Changes
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
+  - @voltagent/core@0.1.32
+
+## 0.2.2
+
+### Patch Changes
+
+- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
+
+  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
+
+## 0.2.1
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
+  - @voltagent/core@0.1.31
 
 ## 0.2.0
 
