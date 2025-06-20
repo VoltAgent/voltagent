@@ -1132,6 +1132,9 @@ importers:
       figlet:
         specifier: ^1.7.0
         version: 1.8.0
+      fs-extra:
+        specifier: ^11.1.1
+        version: 11.3.0
       inquirer:
         specifier: ^8.2.6
         version: 8.2.6
@@ -1160,6 +1163,9 @@ importers:
       '@types/figlet':
         specifier: ^1.5.8
         version: 1.7.0
+      '@types/fs-extra':
+        specifier: ^11.0.4
+        version: 11.0.4
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.7
