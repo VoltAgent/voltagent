@@ -1326,11 +1326,11 @@ describe("Agent", () => {
       const operationContext: OperationContext = onStartSpy.mock.calls[0][0].context;
       expect(operationContext.userContext).toBeInstanceOf(Map);
       expect(operationContext.userContext.get("initialKey")).toBe("initialValue");
-      // Ensure it's a clone, not the same instance
-      expect(operationContext.userContext).not.toBe(initialUserContext);
-      // Modify the original to ensure the clone is not affected
+      // Ensure it's the same instance (reference)
+      expect(operationContext.userContext).toBe(initialUserContext);
+      // Modify the original to ensure changes are reflected
       initialUserContext.set("anotherKey", "anotherValue");
-      expect(operationContext.userContext.has("anotherKey")).toBe(false);
+      expect(operationContext.userContext.has("anotherKey")).toBe(true);
     });
 
     it("should pass userContext to onStart and onEnd hooks when provided in options", async () => {
@@ -1360,7 +1360,7 @@ describe("Agent", () => {
       expect(startContext.userContext.get("hookKey")).toBe("hookValue");
       expect(endContext.userContext.get("hookKey")).toBe("hookValue");
       expect(startContext.userContext).toBe(endContext.userContext);
-      expect(startContext.userContext).not.toBe(providedUserContext); // Should be a clone
+      expect(startContext.userContext).toBe(providedUserContext); // Should be the same reference
     });
 
     it("should allow modifying userContext in onStart and reading in onEnd", async () => {
@@ -1432,7 +1432,7 @@ describe("Agent", () => {
         const toolOpContext = generateTextOptions.toolExecutionContext.operationContext;
         expect(toolOpContext.userContext).toBeInstanceOf(Map);
         expect(toolOpContext.userContext.get(testKey)).toBe(testValue);
-        expect(toolOpContext.userContext).not.toBe(providedUserContext); // Should be a clone
+        expect(toolOpContext.userContext).toBe(providedUserContext); // Should be the same reference
       } else {
         // Fail the test if the structure is not as expected
         throw new Error(
@@ -1443,7 +1443,7 @@ describe("Agent", () => {
       generateTextSpy.mockRestore();
     });
 
-    it("should keep userContext isolated between operations even when passed via options", async () => {
+    it("should use the same userContext reference when passed via options", async () => {
       const key1 = "op1KeyWithOptions";
       const value1 = "op1ValueWithOptions";
       const key2 = "op2KeyWithOptions";
@@ -1453,15 +1453,40 @@ describe("Agent", () => {
       const userContext2 = new Map<string | symbol, unknown>([[key2, value2]]);
 
       const onStartHook = vi.fn(({ context }: { context: OperationContext }) => {
-        if (context.historyEntry.input === "Operation 1 with options") {
+        // historyEntry.input is directly the input parameter passed to generateText
+        const historyInput = context.historyEntry.input;
+        let inputString: string;
+
+        if (typeof historyInput === "string") {
+          // historyInput might be a JSON string, try to parse it
+          try {
+            const parsed = JSON.parse(historyInput);
+            if (parsed && typeof parsed === "object" && "input" in parsed) {
+              inputString = String(parsed.input);
+            } else {
+              inputString = historyInput;
+            }
+          } catch {
+            inputString = historyInput;
+          }
+        } else if (historyInput && typeof historyInput === "object" && "input" in historyInput) {
+          // historyInput is the full history entry object, extract the input field
+          inputString = String((historyInput as any).input);
+        } else {
+          inputString = String(historyInput);
+        }
+
+        if (inputString === "Operation 1 with options") {
+          expect(context.userContext).toBe(userContext1); // Same reference
           expect(context.userContext.get(key1)).toBe(value1);
           expect(context.userContext.has(key2)).toBe(false);
-          // Modify context to ensure it doesn't leak to the next operation
-          context.userContext.set("leakTest", "shouldNotLeak");
-        } else if (context.historyEntry.input === "Operation 2 with options") {
+          // Modify context
+          context.userContext.set("op1Modified", "modified");
+        } else if (inputString === "Operation 2 with options") {
+          expect(context.userContext).toBe(userContext2); // Same reference
           expect(context.userContext.get(key2)).toBe(value2);
           expect(context.userContext.has(key1)).toBe(false);
-          expect(context.userContext.has("leakTest")).toBe(false);
+          expect(context.userContext.has("op1Modified")).toBe(false); // Different context
         }
       });
 
@@ -1481,6 +1506,8 @@ describe("Agent", () => {
       });
 
       expect(onStartHook).toHaveBeenCalledTimes(2);
+      // Verify that modifications were actually made to the original contexts
+      expect(userContext1.has("op1Modified")).toBe(true);
     });
   });
 
@@ -1518,7 +1545,7 @@ describe("Agent", () => {
       const mockForwarder = vi.fn().mockResolvedValue(undefined);
 
       // Access the protected method to test it directly
-      const textOptions = await (agentWithSubAgents as any).prepareTextOptions({
+      const _textOptions = await (agentWithSubAgents as any).prepareTextOptions({
         internalStreamForwarder: mockForwarder,
         historyEntryId: "test-history-id",
         operationContext: {
@@ -1529,8 +1556,8 @@ describe("Agent", () => {
         },
       });
 
-      expect(textOptions.tools).toBeDefined();
-      const delegateTool = textOptions.tools.find((tool: any) => tool.name === "delegate_task");
+      expect(_textOptions.tools).toBeDefined();
+      const delegateTool = _textOptions.tools.find((tool: any) => tool.name === "delegate_task");
       expect(delegateTool).toBeDefined();
     });
 
@@ -2102,7 +2129,7 @@ describe("Agent", () => {
         "createDelegateTool",
       );
 
-      const textOptions = await (agentWithSubAgents as any).prepareTextOptions({
+      await (agentWithSubAgents as any).prepareTextOptions({
         internalStreamForwarder: mockEventForwarder,
         historyEntryId: "test-history-id",
         operationContext: {
@@ -2813,7 +2840,7 @@ describe("Agent", () => {
           if (mockForwarder) {
             await mockForwarder(prefixedData);
           }
-        } catch (error) {
+        } catch {
           // Should handle errors gracefully
           return;
         }
