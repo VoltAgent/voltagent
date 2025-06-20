@@ -1,11 +1,6 @@
 import { devLogger } from "@voltagent/internal/dev";
 import type { LiteralUnion } from "type-fest";
-import type {
-  StreamEvent,
-  StreamEventToolCall,
-  StreamEventToolResult,
-  StreamEventType,
-} from "./types";
+import type { StreamEvent, StreamEventType } from "./types";
 
 export interface StreamEventForwarderOptions {
   forwarder?: (event: StreamEvent) => Promise<void>;

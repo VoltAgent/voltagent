@@ -1,4 +1,4 @@
-import { match } from "ts-pattern";
+import { P, match } from "ts-pattern";
 import type { StreamPart } from "../../agent/providers";
 import type { StreamEvent } from "./types";
 
@@ -12,36 +12,36 @@ export function transformStreamEventToStreamPart(
 ): StreamPart & { timestamp: string } {
   const baseStreamPart = match(event)
     .returnType<StreamPart | null>()
-    .with({ type: "tool-call" }, (e) => ({
+    .with({ type: "tool-call", data: P.not(P.nullish) }, (e) => ({
       type: "tool-call",
       toolCallId: e.data?.toolCallId,
       toolName: e.data?.toolName,
       args: e.data?.args,
     }))
-    .with({ type: "tool-result" }, (e) => ({
+    .with({ type: "tool-result", data: P.not(P.nullish) }, (e) => ({
       type: "tool-result",
       toolCallId: e.data?.toolCallId,
       toolName: e.data?.toolName,
       result: e.data?.result,
     }))
-    .with({ type: "text-delta" }, (e) => ({
+    .with({ type: "text-delta", data: P.not(P.nullish) }, (e) => ({
       type: "text-delta",
       textDelta: e.data?.textDelta,
     }))
-    .with({ type: "reasoning" }, (e) => ({
+    .with({ type: "reasoning", data: P.not(P.nullish) }, (e) => ({
       type: "reasoning",
       reasoning: e.data?.reasoning,
     }))
-    .with({ type: "source" }, (e) => ({
+    .with({ type: "source", data: P.not(P.nullish) }, (e) => ({
       type: "source",
       source: e.data?.source,
     }))
-    .with({ type: "finish" }, (e) => ({
+    .with({ type: "finish", data: P.not(P.nullish) }, (e) => ({
       type: "finish",
       finishReason: e.data?.finishReason,
       usage: e.data?.usage,
     }))
-    .with({ type: "error" }, (e) => ({
+    .with({ type: "error", data: P.not(P.nullish) }, (e) => ({
       type: "error",
       error: e.data?.error,
     }))
