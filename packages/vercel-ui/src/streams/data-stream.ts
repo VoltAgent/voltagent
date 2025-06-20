@@ -194,9 +194,6 @@ export function toDataStream(
                   }),
                 );
 
-                // Don't close stream for tool errors - continue processing
-                // Note: SubAgent events are now forwarded in real-time via streamEventForwarder
-                // No need to parse delegate_task results for batch forwarding
                 break;
               }
               case "finish": {
