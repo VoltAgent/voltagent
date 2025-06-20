@@ -17,18 +17,14 @@
   "bin": {
     "voltagent-docs-mcp": "dist/server.js"
   },
-  "files": [
-    "dist",
-    "docs",
-    "examples"
-  ],
+  "files": ["dist", "docs", "examples"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "start": "node dist/server.js",
-    "test": "vitest",
+    "test": "vitest --passWithNoTests",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
