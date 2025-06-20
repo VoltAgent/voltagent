@@ -1,5 +1,17 @@
 # @voltagent/core
 
+## 0.1.40
+
+### Patch Changes
+
+- [#284](https://github.com/VoltAgent/voltagent/pull/284) [`003ea5e`](https://github.com/VoltAgent/voltagent/commit/003ea5e0aab1e3e4a1398ed5ebf54b20fc9e27f3) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: subagent task delegation system message handling for Google Gemini compatibility
+
+  Fixed an issue where subagent task delegation was sending tasks as system messages, which caused errors with certain AI models like Google Gemini that have strict system message requirements. The task delegation now properly sends tasks as user messages instead of system messages.
+
+  This change improves compatibility across different AI providers, particularly Google Gemini, which expects a specific system message format and doesn't handle multiple or dynamic system messages well during task delegation workflows.
+
+- [#284](https://github.com/VoltAgent/voltagent/pull/284) [`003ea5e`](https://github.com/VoltAgent/voltagent/commit/003ea5e0aab1e3e4a1398ed5ebf54b20fc9e27f3) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: userContext reference preservation in agent history initialization
+
 ## 0.1.39
 
 ### Patch Changes
