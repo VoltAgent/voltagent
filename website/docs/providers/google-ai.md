@@ -38,9 +38,9 @@ The Google AI Provider integrates VoltAgent with Google's Generative AI capabili
 
 _Note: `@google/genai` is a peer dependency. `zod` is required if using `generateObject`._
 
-:::warning Supervisor Agent Known Issue
+:::warning Subagents Known Issue
 
-There's currently a known issue with using `@voltagent/google-ai` provider in Supervisor Agent configurations. This is an open contribution opportunity!
+There's currently a known issue with using `@voltagent/google-ai` provider in [Subagents](../agents/subagents.md) configurations. This is an open contribution opportunity!
 
 **Workaround:** Until this is fixed, you can use [`@voltagent/vercel-ai`](vercel-ai.md) with `@ai-sdk/google` which works seamlessly with Google models.
 
