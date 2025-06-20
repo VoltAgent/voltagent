@@ -1,5 +1,5 @@
 import type { Mock, Mocked } from "vitest";
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { Memory, MemoryMessage } from "../memory/types";
@@ -23,11 +23,11 @@ import type { AgentHistoryEntry } from "../agent/history";
 import type { NewTimelineEvent } from "../events/types";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { VoltAgentExporter } from "../telemetry/exporter";
+import type { Tool, Toolkit } from "../tool";
 import { HistoryManager } from "./history";
 import { createHooks } from "./hooks";
 import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
 import type { DynamicValueOptions } from "./types";
-import type { Tool, Toolkit } from "../tool";
 
 // Define a generic mock model type locally
 type MockModelType = { modelId: string; [key: string]: unknown };
@@ -2943,17 +2943,17 @@ describe("Agent", () => {
           // Test that SubAgent events can be injected using the utility
           if (eventCount === 1 && streamController.current) {
             // Import and use the utility function
-            const { streamEventForwarder } = await import("../utils/stream-event-forwarder");
+            const { streamEventForwarder } = await import(
+              "../utils/streams/stream-event-forwarder"
+            );
 
             await streamEventForwarder(
               {
                 type: "tool-call",
                 data: {
-                  toolCall: {
-                    toolCallId: "test-call",
-                    toolName: "test-tool",
-                    args: { test: "value" },
-                  },
+                  toolCallId: "test-call",
+                  toolName: "test-tool",
+                  args: { test: "value" },
                 },
                 timestamp: new Date().toISOString(),
                 subAgentId: "test-sub",
@@ -2986,9 +2986,9 @@ describe("Agent", () => {
         type: "tool-call",
         subAgentId: "test-sub",
         subAgentName: "Test Sub",
-        toolCall: {
-          toolName: "Test Sub: test-tool", // Should have prefix
+        data: {
           toolCallId: "test-call",
+          toolName: "Test Sub: test-tool",
           args: { test: "value" },
         },
       });
@@ -3039,7 +3039,9 @@ describe("Agent", () => {
 
           // Test error handling in utility
           if (eventCount === 1 && streamController.current) {
-            const { streamEventForwarder } = await import("../utils/stream-event-forwarder");
+            const { streamEventForwarder } = await import(
+              "../utils/streams/stream-event-forwarder"
+            );
 
             // Try to forward with a failing forwarder
             await streamEventForwarder(

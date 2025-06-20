@@ -1,16 +1,15 @@
 import { devLogger } from "@voltagent/internal/dev";
-
-export interface SubAgentEvent {
-  type: string;
-  data: any;
-  timestamp: string;
-  subAgentId: string;
-  subAgentName: string;
-}
+import type { LiteralUnion } from "type-fest";
+import type {
+  StreamEvent,
+  StreamEventToolCall,
+  StreamEventToolResult,
+  StreamEventType,
+} from "./types";
 
 export interface StreamEventForwarderOptions {
-  forwarder?: (event: any) => Promise<void>;
-  filterTypes?: string[];
+  forwarder?: (event: StreamEvent) => Promise<void>;
+  filterTypes?: LiteralUnion<StreamEventType, string>[];
   addSubAgentPrefix?: boolean;
 }
 
@@ -20,14 +19,10 @@ export interface StreamEventForwarderOptions {
  * @param options - Configuration options for forwarding
  */
 export async function streamEventForwarder(
-  event: SubAgentEvent,
+  event: StreamEvent,
   options: StreamEventForwarderOptions = {},
 ): Promise<void> {
-  const {
-    forwarder,
-    filterTypes = ["text", "reasoning", "source"],
-    addSubAgentPrefix = true,
-  } = options;
+  const { forwarder, filterTypes = ["text-delta", "reasoning", "source"] } = options;
 
   try {
     // Validate event structure
@@ -61,32 +56,8 @@ export async function streamEventForwarder(
       return;
     }
 
-    // Create base prefixed data
-    const prefixedData = {
-      ...event.data,
-      timestamp: event.timestamp,
-      type: event.type,
-      subAgentId: event.subAgentId,
-      subAgentName: event.subAgentName,
-    };
-
-    // Add SubAgent prefix to tool events if enabled
-    if (addSubAgentPrefix) {
-      if (event.type === "tool-call" && prefixedData.toolCall) {
-        prefixedData.toolCall = {
-          ...prefixedData.toolCall,
-          toolName: `${event.subAgentName}: ${prefixedData.toolCall.toolName}`,
-        };
-      } else if (event.type === "tool-result" && prefixedData.toolResult) {
-        prefixedData.toolResult = {
-          ...prefixedData.toolResult,
-          toolName: `${event.subAgentName}: ${prefixedData.toolResult.toolName}`,
-        };
-      }
-    }
-
     // Forward the event
-    await forwarder(prefixedData);
+    await forwarder(formatEvent(event, options));
 
     devLogger.info(
       "[StreamEventForwarder] Forwarded",
@@ -95,8 +66,8 @@ export async function streamEventForwarder(
       event.subAgentName,
     );
   } catch (error) {
-    devLogger.error("[StreamEventForwarder] Error forwarding event:", error);
     // Don't throw, just log and continue
+    devLogger.error("[StreamEventForwarder] Error forwarding event:", error);
   }
 }
 
@@ -106,5 +77,44 @@ export async function streamEventForwarder(
  * @returns A configured forwarder function
  */
 export function createStreamEventForwarder(options: StreamEventForwarderOptions = {}) {
-  return (event: SubAgentEvent) => streamEventForwarder(event, options);
+  return (event: StreamEvent) => streamEventForwarder(event, options);
+}
+
+/**
+ * Appends the sub-agent name to the event data if the addSubAgentPrefix option is enabled
+ * @private
+ * @param event - The event to append the sub-agent name to
+ * @param options - The options for the stream event forwarder
+ * @returns The event with the sub-agent name appended to the data
+ */
+function formatEvent(event: StreamEvent, options: StreamEventForwarderOptions): StreamEvent {
+  const { addSubAgentPrefix = true } = options;
+
+  // We append the sub-agent name to the event data if the addSubAgentPrefix option is enabled
+  if (
+    addSubAgentPrefix &&
+    (event.type === "tool-call" || event.type === "tool-result") &&
+    typeof event.data?.toolName === "string" &&
+    event.data.toolName.length > 0
+  ) {
+    return {
+      ...event,
+      data: {
+        ...event.data,
+        toolName: `${event.subAgentName}: ${event.data.toolName}`,
+      },
+    } as StreamEvent;
+  }
+
+  if ((event.type === "tool-call" || event.type === "tool-result") && !event.data?.toolName) {
+    return {
+      ...event,
+      data: null,
+    };
+  }
+
+  return {
+    ...event,
+    data: event.data ?? null,
+  } as StreamEvent;
 }

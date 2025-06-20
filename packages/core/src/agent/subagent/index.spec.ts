@@ -471,11 +471,9 @@ describe("SubAgentManager", () => {
       expect(forwardEventSpy).toHaveBeenCalledWith({
         type: "tool-call",
         data: {
-          toolCall: {
-            toolCallId: "tool-1",
-            toolName: "mock_tool",
-            args: { input: "test" },
-          },
+          toolCallId: "tool-1",
+          toolName: "mock_tool",
+          args: { input: "test" },
         },
         timestamp: expect.any(String),
         subAgentId: "test-agent",
@@ -486,11 +484,9 @@ describe("SubAgentManager", () => {
       expect(forwardEventSpy).toHaveBeenCalledWith({
         type: "tool-result",
         data: {
-          toolResult: {
-            toolCallId: "tool-1",
-            toolName: "mock_tool",
-            result: "mock result",
-          },
+          toolCallId: "tool-1",
+          toolName: "mock_tool",
+          result: "mock result",
         },
         timestamp: expect.any(String),
         subAgentId: "test-agent",

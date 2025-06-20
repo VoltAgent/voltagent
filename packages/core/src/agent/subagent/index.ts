@@ -2,6 +2,15 @@ import { devLogger } from "@voltagent/internal/dev";
 import { z } from "zod";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
+import type {
+  StreamEvent,
+  StreamEventReasoning,
+  StreamEventSource,
+  StreamEventTextDelta,
+  StreamEventToolCall,
+  StreamEventToolResult,
+} from "../../utils/streams";
+import type { StreamEventError } from "../../utils/streams/types";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
@@ -192,7 +201,7 @@ Context: ${JSON.stringify(context)}`,
       // Collect all stream chunks for final result
       let finalText = "";
 
-      // Consume the full stream to capture all events
+      // Consume the full stream to capture all events except for the finish event
       for await (const part of streamResponse.fullStream) {
         const timestamp = new Date().toISOString();
 
@@ -208,7 +217,7 @@ Context: ${JSON.stringify(context)}`,
               timestamp,
               subAgentId: targetAgent.id,
               subAgentName: targetAgent.name,
-            };
+            } satisfies StreamEventTextDelta;
 
             // Forward event in real-time
             if (forwardEvent) {
@@ -225,7 +234,7 @@ Context: ${JSON.stringify(context)}`,
               timestamp,
               subAgentId: targetAgent.id,
               subAgentName: targetAgent.name,
-            };
+            } satisfies StreamEventReasoning;
 
             // Forward event in real-time
             if (forwardEvent) {
@@ -242,7 +251,7 @@ Context: ${JSON.stringify(context)}`,
               timestamp,
               subAgentId: targetAgent.id,
               subAgentName: targetAgent.name,
-            };
+            } satisfies StreamEventSource;
 
             // Forward event in real-time
             if (forwardEvent) {
@@ -254,16 +263,14 @@ Context: ${JSON.stringify(context)}`,
             const eventData = {
               type: "tool-call",
               data: {
-                toolCall: {
-                  toolCallId: part.toolCallId,
-                  toolName: part.toolName,
-                  args: part.args,
-                },
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                args: part.args,
               },
               timestamp,
               subAgentId: targetAgent.id,
               subAgentName: targetAgent.name,
-            };
+            } satisfies StreamEventToolCall;
 
             // Forward event in real-time
             if (forwardEvent) {
@@ -275,16 +282,14 @@ Context: ${JSON.stringify(context)}`,
             const eventData = {
               type: "tool-result",
               data: {
-                toolResult: {
-                  toolCallId: part.toolCallId,
-                  toolName: part.toolName,
-                  result: part.result,
-                },
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                result: part.result,
               },
               timestamp,
               subAgentId: targetAgent.id,
               subAgentName: targetAgent.name,
-            };
+            } satisfies StreamEventToolResult;
 
             // Forward event in real-time
             if (forwardEvent) {
@@ -298,12 +303,14 @@ Context: ${JSON.stringify(context)}`,
               type: "error",
               data: {
                 error: part.error?.message || "Stream error occurred",
+                // TODO: Fix types for this error
+                // @ts-expect-error - code is not part of the StreamEventError type currently
                 code: "STREAM_ERROR",
               },
               timestamp,
               subAgentId: targetAgent.id,
               subAgentName: targetAgent.name,
-            };
+            } satisfies StreamEventError;
 
             // Forward event in real-time
             if (forwardEvent) {
@@ -455,13 +462,7 @@ Context: ${JSON.stringify(context)}`,
 
           // Create real-time event forwarder function
           const forwardEvent = options.forwardEvent as
-            | ((event: {
-                type: string;
-                data: any;
-                timestamp: string;
-                subAgentId: string;
-                subAgentName: string;
-              }) => Promise<void>)
+            | ((event: StreamEvent) => Promise<void>)
             | undefined;
 
           // Wait for all agent tasks to complete using Promise.all
