@@ -27,7 +27,6 @@ const sidebars: SidebarsConfig = {
       items: [
         "agents/overview",
         "agents/tools",
-        "agents/retriever",
         "agents/mcp",
         "agents/hooks",
         "agents/multi-modal",
@@ -53,6 +52,11 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Tools",
       items: ["tools/overview", "tools/reasoning-tool"],
+    },
+    {
+      type: "category",
+      label: "RAG",
+      items: ["rag/overview", "rag/custom-retrievers", "rag/chroma"],
     },
     {
       type: "category",

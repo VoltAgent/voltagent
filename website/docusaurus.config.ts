@@ -161,6 +161,10 @@ const config: Config = {
             to: "/voltops-llm-observability-docs/rest-api/",
             from: "/docs-observability/rest-api/",
           },
+          {
+            to: "/docs/rag/overview/",
+            from: "/docs/agents/retriever/",
+          },
         ],
       },
     ],
