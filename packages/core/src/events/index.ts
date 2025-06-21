@@ -12,6 +12,16 @@ import type { NewTimelineEvent } from "./types";
 export type EventStatus = AgentStatus;
 export type TimelineEventType = "memory" | "tool" | "agent" | "retriever";
 
+// Background event publishing types
+interface QueuedEvent {
+  agentId: string;
+  historyId: string;
+  event: NewTimelineEvent;
+  skipPropagation?: boolean;
+  timestamp: number;
+  retryCount: number;
+}
+
 /**
  * Types for tracked event functionality
  */
@@ -70,8 +80,17 @@ export interface AgentEvents {
 export class AgentEventEmitter extends EventEmitter {
   private static instance: AgentEventEmitter | null = null;
 
+  // Background event publishing queue
+  private eventQueue: QueuedEvent[] = [];
+  private isProcessing = false;
+  private processingInterval: NodeJS.Timeout | null = null;
+  private maxQueueSize = 1000;
+  private maxRetries = 3;
+  private batchSize = 10;
+
   private constructor() {
     super();
+    this.startBackgroundProcessor();
   }
 
   /**
@@ -85,32 +104,125 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * [NEW METHOD - IMMUTABLE EVENTS]
-   * Publishes a new timeline event. This event will be persisted and cannot be updated later.
-   *
-   * @param agentId - Agent ID
-   * @param historyId - History entry ID
-   * @param event - The NewTimelineEvent object to publish. Must conform to the new BaseTimelineEvent structure.
-   * @param skipPropagation - Optional flag to skip propagating this event to parent agents (to prevent cycles)
-   * @returns The updated AgentHistoryEntry or undefined if an error occurs.
+   * Start background event processor
    */
-  public async publishTimelineEvent(params: {
+  private startBackgroundProcessor(): void {
+    if (this.processingInterval) return;
+
+    this.processingInterval = setInterval(async () => {
+      await this.processEventQueue();
+    }, 50); // Process every 50ms for responsive handling
+  }
+
+  /**
+   * Stop background event processor
+   */
+  public stopBackgroundProcessor(): void {
+    if (this.processingInterval) {
+      clearInterval(this.processingInterval);
+      this.processingInterval = null;
+    }
+  }
+
+  /**
+   * Process queued events in batches
+   */
+  private async processEventQueue(): Promise<void> {
+    if (this.isProcessing || this.eventQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessing = true;
+
+    try {
+      // Process events in batches to avoid overwhelming the system
+      const batch = this.eventQueue.splice(0, this.batchSize);
+
+      // Process batch in parallel for better performance
+      const promises = batch.map((queuedEvent) => this.processQueuedEvent(queuedEvent));
+      await Promise.allSettled(promises);
+    } catch (error) {
+      devLogger.error("Error processing event queue:", error);
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
+  /**
+   * Process a single queued event
+   */
+  private async processQueuedEvent(queuedEvent: QueuedEvent): Promise<void> {
+    try {
+      await this.publishTimelineEventSync(queuedEvent);
+    } catch (error) {
+      devLogger.error(
+        `Error processing queued event (attempt ${queuedEvent.retryCount + 1}):`,
+        error,
+      );
+
+      // Retry logic
+      if (queuedEvent.retryCount < this.maxRetries) {
+        queuedEvent.retryCount++;
+        queuedEvent.timestamp = Date.now(); // Update timestamp for retry
+        this.eventQueue.push(queuedEvent); // Re-queue for retry
+      } else {
+        devLogger.error("Max retries exceeded for event:", queuedEvent.event.id);
+      }
+    }
+  }
+
+  /**
+   * Queue event for background processing (non-blocking)
+   * This is the new optimized method that doesn't block the calling thread
+   */
+  public publishTimelineEventAsync(params: {
     agentId: string;
     historyId: string;
-    event: NewTimelineEvent; // This now uses NewTimelineEvent type
+    event: NewTimelineEvent;
     skipPropagation?: boolean;
-  }): Promise<AgentHistoryEntry | undefined> {
+  }): void {
     const { agentId, historyId, event, skipPropagation = false } = params;
 
     // Ensure event has an id and startTime
     if (!event.id) {
       event.id = uuidv4();
     }
-
-    // Ensure event has a startTime
     if (!event.startTime) {
       event.startTime = new Date().toISOString();
     }
+
+    // Check queue size to prevent memory leaks
+    if (this.eventQueue.length >= this.maxQueueSize) {
+      devLogger.warn(`Event queue is full (${this.maxQueueSize} events), dropping oldest events`);
+      this.eventQueue = this.eventQueue.slice(-Math.floor(this.maxQueueSize * 0.8)); // Keep 80% of events
+    }
+
+    // Add to queue
+    this.eventQueue.push({
+      agentId,
+      historyId,
+      event: { ...event }, // Clone to avoid mutations
+      skipPropagation,
+      timestamp: Date.now(),
+      retryCount: 0,
+    });
+  }
+
+  /**
+   * Synchronous version of publishTimelineEvent (for backward compatibility and internal use)
+   * This is what gets called by the background processor
+   */
+  private async publishTimelineEventSync(
+    params:
+      | {
+          agentId: string;
+          historyId: string;
+          event: NewTimelineEvent;
+          skipPropagation?: boolean;
+        }
+      | QueuedEvent,
+  ): Promise<AgentHistoryEntry | undefined> {
+    const { agentId, historyId, event, skipPropagation = false } = params;
 
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (!agent) {
@@ -179,7 +291,7 @@ export class AgentEventEmitter extends EventEmitter {
 
       // Publish the enriched event to the parent, but skip further propagation
       // to avoid propagation cycles (skipPropagation=true)
-      await this.publishTimelineEvent({
+      this.publishTimelineEventAsync({
         agentId: parentId,
         historyId: activeParentEntry.id,
         event: {
@@ -245,7 +357,7 @@ export class AgentEventEmitter extends EventEmitter {
 
       if (activeParentHistoryEntry) {
         // Create agent:start event in parent's history for the subagent
-        await this.publishTimelineEvent({
+        this.publishTimelineEventAsync({
           agentId: parentId,
           historyId: activeParentHistoryEntry.id,
           event: {
@@ -307,7 +419,7 @@ export class AgentEventEmitter extends EventEmitter {
         // Create appropriate event based on history entry status
         if (historyEntry.status === "completed") {
           // Create agent:success event
-          await this.publishTimelineEvent({
+          this.publishTimelineEventAsync({
             agentId: parentId,
             historyId: activeParentHistoryEntry.id,
             event: {
@@ -332,7 +444,7 @@ export class AgentEventEmitter extends EventEmitter {
           });
         } else if (historyEntry.status === "error") {
           // Create agent:error event
-          await this.publishTimelineEvent({
+          this.publishTimelineEventAsync({
             agentId: parentId,
             historyId: activeParentHistoryEntry.id,
             event: {

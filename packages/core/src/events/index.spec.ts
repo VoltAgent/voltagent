@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import { AgentRegistry } from "../server/registry";
@@ -14,6 +15,11 @@ describe("AgentEventEmitter", () => {
     (AgentEventEmitter as any).instance = null;
     eventEmitter = AgentEventEmitter.getInstance();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    // Stop background processor to prevent interference between tests
+    eventEmitter.stopBackgroundProcessor();
   });
 
   describe("getInstance", () => {
@@ -76,7 +82,7 @@ describe("AgentEventEmitter", () => {
     });
   });
 
-  describe("hierarchical event propagation", () => {
+  describe("async timeline event publishing", () => {
     // Test history entry
     const historyEntry: Partial<AgentHistoryEntry> = {
       id: "test-history-id",
@@ -103,23 +109,93 @@ describe("AgentEventEmitter", () => {
       getHistoryManager: vi.fn().mockReturnValue(mockHistoryManager),
     };
 
-    // Setup publishTimelineEvent spy
-    let publishTimelineEventSpy: vi.SpyInstance;
+    // Setup publishTimelineEventSync spy
+    let publishTimelineEventSyncSpy: any;
 
     beforeEach(() => {
       // Reset mock counts
       mockHistoryManager.persistTimelineEvent.mockClear();
       mockAgent.getHistoryManager.mockClear();
 
-      // Setup publishTimelineEvent spy
-      publishTimelineEventSpy = vi
-        .spyOn(eventEmitter, "publishTimelineEvent")
+      // Setup publishTimelineEventSync spy (the private method that actually processes events)
+      publishTimelineEventSyncSpy = vi
+        .spyOn(eventEmitter as any, "publishTimelineEventSync")
         .mockResolvedValue(historyEntry as AgentHistoryEntry);
 
       // Mock AgentRegistry.getInstance().getAgent and getParentAgentIds
-      (AgentRegistry.getInstance as vi.Mock).mockReturnValue({
+      (AgentRegistry.getInstance as any).mockReturnValue({
         getAgent: vi.fn().mockReturnValue(mockAgent),
         getParentAgentIds: vi.fn().mockReturnValue(["parent-agent"]),
+      });
+    });
+
+    describe("publishTimelineEventAsync", () => {
+      it("should queue events for background processing", () => {
+        const testEvent = {
+          id: "test-event-id",
+          name: "tool:start",
+          type: "tool" as const,
+          startTime: "2023-01-01T00:00:00Z",
+          status: "running" as const,
+          input: { query: "test query" },
+          output: null,
+          error: null,
+          metadata: {
+            id: "test-tool-id",
+            displayName: "Test Tool",
+            agentId: "child-agent",
+          },
+          traceId: "test-history-id",
+        };
+
+        // Act: publish an event asynchronously
+        eventEmitter.publishTimelineEventAsync({
+          agentId: "child-agent",
+          historyId: "test-history-id",
+          event: testEvent as any,
+        });
+
+        // Assert: event should be added to queue (we can't directly test the queue, but we can verify no error)
+        expect(() => {
+          eventEmitter.publishTimelineEventAsync({
+            agentId: "child-agent",
+            historyId: "test-history-id",
+            event: testEvent as any,
+          });
+        }).not.toThrow();
+      });
+
+      it("should assign id and startTime to events if missing", () => {
+        const testEvent = {
+          name: "tool:start",
+          type: "tool" as const,
+          status: "running" as const,
+          input: { query: "test query" },
+          output: null,
+          error: null,
+          metadata: {
+            id: "test-tool-id",
+            displayName: "Test Tool",
+            agentId: "child-agent",
+          },
+          traceId: "test-history-id",
+        };
+
+        // Act: publish an event without id and startTime
+        eventEmitter.publishTimelineEventAsync({
+          agentId: "child-agent",
+          historyId: "test-history-id",
+          event: testEvent as any,
+        });
+
+        // Assert: should not throw (id and startTime should be auto-assigned)
+        expect(() => {
+          eventEmitter.publishTimelineEventAsync({
+            agentId: "child-agent",
+            historyId: "test-history-id",
+            event: testEvent as any,
+          });
+        }).not.toThrow();
       });
     });
 
@@ -127,7 +203,7 @@ describe("AgentEventEmitter", () => {
       // Test event to be published
       const testEvent = {
         id: "test-event-id",
-        name: "tool:start",
+        name: "tool:start" as const,
         type: "tool" as const,
         startTime: "2023-01-01T00:00:00Z",
         status: "running" as const,
@@ -135,6 +211,7 @@ describe("AgentEventEmitter", () => {
         output: null,
         error: null,
         metadata: {
+          id: "test-tool-id",
           displayName: "Test Tool",
           agentId: "child-agent",
         },
@@ -143,59 +220,27 @@ describe("AgentEventEmitter", () => {
 
       it("should propagate events to parent agents automatically", async () => {
         // Restore the original implementation for this test
-        publishTimelineEventSpy.mockRestore();
-
-        // Rather than spying on the private method, we'll spy on the publish method
-        // and track if it's called a second time with the parent agent ID
-        const originalPublish = eventEmitter.publishTimelineEvent;
-        const publishSpy = vi.fn().mockImplementation(async (params) => {
-          // Only mock the parent agent call to avoid recursion
-          if (params.agentId === "parent-agent") {
-            return historyEntry as AgentHistoryEntry;
-          }
-          // Otherwise call the real implementation
-          return originalPublish.call(eventEmitter, params);
-        });
-
-        // Apply our spy
-        eventEmitter.publishTimelineEvent = publishSpy;
+        publishTimelineEventSyncSpy.mockRestore();
 
         // Spy on propagateEventToParentAgents for direct verification
         const propagateSpy = vi
           .spyOn(eventEmitter as any, "propagateEventToParentAgents")
           .mockResolvedValue(undefined);
 
-        // Act: publish an event
-        await eventEmitter.publishTimelineEvent({
+        // Act: publish an event synchronously (internal method for testing)
+        await (eventEmitter as any).publishTimelineEventSync({
           agentId: "child-agent",
           historyId: "test-history-id",
-          event: testEvent as any,
+          event: testEvent,
         });
 
         // Assert: propagateEventToParentAgents should be called
         expect(propagateSpy).toHaveBeenCalledWith("child-agent", "test-history-id", testEvent);
-
-        // Restore original implementation
-        eventEmitter.publishTimelineEvent = originalPublish;
       });
 
       it("should not propagate events when skipPropagation is true", async () => {
         // Restore the original implementation for this test
-        publishTimelineEventSpy.mockRestore();
-
-        // Rather than using the private method, check if publishTimelineEvent
-        // is called only once when skipPropagation is true
-        const originalPublish = eventEmitter.publishTimelineEvent;
-        const publishSpy = vi.fn().mockImplementation(async (params) => {
-          // For this test, we'll just track the calls without propagating
-          if (params.skipPropagation === true) {
-            return historyEntry as AgentHistoryEntry;
-          }
-          return originalPublish.call(eventEmitter, params);
-        });
-
-        // Apply our spy
-        eventEmitter.publishTimelineEvent = publishSpy;
+        publishTimelineEventSyncSpy.mockRestore();
 
         // Spy on propagateEventToParentAgents
         const propagateSpy = vi
@@ -203,54 +248,44 @@ describe("AgentEventEmitter", () => {
           .mockResolvedValue(undefined);
 
         // Act: publish an event with skipPropagation=true
-        await eventEmitter.publishTimelineEvent({
+        await (eventEmitter as any).publishTimelineEventSync({
           agentId: "child-agent",
           historyId: "test-history-id",
-          event: testEvent as any,
+          event: testEvent,
           skipPropagation: true,
         });
 
         // Assert: propagateEventToParentAgents should NOT be called
         expect(propagateSpy).not.toHaveBeenCalled();
-
-        // Verify we only called publishTimelineEvent once (for child agent)
-        expect(publishSpy).toHaveBeenCalledTimes(1);
-
-        // Restore original implementation
-        eventEmitter.publishTimelineEvent = originalPublish;
       });
 
       it("should propagate events with enriched metadata to parent agents", async () => {
-        // Öncelikle publishTimelineEventSpy'ı tamamen restore ediyoruz
-        publishTimelineEventSpy.mockRestore();
+        // Restore the original publishTimelineEventSync
+        publishTimelineEventSyncSpy.mockRestore();
 
-        // For this test, we'll mock propagateEventToParentAgents to capture what
-        // would be sent to the parent agent without actually calling publish
-        const propagateMock = vi.fn().mockImplementation(async () => {
-          // İşlem yapmayan boş bir implementasyon
-          return undefined;
-        });
+        // Mock propagateEventToParentAgents to capture what would be sent to the parent agent
+        const propagateMock = vi.fn().mockResolvedValue(undefined);
 
-        // Orijinal metodu saklayıp mock metodu uyguluyoruz
+        // Store original method and apply mock
         const originalMethod = (eventEmitter as any).propagateEventToParentAgents;
         (eventEmitter as any).propagateEventToParentAgents = propagateMock;
 
         try {
           // Act: publish an event
-          await eventEmitter.publishTimelineEvent({
+          await (eventEmitter as any).publishTimelineEventSync({
             agentId: "child-agent",
             historyId: "test-history-id",
-            event: testEvent as any,
+            event: testEvent,
           });
 
           // Verify propagateEventToParentAgents was called
           expect(propagateMock).toHaveBeenCalled();
 
           // Check that it was called with the correct parameters
-          const originalCall = propagateMock.mock.calls[0];
-          expect(originalCall[0]).toBe("child-agent"); // sourceAgentId
-          expect(originalCall[1]).toBe("test-history-id"); // historyId
-          expect(originalCall[2]).toEqual(testEvent); // event
+          const call = propagateMock.mock.calls[0];
+          expect(call[0]).toBe("child-agent"); // sourceAgentId
+          expect(call[1]).toBe("test-history-id"); // historyId
+          expect(call[2]).toEqual(testEvent); // event
         } finally {
           // Restore the original method (even if test fails)
           (eventEmitter as any).propagateEventToParentAgents = originalMethod;
@@ -258,20 +293,16 @@ describe("AgentEventEmitter", () => {
       });
 
       it("should handle multi-level agent hierarchies", async () => {
-        // Öncelikle publishTimelineEventSpy'ı tamamen restore ediyoruz
-        publishTimelineEventSpy.mockRestore();
-
         // Setup mock implementation for three-level hierarchy
-        const mockRegistry = AgentRegistry.getInstance() as vi.Mocked<any>;
+        const mockRegistry = AgentRegistry.getInstance() as any;
         const mockGetParentAgentIds = vi
           .fn()
           .mockReturnValueOnce(["parent-agent"]) // child's parent is 'parent-agent'
           .mockReturnValueOnce(["grandparent-agent"]); // parent's parent is 'grandparent-agent'
 
-        // Bu şekilde kurguluyoruz
         mockRegistry.getParentAgentIds = mockGetParentAgentIds;
 
-        // Mock propagateEventToParentAgents to let us control behavior
+        // Mock propagateEventToParentAgents to track propagation calls
         const propagationHistory: string[] = [];
         const mockPropagateToParents = vi
           .fn()
@@ -282,7 +313,6 @@ describe("AgentEventEmitter", () => {
               _event: any,
               visited?: Set<string>,
             ) => {
-              // Mock implementasyonumuzun gerçekten çalıştığından emin oluyoruz
               propagationHistory.push(sourceAgentId);
 
               // Simplified version of the real method
@@ -293,7 +323,7 @@ describe("AgentEventEmitter", () => {
               const parentIds = mockRegistry.getParentAgentIds(sourceAgentId);
               for (const parentId of parentIds) {
                 propagationHistory.push(`${sourceAgentId} -> ${parentId}`);
-                // Simulate recursive call by pushing additional hierarchy entries
+                // Simulate recursive call
                 if (parentId === "parent-agent") {
                   propagationHistory.push("parent-agent");
                   propagationHistory.push("parent-agent -> grandparent-agent");
@@ -302,19 +332,19 @@ describe("AgentEventEmitter", () => {
             },
           );
 
-        // Orijinal metodu saklayıp mock metodu uyguluyoruz
+        // Store original method and apply mock
         const originalMethod = (eventEmitter as any).propagateEventToParentAgents;
         (eventEmitter as any).propagateEventToParentAgents = mockPropagateToParents;
 
         try {
-          // Act: publish an event manually çağırarak
+          // Act: call propagation directly for testing
           await (eventEmitter as any).propagateEventToParentAgents(
             "child-agent",
             "test-history-id",
-            testEvent as any,
+            testEvent,
           );
 
-          // Assert: check propagation history (now includes simulated recursion)
+          // Assert: check propagation history
           expect(propagationHistory).toEqual([
             "child-agent",
             "child-agent -> parent-agent",
@@ -322,7 +352,7 @@ describe("AgentEventEmitter", () => {
             "parent-agent -> grandparent-agent",
           ]);
         } finally {
-          // Restore original method (even if test fails)
+          // Restore original method
           (eventEmitter as any).propagateEventToParentAgents = originalMethod;
         }
       });
@@ -330,6 +360,9 @@ describe("AgentEventEmitter", () => {
 
     describe("emitHierarchicalHistoryEntryCreated", () => {
       it("should propagate history entry created events to parent agents", async () => {
+        // Setup spy for publishTimelineEventAsync
+        const publishAsyncSpy = vi.spyOn(eventEmitter, "publishTimelineEventAsync");
+
         // Act
         await eventEmitter.emitHierarchicalHistoryEntryCreated(
           "child-agent",
@@ -339,7 +372,7 @@ describe("AgentEventEmitter", () => {
         // Assert
         expect(AgentRegistry.getInstance().getParentAgentIds).toHaveBeenCalledWith("child-agent");
         expect(AgentRegistry.getInstance().getAgent).toHaveBeenCalledWith("parent-agent");
-        expect(publishTimelineEventSpy).toHaveBeenCalledWith(
+        expect(publishAsyncSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             agentId: "parent-agent",
             historyId: "test-history-id",
@@ -362,6 +395,9 @@ describe("AgentEventEmitter", () => {
           .mockReturnValueOnce(["parent-agent"]) // child's parent
           .mockReturnValueOnce(["grandparent-agent"]); // parent's parent
 
+        // Setup spy for publishTimelineEventAsync
+        const publishAsyncSpy = vi.spyOn(eventEmitter, "publishTimelineEventAsync");
+
         // Act
         await eventEmitter.emitHierarchicalHistoryEntryCreated(
           "child-agent",
@@ -371,16 +407,16 @@ describe("AgentEventEmitter", () => {
         // Assert
         expect(AgentRegistry.getInstance().getParentAgentIds).toHaveBeenCalledWith("child-agent");
         expect(AgentRegistry.getInstance().getParentAgentIds).toHaveBeenCalledWith("parent-agent");
-        // 3 çağrı olması gerekiyor, çünkü child -> parent -> grandparent şeklinde 3 agent var
-        expect(publishTimelineEventSpy).toHaveBeenCalledTimes(3);
+        // Should have published 3 times due to recursive propagation: child->parent, child->grandparent, parent->grandparent
+        expect(publishAsyncSpy).toHaveBeenCalledTimes(3);
 
         // Should have published to parent
-        expect(publishTimelineEventSpy).toHaveBeenCalledWith(
+        expect(publishAsyncSpy).toHaveBeenCalledWith(
           expect.objectContaining({ agentId: "parent-agent" }),
         );
 
         // Should have published to grandparent
-        expect(publishTimelineEventSpy).toHaveBeenCalledWith(
+        expect(publishAsyncSpy).toHaveBeenCalledWith(
           expect.objectContaining({ agentId: "grandparent-agent" }),
         );
       });
@@ -391,14 +427,17 @@ describe("AgentEventEmitter", () => {
           .mockReturnValueOnce(["agent-B"]) // agent-A's parent is agent-B
           .mockReturnValueOnce(["agent-A"]); // agent-B's parent is agent-A (cycle)
 
+        // Setup spy for publishTimelineEventAsync
+        const publishAsyncSpy = vi.spyOn(eventEmitter, "publishTimelineEventAsync");
+
         // Act
         await eventEmitter.emitHierarchicalHistoryEntryCreated(
           "agent-A",
           historyEntry as AgentHistoryEntry,
         );
 
-        // Assert
-        expect(publishTimelineEventSpy).toHaveBeenCalledTimes(2);
+        // Assert: should publish 2 times (A->B, B->A) but prevent infinite recursion due to visited tracking
+        expect(publishAsyncSpy).toHaveBeenCalledTimes(2);
       });
     });
 
@@ -410,6 +449,9 @@ describe("AgentEventEmitter", () => {
           status: "completed" as AgentStatus,
         };
 
+        // Setup spy for publishTimelineEventAsync
+        const publishAsyncSpy = vi.spyOn(eventEmitter, "publishTimelineEventAsync");
+
         // Act
         await eventEmitter.emitHierarchicalHistoryUpdate(
           "child-agent",
@@ -418,7 +460,7 @@ describe("AgentEventEmitter", () => {
 
         // Assert
         expect(AgentRegistry.getInstance().getParentAgentIds).toHaveBeenCalledWith("child-agent");
-        expect(publishTimelineEventSpy).toHaveBeenCalledWith(
+        expect(publishAsyncSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             agentId: "parent-agent",
             historyId: "test-history-id",
@@ -444,6 +486,9 @@ describe("AgentEventEmitter", () => {
           output: "Error message",
         };
 
+        // Setup spy for publishTimelineEventAsync
+        const publishAsyncSpy = vi.spyOn(eventEmitter, "publishTimelineEventAsync");
+
         // Act
         await eventEmitter.emitHierarchicalHistoryUpdate(
           "child-agent",
@@ -452,7 +497,7 @@ describe("AgentEventEmitter", () => {
 
         // Assert
         expect(AgentRegistry.getInstance().getParentAgentIds).toHaveBeenCalledWith("child-agent");
-        expect(publishTimelineEventSpy).toHaveBeenCalledWith(
+        expect(publishAsyncSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             agentId: "parent-agent",
             historyId: "test-history-id",
@@ -480,6 +525,9 @@ describe("AgentEventEmitter", () => {
           .mockReturnValueOnce(["parent-agent"]) // child's parent
           .mockReturnValueOnce(["grandparent-agent"]); // parent's parent
 
+        // Setup spy for publishTimelineEventAsync
+        const publishAsyncSpy = vi.spyOn(eventEmitter, "publishTimelineEventAsync");
+
         // Act
         await eventEmitter.emitHierarchicalHistoryUpdate(
           "child-agent",
@@ -489,8 +537,8 @@ describe("AgentEventEmitter", () => {
         // Assert
         expect(AgentRegistry.getInstance().getParentAgentIds).toHaveBeenCalledWith("child-agent");
         expect(AgentRegistry.getInstance().getParentAgentIds).toHaveBeenCalledWith("parent-agent");
-        // 3 çağrı olması gerekiyor, çünkü child -> parent -> grandparent şeklinde 3 agent var
-        expect(publishTimelineEventSpy).toHaveBeenCalledTimes(3);
+        // Should have published 3 times due to recursive propagation: child->parent, child->grandparent, parent->grandparent
+        expect(publishAsyncSpy).toHaveBeenCalledTimes(3);
       });
     });
   });

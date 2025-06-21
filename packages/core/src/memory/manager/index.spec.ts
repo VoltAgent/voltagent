@@ -34,7 +34,7 @@ vi.mock("../../events", () => {
   return {
     AgentEventEmitter: {
       getInstance: vi.fn().mockReturnValue({
-        publishTimelineEvent: vi.fn(),
+        publishTimelineEventAsync: vi.fn(),
         addHistoryEvent: vi.fn(),
         emitHistoryUpdate: vi.fn(),
       }),
@@ -484,11 +484,14 @@ describe("MemoryManager", () => {
         "conversation1",
       );
 
+      // Wait a bit for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Check that conversation was created
       const conversation = await mockMemory.getConversation("conversation1");
       expect(conversation).not.toBeNull();
 
-      // Check that message was saved
+      // Check that message was saved (background operation)
       const savedMessages = await mockMemory.getMessages({
         userId: "user1",
         conversationId: "conversation1",
@@ -516,7 +519,10 @@ describe("MemoryManager", () => {
         "conversation1",
       );
 
-      // Check that messages were saved
+      // Wait a bit for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Check that messages were saved (background operation)
       const savedMessages = await mockMemory.getMessages({
         userId: "user1",
         conversationId: "conversation1",
@@ -582,7 +588,10 @@ describe("MemoryManager", () => {
       expect(messages[1].role).toBe("assistant");
       expect(messages[1].content).toBe("Previous response 1");
 
-      // Check that the new message was saved
+      // Wait a bit for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Check that the new message was saved (background operation)
       const savedMessages = await mockMemory.getMessages({
         userId: "user1",
         conversationId: "existing-conversation",
@@ -814,8 +823,8 @@ describe("MemoryManager - History Management", () => {
 
   it("should create memory events during operations", async () => {
     const eventEmitter = AgentEventEmitter.getInstance();
-    // Create spy for publishTimelineEvent method
-    const publishTimelineEventSpy = vi.spyOn(eventEmitter, "publishTimelineEvent");
+    // Create spy for publishTimelineEventAsync method
+    const publishTimelineEventSpy = vi.spyOn(eventEmitter, "publishTimelineEventAsync");
 
     // Trigger memory event creation by calling saveMessage
     await memoryManager.saveMessage(
@@ -825,7 +834,7 @@ describe("MemoryManager - History Management", () => {
       "test-conversation",
     );
 
-    // Verify publishTimelineEvent was called
+    // Verify publishTimelineEventAsync was called
     expect(publishTimelineEventSpy).toHaveBeenCalled();
 
     publishTimelineEventSpy.mockRestore();
