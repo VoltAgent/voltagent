@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.41
+
+### Patch Changes
+
+- [`7705108`](https://github.com/VoltAgent/voltagent/commit/7705108317a8166bb1324838f99691ad8879b94d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: reverted subagent handoff message role from `user` back to `system`.
+
 ## 0.1.40
 
 ### Patch Changes
