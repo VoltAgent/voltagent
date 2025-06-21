@@ -686,9 +686,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     const opContext: OperationContext = {
       operationId: historyEntry.id,
-      userContext: options.userContext
-        ? new Map(options.userContext)
-        : new Map<string | symbol, unknown>(),
+      userContext: options.userContext ?? new Map<string | symbol, unknown>(),
       historyEntry,
       isActive: true,
       parentAgentId: options.parentAgentId,

@@ -3,7 +3,6 @@ import { z } from "zod";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
 import type {
-  StreamEvent,
   StreamEventReasoning,
   StreamEventSource,
   StreamEventTextDelta,
@@ -178,19 +177,23 @@ ${agentsMemory || "No previous agent interactions available."}
       // Get relevant context from memory (to be passed from Agent class)
       const sharedContext: BaseMessage[] = options.sharedContext || [];
 
-      // Prepare the handoff message with task context
-      const handoffMessage: BaseMessage = {
-        role: "system",
-        content: `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
-${task}
-Context: ${JSON.stringify(context)}`,
-      };
-
       // Get the real-time event forwarder from options (passed from delegate tool)
       const forwardEvent = options.forwardEvent;
 
-      // Use streamText instead of generateText to capture tool calls in real-time
-      const streamResponse = await targetAgent.streamText([handoffMessage, ...sharedContext], {
+      // Include context information if available
+      let taskContent = task;
+      if (context && Object.keys(context).length > 0) {
+        taskContent = `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
+${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
+      }
+
+      const taskMessage: BaseMessage = {
+        role: "system",
+        content: taskContent,
+      };
+
+      // Use streamText without handoff context in system message
+      const streamResponse = await targetAgent.streamText([...sharedContext, taskMessage], {
         conversationId: handoffConversationId,
         userId,
         parentAgentId: sourceAgent?.id || parentAgentId,
@@ -201,130 +204,134 @@ Context: ${JSON.stringify(context)}`,
       // Collect all stream chunks for final result
       let finalText = "";
 
-      // Consume the full stream to capture all events except for the finish event
-      for await (const part of streamResponse.fullStream) {
-        const timestamp = new Date().toISOString();
+      if (streamResponse.fullStream) {
+        // Consume the full stream to capture all events
+        for await (const part of streamResponse.fullStream) {
+          const timestamp = new Date().toISOString();
 
-        switch (part.type) {
-          case "text-delta": {
-            finalText += part.textDelta;
+          switch (part.type) {
+            case "text-delta": {
+              finalText += part.textDelta;
 
-            const eventData = {
-              type: "text-delta",
-              data: {
-                textDelta: part.textDelta,
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            } satisfies StreamEventTextDelta;
+              const eventData = {
+                type: "text-delta",
+                data: {
+                  textDelta: part.textDelta,
+                },
+                timestamp,
+                subAgentId: targetAgent.id,
+                subAgentName: targetAgent.name,
+              } satisfies StreamEventTextDelta;
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
+              // Forward event in real-time
+              if (forwardEvent) {
+                await forwardEvent(eventData);
+              }
+              break;
             }
-            break;
-          }
-          case "reasoning": {
-            const eventData = {
-              type: "reasoning",
-              data: {
-                reasoning: part.reasoning,
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            } satisfies StreamEventReasoning;
+            case "reasoning": {
+              const eventData = {
+                type: "reasoning",
+                data: {
+                  reasoning: part.reasoning,
+                },
+                timestamp,
+                subAgentId: targetAgent.id,
+                subAgentName: targetAgent.name,
+              } satisfies StreamEventReasoning;
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
+              // Forward event in real-time
+              if (forwardEvent) {
+                await forwardEvent(eventData);
+              }
+              break;
             }
-            break;
-          }
-          case "source": {
-            const eventData = {
-              type: "source",
-              data: {
-                source: part.source,
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            } satisfies StreamEventSource;
+            case "source": {
+              const eventData = {
+                type: "source",
+                data: {
+                  source: part.source,
+                },
+                timestamp,
+                subAgentId: targetAgent.id,
+                subAgentName: targetAgent.name,
+              } satisfies StreamEventSource;
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
+              // Forward event in real-time
+              if (forwardEvent) {
+                await forwardEvent(eventData);
+              }
+              break;
             }
-            break;
-          }
-          case "tool-call": {
-            const eventData = {
-              type: "tool-call",
-              data: {
-                toolCallId: part.toolCallId,
-                toolName: part.toolName,
-                args: part.args,
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            } satisfies StreamEventToolCall;
+            case "tool-call": {
+              const eventData = {
+                type: "tool-call",
+                data: {
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  args: part.args,
+                },
+                timestamp,
+                subAgentId: targetAgent.id,
+                subAgentName: targetAgent.name,
+              } satisfies StreamEventToolCall;
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
+              // Forward event in real-time
+              if (forwardEvent) {
+                await forwardEvent(eventData);
+              }
+              break;
             }
-            break;
-          }
-          case "tool-result": {
-            const eventData = {
-              type: "tool-result",
-              data: {
-                toolCallId: part.toolCallId,
-                toolName: part.toolName,
-                result: part.result,
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            } satisfies StreamEventToolResult;
+            case "tool-result": {
+              const eventData = {
+                type: "tool-result",
+                data: {
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  result: part.result,
+                },
+                timestamp,
+                subAgentId: targetAgent.id,
+                subAgentName: targetAgent.name,
+              } satisfies StreamEventToolResult;
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
+              // Forward event in real-time
+              if (forwardEvent) {
+                await forwardEvent(eventData);
+              }
+              break;
             }
-            break;
-          }
 
-          case "error": {
-            const eventData = {
-              type: "error",
-              data: {
-                error: part.error?.message || "Stream error occurred",
-                // TODO: Fix types for this error
-                // @ts-expect-error - code is not part of the StreamEventError type currently
-                code: "STREAM_ERROR",
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            } satisfies StreamEventError;
+            case "error": {
+              const eventData = {
+                type: "error",
+                data: {
+                  error: part.error?.message || "Stream error occurred",
+                  code: "STREAM_ERROR",
+                },
+                timestamp,
+                subAgentId: targetAgent.id,
+                subAgentName: targetAgent.name,
+              } satisfies StreamEventError;
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
+              // Forward event in real-time
+              if (forwardEvent) {
+                await forwardEvent(eventData);
+              }
+              break;
             }
-            break;
           }
+        }
+      } else {
+        for await (const part of streamResponse.textStream) {
+          finalText += part;
         }
       }
 
       return {
         result: finalText,
         conversationId: handoffConversationId,
-        messages: [handoffMessage, { role: "assistant", content: finalText }],
+        messages: [taskMessage, { role: "assistant", content: finalText }],
         status: "success",
       };
     } catch (error) {
@@ -462,7 +469,13 @@ Context: ${JSON.stringify(context)}`,
 
           // Create real-time event forwarder function
           const forwardEvent = options.forwardEvent as
-            | ((event: StreamEvent) => Promise<void>)
+            | ((event: {
+                type: string;
+                data: any;
+                timestamp: string;
+                subAgentId: string;
+                subAgentName: string;
+              }) => Promise<void>)
             | undefined;
 
           // Wait for all agent tasks to complete using Promise.all
