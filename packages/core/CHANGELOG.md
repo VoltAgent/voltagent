@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.42
+
+### Patch Changes
+
+- [#286](https://github.com/VoltAgent/voltagent/pull/286) [`73632ea`](https://github.com/VoltAgent/voltagent/commit/73632ea229917ab4042bb58b61d5e6dbd9b72804) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Fixed issue where fullStream processing was erroring due to inability to access a Nil value
+
 ## 0.1.41
 
 ### Patch Changes
