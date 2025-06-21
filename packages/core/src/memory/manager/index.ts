@@ -357,8 +357,6 @@ export class MemoryManager {
       // Continue with empty messages, but don't fail the operation
     }
 
-    // 🚀 BACKGROUND OPTIMIZATION: Sequential background tasks
-    // 1. First ensure conversation exists, 2. Then save input
     this.handleSequentialBackgroundOperations(context, input, userId, conversationId);
 
     return { messages, conversationId };
