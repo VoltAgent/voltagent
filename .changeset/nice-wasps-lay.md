@@ -1,5 +1,5 @@
 ---
-"@voltagent/vercel-ui": patch
+"@voltagent/vercel-ui": minor
 ---
 
 Added a set of new utility functions for working with data streams in the vercel `ai` package.
