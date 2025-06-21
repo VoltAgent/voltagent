@@ -165,6 +165,18 @@ describe("convertToUIMessages", () => {
     const result = convertToUIMessages(ctx);
     expect(result[0].createdAt).toEqual(customDate);
   });
+
+  it("should handle file part with data property in message content", () => {
+    const message: Message = {
+      role: "user",
+      content: [{ type: "file", data: Buffer.from("filedata"), mimeType: "application/pdf" }],
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].parts).toEqual([
+      { type: "file", data: Buffer.from("filedata").toString(), mimeType: "application/pdf" },
+    ]);
+  });
 });
 
 type Message = BaseMessage & {

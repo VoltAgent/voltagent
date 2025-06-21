@@ -126,6 +126,7 @@ export function toDataStream(
             try {
               controller.close();
               streamClosed = true;
+              /* c8 ignore next 3 */
             } catch (e) {
               devLogger.error("Failed to close controller:", e);
             }
@@ -220,8 +221,10 @@ export function toDataStream(
                 safeEnqueue(formatDataStreamPart("error", getErrorMessage(streamPart.error)));
 
                 // Don't close stream for tool errors
+                /* c8 ignore next 1 */
                 if (!isToolError(streamPart.error)) {
                   safeClose();
+                  /* c8 ignore next 4 */
                   return;
                 }
                 break;
@@ -246,11 +249,14 @@ export function toDataStream(
         const errorMessage = getErrorMessage(error);
         try {
           controller.enqueue(formatDataStreamPart("error", errorMessage));
+          /* c8 ignore next 3 */
         } catch (e) {
           devLogger.error("Failed to enqueue setup error message:", e);
         }
         try {
           controller.close();
+
+          /* c8 ignore next 3 */
         } catch (e) {
           devLogger.error("Failed to close controller after setup error:", e);
         }

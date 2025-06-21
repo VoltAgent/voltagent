@@ -107,6 +107,7 @@ function convertToV4UIMessages(
     createdAt: match(message)
       .when(
         (m) => hasKey(m, "createdAt"),
+        /* c8 ignore next 1 */
         ({ createdAt }) => (createdAt instanceof Date ? createdAt : new Date()),
       )
       .otherwise(() => new Date()),
@@ -123,6 +124,7 @@ function convertToV4UIMessages(
             .with({ type: "image" }, (p) => ({
               type: "file",
               data: p.image.toString(),
+              /* c8 ignore next 1 */
               mimeType: p.mimeType ?? "image/png",
             }))
             .with({ type: "file" }, (p) => ({

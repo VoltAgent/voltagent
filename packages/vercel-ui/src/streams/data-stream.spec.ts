@@ -21,14 +21,6 @@ vi.mock("ai", () => ({
   formatDataStreamPart: vi.fn((type, value) => `formatted:${type}:${JSON.stringify(value)}`),
 }));
 
-function mockFullStream(data: StreamPart[]): FullStream {
-  return {
-    async *[Symbol.asyncIterator]() {
-      yield* data;
-    },
-  };
-}
-
 describe("data-stream", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -102,7 +94,7 @@ describe("data-stream", () => {
       } as any;
 
       const mockStream: FullStream = (async function* () {
-        yield { type: "text-delta", textDelta: "test" };
+        yield { type: "text-delta", textDelta: "test" } as const;
       })();
 
       const options: DataStreamOptions = {
@@ -406,5 +398,35 @@ describe("data-stream", () => {
         'formatted:finish_message:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}',
       ]);
     });
+
+    describe("error handling", () => {
+      it("should handle error thrown during stream iteration in toDataStream", async () => {
+        const dataStream = toDataStream(null as any);
+        const chunks = await convertReadableStreamToArray(dataStream);
+        expect(chunks).toEqual(['formatted:error:"An error occurred."']);
+      });
+
+      it("should handle error thrown in start of ReadableStream", async () => {
+        const dataStream = toDataStream(null as any, {
+          getErrorMessage: (x) => {
+            const msg = (x as Error).message;
+            if (msg.includes("Cannot read properties of null")) {
+              throw new Error("A Test Error");
+            }
+            return msg;
+          },
+        });
+        const chunks = await convertReadableStreamToArray(dataStream);
+        expect(chunks).toEqual(['formatted:error:"A Test Error"']);
+      });
+    });
   });
 });
+
+function mockFullStream(data: StreamPart[]): FullStream {
+  return {
+    async *[Symbol.asyncIterator]() {
+      yield* data;
+    },
+  };
+}
