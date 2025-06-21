@@ -307,6 +307,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
                 type: "error",
                 data: {
                   error: part.error?.message || "Stream error occurred",
+                  // @ts-expect-error - code is not part of the StreamEventError type currently
                   code: "STREAM_ERROR",
                 },
                 timestamp,
