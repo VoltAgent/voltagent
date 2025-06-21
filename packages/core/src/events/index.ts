@@ -6,6 +6,7 @@ import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import type { BaseMessage } from "../index";
 import { AgentRegistry } from "../server/registry";
+import { BackgroundQueue } from "../utils/queue/queue";
 import type { NewTimelineEvent } from "./types";
 
 // New type exports
@@ -70,8 +71,19 @@ export interface AgentEvents {
 export class AgentEventEmitter extends EventEmitter {
   private static instance: AgentEventEmitter | null = null;
 
+  // Background queue for timeline events
+  private timelineEventQueue: BackgroundQueue;
+
   private constructor() {
     super();
+
+    // Initialize specialized queue for timeline events
+    this.timelineEventQueue = new BackgroundQueue({
+      maxConcurrency: 5, // Higher concurrency for timeline events (real-time feedback)
+      defaultTimeout: 5000, // 5 seconds timeout (faster for UI feedback)
+      defaultRetries: 2, // Less retries (timeline events are less critical)
+      drainTimeout: 3000, // 3 seconds to drain (quick shutdown)
+    });
   }
 
   /**
@@ -85,32 +97,73 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * [NEW METHOD - IMMUTABLE EVENTS]
-   * Publishes a new timeline event. This event will be persisted and cannot be updated later.
-   *
-   * @param agentId - Agent ID
-   * @param historyId - History entry ID
-   * @param event - The NewTimelineEvent object to publish. Must conform to the new BaseTimelineEvent structure.
-   * @param skipPropagation - Optional flag to skip propagating this event to parent agents (to prevent cycles)
-   * @returns The updated AgentHistoryEntry or undefined if an error occurs.
+   * Drain all pending timeline events
+   * This should be called when shutting down to ensure all events are processed
    */
-  public async publishTimelineEvent(params: {
+  public async drainTimelineEvents(): Promise<void> {
+    await this.timelineEventQueue.drain();
+  }
+
+  /**
+   * Queue timeline event for background processing (non-blocking)
+   * Uses the new BackgroundQueue utility for better reliability
+   */
+  public publishTimelineEventAsync(params: {
     agentId: string;
     historyId: string;
-    event: NewTimelineEvent; // This now uses NewTimelineEvent type
+    event: NewTimelineEvent;
     skipPropagation?: boolean;
-  }): Promise<AgentHistoryEntry | undefined> {
+  }): void {
     const { agentId, historyId, event, skipPropagation = false } = params;
 
     // Ensure event has an id and startTime
     if (!event.id) {
       event.id = uuidv4();
     }
-
-    // Ensure event has a startTime
     if (!event.startTime) {
       event.startTime = new Date().toISOString();
     }
+
+    // Add to the background queue
+    this.timelineEventQueue.enqueue({
+      id: `timeline-event-${event.id}`,
+      operation: async () => {
+        // 🔴 FIX: Proper deep clone to avoid mutation issues
+        const clonedEvent = this.deepCloneEvent(event);
+
+        await this.publishTimelineEventSync({
+          agentId,
+          historyId,
+          event: clonedEvent,
+          skipPropagation,
+        });
+      },
+    });
+  }
+
+  /**
+   * Deep clone event to prevent mutation issues
+   */
+  private deepCloneEvent(event: NewTimelineEvent): NewTimelineEvent {
+    try {
+      return JSON.parse(JSON.stringify(event));
+    } catch (error) {
+      devLogger.warn("Failed to deep clone event, using shallow clone:", error);
+      return { ...event };
+    }
+  }
+
+  /**
+   * Synchronous version of publishTimelineEvent (internal use)
+   * This is what gets called by the background queue
+   */
+  private async publishTimelineEventSync(params: {
+    agentId: string;
+    historyId: string;
+    event: NewTimelineEvent;
+    skipPropagation?: boolean;
+  }): Promise<AgentHistoryEntry | undefined> {
+    const { agentId, historyId, event, skipPropagation = false } = params;
 
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (!agent) {
@@ -143,7 +196,7 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * Propagates a timeline event from a subagent to all its parent agents
+   * Propagates a timeline event from a subagent to all its parent agents (optimized batch version)
    * This ensures all events from subagents appear in parent agent timelines
    *
    * @param agentId - The source agent ID (subagent)
@@ -165,37 +218,44 @@ export class AgentEventEmitter extends EventEmitter {
     const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
     if (parentIds.length === 0) return; // No parents, nothing to propagate to
 
-    // Propagate to each parent agent
-    for (const parentId of parentIds) {
+    // Batch process all parent propagations to reduce queue pressure
+    const propagationPromises = parentIds.map(async (parentId) => {
       const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
-      if (!parentAgent) continue;
+      if (!parentAgent) return;
 
-      // Find active history entry for the parent agent
-      const parentHistory = await parentAgent.getHistory();
-      const activeParentEntry =
-        parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
+      try {
+        // Find active history entry for the parent agent
+        const parentHistory = await parentAgent.getHistory();
+        const activeParentEntry =
+          parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
 
-      if (!activeParentEntry) continue;
+        if (!activeParentEntry) return;
 
-      // Publish the enriched event to the parent, but skip further propagation
-      // to avoid propagation cycles (skipPropagation=true)
-      await this.publishTimelineEvent({
-        agentId: parentId,
-        historyId: activeParentEntry.id,
-        event: {
-          ...event,
-          id: crypto.randomUUID(),
-          metadata: {
-            ...event.metadata,
-            agentId: event.metadata.agentId || parentId,
+        // Publish the enriched event to the parent, but skip further propagation
+        // to avoid propagation cycles (skipPropagation=true)
+        this.publishTimelineEventAsync({
+          agentId: parentId,
+          historyId: activeParentEntry.id,
+          event: {
+            ...event,
+            id: crypto.randomUUID(),
+            metadata: {
+              ...event.metadata,
+              agentId: event.metadata.agentId || parentId,
+            },
           },
-        },
-        skipPropagation: true, // Prevent cycles
-      });
+          skipPropagation: true, // Prevent cycles
+        });
 
-      // Recursively propagate to higher level ancestors (grandparents)
-      await this.propagateEventToParentAgents(parentId, activeParentEntry.id, event, visited);
-    }
+        // Recursively propagate to higher level ancestors (grandparents)
+        await this.propagateEventToParentAgents(parentId, activeParentEntry.id, event, visited);
+      } catch (error) {
+        devLogger.warn(`Failed to propagate event to parent agent ${parentId}:`, error);
+      }
+    });
+
+    // Wait for all propagations to complete
+    await Promise.allSettled(propagationPromises);
   }
 
   /**
@@ -245,7 +305,7 @@ export class AgentEventEmitter extends EventEmitter {
 
       if (activeParentHistoryEntry) {
         // Create agent:start event in parent's history for the subagent
-        await this.publishTimelineEvent({
+        this.publishTimelineEventAsync({
           agentId: parentId,
           historyId: activeParentHistoryEntry.id,
           event: {
@@ -307,7 +367,7 @@ export class AgentEventEmitter extends EventEmitter {
         // Create appropriate event based on history entry status
         if (historyEntry.status === "completed") {
           // Create agent:success event
-          await this.publishTimelineEvent({
+          this.publishTimelineEventAsync({
             agentId: parentId,
             historyId: activeParentHistoryEntry.id,
             event: {
@@ -332,7 +392,7 @@ export class AgentEventEmitter extends EventEmitter {
           });
         } else if (historyEntry.status === "error") {
           // Create agent:error event
-          await this.publishTimelineEvent({
+          this.publishTimelineEventAsync({
             agentId: parentId,
             historyId: activeParentHistoryEntry.id,
             event: {

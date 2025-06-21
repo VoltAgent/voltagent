@@ -330,8 +330,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         traceId: historyEntryId,
       };
 
-      // Publish the retriever:start event
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
+      // Publish the retriever:start event (background)
+      AgentEventEmitter.getInstance().publishTimelineEventAsync({
         agentId: this.id,
         historyId: historyEntryId,
         event: retrieverStartEvent,
@@ -363,8 +363,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
           };
 
-          // Publish the retriever:success event
-          await AgentEventEmitter.getInstance().publishTimelineEvent({
+          // Publish the retriever:success event (background)
+          AgentEventEmitter.getInstance().publishTimelineEventAsync({
             agentId: this.id,
             historyId: historyEntryId,
             event: retrieverSuccessEvent,
@@ -390,8 +390,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
           };
 
-          // Publish the retriever:success event (empty result)
-          await AgentEventEmitter.getInstance().publishTimelineEvent({
+          // Publish the retriever:success event (empty result, background)
+          AgentEventEmitter.getInstance().publishTimelineEventAsync({
             agentId: this.id,
             historyId: historyEntryId,
             event: retrieverSuccessEvent,
@@ -422,8 +422,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
         };
 
-        // Publish the retriever:error event
-        await AgentEventEmitter.getInstance().publishTimelineEvent({
+        // Publish the retriever:error event (background)
+        AgentEventEmitter.getInstance().publishTimelineEventAsync({
           agentId: this.id,
           historyId: historyEntryId,
           event: retrieverErrorEvent,
@@ -501,6 +501,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
     // Add all message objects directly
     return [...messages, ...input];
+  }
+
+  /**
+   * Drain all background operations for cleanup
+   * This ensures all memory and timeline event operations are completed
+   */
+  private async drainAllBackgroundOperations(): Promise<void> {
+    // Drain memory background operations
+    await this.memoryManager.drainBackgroundOperations();
+
+    // Drain timeline event queue for complete cleanup
+    await AgentEventEmitter.getInstance().drainTimelineEvents();
   }
 
   /**
@@ -1001,7 +1013,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
       // Publish the new event through AgentEventEmitter
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
+      AgentEventEmitter.getInstance().publishTimelineEventAsync({
         agentId: this.id,
         historyId: operationContext.historyEntry.id,
         event: agentStartEvent,
@@ -1068,8 +1080,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 startTime: toolStartTime, // Store the start time for later
               });
 
-              // Publish the tool:start event
-              await AgentEventEmitter.getInstance().publishTimelineEvent({
+              // Publish the tool:start event (background)
+              AgentEventEmitter.getInstance().publishTimelineEventAsync({
                 agentId: this.id,
                 historyId: operationContext.historyEntry.id,
                 event: toolStartEvent,
@@ -1125,8 +1137,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   parentEventId: toolStartInfo.eventId, // Link to the tool:start event
                 };
 
-                // Publish the tool:error event
-                await AgentEventEmitter.getInstance().publishTimelineEvent({
+                // Publish the tool:error event (background)
+                AgentEventEmitter.getInstance().publishTimelineEventAsync({
                   agentId: this.id,
                   historyId: operationContext.historyEntry.id,
                   event: toolErrorEvent,
@@ -1151,8 +1163,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   parentEventId: toolStartInfo.eventId, // Link to the tool:start event
                 };
 
-                // Publish the tool:success event
-                await AgentEventEmitter.getInstance().publishTimelineEvent({
+                // Publish the tool:success event (background)
+                AgentEventEmitter.getInstance().publishTimelineEventAsync({
                   agentId: this.id,
                   historyId: operationContext.historyEntry.id,
                   event: toolSuccessEvent,
@@ -1220,8 +1232,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
       };
 
-      // Publish the agent:success event
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
+      // Publish the agent:success event (background)
+      AgentEventEmitter.getInstance().publishTimelineEventAsync({
         agentId: this.id,
         historyId: operationContext.historyEntry.id,
         event: agentSuccessEvent,
@@ -1258,6 +1270,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         endTime: new Date(),
         status: "completed" as any,
       });
+
+      // Drain all background operations after completion
+      await this.drainAllBackgroundOperations();
 
       return response;
     } catch (error) {
@@ -1301,8 +1316,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
       };
 
-      // Publish the agent:error event
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
+      // Publish the agent:error event (background)
+      AgentEventEmitter.getInstance().publishTimelineEventAsync({
         agentId: this.id,
         historyId: operationContext.historyEntry.id,
         event: agentErrorEvent,
@@ -1337,6 +1352,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "error",
         endTime: new Date(),
       });
+
+      // Drain all background operations even on error
+      await this.drainAllBackgroundOperations();
+
       throw voltagentError;
     }
   }
@@ -1430,7 +1449,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
     // Publish the new event through AgentEventEmitter
-    await AgentEventEmitter.getInstance().publishTimelineEvent({
+    AgentEventEmitter.getInstance().publishTimelineEventAsync({
       agentId: this.id,
       historyId: operationContext.historyEntry.id,
       event: agentStartEvent,
@@ -1545,8 +1564,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               startTime: toolStartTime, // Store the start time for later
             });
 
-            // Publish the tool:start event
-            await AgentEventEmitter.getInstance().publishTimelineEvent({
+            // Publish the tool:start event (background)
+            AgentEventEmitter.getInstance().publishTimelineEventAsync({
               agentId: this.id,
               historyId: operationContext.historyEntry.id,
               event: toolStartEvent,
@@ -1600,8 +1619,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 parentEventId: toolStartInfo.eventId, // Link to the tool:start event
               };
 
-              // Publish the tool:error event
-              await AgentEventEmitter.getInstance().publishTimelineEvent({
+              // Publish the tool:error event (background)
+              AgentEventEmitter.getInstance().publishTimelineEventAsync({
                 agentId: this.id,
                 historyId: operationContext.historyEntry.id,
                 event: toolErrorEvent,
@@ -1626,8 +1645,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 parentEventId: toolStartInfo.eventId, // Link to the tool:start event
               };
 
-              // Publish the tool:success event
-              await AgentEventEmitter.getInstance().publishTimelineEvent({
+              // Publish the tool:success event (background)
+              AgentEventEmitter.getInstance().publishTimelineEventAsync({
                 agentId: this.id,
                 historyId: operationContext.historyEntry.id,
                 event: toolSuccessEvent,
@@ -1712,8 +1731,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           parentEventId: agentStartInfo.eventId, // Link to the agent:start event
         };
 
-        // Publish the agent:success event
-        await AgentEventEmitter.getInstance().publishTimelineEvent({
+        // Publish the agent:success event (background)
+        AgentEventEmitter.getInstance().publishTimelineEventAsync({
           agentId: this.id,
           historyId: operationContext.historyEntry.id,
           event: agentSuccessEvent,
@@ -1751,6 +1770,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             resultWithContext,
           );
         }
+
+        // Drain all background operations after completion
+        await this.drainAllBackgroundOperations();
       },
       onError: async (error: VoltAgentError) => {
         if (error.toolError) {
@@ -1786,8 +1808,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               parentEventId: toolStartInfo.eventId,
             };
 
-            // Publish the tool:error event
-            await AgentEventEmitter.getInstance().publishTimelineEvent({
+            // Publish the tool:error event (background)
+            AgentEventEmitter.getInstance().publishTimelineEventAsync({
               agentId: this.id,
               historyId: operationContext.historyEntry.id,
               event: toolErrorEvent,
@@ -1851,8 +1873,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
         };
 
-        // Publish the agent:error event
-        await AgentEventEmitter.getInstance().publishTimelineEvent({
+        // Publish the agent:error event (background)
+        AgentEventEmitter.getInstance().publishTimelineEventAsync({
           agentId: this.id,
           historyId: operationContext.historyEntry.id,
           event: agentErrorEvent,
@@ -1885,6 +1907,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           conversationId: finalConversationId,
           context: operationContext,
         });
+
+        // Drain all background operations even on error
+        await this.drainAllBackgroundOperations();
       },
     });
 
@@ -1991,7 +2016,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
       // Publish the new event through AgentEventEmitter
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
+      AgentEventEmitter.getInstance().publishTimelineEventAsync({
         agentId: this.id,
         historyId: operationContext.historyEntry.id,
         event: agentStartEvent,
@@ -2070,8 +2095,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         parentEventId: agentStartInfo.eventId, // Link to the agent:start event
       };
 
-      // Publish the agent:success event
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
+      // Publish the agent:success event (background)
+      AgentEventEmitter.getInstance().publishTimelineEventAsync({
         agentId: this.id,
         historyId: operationContext.historyEntry.id,
         event: agentSuccessEvent,
@@ -2108,6 +2133,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
+
+      // Drain all background operations after completion
+      await this.drainAllBackgroundOperations();
+
       return response;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
@@ -2150,8 +2179,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
       };
 
-      // Publish the agent:error event
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
+      // Publish the agent:error event (background)
+      AgentEventEmitter.getInstance().publishTimelineEventAsync({
         agentId: this.id,
         historyId: operationContext.historyEntry.id,
         event: agentErrorEvent,
@@ -2184,6 +2213,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
+
+      // Drain all background operations even on error
+      await this.drainAllBackgroundOperations();
+
       throw voltagentError;
     }
   }
@@ -2279,7 +2312,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
     // Publish the new event through AgentEventEmitter
-    await AgentEventEmitter.getInstance().publishTimelineEvent({
+    AgentEventEmitter.getInstance().publishTimelineEventAsync({
       agentId: this.id,
       historyId: operationContext.historyEntry.id,
       event: agentStartEvent,
@@ -2360,8 +2393,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             parentEventId: agentStartInfo.eventId, // Link to the agent:start event
           };
 
-          // Publish the agent:success event
-          await AgentEventEmitter.getInstance().publishTimelineEvent({
+          // Publish the agent:success event (background)
+          AgentEventEmitter.getInstance().publishTimelineEventAsync({
             agentId: this.id,
             historyId: operationContext.historyEntry.id,
             event: agentSuccessEvent,
@@ -2406,6 +2439,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               resultWithContext,
             );
           }
+
+          // Drain all background operations after completion
+          await this.drainAllBackgroundOperations();
         },
         onError: async (error: VoltAgentError) => {
           if (error.toolError) {
@@ -2458,8 +2494,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
           };
 
-          // Publish the agent:error event
-          await AgentEventEmitter.getInstance().publishTimelineEvent({
+          // Publish the agent:error event (background)
+          AgentEventEmitter.getInstance().publishTimelineEventAsync({
             agentId: this.id,
             historyId: operationContext.historyEntry.id,
             event: agentErrorEvent,
@@ -2495,6 +2531,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             conversationId: finalConversationId,
             context: operationContext,
           });
+
+          // Drain all background operations even on error
+          await this.drainAllBackgroundOperations();
         },
       });
       return response;
@@ -2507,6 +2546,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
+
+      // Drain all background operations even on error
+      await this.drainAllBackgroundOperations();
+
       throw error;
     }
   }
