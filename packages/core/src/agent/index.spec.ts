@@ -466,6 +466,7 @@ const mockEventEmitter = {
   onHistoryEntryCreated: vi.fn(),
   onHistoryUpdate: vi.fn(),
   publishTimelineEventAsync: vi.fn(),
+  drainTimelineEvents: vi.fn().mockResolvedValue(undefined),
 } as unknown as Mocked<AgentEventEmitter>;
 
 // Mock AgentEventEmitter.getInstance globally

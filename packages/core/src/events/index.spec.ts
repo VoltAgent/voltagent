@@ -17,9 +17,9 @@ describe("AgentEventEmitter", () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    // Stop background processor to prevent interference between tests
-    eventEmitter.stopBackgroundProcessor();
+  afterEach(async () => {
+    // Drain timeline events to prevent interference between tests
+    await eventEmitter.drainTimelineEvents();
   });
 
   describe("getInstance", () => {

@@ -502,6 +502,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Drain all background operations for cleanup
+   * This ensures all memory and timeline event operations are completed
+   */
+  private async drainAllBackgroundOperations(): Promise<void> {
+    // Drain memory background operations
+    await this.memoryManager.drainBackgroundOperations();
+
+    // Drain timeline event queue for complete cleanup
+    await AgentEventEmitter.getInstance().drainTimelineEvents();
+  }
+
+  /**
    * Calculate maximum number of steps based on sub-agents
    */
   private calculateMaxSteps(): number {
@@ -1257,6 +1269,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed" as any,
       });
 
+      // Drain all background operations after completion
+      await this.drainAllBackgroundOperations();
+
       return response;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
@@ -1335,6 +1350,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "error",
         endTime: new Date(),
       });
+
+      // Drain all background operations even on error
+      await this.drainAllBackgroundOperations();
+
       throw voltagentError;
     }
   }
@@ -1810,6 +1829,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             resultWithContext,
           );
         }
+
+        // Drain all background operations after completion
+        await this.drainAllBackgroundOperations();
       },
       onError: async (error: VoltAgentError) => {
         if (error.toolError) {
@@ -1944,6 +1966,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           conversationId: finalConversationId,
           context: operationContext,
         });
+
+        // Drain all background operations even on error
+        await this.drainAllBackgroundOperations();
       },
     });
 
@@ -2167,6 +2192,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
+
+      // Drain all background operations after completion
+      await this.drainAllBackgroundOperations();
+
       return response;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
@@ -2243,6 +2272,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
+
+      // Drain all background operations even on error
+      await this.drainAllBackgroundOperations();
+
       throw voltagentError;
     }
   }
@@ -2465,6 +2498,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               resultWithContext,
             );
           }
+
+          // Drain all background operations after completion
+          await this.drainAllBackgroundOperations();
         },
         onError: async (error: VoltAgentError) => {
           if (error.toolError) {
@@ -2554,6 +2590,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             conversationId: finalConversationId,
             context: operationContext,
           });
+
+          // Drain all background operations even on error
+          await this.drainAllBackgroundOperations();
         },
       });
       return response;
@@ -2566,6 +2605,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
+
+      // Drain all background operations even on error
+      await this.drainAllBackgroundOperations();
+
       throw error;
     }
   }

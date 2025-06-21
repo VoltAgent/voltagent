@@ -12,6 +12,7 @@ import type {
   NewTimelineEvent,
 } from "../../events/types";
 import { NodeType, createNodeId } from "../../utils/node-utils";
+import { BackgroundQueue } from "../../utils/queue/queue";
 import { LibSQLStorage } from "../index";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";
 
@@ -51,6 +52,11 @@ export class MemoryManager {
   private resourceId: string;
 
   /**
+   * Background queue for memory operations
+   */
+  private backgroundQueue: BackgroundQueue;
+
+  /**
    * Creates a new MemoryManager
    */
   constructor(resourceId: string, memory?: Memory | false, options: MemoryOptions = {}) {
@@ -72,28 +78,32 @@ export class MemoryManager {
     }
 
     this.options = options;
+
+    // Initialize background queue for memory operations
+    this.backgroundQueue = new BackgroundQueue({
+      maxConcurrency: 2, // Limited concurrency for memory operations
+      defaultTimeout: 15000, // 15 seconds timeout
+      defaultRetries: 3, // 3 retries for memory operations
+      drainTimeout: 10000, // 10 seconds to drain when closing
+    });
   }
 
   /**
-   * Create and publish a timeline event for memory operations
+   * Create and publish a timeline event for memory operations using the queue
    *
    * @param context - Operation context with history entry info
    * @param event - Timeline event to publish
-   * @returns A promise that resolves when the event is published
    */
   private publishTimelineEvent(context: OperationContext, event: NewTimelineEvent): void {
     const historyId = context.historyEntry.id;
     if (!historyId) return;
 
-    try {
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.resourceId,
-        historyId: historyId,
-        event: event,
-      });
-    } catch (error) {
-      devLogger.error("Failed to publish timeline event:", error);
-    }
+    // 🔴 FIX: Direct call to avoid double queueing - AgentEventEmitter has its own queue
+    AgentEventEmitter.getInstance().publishTimelineEventAsync({
+      agentId: this.resourceId,
+      historyId: historyId,
+      event: event,
+    });
   }
 
   /**
@@ -363,8 +373,8 @@ export class MemoryManager {
   }
 
   /**
-   * Handle sequential background operations
-   * 1. First ensure conversation exists, 2. Then save input
+   * Handle sequential background operations using the queue
+   * Setup conversation and save input in a single atomic operation
    */
   private handleSequentialBackgroundOperations(
     context: OperationContext,
@@ -374,18 +384,22 @@ export class MemoryManager {
   ): void {
     if (!this.memory) return;
 
-    // Sequential background operations: conversation setup -> input saving
-    this.ensureConversationExists(userId, conversationId)
-      .then(() => {
-        // Only save input after conversation is confirmed to exist
-        return this.saveCurrentInput(context, input, userId, conversationId);
-      })
-      .then(() => {
-        devLogger.info("[Memory] Sequential background operations completed for", conversationId);
-      })
-      .catch((error) => {
-        devLogger.error("[Memory] Sequential background operations failed:", error);
-      });
+    // Single atomic operation combining conversation setup and input saving
+    this.backgroundQueue.enqueue({
+      id: `conversation-and-input-${conversationId}-${Date.now()}`,
+      operation: async () => {
+        try {
+          // First ensure conversation exists
+          await this.ensureConversationExists(userId, conversationId);
+
+          // Then save current input
+          await this.saveCurrentInput(context, input, userId, conversationId);
+        } catch (error) {
+          devLogger.error("Failed to setup conversation and save input:", error);
+          throw error; // Re-throw to trigger retry mechanism
+        }
+      },
+    });
   }
 
   /**
@@ -411,7 +425,7 @@ export class MemoryManager {
         devLogger.info(`[Memory] Updated conversation ${conversationId}`);
       }
     } catch (error) {
-      devLogger.error(`[Memory] Failed to ensure conversation exists:`, error);
+      devLogger.error("[Memory] Failed to ensure conversation exists:", error);
     }
   }
 
@@ -436,7 +450,7 @@ export class MemoryManager {
         };
 
         await this.saveMessage(context, userMessage, userId, conversationId, "text");
-        devLogger.info(`[Memory] Saved user message to conversation`);
+        devLogger.info("[Memory] Saved user message to conversation");
       } else if (Array.isArray(input)) {
         // If input is BaseMessage[], save all to memory
         for (const message of input) {
@@ -445,7 +459,7 @@ export class MemoryManager {
         devLogger.info(`[Memory] Saved ${input.length} messages to conversation`);
       }
     } catch (error) {
-      devLogger.error(`[Memory] Failed to save current input:`, error);
+      devLogger.error("[Memory] Failed to save current input:", error);
     }
   }
 
@@ -701,5 +715,16 @@ export class MemoryManager {
       devLogger.error("Failed to add timeline event to history entry:", error);
       return undefined;
     }
+  }
+
+  /**
+   * Drain all pending background operations
+   * This should be called when closing/stopping the agent to ensure all memory operations complete
+   *
+   * @returns A promise that resolves when all background operations are drained
+   */
+  async drainBackgroundOperations(): Promise<void> {
+    devLogger.info("[Memory] Draining background operations");
+    await this.backgroundQueue.drain();
   }
 }

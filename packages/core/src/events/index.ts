@@ -6,21 +6,12 @@ import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import type { BaseMessage } from "../index";
 import { AgentRegistry } from "../server/registry";
+import { BackgroundQueue } from "../utils/queue/queue";
 import type { NewTimelineEvent } from "./types";
 
 // New type exports
 export type EventStatus = AgentStatus;
 export type TimelineEventType = "memory" | "tool" | "agent" | "retriever";
-
-// Background event publishing types
-interface QueuedEvent {
-  agentId: string;
-  historyId: string;
-  event: NewTimelineEvent;
-  skipPropagation?: boolean;
-  timestamp: number;
-  retryCount: number;
-}
 
 /**
  * Types for tracked event functionality
@@ -80,17 +71,19 @@ export interface AgentEvents {
 export class AgentEventEmitter extends EventEmitter {
   private static instance: AgentEventEmitter | null = null;
 
-  // Background event publishing queue
-  private eventQueue: QueuedEvent[] = [];
-  private isProcessing = false;
-  private processingInterval: NodeJS.Timeout | null = null;
-  private maxQueueSize = 1000;
-  private maxRetries = 3;
-  private batchSize = 10;
+  // Background queue for timeline events
+  private timelineEventQueue: BackgroundQueue;
 
   private constructor() {
     super();
-    this.startBackgroundProcessor();
+
+    // Initialize specialized queue for timeline events
+    this.timelineEventQueue = new BackgroundQueue({
+      maxConcurrency: 5, // Higher concurrency for timeline events (real-time feedback)
+      defaultTimeout: 5000, // 5 seconds timeout (faster for UI feedback)
+      defaultRetries: 2, // Less retries (timeline events are less critical)
+      drainTimeout: 3000, // 3 seconds to drain (quick shutdown)
+    });
   }
 
   /**
@@ -104,76 +97,16 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * Start background event processor
+   * Drain all pending timeline events
+   * This should be called when shutting down to ensure all events are processed
    */
-  private startBackgroundProcessor(): void {
-    if (this.processingInterval) return;
-
-    this.processingInterval = setInterval(async () => {
-      await this.processEventQueue();
-    }, 50); // Process every 50ms for responsive handling
+  public async drainTimelineEvents(): Promise<void> {
+    await this.timelineEventQueue.drain();
   }
 
   /**
-   * Stop background event processor
-   */
-  public stopBackgroundProcessor(): void {
-    if (this.processingInterval) {
-      clearInterval(this.processingInterval);
-      this.processingInterval = null;
-    }
-  }
-
-  /**
-   * Process queued events in batches
-   */
-  private async processEventQueue(): Promise<void> {
-    if (this.isProcessing || this.eventQueue.length === 0) {
-      return;
-    }
-
-    this.isProcessing = true;
-
-    try {
-      // Process events in batches to avoid overwhelming the system
-      const batch = this.eventQueue.splice(0, this.batchSize);
-
-      // Process batch in parallel for better performance
-      const promises = batch.map((queuedEvent) => this.processQueuedEvent(queuedEvent));
-      await Promise.allSettled(promises);
-    } catch (error) {
-      devLogger.error("Error processing event queue:", error);
-    } finally {
-      this.isProcessing = false;
-    }
-  }
-
-  /**
-   * Process a single queued event
-   */
-  private async processQueuedEvent(queuedEvent: QueuedEvent): Promise<void> {
-    try {
-      await this.publishTimelineEventSync(queuedEvent);
-    } catch (error) {
-      devLogger.error(
-        `Error processing queued event (attempt ${queuedEvent.retryCount + 1}):`,
-        error,
-      );
-
-      // Retry logic
-      if (queuedEvent.retryCount < this.maxRetries) {
-        queuedEvent.retryCount++;
-        queuedEvent.timestamp = Date.now(); // Update timestamp for retry
-        this.eventQueue.push(queuedEvent); // Re-queue for retry
-      } else {
-        devLogger.error("Max retries exceeded for event:", queuedEvent.event.id);
-      }
-    }
-  }
-
-  /**
-   * Queue event for background processing (non-blocking)
-   * This is the new optimized method that doesn't block the calling thread
+   * Queue timeline event for background processing (non-blocking)
+   * Uses the new BackgroundQueue utility for better reliability
    */
   public publishTimelineEventAsync(params: {
     agentId: string;
@@ -191,37 +124,45 @@ export class AgentEventEmitter extends EventEmitter {
       event.startTime = new Date().toISOString();
     }
 
-    // Check queue size to prevent memory leaks
-    if (this.eventQueue.length >= this.maxQueueSize) {
-      devLogger.warn(`Event queue is full (${this.maxQueueSize} events), dropping oldest events`);
-      this.eventQueue = this.eventQueue.slice(-Math.floor(this.maxQueueSize * 0.8)); // Keep 80% of events
-    }
+    // Add to the background queue
+    this.timelineEventQueue.enqueue({
+      id: `timeline-event-${event.id}`,
+      operation: async () => {
+        // 🔴 FIX: Proper deep clone to avoid mutation issues
+        const clonedEvent = this.deepCloneEvent(event);
 
-    // Add to queue
-    this.eventQueue.push({
-      agentId,
-      historyId,
-      event: { ...event }, // Clone to avoid mutations
-      skipPropagation,
-      timestamp: Date.now(),
-      retryCount: 0,
+        await this.publishTimelineEventSync({
+          agentId,
+          historyId,
+          event: clonedEvent,
+          skipPropagation,
+        });
+      },
     });
   }
 
   /**
-   * Synchronous version of publishTimelineEvent (for backward compatibility and internal use)
-   * This is what gets called by the background processor
+   * Deep clone event to prevent mutation issues
    */
-  private async publishTimelineEventSync(
-    params:
-      | {
-          agentId: string;
-          historyId: string;
-          event: NewTimelineEvent;
-          skipPropagation?: boolean;
-        }
-      | QueuedEvent,
-  ): Promise<AgentHistoryEntry | undefined> {
+  private deepCloneEvent(event: NewTimelineEvent): NewTimelineEvent {
+    try {
+      return JSON.parse(JSON.stringify(event));
+    } catch (error) {
+      devLogger.warn("Failed to deep clone event, using shallow clone:", error);
+      return { ...event };
+    }
+  }
+
+  /**
+   * Synchronous version of publishTimelineEvent (internal use)
+   * This is what gets called by the background queue
+   */
+  private async publishTimelineEventSync(params: {
+    agentId: string;
+    historyId: string;
+    event: NewTimelineEvent;
+    skipPropagation?: boolean;
+  }): Promise<AgentHistoryEntry | undefined> {
     const { agentId, historyId, event, skipPropagation = false } = params;
 
     const agent = AgentRegistry.getInstance().getAgent(agentId);
@@ -255,7 +196,7 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * Propagates a timeline event from a subagent to all its parent agents
+   * Propagates a timeline event from a subagent to all its parent agents (optimized batch version)
    * This ensures all events from subagents appear in parent agent timelines
    *
    * @param agentId - The source agent ID (subagent)
@@ -277,37 +218,44 @@ export class AgentEventEmitter extends EventEmitter {
     const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
     if (parentIds.length === 0) return; // No parents, nothing to propagate to
 
-    // Propagate to each parent agent
-    for (const parentId of parentIds) {
+    // Batch process all parent propagations to reduce queue pressure
+    const propagationPromises = parentIds.map(async (parentId) => {
       const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
-      if (!parentAgent) continue;
+      if (!parentAgent) return;
 
-      // Find active history entry for the parent agent
-      const parentHistory = await parentAgent.getHistory();
-      const activeParentEntry =
-        parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
+      try {
+        // Find active history entry for the parent agent
+        const parentHistory = await parentAgent.getHistory();
+        const activeParentEntry =
+          parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
 
-      if (!activeParentEntry) continue;
+        if (!activeParentEntry) return;
 
-      // Publish the enriched event to the parent, but skip further propagation
-      // to avoid propagation cycles (skipPropagation=true)
-      this.publishTimelineEventAsync({
-        agentId: parentId,
-        historyId: activeParentEntry.id,
-        event: {
-          ...event,
-          id: crypto.randomUUID(),
-          metadata: {
-            ...event.metadata,
-            agentId: event.metadata.agentId || parentId,
+        // Publish the enriched event to the parent, but skip further propagation
+        // to avoid propagation cycles (skipPropagation=true)
+        this.publishTimelineEventAsync({
+          agentId: parentId,
+          historyId: activeParentEntry.id,
+          event: {
+            ...event,
+            id: crypto.randomUUID(),
+            metadata: {
+              ...event.metadata,
+              agentId: event.metadata.agentId || parentId,
+            },
           },
-        },
-        skipPropagation: true, // Prevent cycles
-      });
+          skipPropagation: true, // Prevent cycles
+        });
 
-      // Recursively propagate to higher level ancestors (grandparents)
-      await this.propagateEventToParentAgents(parentId, activeParentEntry.id, event, visited);
-    }
+        // Recursively propagate to higher level ancestors (grandparents)
+        await this.propagateEventToParentAgents(parentId, activeParentEntry.id, event, visited);
+      } catch (error) {
+        devLogger.warn(`Failed to propagate event to parent agent ${parentId}:`, error);
+      }
+    });
+
+    // Wait for all propagations to complete
+    await Promise.allSettled(propagationPromises);
   }
 
   /**
