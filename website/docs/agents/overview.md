@@ -602,7 +602,7 @@ console.log(response.text);
 // then generate an answer based on the retrieved context.
 ```
 
-[Learn more about Retrievers](./retriever.md)
+[Learn more about Retrievers](../rag/overview.md)
 
 ### Providers
 
