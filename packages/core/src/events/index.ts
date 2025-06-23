@@ -80,9 +80,9 @@ export class AgentEventEmitter extends EventEmitter {
     // Initialize specialized queue for timeline events
     this.timelineEventQueue = new BackgroundQueue({
       maxConcurrency: 5, // Higher concurrency for timeline events (real-time feedback)
-      defaultTimeout: 5000, // 5 seconds timeout (faster for UI feedback)
-      defaultRetries: 2, // Less retries (timeline events are less critical)
-      drainTimeout: 3000, // 3 seconds to drain (quick shutdown)
+      defaultTimeout: 30000, // 30 seconds timeout (faster for UI feedback)
+      defaultRetries: 5, // Less retries (timeline events are less critical)
+      drainTimeout: 10000, // 10 seconds to drain (quick shutdown)
     });
   }
 
