@@ -7,6 +7,7 @@ import type { AgentStatus } from "../agent/types";
 import type { BaseMessage } from "../index";
 import { AgentRegistry } from "../server/registry";
 import { BackgroundQueue } from "../utils/queue/queue";
+import { deepClone } from "../utils/object-utils/object-utils";
 import type { NewTimelineEvent } from "./types";
 
 // New type exports
@@ -128,8 +129,7 @@ export class AgentEventEmitter extends EventEmitter {
     this.timelineEventQueue.enqueue({
       id: `timeline-event-${event.id}`,
       operation: async () => {
-        // 🔴 FIX: Proper deep clone to avoid mutation issues
-        const clonedEvent = this.deepCloneEvent(event);
+        const clonedEvent = deepClone(event);
 
         await this.publishTimelineEventSync({
           agentId,
@@ -139,18 +139,6 @@ export class AgentEventEmitter extends EventEmitter {
         });
       },
     });
-  }
-
-  /**
-   * Deep clone event to prevent mutation issues
-   */
-  private deepCloneEvent(event: NewTimelineEvent): NewTimelineEvent {
-    try {
-      return JSON.parse(JSON.stringify(event));
-    } catch (error) {
-      devLogger.warn("Failed to deep clone event, using shallow clone:", error);
-      return { ...event };
-    }
   }
 
   /**
