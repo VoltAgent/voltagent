@@ -1495,6 +1495,28 @@ describe("Agent", () => {
       // Verify that modifications were actually made to the original contexts
       expect(userContext1.has("op1Modified")).toBe(true);
     });
+
+    it("should return userContext in generateText response", async () => {
+      const userContext = new Map<string | symbol, unknown>();
+      userContext.set("agentName", "Math Agent");
+      userContext.set("testKey", "testValue");
+
+      const response = await agent.generateText("What's 2+2?", {
+        userContext,
+      });
+
+      // Verify response structure includes userContext
+      expect(response).toHaveProperty("userContext");
+      expect(response.userContext).toBeInstanceOf(Map);
+      expect(response.userContext?.get("agentName")).toBe("Math Agent");
+      expect(response.userContext?.get("testKey")).toBe("testValue");
+
+      // Verify the response also has the expected base properties
+      expect(response).toHaveProperty("text");
+      expect(response).toHaveProperty("usage");
+      expect(response).toHaveProperty("finishReason");
+      expect(response).toHaveProperty("providerResponse");
+    });
   });
 
   describe("forward event functionality", () => {

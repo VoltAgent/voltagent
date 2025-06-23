@@ -46,8 +46,6 @@ import type {
   CommonGenerateOptions,
   DynamicValue,
   DynamicValueOptions,
-  InferGenerateObjectResponseFromProvider,
-  InferGenerateTextResponseFromProvider,
   InferStreamObjectResponseFromProvider,
   InferStreamTextResponseFromProvider,
   InternalGenerateOptions,
@@ -915,7 +913,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateTextResponseFromProvider<TProvider>> {
+  ): Promise<StandardizedTextResult> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1259,7 +1257,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed" as any,
       });
 
-      return response;
+      return standardizedOutput as any;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
@@ -1906,7 +1904,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateObjectResponseFromProvider<TProvider, TSchema>> {
+  ): Promise<StandardizedObjectResult<z.infer<TSchema>>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -2108,7 +2106,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
-      return response;
+      return standardizedOutput as any;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
