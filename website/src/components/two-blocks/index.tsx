@@ -90,7 +90,7 @@ export function TwoBlocks() {
               {/* CTA Button */}
               <button
                 type="button"
-                className="w-full  no-prose landing-md:w-auto landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-black font-semibold rounded-md bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-emerald-400 font-semibold rounded-lg border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
                 onClick={() => {
                   window.open("https://voltagent.dev/docs/", "_blank");
                 }}
@@ -104,7 +104,7 @@ export function TwoBlocks() {
           <div>
             <div className="flex flex-col items-center gap-2 landing-xs:mb-3 landing-md:mb-4">
               <p className="text-orange-500 landing-xs:text-lg landing-md:text-xl font-bold mb-0 uppercase tracking-wide text-center">
-                LLM OBSERVABILITY & EVALS{" "}
+                LLM OBSERVABILITY PLATFORM
               </p>
               <span className="text-gray-300 landing-xs:text-base landing-md:text-lg text-center">
                 Gain visibility with VoltOps
@@ -211,15 +211,13 @@ export function TwoBlocks() {
               {/* CTA Button */}
               <button
                 type="button"
-                className="w-full landing-md:w-auto landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 font-semibold rounded-md bg-orange-400/10 text-orange-400 border-orange-400/20 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
                 onClick={() => {
-                  // Navigate to live preview section and activate VoltOps tab
                   const livePreviewSection = document.querySelector(
                     '[data-section="live-preview"]',
                   );
                   if (livePreviewSection) {
                     livePreviewSection.scrollIntoView({ behavior: "smooth" });
-                    // Dispatch custom event to activate VoltOps tab
                     window.dispatchEvent(new CustomEvent("activateVoltOpsTab"));
                   }
                 }}
