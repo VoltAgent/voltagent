@@ -60,7 +60,6 @@ export class VoltAgentExporter {
       maxConcurrency: 10, // Higher concurrency for telemetry exports (they don't affect event order)
       defaultTimeout: 30000, // 30 seconds for network operations
       defaultRetries: 5, // More retries for network reliability
-      drainTimeout: 15000, // 15 seconds to drain on shutdown
     });
   }
 

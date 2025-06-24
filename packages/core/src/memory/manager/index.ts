@@ -84,7 +84,6 @@ export class MemoryManager {
       maxConcurrency: 10,
       defaultTimeout: 30000, // 30 seconds timeout
       defaultRetries: 5, // 5 retries for memory operations
-      drainTimeout: 10000, // 10 seconds to drain when closing
     });
   }
 

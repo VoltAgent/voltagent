@@ -15,7 +15,7 @@ export interface QueueOptions {
 
 /**
  * A background queue utility for managing async operations
- * Supports priority, timeout, retries, and graceful draining
+ * Supports priority, timeout, and retries
  */
 export class BackgroundQueue {
   private tasks: QueueTask[] = [];
