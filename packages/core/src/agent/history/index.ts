@@ -11,6 +11,7 @@ import type {
 import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/types";
 import type { AgentStatus } from "../types";
+import { BackgroundQueue } from "../../utils/queue/queue";
 
 // Export types
 export type { HistoryStatus } from "./types";
@@ -189,6 +190,12 @@ export class HistoryManager {
   private voltAgentExporter?: VoltAgentExporter;
 
   /**
+   * Background queue for non-blocking history operations
+   * Uses lower concurrency to preserve operation order when telemetryExporter is enabled
+   */
+  private historyQueue: BackgroundQueue;
+
+  /**
    * Create a new history manager
    *
    * @param agentId - Agent ID for emitting events and for storage
@@ -206,6 +213,13 @@ export class HistoryManager {
     this.memoryManager = memoryManager;
     this.maxEntries = maxEntries;
     this.voltAgentExporter = voltAgentExporter;
+
+    // Initialize background queue for all history operations
+    this.historyQueue = new BackgroundQueue({
+      maxConcurrency: 1, // Higher concurrency for mixed operations
+      defaultTimeout: 60000, // 60 seconds timeout for complex operations
+      defaultRetries: 2,
+    });
   }
 
   /**
@@ -224,11 +238,31 @@ export class HistoryManager {
   }
 
   /**
+   * Get the VoltAgentExporter instance
+   * @returns The VoltAgentExporter instance or undefined if not configured
+   */
+  public getExporter(): VoltAgentExporter | undefined {
+    return this.voltAgentExporter;
+  }
+
+  /**
    * Checks if a VoltAgentExporter is configured for this history manager.
    * @returns True if an exporter is configured, false otherwise.
    */
   public isExporterConfigured(): boolean {
     return !!this.voltAgentExporter;
+  }
+
+  /**
+   * Queue a history operation for background processing
+   * @param operationId Unique identifier for the operation
+   * @param operation The async operation to execute
+   */
+  private queueHistoryOperation(operationId: string, operation: () => Promise<void>): void {
+    this.historyQueue.enqueue({
+      id: operationId,
+      operation,
+    });
   }
 
   /**
@@ -262,52 +296,52 @@ export class HistoryManager {
       ...(params.options || {}),
     };
 
-    await this.memoryManager.storeHistoryEntry(this.agentId, entry);
+    // Store entry in memory (background)
+    const agentId = this.agentId; // Capture agentId in closure
+    if (agentId) {
+      this.queueHistoryOperation(`store-entry-${entry.id}`, async () => {
+        await this.memoryManager.storeHistoryEntry(agentId, entry);
+        devLogger.info(`[HistoryManager] History entry stored: ${entry.id}`);
+      });
+    }
 
-    AgentEventEmitter.getInstance().emitHistoryEntryCreated(this.agentId, entry);
+    if (agentId) {
+      AgentEventEmitter.getInstance().emitHistoryEntryCreated(agentId, entry);
+    }
 
-    if (this.voltAgentExporter) {
-      try {
-        let sanitizedInput: Record<string, unknown>;
-        if (typeof entry.input === "string") {
-          sanitizedInput = { text: entry.input };
-        } else if (Array.isArray(entry.input)) {
-          sanitizedInput = { messages: entry.input };
-        } else {
-          sanitizedInput = entry.input;
-        }
+    const voltAgentExporter = this.voltAgentExporter;
 
-        const historyPayload: ExportAgentHistoryPayload = {
-          agent_id: this.agentId,
-          project_id: this.voltAgentExporter.publicKey,
-          history_id: entry.id,
-          startTime: entry.startTime.toISOString(),
-          endTime: entry.endTime?.toISOString(),
-          status: entry.status,
-          input: sanitizedInput,
-          output: { text: entry.output },
-          steps: entry.steps,
-          usage: entry.usage,
-          metadata: {
-            agentSnapshot: params.options?.metadata?.agentSnapshot,
-          },
-          userId: params.userId,
-          conversationId: params.conversationId,
-          model: params.model,
-        };
-        await this.voltAgentExporter.exportHistoryEntry(historyPayload);
-      } catch (telemetryError: any) {
-        if (telemetryError?.message?.includes("401")) {
-          devLogger.warn(
-            `Failed to export history entry to telemetry service for agent ${this.agentId}. Status: 401. Please check your VoltAgentExporter public and secret keys.`,
-          );
-        } else {
-          devLogger.warn(
-            `Failed to export history entry to telemetry service for agent ${this.agentId}. Error:`,
-            telemetryError,
-          );
-        }
+    if (voltAgentExporter) {
+      let sanitizedInput: Record<string, unknown>;
+      if (typeof entry.input === "string") {
+        sanitizedInput = { text: entry.input };
+      } else if (Array.isArray(entry.input)) {
+        sanitizedInput = { messages: entry.input };
+      } else {
+        sanitizedInput = entry.input;
       }
+
+      const historyPayload: ExportAgentHistoryPayload = {
+        agent_id: this.agentId,
+        project_id: voltAgentExporter.publicKey,
+        history_id: entry.id,
+        startTime: entry.startTime.toISOString(),
+        endTime: entry.endTime?.toISOString(),
+        status: entry.status,
+        input: sanitizedInput,
+        output: { text: entry.output },
+        steps: entry.steps,
+        usage: entry.usage,
+        metadata: {
+          agentSnapshot: params.options?.metadata?.agentSnapshot,
+        },
+        userId: params.userId,
+        conversationId: params.conversationId,
+        model: params.model,
+      };
+
+      // 🟢 FIX: Use async export method (non-blocking)
+      voltAgentExporter.exportHistoryEntryAsync(historyPayload);
     }
 
     return entry;
@@ -320,11 +354,10 @@ export class HistoryManager {
    * @param steps - Steps to add
    * @returns The updated entry or undefined if not found
    */
-  public async addStepsToEntry(
-    entryId: string,
-    steps: StepWithContent[],
-  ): Promise<AgentHistoryEntry | undefined> {
-    if (!this.agentId) return undefined;
+  public addStepsToEntry(entryId: string, steps: StepWithContent[]): void {
+    if (!this.agentId) return;
+
+    const agentId = this.agentId; // Capture agentId in closure
 
     const historySteps: HistoryStep[] = steps.map((step) => ({
       type: step.type,
@@ -333,21 +366,27 @@ export class HistoryManager {
       arguments: step.arguments as Record<string, unknown>,
     }));
 
-    const updatedEntry = await this.memoryManager.addStepsToHistoryEntry(
-      this.agentId,
-      entryId,
-      historySteps,
-    );
+    const voltAgentExporter = this.voltAgentExporter;
+    const agentEventEmitter = AgentEventEmitter.getInstance();
+    const memoryManager = this.memoryManager;
 
-    if (this.voltAgentExporter && updatedEntry) {
-      await this.voltAgentExporter.exportHistorySteps(entryId, historySteps);
-    }
+    // Add steps to entry in memory (background)
+    this.queueHistoryOperation(`add-steps-${entryId}`, async () => {
+      const updatedEntry = await memoryManager.addStepsToHistoryEntry(
+        agentId,
+        entryId,
+        historySteps,
+      );
+      devLogger.info(`[HistoryManager] Steps added to entry: ${entryId}`);
 
-    if (updatedEntry) {
-      AgentEventEmitter.getInstance().emitHistoryUpdate(this.agentId, updatedEntry);
-    }
+      if (voltAgentExporter && updatedEntry) {
+        voltAgentExporter.exportHistoryStepsAsync(entryId, historySteps);
+      }
 
-    return updatedEntry;
+      if (updatedEntry) {
+        agentEventEmitter.emitHistoryUpdate(agentId, updatedEntry);
+      }
+    });
   }
 
   /**
@@ -385,53 +424,63 @@ export class HistoryManager {
    * @param updates - Partial entry with fields to update
    * @returns The updated entry or undefined if not found
    */
-  public async updateEntry(
+  public updateEntry(
     id: string,
     updates: Partial<
       Omit<AgentHistoryEntry, "id" | "timestamp"> & {
         metadata?: Record<string, unknown>;
       }
     >,
-  ): Promise<AgentHistoryEntry | undefined> {
-    if (!this.agentId) return undefined;
+  ): void {
+    if (!this.agentId) return;
 
-    const updatedEntry = await this.memoryManager.updateHistoryEntry(
-      this.agentId,
-      id,
-      updates as Partial<AgentHistoryEntry>,
-    );
+    const agentId = this.agentId; // Capture agentId in closure
 
-    if (updatedEntry) {
-      AgentEventEmitter.getInstance().emitHistoryUpdate(this.agentId, updatedEntry);
+    const voltAgentExporter = this.voltAgentExporter;
+    const agentEventEmitter = AgentEventEmitter.getInstance();
+    const memoryManager = this.memoryManager;
 
-      if (this.voltAgentExporter) {
-        const finalUpdates: Partial<AgentHistoryUpdatableFields> = {};
+    // Update entry in memory (background)
+    this.queueHistoryOperation(`update-entry-${id}`, async () => {
+      const updatedEntry = await memoryManager.updateHistoryEntry(
+        agentId,
+        id,
+        updates as Partial<AgentHistoryEntry>,
+      );
+      devLogger.info(`[HistoryManager] History entry updated in memory: ${id}`);
 
-        if (updates.input !== undefined) {
-          if (typeof updates.input === "string") finalUpdates.input = { text: updates.input };
-          else finalUpdates.input = updates.input as Record<string, unknown> | BaseMessage[];
+      agentEventEmitter.emitHistoryUpdate(agentId, updatedEntry);
+      try {
+        if (voltAgentExporter) {
+          const finalUpdates: Partial<AgentHistoryUpdatableFields> = {};
+
+          if (updates.input !== undefined) {
+            if (typeof updates.input === "string") finalUpdates.input = { text: updates.input };
+            else finalUpdates.input = updates.input as Record<string, unknown> | BaseMessage[];
+          }
+          if (updates.output !== undefined) finalUpdates.output = updates.output;
+          if (updates.status !== undefined) finalUpdates.status = updates.status;
+          if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
+          if (updates.metadata !== undefined) finalUpdates.metadata = updates.metadata;
+          if (updates.endTime !== undefined) finalUpdates.endTime = updates.endTime.toISOString();
+
+          if (Object.keys(finalUpdates).length > 0) {
+            voltAgentExporter.updateHistoryEntryAsync(
+              id,
+              finalUpdates as AgentHistoryUpdatableFields,
+            );
+          }
         }
-        if (updates.output !== undefined) finalUpdates.output = updates.output;
-        if (updates.status !== undefined) finalUpdates.status = updates.status;
-        if (updates.usage !== undefined) finalUpdates.usage = updates.usage;
-        if (updates.metadata !== undefined) finalUpdates.metadata = updates.metadata;
-        if (updates.endTime !== undefined) finalUpdates.endTime = updates.endTime.toISOString();
-
-        if (Object.keys(finalUpdates).length > 0) {
-          await this.voltAgentExporter.updateHistoryEntry(
-            id,
-            finalUpdates as AgentHistoryUpdatableFields,
-          );
-        }
+      } catch (error) {
+        devLogger.error("Failed to update history entry:", error);
       }
-    }
-
-    return updatedEntry;
+    });
   }
 
   /**
    * Persists a timeline event for a history entry.
    * This is used by the new immutable event system.
+   *
    *
    * @param historyId - ID of the history entry
    * @param event - The NewTimelineEvent object to persist
@@ -441,42 +490,64 @@ export class HistoryManager {
     historyId: string,
     event: NewTimelineEvent,
   ): Promise<AgentHistoryEntry | undefined> {
-    if (!this.agentId) return undefined;
-
-    try {
-      // Ensure the event has an ID
-      const eventId = event.id || crypto.randomUUID();
-
-      // Ensure event has ID set for any future references
-      event.id = eventId;
-
-      // Use the memory manager to add the timeline event
-      const updatedEntry = await this.memoryManager.addTimelineEvent(
-        this.agentId,
-        historyId,
-        eventId,
-        event,
-      );
-
-      if (this.voltAgentExporter && updatedEntry && event.id) {
-        // The backend now expects the entire event object nested, likely under a 'value' key
-        // or as the main event payload itself depending on the exporter implementation.
-        // Assuming the exporter expects the event object directly:
-        const payload: ExportTimelineEventPayload = {
-          history_id: historyId,
-          event_id: eventId,
-          agent_id: this.agentId,
-          event,
-        };
-
-        // We need to ensure the type ExportTimelineEventPayload matches this structure
-        await this.voltAgentExporter.exportTimelineEvent(payload);
-      }
-
-      return updatedEntry;
-    } catch (error) {
-      devLogger.error("Failed to persist timeline event:", error);
+    // 🟢 FIX: Capture agentId in closure for safety (critical pattern from memory)
+    const agentId = this.agentId;
+    if (!agentId) {
+      devLogger.warn("[HistoryManager] persistTimelineEvent called without agentId");
       return undefined;
     }
+
+    // Capture all dependencies in closure to avoid context issues
+    const voltAgentExporter = this.voltAgentExporter;
+    const memoryManager = this.memoryManager;
+
+    // Ensure the event has an ID before queueing
+    const eventId = event.id || crypto.randomUUID();
+    event.id = eventId;
+
+    return new Promise<AgentHistoryEntry | undefined>((resolve) => {
+      this.queueHistoryOperation(`persist-timeline-event-${eventId}`, async () => {
+        try {
+          devLogger.info(
+            `[HistoryManager] Processing timeline event: ${eventId} for agent: ${agentId}`,
+          );
+
+          // Persist to memory within the queue (maintains order)
+          const updatedEntry = await memoryManager.addTimelineEvent(
+            agentId,
+            historyId,
+            eventId,
+            event,
+          );
+
+          if (!updatedEntry) {
+            devLogger.warn(`[HistoryManager] Failed to persist timeline event: ${eventId}`);
+            resolve(undefined);
+            return;
+          }
+
+          devLogger.info(`[HistoryManager] Timeline event persisted successfully: ${eventId}`);
+
+          // Queue telemetry export separately (non-blocking, preserves event order)
+          if (voltAgentExporter && event.id) {
+            const payload: ExportTimelineEventPayload = {
+              history_id: historyId,
+              event_id: eventId,
+              agent_id: agentId, // Use captured agentId instead of this.agentId
+              event,
+            };
+
+            // Non-blocking telemetry export
+            voltAgentExporter.exportTimelineEventAsync(payload);
+          }
+
+          // Resolve with the updated entry
+          resolve(updatedEntry);
+        } catch (error) {
+          devLogger.error(`[HistoryManager] Error persisting timeline event ${eventId}:`, error);
+          resolve(undefined);
+        }
+      });
+    });
   }
 }

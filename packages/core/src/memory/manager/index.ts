@@ -81,7 +81,7 @@ export class MemoryManager {
 
     // Initialize background queue for memory operations
     this.backgroundQueue = new BackgroundQueue({
-      maxConcurrency: 5, // Limited concurrency for memory operations
+      maxConcurrency: 1, // Limited concurrency for memory operations
       defaultTimeout: 30000, // 30 seconds timeout
       defaultRetries: 5, // 5 retries for memory operations
       drainTimeout: 10000, // 10 seconds to drain when closing

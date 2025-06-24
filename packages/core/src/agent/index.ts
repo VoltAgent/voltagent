@@ -502,18 +502,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Drain all background operations for cleanup
-   * This ensures all memory and timeline event operations are completed
-   */
-  private async drainAllBackgroundOperations(): Promise<void> {
-    // Drain memory background operations
-    await this.memoryManager.drainBackgroundOperations();
-
-    // Drain timeline event queue for complete cleanup
-    await AgentEventEmitter.getInstance().drainTimelineEvents();
-  }
-
-  /**
    * Calculate maximum number of steps based on sub-agents
    */
   private calculateMaxSteps(): number {
@@ -772,11 +760,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Update history entry
    */
-  private async updateHistoryEntry(
-    context: OperationContext,
-    updates: Partial<AgentHistoryEntry>,
-  ): Promise<void> {
-    await this.historyManager.updateEntry(context.historyEntry.id, updates);
+  private updateHistoryEntry(context: OperationContext, updates: Partial<AgentHistoryEntry>): void {
+    this.historyManager.updateEntry(context.historyEntry.id, updates);
   }
 
   /**
@@ -1262,15 +1247,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context: operationContext,
       });
 
-      await this.updateHistoryEntry(operationContext, {
+      this.updateHistoryEntry(operationContext, {
         output: response.text,
         usage: response.usage,
         endTime: new Date(),
         status: "completed" as any,
       });
-
-      // Drain all background operations after completion
-      await this.drainAllBackgroundOperations();
 
       return response;
     } catch (error) {
@@ -1346,13 +1328,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context: operationContext,
       });
 
-      await this.updateHistoryEntry(operationContext, {
+      this.updateHistoryEntry(operationContext, {
         status: "error",
         endTime: new Date(),
       });
-
-      // Drain all background operations even on error
-      await this.drainAllBackgroundOperations();
 
       throw voltagentError;
     }
@@ -1753,7 +1732,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             agentStartEvent.id,
         };
 
-        await this.updateHistoryEntry(operationContext, {
+        this.updateHistoryEntry(operationContext, {
           output: result.text,
           usage: result.usage,
           endTime: new Date(),
@@ -1829,9 +1808,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             resultWithContext,
           );
         }
-
-        // Drain all background operations after completion
-        await this.drainAllBackgroundOperations();
       },
       onError: async (error: VoltAgentError) => {
         if (error.toolError) {
@@ -1899,7 +1875,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           eventId: operationContext.userContext.get("agent_start_event_id") as string,
         };
 
-        await this.updateHistoryEntry(operationContext, {
+        this.updateHistoryEntry(operationContext, {
           status: "error",
           endTime: new Date(),
         });
@@ -1966,9 +1942,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           conversationId: finalConversationId,
           context: operationContext,
         });
-
-        // Drain all background operations even on error
-        await this.drainAllBackgroundOperations();
       },
     });
 
@@ -2170,7 +2143,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
       operationContext.isActive = false;
 
-      await this.updateHistoryEntry(operationContext, {
+      this.updateHistoryEntry(operationContext, {
         output: responseStr,
         usage: response.usage,
         endTime: new Date(),
@@ -2192,9 +2165,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
-
-      // Drain all background operations after completion
-      await this.drainAllBackgroundOperations();
 
       return response;
     } catch (error) {
@@ -2260,7 +2230,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
       operationContext.isActive = false;
 
-      await this.updateHistoryEntry(operationContext, {
+      this.updateHistoryEntry(operationContext, {
         status: "error",
         endTime: new Date(),
       });
@@ -2272,9 +2242,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
-
-      // Drain all background operations even on error
-      await this.drainAllBackgroundOperations();
 
       throw voltagentError;
     }
@@ -2472,7 +2439,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             },
           });
 
-          await this.updateHistoryEntry(operationContext, {
+          this.updateHistoryEntry(operationContext, {
             output: responseStr,
             usage: result.usage,
             status: "completed" as any,
@@ -2498,9 +2465,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               resultWithContext,
             );
           }
-
-          // Drain all background operations after completion
-          await this.drainAllBackgroundOperations();
         },
         onError: async (error: VoltAgentError) => {
           if (error.toolError) {
@@ -2574,7 +2538,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             },
           });
 
-          await this.updateHistoryEntry(operationContext, {
+          this.updateHistoryEntry(operationContext, {
             status: "error",
           });
 
@@ -2590,9 +2554,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             conversationId: finalConversationId,
             context: operationContext,
           });
-
-          // Drain all background operations even on error
-          await this.drainAllBackgroundOperations();
         },
       });
       return response;
@@ -2605,9 +2566,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         context: operationContext,
       });
-
-      // Drain all background operations even on error
-      await this.drainAllBackgroundOperations();
 
       throw error;
     }

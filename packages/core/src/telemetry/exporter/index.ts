@@ -34,10 +34,18 @@ import {
   type ExportTimelineEventPayload,
   TelemetryServiceApiClient,
 } from "../client";
+import { BackgroundQueue } from "../../utils/queue/queue";
+import { devLogger } from "@voltagent/internal/dev";
 
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;
   public readonly publicKey: string;
+
+  /**
+   * Internal queue for all telemetry export operations
+   * Ensures non-blocking exports that don't interfere with event ordering
+   */
+  private telemetryQueue: BackgroundQueue;
 
   constructor(options: VoltAgentExporterOptions) {
     let baseUrl = options.baseUrl;
@@ -46,83 +54,151 @@ export class VoltAgentExporter {
     }
     this.apiClient = new TelemetryServiceApiClient({ ...options, baseUrl });
     this.publicKey = options.publicKey;
+
+    // Initialize dedicated telemetry export queue
+    this.telemetryQueue = new BackgroundQueue({
+      maxConcurrency: 1, // Higher concurrency for telemetry exports (they don't affect event order)
+      defaultTimeout: 30000, // 30 seconds for network operations
+      defaultRetries: 5, // More retries for network reliability
+      drainTimeout: 15000, // 15 seconds to drain on shutdown
+    });
   }
 
   /**
    * Exports a single agent history entry.
    * @param historyEntryData - The agent history data to export.
-   *                           This should conform to ExportAgentHistoryPayload.
-   * @returns A promise that resolves with the response from the telemetry service,
-   *          typically including the ID of the created history entry.
+   * @returns A promise that resolves with the response from the telemetry service.
    */
   public async exportHistoryEntry(
     historyEntryData: ExportAgentHistoryPayload,
   ): Promise<{ historyEntryId: string }> {
-    // TODO: Add any transformation or validation logic here if needed
-    // before sending to the API client.
-    // For example, ensuring event_timestamp is correctly formatted if it's a Date object.
-    // const payload: ExportAgentHistoryPayload = {
-    //   ...historyEntryData,
-    //   event_timestamp: typeof historyEntryData.event_timestamp === 'string'
-    //     ? historyEntryData.event_timestamp
-    //     : (historyEntryData.event_timestamp as Date).toISOString(), // Example: Convert Date to ISO string
-    // };
-
-    const result = await this.apiClient.exportAgentHistory(historyEntryData); // Pass directly if already formatted
+    const result = await this.apiClient.exportAgentHistory(historyEntryData);
     return {
       historyEntryId: result.id,
     };
   }
 
   /**
+   * Exports a single agent history entry asynchronously (non-blocking).
+   * Queues the export operation to avoid blocking the calling thread.
+   * @param historyEntryData - The agent history data to export.
+   */
+  public exportHistoryEntryAsync(historyEntryData: ExportAgentHistoryPayload): void {
+    this.telemetryQueue.enqueue({
+      id: `export-history-${historyEntryData.history_id}`,
+      operation: async () => {
+        try {
+          await this.exportHistoryEntry(historyEntryData);
+          devLogger.info(
+            `[VoltAgentExporter] History entry exported: ${historyEntryData.history_id}`,
+          );
+        } catch (error) {
+          devLogger.error("Failed to export history entry:", error);
+          throw error;
+        }
+      },
+    });
+  }
+
+  /**
    * Exports a single timeline event.
-   * (Placeholder for when the 'export-timeline-event' Edge Function is ready)
    * @param timelineEventData - The timeline event data to export.
-   *                            This should conform to ExportTimelineEventPayload.
    * @returns A promise that resolves with the response from the telemetry service.
    */
   public async exportTimelineEvent(
     timelineEventData: ExportTimelineEventPayload,
   ): Promise<{ timelineEventId: string }> {
-    // TODO: Add any transformation or validation logic here if needed.
-    // const payload: ExportTimelineEventPayload = {
-    //   ...timelineEventData,
-    //   event_timestamp: typeof timelineEventData.event_timestamp === 'string'
-    //    ? timelineEventData.event_timestamp
-    //    : (timelineEventData.event_timestamp as Date).toISOString(), // Example
-    // };
-
-    const result = await this.apiClient.exportTimelineEvent(timelineEventData); // Pass directly if already formatted
+    const result = await this.apiClient.exportTimelineEvent(timelineEventData);
     return {
       timelineEventId: result.id,
     };
   }
 
   /**
+   * Exports a single timeline event asynchronously (non-blocking).
+   * Queues the export operation to avoid blocking the calling thread.
+   * @param timelineEventData - The timeline event data to export.
+   */
+  public exportTimelineEventAsync(timelineEventData: ExportTimelineEventPayload): void {
+    this.telemetryQueue.enqueue({
+      id: `export-timeline-${timelineEventData.event_id}`,
+      operation: async () => {
+        try {
+          await this.exportTimelineEvent(timelineEventData);
+          devLogger.info(
+            `[VoltAgentExporter] Timeline event exported: ${timelineEventData.event_id}`,
+          );
+        } catch (error) {
+          devLogger.error("Failed to export timeline event:", error);
+          throw error;
+        }
+      },
+    });
+  }
+
+  /**
    * Exports history steps for a specific agent history entry.
-   * @param project_id - The project ID associated with the history entry.
    * @param history_id - The ID of the history entry to export steps for.
    * @param steps - The steps data to export.
-   * @returns A promise that resolves with the response from the telemetry service.
+   * @returns A promise that resolves when the export is complete.
    */
   public async exportHistorySteps(history_id: string, steps: HistoryStep[]): Promise<void> {
     await this.apiClient.exportHistorySteps(history_id, steps);
-    // No specific result to return for void methods
+  }
+
+  /**
+   * Exports history steps for a specific agent history entry asynchronously (non-blocking).
+   * @param history_id - The ID of the history entry to export steps for.
+   * @param steps - The steps data to export.
+   */
+  public exportHistoryStepsAsync(history_id: string, steps: HistoryStep[]): void {
+    this.telemetryQueue.enqueue({
+      id: `export-steps-${history_id}`,
+      operation: async () => {
+        try {
+          await this.exportHistorySteps(history_id, steps);
+          devLogger.info(`[VoltAgentExporter] History steps exported: ${history_id}`);
+        } catch (error) {
+          devLogger.error("Failed to export history steps:", error);
+          throw error;
+        }
+      },
+    });
   }
 
   /**
    * Updates specific fields of an agent history entry.
-   * @param project_id - The project ID associated with the history entry.
    * @param history_id - The ID of the history entry to update.
    * @param updates - An object containing the fields to update.
-   *                  Should conform to Partial<AgentHistoryUpdatableFields>.
-   * @returns A promise that resolves with the response from the telemetry service.
+   * @returns A promise that resolves when the update is complete.
    */
   public async updateHistoryEntry(
     history_id: string,
     updates: Partial<AgentHistoryUpdatableFields>,
   ): Promise<void> {
     await this.apiClient.updateAgentHistory(history_id, updates);
-    // No specific result to return for void methods
+  }
+
+  /**
+   * Updates specific fields of an agent history entry asynchronously (non-blocking).
+   * @param history_id - The ID of the history entry to update.
+   * @param updates - An object containing the fields to update.
+   */
+  public updateHistoryEntryAsync(
+    history_id: string,
+    updates: Partial<AgentHistoryUpdatableFields>,
+  ): void {
+    this.telemetryQueue.enqueue({
+      id: `update-history-${history_id}`,
+      operation: async () => {
+        try {
+          await this.updateHistoryEntry(history_id, updates);
+          devLogger.info(`[VoltAgentExporter] History entry updated: ${history_id}`);
+        } catch (error) {
+          devLogger.error("Failed to update history entry:", error);
+          throw error;
+        }
+      },
+    });
   }
 }

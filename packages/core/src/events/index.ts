@@ -80,8 +80,8 @@ export class AgentEventEmitter extends EventEmitter {
 
     // Initialize specialized queue for timeline events
     this.timelineEventQueue = new BackgroundQueue({
-      maxConcurrency: 5, // Higher concurrency for timeline events (real-time feedback)
-      defaultTimeout: 30000, // 30 seconds timeout (faster for UI feedback)
+      maxConcurrency: 1, // Higher concurrency for timeline events (real-time feedback)
+      defaultTimeout: 60000, // 60 seconds timeout (faster for UI feedback)
       defaultRetries: 5, // Less retries (timeline events are less critical)
       drainTimeout: 10000, // 10 seconds to drain (quick shutdown)
     });
@@ -199,51 +199,101 @@ export class AgentEventEmitter extends EventEmitter {
     visited: Set<string> = new Set(),
   ): Promise<void> {
     // Prevent infinite loops in cyclic agent relationships by tracking visited agents
-    if (visited.has(agentId)) return;
+    if (visited.has(agentId)) {
+      devLogger.info(`[EventPropagation] Skipping already visited agent: ${agentId}`);
+      return;
+    }
     visited.add(agentId);
 
     // Get parent agent IDs for this agent
     const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
-    if (parentIds.length === 0) return; // No parents, nothing to propagate to
+    if (parentIds.length === 0) {
+      devLogger.info(`[EventPropagation] No parents found for agent: ${agentId}`);
+      return; // No parents, nothing to propagate to
+    }
 
-    // Batch process all parent propagations to reduce queue pressure
-    const propagationPromises = parentIds.map(async (parentId) => {
+    devLogger.info(
+      `[EventPropagation] Propagating event from ${agentId} to parents: ${parentIds.join(", ")}`,
+    );
+
+    const propagationTasks: Array<() => Promise<void>> = [];
+
+    // Process parent propagations sequentially to maintain order
+    for (const parentId of parentIds) {
       const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
-      if (!parentAgent) return;
+      if (!parentAgent) {
+        devLogger.warn(`[EventPropagation] Parent agent not found: ${parentId}`);
+        continue;
+      }
 
-      try {
-        // Find active history entry for the parent agent
-        const parentHistory = await parentAgent.getHistory();
-        const activeParentEntry =
-          parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
+      // Add propagation task for this parent
+      propagationTasks.push(async () => {
+        try {
+          // Find active history entry for the parent agent
+          const parentHistory = await parentAgent.getHistory();
+          const activeParentEntry =
+            parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
 
-        if (!activeParentEntry) return;
+          if (!activeParentEntry) {
+            devLogger.warn(
+              `[EventPropagation] No active history entry for parent agent: ${parentId}`,
+            );
+            return;
+          }
 
-        // Publish the enriched event to the parent, but skip further propagation
-        // to avoid propagation cycles (skipPropagation=true)
-        this.publishTimelineEventAsync({
-          agentId: parentId,
-          historyId: activeParentEntry.id,
-          event: {
+          // 🟢 FIX: Create enriched event with new ID to prevent conflicts
+          const enrichedEvent: NewTimelineEvent = {
             ...event,
             id: crypto.randomUUID(),
             metadata: {
               ...event.metadata,
-              agentId: event.metadata.agentId || parentId,
+              agentId: event.metadata?.agentId || parentId,
             },
-          },
-          skipPropagation: true, // Prevent cycles
-        });
+          };
 
-        // Recursively propagate to higher level ancestors (grandparents)
-        await this.propagateEventToParentAgents(parentId, activeParentEntry.id, event, visited);
+          // Call publishTimelineEventSync directly to avoid additional queueing
+          await this.publishTimelineEventSync({
+            agentId: parentId,
+            historyId: activeParentEntry.id,
+            event: enrichedEvent,
+            skipPropagation: true, // Prevent recursive propagation cycles
+          });
+
+          devLogger.info(
+            `[EventPropagation] Successfully propagated event ${enrichedEvent.id} to parent ${parentId}`,
+          );
+        } catch (error) {
+          devLogger.error(
+            `[EventPropagation] Failed to propagate event to parent agent ${parentId}:`,
+            error,
+          );
+          // Continue with other parents instead of failing completely
+        }
+      });
+    }
+
+    // This prevents queue explosion while maintaining event delivery
+    await Promise.allSettled(propagationTasks.map((task) => task()));
+
+    // Process grandparents after all direct parents are handled
+    for (const parentId of parentIds) {
+      try {
+        // Create new visited set for each branch to avoid cross-contamination
+        const branchVisited = new Set(visited);
+        await this.propagateEventToParentAgents(
+          parentId,
+          _historyId, // Keep original history ID for context
+          event,
+          branchVisited,
+        );
       } catch (error) {
-        devLogger.warn(`Failed to propagate event to parent agent ${parentId}:`, error);
+        devLogger.error(
+          `[EventPropagation] Failed to propagate to higher ancestors from ${parentId}:`,
+          error,
+        );
+        // Continue with other ancestors
       }
-    });
-
-    // Wait for all propagations to complete
-    await Promise.allSettled(propagationPromises);
+    }
   }
 
   /**

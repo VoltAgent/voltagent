@@ -21,7 +21,6 @@ export interface QueueOptions {
 export class BackgroundQueue {
   private tasks: QueueTask[] = [];
   private activeTasks = new Set<Promise<any>>();
-  private isDraining = false;
   private options: Required<QueueOptions>;
 
   constructor(options: QueueOptions = {}) {
@@ -37,11 +36,6 @@ export class BackgroundQueue {
    * Add a task to the queue
    */
   public enqueue<T>(task: QueueTask<T>): void {
-    if (this.isDraining) {
-      devLogger.warn(`[Queue] Cannot enqueue task ${task.id} - queue is draining`);
-      return;
-    }
-
     // Set defaults
     task.timeout = task.timeout ?? this.options.defaultTimeout;
     task.retries = task.retries ?? this.options.defaultRetries;
@@ -51,11 +45,7 @@ export class BackgroundQueue {
 
     devLogger.info(`[Queue] Enqueued task ${task.id}`);
 
-    // Process immediately if not draining
-    if (!this.isDraining) {
-      // Use setTimeout to avoid blocking the current execution
-      setTimeout(() => this.processNext(), 0);
-    }
+    setTimeout(() => this.processNext(), 0);
   }
 
   /**
@@ -74,10 +64,8 @@ export class BackgroundQueue {
       // Remove from active when done and try to process more
       taskPromise.finally(() => {
         this.activeTasks.delete(taskPromise);
-        // Try to process more tasks if not draining
-        if (!this.isDraining) {
-          setTimeout(() => this.processNext(), 0);
-        }
+        // Try to process more tasks
+        setTimeout(() => this.processNext(), 0);
       });
     }
   }
@@ -124,68 +112,6 @@ export class BackgroundQueue {
             lastError,
           );
         }
-      }
-    }
-  }
-
-  /**
-   * Drain the queue - wait for all tasks to complete or timeout
-   */
-  public async drain(): Promise<void> {
-    if (this.isDraining) {
-      devLogger.warn("[Queue] Already draining");
-      return;
-    }
-
-    devLogger.info("[Queue] Starting drain process");
-    this.isDraining = true;
-
-    try {
-      // Process any remaining tasks first
-      this.processNext();
-
-      // Wait for all tasks to complete with a timeout
-      const drainPromise = this.waitForCompletion();
-      const timeoutPromise = new Promise<void>((_, reject) => {
-        setTimeout(() => reject(new Error("Drain timeout")), this.options.drainTimeout);
-      });
-
-      await Promise.race([drainPromise, timeoutPromise]);
-      devLogger.info("[Queue] Drain completed");
-    } catch (error) {
-      devLogger.error("[Queue] Drain failed:", error);
-    } finally {
-      this.isDraining = false;
-    }
-  }
-
-  /**
-   * Wait for all tasks to complete
-   */
-  private async waitForCompletion(): Promise<void> {
-    let backoffDelay = 10; // Start with 10ms
-
-    while (this.tasks.length > 0 || this.activeTasks.size > 0) {
-      // Wait for active tasks to complete
-      if (this.activeTasks.size > 0) {
-        try {
-          await Promise.race(Array.from(this.activeTasks));
-          // Reset backoff when tasks complete successfully
-          backoffDelay = 10;
-        } catch (error) {
-          // Log but don't fail drain process due to individual task failures
-          devLogger.warn("[Queue] Task failed during drain:", error);
-        }
-      }
-
-      // Process any remaining tasks
-      this.processNext();
-
-      // Use proper exponential backoff if still waiting
-      if (this.tasks.length > 0 || this.activeTasks.size > 0) {
-        await new Promise((resolve) => setTimeout(resolve, backoffDelay));
-        // Increase backoff up to 100ms max
-        backoffDelay = Math.min(backoffDelay * 1.5, 100);
       }
     }
   }
