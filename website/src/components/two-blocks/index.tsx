@@ -90,7 +90,7 @@ export function TwoBlocks() {
               {/* CTA Button */}
               <button
                 type="button"
-                className="w-full landing-md:w-auto landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-black font-semibold rounded-md bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                className="w-full  no-prose landing-md:w-auto landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-black font-semibold rounded-md bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
                 onClick={() => {
                   window.open("https://voltagent.dev/docs/", "_blank");
                 }}
