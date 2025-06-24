@@ -6,11 +6,26 @@ import {
 } from "@codesandbox/sandpack-react";
 import { amethyst } from "@codesandbox/sandpack-themes";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LivePreview() {
   const [activeTab, setActiveTab] = useState<"code" | "console">("code");
   const isMobile = useMediaQuery("(max-width: 768px)");
+
+  useEffect(() => {
+    const handleActivateVoltOpsTab = () => {
+      setActiveTab("console");
+    };
+
+    window.addEventListener("activateVoltOpsTab", handleActivateVoltOpsTab);
+
+    return () => {
+      window.removeEventListener(
+        "activateVoltOpsTab",
+        handleActivateVoltOpsTab,
+      );
+    };
+  }, []);
 
   return (
     <div
@@ -19,6 +34,7 @@ export default function LivePreview() {
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
       }}
+      data-section="live-preview"
     >
       <div className="flex items-center justify-center gap-4 mb-3">
         <div className="inline-flex border border-solid border-emerald-400/20 self-center rounded-md">
