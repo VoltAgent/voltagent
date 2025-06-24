@@ -1,4 +1,4 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
+import { vi, describe, expect, it, beforeEach } from "vitest";
 import { BackgroundQueue } from "./queue";
 
 // Mock devLogger to avoid console noise in tests
@@ -18,12 +18,7 @@ describe("BackgroundQueue", () => {
       maxConcurrency: 3,
       defaultTimeout: 1000,
       defaultRetries: 1,
-      drainTimeout: 1000,
     });
-  });
-
-  afterEach(async () => {
-    await queue.drain();
   });
 
   describe("Basic functionality", () => {
@@ -38,10 +33,9 @@ describe("BackgroundQueue", () => {
         },
       });
 
-      // Give it a moment to process
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      // Give it time to process in background
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
-      await queue.drain();
       expect(executed).toBe(true);
     }, 3000);
 
@@ -72,9 +66,8 @@ describe("BackgroundQueue", () => {
         },
       });
 
-      // Give tasks time to be enqueued
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await queue.drain();
+      // Give tasks time to complete in background
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(results).toHaveLength(3);
       expect(results).toContain("task1");
@@ -88,7 +81,6 @@ describe("BackgroundQueue", () => {
       const sequentialQueue = new BackgroundQueue({
         maxConcurrency: 1, // Ensure sequential execution
         defaultTimeout: 1000,
-        drainTimeout: 2000,
       });
       const executionOrder: string[] = [];
 
@@ -113,10 +105,9 @@ describe("BackgroundQueue", () => {
         },
       });
 
-      // Wait a bit for processing to start
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Wait for sequential processing to complete
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
-      await sequentialQueue.drain();
       expect(executionOrder).toEqual(["first", "second", "third"]);
     }, 5000);
   });
@@ -126,7 +117,6 @@ describe("BackgroundQueue", () => {
       const concurrentQueue = new BackgroundQueue({
         maxConcurrency: 2,
         defaultTimeout: 500,
-        drainTimeout: 2000,
       });
       let activeTasks = 0;
       let maxConcurrentTasks = 0;
@@ -137,7 +127,7 @@ describe("BackgroundQueue", () => {
           activeTasks++;
           maxConcurrentTasks = Math.max(maxConcurrentTasks, activeTasks);
           // Shorter delay to prevent timeout
-          await new Promise((resolve) => setTimeout(resolve, 20));
+          await new Promise((resolve) => setTimeout(resolve, 50));
           activeTasks--;
         },
       });
@@ -147,10 +137,9 @@ describe("BackgroundQueue", () => {
         concurrentQueue.enqueue(createTask(`task${i}`));
       }
 
-      // Wait a bit for processing to start
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Wait for processing to complete
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-      await concurrentQueue.drain();
       expect(maxConcurrentTasks).toBeLessThanOrEqual(2);
       expect(maxConcurrentTasks).toBeGreaterThan(0);
     }, 5000);
@@ -172,39 +161,9 @@ describe("BackgroundQueue", () => {
         },
       });
 
-      // Give task time to be enqueued and processed
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await queue.drain();
+      // Give task time to complete with retries
+      await new Promise((resolve) => setTimeout(resolve, 200));
       expect(attempts).toBe(3);
-    }, 5000);
-  });
-
-  describe("Drain functionality", () => {
-    it("should wait for all tasks to complete when draining", async () => {
-      let task1Completed = false;
-      let task2Completed = false;
-
-      queue.enqueue({
-        id: "task1",
-        operation: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          task1Completed = true;
-        },
-      });
-
-      queue.enqueue({
-        id: "task2",
-        operation: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          task2Completed = true;
-        },
-      });
-
-      // Give tasks time to be enqueued
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await queue.drain();
-      expect(task1Completed).toBe(true);
-      expect(task2Completed).toBe(true);
     }, 5000);
   });
 
@@ -230,9 +189,8 @@ describe("BackgroundQueue", () => {
         retries: 0,
       });
 
-      // Give tasks time to be enqueued
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await queue.drain();
+      // Give tasks time to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
       expect(successTaskExecuted).toBe(true);
       expect(errorTaskExecuted).toBe(true);
     }, 5000);
@@ -262,9 +220,8 @@ describe("BackgroundQueue", () => {
         },
       });
 
-      // Give tasks time to be enqueued
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await queue.drain();
+      // Give tasks time to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
       expect(results).toContain("task1");
       expect(results).toContain("task3");
       expect(results).toHaveLength(2);
@@ -277,7 +234,6 @@ describe("BackgroundQueue", () => {
         maxConcurrency: 5,
         defaultTimeout: 2000,
         defaultRetries: 5,
-        drainTimeout: 1000,
       });
 
       expect(customQueue).toBeDefined();

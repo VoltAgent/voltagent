@@ -2,7 +2,7 @@
  * Object manipulation utility functions
  */
 
-import { devLogger } from "@voltagent/internal/dev";
+import { devLogger } from "../dev";
 
 /**
  * Deep clone an object using JSON serialization with fallback to shallow clone

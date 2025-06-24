@@ -13,9 +13,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -35,7 +33,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/ws": "^8.18.1",
-    "@voltagent/internal": "workspace:^",
+    "@voltagent/internal": "^0.0.1",
     "hono": "^4.7.7",
     "npm-check-updates": "^17.1.18",
     "uuid": "^9.0.1",

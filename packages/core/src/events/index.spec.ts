@@ -17,11 +17,6 @@ describe("AgentEventEmitter", () => {
     vi.clearAllMocks();
   });
 
-  afterEach(async () => {
-    // Drain timeline events to prevent interference between tests
-    await eventEmitter.drainTimelineEvents();
-  });
-
   describe("getInstance", () => {
     it("should return the same instance on multiple calls", () => {
       const instance1 = AgentEventEmitter.getInstance();
@@ -235,7 +230,13 @@ describe("AgentEventEmitter", () => {
         });
 
         // Assert: propagateEventToParentAgents should be called
-        expect(propagateSpy).toHaveBeenCalledWith("child-agent", "test-history-id", testEvent);
+        expect(propagateSpy).toHaveBeenCalledWith(
+          "child-agent",
+          "test-history-id",
+          testEvent,
+          new Set(),
+          undefined,
+        );
       });
 
       it("should not propagate events when skipPropagation is true", async () => {

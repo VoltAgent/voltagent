@@ -18,16 +18,17 @@
       "types": "./dist/test/index.d.ts",
       "import": "./dist/test/index.mjs",
       "require": "./dist/test/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.mjs",
+      "require": "./dist/utils/index.js"
     }
   },
   "main": "dist/main/index.js",
   "module": "dist/main/index.mjs",
   "types": "dist/main/index.d.ts",
-  "files": [
-    "dist/**/*",
-    "dev/dist/**/*",
-    "test/dist/**/*"
-  ],
+  "files": ["dist/**/*", "dev/dist/**/*", "test/dist/**/*"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -328,12 +328,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         traceId: historyEntryId,
       };
 
-      // Publish the retriever:start event (background)
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.id,
-        historyId: historyEntryId,
-        event: retrieverStartEvent,
-      });
+      // Publish the retriever:start event (background) with parent context
+      this.publishTimelineEvent(operationContext, retrieverStartEvent);
 
       try {
         const context = await this.retriever.retrieve(input, {
@@ -361,12 +357,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
           };
 
-          // Publish the retriever:success event (background)
-          AgentEventEmitter.getInstance().publishTimelineEventAsync({
-            agentId: this.id,
-            historyId: historyEntryId,
-            event: retrieverSuccessEvent,
-          });
+          // Publish the retriever:success event (background) with parent context
+          this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
         } else {
           // If there was no context returned, still create a success event
           // but with a note that no context was found
@@ -388,12 +380,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
           };
 
-          // Publish the retriever:success event (empty result, background)
-          AgentEventEmitter.getInstance().publishTimelineEventAsync({
-            agentId: this.id,
-            historyId: historyEntryId,
-            event: retrieverSuccessEvent,
-          });
+          // Publish the retriever:success event (empty result, background) with parent context
+          this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
         }
       } catch (error) {
         // [NEW EVENT SYSTEM] Create a retriever:error event
@@ -420,12 +408,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
         };
 
-        // Publish the retriever:error event (background)
-        AgentEventEmitter.getInstance().publishTimelineEventAsync({
-          agentId: this.id,
-          historyId: historyEntryId,
-          event: retrieverErrorEvent,
-        });
+        // Publish the retriever:error event (background) with parent context
+        this.publishTimelineEvent(operationContext, retrieverErrorEvent);
 
         devLogger.warn("Failed to retrieve context:", error);
       }
@@ -844,6 +828,22 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
   }
 
+  private publishTimelineEvent(
+    operationContext: OperationContext | undefined,
+    event: any,
+    skipPropagation = false,
+  ): void {
+    if (!operationContext) return;
+
+    AgentEventEmitter.getInstance().publishTimelineEventAsync({
+      agentId: this.id,
+      historyId: operationContext.historyEntry.id,
+      event,
+      skipPropagation,
+      parentHistoryEntryId: operationContext.parentHistoryEntryId,
+    });
+  }
+
   /**
    * Create an enhanced fullStream with real-time SubAgent event injection
    */
@@ -996,11 +996,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
       // Publish the new event through AgentEventEmitter
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.id,
-        historyId: operationContext.historyEntry.id,
-        event: agentStartEvent,
-      });
+      this.publishTimelineEvent(operationContext, agentStartEvent);
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -1064,11 +1060,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               });
 
               // Publish the tool:start event (background)
-              AgentEventEmitter.getInstance().publishTimelineEventAsync({
-                agentId: this.id,
-                historyId: operationContext.historyEntry.id,
-                event: toolStartEvent,
-              });
+              this.publishTimelineEvent(operationContext, toolStartEvent);
 
               await this.addToolEvent(operationContext, step.name, "working", {
                 toolId: step.id,
@@ -1121,11 +1113,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 };
 
                 // Publish the tool:error event (background)
-                AgentEventEmitter.getInstance().publishTimelineEventAsync({
-                  agentId: this.id,
-                  historyId: operationContext.historyEntry.id,
-                  event: toolErrorEvent,
-                });
+                this.publishTimelineEvent(operationContext, toolErrorEvent);
               } else {
                 // Create tool:success event
                 const toolSuccessEvent: ToolSuccessEvent = {
@@ -1147,11 +1135,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 };
 
                 // Publish the tool:success event (background)
-                AgentEventEmitter.getInstance().publishTimelineEventAsync({
-                  agentId: this.id,
-                  historyId: operationContext.historyEntry.id,
-                  event: toolSuccessEvent,
-                });
+                this.publishTimelineEvent(operationContext, toolSuccessEvent);
               }
 
               this._endOtelToolSpan(operationContext, toolCallId, toolName, {
@@ -1216,11 +1200,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
 
       // Publish the agent:success event (background)
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.id,
-        historyId: operationContext.historyEntry.id,
-        event: agentSuccessEvent,
-      });
+      this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
       // Original agent completion event for backward compatibility
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
@@ -1297,11 +1277,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
 
       // Publish the agent:error event (background)
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.id,
-        historyId: operationContext.historyEntry.id,
-        event: agentErrorEvent,
-      });
+      this.publishTimelineEvent(operationContext, agentErrorEvent);
 
       // Original error event for backward compatibility
       this.addAgentEvent(operationContext, "finished", "error" as any, {
@@ -1426,11 +1402,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
     // Publish the new event through AgentEventEmitter
-    AgentEventEmitter.getInstance().publishTimelineEventAsync({
-      agentId: this.id,
-      historyId: operationContext.historyEntry.id,
-      event: agentStartEvent,
-    });
+    this.publishTimelineEvent(operationContext, agentStartEvent);
 
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
@@ -1603,11 +1575,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             });
 
             // Publish the tool:start event (background)
-            AgentEventEmitter.getInstance().publishTimelineEventAsync({
-              agentId: this.id,
-              historyId: operationContext.historyEntry.id,
-              event: toolStartEvent,
-            });
+            this.publishTimelineEvent(operationContext, toolStartEvent);
 
             // Original tool event for backward compatibility
             this.addToolEvent(operationContext, chunk.name, "working", {
@@ -1658,11 +1626,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               };
 
               // Publish the tool:error event (background)
-              AgentEventEmitter.getInstance().publishTimelineEventAsync({
-                agentId: this.id,
-                historyId: operationContext.historyEntry.id,
-                event: toolErrorEvent,
-              });
+              this.publishTimelineEvent(operationContext, toolErrorEvent);
             } else {
               // Create tool:success event
               const toolSuccessEvent: ToolSuccessEvent = {
@@ -1684,11 +1648,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               };
 
               // Publish the tool:success event (background)
-              AgentEventEmitter.getInstance().publishTimelineEventAsync({
-                agentId: this.id,
-                historyId: operationContext.historyEntry.id,
-                event: toolSuccessEvent,
-              });
+              this.publishTimelineEvent(operationContext, toolSuccessEvent);
             }
 
             this._endOtelToolSpan(operationContext, toolCallId, toolName, {
@@ -1770,11 +1730,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         };
 
         // Publish the agent:success event (background)
-        AgentEventEmitter.getInstance().publishTimelineEventAsync({
-          agentId: this.id,
-          historyId: operationContext.historyEntry.id,
-          event: agentSuccessEvent,
-        });
+        this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
         // Original agent completion event for backward compatibility
         this.addAgentEvent(operationContext, "finished", "completed" as any, {
@@ -1844,11 +1800,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             };
 
             // Publish the tool:error event (background)
-            AgentEventEmitter.getInstance().publishTimelineEventAsync({
-              agentId: this.id,
-              historyId: operationContext.historyEntry.id,
-              event: toolErrorEvent,
-            });
+            this.publishTimelineEvent(operationContext, toolErrorEvent);
           } catch (updateError) {
             devLogger.error(
               `[Agent ${this.id}] Failed to update tool event to error status for ${toolName} (${toolCallId}):`,
@@ -1909,11 +1861,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         };
 
         // Publish the agent:error event (background)
-        AgentEventEmitter.getInstance().publishTimelineEventAsync({
-          agentId: this.id,
-          historyId: operationContext.historyEntry.id,
-          event: agentErrorEvent,
-        });
+        this.publishTimelineEvent(operationContext, agentErrorEvent);
 
         // Original error event for backward compatibility
         this.addAgentEvent(operationContext, "finished", "error" as any, {
@@ -2048,11 +1996,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
       // Publish the new event through AgentEventEmitter
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.id,
-        historyId: operationContext.historyEntry.id,
-        event: agentStartEvent,
-      });
+      this.publishTimelineEvent(operationContext, agentStartEvent);
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -2128,11 +2072,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
 
       // Publish the agent:success event (background)
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.id,
-        historyId: operationContext.historyEntry.id,
-        event: agentSuccessEvent,
-      });
+      this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
       const responseStr = JSON.stringify(response.object);
       this.addAgentEvent(operationContext, "finished", "completed" as any, {
@@ -2209,11 +2149,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
 
       // Publish the agent:error event (background)
-      AgentEventEmitter.getInstance().publishTimelineEventAsync({
-        agentId: this.id,
-        historyId: operationContext.historyEntry.id,
-        event: agentErrorEvent,
-      });
+      this.publishTimelineEvent(operationContext, agentErrorEvent);
 
       this.addAgentEvent(operationContext, "finished", "error" as any, {
         input: messages,
@@ -2338,11 +2274,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
 
     // Publish the new event through AgentEventEmitter
-    AgentEventEmitter.getInstance().publishTimelineEventAsync({
-      agentId: this.id,
-      historyId: operationContext.historyEntry.id,
-      event: agentStartEvent,
-    });
+    this.publishTimelineEvent(operationContext, agentStartEvent);
 
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
@@ -2420,11 +2352,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           };
 
           // Publish the agent:success event (background)
-          AgentEventEmitter.getInstance().publishTimelineEventAsync({
-            agentId: this.id,
-            historyId: operationContext.historyEntry.id,
-            event: agentSuccessEvent,
-          });
+          this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
           const responseStr = JSON.stringify(result.object);
           this.addAgentEvent(operationContext, "finished", "completed" as any, {
@@ -2518,11 +2446,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           };
 
           // Publish the agent:error event (background)
-          AgentEventEmitter.getInstance().publishTimelineEventAsync({
-            agentId: this.id,
-            historyId: operationContext.historyEntry.id,
-            event: agentErrorEvent,
-          });
+          this.publishTimelineEvent(operationContext, agentErrorEvent);
 
           this.addAgentEvent(operationContext, "finished", "error" as any, {
             input: messages,

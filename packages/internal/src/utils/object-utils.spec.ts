@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { devLogger } from "@voltagent/internal/dev";
+import { devLogger } from "../dev";
 import { deepClone } from "./object-utils";
 
 // Mock devLogger
-vi.mock("@voltagent/internal/dev", () => ({
+vi.mock("./dev", () => ({
   devLogger: {
     warn: vi.fn(),
   },

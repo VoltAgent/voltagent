@@ -57,7 +57,7 @@ export class VoltAgentExporter {
 
     // Initialize dedicated telemetry export queue
     this.telemetryQueue = new BackgroundQueue({
-      maxConcurrency: 1, // Higher concurrency for telemetry exports (they don't affect event order)
+      maxConcurrency: 10, // Higher concurrency for telemetry exports (they don't affect event order)
       defaultTimeout: 30000, // 30 seconds for network operations
       defaultRetries: 5, // More retries for network reliability
       drainTimeout: 15000, // 15 seconds to drain on shutdown

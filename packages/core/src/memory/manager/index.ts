@@ -81,7 +81,7 @@ export class MemoryManager {
 
     // Initialize background queue for memory operations
     this.backgroundQueue = new BackgroundQueue({
-      maxConcurrency: 1, // Limited concurrency for memory operations
+      maxConcurrency: 10,
       defaultTimeout: 30000, // 30 seconds timeout
       defaultRetries: 5, // 5 retries for memory operations
       drainTimeout: 10000, // 10 seconds to drain when closing
@@ -715,16 +715,5 @@ export class MemoryManager {
       devLogger.error("Failed to add timeline event to history entry:", error);
       return undefined;
     }
-  }
-
-  /**
-   * Drain all pending background operations
-   * This should be called when closing/stopping the agent to ensure all memory operations complete
-   *
-   * @returns A promise that resolves when all background operations are drained
-   */
-  async drainBackgroundOperations(): Promise<void> {
-    devLogger.info("[Memory] Draining background operations");
-    await this.backgroundQueue.drain();
   }
 }

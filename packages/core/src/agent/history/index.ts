@@ -216,7 +216,7 @@ export class HistoryManager {
 
     // Initialize background queue for all history operations
     this.historyQueue = new BackgroundQueue({
-      maxConcurrency: 1, // Higher concurrency for mixed operations
+      maxConcurrency: 1,
       defaultTimeout: 60000, // 60 seconds timeout for complex operations
       defaultRetries: 2,
     });
@@ -340,7 +340,6 @@ export class HistoryManager {
         model: params.model,
       };
 
-      // 🟢 FIX: Use async export method (non-blocking)
       voltAgentExporter.exportHistoryEntryAsync(historyPayload);
     }
 
@@ -490,7 +489,6 @@ export class HistoryManager {
     historyId: string,
     event: NewTimelineEvent,
   ): Promise<AgentHistoryEntry | undefined> {
-    // 🟢 FIX: Capture agentId in closure for safety (critical pattern from memory)
     const agentId = this.agentId;
     if (!agentId) {
       devLogger.warn("[HistoryManager] persistTimelineEvent called without agentId");

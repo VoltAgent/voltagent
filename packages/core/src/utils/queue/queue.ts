@@ -11,7 +11,6 @@ export interface QueueOptions {
   maxConcurrency?: number;
   defaultTimeout?: number;
   defaultRetries?: number;
-  drainTimeout?: number;
 }
 
 /**
@@ -28,7 +27,6 @@ export class BackgroundQueue {
       maxConcurrency: options.maxConcurrency ?? 3,
       defaultTimeout: options.defaultTimeout ?? 10000, // 10 seconds
       defaultRetries: options.defaultRetries ?? 2,
-      drainTimeout: options.drainTimeout ?? 5000, // 5 seconds for drain
     };
   }
 

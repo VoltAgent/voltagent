@@ -484,8 +484,8 @@ describe("MemoryManager", () => {
         "conversation1",
       );
 
-      // Wait for background operations to complete
-      await memoryManager.drainBackgroundOperations();
+      // Give some time for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check that conversation was created
       const conversation = await mockMemory.getConversation("conversation1");
@@ -519,8 +519,8 @@ describe("MemoryManager", () => {
         "conversation1",
       );
 
-      // Wait for background operations to complete
-      await memoryManager.drainBackgroundOperations();
+      // Give some time for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check that messages were saved (background operation)
       const savedMessages = await mockMemory.getMessages({
@@ -549,8 +549,8 @@ describe("MemoryManager", () => {
       expect(conversationId).toBeDefined();
       expect(typeof conversationId).toBe("string");
 
-      // Wait for background operations to complete
-      await memoryManager.drainBackgroundOperations();
+      // Give some time for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check that conversation was created with the generated ID
       const conversation = await mockMemory.getConversation(conversationId);
@@ -591,8 +591,8 @@ describe("MemoryManager", () => {
       expect(messages[1].role).toBe("assistant");
       expect(messages[1].content).toBe("Previous response 1");
 
-      // Wait for background operations to complete
-      await memoryManager.drainBackgroundOperations();
+      // Give some time for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check that the new message was saved (background operation)
       const savedMessages = await mockMemory.getMessages({
@@ -836,9 +836,6 @@ describe("MemoryManager - History Management", () => {
       "test-user",
       "test-conversation",
     );
-
-    // Wait for background operations to complete (including timeline events)
-    await memoryManager.drainBackgroundOperations();
 
     // Verify publishTimelineEventAsync was called
     expect(publishTimelineEventSpy).toHaveBeenCalled();
