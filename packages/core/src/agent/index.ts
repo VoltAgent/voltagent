@@ -1,6 +1,5 @@
 import type { Span } from "@opentelemetry/api";
 import { devLogger } from "@voltagent/internal/dev";
-import { match } from "ts-pattern";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
