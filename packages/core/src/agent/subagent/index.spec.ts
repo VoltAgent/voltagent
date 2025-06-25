@@ -374,7 +374,7 @@ describe("SubAgentManager", () => {
       handoffToMultipleSpy.mockRestore();
     });
 
-    it("should pass supervisor's userContext to sub-agents via handoffOptions", async () => {
+    it("should pass supervisor's userContext to sub-agents via parentOperationContext", async () => {
       subAgentManager.addSubAgent(mockAgent1 as any); // Math Agent
 
       // Spy on mockAgent1.streamText to check the options it receives
@@ -414,20 +414,25 @@ describe("SubAgentManager", () => {
       // Define types for the arguments received by the spy
       const messagesPassedToSubAgent = streamTextCallArgs[0] as BaseMessage[];
       const optionsPassedToSubAgent = streamTextCallArgs[1] as {
-        userContext?: Map<string | symbol, unknown>;
+        parentOperationContext?: any;
       };
 
       // Verify the task message is part of what's passed
       expect(messagesPassedToSubAgent[0].role).toBe("system");
       expect(messagesPassedToSubAgent[0].content).toContain("Test task for userContext passing");
 
-      // Verify the userContext from the supervisor was passed in the options
+      // Verify the parentOperationContext from the supervisor was passed in the options
       expect(optionsPassedToSubAgent).toBeDefined();
-      expect(optionsPassedToSubAgent.userContext).toBeDefined();
-      expect(optionsPassedToSubAgent.userContext).toBeInstanceOf(Map);
-      expect(optionsPassedToSubAgent.userContext?.get("supervisorKey")).toBe("supervisorValue");
+      expect(optionsPassedToSubAgent.parentOperationContext).toBeDefined();
+      expect(optionsPassedToSubAgent.parentOperationContext.userContext).toBeDefined();
+      expect(optionsPassedToSubAgent.parentOperationContext.userContext).toBeInstanceOf(Map);
+      expect(optionsPassedToSubAgent.parentOperationContext.userContext?.get("supervisorKey")).toBe(
+        "supervisorValue",
+      );
       // It should be the same instance as it's directly passed through options in createDelegateTool to handoffToMultiple
-      expect(optionsPassedToSubAgent.userContext).toBe(supervisorUserContext);
+      expect(optionsPassedToSubAgent.parentOperationContext.userContext).toBe(
+        supervisorUserContext,
+      );
 
       streamTextSpy.mockRestore();
     });

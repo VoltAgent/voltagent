@@ -234,16 +234,25 @@ export interface CommonGenerateOptions {
 }
 
 /**
- * Internal options extending CommonGenerateOptions with parent context fields
- * Used for internal implementation of agent methods
+ * Internal options that extend PublicGenerateOptions with additional parameters
+ * Used internally by the agent
  */
-export interface InternalGenerateOptions extends CommonGenerateOptions {
-  // Parent agent ID for tracking delegation chain
+export type InternalGenerateOptions = PublicGenerateOptions & {
+  /**
+   * Parent agent ID for delegation chains
+   */
   parentAgentId?: string;
 
-  // Parent history entry ID for connecting events
+  /**
+   * Parent history entry ID for delegation chains
+   */
   parentHistoryEntryId?: string;
-}
+
+  /**
+   * Parent's operation context - if provided, steps will be added to parent's conversationSteps
+   */
+  parentOperationContext?: OperationContext;
+};
 
 /**
  * Public-facing generate options for external users
@@ -368,6 +377,11 @@ export type AgentHandoffOptions = {
    * Used to forward SubAgent events to parent stream in real-time
    */
   forwardEvent?: (event: StreamEvent) => Promise<void>;
+
+  /**
+   * Parent's operation context to merge SubAgent steps into
+   */
+  parentOperationContext?: OperationContext;
 };
 
 /**

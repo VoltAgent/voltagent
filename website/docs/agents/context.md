@@ -185,22 +185,25 @@ console.log("Search query:", response.userContext?.get("searchQuery"));
 console.log("References:", response.userContext?.get("references"));
 ```
 
-## Sub-Agents Share Context
+## Sub-Agents Automatically Inherit Context
 
-When a supervisor delegates to sub-agents, `userContext` is automatically passed:
+When a supervisor delegates to sub-agents, the complete operation context is automatically passed, including `userContext` and conversation history:
 
 ```typescript
-// Worker agent
+// Worker agent - automatically receives supervisor's context
 const workerAgent = new Agent({
   name: "WorkerAgent",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   hooks: createHooks({
     onStart: ({ context }) => {
-      // Gets userContext from supervisor
+      // Automatically gets userContext from supervisor
       const projectId = context.userContext.get("projectId");
       const language = context.userContext.get("language");
       console.log(`Worker starting for project ${projectId}, language ${language}`);
+
+      // Can add its own data too
+      context.userContext.set("workerStartTime", new Date().toISOString());
     },
   }),
   instructions: "You are a worker that processes tasks.",
@@ -214,22 +217,36 @@ const supervisorAgent = new Agent({
   subAgents: [workerAgent],
   hooks: createHooks({
     onStart: ({ context }) => {
-      // Add project tracking
+      // Set up project context
       context.userContext.set("projectId", `project-${Date.now()}`);
+      context.userContext.set("supervisorId", "supervisor-001");
     },
   }),
   instructions: "You supervise tasks. Delegate work to WorkerAgent when needed.",
 });
 
 // Usage
-const context = new Map();
-context.set("language", "English");
+const initialContext = new Map();
+initialContext.set("language", "English");
+initialContext.set("priority", "high");
 
-// When supervisor delegates, worker gets the same userContext
-await supervisorAgent.generateText("Please delegate this task to the worker", {
-  userContext: context,
+const response = await supervisorAgent.generateText("Please delegate this task to the worker", {
+  userContext: initialContext,
 });
+
+// Final context includes data from both supervisor and worker
+console.log("Project ID:", response.userContext?.get("projectId"));
+console.log("Worker start time:", response.userContext?.get("workerStartTime"));
 ```
+
+### Key Benefits
+
+- **Automatic Inheritance**: No manual context passing required
+- **Shared History**: All agents contribute to the same conversation steps
+- **Bidirectional Updates**: Changes made by sub-agents are visible to supervisor
+- **Unified Workflow**: The entire operation appears as one cohesive process
+
+For more details on sub-agent architecture, see the [Sub-Agents guide](./subagents.md).
 
 ## Complete Flow Example
 

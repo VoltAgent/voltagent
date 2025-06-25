@@ -640,6 +640,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userContext?: Map<string | symbol, unknown>;
       userId?: string;
       conversationId?: string;
+      parentOperationContext?: OperationContext;
     } = {
       operationName: "unknown",
     },
@@ -670,13 +671,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     const opContext: OperationContext = {
       operationId: historyEntry.id,
-      userContext: options.userContext ?? new Map<string | symbol, unknown>(),
+      userContext:
+        (options.parentOperationContext?.userContext || options.userContext) ??
+        new Map<string | symbol, unknown>(),
       historyEntry,
       isActive: true,
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
       otelSpan: otelSpan,
-      conversationSteps: [],
+      // Use parent's conversationSteps if available (for SubAgents), otherwise create new array
+      conversationSteps: options.parentOperationContext?.conversationSteps || [],
     };
 
     return opContext;
@@ -919,6 +923,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       conversationId: initialConversationId,
       parentAgentId,
       parentHistoryEntryId,
+      parentOperationContext,
       contextLimit = 10,
       userContext,
     } = internalOptions;
@@ -930,6 +935,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userContext,
       userId,
       conversationId: initialConversationId,
+      parentOperationContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1328,6 +1334,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       conversationId: initialConversationId,
       parentAgentId,
       parentHistoryEntryId,
+      parentOperationContext,
       contextLimit = 10,
       userContext,
     } = internalOptions;
@@ -1339,6 +1346,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userContext,
       userId,
       conversationId: initialConversationId,
+      parentOperationContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1859,10 +1867,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       conversationId: initialConversationId,
       parentAgentId,
       parentHistoryEntryId,
+      parentOperationContext,
       contextLimit = 10,
       userContext,
     } = internalOptions;
 
+    // Always create new operation context, but share conversationSteps with parent if provided
     const operationContext = await this.initializeHistory(input, "working", {
       parentAgentId,
       parentHistoryEntryId,
@@ -1870,6 +1880,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userContext,
       userId,
       conversationId: initialConversationId,
+      parentOperationContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -2138,6 +2149,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       conversationId: initialConversationId,
       parentAgentId,
       parentHistoryEntryId,
+      parentOperationContext,
       provider,
       contextLimit = 10,
       userContext,
@@ -2150,6 +2162,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userContext,
       userId,
       conversationId: initialConversationId,
+      parentOperationContext,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =

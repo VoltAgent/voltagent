@@ -111,9 +111,9 @@ This tool is the primary interface for delegation.
 7.  The supervisor receives the results from the `delegate_task` tool.
 8.  Based on its instructions and the received results, the supervisor synthesizes the final response and presents it to the user.
 
-## Example
+## Complete Working Example
 
-Here's a complete example of a workflow that uses multiple specialized agents:
+Here's a full example you can copy and run to see subagents in action:
 
 ```ts
 import { Agent } from "@voltagent/core";
@@ -158,6 +158,17 @@ const result = await supervisorAgent.streamText(
 for await (const chunk of result.textStream) {
   process.stdout.write(chunk);
 }
+
+/* Expected Output:
+1. Supervisor analyzes the request
+2. Supervisor calls delegate_task tool → Story Agent
+3. Story Agent creates the story
+4. Supervisor calls delegate_task tool → Translator Agent  
+5. Translator Agent translates to German
+6. Supervisor presents both versions
+
+Final response includes both the original story and German translation.
+*/
 ```
 
 ## Combining with Hooks
@@ -191,6 +202,74 @@ const supervisorAgent = new Agent({
 ```
 
 The `onHandoff` hook is triggered within the `handoffTask` method just before the target agent starts processing the delegated task.
+
+## Context Sharing Between Agents
+
+SubAgents automatically inherit the supervisor's operation context, including `userContext` and conversation history. This enables seamless data sharing across the agent hierarchy.
+
+### Automatic Context Inheritance
+
+When a supervisor delegates a task, the subagent receives:
+
+- **userContext**: All custom data from the supervisor's operation
+- **conversationSteps**: Shared conversation history (steps are added to the same array)
+- **parentAgentId**: Reference to the supervisor for traceability
+
+```ts
+// Supervisor sets context
+const response = await supervisorAgent.streamText("Translate this story", {
+  userContext: new Map([
+    ["projectId", "proj-123"],
+    ["language", "Spanish"],
+    ["priority", "high"],
+  ]),
+});
+
+// SubAgent automatically receives this context and can access it in hooks/tools
+const translatorAgent = new Agent({
+  name: "Translator Agent",
+  hooks: createHooks({
+    onStart: ({ context }) => {
+      // Access supervisor's context
+      const projectId = context.userContext.get("projectId");
+      const language = context.userContext.get("language");
+      console.log(`Translating for project ${projectId} to ${language}`);
+    },
+  }),
+  // ... other config
+});
+```
+
+### Shared Conversation History
+
+SubAgents contribute to the same conversation history as their supervisor, making the entire workflow appear as one cohesive operation:
+
+```ts
+const supervisorAgent = new Agent({
+  name: "Supervisor",
+  subAgents: [translatorAgent, reviewerAgent],
+  hooks: createHooks({
+    onEnd: ({ context }) => {
+      // Access all steps from supervisor AND subagents
+      const allSteps = context.conversationSteps;
+      console.log(`Total workflow steps: ${allSteps.length}`);
+
+      // Steps include:
+      // - Supervisor's tool calls (delegate_task)
+      // - SubAgent's processing steps
+      // - All tool executions across agents
+      // This creates a complete audit trail
+    },
+  }),
+  instructions: "Coordinate translation and review workflow",
+});
+
+// When you call the supervisor, you get a unified history
+const response = await supervisorAgent.streamText("Translate and review this text");
+// response.userContext contains the complete workflow state
+```
+
+For detailed examples and patterns, see the [Operation Context guide](./context.md).
 
 ## Observability and Event Tracking
 
@@ -229,4 +308,62 @@ supervisorAgent.addSubAgent(factCheckerAgent);
 // Remove a subagent by its ID
 // This also unregisters the relationship in AgentRegistry
 supervisorAgent.removeSubAgent(factCheckerAgent.id);
+```
+
+## Troubleshooting
+
+### SubAgent Not Being Called?
+
+1. **Check Agent Names**: The `delegate_task` tool uses agent names, not IDs:
+
+   ```ts
+   // ✅ Correct
+   const subAgent = new Agent({ name: "Story Agent", ... });
+
+   // ❌ Wrong - LLM will try to call "story-agent-id"
+   const subAgent = new Agent({ name: "story-agent-id", ... });
+   ```
+
+2. **Improve Supervisor Instructions**: Be explicit about when to delegate:
+
+   ```ts
+   const supervisor = new Agent({
+     instructions: `
+       You coordinate specialized agents:
+       - For creative writing: use Story Agent
+       - For translation: use Translator Agent
+       
+       Always delegate tasks to the appropriate specialist.
+     `,
+     // ...
+   });
+   ```
+
+3. **Debug Context Passing**: Check if context is being inherited:
+   ```ts
+   const subAgent = new Agent({
+     hooks: createHooks({
+       onStart: ({ context }) => {
+         console.log("SubAgent context:", Object.fromEntries(context.userContext));
+       },
+     }),
+     // ...
+   });
+   ```
+
+### Monitor the Workflow
+
+Enable logging to see the delegation flow:
+
+```ts
+const supervisor = new Agent({
+  hooks: createHooks({
+    onToolStart: ({ tool }) => {
+      if (tool.name === "delegate_task") {
+        console.log("🔄 Delegating task to subagent");
+      }
+    },
+  }),
+  // ...
+});
 ```

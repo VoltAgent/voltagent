@@ -174,34 +174,68 @@ class MockProvider implements LLMProvider<MockModelType> {
     this.generateTextCalls++;
     this.lastMessages = options.messages;
 
-    // If there are tools and the message contains "Use the test tool", simulate tool usage
+    // If there are tools and the message contains tool-related keywords, simulate tool usage
     if (
       options.tools &&
+      options.tools.length > 0 &&
       options.messages.some((m) => {
-        return getStringContent(m.content).includes("Use the test tool");
+        const content = getStringContent(m.content);
+        return (
+          content.includes("Use the test tool") ||
+          content.includes("delegate_task") ||
+          content.includes("hand this off") ||
+          content.includes("delegate")
+        );
       })
     ) {
-      // Simulate tool call step
-      if (options.onStepFinish) {
+      // Find the appropriate tool to call
+      const toolToCall = options.tools.find(
+        (tool) => tool.name === "delegate_task" || tool.name === "test-tool",
+      );
+
+      if (toolToCall && options.onStepFinish) {
+        const toolCallId = `${toolToCall.name}-call-id`;
+
+        // Simulate tool call step
         await options.onStepFinish({
           type: "tool_call",
           role: "assistant",
-          content: "Using test-tool",
-          id: "test-tool-call-id",
-          name: "test-tool",
-          arguments: {},
+          content: `Using ${toolToCall.name}`,
+          id: toolCallId,
+          name: toolToCall.name,
+          arguments:
+            toolToCall.name === "delegate_task"
+              ? {
+                  task: "Test delegation task",
+                  targetAgents: ["RealSubAgent"],
+                  context: {},
+                }
+              : {},
         });
-      }
 
-      // Simulate tool result step
-      if (options.onStepFinish) {
+        // Execute the actual tool if it's delegate_task
+        let toolResult = "tool result";
+        if (toolToCall.name === "delegate_task" && toolToCall.execute) {
+          try {
+            const result = await toolToCall.execute({
+              task: "Test delegation task",
+              targetAgents: ["RealSubAgent"],
+              context: {},
+            });
+            toolResult = JSON.stringify(result);
+          } catch (error) {
+            toolResult = `Error: ${error}`;
+          }
+        }
+
+        // Simulate tool result step
         await options.onStepFinish({
           type: "tool_result",
           role: "tool",
-          content: "tool result",
-          id: "test-tool-call-id",
-          name: "test-tool",
-          result: "tool result",
+          content: toolResult,
+          id: toolCallId,
+          name: toolToCall.name,
+          result: toolResult,
         });
       }
     }
@@ -237,9 +271,84 @@ class MockProvider implements LLMProvider<MockModelType> {
     model: MockModelType;
     tools?: BaseTool[];
     maxSteps?: number;
+    onChunk?: (chunk: StepWithContent) => Promise<void>;
+    onStepFinish?: (step: StepWithContent) => Promise<void>;
+    onFinish?: (result: any) => Promise<void>;
+    onError?: (error: any) => Promise<void>;
   }): Promise<ProviderTextStreamResponse<MockStreamTextResult>> {
     this.streamTextCalls++;
     this.lastMessages = options.messages;
+
+    // Check if we should simulate tool usage
+    const shouldUseTool =
+      options.tools &&
+      options.tools.length > 0 &&
+      options.messages.some((m) => {
+        const content = getStringContent(m.content);
+        return (
+          content.includes("Use the test tool") ||
+          content.includes("delegate_task") ||
+          content.includes("hand this off") ||
+          content.includes("delegate")
+        );
+      });
+
+    if (shouldUseTool) {
+      // Find the appropriate tool to call
+      const toolToCall = options.tools?.find(
+        (tool) => tool.name === "delegate_task" || tool.name === "test-tool",
+      );
+
+      if (toolToCall) {
+        const toolCallId = `${toolToCall.name}-call-id`;
+
+        // Simulate tool call chunk
+        if (options.onChunk) {
+          await options.onChunk({
+            type: "tool_call",
+            role: "assistant",
+            content: `Using ${toolToCall.name}`,
+            id: toolCallId,
+            name: toolToCall.name,
+            arguments:
+              toolToCall.name === "delegate_task"
+                ? {
+                    task: "Test delegation task",
+                    targetAgents: ["RealSubAgent"],
+                    context: {},
+                  }
+                : {},
+          });
+        }
+
+        // Execute the actual tool if it's delegate_task
+        let toolResult = "tool result";
+        if (toolToCall.name === "delegate_task" && toolToCall.execute) {
+          try {
+            const result = await toolToCall.execute({
+              task: "Test delegation task",
+              targetAgents: ["RealSubAgent"],
+              context: {},
+            });
+            toolResult = JSON.stringify(result);
+          } catch (error) {
+            toolResult = `Error: ${error}`;
+          }
+        }
+
+        // Simulate tool result chunk
+        if (options.onChunk) {
+          await options.onChunk({
+            type: "tool_result",
+            role: "tool",
+            content: toolResult,
+            id: toolCallId,
+            name: toolToCall.name,
+            result: toolResult,
+          });
+        }
+      }
+    }
 
     const stream = createAsyncIterableStream(
       new ReadableStream<{
@@ -266,6 +375,18 @@ class MockProvider implements LLMProvider<MockModelType> {
         },
       }),
     );
+
+    // Call onFinish if provided
+    if (options.onFinish) {
+      const finishCallback = options.onFinish;
+      setTimeout(() => {
+        finishCallback({
+          text: "Hello, world!",
+          usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+          finishReason: "stop",
+        });
+      }, 0);
+    }
 
     return {
       provider: stream,
@@ -3260,8 +3381,192 @@ describe("Agent", () => {
       }
     });
   });
-});
 
+  describe("SubAgent conversationSteps integration", () => {
+    it("should pass parentOperationContext to SubAgent via delegate tool", async () => {
+      // Simple test to verify parentOperationContext is passed correctly
+      const parentAgent = new TestAgent({
+        id: "parent-test",
+        name: "ParentTestAgent",
+        instructions: "Parent agent for testing",
+        llm: new MockProvider({ modelId: "parent-model" }),
+        model: { modelId: "parent-model" },
+      });
+
+      const subAgent = new TestAgent({
+        id: "sub-test",
+        name: "SubTestAgent",
+        instructions: "Sub agent for testing",
+        llm: new MockProvider({ modelId: "sub-model" }),
+        model: { modelId: "sub-model" },
+      });
+
+      parentAgent.addSubAgent(subAgent);
+
+      // Create test operation context
+      const testOperationContext = {
+        operationId: "test-op-123",
+        userContext: new Map([["testKey", "testValue"]]),
+        conversationSteps: [{ type: "test", content: "initial step" }],
+        historyEntry: { id: "test-history-123" },
+        isActive: true,
+      };
+
+      // Spy on SubAgent's streamText
+      const subAgentSpy = vi.spyOn(subAgent, "streamText");
+
+      // Get delegate tool directly
+      const delegateTool = parentAgent.getSubAgentManager().createDelegateTool({
+        sourceAgent: parentAgent,
+        operationContext: testOperationContext,
+        currentHistoryEntryId: "test-history-123",
+      });
+
+      // Execute delegate tool directly
+      await delegateTool.execute({
+        task: "Test task for SubAgent",
+        targetAgents: ["SubTestAgent"],
+        context: { testContext: true },
+      });
+
+      // Verify SubAgent was called
+      expect(subAgentSpy).toHaveBeenCalled();
+
+      // Get the call arguments
+      const callArgs = subAgentSpy.mock.calls[0];
+      const callOptions = callArgs[1] as any;
+
+      // Verify parentOperationContext was passed
+      expect(callOptions.parentOperationContext).toBeDefined();
+      expect(callOptions.parentOperationContext.operationId).toBe("test-op-123");
+      expect(callOptions.parentOperationContext.userContext.get("testKey")).toBe("testValue");
+      expect(Array.isArray(callOptions.parentOperationContext.conversationSteps)).toBe(true);
+      expect(callOptions.parentOperationContext.conversationSteps[0].content).toBe("initial step");
+
+      subAgentSpy.mockRestore();
+    });
+
+    it("should inherit userContext from parent's operationContext", async () => {
+      // Test that SubAgent inherits userContext from parent's operationContext
+      const parentAgent = new TestAgent({
+        id: "parent-ctx",
+        name: "ParentContextAgent",
+        instructions: "Parent with context",
+        llm: new MockProvider({ modelId: "mock-model" }),
+        model: { modelId: "mock-model" },
+      });
+
+      const subAgent = new TestAgent({
+        id: "sub-ctx",
+        name: "SubContextAgent",
+        instructions: "Sub with inherited context",
+        llm: new MockProvider({ modelId: "mock-model" }),
+        model: { modelId: "mock-model" },
+      });
+
+      parentAgent.addSubAgent(subAgent);
+
+      // Create parent context with userContext
+      const parentUserContext = new Map<string | symbol, unknown>();
+      parentUserContext.set("parentKey", "parentValue");
+      parentUserContext.set("sharedData", { important: true });
+
+      const parentOperationContext = {
+        operationId: "parent-op",
+        userContext: parentUserContext,
+        conversationSteps: [],
+        historyEntry: { id: "parent-history" },
+        isActive: true,
+      };
+
+      // Spy on SubAgent's streamText
+      const subAgentSpy = vi.spyOn(subAgent, "streamText");
+
+      // Execute delegate tool with parent context
+      const delegateTool = parentAgent.getSubAgentManager().createDelegateTool({
+        sourceAgent: parentAgent,
+        operationContext: parentOperationContext,
+        currentHistoryEntryId: "parent-history",
+      });
+
+      await delegateTool.execute({
+        task: "Inherit context test",
+        targetAgents: ["SubContextAgent"],
+        context: {},
+      });
+
+      // Verify SubAgent received parent's userContext
+      expect(subAgentSpy).toHaveBeenCalled();
+      const subAgentOptions = subAgentSpy.mock.calls[0][1] as any;
+      const receivedContext = subAgentOptions.parentOperationContext;
+
+      expect(receivedContext.userContext).toBe(parentUserContext); // Same reference
+      expect(receivedContext.userContext.get("parentKey")).toBe("parentValue");
+      expect(receivedContext.userContext.get("sharedData")).toEqual({ important: true });
+
+      subAgentSpy.mockRestore();
+    });
+
+    it("should share conversationSteps array between parent and SubAgent", async () => {
+      // Test that conversationSteps array is shared between parent and SubAgent
+      const parentAgent = new TestAgent({
+        id: "parent-steps",
+        name: "ParentStepsAgent",
+        instructions: "Parent with steps",
+        llm: new MockProvider({ modelId: "mock-model" }),
+        model: { modelId: "mock-model" },
+      });
+
+      const subAgent = new TestAgent({
+        id: "sub-steps",
+        name: "SubStepsAgent",
+        instructions: "Sub with shared steps",
+        llm: new MockProvider({ modelId: "mock-model" }),
+        model: { modelId: "mock-model" },
+      });
+
+      parentAgent.addSubAgent(subAgent);
+
+      // Create shared conversationSteps array
+      const sharedSteps: any[] = [{ type: "initial", content: "Parent started" }];
+
+      const parentOperationContext = {
+        operationId: "steps-op",
+        userContext: new Map(),
+        conversationSteps: sharedSteps,
+        historyEntry: { id: "steps-history" },
+        isActive: true,
+      };
+
+      // Spy on SubAgent
+      const subAgentSpy = vi.spyOn(subAgent, "streamText");
+
+      // Execute delegate tool
+      const delegateTool = parentAgent.getSubAgentManager().createDelegateTool({
+        sourceAgent: parentAgent,
+        operationContext: parentOperationContext,
+        currentHistoryEntryId: "steps-history",
+      });
+
+      await delegateTool.execute({
+        task: "Shared steps test",
+        targetAgents: ["SubStepsAgent"],
+        context: {},
+      });
+
+      // Verify SubAgent received same conversationSteps array
+      expect(subAgentSpy).toHaveBeenCalled();
+      const subAgentOptions = subAgentSpy.mock.calls[0][1] as any;
+      const receivedSteps = subAgentOptions.parentOperationContext.conversationSteps;
+
+      // Should be the same array reference
+      expect(receivedSteps).toBe(sharedSteps);
+      expect(receivedSteps[0].content).toBe("Parent started");
+
+      subAgentSpy.mockRestore();
+    });
+  });
+});
 // Dynamic Values Tests
 describe("Agent Dynamic Values", () => {
   let mockLLM: MockProvider;

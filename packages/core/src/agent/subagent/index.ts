@@ -162,7 +162,7 @@ ${agentsMemory || "No previous agent interactions available."}
       sourceAgent,
       parentAgentId,
       parentHistoryEntryId,
-      userContext,
+      parentOperationContext,
     } = options;
 
     // Use the provided conversationId or generate a new one
@@ -192,13 +192,12 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         content: taskContent,
       };
 
-      // Use streamText without handoff context in system message
       const streamResponse = await targetAgent.streamText([...sharedContext, taskMessage], {
         conversationId: handoffConversationId,
         userId,
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
-        userContext,
+        parentOperationContext,
       });
 
       // Collect all stream chunks for final result
@@ -363,7 +362,6 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
   public async handoffToMultiple(
     options: Omit<AgentHandoffOptions, "targetAgent"> & {
       targetAgents: Agent<any>[];
-      userContext?: Map<string | symbol, unknown>;
     },
   ): Promise<AgentHandoffResult[]> {
     const {
@@ -371,7 +369,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
       conversationId,
       parentAgentId,
       parentHistoryEntryId,
-      userContext,
+      parentOperationContext,
       ...restOptions
     } = options;
 
@@ -388,7 +386,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             conversationId: handoffConversationId,
             parentAgentId,
             parentHistoryEntryId,
-            userContext,
+            parentOperationContext,
           });
         } catch (error) {
           devLogger.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
@@ -462,7 +460,6 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
           // Get the source agent and its operationContext from options
           const sourceAgent = options.sourceAgent as Agent<any> | undefined;
           const operationContext = options.operationContext;
-          const supervisorUserContext = operationContext?.userContext;
 
           // Get current history entry ID for parent context
           // This is passed from the Agent class via options when the tool is called
@@ -488,8 +485,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             // Pass parent context for event propagation
             parentAgentId: sourceAgent?.id,
             parentHistoryEntryId: currentHistoryEntryId,
-            // Pass the supervisor's userContext to the handoff options
-            userContext: supervisorUserContext,
+            parentOperationContext: operationContext,
             // Pass the real-time event forwarder
             forwardEvent,
             ...options,
