@@ -1,8 +1,14 @@
-import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  CheckCircleIcon,
+  XMarkIcon,
+  CalculatorIcon,
+} from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useState } from "react";
+import PricingCalculatorModal from "./PricingCalculatorModal";
 
 const PricingSection = () => {
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
   const pricingTiers = [
     {
       name: "Free",
@@ -11,9 +17,9 @@ const PricingSection = () => {
       description: "Perfect for getting started with AI agent monitoring",
       features: [
         "1 seat, 1 project",
-        "10.000 events per month",
+        "100 traces per month",
         "Limited requests limits",
-        "Up to 5 agents",
+        "Up to 3 agents",
         "7-day data retention",
       ],
       buttonText: "Get Started",
@@ -27,7 +33,8 @@ const PricingSection = () => {
       description: "Ideal for growing teams and production environments",
       features: [
         "Up to 5 seats included",
-        "100.000 events per month",
+        "5.000 traces per month",
+        "Additional 5,000 traces: $10",
         "4000 requests/min",
         "Unlimited agents",
         "90 days data retention",
@@ -89,9 +96,9 @@ const PricingSection = () => {
       category: "Usage & Limits",
       features: [
         {
-          name: "Monthly Events",
-          free: "10k events",
-          pro: "100k events",
+          name: "Monthly Traces",
+          free: "100 traces",
+          pro: "5.000 traces",
           enterprise: "Unlimited",
         },
         {
@@ -321,15 +328,32 @@ const PricingSection = () => {
                     <div key={`${tier.name}-${feature}`}>
                       <div className="flex items-start">
                         <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0" />
-                        <span
-                          className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
-                            feature === "Enterprise only features"
-                              ? "text-emerald-500 font-medium"
-                              : "text-gray-300"
-                          }`}
-                        >
-                          {feature}
-                        </span>
+                        <div className="flex-1 flex items-center justify-between">
+                          <span
+                            className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
+                              feature === "Enterprise only features"
+                                ? "text-emerald-500 font-medium"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            {feature}
+                          </span>
+                          {feature === "Additional 5,000 traces: $10" && (
+                            <span
+                              onClick={() => setCalculatorOpen(true)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  setCalculatorOpen(true);
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              className="text-emerald-400 hover:text-emerald-300 text-xs cursor-pointer transition-colors ml-2"
+                            >
+                              Calculate
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {feature === "Up to 10 seats included" && (
                         <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8">
@@ -425,6 +449,12 @@ const PricingSection = () => {
           </p>
         </motion.div>
       </div>
+
+      {/* Pricing Calculator Modal */}
+      <PricingCalculatorModal
+        isOpen={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
+      />
     </section>
   );
 };

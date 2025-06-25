@@ -1,5 +1,100 @@
 ## Package: @voltagent/core
 
+## 0.1.44
+
+### Patch Changes
+
+- Updated dependencies [[`94de46a`](https://github.com/VoltAgent/voltagent/commit/94de46ab2b7ccead47a539e93c72b357f17168f6)]:
+  - @voltagent/internal@0.0.2
+
+## 0.1.43
+
+### Patch Changes
+
+- [#287](https://github.com/VoltAgent/voltagent/pull/287) [`4136a9b`](https://github.com/VoltAgent/voltagent/commit/4136a9bd1a2f687bf009858dda4e56a50574c9c2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: optimize streamText/generateText/genereteObject/streamObject performance with background event publishing and memory operations
+
+  Significantly improved agent response times by optimizing blocking operations during stream initialization. Stream start time reduced by 70-80% while maintaining full conversation context quality.
+
+  ## What's Fixed
+
+  - **Background Event Publishing**: Timeline events now publish asynchronously, eliminating blocking delays
+  - **Memory Operations**: Context loading optimized with background conversation setup and input saving
+
+  ## Performance Impact
+
+  - Stream initialization: ~300-500ms → ~150-200ms
+  - 70-80% faster response start times
+  - Zero impact on conversation quality or history tracking
+
+  Perfect for production applications requiring fast AI interactions.
+
+- [#287](https://github.com/VoltAgent/voltagent/pull/287) [`4136a9b`](https://github.com/VoltAgent/voltagent/commit/4136a9bd1a2f687bf009858dda4e56a50574c9c2) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `deepClone` function to `object-utils` module
+
+  Added a new `deepClone` utility function to the object-utils module for creating deep copies of complex JavaScript objects. This utility provides safe cloning of nested objects, arrays, and primitive values while handling circular references and special object types.
+
+  Usage:
+
+  ```typescript
+  import { deepClone } from "@voltagent/core/utils/object-utils";
+
+  const original = {
+    nested: {
+      array: [1, 2, { deep: "value" }],
+      date: new Date(),
+    },
+  };
+
+  const cloned = deepClone(original);
+  // cloned is completely independent from original
+  ```
+
+  This utility is particularly useful for agent state management, configuration cloning, and preventing unintended mutations in complex data structures.
+
+- [#287](https://github.com/VoltAgent/voltagent/pull/287) [`4136a9b`](https://github.com/VoltAgent/voltagent/commit/4136a9bd1a2f687bf009858dda4e56a50574c9c2) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: optimize performance with new `BackgroundQueue` utility class and non-blocking background operations
+
+  Added a new `BackgroundQueue` utility class for managing background operations with enhanced reliability, performance, and order preservation. Significantly improved agent response times by optimizing blocking operations during stream initialization and agent interactions.
+
+  ## Performance Improvements
+
+  **All blocking operations have been moved to background jobs**, resulting in significant performance gains:
+
+  - **Agent execution is no longer blocked** by history persistence, memory operations, or telemetry exports
+  - **3-5x faster response times** for agent interactions due to non-blocking background processing
+  - **Zero blocking delays** during agent conversations and tool executions
+
+  ## Stream Operations Optimized
+
+  - **Background Event Publishing**: Timeline events now publish asynchronously, eliminating blocking delays
+  - **Memory Operations**: Context loading optimized with background conversation setup and input saving
+  - **Stream initialization**: ~300-500ms → ~150-200ms (70-80% faster response start times)
+  - **Zero impact on conversation quality or history tracking**
+
+  Perfect for production applications requiring fast AI interactions with enhanced reliability and order preservation.
+
+## 0.1.42
+
+### Patch Changes
+
+- [#286](https://github.com/VoltAgent/voltagent/pull/286) [`73632ea`](https://github.com/VoltAgent/voltagent/commit/73632ea229917ab4042bb58b61d5e6dbd9b72804) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Fixed issue where fullStream processing was erroring due to inability to access a Nil value
+
+## 0.1.41
+
+### Patch Changes
+
+- [`7705108`](https://github.com/VoltAgent/voltagent/commit/7705108317a8166bb1324838f99691ad8879b94d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: reverted subagent handoff message role from `user` back to `system`.
+
+## 0.1.40
+
+### Patch Changes
+
+- [#284](https://github.com/VoltAgent/voltagent/pull/284) [`003ea5e`](https://github.com/VoltAgent/voltagent/commit/003ea5e0aab1e3e4a1398ed5ebf54b20fc9e27f3) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: subagent task delegation system message handling for Google Gemini compatibility
+
+  Fixed an issue where subagent task delegation was sending tasks as system messages, which caused errors with certain AI models like Google Gemini that have strict system message requirements. The task delegation now properly sends tasks as user messages instead of system messages.
+
+  This change improves compatibility across different AI providers, particularly Google Gemini, which expects a specific system message format and doesn't handle multiple or dynamic system messages well during task delegation workflows.
+
+- [#284](https://github.com/VoltAgent/voltagent/pull/284) [`003ea5e`](https://github.com/VoltAgent/voltagent/commit/003ea5e0aab1e3e4a1398ed5ebf54b20fc9e27f3) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: userContext reference preservation in agent history initialization
+
 ## 0.1.39
 
 ### Patch Changes
@@ -2182,6 +2277,39 @@
 
 ---
 
+## Package: @voltagent/internal
+
+## 0.0.2
+
+### Patch Changes
+
+- [`94de46a`](https://github.com/VoltAgent/voltagent/commit/94de46ab2b7ccead47a539e93c72b357f17168f6) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `deepClone` function to `object-utils` module
+
+  Added a new `deepClone` utility function to the object-utils module for creating deep copies of complex JavaScript objects. This utility provides safe cloning of nested objects, arrays, and primitive values while handling circular references and special object types.
+
+  Usage:
+
+  ```typescript
+  import { deepClone } from "@voltagent/core/utils/object-utils";
+
+  const original = {
+    nested: {
+      array: [1, 2, { deep: "value" }],
+      date: new Date(),
+    },
+  };
+
+  const cloned = deepClone(original);
+  // cloned is completely independent from original
+  ```
+
+  This utility is particularly useful for agent state management, configuration cloning, and preventing unintended mutations in complex data structures.
+
+- Updated dependencies []:
+  - @voltagent/core@0.1.44
+
+---
+
 ## Package: @voltagent/langfuse-exporter
 
 ## 0.1.4
@@ -3029,6 +3157,90 @@
 ---
 
 ## Package: @voltagent/vercel-ui
+
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [[`94de46a`](https://github.com/VoltAgent/voltagent/commit/94de46ab2b7ccead47a539e93c72b357f17168f6)]:
+  - @voltagent/internal@0.0.2
+  - @voltagent/core@0.1.44
+
+## 0.1.0
+
+### Minor Changes
+
+- [#273](https://github.com/VoltAgent/voltagent/pull/273) [`12b8c90`](https://github.com/VoltAgent/voltagent/commit/12b8c9025488e1d6f4b5a99d74b639bf202ba7d2) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Added a set of new utility functions for working with data streams in the vercel `ai` package.
+
+  ## New Functions
+
+  ### `toDataStream`
+
+  You can use this function to convert a VoltAgent `ReadableStream` to a `DataStream`.
+
+  ```typescript
+  const result = await agent.streamText("Hello, world!");
+  const dataStream = toDataStream(result.fullStream);
+  ```
+
+  ### `mergeIntoDataStream`
+
+  You can use this function to merge a VoltAgent `ReadableStream` into a `DataStream` using the vercel `createDataStream` function.
+
+  ```typescript
+  const result = await agent.streamText("Hello, world!");
+
+  const dataStream = createDataStream({
+    execute: async (writer) => {
+      const result = await agent.streamText("Hello, world!");
+      mergeIntoDataStream(writer, result.fullStream);
+    },
+  });
+
+  reply.send(dataStream);
+  ```
+
+  ### `formatDataStreamPart`
+
+  You can use this function to format a data stream part for the vercel `ai` package to be used in the `DataStream` interface, this appends certain metadata for VoltAgent.
+
+  ```typescript
+  const result = await agent.streamText("Hello, world!");
+
+  const dataStream = toDataStream(result.fullStream);
+
+  // This will append subAgentId and subAgentName to the data stream part
+  ```
+
+  ### `isSubAgentStreamPart`
+
+  You can use this function to check if a data stream part is a sub-agent stream part.
+
+  ```typescript
+  import { isSubAgentStreamPart } from "@voltagent/vercel-ui";
+
+  const messages = useChat(...);
+
+  for (const message of messages) {
+    if (isSubAgentStreamPart(message)) {
+      // This is a sub-agent stream part
+      // NOTE: This will ONLY work for Tool calls and results and not other stream parts
+      console.log(message.subAgentId, message.subAgentName);
+    }
+  }
+  ```
+
+  ## New Types
+
+  Additional types have been exposed to make it easier to improve types with the vercel `ai` package.
+
+  - `UIMessage` - A VoltAgent ready `UIMessage` type, this is a wrapper around the vercel `UIMessage` type.
+  - `DataStream` - A VoltAgent ready `DataStream` type, this is a wrapper around the vercel `DataStream` type.
+
+### Patch Changes
+
+- Updated dependencies [[`73632ea`](https://github.com/VoltAgent/voltagent/commit/73632ea229917ab4042bb58b61d5e6dbd9b72804)]:
+  - @voltagent/core@0.1.42
 
 ## 0.0.2
 

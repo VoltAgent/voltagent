@@ -270,7 +270,7 @@ const config: Config = {
       darkTheme: {
         plain: {
           color: "#e2e8f0",
-          backgroundColor: "#000000",
+          backgroundColor: "#282c34",
         },
         styles: [
           {

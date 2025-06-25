@@ -22,9 +22,16 @@ vi.mock("../../telemetry/exporter", () => ({
     exportTimelineEvent: vi.fn(),
     exportHistorySteps: vi.fn(),
     updateHistoryEntry: vi.fn(),
+    exportHistoryEntryAsync: vi.fn(),
+    exportTimelineEventAsync: vi.fn(),
+    exportHistoryStepsAsync: vi.fn(),
+    updateHistoryEntryAsync: vi.fn(),
     publicKey: "mock-public-key",
   })),
 }));
+
+// Helper function to wait for background queue operations
+const waitForBackgroundQueue = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("HistoryManager", () => {
   let historyManager: HistoryManager;
@@ -99,6 +106,10 @@ describe("HistoryManager", () => {
     mockVoltAgentExporter.exportTimelineEvent.mockClear();
     mockVoltAgentExporter.exportHistorySteps.mockClear();
     mockVoltAgentExporter.updateHistoryEntry.mockClear();
+    mockVoltAgentExporter.exportHistoryEntryAsync.mockClear();
+    mockVoltAgentExporter.exportTimelineEventAsync.mockClear();
+    mockVoltAgentExporter.exportHistoryStepsAsync.mockClear();
+    mockVoltAgentExporter.updateHistoryEntryAsync.mockClear();
 
     // Mock AgentEventEmitter
     const mockEmitter = {
@@ -142,6 +153,8 @@ describe("HistoryManager", () => {
       expect(entry.output).toBe(params.output);
       expect(entry.status).toBe(params.status);
 
+      await waitForBackgroundQueue();
+
       const entries = await historyManager.getEntries();
       expect(entries.length).toBe(1);
       expect(entries[0]).toEqual(entry);
@@ -164,7 +177,27 @@ describe("HistoryManager", () => {
     });
 
     it("should truncate history if maxEntries is exceeded", async () => {
-      const limitedHistoryManager = new HistoryManager("test-agent", mockMemoryManager, 2);
+      const isolatedMockEntries: AgentHistoryEntry[] = [];
+
+      // Create isolated mock memory manager for this test
+      const isolatedMockMemoryManager = new MemoryManager(
+        "isolated-memory-manager",
+      ) as Mocked<MemoryManager>;
+      isolatedMockMemoryManager.storeHistoryEntry = vi
+        .fn()
+        .mockImplementation((_agentId, entry) => {
+          isolatedMockEntries.unshift(entry); // Add to the beginning (newest first)
+          return Promise.resolve(entry);
+        });
+      isolatedMockMemoryManager.getAllHistoryEntries = vi.fn().mockImplementation(() => {
+        return Promise.resolve([...isolatedMockEntries]); // Return a copy
+      });
+
+      const limitedHistoryManager = new HistoryManager(
+        "test-agent-limited",
+        isolatedMockMemoryManager,
+        2,
+      );
 
       await limitedHistoryManager.addEntry({
         input: "Input 1",
@@ -182,6 +215,8 @@ describe("HistoryManager", () => {
         status: "completed",
       });
 
+      await waitForBackgroundQueue();
+
       const entries = await limitedHistoryManager.getEntries();
       expect(entries.length).toBe(3); // Changed from 2 to 3 since truncation is not implemented yet
       // Note: The current implementation doesn't handle truncating yet (see TODO in the code)
@@ -193,6 +228,8 @@ describe("HistoryManager", () => {
     it("should return all history entries", async () => {
       await historyManager.addEntry({ input: "Input 1", output: "Output 1", status: "completed" });
       await historyManager.addEntry({ input: "Input 2", output: "Output 2", status: "error" });
+
+      await waitForBackgroundQueue();
 
       const entries = await historyManager.getEntries();
 
@@ -206,6 +243,8 @@ describe("HistoryManager", () => {
     it("should remove all entries when implemented", async () => {
       await historyManager.addEntry({ input: "Input 1", output: "Output 1", status: "completed" });
       await historyManager.addEntry({ input: "Input 2", output: "Output 2", status: "error" });
+
+      await waitForBackgroundQueue();
 
       const entriesBefore = await historyManager.getEntries();
       expect(entriesBefore.length).toBe(2);
@@ -229,10 +268,14 @@ describe("HistoryManager", () => {
 
       await historyManager.addEntry({ input: "Input 1", output: "Output 1", status: "completed" });
 
+      await waitForBackgroundQueue();
+
       const entriesAfterOne = await historyManager.getEntries();
       expect(entriesAfterOne.length).toBe(1);
 
       await historyManager.addEntry({ input: "Input 2", output: "Output 2", status: "error" });
+
+      await waitForBackgroundQueue();
 
       const entriesAfterTwo = await historyManager.getEntries();
       expect(entriesAfterTwo.length).toBe(2);
@@ -254,14 +297,14 @@ describe("HistoryManager", () => {
         status: "working",
       });
 
-      const updatedEntry = await historyManager.updateEntry(entry.id, {
+      await waitForBackgroundQueue();
+
+      historyManager.updateEntry(entry.id, {
         output: "Updated output",
         status: "completed",
       });
 
-      expect(updatedEntry).toBeDefined();
-      expect(updatedEntry?.output).toBe("Updated output");
-      expect(updatedEntry?.status).toBe("completed");
+      await waitForBackgroundQueue();
 
       // Verify the entry was updated in storage
       const retrievedEntry = await historyManager.getEntryById(entry.id);
@@ -314,6 +357,8 @@ describe("HistoryManager", () => {
         status: "completed",
       });
 
+      await waitForBackgroundQueue();
+
       const steps: StepWithContent[] = [
         {
           id: "step-1",
@@ -325,8 +370,12 @@ describe("HistoryManager", () => {
         },
       ];
 
-      const updatedEntry = await historyManager.addStepsToEntry(entry.id, steps);
+      historyManager.addStepsToEntry(entry.id, steps);
 
+      await waitForBackgroundQueue();
+
+      // Verify the steps were added by getting the entry
+      const updatedEntry = await historyManager.getEntryById(entry.id);
       expect(updatedEntry).toBeDefined();
       expect(updatedEntry?.steps).toBeDefined();
       expect(updatedEntry?.steps?.length).toBe(1);
@@ -372,7 +421,7 @@ describe("HistoryManager", () => {
 
         const entry = await telemetryHistoryManager.addEntry(params);
 
-        expect(mockVoltAgentExporter.exportHistoryEntry).toHaveBeenCalledTimes(1);
+        expect(mockVoltAgentExporter.exportHistoryEntryAsync).toHaveBeenCalledTimes(1);
         const expectedPayload: ExportAgentHistoryPayload = {
           agent_id: "telemetry-agent",
           project_id: "mock-public-key",
@@ -391,26 +440,48 @@ describe("HistoryManager", () => {
           conversationId: params.conversationId,
           model: params.model,
         };
-        expect(mockVoltAgentExporter.exportHistoryEntry).toHaveBeenCalledWith(expectedPayload);
+        expect(mockVoltAgentExporter.exportHistoryEntryAsync).toHaveBeenCalledWith(expectedPayload);
       });
 
-      it("should NOT call voltAgentExporter.exportHistoryEntry when exporter is NOT provided", async () => {
+      it("should NOT call voltAgentExporter.exportHistoryEntryAsync when exporter is NOT provided", async () => {
         // Use the default historyManager instance (without exporter)
         await historyManager.addEntry({
           input: "no telemetry input",
           output: "no telemetry output",
           status: "completed",
         });
-        expect(mockVoltAgentExporter.exportHistoryEntry).not.toHaveBeenCalled();
+        expect(mockVoltAgentExporter.exportHistoryEntryAsync).not.toHaveBeenCalled();
       });
 
-      it("should handle errors from exportHistoryEntry gracefully", async () => {
-        mockVoltAgentExporter.exportHistoryEntry.mockRejectedValueOnce(new Error("Telemetry down"));
-        await telemetryHistoryManager.addEntry({
+      it("should handle errors from exportHistoryEntryAsync gracefully", async () => {
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        // Real VoltAgentExporter throws errors in the background queue operations
+        mockVoltAgentExporter.exportHistoryEntryAsync.mockImplementationOnce(() => {
+          // Simulate the real queue behavior - enqueue operation that will fail
+          setTimeout(() => {
+            try {
+              throw new Error("Telemetry down");
+            } catch (error) {
+              console.error("Failed to export history entry:", error);
+            }
+          }, 50);
+        });
+
+        // The addEntry call itself should still succeed (fire-and-forget telemetry)
+        const entry = await telemetryHistoryManager.addEntry({
           input: "error input",
           output: "error output",
           status: "completed",
         });
+
+        expect(entry).toBeDefined();
+        expect(entry.input).toBe("error input");
+
+        // Wait for the background operation to complete
+        await waitForBackgroundQueue();
+
+        consoleErrorSpy.mockRestore();
       });
     });
 
@@ -439,10 +510,10 @@ describe("HistoryManager", () => {
 
         await telemetryHistoryManager.persistTimelineEvent(entry.id, event);
 
-        expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledTimes(1);
+        expect(mockVoltAgentExporter.exportTimelineEventAsync).toHaveBeenCalledTimes(1);
 
-        // Check that exportTimelineEvent was called with the right parameters
-        expect(mockVoltAgentExporter.exportTimelineEvent).toHaveBeenCalledWith(
+        // Check that exportTimelineEventAsync was called with the right parameters
+        expect(mockVoltAgentExporter.exportTimelineEventAsync).toHaveBeenCalledWith(
           expect.objectContaining({
             history_id: entry.id,
             event_id: event.id,
@@ -457,15 +528,26 @@ describe("HistoryManager", () => {
         );
       });
 
-      it("should handle errors from exportTimelineEvent gracefully", async () => {
+      it("should handle errors from exportTimelineEventAsync gracefully", async () => {
         const entry = await telemetryHistoryManager.addEntry({
           input: "entry",
           output: "out",
           status: "completed",
         });
-        mockVoltAgentExporter.exportTimelineEvent.mockRejectedValueOnce(
-          new Error("Timeline Telemetry down"),
-        );
+
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        mockVoltAgentExporter.exportTimelineEventAsync.mockImplementationOnce(() => {
+          // Simulate the real queue behavior - enqueue operation that will fail
+          setTimeout(() => {
+            try {
+              throw new Error("Timeline Telemetry down");
+            } catch (error) {
+              console.error("Failed to export timeline event:", error);
+            }
+          }, 50);
+        });
+
         const event: NewTimelineEvent = {
           id: "err-event",
           name: "tool:error",
@@ -482,7 +564,15 @@ describe("HistoryManager", () => {
           },
           traceId: entry.id,
         };
-        await telemetryHistoryManager.persistTimelineEvent(entry.id, event);
+
+        // The persistTimelineEvent call should still succeed (fire-and-forget telemetry)
+        const result = await telemetryHistoryManager.persistTimelineEvent(entry.id, event);
+        expect(result).toBeDefined();
+
+        // Wait for the background operation to complete
+        await waitForBackgroundQueue();
+
+        consoleErrorSpy.mockRestore();
       });
     });
 
@@ -503,24 +593,46 @@ describe("HistoryManager", () => {
           arguments: s.arguments as Record<string, unknown>,
         }));
 
-        await telemetryHistoryManager.addStepsToEntry(entry.id, steps);
+        telemetryHistoryManager.addStepsToEntry(entry.id, steps);
 
-        expect(mockVoltAgentExporter.exportHistorySteps).toHaveBeenCalledTimes(1);
-        expect(mockVoltAgentExporter.exportHistorySteps).toHaveBeenCalledWith(
+        await waitForBackgroundQueue();
+
+        expect(mockVoltAgentExporter.exportHistoryStepsAsync).toHaveBeenCalledTimes(1);
+        expect(mockVoltAgentExporter.exportHistoryStepsAsync).toHaveBeenCalledWith(
           entry.id,
           historySteps,
         );
       });
 
-      it("should handle errors from exportHistorySteps gracefully", async () => {
+      it("should handle errors from exportHistoryStepsAsync gracefully", async () => {
         const entry = await telemetryHistoryManager.addEntry({
           input: "entry",
           output: "out",
           status: "completed",
         });
-        await telemetryHistoryManager.addStepsToEntry(entry.id, [
+
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        mockVoltAgentExporter.exportHistoryStepsAsync.mockImplementationOnce(() => {
+          // Simulate the real queue behavior - enqueue operation that will fail
+          setTimeout(() => {
+            try {
+              throw new Error("Steps Telemetry down");
+            } catch (error) {
+              console.error("Failed to export history steps:", error);
+            }
+          }, 50);
+        });
+
+        // The addStepsToEntry call should still succeed (fire-and-forget telemetry)
+        telemetryHistoryManager.addStepsToEntry(entry.id, [
           { id: "s1", type: "text", content: "Step 1", role: "assistant" },
         ]);
+
+        // Wait for background queue to process
+        await waitForBackgroundQueue();
+
+        consoleErrorSpy.mockRestore();
       });
     });
 
@@ -542,34 +654,59 @@ describe("HistoryManager", () => {
           metadata: { state: "updated" },
         };
 
-        await telemetryHistoryManager.updateEntry(entry.id, updates);
+        telemetryHistoryManager.updateEntry(entry.id, updates);
 
-        expect(mockVoltAgentExporter.updateHistoryEntry).toHaveBeenCalledTimes(1);
-        expect(mockVoltAgentExporter.updateHistoryEntry).toHaveBeenCalledWith(
+        await waitForBackgroundQueue();
+
+        expect(mockVoltAgentExporter.updateHistoryEntryAsync).toHaveBeenCalledTimes(1);
+        expect(mockVoltAgentExporter.updateHistoryEntryAsync).toHaveBeenCalledWith(
           entry.id,
           expectedTelemetryUpdates,
         );
       });
 
-      it("should NOT call voltAgentExporter.updateHistoryEntry if no relevant fields are updated", async () => {
+      it("should NOT call voltAgentExporter.updateHistoryEntryAsync if no relevant fields are updated", async () => {
         const entry = await telemetryHistoryManager.addEntry({
           input: "entry",
           output: "out",
           status: "working",
         });
-        await telemetryHistoryManager.updateEntry(entry.id, {
+        telemetryHistoryManager.updateEntry(entry.id, {
           some_other_field: "value",
         } as Partial<AgentHistoryEntry>);
-        expect(mockVoltAgentExporter.updateHistoryEntry).not.toHaveBeenCalled();
+
+        await waitForBackgroundQueue();
+
+        expect(mockVoltAgentExporter.updateHistoryEntryAsync).not.toHaveBeenCalled();
       });
 
-      it("should handle errors from updateHistoryEntry gracefully", async () => {
+      it("should handle errors from updateHistoryEntryAsync gracefully", async () => {
         const entry = await telemetryHistoryManager.addEntry({
           input: "entry",
           output: "out",
           status: "working",
         });
-        await telemetryHistoryManager.updateEntry(entry.id, { output: "new" });
+
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        mockVoltAgentExporter.updateHistoryEntryAsync.mockImplementationOnce(() => {
+          // Simulate the real queue behavior - enqueue operation that will fail
+          setTimeout(() => {
+            try {
+              throw new Error("Update Telemetry down");
+            } catch (error) {
+              console.error("Failed to update history entry:", error);
+            }
+          }, 50);
+        });
+
+        // The updateEntry call should still succeed (fire-and-forget telemetry)
+        telemetryHistoryManager.updateEntry(entry.id, { output: "new" });
+
+        // Wait for background queue to process
+        await waitForBackgroundQueue();
+
+        consoleErrorSpy.mockRestore();
       });
     });
   });

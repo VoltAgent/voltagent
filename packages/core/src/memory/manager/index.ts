@@ -12,6 +12,7 @@ import type {
   NewTimelineEvent,
 } from "../../events/types";
 import { NodeType, createNodeId } from "../../utils/node-utils";
+import { BackgroundQueue } from "../../utils/queue/queue";
 import { LibSQLStorage } from "../index";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";
 
@@ -51,6 +52,11 @@ export class MemoryManager {
   private resourceId: string;
 
   /**
+   * Background queue for memory operations
+   */
+  private backgroundQueue: BackgroundQueue;
+
+  /**
    * Creates a new MemoryManager
    */
   constructor(resourceId: string, memory?: Memory | false, options: MemoryOptions = {}) {
@@ -72,31 +78,31 @@ export class MemoryManager {
     }
 
     this.options = options;
+
+    // Initialize background queue for memory operations
+    this.backgroundQueue = new BackgroundQueue({
+      maxConcurrency: 10,
+      defaultTimeout: 30000, // 30 seconds timeout
+      defaultRetries: 5, // 5 retries for memory operations
+    });
   }
 
   /**
-   * Create and publish a timeline event for memory operations
+   * Create and publish a timeline event for memory operations using the queue
    *
    * @param context - Operation context with history entry info
    * @param event - Timeline event to publish
-   * @returns A promise that resolves when the event is published
    */
-  private async publishTimelineEvent(
-    context: OperationContext,
-    event: NewTimelineEvent,
-  ): Promise<void> {
+  private publishTimelineEvent(context: OperationContext, event: NewTimelineEvent): void {
     const historyId = context.historyEntry.id;
     if (!historyId) return;
 
-    try {
-      await AgentEventEmitter.getInstance().publishTimelineEvent({
-        agentId: this.resourceId,
-        historyId: historyId,
-        event: event,
-      });
-    } catch (error) {
-      devLogger.error("Failed to publish timeline event:", error);
-    }
+    // 🔴 FIX: Direct call to avoid double queueing - AgentEventEmitter has its own queue
+    AgentEventEmitter.getInstance().publishTimelineEventAsync({
+      agentId: this.resourceId,
+      historyId: historyId,
+      event: event,
+    });
   }
 
   /**
@@ -133,8 +139,8 @@ export class MemoryManager {
       traceId: context.historyEntry.id,
     };
 
-    // Publish the memory write start event
-    await this.publishTimelineEvent(context, memoryWriteStartEvent);
+    // Publish the memory write start event (background)
+    this.publishTimelineEvent(context, memoryWriteStartEvent);
 
     try {
       // Perform the operation
@@ -164,8 +170,8 @@ export class MemoryManager {
         parentEventId: memoryWriteStartEvent.id,
       };
 
-      // Publish the memory write success event
-      await this.publishTimelineEvent(context, memoryWriteSuccessEvent);
+      // Publish the memory write success event (background)
+      this.publishTimelineEvent(context, memoryWriteSuccessEvent);
     } catch (error) {
       // Create memory write error event for new timeline
       const memoryWriteErrorEvent: MemoryWriteErrorEvent = {
@@ -191,8 +197,8 @@ export class MemoryManager {
         parentEventId: memoryWriteStartEvent.id,
       };
 
-      // Publish the memory write error event
-      await this.publishTimelineEvent(context, memoryWriteErrorEvent);
+      // Publish the memory write error event (background)
+      this.publishTimelineEvent(context, memoryWriteErrorEvent);
 
       devLogger.error("Failed to save message:", error);
     }
@@ -235,7 +241,8 @@ export class MemoryManager {
   }
 
   /**
-   * Prepare conversation context for message generation
+   * Prepare conversation context for message generation (CONTEXT-FIRST OPTIMIZED)
+   * Ensures context is always loaded, optimizes non-critical operations in background
    */
   async prepareConversationContext(
     context: OperationContext,
@@ -251,13 +258,158 @@ export class MemoryManager {
       return { messages: [], conversationId };
     }
 
-    // Get history from memory if available
+    // Return empty context immediately if no memory/userId
+    if (!this.memory || !userId) {
+      return { messages: [], conversationId };
+    }
+
+    // 🎯 CRITICAL: Always load conversation context (conversation continuity is essential)
     let messages: BaseMessage[] = [];
-    if (this.memory && userId) {
-      // Check if conversation exists, if not create it
+
+    // Create memory read start event for new timeline
+    const memoryReadStartEvent: MemoryReadStartEvent = {
+      id: crypto.randomUUID(),
+      name: "memory:read_start",
+      type: "memory",
+      startTime: new Date().toISOString(),
+      status: "running",
+      input: {
+        userId,
+        conversationId,
+        contextLimit,
+      },
+      output: null,
+      metadata: {
+        displayName: "Memory",
+        id: "memory",
+        agentId: this.resourceId,
+      },
+      traceId: context.historyEntry.id,
+    };
+
+    // Publish the memory read start event (background)
+    this.publishTimelineEvent(context, memoryReadStartEvent);
+
+    try {
+      // This MUST complete for proper conversation flow - no shortcuts
+      const memoryMessages = await this.memory.getMessages({
+        userId,
+        conversationId,
+        limit: contextLimit,
+      });
+
+      messages = memoryMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      // Create memory read success event for new timeline
+      const memoryReadSuccessEvent: MemoryReadSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:read_success",
+        type: "memory",
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        status: "completed",
+        input: {
+          userId,
+          conversationId,
+          contextLimit,
+        },
+        output: {
+          messagesCount: messages.length,
+          contextLimit,
+          conversationId,
+        },
+        metadata: {
+          displayName: "Memory",
+          id: "memory",
+          agentId: this.resourceId,
+        },
+        traceId: context.historyEntry.id,
+        parentEventId: memoryReadStartEvent.id,
+      };
+
+      // Publish the memory read success event (background)
+      this.publishTimelineEvent(context, memoryReadSuccessEvent);
+
+      devLogger.info("[Memory] Context loaded:", messages.length, "messages");
+    } catch (error) {
+      // Create memory read error event for new timeline
+      const memoryReadErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "memory:read_error",
+        type: "memory",
+        startTime: memoryReadStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        statusMessage: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+        metadata: {
+          displayName: "Memory",
+          id: "memory",
+          agentId: this.resourceId,
+        },
+        traceId: context.historyEntry.id,
+        parentEventId: memoryReadStartEvent.id,
+      } as const;
+
+      // Publish the memory read error event (background)
+      this.publishTimelineEvent(context, memoryReadErrorEvent);
+
+      devLogger.error("[Memory] Failed to load context:", error);
+      // Continue with empty messages, but don't fail the operation
+    }
+
+    this.handleSequentialBackgroundOperations(context, input, userId, conversationId);
+
+    return { messages, conversationId };
+  }
+
+  /**
+   * Handle sequential background operations using the queue
+   * Setup conversation and save input in a single atomic operation
+   */
+  private handleSequentialBackgroundOperations(
+    context: OperationContext,
+    input: string | BaseMessage[],
+    userId: string,
+    conversationId: string,
+  ): void {
+    if (!this.memory) return;
+
+    // Single atomic operation combining conversation setup and input saving
+    this.backgroundQueue.enqueue({
+      id: `conversation-and-input-${conversationId}-${Date.now()}`,
+      operation: async () => {
+        try {
+          // First ensure conversation exists
+          await this.ensureConversationExists(userId, conversationId);
+
+          // Then save current input
+          await this.saveCurrentInput(context, input, userId, conversationId);
+        } catch (error) {
+          devLogger.error("Failed to setup conversation and save input:", error);
+          throw error; // Re-throw to trigger retry mechanism
+        }
+      },
+    });
+  }
+
+  /**
+   * Ensure conversation exists (background task)
+   */
+  private async ensureConversationExists(userId: string, conversationId: string): Promise<void> {
+    if (!this.memory) return;
+
+    try {
       const existingConversation = await this.memory.getConversation(conversationId);
       if (!existingConversation) {
-        // TODO: add new event for createConversation
         await this.memory.createConversation({
           id: conversationId,
           resourceId: this.resourceId,
@@ -265,99 +417,49 @@ export class MemoryManager {
           title: `New Chat ${new Date().toISOString()}`,
           metadata: {},
         });
+        devLogger.info("[Memory] Created new conversation", conversationId);
       } else {
         // Update conversation's updatedAt
         await this.memory.updateConversation(conversationId, {});
+        devLogger.info(`[Memory] Updated conversation ${conversationId}`);
       }
-
-      // TODO: add new event for getMessages
-      try {
-        const memoryReadStartEvent: MemoryReadStartEvent = {
-          id: crypto.randomUUID(),
-          name: "memory:read_start",
-          type: "memory",
-          startTime: new Date().toISOString(),
-          status: "running",
-          input: {
-            userId,
-            conversationId,
-          },
-          output: null,
-          metadata: {
-            displayName: "Memory",
-            id: "memory",
-            agentId: this.resourceId,
-          },
-          traceId: context.historyEntry.id,
-        };
-
-        // Publish the memory read start event
-        await this.publishTimelineEvent(context, memoryReadStartEvent);
-
-        const memoryMessages = await this.memory.getMessages({
-          userId,
-          conversationId,
-          limit: contextLimit,
-        });
-
-        messages = memoryMessages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
-
-        const memoryReadSuccessEvent: MemoryReadSuccessEvent = {
-          id: crypto.randomUUID(),
-          name: "memory:read_success",
-          type: "memory",
-          startTime: new Date().toISOString(),
-          endTime: new Date().toISOString(),
-          status: "completed",
-          input: {
-            userId,
-            conversationId,
-          },
-          output: {
-            messages,
-          },
-          metadata: {
-            displayName: "Memory",
-            id: "memory",
-            agentId: this.resourceId,
-          },
-          traceId: context.historyEntry.id,
-        };
-
-        await this.publishTimelineEvent(context, memoryReadSuccessEvent);
-      } catch (error) {
-        // TODO: add new event for getMessages
-        devLogger.error("Failed to get messages:", error);
-      }
+    } catch (error) {
+      devLogger.error("[Memory] Failed to ensure conversation exists:", error);
     }
+  }
 
-    // Handle input based on type
-    if (typeof input === "string") {
-      // The user message with content
-      const userMessage: BaseMessage = {
-        role: "user",
-        content: input,
-      };
+  /**
+   * Save current input (background task)
+   */
+  private async saveCurrentInput(
+    context: OperationContext,
+    input: string | BaseMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    if (!this.memory) return;
 
-      // Save the user message to memory if available
-      if (this.memory && userId) {
+    try {
+      // Handle input based on type
+      if (typeof input === "string") {
+        // The user message with content
+        const userMessage: BaseMessage = {
+          role: "user",
+          content: input,
+        };
+
         await this.saveMessage(context, userMessage, userId, conversationId, "text");
-      }
-
-      // Don't add the user message here, it will be handled by the agent
-    } else if (Array.isArray(input)) {
-      // If input is BaseMessage[], save all to memory
-      if (this.memory && userId) {
+        devLogger.info("[Memory] Saved user message to conversation");
+      } else if (Array.isArray(input)) {
+        // If input is BaseMessage[], save all to memory
         for (const message of input) {
           await this.saveMessage(context, message, userId, conversationId, "text");
         }
+        devLogger.info(`[Memory] Saved ${input.length} messages to conversation`);
       }
+    } catch (error) {
+      devLogger.error("[Memory] Failed to save current input:", error);
     }
-
-    return { messages, conversationId };
   }
 
   /**
