@@ -912,12 +912,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<
-    InferGenerateTextResponseFromProvider<TProvider> & {
-      userContext: Map<string | symbol, unknown>;
-      providerResponse: unknown;
-    }
-  > {
+  ): Promise<StandardizedTextResult> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1241,12 +1236,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
       });
 
-      // Enhance provider response with userContext for consumers while maintaining type safety
-      return {
-        ...response,
-        userContext: new Map(operationContext.userContext),
-        providerResponse: response.provider || response, // Backward compatibility
-      };
+      return standardizedOutput;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
@@ -1862,7 +1852,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateObjectResponseFromProvider<TProvider, TSchema>> {
+  ): Promise<StandardizedObjectResult<z.infer<TSchema>>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -2057,20 +2047,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context: operationContext,
       });
 
-
-      const responseUserContext = {
-        ...response,
-        userContext: new Map(operationContext.userContext),
-        providerResponse: response.provider || response,
-      } as InferGenerateObjectResponseFromProvider<TProvider, TSchema> & {
-        userContext: Map<string | symbol, unknown>;
-        providerResponse: unknown;
-      };
-
-      return responseUserContext;
-
-      return response;
-
+      return standardizedOutput;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
