@@ -476,25 +476,6 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             );
           }
 
-          // Get the source agent and its operationContext from options
-          const sourceAgent = options.sourceAgent as Agent<any> | undefined;
-          const operationContext = options.operationContext;
-
-          // Get current history entry ID for parent context
-          // This is passed from the Agent class via options when the tool is called
-          const currentHistoryEntryId = options.currentHistoryEntryId;
-
-          // Create real-time event forwarder function
-          const forwardEvent = options.forwardEvent as
-            | ((event: {
-                type: string;
-                data: any;
-                timestamp: string;
-                subAgentId: string;
-                subAgentName: string;
-              }) => Promise<void>)
-            | undefined;
-
           // Wait for all agent tasks to complete using Promise.all
           const results = await this.handoffToMultiple({
             task,
