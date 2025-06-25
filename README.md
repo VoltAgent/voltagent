@@ -7,6 +7,12 @@
 <br/>
 
 <div align="center">
+English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i18n/README-cn-bsc.md">简体中文</a> | <a href="i18n/README-jp.md">日本語</a> | <a href="i18n/README-kr.md">한국어</a>
+</div>
+
+<br/>
+
+<div align="center">
     <a href="https://voltagent.dev">Home Page</a> |
     <a href="https://voltagent.dev/docs/">Documentation</a> |
     <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> |
@@ -45,8 +51,6 @@ Escape the limitations of no-code builders and the complexity of starting from s
 ## What is VoltAgent?
 
 > An **AI Agent Framework** provides the foundational structure and tools needed to build applications powered by autonomous agents. These agents, often driven by Large Language Models (LLMs), can perceive their environment, make decisions, and take actions to achieve specific goals. Building such agents from scratch involves managing complex interactions with LLMs, handling state, connecting to external tools and data, and orchestrating workflows.
-
-[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://github.com/VoltAgent/voltagent/blob/main/CONSOLE.md)
 
 **VoltAgent** is an open-source TypeScript framework that acts as this essential toolkit. It simplifies the development of AI agent applications by providing modular building blocks, standardized patterns, and abstractions. Whether you're creating chatbots, virtual assistants, automated workflows, or complex multi-agent systems, VoltAgent handles the underlying complexity, allowing you to focus on defining your agents' capabilities and logic.
 
@@ -186,7 +190,7 @@ We welcome contributions! Please refer to the contribution guidelines (link need
 
 ## Contributor ♥️ Thanks
 
-Big thanks to everyone who’s been part of the VoltAgent journey, whether you’ve built a plugin, opened an issue, dropped a pull request, or just helped someone out on Discord or GitHub Discussions.
+Big thanks to everyone who's been part of the VoltAgent journey, whether you've built a plugin, opened an issue, dropped a pull request, or just helped someone out on Discord or GitHub Discussions.
 
 VoltAgent is a community effort, and it keeps getting better because of people like you.
 

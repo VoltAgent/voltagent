@@ -161,6 +161,10 @@ const config: Config = {
             to: "/voltops-llm-observability-docs/rest-api/",
             from: "/docs-observability/rest-api/",
           },
+          {
+            to: "/docs/rag/overview/",
+            from: "/docs/agents/retriever/",
+          },
         ],
       },
     ],
@@ -266,7 +270,7 @@ const config: Config = {
       darkTheme: {
         plain: {
           color: "#e2e8f0",
-          backgroundColor: "#000000",
+          backgroundColor: "#282c34",
         },
         styles: [
           {

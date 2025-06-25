@@ -41,6 +41,37 @@ app.get("/api/chats/:id", async ({ req }) => {
 });
 ```
 
+## 🧪 Testing
+
+This package maintains strict test coverage requirements. All code must have comprehensive test coverage with the following thresholds:
+
+### Coverage Requirements
+
+- **Global**: 90% statements, 90% branches, 100% functions, 90% lines
+- **Messages module**: 100% statements, 95% branches, 100% functions, 100% lines
+- **Utils module**: 100% statements, 100% branches, 100% functions, 100% lines
+- **Streams module**: 90% statements, 90% branches, 100% functions, 90% lines
+
+### Running Tests
+
+```bash
+# Run tests in watch mode
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Run tests with strict coverage enforcement
+pnpm test:coverage:strict
+```
+
+### Coverage Exclusions
+
+The following files are excluded from coverage requirements as they contain only type definitions:
+
+- `src/types.ts`
+- `src/streams/type-utils.ts`
+
 ## 📄 License
 
 MIT License - see LICENSE file for details.

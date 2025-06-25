@@ -7,4 +7,4 @@ export * from "./node-utils";
 export * from "./toolParser";
 export * from "./update";
 export * from "./serialization";
-export * from "./stream-event-forwarder";
+export * from "./streams/stream-event-forwarder";

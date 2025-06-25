@@ -1,4 +1,4 @@
-import { VoltAgent, Agent, createTool } from "@voltagent/core";
+import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -25,12 +25,20 @@ const calculatorTool = createTool({
   },
 });
 
-export const agent = new Agent({
-  name: "Assistant",
+export const subAgent = new Agent({
+  name: "MathAssistant",
   description: "A helpful assistant that can answer questions and perform calculations",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4.1-mini"),
   tools: [calculatorTool],
+});
+
+export const agent = new Agent({
+  name: "Boss",
+  description: "A Supervisor that can delegate tasks to sub-agents",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4.1-mini"),
+  subAgents: [subAgent],
 });
 
 new VoltAgent({

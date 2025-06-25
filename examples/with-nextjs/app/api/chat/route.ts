@@ -1,4 +1,5 @@
 import { agent } from "@/voltagent";
+import { mergeIntoDataStream } from "@voltagent/vercel-ui";
 import { createDataStreamResponse } from "ai";
 
 export async function POST(req: Request) {
@@ -14,47 +15,8 @@ export async function POST(req: Request) {
         try {
           const result = await agent.streamText(lastMessage.content);
 
-          result.provider.mergeIntoDataStream(dataStream);
-
-          for await (const chunk of result.fullStream || []) {
-            switch (chunk.type) {
-              case "tool-call":
-                // Add annotation when tool call starts
-                dataStream.writeMessageAnnotation({
-                  type: "tool-call",
-                  value: {
-                    toolCallId: chunk.toolCallId,
-                    toolName: chunk.toolName,
-                    args: chunk.args,
-                    status: "calling",
-                  },
-                });
-                break;
-
-              case "tool-result":
-                // Add annotation when tool result arrives
-                dataStream.writeMessageAnnotation({
-                  type: "tool-result",
-                  value: {
-                    toolCallId: chunk.toolCallId,
-                    toolName: chunk.toolName,
-                    result: chunk.result,
-                    status: "completed",
-                  },
-                });
-                break;
-
-              case "error":
-                // Add annotation for error cases
-                dataStream.writeMessageAnnotation({
-                  type: "error",
-                  value: {
-                    error: chunk.error?.message || "Unknown error",
-                  },
-                });
-                break;
-            }
-          }
+          // biome-ignore lint/style/noNonNullAssertion: always exists
+          mergeIntoDataStream(dataStream, result.fullStream!);
         } catch (error) {
           console.error("Stream processing error:", error);
           dataStream.writeMessageAnnotation({

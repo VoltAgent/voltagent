@@ -10,6 +10,7 @@ import type {
 import type { Memory, MemoryOptions } from "../memory/types";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
+import type { StreamEvent } from "../utils/streams";
 import type { AgentHistoryEntry } from "./history";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
@@ -366,13 +367,7 @@ export type AgentHandoffOptions = {
    * Optional real-time event forwarder function
    * Used to forward SubAgent events to parent stream in real-time
    */
-  forwardEvent?: (event: {
-    type: string;
-    data: any;
-    timestamp: string;
-    subAgentId: string;
-    subAgentName: string;
-  }) => Promise<void>;
+  forwardEvent?: (event: StreamEvent) => Promise<void>;
 };
 
 /**

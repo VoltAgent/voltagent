@@ -1,5 +1,5 @@
 import type { BaseMessage, OperationContext, StepWithContent } from "@voltagent/core";
-import { convertToUIMessages } from "./index";
+import { convertToUIMessages } from "./convert-to-ui";
 
 describe("convertToUIMessages", () => {
   it("should convert string input to UI messages", () => {
@@ -164,6 +164,18 @@ describe("convertToUIMessages", () => {
     const ctx = createFauxContext([message]);
     const result = convertToUIMessages(ctx);
     expect(result[0].createdAt).toEqual(customDate);
+  });
+
+  it("should handle file part with data property in message content", () => {
+    const message: Message = {
+      role: "user",
+      content: [{ type: "file", data: Buffer.from("filedata"), mimeType: "application/pdf" }],
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].parts).toEqual([
+      { type: "file", data: Buffer.from("filedata").toString(), mimeType: "application/pdf" },
+    ]);
   });
 });
 

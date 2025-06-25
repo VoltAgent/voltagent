@@ -60,7 +60,7 @@ VoltAgent provides a streamlined way to implement RAG through its **Retriever** 
 To add RAG capabilities to your agent, you essentially need to:
 
 1.  **Create a Custom Retriever:** Extend `BaseRetriever` and implement the `retrieve` method. This method contains your logic for fetching relevant data from your chosen source based on the user's input.
-2.  **Connect it to an Agent:** VoltAgent offers two main ways to do this, as detailed in the [Retriever documentation](/docs/agents/retriever):
+2.  **Connect it to an Agent:** VoltAgent offers two main ways to do this, as detailed in the [Retriever documentation](/docs/rag/overview):
     - **Direct Attachment (`agent.retriever`):** The retriever runs automatically _before every_ LLM call for that agent. Simple, ensures context is always fetched.
     - **As a Tool (`agent.tools`):** The LLM decides _when_ to call the retriever tool based on the conversation. More efficient and flexible, especially if retrieval isn't always needed.
 

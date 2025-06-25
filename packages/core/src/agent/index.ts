@@ -1,3 +1,4 @@
+import type { Span } from "@opentelemetry/api";
 import { devLogger } from "@voltagent/internal/dev";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
@@ -22,11 +23,15 @@ import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import { NodeType, createNodeId } from "../utils/node-utils";
-import { type SubAgentEvent, streamEventForwarder } from "../utils/stream-event-forwarder";
-
+import {
+  type StreamEvent,
+  streamEventForwarder,
+  transformStreamEventToStreamPart,
+} from "../utils/streams";
 import type { Voice } from "../voice";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
+import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 import type {
   BaseMessage,
   BaseTool,
@@ -60,9 +65,6 @@ import type {
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
-
-import type { Span } from "@opentelemetry/api";
-import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 
 /**
  * Agent class for interacting with AI models
@@ -497,7 +499,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    */
   private async prepareTextOptions(
     options: CommonGenerateOptions & {
-      internalStreamForwarder?: (event: any) => Promise<void>;
+      internalStreamForwarder?: (event: StreamEvent) => Promise<void>;
     } = {},
   ): Promise<{
     tools: BaseTool[];
@@ -579,7 +581,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
     if (this.subAgentManager.hasSubAgents()) {
       // Create a real-time event forwarder for SubAgent events
-      const forwardEvent = async (event: SubAgentEvent) => {
+      const forwardEvent = async (event: StreamEvent) => {
         devLogger.info(
           `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
         );
@@ -1416,7 +1418,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       current: null,
     };
 
-    const streamEventForwarder = async (event: any) => {
+    const internalStreamEventForwarder = async (event: StreamEvent) => {
       devLogger.info("[Real-time Stream] Received SubAgent event:", {
         eventType: event.type,
         subAgentId: event.subAgentId,
@@ -1441,73 +1443,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         );
       }
 
-      // Format event for stream - handle nested data structures properly
-      let streamEvent: any = {
-        type: event.type,
-        subAgentId: event.subAgentId,
-        subAgentName: event.subAgentName,
-        timestamp: event.timestamp,
-      };
-
-      // Handle different event types with proper data extraction
-      switch (event.type) {
-        case "tool-call":
-          if (event?.toolCall) {
-            streamEvent = {
-              ...streamEvent,
-              toolCallId: event.toolCall.toolCallId,
-              toolName: event.toolCall.toolName,
-              args: event.toolCall.args,
-            };
-          }
-          break;
-        case "tool-result":
-          if (event?.toolResult) {
-            streamEvent = {
-              ...streamEvent,
-              toolCallId: event.toolResult.toolCallId,
-              toolName: event.toolResult.toolName,
-              result: event.toolResult.result,
-            };
-          }
-          break;
-        case "text-delta":
-          if (event?.textDelta) {
-            streamEvent = {
-              ...streamEvent,
-              textDelta: event.data.textDelta,
-            };
-          }
-          break;
-        case "reasoning":
-          if (event?.reasoning) {
-            streamEvent = {
-              ...streamEvent,
-              reasoning: event.reasoning,
-            };
-          }
-          break;
-        case "source":
-          if (event?.source) {
-            streamEvent = {
-              ...streamEvent,
-              source: event.source,
-            };
-          }
-          break;
-        default:
-          // For any other event types, spread the data
-          streamEvent = {
-            ...streamEvent,
-            ...(event || {}),
-          };
-          break;
-      }
-
       // Immediately inject into stream if controller is available
       if (streamController.current) {
         try {
-          streamController.current.enqueue(streamEvent);
+          const formattedStreamPart = transformStreamEventToStreamPart(event);
+          streamController.current.enqueue(formattedStreamPart);
           devLogger.info("[Real-time Stream] Event injected into stream:", {
             eventType: event.type,
             subAgentId: event.subAgentId,
@@ -1523,7 +1463,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       conversationId: finalConversationId,
       historyEntryId: operationContext.historyEntry.id,
       operationContext: operationContext,
-      internalStreamForwarder: streamEventForwarder, // Pass the internal forwarder to tools
+      // Pass the internal forwarder to tools
+      internalStreamForwarder: internalStreamEventForwarder,
     });
 
     // Resolve dynamic model based on user context

@@ -1,0 +1,169 @@
+---
+title: Overview
+slug: /rag/overview
+---
+
+# RAG: Give Your AI Agent a Memory
+
+Ever wished your AI agent could remember your company's documentation, search your database, or know about events that happened after its training? That's exactly what RAG (Retrieval-Augmented Generation) does.
+
+## The Problem
+
+Without RAG, your AI agent is like a smart person with amnesia:
+
+```typescript
+// ❌ Without RAG - agent only knows training data
+const agent = new Agent({
+  name: "Support Bot",
+  instructions: "Help customers with our product",
+});
+
+// User: "What's our return policy?"
+// Agent: "I don't have access to your specific return policy..."
+```
+
+## The Solution
+
+With RAG, your agent can search and use your actual data:
+
+```typescript
+// ✅ With RAG - agent searches your knowledge base
+const agent = new Agent({
+  name: "Support Bot",
+  instructions: "Help customers with our product",
+  retriever: myKnowledgeBase, // 🔥 This is the magic
+});
+
+// User: "What's our return policy?"
+// Agent: "According to our policy document, you have 30 days..."
+// Sources: [{ title: "Return Policy", url: "docs/returns.md" }]
+```
+
+## What You'll Build
+
+By the end of this guide, you'll have an AI agent that can:
+
+- Search through your documents instantly
+- Pull relevant info from databases
+- Give accurate answers with sources
+- Track where information came from
+- Stay up-to-date with your latest data
+
+## How It Works (2 Ways)
+
+VoltAgent gives you two ways to add RAG to your agents:
+
+### Option 1: Always-On Search
+
+```typescript
+const agent = new Agent({
+  name: "Smart Assistant",
+  retriever: mySearchEngine, // Searches before every response
+});
+```
+
+**When to use**: Support bots, documentation assistants, Q&A systems
+
+### Option 2: Search When Needed
+
+```typescript
+const agent = new Agent({
+  name: "Smart Assistant",
+  tools: [mySearchEngine.tool], // Agent decides when to search
+});
+```
+
+**When to use**: General assistants, complex workflows, multi-step tasks
+
+## Works With Any Database
+
+The best part? VoltAgent doesn't lock you into any specific database. All retrievers extend the same `BaseRetriever` class, so switching is easy:
+
+```typescript
+import { BaseRetriever } from "@voltagent/core";
+
+// Start with local files
+class FileRetriever extends BaseRetriever {
+  async retrieve(input, options) {
+    const query = typeof input === "string" ? input : input[input.length - 1].content;
+    // Search local files
+    const results = await this.searchFiles(query);
+    return results.join("\n\n");
+  }
+}
+
+// Later switch to PostgreSQL
+class PostgreSQLRetriever extends BaseRetriever {
+  async retrieve(input, options) {
+    const query = typeof input === "string" ? input : input[input.length - 1].content;
+    // Search PostgreSQL with pgvector
+    const results = await this.searchPostgreSQL(query);
+    return results.map((row) => row.content).join("\n\n");
+  }
+}
+
+// Agent code stays exactly the same! 🎉
+const agent = new Agent({
+  retriever: new FileRetriever(), // Just swap the class
+});
+```
+
+**Supported patterns:**
+
+- Vector DBs: Chroma, Pinecone, Weaviate, Qdrant
+- SQL: PostgreSQL, MySQL, SQLite
+- NoSQL: MongoDB, Redis
+- Search: Elasticsearch, Algolia
+- Files: PDF, Word, CSV, JSON
+- APIs: REST, GraphQL
+
+## Integration Examples
+
+### Build Your Own Retriever
+
+Connect to your own database, API, or files with a custom retriever.
+
+```typescript
+class MyRetriever extends BaseRetriever {
+  async retrieve(input, options) {
+    const query = typeof input === "string" ? input : input[input.length - 1].content;
+    const results = await this.searchMyData(query);
+
+    // Track sources using userContext
+    if (options.userContext) {
+      options.userContext.set(
+        "sources",
+        results.map((r) => r.source)
+      );
+    }
+
+    return results.map((r) => r.content).join("\n\n");
+  }
+}
+```
+
+[**→ Build Your Own Retriever**](/docs/rag/custom-retrievers)
+
+### Chroma Vector Database
+
+Perfect for beginners. Run locally with Docker and get started immediately.
+
+```bash
+# Start Chroma server
+docker run -p 8000:8000 chromadb/chroma
+
+# Try the example
+npm create voltagent-app@latest -- --example with-chroma
+```
+
+[**→ Full Chroma Guide**](/docs/rag/chroma)
+
+## Choose Your Path
+
+**I want to try it now** → [Chroma Tutorial](/docs/rag/chroma) (10 mins)
+
+**I want to build custom** → [Build Your Own Retriever](/docs/rag/custom-retrievers)
+
+**I want to see examples** → [GitHub Examples](https://github.com/voltagent/voltagent/tree/main/examples)
+
+**I need help choosing** → Join our [Discord](https://s.voltagent.dev/discord) and ask!
