@@ -62,8 +62,6 @@ import type {
   StreamTextOnFinishCallback,
   ToolExecutionContext,
   VoltAgentError,
-  InferGenerateTextResponseFromProvider,
-  InferGenerateObjectResponseFromProvider,
 } from "./types";
 
 /**
