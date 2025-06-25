@@ -97,76 +97,14 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
             </p>
           </div>
 
-          {/* Company Info */}
-          <div className="mb-4 space-y-2">
-            <div className="flex items-center text-xs text-gray-400">
-              <UsersIcon className="w-4 h-4 mr-2" />
-              <span>{project.customer.team_size} employees</span>
-            </div>
-            <div className="flex items-center text-xs text-gray-400">
-              <BuildingOfficeIcon className="w-4 h-4 mr-2" />
-              <span>{project.customer.location}</span>
-            </div>
-          </div>
-
           {/* Quote Preview */}
           <div className="bg-[#1e293b]/30 rounded-lg p-3 mb-4">
             <p className="text-gray-300 text-sm italic line-clamp-3 mb-2">
               "{project.case_study.quote.text}"
             </p>
-            <div className="text-xs text-gray-400">
-              <span className="font-medium text-[#00d992]">
-                {project.case_study.quote.author}
-              </span>
-              <span className="mx-1">•</span>
-              <span>{project.case_study.quote.position}</span>
-            </div>
-          </div>
-
-          {/* Key Results */}
-          <div className="">
-            <div className="text-xs text-gray-500 mb-2">Key Results:</div>
-            <div className="space-y-1">
-              {project.case_study.results.slice(0, 2).map((result, index) => (
-                <div
-                  key={`result-${project.id}-${index}`}
-                  className="text-xs text-gray-300 flex items-start"
-                >
-                  <span className="text-[#00d992] mr-2">✓</span>
-                  <span className="line-clamp-1">{result}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Footer with Links */}
-          <div className="mt-auto pt-4 flex justify-between items-center">
-            <div className="flex space-x-2">
-              {project.case_study.links.github && (
-                <a
-                  href={project.case_study.links.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-[#00d992] transition-colors"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <GitHubLogo className="w-4 h-4" />
-                </a>
-              )}
-              {project.case_study.links.video && (
-                <a
-                  href={project.case_study.links.video}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-[#00d992] transition-colors"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <GlobeAltIcon className="w-4 h-4" />
-                </a>
-              )}
-            </div>
-            <span className="text-xs text-gray-500">Read Case Study</span>
-          </div>
         </div>
       </motion.div>
     </Link>
