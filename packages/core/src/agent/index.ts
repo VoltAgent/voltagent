@@ -589,7 +589,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // Use the utility function to forward events
         await streamEventForwarder(event, {
           forwarder: internalStreamForwarder,
-          filterTypes: [], // Don't filter any events in this context
+          // default to only filtering out error events to prevent errors from being forwarded to the client
+          // from a subagent, so the supervisor agent can handle the error and continue processing
+          filterTypes: ["error"],
           addSubAgentPrefix: true,
         });
       };
