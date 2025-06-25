@@ -1,12 +1,9 @@
 import Link from "@docusaurus/Link";
 import { motion } from "framer-motion";
 import React from "react";
-import { GitHubLogo } from "../../../static/img/logos/github";
 import {
   ArrowTopRightOnSquareIcon,
   BuildingOfficeIcon,
-  UsersIcon,
-  GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 
 interface CustomerCardProps {
@@ -49,62 +46,57 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="border-solid border-[#1e293b]/40 border-2 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/30 hover:scale-[1.02] cursor-pointer"
+        className="border-solid border-[#334155] border rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/50 hover:scale-[1.02] cursor-pointer"
         style={{
-          backdropFilter: "blur(4px)",
-          WebkitBackdropFilter: "blur(4px)",
-          backgroundColor: "rgba(58, 66, 89, 0.3)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          backgroundColor: "rgba(30, 41, 59, 0.6)",
         }}
       >
         {/* Customer Header */}
-        <div className="relative p-6 bg-gradient-to-r from-[#00d992]/10 to-transparent">
-          <div className="flex items-center justify-between mb-4">
+        <div className="relative p-4 border-b border-[#334155]">
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <img
-                src={project.customer.logo_url}
-                alt={`${project.customer.name} logo`}
-                className="w-12 h-12 rounded-lg border border-[#1e293b] mr-3 bg-white p-1"
-              />
+              <BuildingOfficeIcon className="w-9 h-9 mr-2" />
               <div>
-                <h3 className="text-[#00d992] font-bold text-lg">
+                <span className="text-[#00d992] font-bold text-base">
                   {project.customer.name}
-                </h3>
-                <p className="text-gray-400 text-sm">
+                </span>
+                <div className="text-gray-400 text-xs">
                   {project.customer.industry}
-                </p>
+                </div>
               </div>
             </div>
-            <a
-              href={project.customer.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-[#00d992] transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ArrowTopRightOnSquareIcon className="w-5 h-5" />
-            </a>
           </div>
         </div>
 
-        <div className="p-4 flex flex-col h-full">
+        <div className="px-4 pb-4 flex flex-col flex-1">
           {/* Case Study Title */}
-          <div className="mb-4">
-            <h4 className="text-white font-semibold text-base mb-2 line-clamp-2">
+          <div className="mb-3">
+            <h4 className="text-white font-semibold text-sm mb-1 line-clamp-2 leading-tight">
               {project.case_study.title}
             </h4>
-            <p className="text-gray-400 text-sm line-clamp-2">
+            <p className="text-gray-400 text-xs line-clamp-2">
               {project.case_study.use_case}
             </p>
           </div>
 
           {/* Quote Preview */}
-          <div className="bg-[#1e293b]/30 rounded-lg p-3 mb-4">
-            <p className="text-gray-300 text-sm italic line-clamp-3 mb-2">
+          <div className="flex-1 flex items-start mb-3">
+            <blockquote className="text-gray-300 text-xs italic line-clamp-4 leading-relaxed">
               "{project.case_study.quote.text}"
-            </p>
+            </blockquote>
           </div>
 
-          {/* Footer with Links */}
+          {/* Author Info */}
+          <div className="mt-auto">
+            <div className="font-semibold text-[#00d992] text-xs hover:text-[#00c182] transition-colors cursor-pointer group">
+              Read the case study
+              <span className="inline-block transition-transform group-hover:translate-x-1 ml-1">
+                →
+              </span>
+            </div>
+          </div>
         </div>
       </motion.div>
     </Link>
