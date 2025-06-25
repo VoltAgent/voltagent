@@ -29,7 +29,7 @@ const standardizedOutput: StandardizedTextResult = {
   userContext: new Map(operationContext.userContext),
 };
 
-return standardizedOutput as any; // ✅ Includes userContext
+return standardizedOutput; // ✅ Includes userContext
 ```
 
 Fixes: #[283](https://github.com/VoltAgent/voltagent/issues/283)
