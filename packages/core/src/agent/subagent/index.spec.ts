@@ -87,11 +87,17 @@ describe("SubAgentManager", () => {
   let subAgentManager: SubAgentManager;
   let mockAgent1: any;
   let mockAgent2: any;
+  let mockDelegateToolOptions: any;
 
   beforeEach(() => {
     mockAgent1 = new MockAgent("agent1", "Math Agent");
     mockAgent2 = new MockAgent("agent2", "Writing Agent");
     subAgentManager = new SubAgentManager("Main Agent");
+    mockDelegateToolOptions = {
+      sourceAgent: mockAgent1,
+      operationContext: { userContext: new Map() },
+      currentHistoryEntryId: "history-123",
+    };
   });
 
   describe("constructor", () => {
@@ -236,7 +242,7 @@ describe("SubAgentManager", () => {
       // Verify streamText was called with task message
       expect(streamTextSpy).toHaveBeenCalled();
       const messages = streamTextSpy.mock.calls[0][0] as any[];
-      expect(messages[0].role).toBe("system");
+      expect(messages[0].role).toBe("user");
       expect(messages[0].content).toContain("Solve this math problem");
 
       // Verify result - should contain text from stream
@@ -295,7 +301,7 @@ describe("SubAgentManager", () => {
 
   describe("createDelegateTool", () => {
     it("should create a delegate tool with correct configuration", () => {
-      const tool = subAgentManager.createDelegateTool();
+      const tool = subAgentManager.createDelegateTool(mockDelegateToolOptions);
 
       expect(tool.name).toBe("delegate_task");
       expect(tool.description).toContain("Delegate a task");
@@ -308,7 +314,7 @@ describe("SubAgentManager", () => {
     });
 
     it("should throw error when executing with no valid agents", async () => {
-      const tool = subAgentManager.createDelegateTool();
+      const tool = subAgentManager.createDelegateTool(mockDelegateToolOptions);
 
       // Attempt to execute with non-existent agents
       await expect(
@@ -346,7 +352,7 @@ describe("SubAgentManager", () => {
           },
         ]);
 
-      const tool = subAgentManager.createDelegateTool();
+      const tool = subAgentManager.createDelegateTool(mockDelegateToolOptions);
 
       const result = await tool.execute({
         task: "Test task",
@@ -394,7 +400,7 @@ describe("SubAgentManager", () => {
 
       // Create the delegate tool, providing the necessary options that would normally come from the Agent class
       const tool = subAgentManager.createDelegateTool({
-        sourceAgent: { id: "supervisor-agent-id" }, // Simplified mock of sourceAgent
+        sourceAgent: { id: "supervisor-agent-id" } as any, // Simplified mock of sourceAgent
         operationContext: mockSupervisorOperationContext, // Pass the mocked supervisor's OperationContext
         currentHistoryEntryId: "supervisor-history-id",
       });
@@ -418,7 +424,7 @@ describe("SubAgentManager", () => {
       };
 
       // Verify the task message is part of what's passed
-      expect(messagesPassedToSubAgent[0].role).toBe("system");
+      expect(messagesPassedToSubAgent[0].role).toBe("user");
       expect(messagesPassedToSubAgent[0].content).toContain("Test task for userContext passing");
 
       // Verify the parentOperationContext from the supervisor was passed in the options
@@ -560,8 +566,8 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent as any);
 
       const tool = subAgentManager.createDelegateTool({
-        sourceAgent: { id: "supervisor-agent" },
-        operationContext: { userContext: new Map() },
+        sourceAgent: { id: "supervisor-agent" } as any,
+        operationContext: { userContext: new Map() } as any,
         currentHistoryEntryId: "history-123",
         forwardEvent: forwardEventSpy,
       });
@@ -598,8 +604,8 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent2 as any);
 
       const tool = subAgentManager.createDelegateTool({
-        sourceAgent: { id: "supervisor-agent" },
-        operationContext: { userContext: new Map() },
+        sourceAgent: { id: "supervisor-agent" } as any,
+        operationContext: { userContext: new Map() } as any,
         currentHistoryEntryId: "history-456",
         forwardEvent: forwardEventSpy,
       });

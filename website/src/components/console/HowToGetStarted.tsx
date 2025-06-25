@@ -261,10 +261,21 @@ export const HowToGetStarted = () => {
               </Link>
             </div>
             <div className="h-[250px] landing-xs:h-[200px] landing-sm:h-[350px] mt-4 landing-md:h-[500px] landing-lg:h-[600px] landing-xl:h-[800px]">
+              {/* Mobile and tablet - show image */}
               <img
                 src="/img/ops/flow-1.png"
                 alt="VoltOps Platform Flow"
-                className="w-full h-full object-cover rounded-b-md p-1"
+                className="w-full h-full object-cover rounded-b-md p-1 block landing-md:hidden"
+              />
+              {/* Desktop - show iframe */}
+              <iframe
+                src="https://console.voltagent.dev/demo"
+                title="VoltOps Platform Demo"
+                className="w-full h-full rounded-b-md hidden landing-md:block"
+                style={{
+                  border: "2px solid #2c3335",
+                  borderRadius: "6px",
+                }}
               />
             </div>
           </div>

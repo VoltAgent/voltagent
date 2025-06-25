@@ -2,7 +2,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["**/__tests__/**/*.test.ts", "**/*.spec.ts"],
+    typecheck: {
+      tsconfig: "./tsconfig.spec.json",
+    },
+    include: ["**/*.spec.ts"],
     environment: "node",
     coverage: {
       provider: "v8",
@@ -21,6 +24,5 @@ export default defineConfig({
         statements: 100,
       },
     },
-    globals: true,
   },
 });

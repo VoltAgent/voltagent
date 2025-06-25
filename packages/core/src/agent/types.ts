@@ -368,11 +368,6 @@ export type AgentHandoffOptions = {
   parentHistoryEntryId?: string;
 
   /**
-   * Optional user-defined context to be passed from the supervisor agent
-   */
-  userContext?: Map<string | symbol, unknown>;
-
-  /**
    * Optional real-time event forwarder function
    * Used to forward SubAgent events to parent stream in real-time
    */

@@ -4,6 +4,7 @@ import { devLogger } from "@voltagent/internal/dev";
 import { formatDataStreamPart as formatDataStreamPartBase } from "ai";
 import type * as AI from "ai";
 import { P, match } from "ts-pattern";
+import { removeAgentPrefix } from "../utils/tools";
 import type { DataStreamPartType, DataStreamPartValueType } from "./type-utils";
 
 export type SubAgentStreamPart = StreamPart & {
@@ -169,7 +170,7 @@ export function toDataStream(
                 safeEnqueue(
                   formatDataStreamPart("tool_call", {
                     toolCallId: streamPart.toolCallId,
-                    toolName: cleanToolName(streamPart.toolName),
+                    toolName: removeAgentPrefix(streamPart.toolName),
                     args: streamPart.args,
                     subAgentName: streamPart?.subAgentName ?? undefined,
                     subAgentId: streamPart?.subAgentId ?? undefined,
@@ -287,10 +288,6 @@ export function isSubAgentStreamPart(part: StreamPart): part is SubAgentStreamPa
 | Internals
 |------------------
 */
-
-function cleanToolName(toolName: string): string {
-  return toolName.replace(/^[a-zA-Z0-9_-]+:/, "").trim();
-}
 
 function isToolError(error: unknown): boolean {
   return error?.constructor?.name === "ToolExecutionError";
