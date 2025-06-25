@@ -201,6 +201,13 @@ const config: Config = {
         path: "./src/components/mcp-list/data",
       },
     ],
+    [
+      "./plugins/docusaurus-plugin-content-customers",
+      {
+        id: "customers",
+        contentPath: "src/components/customers",
+      },
+    ],
   ],
   themeConfig: {
     image: "img/social3.png",
@@ -239,6 +246,11 @@ const config: Config = {
         {
           to: "/showcase",
           label: "Showcase",
+          position: "left",
+        },
+        {
+          to: "/customers",
+          label: "Customers",
           position: "left",
         },
         {

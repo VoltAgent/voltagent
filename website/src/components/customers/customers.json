@@ -1,0 +1,91 @@
+[
+  {
+    "id": 1,
+    "slug": "flowmind-agent-debugging",
+    "customer": {
+      "name": "FlowMind",
+      "logo_url": "https://cdn.voltagent.dev/website/customers/flowmind-logo.png",
+      "website": "https://flowmind.ai",
+      "industry": "AI Knowledge Management",
+      "team_size": "10-20",
+      "location": "San Francisco, CA"
+    },
+    "case_study": {
+      "title": "How FlowMind Debugged Complex Agent Workflows with VoltAgent and VoltOps",
+      "use_case": "Context-aware AI assistant for internal company documentation",
+      "challenge": [
+        "FlowMind was building a multi-agent AI assistant that pulled data from Notion, Slack, and internal APIs.",
+        "Before VoltAgent, managing state and tool execution across agents had become messy and hard to debug.",
+        "Tool failures and agent miscommunication often went unnoticed until they reached the end user.",
+        "There was no clear way to trace why an agent returned a wrong or partial answer."
+      ],
+      "solution": [
+        "FlowMind adopted VoltAgent to define each agent with TypeScript and coordinate memory, tools, and workflows in a clean, modular structure.",
+        "To visualize and debug the entire agent system, they started using VoltOps — VoltAgent's visual observability console (previously called 'n8n-style observability').",
+        "With VoltOps, they were able to:",
+        "- See how agents responded to prompts and which tools were triggered",
+        "- Identify silent LLM failures or infinite loops in multi-agent chains",
+        "- Share trace views with teammates for collaborative debugging"
+      ],
+      "results": [
+        "Faster debugging: Issues that used to take 30–60 minutes to trace now take under 5",
+        "Full visibility: All team members gained a shared understanding of agent behavior",
+        "Confident deployments: They now debug flows using trace views before going live"
+      ],
+      "quote": {
+        "text": "VoltAgent gave us structure. VoltOps gave us eyes. Without it, we were flying blind with our agents.",
+        "author": "Tania Roy",
+        "position": "Lead Engineer",
+        "company": "FlowMind"
+      },
+      "links": {
+        "github": "https://github.com/voltagent/voltagent",
+        "discord": "https://discord.gg/voltagent"
+      }
+    }
+  },
+  {
+    "id": 2,
+    "slug": "techcorp-content-automation",
+    "customer": {
+      "name": "TechCorp",
+      "logo_url": "https://cdn.voltagent.dev/website/customers/techcorp-logo.png",
+      "website": "https://techcorp.com",
+      "industry": "Enterprise Software",
+      "team_size": "50-100",
+      "location": "New York, NY"
+    },
+    "case_study": {
+      "title": "TechCorp's 4-Agent AI Team Revolutionizes Blog Research and Content Creation",
+      "use_case": "Automated content research and first draft generation for marketing teams",
+      "challenge": [
+        "TechCorp's marketing team was spending 15+ hours per week on manual research for blog posts",
+        "Content creation was inconsistent across different team members",
+        "Tracking industry trends and competitive intelligence was time-consuming",
+        "The team struggled to maintain a consistent publishing schedule due to research bottlenecks"
+      ],
+      "solution": [
+        "TechCorp implemented a 4-agent AI team using VoltAgent, Composio MCP, and OpenAI GPT-4o",
+        "The multi-agent system automates research from communities, trend tracking, and first draft writing",
+        "Agents work collaboratively to ensure content quality and consistency",
+        "Integration with existing content management workflows through Composio MCP"
+      ],
+      "results": [
+        "Research time reduced from 15 hours to 2 hours per week",
+        "Publishing frequency increased by 300% with consistent quality",
+        "Team can now focus on strategy and final editing rather than manual research",
+        "Improved content performance with data-driven topic selection"
+      ],
+      "quote": {
+        "text": "VoltAgent's multi-agent approach transformed our content workflow. We went from struggling to publish weekly to having a pipeline of research-backed content.",
+        "author": "Emre Tezisci",
+        "position": "Content Marketing Manager",
+        "company": "TechCorp"
+      },
+      "links": {
+        "github": "https://github.com/emretezisci/pmm-agent/",
+        "video": "https://www.youtube.com/embed/My6FFxtwqIA/"
+      }
+    }
+  }
+]
