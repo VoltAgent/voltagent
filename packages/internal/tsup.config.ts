@@ -35,4 +35,12 @@ export default defineConfig([
     outDir: "dist/utils",
     entry: ["src/utils/index.ts"],
   },
+  {
+    ...baseConfig,
+    outDir: "dist/types",
+    dts: {
+      only: true,
+    },
+    entry: ["src/types/index.ts"],
+  },
 ]);

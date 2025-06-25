@@ -5,6 +5,7 @@ import { P, match } from "ts-pattern";
 import type { UIMessage, VercelVersion } from "../types";
 import { generateMessageId, hasKey } from "../utils/identifiers";
 import schemas from "../utils/patterns";
+import { removeAgentPrefix } from "../utils/tools";
 
 export interface ConvertToUIMessagesOptions<TVersion extends VercelVersion = VercelVersion> {
   version: TVersion;
@@ -148,7 +149,7 @@ function convertToV4UIMessages(
             type: "tool-call",
             toolCallId: step.id,
             // biome-ignore lint/style/noNonNullAssertion: this SHOULD always be defined
-            toolName: step.name!,
+            toolName: removeAgentPrefix(step.name!),
             args: step.arguments,
           },
         ],
@@ -161,7 +162,7 @@ function convertToV4UIMessages(
             type: "tool-result",
             toolCallId: step.id,
             // biome-ignore lint/style/noNonNullAssertion: this SHOULD always be defined
-            toolName: step.name!,
+            toolName: removeAgentPrefix(step.name!),
             result: step.result,
           },
         ],

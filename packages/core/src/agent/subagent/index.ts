@@ -1,4 +1,6 @@
 import { devLogger } from "@voltagent/internal/dev";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { MergeDeep } from "type-fest";
 import { z } from "zod";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
@@ -9,11 +11,11 @@ import type {
   StreamEventToolCall,
   StreamEventToolResult,
 } from "../../utils/streams";
-import type { StreamEventError } from "../../utils/streams/types";
+import type { StreamEvent, StreamEventError } from "../../utils/streams/types";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
-import type { AgentHandoffOptions, AgentHandoffResult } from "../types";
+import type { AgentHandoffOptions, AgentHandoffResult, OperationContext } from "../types";
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -153,17 +155,12 @@ ${agentsMemory || "No previous agent interactions available."}
    * Hand off a task to another agent
    */
   public async handoffTask(options: AgentHandoffOptions): Promise<AgentHandoffResult> {
-    const {
-      task,
-      targetAgent,
-      context = {},
-      conversationId,
-      userId,
-      sourceAgent,
-      parentAgentId,
-      parentHistoryEntryId,
-      userContext,
-    } = options;
+    const { task, conversationId, userId, parentAgentId, parentHistoryEntryId, userContext } =
+      options;
+    // TODO: Fix the types here
+    const context = options.context as OperationContext | undefined;
+    const sourceAgent = options.sourceAgent as Agent<DangerouslyAllowAny>;
+    const targetAgent = options.targetAgent as Agent<DangerouslyAllowAny>;
 
     // Use the provided conversationId or generate a new one
     const handoffConversationId = conversationId || crypto.randomUUID();
@@ -196,6 +193,8 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
       const streamResponse = await targetAgent.streamText([...sharedContext, taskMessage], {
         conversationId: handoffConversationId,
         userId,
+        // TODO: Fix the types here
+        // @ts-expect-error - bad types
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
         userContext,
@@ -306,8 +305,8 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
               const eventData = {
                 type: "error",
                 data: {
+                  // @ts-expect-error - fix bad type
                   error: part.error?.message || "Stream error occurred",
-                  // @ts-expect-error - code is not part of the StreamEventError type currently
                   code: "STREAM_ERROR",
                 },
                 timestamp,
@@ -317,6 +316,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
 
               // Forward event in real-time
               if (forwardEvent) {
+                // @ts-expect-error - fix bad type
                 await forwardEvent(eventData);
               }
               break;
@@ -417,9 +417,22 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
   }
 
   /**
-   * Create a delegate tool for sub-agents
+   * Creates a tool that allows the supervisor agent to delegate a
+   * task to one or more specialized agents
    */
-  public createDelegateTool(options: Record<string, any> = {}): BaseTool {
+  public createDelegateTool(
+    options: MergeDeep<
+      {
+        sourceAgent: Agent<any>;
+        currentHistoryEntryId?: string;
+        operationContext?: OperationContext;
+        forwardEvent?: (event: StreamEvent) => Promise<void>;
+      },
+      Record<string, any>
+    >,
+  ): BaseTool {
+    const { sourceAgent, forwardEvent, operationContext, currentHistoryEntryId, ...restOptions } =
+      options;
     return createTool({
       id: "delegate_task",
       name: "delegate_task",
@@ -459,26 +472,6 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             );
           }
 
-          // Get the source agent and its operationContext from options
-          const sourceAgent = options.sourceAgent as Agent<any> | undefined;
-          const operationContext = options.operationContext;
-          const supervisorUserContext = operationContext?.userContext;
-
-          // Get current history entry ID for parent context
-          // This is passed from the Agent class via options when the tool is called
-          const currentHistoryEntryId = options.currentHistoryEntryId;
-
-          // Create real-time event forwarder function
-          const forwardEvent = options.forwardEvent as
-            | ((event: {
-                type: string;
-                data: any;
-                timestamp: string;
-                subAgentId: string;
-                subAgentName: string;
-              }) => Promise<void>)
-            | undefined;
-
           // Wait for all agent tasks to complete using Promise.all
           const results = await this.handoffToMultiple({
             task,
@@ -487,12 +480,14 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             sourceAgent,
             // Pass parent context for event propagation
             parentAgentId: sourceAgent?.id,
+            // Get current history entry ID for parent context
+            // This is passed from the Agent class via options when the tool is called
             parentHistoryEntryId: currentHistoryEntryId,
             // Pass the supervisor's userContext to the handoff options
-            userContext: supervisorUserContext,
+            userContext: operationContext?.userContext,
             // Pass the real-time event forwarder
             forwardEvent,
-            ...options,
+            ...restOptions,
           });
 
           // Return structured results with agent names, their responses, and status
@@ -557,4 +552,17 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
       return fullState;
     });
   }
+
+  /**
+   * Add step to conversation steps in the parent agent.
+   * @param sourceAgent the source agent that is delegating the task
+   * @param step - The step to add
+   * @param context - The operation context
+   */
+  // private addStepToParentConversationSteps(step: StepWithContent, context: OperationContext): void {
+  //   if (!context.conversationSteps) {
+  //     context.conversationSteps = [];
+  //   }
+  //   context.conversationSteps.push(step);
+  // }
 }

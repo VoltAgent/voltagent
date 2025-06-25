@@ -1,5 +1,6 @@
 import type { Span } from "@opentelemetry/api";
 import { devLogger } from "@voltagent/internal/dev";
+import { match } from "ts-pattern";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
@@ -909,7 +910,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a text response without streaming
    */
-  async generateText(
+  public async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferGenerateTextResponseFromProvider<TProvider>> {
@@ -1318,7 +1319,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a text response
    */
-  async streamText(
+  public async streamText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferStreamTextResponseFromProvider<TProvider>> {
@@ -1447,6 +1448,33 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       if (streamController.current) {
         try {
           const formattedStreamPart = transformStreamEventToStreamPart(event);
+
+          if (
+            formattedStreamPart.type === "tool-call" ||
+            formattedStreamPart.type === "tool-result"
+          ) {
+            this.addStepToHistory(
+              {
+                id: formattedStreamPart.toolCallId,
+                content: "",
+                type: formattedStreamPart.type === "tool-call" ? "tool_call" : "tool_result",
+                role: "tool",
+                name: formattedStreamPart.toolName,
+                arguments: match(formattedStreamPart)
+                  .with({ type: "tool-call" }, (e) => e.args)
+                  .with({ type: "tool-result" }, () => undefined)
+                  .exhaustive(),
+                result: match(formattedStreamPart)
+                  .with({ type: "tool-call" }, () => undefined)
+                  .with({ type: "tool-result" }, (e) => e.result)
+                  .exhaustive(),
+                subAgentId: event.subAgentId,
+                subAgentName: event.subAgentName,
+              },
+              operationContext,
+            );
+          }
+
           streamController.current.enqueue(formattedStreamPart);
           devLogger.info("[Real-time Stream] Event injected into stream:", {
             eventType: event.type,
@@ -1848,7 +1876,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a structured object response
    */
-  async generateObject<TSchema extends z.ZodType>(
+  public async generateObject<TSchema extends z.ZodType>(
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
@@ -2127,7 +2155,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<TSchema extends z.ZodType>(
+  public async streamObject<TSchema extends z.ZodType>(
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},

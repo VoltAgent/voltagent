@@ -324,6 +324,8 @@ export interface StepWithContent {
   arguments?: Record<string, any>;
   result?: any;
   usage?: UsageInfo;
+  subAgentId?: string;
+  subAgentName?: string;
 }
 
 export type StepFinishCallback = (step: StepWithContent) => void | Promise<void>;

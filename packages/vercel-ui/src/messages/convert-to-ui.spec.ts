@@ -1,4 +1,5 @@
 import type { BaseMessage, OperationContext, StepWithContent } from "@voltagent/core";
+import { describe, expect, it } from "vitest";
 import { convertToUIMessages } from "./convert-to-ui";
 
 describe("convertToUIMessages", () => {

@@ -28,7 +28,7 @@
     "@ai-sdk/provider": "^1.1.3",
     "@ai-sdk/ui-utils": "^1.2.11",
     "@voltagent/core": "^0.1.44",
-    "@voltagent/internal": "workspace:^",
+    "@voltagent/internal": "^0.0.2",
     "ai": "^4.3.16",
     "ai-v5": "npm:ai@5.0.0-alpha.11",
     "ts-pattern": "^5.7.1"
