@@ -3,7 +3,7 @@ import { devLogger } from "../dev";
 import { deepClone } from "./object-utils";
 
 // Mock devLogger
-vi.mock("./dev", () => ({
+vi.mock("../dev", () => ({
   devLogger: {
     warn: vi.fn(),
   },
