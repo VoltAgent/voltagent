@@ -17,7 +17,7 @@ export async function streamEventForwarder(
   event: StreamEvent,
   options: StreamEventForwarderOptions = {},
 ): Promise<void> {
-  const { forwarder, filterTypes = ["text-delta", "reasoning", "source"] } = options;
+  const { forwarder, filterTypes = ["text-delta", "reasoning", "source", "error"] } = options;
 
   try {
     // Validate event structure

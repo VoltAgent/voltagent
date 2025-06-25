@@ -158,3 +158,6 @@ vitest.config.*.timestamp*
 
 # .ignore
 .ignore
+
+# vscode
+.vscode
