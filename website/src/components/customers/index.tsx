@@ -1,7 +1,7 @@
 import { CodeBracketIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ProjectCard } from "./customerCard";
 
 interface CustomerListProps {
@@ -9,13 +9,35 @@ interface CustomerListProps {
 }
 
 export const CustomerList = ({ customers = [] }: CustomerListProps) => {
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+
+  // Extract testimonials from customers data
+  const testimonials = customers.map((customer) => ({
+    text: customer.case_study.quote.text,
+    author: customer.case_study.quote.author,
+    position: customer.case_study.quote.position,
+    company: customer.case_study.quote.company,
+    avatar: customer.customer.logo_url,
+  }));
+
+  // Auto-rotate testimonials every 5 seconds
+  useEffect(() => {
+    if (testimonials.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [testimonials.length]);
+
   return (
     <section className="relative py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        {/* Header */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 mb-12 sm:mb-24 items-center">
-          <div className="flex  flex-col items-center  relative">
-            <div className="flex items-baseline justify-start">
+        {/* Header with Testimonials */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 landing-sm:gap-12 mb-12 sm:mb-24">
+          {/* Left Side - Main Content */}
+          <div className="flex flex-col justify-center">
+            <div className="flex items-baseline justify-start mb-6">
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
               </div>
@@ -24,36 +46,65 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
               </span>
               <div className="relative">
                 <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
-                  Customer Success Stories
+                  Customer Case Studies
                 </span>
               </div>
             </div>
-            <p className="mt-2 text-center self-center text-gray-400 text-sm">
-              Real companies solving real problems with VoltAgent.
+
+            <p className="text-base text-gray-400 mb-8 leading-relaxed">
+              <span className="text-[#00d992] font-semibold">VoltAgent</span> is
+              the TypeScript AI agent framework, while{" "}
+              <span className="text-orange-400 font-semibold">VoltOps</span>{" "}
+              provides framework-agnostic LLM observability. Companies use both
+              to build powerful AI agents and gain visibility into their
+              applications across any tech stack.
             </p>
           </div>
 
-          <div className="relative">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-left md:ml-8 flex flex-col items-center"
-            >
-              <h3 className="text-lg font-bold text-[#00d992] mb-3">
-                Ready to Transform Your Workflow?
-              </h3>
-              <a
-                href="https://discord.gg/voltagent"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className=" items-center no-underline p-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 text-sm font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 justify-center"
+          {/* Right Side - Simple Testimonial */}
+          {testimonials.length > 0 && (
+            <div className="relative flex items-center justify-center">
+              <motion.div
+                key={currentTestimonial}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="relative max-w-md w-full"
               >
-                Get Started Today
-              </a>
-            </motion.div>
-          </div>
+                <div
+                  className="bg-[#1e293b]/60 backdrop-blur-md border-solid border-[#334155] rounded-lg p-8 shadow-2xl h-64 flex flex-col justify-between"
+                  style={{
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
+                  }}
+                >
+                  {/* Testimonial Content */}
+                  <div className="flex-1 flex items-center">
+                    <blockquote className="text-md text-gray-200 italic leading-relaxed">
+                      "{testimonials[currentTestimonial].text}"
+                    </blockquote>
+                  </div>
+
+                  {/* Author Info */}
+                  <div className="flex items-center mt-4">
+                    <div>
+                      <div className="font-semibold text-[#00d992] text-lg">
+                        {testimonials[currentTestimonial].author}
+                      </div>
+                      <div className="text-gray-400 text-sm">
+                        {testimonials[currentTestimonial].position}
+                      </div>
+                      <div className="text-gray-500 text-xs">
+                        {testimonials[currentTestimonial].company}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </div>
+
         {/* Customer Case Studies Grid */}
         <motion.div
           initial={{ opacity: 0 }}
