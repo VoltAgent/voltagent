@@ -111,11 +111,7 @@ export default function CustomerProjectPage({
               className="mb-8"
             >
               <div className="flex items-center mb-6">
-                <img
-                  src={customer.customer.logo_url}
-                  alt={`${customer.customer.name} logo`}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6 bg-white p-2"
-                />
+                <BuildingOfficeIcon className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6  p-2" />
                 <div className="flex-1">
                   <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#00d992] mb-2">
                     {customer.customer.name}
@@ -154,13 +150,44 @@ export default function CustomerProjectPage({
                 {customer.case_study.use_case}
               </p>
             </motion.div>
-
+            {/* Customer Testimonial */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div
+                className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6 mb-8"
+                style={{
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                  backgroundColor: "rgba(58, 66, 89, 0.3)",
+                }}
+              >
+                <blockquote className="mb-4">
+                  <p className="text-sm sm:text-base text-gray-300 italic leading-relaxed">
+                    "{customer.case_study.quote.text}"
+                  </p>
+                </blockquote>
+                <div className="border-t flex items-center border-gray-600 pt-4">
+                  <div className="text-sm sm:text-base font-medium text-[#00d992]">
+                    {customer.case_study.quote.author}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-400">
+                    {customer.case_study.quote.position}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-500">
+                    {customer.case_study.quote.company}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
             {/* Case Study Content */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+              className=" gap-8"
             >
               {/* Main Content */}
               <div className="lg:col-span-2 space-y-8">
@@ -244,126 +271,6 @@ export default function CustomerProjectPage({
                     ))}
                   </ul>
                 </div>
-              </div>
-
-              {/* Sidebar */}
-              <div className="lg:col-span-1 space-y-8">
-                {/* Customer Quote */}
-                <div
-                  className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
-                  style={{
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                    backgroundColor: "rgba(58, 66, 89, 0.3)",
-                  }}
-                >
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-4">
-                    Customer Testimonial
-                  </h3>
-                  <blockquote className="mb-4">
-                    <p className="text-sm sm:text-base text-gray-300 italic leading-relaxed">
-                      "{customer.case_study.quote.text}"
-                    </p>
-                  </blockquote>
-                  <div className="border-t border-gray-600 pt-4">
-                    <div className="text-sm sm:text-base font-medium text-[#00d992]">
-                      {customer.case_study.quote.author}
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-400">
-                      {customer.case_study.quote.position}
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-500">
-                      {customer.case_study.quote.company}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Company Info */}
-                <div
-                  className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
-                  style={{
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                    backgroundColor: "rgba(58, 66, 89, 0.3)",
-                  }}
-                >
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-4">
-                    Company Details
-                  </h3>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-gray-500 text-sm">Industry:</span>
-                      <div className="text-gray-300">
-                        {customer.customer.industry}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-sm">Team Size:</span>
-                      <div className="text-gray-300">
-                        {customer.customer.team_size} employees
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-sm">Location:</span>
-                      <div className="text-gray-300">
-                        {customer.customer.location}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resources */}
-                {customer.case_study.links && (
-                  <div
-                    className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
-                    style={{
-                      backdropFilter: "blur(4px)",
-                      WebkitBackdropFilter: "blur(4px)",
-                      backgroundColor: "rgba(58, 66, 89, 0.3)",
-                    }}
-                  >
-                    <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-4">
-                      Resources
-                    </h3>
-                    <div className="space-y-3">
-                      {customer.case_study.links.github && (
-                        <a
-                          href={customer.case_study.links.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center text-gray-300 hover:text-[#00d992] transition-colors no-underline"
-                        >
-                          <GitHubLogo className="w-4 h-4 mr-2" />
-                          <span className="text-sm">View on GitHub</span>
-                        </a>
-                      )}
-                      {customer.case_study.links.video && (
-                        <a
-                          href={customer.case_study.links.video}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center text-gray-300 hover:text-[#00d992] transition-colors no-underline"
-                        >
-                          <GlobeAltIcon className="w-4 h-4 mr-2" />
-                          <span className="text-sm">Watch Demo</span>
-                        </a>
-                      )}
-                      {customer.case_study.links.discord && (
-                        <a
-                          href={customer.case_study.links.discord}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center text-gray-300 hover:text-[#00d992] transition-colors no-underline"
-                        >
-                          <ArrowTopRightOnSquareIcon className="w-4 h-4 mr-2" />
-                          <span className="text-sm">Join Discord</span>
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Call to Action */}
                 <div
                   className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
                   style={{
