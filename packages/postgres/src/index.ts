@@ -269,7 +269,7 @@ export class PostgresStorage implements Memory {
           end_time TIMESTAMPTZ,
           status TEXT,
           status_message TEXT,
-          level TEXT DEFAULT "INFO",
+          level TEXT DEFAULT 'INFO',
           version TEXT,
           parent_event_id TEXT,
           tags JSONB,
