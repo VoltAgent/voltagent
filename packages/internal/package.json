@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/internal",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
   "license": "MIT",
   "exports": {
@@ -28,7 +28,11 @@
   "main": "dist/main/index.js",
   "module": "dist/main/index.mjs",
   "types": "dist/main/index.d.ts",
-  "files": ["dist/**/*", "dev/dist/**/*", "test/dist/**/*"],
+  "files": [
+    "dist/**/*",
+    "dev/dist/**/*",
+    "test/dist/**/*"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -38,7 +42,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.31"
+    "@voltagent/core": "^0.1.44"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

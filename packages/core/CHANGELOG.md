@@ -1,5 +1,12 @@
 # @voltagent/core
 
+## 0.1.44
+
+### Patch Changes
+
+- Updated dependencies [[`94de46a`](https://github.com/VoltAgent/voltagent/commit/94de46ab2b7ccead47a539e93c72b357f17168f6)]:
+  - @voltagent/internal@0.0.2
+
 ## 0.1.43
 
 ### Patch Changes
