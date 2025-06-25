@@ -1448,33 +1448,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       if (streamController.current) {
         try {
           const formattedStreamPart = transformStreamEventToStreamPart(event);
-
-          if (
-            formattedStreamPart.type === "tool-call" ||
-            formattedStreamPart.type === "tool-result"
-          ) {
-            this.addStepToHistory(
-              {
-                id: formattedStreamPart.toolCallId,
-                content: "",
-                type: formattedStreamPart.type === "tool-call" ? "tool_call" : "tool_result",
-                role: "tool",
-                name: formattedStreamPart.toolName,
-                arguments: match(formattedStreamPart)
-                  .with({ type: "tool-call" }, (e) => e.args)
-                  .with({ type: "tool-result" }, () => undefined)
-                  .exhaustive(),
-                result: match(formattedStreamPart)
-                  .with({ type: "tool-call" }, () => undefined)
-                  .with({ type: "tool-result" }, (e) => e.result)
-                  .exhaustive(),
-                subAgentId: event.subAgentId,
-                subAgentName: event.subAgentName,
-              },
-              operationContext,
-            );
-          }
-
           streamController.current.enqueue(formattedStreamPart);
           devLogger.info("[Real-time Stream] Event injected into stream:", {
             eventType: event.type,
