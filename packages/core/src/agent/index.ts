@@ -912,7 +912,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateTextResponseFromProvider<TProvider>> {
+  ): Promise<
+    InferGenerateTextResponseFromProvider<TProvider> & {
+      userContext: Map<string | symbol, unknown>;
+      providerResponse: unknown;
+    }
+  > {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1237,16 +1242,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Enhance provider response with userContext for consumers while maintaining type safety
-      const enhancedResponse = {
+      return {
         ...response,
         userContext: new Map(operationContext.userContext),
         providerResponse: response.provider || response, // Backward compatibility
-      } as InferGenerateTextResponseFromProvider<TProvider> & {
-        userContext: Map<string | symbol, unknown>;
-        providerResponse: unknown;
       };
-
-      return enhancedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
