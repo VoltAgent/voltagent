@@ -185,7 +185,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
       }
 
       const taskMessage: BaseMessage = {
-        role: "system",
+        role: "user",
         content: taskContent,
       };
 

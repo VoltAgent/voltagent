@@ -242,7 +242,7 @@ describe("SubAgentManager", () => {
       // Verify streamText was called with task message
       expect(streamTextSpy).toHaveBeenCalled();
       const messages = streamTextSpy.mock.calls[0][0] as any[];
-      expect(messages[0].role).toBe("system");
+      expect(messages[0].role).toBe("user");
       expect(messages[0].content).toContain("Solve this math problem");
 
       // Verify result - should contain text from stream
@@ -424,7 +424,7 @@ describe("SubAgentManager", () => {
       };
 
       // Verify the task message is part of what's passed
-      expect(messagesPassedToSubAgent[0].role).toBe("system");
+      expect(messagesPassedToSubAgent[0].role).toBe("user");
       expect(messagesPassedToSubAgent[0].content).toContain("Test task for userContext passing");
 
       // Verify the userContext from the supervisor was passed in the options
