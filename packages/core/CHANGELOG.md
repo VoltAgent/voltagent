@@ -1,5 +1,67 @@
 # @voltagent/core
 
+## 0.1.45
+
+### Patch Changes
+
+- [#308](https://github.com/VoltAgent/voltagent/pull/308) [`33afe6e`](https://github.com/VoltAgent/voltagent/commit/33afe6ef40ef56c501f7fa69be42da730f87d29d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: subAgents now share conversation steps and context with parent agents
+
+  SubAgents automatically inherit and contribute to their parent agent's operation context, including `userContext` and conversation history. This creates a unified workflow where all agents (supervisor + subagents) add steps to the same `conversationSteps` array, providing complete visibility and traceability across the entire agent hierarchy.
+
+  ## Usage
+
+  ```typescript
+  import { Agent, createHooks } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  // SubAgent automatically receives parent's context
+  const translatorAgent = new Agent({
+    name: "Translator Agent",
+    hooks: createHooks({
+      onStart: ({ context }) => {
+        // Access parent's userContext automatically
+        const projectId = context.userContext.get("projectId");
+        const language = context.userContext.get("language");
+        console.log(`Translating for project ${projectId} to ${language}`);
+      },
+    }),
+    instructions: "You are a skilled translator",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Supervisor agent with context
+  const supervisorAgent = new Agent({
+    name: "Supervisor Agent",
+    subAgents: [translatorAgent],
+    hooks: createHooks({
+      onEnd: ({ context }) => {
+        // Access complete workflow history from all agents
+        const allSteps = context.conversationSteps;
+        console.log(`Total workflow steps: ${allSteps.length}`);
+        // Includes supervisor's delegate_task calls + subagent's processing steps
+      },
+    }),
+    instructions: "Coordinate translation workflow",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Usage - context automatically flows to subagents
+  const response = await supervisorAgent.streamText("Translate this text", {
+    userContext: new Map([
+      ["projectId", "proj-123"],
+      ["language", "Spanish"],
+    ]),
+  });
+
+  // Final context includes data from both supervisor and subagents
+  console.log("Project:", response.userContext?.get("projectId"));
+  ```
+
+- [#306](https://github.com/VoltAgent/voltagent/pull/306) [`b8529b5`](https://github.com/VoltAgent/voltagent/commit/b8529b53313fa97e941ecacb8c1555205de49c19) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core): Revert original fix by @omeraplak to pass the task role as "user" instead of prompt to prevent errors in providers such as Anthropic, Grok, etc.
+
 ## 0.1.44
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @voltagent/postgres
 
+## 0.1.6
+
+### Patch Changes
+
+- [#301](https://github.com/VoltAgent/voltagent/pull/301) [`619e951`](https://github.com/VoltAgent/voltagent/commit/619e9510c05b7e46f8c243db226f220b5fdad824) Thanks [@woutrbe](https://github.com/woutrbe)! - fix(postgres): Fix default value being interpreted as column name
+
+- Updated dependencies [[`33afe6e`](https://github.com/VoltAgent/voltagent/commit/33afe6ef40ef56c501f7fa69be42da730f87d29d), [`b8529b5`](https://github.com/VoltAgent/voltagent/commit/b8529b53313fa97e941ecacb8c1555205de49c19)]:
+  - @voltagent/core@0.1.45
+
 ## 0.1.5
 
 ### Patch Changes

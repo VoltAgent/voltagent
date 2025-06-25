@@ -1,5 +1,14 @@
 # @voltagent/vercel-ui
 
+## 0.1.2
+
+### Patch Changes
+
+- [#302](https://github.com/VoltAgent/voltagent/pull/302) [`1e1f563`](https://github.com/VoltAgent/voltagent/commit/1e1f563aeb9ac25880ca56a33285abca0b24b389) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Fix to match the output of `mergeIntoDataStream` and `convertToUIMessages` as the `mergeIntoDataStream` filters out the `SubAgent` prefix of a `toolName` (i.e. `BlogReader: read-blog-post`). `convertToUIMessages` was not filtering out the `SubAgent` prefix by default and it was causing the `toolName` to be different on the server in the `onEnd` hook from whats being sent to the client (and expected by the developer).
+
+- Updated dependencies [[`33afe6e`](https://github.com/VoltAgent/voltagent/commit/33afe6ef40ef56c501f7fa69be42da730f87d29d), [`b8529b5`](https://github.com/VoltAgent/voltagent/commit/b8529b53313fa97e941ecacb8c1555205de49c19)]:
+  - @voltagent/core@0.1.45
+
 ## 0.1.1
 
 ### Patch Changes
