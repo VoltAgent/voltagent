@@ -552,17 +552,4 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
       return fullState;
     });
   }
-
-  /**
-   * Add step to conversation steps in the parent agent.
-   * @param sourceAgent the source agent that is delegating the task
-   * @param step - The step to add
-   * @param context - The operation context
-   */
-  // private addStepToParentConversationSteps(step: StepWithContent, context: OperationContext): void {
-  //   if (!context.conversationSteps) {
-  //     context.conversationSteps = [];
-  //   }
-  //   context.conversationSteps.push(step);
-  // }
 }
