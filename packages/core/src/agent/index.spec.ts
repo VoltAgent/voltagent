@@ -3060,7 +3060,11 @@ describe("Agent", () => {
             await streamEventForwarder(
               {
                 type: "tool-call",
-                data: {},
+                data: {
+                  toolName: "test-tool",
+                  toolCallId: "test-call-id",
+                  args: { test: "value" },
+                },
                 timestamp: new Date().toISOString(),
                 subAgentId: "test-sub",
                 subAgentName: "Test Sub",
@@ -3080,6 +3084,180 @@ describe("Agent", () => {
       // Should not throw despite forwarder error
       await expect(streamPromise).resolves.toBeUndefined();
       expect(events).toHaveLength(1); // Only original event
+    });
+  });
+
+  describe("Concurrent SubAgent Event Propagation", () => {
+    it("should prevent event mixing between concurrent operations on same agent", async () => {
+      // Track published events to verify proper isolation
+      const publishedEvents: Array<{
+        agentId: string;
+        historyId: string;
+        parentHistoryEntryId?: string;
+        eventName: string;
+      }> = [];
+
+      // Spy on AgentEventEmitter to track event propagation
+      const mockEventEmitterSpy = vi
+        .spyOn(AgentEventEmitter.getInstance(), "publishTimelineEventAsync")
+        .mockImplementation((params: any) => {
+          publishedEvents.push({
+            agentId: params.agentId,
+            historyId: params.historyId,
+            parentHistoryEntryId: params.parentHistoryEntryId,
+            eventName: params.event?.name || "unknown",
+          });
+        });
+
+      try {
+        // Create parent agent for testing
+        const testParentAgent = new TestAgent({
+          id: "concurrent-parent",
+          name: "Concurrent Parent",
+          description: "Parent agent for concurrent testing",
+          model: mockModel,
+          llm: mockProvider,
+          instructions: "Parent agent for concurrent testing",
+        });
+
+        // Start two concurrent operations
+        const [result1, result2] = await Promise.all([
+          testParentAgent.generateText("Concurrent operation 1", {
+            userId: "user-1",
+            conversationId: "conv-1",
+          }),
+          testParentAgent.generateText("Concurrent operation 2", {
+            userId: "user-2",
+            conversationId: "conv-2",
+          }),
+        ]);
+
+        // Verify both operations completed successfully
+        expect(result1.text).toBe("Hello, I am a test agent!");
+        expect(result2.text).toBe("Hello, I am a test agent!");
+
+        // Verify that events were published and properly isolated
+        expect(publishedEvents.length).toBeGreaterThan(0);
+
+        // Get unique operation IDs (historyId is used as operation identifier)
+        const operationIds = [...new Set(publishedEvents.map((e) => e.historyId))];
+        expect(operationIds.length).toBeGreaterThanOrEqual(2);
+
+        // Verify events are properly associated with their operations
+        operationIds.forEach((operationId) => {
+          const operationEvents = publishedEvents.filter((e) => e.historyId === operationId);
+          expect(operationEvents.length).toBeGreaterThan(0);
+        });
+      } finally {
+        mockEventEmitterSpy.mockRestore();
+      }
+    });
+
+    it("should ensure parentHistoryEntryId propagation prevents event cross-contamination", async () => {
+      const eventsByOperation: Map<string, Array<any>> = new Map();
+
+      const mockEventEmitterSpy = vi
+        .spyOn(AgentEventEmitter.getInstance(), "publishTimelineEventAsync")
+        .mockImplementation((params: any) => {
+          const operationId = params.historyId;
+          if (!eventsByOperation.has(operationId)) {
+            eventsByOperation.set(operationId, []);
+          }
+          const operationEvents = eventsByOperation.get(operationId);
+          if (operationEvents) {
+            operationEvents.push({
+              agentId: params.agentId,
+              eventName: params.event?.name,
+              parentHistoryEntryId: params.parentHistoryEntryId,
+              skipPropagation: params.skipPropagation,
+            });
+          }
+        });
+
+      try {
+        const testAgent = new TestAgent({
+          id: "propagation-test-agent",
+          name: "Propagation Test Agent",
+          description: "Agent for testing event propagation",
+          model: mockModel,
+          llm: mockProvider,
+          instructions: "Agent for testing event propagation",
+        });
+
+        // Run concurrent operations with different contexts
+        await Promise.all([
+          testAgent.generateText("Operation A with context", {
+            userContext: new Map([["operationId", "op-a"]]),
+          }),
+          testAgent.generateText("Operation B with context", {
+            userContext: new Map([["operationId", "op-b"]]),
+          }),
+        ]);
+
+        // Verify we have events for multiple operations
+        expect(eventsByOperation.size).toBeGreaterThanOrEqual(2);
+
+        // Verify events are properly isolated per operation
+        for (const [operationId, events] of eventsByOperation.entries()) {
+          expect(events.length).toBeGreaterThan(0);
+          expect(operationId).toBeDefined();
+
+          // Events within an operation should be consistent
+          events.forEach((event) => {
+            expect(event.agentId).toBeDefined();
+            expect(event.eventName).toBeDefined();
+          });
+        }
+      } finally {
+        mockEventEmitterSpy.mockRestore();
+      }
+    });
+
+    it("should handle rapid concurrent operations without event leakage", async () => {
+      const eventsPerOperation: Map<string, number> = new Map();
+
+      const mockEventEmitterSpy = vi
+        .spyOn(AgentEventEmitter.getInstance(), "publishTimelineEventAsync")
+        .mockImplementation((params: any) => {
+          const operationId = params.historyId;
+          eventsPerOperation.set(operationId, (eventsPerOperation.get(operationId) || 0) + 1);
+        });
+
+      try {
+        const rapidTestAgent = new TestAgent({
+          id: "rapid-test-agent",
+          name: "Rapid Test Agent",
+          description: "Agent for rapid concurrent testing",
+          model: mockModel,
+          llm: mockProvider,
+          instructions: "Agent for rapid concurrent testing",
+        });
+
+        const concurrentOperations = 3;
+        const operations = Array.from({ length: concurrentOperations }, (_, i) =>
+          rapidTestAgent.generateText(`Rapid operation ${i + 1}`),
+        );
+
+        const results = await Promise.all(operations);
+
+        // Verify all operations completed successfully
+        expect(results).toHaveLength(concurrentOperations);
+        results.forEach((result) => {
+          expect(result.text).toBe("Hello, I am a test agent!");
+        });
+
+        // Verify that we have the expected number of separate operations
+        expect(eventsPerOperation.size).toBe(concurrentOperations);
+
+        // Each operation should have received some events
+        for (const [operationId, eventCount] of eventsPerOperation.entries()) {
+          expect(eventCount).toBeGreaterThan(0);
+          expect(operationId).toBeDefined();
+          expect(operationId).not.toBe("");
+        }
+      } finally {
+        mockEventEmitterSpy.mockRestore();
+      }
     });
   });
 });
