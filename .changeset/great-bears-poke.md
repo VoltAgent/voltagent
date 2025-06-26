@@ -7,30 +7,17 @@ The `UserContext` was properly propagated through tools and hooks, but was not b
 **Before**:
 
 ```typescript
-const standardizedOutput: StandardizedTextResult = {
-  text: response.text,
-  usage: response.usage,
-  finishReason: response.finishReason,
-  providerResponse: response,
-  userContext: new Map(operationContext.userContext),
-};
+const result = await agent.generateText(...);
 
-return response; // ❌ Missing userContext
+result.userContext; // ❌ Missing userContext
 ```
 
 **After**:
 
 ```typescript
-const standardizedOutput: StandardizedTextResult = {
-  text: response.text,
-  usage: response.usage,
-  finishReason: response.finishReason,
-  providerResponse: response,
-  userContext: new Map(operationContext.userContext),
-};
+const result = await agent.generateText(...);
 
-return standardizedOutput; // ✅ Includes userContext
-```
+return result.userContext; // ✅ Includes userContext
 
 **How users can see the changes**:
 
