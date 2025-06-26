@@ -14,8 +14,9 @@ export default defineConfig({
       exclude: [
         "src/**/*.d.ts",
         "src/**/index.ts",
-        "src/types.ts", // Exclude types file as it has 0% coverage
-        "src/streams/type-utils.ts", // Exclude type-utils as it has 0% coverage
+        "src/types.ts",
+        "src/streams/type-utils.ts",
+        "src/internal/**/*.ts",
       ],
       thresholds: {
         branches: 100,

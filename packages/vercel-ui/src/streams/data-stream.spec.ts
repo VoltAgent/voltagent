@@ -1,12 +1,7 @@
 import type { StreamPart } from "@voltagent/core";
 import { convertReadableStreamToArray } from "@voltagent/internal/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  formatDataStreamPart,
-  isSubAgentStreamPart,
-  mergeIntoDataStream,
-  toDataStream,
-} from "./data-stream";
+import { formatDataStreamPart, mergeIntoDataStream, toDataStream } from "./data-stream";
 import type { DataStreamOptions, FullStream, SubAgentStreamPart } from "./data-stream";
 
 // Mock dependencies
@@ -39,50 +34,6 @@ describe("data-stream", () => {
     it("should handle different data types", () => {
       const result = formatDataStreamPart("error", "test error");
       expect(result).toBe('formatted:error:"test error"');
-    });
-  });
-
-  describe("isSubAgentStreamPart", () => {
-    it("should return true for valid sub-agent stream parts", () => {
-      const subAgentPart: SubAgentStreamPart = {
-        type: "text-delta",
-        textDelta: "test",
-        subAgentId: "agent-1",
-        subAgentName: "TestAgent",
-      };
-
-      expect(isSubAgentStreamPart(subAgentPart)).toBe(true);
-    });
-
-    it("should return false for regular stream parts", () => {
-      const regularPart: StreamPart = {
-        type: "text-delta",
-        textDelta: "test",
-      };
-
-      expect(isSubAgentStreamPart(regularPart)).toBe(false);
-    });
-
-    it("should return false for stream parts with missing sub-agent properties", () => {
-      const incompletePart = {
-        type: "text-delta",
-        textDelta: "test",
-        subAgentId: "agent-1",
-        // missing subAgentName
-      } as any;
-
-      expect(isSubAgentStreamPart(incompletePart)).toBe(false);
-    });
-
-    it("should return false for stream parts with wrong property types", () => {
-      const wrongTypePart = {
-        type: "text-delta",
-        textDelta: "test",
-        subAgentId: 123, // should be string
-        subAgentName: "TestAgent",
-      } as any;
-
-      expect(isSubAgentStreamPart(wrongTypePart)).toBe(false);
     });
   });
 

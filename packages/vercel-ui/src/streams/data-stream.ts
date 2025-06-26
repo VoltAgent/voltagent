@@ -4,6 +4,7 @@ import { devLogger } from "@voltagent/internal/dev";
 import { formatDataStreamPart as formatDataStreamPartBase } from "ai";
 import type * as AI from "ai";
 import { P, match } from "ts-pattern";
+import { isSubAgent } from "../utils/guards";
 import { removeAgentPrefix } from "../utils/tools";
 import type { DataStreamPartType, DataStreamPartValueType } from "./type-utils";
 
@@ -95,7 +96,7 @@ export function toDataStream(
     }
 
     // the Supervisor should be controlling the text stream, the primary idea with fullStream is to surface tool calls and other metadata
-    if (isSubAgentStreamPart(streamPart) && streamPart.type === "text-delta") {
+    if (isSubAgent(streamPart) && streamPart.type === "text-delta") {
       return true;
     }
 
@@ -174,7 +175,7 @@ export function toDataStream(
                     args: streamPart.args,
                     subAgentName: streamPart?.subAgentName ?? undefined,
                     subAgentId: streamPart?.subAgentId ?? undefined,
-                    subAgent: isSubAgentStreamPart(streamPart),
+                    subAgent: isSubAgent(streamPart),
                   }),
                 );
                 break;
@@ -186,7 +187,7 @@ export function toDataStream(
                     result: streamPart.result,
                     subAgentName: streamPart?.subAgentName ?? undefined,
                     subAgentId: streamPart?.subAgentId ?? undefined,
-                    subAgent: isSubAgentStreamPart(streamPart),
+                    subAgent: isSubAgent(streamPart),
                   }),
                 );
                 safeEnqueue(
@@ -267,20 +268,6 @@ export function toDataStream(
       devLogger.warn("Stream cancelled:", reason);
     },
   });
-}
-
-/**
- * Check if a stream part is a sub-agent stream part.
- * @param part - The stream part to check.
- * @returns True if the stream part is a sub-agent stream part, false otherwise.
- */
-export function isSubAgentStreamPart(part: StreamPart): part is SubAgentStreamPart {
-  return [
-    "subAgentId" in part,
-    "subAgentName" in part,
-    typeof part.subAgentId === "string",
-    typeof part.subAgentName === "string",
-  ].every((v) => v === true);
 }
 
 /*

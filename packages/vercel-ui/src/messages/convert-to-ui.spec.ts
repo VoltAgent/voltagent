@@ -41,6 +41,73 @@ describe("convertToUIMessages", () => {
     expect(result).toEqual([]);
   });
 
+  it("should default to exclude non-tool related steps for sub-agents", () => {
+    const message: Message = {
+      role: "user",
+      content: "Hello!",
+    };
+    const ctx = createFauxContext(
+      [message],
+      [
+        {
+          type: "text",
+          id: "text-1",
+          content: "Hello!",
+          role: "assistant",
+        },
+        {
+          type: "tool_call",
+          id: "tool-1",
+          name: "test-tool",
+          arguments: { foo: "bar" },
+          content: "",
+          role: "assistant",
+          subAgentId: "sub-agent-1",
+          subAgentName: "Sub Agent 1",
+        },
+        {
+          type: "text",
+          id: "text-2",
+          content: "Hello I'm a sub-agent!",
+          role: "assistant",
+          subAgentId: "sub-agent-1",
+          subAgentName: "Sub Agent 1",
+        },
+        {
+          type: "tool_result",
+          id: "tool-1",
+          name: "test-tool",
+          result: "tool result",
+          content: "",
+          role: "assistant",
+          subAgentId: "sub-agent-1",
+          subAgentName: "Sub Agent 1",
+        },
+      ],
+    );
+
+    const result = convertToUIMessages(ctx);
+    expect(result[1].parts).toEqual([
+      { type: "step-start" },
+      { type: "text", text: "Hello!", subAgent: false },
+      { type: "step-start" },
+      {
+        type: "tool-invocation",
+        toolInvocation: {
+          toolCallId: "tool-1",
+          toolName: "test-tool",
+          state: "result",
+          step: 1,
+          args: { foo: "bar" },
+          result: "tool result",
+          subAgentId: "sub-agent-1",
+          subAgentName: "Sub Agent 1",
+          subAgent: true,
+        },
+      },
+    ]);
+  });
+
   it("should handle input message parts (text, image, file)", () => {
     const message: Message = {
       role: "user",
@@ -121,6 +188,7 @@ describe("convertToUIMessages", () => {
           step: expect.any(Number),
           args: { foo: "bar" },
           result: "tool result",
+          subAgent: false,
         },
       }),
     );
@@ -177,6 +245,17 @@ describe("convertToUIMessages", () => {
     expect(result[0].parts).toEqual([
       { type: "file", data: Buffer.from("filedata").toString(), mimeType: "application/pdf" },
     ]);
+  });
+
+  it("should fallback to new Date() if createdAt is not a Date instance", () => {
+    const message: Message = {
+      role: "user",
+      content: "Hello!",
+      createdAt: "not-a-date",
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].createdAt).toBeInstanceOf(Date);
   });
 });
 

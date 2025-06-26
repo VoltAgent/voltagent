@@ -1,5 +1,6 @@
 import type { Span } from "@opentelemetry/api";
 import { devLogger } from "@voltagent/internal/dev";
+import { P, match } from "ts-pattern";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { EventStatus } from "../events";
@@ -746,7 +747,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (!context.conversationSteps) {
       context.conversationSteps = [];
     }
-    context.conversationSteps.push(step);
+
+    const finalStep = {
+      ...step,
+      ...match(context)
+        .with({ parentAgentId: P.not(P.nullish) }, () => ({
+          subAgentId: this.id,
+          subAgentName: this.name,
+        }))
+        .otherwise(() => ({})),
+    };
+
+    context.conversationSteps.push(finalStep);
   }
 
   /**

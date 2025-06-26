@@ -1,8 +1,7 @@
-/**
- * Object manipulation utility functions
- */
-
+import type { SetRequired } from "type-fest";
 import { devLogger } from "../dev";
+import type { PlainObject } from "../types";
+import { isObject } from "./lang";
 
 /**
  * Deep clone an object using JSON serialization with fallback to shallow clone
@@ -21,4 +20,18 @@ export function deepClone<T>(obj: T): T {
     }
     return { ...obj } as T;
   }
+}
+
+/**
+ * Check if an object has a key
+ *
+ * @param obj - The object to check
+ * @param key - The key to check
+ * @returns True if the object has the key, false otherwise
+ */
+export function hasKey<T extends PlainObject, K extends string>(
+  obj: T,
+  key: K,
+): obj is T & SetRequired<T, K> {
+  return isObject(obj) && key in obj;
 }

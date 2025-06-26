@@ -1,1 +1,2 @@
-export { deepClone } from "./object-utils";
+export { deepClone, hasKey } from "./objects";
+export { isNil, isObject, isEmptyObject, isFunction, isPlainObject } from "./lang";

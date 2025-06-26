@@ -1,14 +1,37 @@
 import type { BaseMessage, OperationContext, StepWithContent } from "@voltagent/core";
-import { appendResponseMessages } from "ai";
 import type * as VercelAIv5 from "ai-v5";
 import { P, match } from "ts-pattern";
-import type { UIMessage, VercelVersion } from "../types";
+import {
+  type VercelResponseMessage,
+  appendResponseMessages,
+} from "../internal/append-response-messages";
+import { buildSubAgentData } from "../internal/utils";
+import type { UIMessage, UIMessagePart, VercelVersion } from "../types";
+import { rejectStepsWithContent, rejectUIMessageParts } from "../utils/filters";
+import { isSubAgent } from "../utils/guards";
 import { generateMessageId, hasKey } from "../utils/identifiers";
 import schemas from "../utils/patterns";
 import { removeAgentPrefix } from "../utils/tools";
 
 export interface ConvertToUIMessagesOptions<TVersion extends VercelVersion = VercelVersion> {
-  version: TVersion;
+  /**
+   * The parts to exclude from the UIMessages.
+   *
+   * By default all messages are included.
+   */
+  excludeMessageParts?: (part: UIMessagePart) => boolean;
+  /**
+   * The steps to exclude from the UIMessages.
+   *
+   * By default the non-tool related steps for sub-agents is excluded while all other steps are included.
+   */
+  excludeSteps?: (step: StepWithContent) => boolean;
+  /**
+   * Only v4 is supported currently, v5 is not implemented yet.
+   *
+   * @default "v4"
+   */
+  version?: TVersion;
 }
 
 /**
@@ -67,6 +90,22 @@ export function convertToUIMessages<
       return [];
     });
 
+  // the default exclude is to remove the non-tool related parts for sub-agents while keeping all other parts
+  const excludeMessageParts = match(options?.excludeMessageParts)
+    .returnType<(part: UIMessagePart) => boolean>()
+    .with(P.not(P.nullish), (predicate) => predicate)
+    .otherwise(() => (_part) => false);
+
+  const excludeSteps = match(options?.excludeSteps)
+    .returnType<(step: StepWithContent) => boolean>()
+    .with(P.not(P.nullish), (predicate) => predicate)
+    .otherwise(() => (step) => {
+      if (isSubAgent(step)) {
+        return step.type !== "tool_call" && step.type !== "tool_result";
+      }
+      return false;
+    });
+
   const steps = match(operationContext.conversationSteps)
     .returnType<StepWithContent[]>()
     .with(P.nullish, () => {
@@ -77,10 +116,15 @@ export function convertToUIMessages<
     });
 
   if (options?.version === "v5") {
-    return convertToV5UIMessages(messages, steps);
+    throw new Error("V5 is not supported yet");
   }
 
-  return convertToV4UIMessages(messages, steps);
+  return convertToV4UIMessages(messages, rejectStepsWithContent(steps, excludeSteps)).map(
+    (message) => ({
+      ...message,
+      parts: rejectUIMessageParts(message, excludeMessageParts),
+    }),
+  );
 }
 
 /**
@@ -151,6 +195,7 @@ function convertToV4UIMessages(
             // biome-ignore lint/style/noNonNullAssertion: this SHOULD always be defined
             toolName: removeAgentPrefix(step.name!),
             args: step.arguments,
+            ...buildSubAgentData(step),
           },
         ],
       }))
@@ -164,6 +209,7 @@ function convertToV4UIMessages(
             // biome-ignore lint/style/noNonNullAssertion: this SHOULD always be defined
             toolName: removeAgentPrefix(step.name!),
             result: step.result,
+            ...buildSubAgentData(step),
           },
         ],
       }))
@@ -171,42 +217,23 @@ function convertToV4UIMessages(
         id: step.id,
         role: "assistant",
         content: [{ type: "text", text: step.content }],
+        ...buildSubAgentData(step),
       }))
       .exhaustive();
   }) satisfies VercelResponseMessage[];
 
-  // @ts-expect-error - TODO: fix this
-  return appendResponseMessages({
+  // We do this to build the final message with all the parts
+  // combined using the vercel/ai appendResponseMessages function with some
+  // additional parts & logic added
+  const finalMessages = appendResponseMessages({
     messages: inputMessages,
     responseMessages,
   }).map((message) => ({
     ...message,
   }));
-}
 
-/**
- * Convert a list of messages to a list of V5 UIMessages.
- *
- * NOT IMPLEMENTED YET
- *
- * @throws {Error} - This function is not implemented yet.
- * @param messages - The input message(s) to convert.
- * @param steps - The steps to convert from the agent/provider.
- * @returns The converted messages.
- */
-function convertToV5UIMessages<
-  TMetadata = unknown,
-  TDataParts extends VercelAIv5.UIDataTypes = VercelAIv5.UIDataTypes,
->(
-  _messages: BaseMessage[],
-  _steps: StepWithContent[],
-): Array<UIMessage<"v5", TMetadata, TDataParts>> {
-  throw new Error("V5 is not supported yet");
+  return finalMessages;
 }
-
-type VercelResponseMessage = Parameters<
-  typeof appendResponseMessages
->[0]["responseMessages"][number];
 
 function getId(message: unknown): string {
   if (hasKey(message, "id") && typeof message.id === "string") {
