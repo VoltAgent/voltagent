@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.46
+
+### Patch Changes
+
+- [#309](https://github.com/VoltAgent/voltagent/pull/309) [`b81a6b0`](https://github.com/VoltAgent/voltagent/commit/b81a6b09c33d95f7e586501cc058ae8381c854c4) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core): Default to filtering `error` types from the `fullStream` to allow for error handling to happen properly
+
 ## 0.1.45
 
 ### Patch Changes
