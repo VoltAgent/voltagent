@@ -46,10 +46,10 @@ import type {
   CommonGenerateOptions,
   DynamicValue,
   DynamicValueOptions,
-  ExtendedGenerateObjectResponse,
-  ExtendedGenerateTextResponse,
-  ExtendedStreamObjectResponse,
-  ExtendedStreamTextResponse,
+  GenerateObjectResponse,
+  GenerateTextResponse,
+  StreamObjectResponse,
+  StreamTextResponse,
   InternalGenerateOptions,
   ModelType,
   OperationContext,
@@ -910,7 +910,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<ExtendedGenerateTextResponse<TProvider>> {
+  ): Promise<GenerateTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1213,7 +1213,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationContext.isActive = false;
 
       // Extend the original response with userContext for backward compatibility
-      const extendedResponse: ExtendedGenerateTextResponse<TProvider> = {
+      const extendedResponse: GenerateTextResponse<TProvider> = {
         ...response,
         userContext: new Map(operationContext.userContext),
       };
@@ -1318,7 +1318,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   async streamText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<ExtendedStreamTextResponse<TProvider>> {
+  ): Promise<StreamTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1832,7 +1832,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     });
 
     // Create enhanced stream with real-time SubAgent event injection and add userContext
-    const wrappedResponse: ExtendedStreamTextResponse<TProvider> = {
+    const wrappedResponse: StreamTextResponse<TProvider> = {
       ...response,
       fullStream: response.fullStream
         ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
@@ -1850,7 +1850,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<ExtendedGenerateObjectResponse<TProvider, TSchema>> {
+  ): Promise<GenerateObjectResponse<TProvider, TSchema>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -2030,7 +2030,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Extend the original response with userContext for backward compatibility
-      const extendedResponse: ExtendedGenerateObjectResponse<TProvider, TSchema> = {
+      const extendedResponse: GenerateObjectResponse<TProvider, TSchema> = {
         ...response,
         userContext: new Map(operationContext.userContext),
       };
@@ -2127,7 +2127,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<ExtendedStreamObjectResponse<TProvider, TSchema>> {
+  ): Promise<StreamObjectResponse<TProvider, TSchema>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -2419,7 +2419,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Add userContext to the response for backward compatibility
-      const extendedResponse: ExtendedStreamObjectResponse<TProvider, TSchema> = {
+      const extendedResponse: StreamObjectResponse<TProvider, TSchema> = {
         ...response,
         userContext: new Map(operationContext.userContext),
       };
