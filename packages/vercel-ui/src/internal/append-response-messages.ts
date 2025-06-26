@@ -10,6 +10,7 @@ import {
   extractMaxToolInvocationStep,
 } from "@ai-sdk/ui-utils";
 import type { appendResponseMessages as baseAppendResponseMessages } from "ai";
+import type { UIMessage } from "../types";
 import { buildSubAgentData, convertDataContentToBase64String } from "./utils";
 
 export type VercelResponseMessage = Parameters<
@@ -253,5 +254,5 @@ Internal. For test use only. May change without notice.
     }
   }
 
-  return clonedMessages;
+  return clonedMessages as UIMessage[];
 }
