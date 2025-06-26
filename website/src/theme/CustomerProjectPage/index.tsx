@@ -108,25 +108,27 @@ export default function CustomerProjectPage({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="mb-8"
+              className="mb-6 sm:mb-8"
             >
-              <div className="flex items-center mb-6">
-                <BuildingOfficeIcon className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6  p-2" />
-                <div className="flex-1">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#00d992] mb-2">
-                    {customer.customer.name}
-                  </h1>
-                  <p className="text-gray-400 text-base sm:text-lg">
-                    {customer.customer.industry}
-                  </p>
-                  <div className="flex items-center mt-2 space-x-4">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <UsersIcon className="w-4 h-4 mr-1" />
-                      {customer.customer.team_size} employees
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <BuildingOfficeIcon className="w-4 h-4 mr-1" />
-                      {customer.customer.location}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
+                <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                  <BuildingOfficeIcon className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6 " />
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#00d992] mb-1 sm:mb-2 leading-tight">
+                      {customer.customer.name}
+                    </h1>
+                    <p className="text-gray-400 text-sm sm:text-base lg:text-lg mb-2">
+                      {customer.customer.industry}
+                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                      <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                        <UsersIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        {customer.customer.team_size} employees
+                      </div>
+                      <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                        <BuildingOfficeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        {customer.customer.location}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -134,21 +136,23 @@ export default function CustomerProjectPage({
                   href={customer.customer.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center no-underline px-3 sm:px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border-solid border-gray-600 rounded-lg transition-colors"
+                  className="flex items-center justify-center no-underline px-3 py-2 sm:px-4 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 rounded-lg transition-colors self-start"
                 >
-                  <GlobeAltIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-300" />
-                  <span className="text-gray-300 font-medium text-sm sm:text-base">
+                  <GlobeAltIcon className="w-4 h-4 mr-2 text-gray-300" />
+                  <span className="text-gray-300 font-medium text-sm">
                     Visit Website
                   </span>
                 </a>
               </div>
 
-              <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4">
-                {customer.case_study.title}
-              </h2>
-              <p className="text-gray-400 text-base">
-                {customer.case_study.use_case}
-              </p>
+              <div className="space-y-2 sm:space-y-4">
+                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-white leading-tight">
+                  {customer.case_study.title}
+                </h2>
+                <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
+                  {customer.case_study.use_case}
+                </p>
+              </div>
             </motion.div>
             {/* Customer Testimonial */}
             <motion.div
@@ -157,11 +161,10 @@ export default function CustomerProjectPage({
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <div
-                className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6 mb-8"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-md p-6 mb-8"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
-                  backgroundColor: "rgba(58, 66, 89, 0.3)",
                 }}
               >
                 <blockquote className="mb-4">
@@ -187,114 +190,79 @@ export default function CustomerProjectPage({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className=" gap-8"
+              className="space-y-6 sm:space-y-8"
             >
-              {/* Main Content */}
-              <div className="lg:col-span-2 space-y-8">
-                {/* Challenge */}
-                <div
-                  className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
-                  style={{
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                    backgroundColor: "rgba(58, 66, 89, 0.3)",
-                  }}
-                >
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-4">
-                    The Challenge
-                  </h3>
-                  <ul className="space-y-3">
-                    {customer.case_study.challenge.map((item, index) => (
-                      <li
-                        key={`challenge-${customer.id}-${index}`}
-                        className="flex items-start"
-                      >
-                        <span className="text-red-400 mr-3 mt-1">•</span>
-                        <span className="text-sm sm:text-base text-gray-300 leading-relaxed">
-                          {item}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {/* Challenge */}
+              <div
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                style={{
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                }}
+              >
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                  The Challenge
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
+                  {customer.case_study.challenge_paragraph}
+                </p>
+              </div>
 
-                {/* Solution */}
-                <div
-                  className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
-                  style={{
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                    backgroundColor: "rgba(58, 66, 89, 0.3)",
-                  }}
-                >
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-4">
-                    The Solution
-                  </h3>
-                  <ul className="space-y-3">
-                    {customer.case_study.solution.map((item, index) => (
-                      <li
-                        key={`solution-${customer.id}-${index}`}
-                        className="flex items-start"
-                      >
-                        <span className="text-[#00d992] mr-3 mt-1">•</span>
-                        <span className="text-sm sm:text-base text-gray-300 leading-relaxed">
-                          {item}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {/* Solution */}
+              <div
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                style={{
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                }}
+              >
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                  The Solution
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
+                  {customer.case_study.solution_paragraph}
+                </p>
+              </div>
 
-                {/* Results */}
-                <div
-                  className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
-                  style={{
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                    backgroundColor: "rgba(58, 66, 89, 0.3)",
-                  }}
+              {/* Results */}
+              <div
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                style={{
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                }}
+              >
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                  The Results
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
+                  {customer.case_study.results_paragraph}
+                </p>
+              </div>
+
+              {/* Call to Action */}
+              <div
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                style={{
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                }}
+              >
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                  Ready to Transform Your Workflow?
+                </h3>
+                <p className="text-gray-400 mb-4 text-xs sm:text-sm">
+                  Join hundreds of companies already using VoltAgent to build
+                  powerful AI agents.
+                </p>
+                <a
+                  href="https://discord.gg/voltagent"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center px-3 sm:px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 font-semibold rounded-lg transition-colors hover:bg-emerald-400/20 no-underline text-xs sm:text-sm"
                 >
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-4">
-                    The Results
-                  </h3>
-                  <ul className="space-y-3">
-                    {customer.case_study.results.map((item, index) => (
-                      <li
-                        key={`result-${customer.id}-${index}`}
-                        className="flex items-start"
-                      >
-                        <span className="text-green-400 mr-3 mt-1">✓</span>
-                        <span className="text-sm sm:text-base text-gray-300 leading-relaxed">
-                          {item}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div
-                  className="border-solid border-[#1e293b]/40 border-2 rounded-lg p-6"
-                  style={{
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                    backgroundColor: "rgba(58, 66, 89, 0.3)",
-                  }}
-                >
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-4">
-                    Ready to Transform Your Workflow?
-                  </h3>
-                  <p className="text-gray-400 mb-4 text-xs sm:text-sm">
-                    Join hundreds of companies already using VoltAgent to build
-                    powerful AI agents.
-                  </p>
-                  <a
-                    href="https://discord.gg/voltagent"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center px-3 sm:px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 font-semibold rounded-lg transition-colors hover:bg-emerald-400/20 no-underline text-xs sm:text-sm"
-                  >
-                    Get Started Today
-                  </a>
-                </div>
+                  Get Started Today
+                </a>
               </div>
             </motion.div>
           </div>

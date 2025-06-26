@@ -46,11 +46,10 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="border-solid border-[#334155] border rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/50 hover:scale-[1.02] cursor-pointer"
+        className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/30 hover:scale-[1.02] cursor-pointer"
         style={{
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          backgroundColor: "rgba(30, 41, 59, 0.6)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
         }}
       >
         {/* Customer Header */}
@@ -73,19 +72,12 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
         <div className="px-4 pb-4 flex flex-col flex-1">
           {/* Case Study Title */}
           <div className="mb-3">
-            <h4 className="text-white font-semibold text-sm mb-1 line-clamp-2 leading-tight">
+            <h4 className="text-[#dcdcdc] font-semibold text-sm mb-3 line-clamp-2 leading-tight">
               {project.case_study.title}
             </h4>
             <p className="text-gray-400 text-xs line-clamp-2">
               {project.case_study.use_case}
             </p>
-          </div>
-
-          {/* Quote Preview */}
-          <div className="flex-1 flex items-start mb-3">
-            <blockquote className="text-gray-300 text-xs italic line-clamp-4 leading-relaxed">
-              "{project.case_study.quote.text}"
-            </blockquote>
           </div>
 
           {/* Author Info */}

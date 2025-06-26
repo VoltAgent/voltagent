@@ -72,10 +72,10 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
                 className="relative max-w-md w-full"
               >
                 <div
-                  className="bg-[#1e293b]/60 backdrop-blur-md border-solid border-[#334155] rounded-lg p-8 shadow-2xl h-64 flex flex-col justify-between"
+                  className="backdrop-blur-md bg-white/5 border-solid border-[#1e293b]/40 border-2 rounded-lg p-8 shadow-2xl h-64 flex flex-col justify-between"
                   style={{
-                    backdropFilter: "blur(16px)",
-                    WebkitBackdropFilter: "blur(16px)",
+                    backdropFilter: "blur(4px)",
+                    WebkitBackdropFilter: "blur(4px)",
                   }}
                 >
                   {/* Testimonial Content */}

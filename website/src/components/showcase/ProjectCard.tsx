@@ -28,11 +28,10 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="border-solid border-[#1e293b]/40 border-2 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/30 hover:scale-[1.02] cursor-pointer"
+        className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg overflow-hidden transition-all duration-300 h-full hover:border-[#00d992]/30 hover:scale-[1.02] cursor-pointer"
         style={{
           backdropFilter: "blur(4px)",
           WebkitBackdropFilter: "blur(4px)",
-          backgroundColor: "rgba(58, 66, 89, 0.3)",
         }}
       >
         {/* Project Screenshot */}
