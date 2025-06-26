@@ -10,7 +10,16 @@ import type { OperationContext, VoltAgentError } from "../types";
 // Mock LLM provider
 class MockProvider {
   async generateText() {
-    return { text: "Mock response" };
+    return {
+      provider: { originalResponse: true },
+      text: "Mock response",
+      usage: {
+        promptTokens: 10,
+        completionTokens: 5,
+        totalTokens: 15,
+      },
+      finishReason: "stop",
+    };
   }
 
   getModelIdentifier() {
@@ -103,7 +112,7 @@ describe("Agent Hooks Functionality", () => {
           text: response.text,
           usage: response.usage,
           finishReason: response.finishReason,
-          providerResponse: response.providerResponse,
+          provider: response.provider,
           userContext: expect.any(Map), // Verify userContext is included
         }),
         error: undefined,

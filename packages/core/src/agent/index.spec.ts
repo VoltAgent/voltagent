@@ -1515,7 +1515,7 @@ describe("Agent", () => {
       expect(response).toHaveProperty("text");
       expect(response).toHaveProperty("usage");
       expect(response).toHaveProperty("finishReason");
-      expect(response).toHaveProperty("providerResponse");
+      expect(response).toHaveProperty("provider");
     });
   });
 
