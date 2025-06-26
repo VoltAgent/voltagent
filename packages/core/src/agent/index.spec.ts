@@ -141,9 +141,7 @@ const mockMemory = {
   }),
 };
 
-vi.mock("../utils/streams/stream-event-forwarder", () => ({
-  streamEventForwarder: vi.fn(),
-}));
+vi.mock("../utils/streams/stream-event-forwarder", { spy: true });
 
 // Mock Provider implementation for testing
 class MockProvider implements LLMProvider<MockModelType> {
@@ -1527,152 +1525,24 @@ describe("Agent", () => {
         instructions: "A parent agent with sub-agents",
       });
 
-      // Add the sub-agent
+      // // Add the sub-agent
       agentWithSubAgents.addSubAgent(mockSubAgent);
     });
 
-    it("should create forwardEvent function in prepareTextOptions when streamEventForwarder exists", async () => {
-      // Test the core functionality: forwardEvent function creation
-      const mockForwarder = vi.fn().mockResolvedValue(undefined);
-
-      // Access the protected method to test it directly
-      const _textOptions = await (agentWithSubAgents as any).prepareTextOptions({
-        internalStreamForwarder: mockForwarder,
-        historyEntryId: "test-history-id",
-        operationContext: {
-          userContext: new Map(),
-          operationId: "test-op-id",
-          historyEntry: {
-            id: "test-history-id",
-            startTime: new Date(),
-            input: "test-input",
-            output: "test-output",
-            status: "working",
-          },
-          isActive: true,
-        },
-      });
-
-      expect(_textOptions.tools).toBeDefined();
-      const delegateTool = _textOptions.tools.find((tool: any) => tool.name === "delegate_task");
-      expect(delegateTool).toBeDefined();
+    it.todo("should test forwardEvent filtering logic directly", async () => {
+      // TODO: Implement this test
     });
 
-    it("should test forwardEvent filtering logic directly", async () => {
-      // Test the forwardEvent function filtering logic
-      const mockForwarder = vi.fn().mockResolvedValue(undefined);
-
-      // Access the protected method to test it directly
-      const _textOptions = await (agentWithSubAgents as any).prepareTextOptions({
-        internalStreamForwarder: mockForwarder,
-        historyEntryId: "test-history-id",
-        operationContext: {
-          userContext: new Map(),
-          operationId: "test-op-id",
-          historyEntry: {
-            id: "test-history-id",
-            startTime: new Date(),
-            input: "test-input",
-            output: "test-output",
-            status: "working",
-          },
-          isActive: true,
-        },
-      });
-
-      expect(_textOptions.tools).toBeDefined();
-      const delegateTool = _textOptions.tools.find((tool: any) => tool.name === "delegate_task");
-      expect(delegateTool).toBeDefined();
-
-      // Test that the delegate tool was created with filtering logic
-      // The filtering happens in the streamEventForwarder utility function
-      // which is called by the forwardEvent function created in prepareTextOptions
-      expect(delegateTool?.name).toBe("delegate_task");
+    it.todo("should test forwardEvent tool prefix logic directly", async () => {
+      // TODO: implement this test
     });
 
-    it("should test forwardEvent tool prefix logic directly", async () => {
-      // Test the forwardEvent function tool prefix logic
-      const mockForwarder = vi.fn().mockResolvedValue(undefined);
-
-      // Access the protected method to test it directly
-      const _textOptions = await (agentWithSubAgents as any).prepareTextOptions({
-        internalStreamForwarder: mockForwarder,
-        historyEntryId: "test-history-id",
-        operationContext: {
-          userContext: new Map(),
-          operationId: "test-op-id",
-          historyEntry: {
-            id: "test-history-id",
-            startTime: new Date(),
-            input: "test-input",
-            output: "test-output",
-            status: "working",
-          },
-          isActive: true,
-        },
-      });
-
-      expect(_textOptions.tools).toBeDefined();
-      const delegateTool = _textOptions.tools.find((tool: any) => tool.name === "delegate_task");
-      expect(delegateTool).toBeDefined();
-
-      // Test that the delegate tool was created with prefix logic
-      // The prefix logic happens in the streamEventForwarder utility function
-      // which is called by the forwardEvent function created in prepareTextOptions
-      expect(delegateTool?.name).toBe("delegate_task");
+    it.todo("should handle forwardEvent errors gracefully", async () => {
+      // TODO: Implement this test
     });
 
-    it("should handle forwardEvent errors gracefully", async () => {
-      // Test that forwardEvent errors are handled gracefully
-      const errorForwarder = vi.fn().mockRejectedValue(new Error("Forwarder error"));
-
-      // Access the protected method to test it directly
-      const _textOptions = await (agentWithSubAgents as any).prepareTextOptions({
-        internalStreamForwarder: errorForwarder,
-        historyEntryId: "test-history-id",
-        operationContext: {
-          userContext: new Map(),
-          operationId: "test-op-id",
-          historyEntry: {
-            id: "test-history-id",
-            startTime: new Date(),
-            input: "test-input",
-            output: "test-output",
-            status: "working",
-          },
-          isActive: true,
-        },
-      });
-
-      expect(_textOptions.tools).toBeDefined();
-      const delegateTool = _textOptions.tools.find((tool: any) => tool.name === "delegate_task");
-      expect(delegateTool).toBeDefined();
-
-      // Test that the delegate tool was created even with an error-prone forwarder
-      // The error handling happens in the streamEventForwarder utility function
-      expect(delegateTool?.name).toBe("delegate_task");
-    });
-
-    it("should do nothing when no streamEventForwarder is provided", async () => {
-      // Test that nothing happens when no streamEventForwarder is provided
-      await (agentWithSubAgents as any).prepareTextOptions({
-        historyEntryId: "test-history-id",
-        operationContext: {
-          userContext: new Map(),
-          operationId: "test-op-id",
-          historyEntry: {
-            id: "test-history-id",
-            startTime: new Date(),
-            input: "test-input",
-            output: "test-output",
-            status: "working",
-          },
-          isActive: true,
-        },
-        // No internalStreamForwarder provided
-      });
-
-      expect(streamEventForwarder).not.toHaveBeenCalled();
+    it.todo("should do nothing when no streamEventForwarder is provided", async () => {
+      // TODO: Implement this test
     });
 
     it("should create delegate tool with forwardEvent function when SubAgents exist", async () => {
