@@ -232,7 +232,7 @@ function convertToV4UIMessages(
     ...message,
   }));
 
-  return finalMessages;
+  return finalMessages as UIMessage[];
 }
 
 function getId(message: unknown): string {
