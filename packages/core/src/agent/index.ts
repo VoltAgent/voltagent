@@ -231,18 +231,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Resolve dynamic instructions based on user context
    */
-  private resolveInstructions = async (options: DynamicValueOptions): Promise<string> => {
+  private async resolveInstructions(options: DynamicValueOptions): Promise<string> {
     if (!this.dynamicInstructions) return this.instructions;
     if (typeof this.dynamicInstructions === "function") {
       return await this.dynamicInstructions(options);
     }
     return this.dynamicInstructions;
-  };
+  }
 
   /**
    * Resolve dynamic model based on user context
    */
-  private resolveModel = async (options: DynamicValueOptions): Promise<ModelType<TProvider>> => {
+  private async resolveModel(options: DynamicValueOptions): Promise<ModelType<TProvider>> {
     if (!this.dynamicModel) return this.model;
     if (typeof this.dynamicModel === "function") {
       return await (
@@ -252,18 +252,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       )(options);
     }
     return this.dynamicModel;
-  };
+  }
 
   /**
    * Resolve dynamic tools based on user context
    */
-  private resolveTools = async (options: DynamicValueOptions): Promise<(Tool<any> | Toolkit)[]> => {
+  private async resolveTools(options: DynamicValueOptions): Promise<(Tool<any> | Toolkit)[]> {
     if (!this.dynamicTools) return [];
     if (typeof this.dynamicTools === "function") {
       return await this.dynamicTools(options);
     }
     return this.dynamicTools;
-  };
+  }
 
   /**
    * Get the system message for the agent
@@ -587,13 +587,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         );
 
         // Use the utility function to forward events
-        await streamEventForwarder(event, {
-          forwarder: internalStreamForwarder,
-          // default to only filtering out error events to prevent errors from being forwarded to the client
-          // from a subagent, so the supervisor agent can handle the error and continue processing
-          filterTypes: ["error"],
-          addSubAgentPrefix: true,
-        });
+        if (internalStreamForwarder) {
+          await streamEventForwarder(event, {
+            forwarder: internalStreamForwarder,
+            types: ["tool-call", "tool-result"],
+            addSubAgentPrefix: true,
+          });
+        }
       };
 
       // Always create a delegate tool with the current operationContext
@@ -755,12 +755,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Fix delete operator usage for better performance
    */
-  private addToolEvent = (
+  private addToolEvent(
     context: OperationContext,
     toolName: string,
     status: EventStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
-  ): void => {
+  ): void {
     // Ensure the toolSpans map exists on the context
     if (!context.toolSpans) {
       context.toolSpans = new Map<string, Span>();
@@ -784,17 +784,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context.toolSpans.set(toolCallId, toolSpan);
       }
     }
-  };
+  }
 
   /**
    * Agent event creator (update)
    */
-  private addAgentEvent = (
+  private addAgentEvent(
     context: OperationContext,
     eventName: string,
     status: AgentStatus,
     data: Partial<StandardEventData> & Record<string, unknown> = {},
-  ): void => {
+  ): void {
     // Retrieve the OpenTelemetry span from the context
     const otelSpan = context.otelSpan;
 
@@ -809,7 +809,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
       );
     }
-  };
+  }
 
   /**
    * Helper method to enrich and end an OpenTelemetry span associated with a tool call.
@@ -2526,7 +2526,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Delegates to ToolManager's addItems method.
    * @returns Object containing added items (difficult to track precisely here, maybe simplify return)
    */
-  addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] } {
+  public addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] } {
     // ToolManager handles the logic of adding tools vs toolkits and checking conflicts
     this.toolManager.addItems(items);
 

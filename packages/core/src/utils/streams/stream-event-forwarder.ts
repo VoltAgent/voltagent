@@ -3,8 +3,10 @@ import type { LiteralUnion } from "type-fest";
 import type { StreamEvent, StreamEventType } from "./types";
 
 export interface StreamEventForwarderOptions {
-  forwarder?: (event: StreamEvent) => Promise<void>;
-  filterTypes?: LiteralUnion<StreamEventType, string>[];
+  forwarder: (event: StreamEvent) => Promise<void>;
+  types:
+    | Array<LiteralUnion<StreamEventType, string>>
+    | ReadonlyArray<LiteralUnion<StreamEventType, string>>;
   addSubAgentPrefix?: boolean;
 }
 
@@ -15,9 +17,9 @@ export interface StreamEventForwarderOptions {
  */
 export async function streamEventForwarder(
   event: StreamEvent,
-  options: StreamEventForwarderOptions = {},
+  options: StreamEventForwarderOptions,
 ): Promise<void> {
-  const { forwarder, filterTypes = ["text-delta", "reasoning", "source", "error"] } = options;
+  const { forwarder, types } = options;
 
   try {
     // Validate event structure
@@ -35,8 +37,8 @@ export async function streamEventForwarder(
       return;
     }
 
-    // Filter out specific event types
-    if (filterTypes.includes(event.type)) {
+    // Only forward events that are in the types array
+    if (!types.includes(event.type)) {
       devLogger.info(
         "[StreamEventForwarder] Filtered out",
         event.type,
@@ -46,12 +48,6 @@ export async function streamEventForwarder(
       return;
     }
 
-    // No forwarder provided, nothing to do
-    if (!forwarder) {
-      return;
-    }
-
-    // Forward the event
     await forwarder(formatEvent(event, options));
 
     devLogger.info(
@@ -61,7 +57,6 @@ export async function streamEventForwarder(
       event.subAgentName,
     );
   } catch (error) {
-    // Don't throw, just log and continue
     devLogger.error("[StreamEventForwarder] Error forwarding event:", error);
   }
 }
@@ -71,7 +66,7 @@ export async function streamEventForwarder(
  * @param options - Configuration options
  * @returns A configured forwarder function
  */
-export function createStreamEventForwarder(options: StreamEventForwarderOptions = {}) {
+export function createStreamEventForwarder(options: StreamEventForwarderOptions) {
   return (event: StreamEvent) => streamEventForwarder(event, options);
 }
 

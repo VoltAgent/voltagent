@@ -16,6 +16,8 @@ vi.mock("@voltagent/internal/dev", () => ({
   },
 }));
 
+const defaultTypes = ["tool-call", "tool-result"] as const;
+
 describe("streamEventForwarder", () => {
   let mockForwarder: ReturnType<typeof vi.fn>;
 
@@ -26,7 +28,7 @@ describe("streamEventForwarder", () => {
 
   describe("event validation", () => {
     it("should handle null event gracefully", async () => {
-      await streamEventForwarder(null as any, { forwarder: mockForwarder });
+      await streamEventForwarder(null as any, { forwarder: mockForwarder, types: defaultTypes });
 
       expect(devLogger.warn).toHaveBeenCalledWith(
         "[StreamEventForwarder] Invalid event structure:",
@@ -36,7 +38,10 @@ describe("streamEventForwarder", () => {
     });
 
     it("should handle undefined event gracefully", async () => {
-      await streamEventForwarder(undefined as any, { forwarder: mockForwarder });
+      await streamEventForwarder(undefined as any, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       expect(devLogger.warn).toHaveBeenCalledWith(
         "[StreamEventForwarder] Invalid event structure:",
@@ -46,7 +51,10 @@ describe("streamEventForwarder", () => {
     });
 
     it("should handle non-object event gracefully", async () => {
-      await streamEventForwarder("invalid" as any, { forwarder: mockForwarder });
+      await streamEventForwarder("invalid" as any, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       expect(devLogger.warn).toHaveBeenCalledWith(
         "[StreamEventForwarder] Invalid event structure:",
@@ -63,7 +71,10 @@ describe("streamEventForwarder", () => {
         timestamp: "2023-01-01",
       } as StreamEvent;
 
-      await streamEventForwarder(incompleteEvent, { forwarder: mockForwarder });
+      await streamEventForwarder(incompleteEvent, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       expect(devLogger.warn).toHaveBeenCalledWith(
         "[StreamEventForwarder] Missing required event fields:",
@@ -77,26 +88,8 @@ describe("streamEventForwarder", () => {
     });
   });
 
-  describe("event filtering", () => {
-    it("should filter out default filtered event types", async () => {
-      const filteredTypes = ["text-delta", "reasoning", "source"] as const;
-
-      for (const type of filteredTypes) {
-        const event = mockStreamEvent(type);
-        await streamEventForwarder(event, { forwarder: mockForwarder });
-
-        expect(devLogger.info).toHaveBeenCalledWith(
-          "[StreamEventForwarder] Filtered out",
-          type,
-          "event from",
-          event.subAgentName,
-        );
-      }
-
-      expect(mockForwarder).not.toHaveBeenCalled();
-    });
-
-    it("should allow custom filter types", async () => {
+  describe("event type inclusion", () => {
+    it("should allow custom types", async () => {
       const customFilterTypes = ["custom-type", "another-type"];
       const event = {
         ...mockStreamEvent("text-delta"),
@@ -105,54 +98,35 @@ describe("streamEventForwarder", () => {
 
       await streamEventForwarder(event, {
         forwarder: mockForwarder,
-        filterTypes: customFilterTypes,
+        types: customFilterTypes,
       });
 
       expect(devLogger.info).toHaveBeenCalledWith(
-        "[StreamEventForwarder] Filtered out",
+        "[StreamEventForwarder] Forwarded",
         "custom-type",
         "event from",
         event.subAgentName,
       );
-      expect(mockForwarder).not.toHaveBeenCalled();
+      expect(mockForwarder).toHaveBeenCalled();
     });
 
-    it("should not filter non-filtered event types", async () => {
-      const allowedTypes = ["tool-call", "tool-result", "error"] as const;
-
-      for (const type of allowedTypes) {
-        mockForwarder.mockClear();
-        const event = mockStreamEvent(type);
-
-        await streamEventForwarder(event, { forwarder: mockForwarder });
-
-        expect(mockForwarder).toHaveBeenCalled();
-      }
-    });
-
-    it("should allow empty filter types", async () => {
+    it("should allow empty types", async () => {
       // Filtered by default
       const event = mockStreamEvent("text-delta");
       await streamEventForwarder(event, {
         forwarder: mockForwarder,
-        filterTypes: [],
+        types: [],
       });
-      expect(mockForwarder).toHaveBeenCalled();
+      expect(mockForwarder).not.toHaveBeenCalled();
     });
   });
 
   describe("event forwarding", () => {
-    it("should do nothing when no forwarder is provided", async () => {
-      await streamEventForwarder(mockStreamEvent("text-delta"), {});
-
-      // Should not throw and should complete silently
-      expect(devLogger.error).not.toHaveBeenCalled();
-    });
-
     it("should forward valid events with correct data structure", async () => {
       const event = mockStreamEvent("tool-call");
       await streamEventForwarder(event, {
         forwarder: mockForwarder,
+        types: defaultTypes,
         addSubAgentPrefix: false,
       });
 
@@ -185,7 +159,10 @@ describe("streamEventForwarder", () => {
         },
       } as unknown as StreamEvent;
 
-      await streamEventForwarder(eventWithMetadata, { forwarder: mockForwarder });
+      await streamEventForwarder(eventWithMetadata, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       const forwardedData = mockForwarder.mock.calls[0][0];
       expect(forwardedData.data.metadata).toEqual({
@@ -198,7 +175,7 @@ describe("streamEventForwarder", () => {
   describe("SubAgent prefix handling", () => {
     it("should add SubAgent prefix to tool-call events by default", async () => {
       const event = mockStreamEvent("tool-call");
-      await streamEventForwarder(event, { forwarder: mockForwarder });
+      await streamEventForwarder(event, { forwarder: mockForwarder, types: defaultTypes });
 
       const forwardedData = mockForwarder.mock.calls[0][0];
       expect(forwardedData.data.toolName).toBe(`${event.subAgentName}: ${event.data?.toolName}`);
@@ -207,7 +184,10 @@ describe("streamEventForwarder", () => {
     it("should add SubAgent prefix to tool-result events", async () => {
       const event = mockStreamEvent("tool-result");
 
-      await streamEventForwarder(event, { forwarder: mockForwarder });
+      await streamEventForwarder(event, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       const forwardedData = mockForwarder.mock.calls[0][0];
       expect(forwardedData.data.toolName).toBe(`${event.subAgentName}: ${event.data?.toolName}`);
@@ -217,6 +197,7 @@ describe("streamEventForwarder", () => {
       const event = mockStreamEvent("tool-call");
       await streamEventForwarder(event, {
         forwarder: mockForwarder,
+        types: defaultTypes,
         addSubAgentPrefix: false,
       });
 
@@ -224,7 +205,7 @@ describe("streamEventForwarder", () => {
       expect(forwardedData.data.toolName).toBe(event.data?.toolName);
     });
 
-    it("should handle events without toolCall/toolResult data", async () => {
+    it("should handle custom event types", async () => {
       const genericEvent = {
         type: "custom-event",
         timestamp: "2023-01-01T10:00:00.000Z",
@@ -235,7 +216,10 @@ describe("streamEventForwarder", () => {
         },
       } as unknown as StreamEvent;
 
-      await streamEventForwarder(genericEvent, { forwarder: mockForwarder });
+      await streamEventForwarder(genericEvent, {
+        forwarder: mockForwarder,
+        types: [...defaultTypes, "custom-event"] as const,
+      });
 
       const forwardedData = mockForwarder.mock.calls[0][0];
       expect(forwardedData.data.customField).toBe("value");
@@ -251,7 +235,10 @@ describe("streamEventForwarder", () => {
         },
       } as unknown as StreamEvent;
 
-      await streamEventForwarder(eventWithNullTool, { forwarder: mockForwarder });
+      await streamEventForwarder(eventWithNullTool, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       const forwardedData = mockForwarder.mock.calls[0][0];
       expect(forwardedData.data).toBeNull();
@@ -262,7 +249,10 @@ describe("streamEventForwarder", () => {
     it("should handle forwarder errors gracefully", async () => {
       const errorForwarder = vi.fn().mockRejectedValue(new Error("Forwarding failed"));
 
-      await streamEventForwarder(mockStreamEvent("tool-call"), { forwarder: errorForwarder });
+      await streamEventForwarder(mockStreamEvent("tool-call"), {
+        forwarder: errorForwarder,
+        types: defaultTypes,
+      });
 
       expect(devLogger.error).toHaveBeenCalledWith(
         "[StreamEventForwarder] Error forwarding event:",
@@ -278,7 +268,10 @@ describe("streamEventForwarder", () => {
         throw new Error("Sync error");
       });
 
-      await streamEventForwarder(mockStreamEvent("tool-call"), { forwarder: errorForwarder });
+      await streamEventForwarder(mockStreamEvent("tool-call"), {
+        forwarder: errorForwarder,
+        types: defaultTypes,
+      });
 
       expect(devLogger.error).toHaveBeenCalledWith(
         "[StreamEventForwarder] Error forwarding event:",
@@ -294,7 +287,10 @@ describe("streamEventForwarder", () => {
         data: {},
       } as unknown as StreamEvent;
 
-      await streamEventForwarder(eventWithEmptyData, { forwarder: mockForwarder });
+      await streamEventForwarder(eventWithEmptyData, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       expect(mockForwarder).toHaveBeenCalled();
       const forwardedData = mockForwarder.mock.calls[0][0];
@@ -307,7 +303,10 @@ describe("streamEventForwarder", () => {
         data: undefined,
       } as unknown as StreamEvent;
 
-      await streamEventForwarder(eventWithUndefinedData, { forwarder: mockForwarder });
+      await streamEventForwarder(eventWithUndefinedData, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       expect(mockForwarder).toHaveBeenCalled();
     });
@@ -318,7 +317,10 @@ describe("streamEventForwarder", () => {
         subAgentName: "A".repeat(1000),
       };
 
-      await streamEventForwarder(longNameEvent, { forwarder: mockForwarder });
+      await streamEventForwarder(longNameEvent, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       const forwardedData = mockForwarder.mock.calls[0][0];
       expect(forwardedData.data.toolName).toBe(
@@ -331,7 +333,10 @@ describe("streamEventForwarder", () => {
         ...mockStreamEvent("tool-call"),
         subAgentName: "Special: Agent @#$%",
       };
-      await streamEventForwarder(specialCharEvent, { forwarder: mockForwarder });
+      await streamEventForwarder(specialCharEvent, {
+        forwarder: mockForwarder,
+        types: defaultTypes,
+      });
 
       const forwardedData = mockForwarder.mock.calls[0][0];
       expect(forwardedData.data.toolName).toBe(
@@ -346,7 +351,7 @@ describe("createStreamEventForwarder", () => {
     const mockForwarder = vi.fn().mockResolvedValue(undefined);
     const options: StreamEventForwarderOptions = {
       forwarder: mockForwarder,
-      filterTypes: ["custom-filter"],
+      types: ["custom-filter"],
       addSubAgentPrefix: false,
     };
 
@@ -360,22 +365,13 @@ describe("createStreamEventForwarder", () => {
     const mockForwarder = vi.fn().mockResolvedValue(undefined);
     const configuredForwarder = createStreamEventForwarder({
       forwarder: mockForwarder,
-      filterTypes: ["tool-call"], // Filter out tool-call events
+      types: ["text-delta"],
     });
 
-    const validEvent = mockStreamEvent("tool-call");
-    await configuredForwarder(validEvent);
-
-    // Should be filtered out due to custom filterTypes
-    expect(mockForwarder).not.toHaveBeenCalled();
-  });
-
-  it("should work with default options", async () => {
-    const configuredForwarder = createStreamEventForwarder();
     const validEvent = mockStreamEvent("text-delta");
-
     await configuredForwarder(validEvent);
-    expect(true).toBe(true);
+
+    expect(mockForwarder).toHaveBeenCalled();
   });
 });
 
