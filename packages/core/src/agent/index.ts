@@ -20,6 +20,7 @@ import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
+import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
@@ -61,9 +62,11 @@ import type {
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
+  SystemMessageResponse,
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
+import type { PromptContent } from "../voltops/types";
 
 /**
  * Agent class for interacting with AI models
@@ -230,10 +233,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Resolve dynamic instructions based on user context
    */
-  private async resolveInstructions(options: DynamicValueOptions): Promise<string> {
+  private async resolveInstructions(options: DynamicValueOptions): Promise<string | PromptContent> {
     if (!this.dynamicInstructions) return this.instructions;
     if (typeof this.dynamicInstructions === "function") {
-      return await this.dynamicInstructions(options);
+      // Always provide prompts helper - user can choose to use it or not
+      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
+        this.id,
+        this.name,
+        this.instructions,
+      );
+      const enhancedOptions = { ...options, prompts: promptHelper };
+      const result = await this.dynamicInstructions(enhancedOptions);
+
+      // If result is a PromptContent object from VoltOps, return it as-is
+      if (typeof result === "object" && result !== null && "type" in result) {
+        return result as PromptContent;
+      }
+
+      return result;
     }
     return this.dynamicInstructions;
   }
@@ -277,13 +294,52 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     historyEntryId: string;
     contextMessages: BaseMessage[];
     operationContext?: OperationContext;
-  }): Promise<BaseMessage> {
+  }): Promise<SystemMessageResponse> {
     // Resolve dynamic instructions based on user context
+    const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
+      this.id,
+      this.name,
+      this.instructions,
+    );
     const dynamicValueOptions: DynamicValueOptions = {
       userContext: operationContext?.userContext || new Map(),
+      prompts: promptHelper,
     };
     const resolvedInstructions = await this.resolveInstructions(dynamicValueOptions);
-    let baseInstructions = resolvedInstructions || ""; // Ensure baseInstructions is a string
+
+    // Handle chat type prompts first - these return BaseMessage[]
+    if (typeof resolvedInstructions === "object" && resolvedInstructions.type === "chat") {
+      if (!resolvedInstructions.messages || resolvedInstructions.messages.length === 0) {
+        // Fallback to default instructions if chat messages are empty
+        return {
+          systemMessages: {
+            role: "system",
+            content: `You are ${this.name}. ${this.instructions}`,
+          },
+          promptMetadata: resolvedInstructions.metadata,
+        };
+      }
+
+      return {
+        systemMessages: resolvedInstructions.messages,
+        promptMetadata: resolvedInstructions.metadata,
+      };
+    }
+
+    // Handle text type (either string or PromptContent with text)
+    let baseInstructions = "";
+    let promptMetadata: any = null;
+
+    if (typeof resolvedInstructions === "string") {
+      baseInstructions = resolvedInstructions || "";
+    } else if (typeof resolvedInstructions === "object" && resolvedInstructions.type === "text") {
+      baseInstructions = resolvedInstructions.text || "";
+      // ✅ Capture metadata from PromptContent
+      promptMetadata = resolvedInstructions.metadata;
+    } else {
+      // Fallback to default instructions
+      baseInstructions = this.instructions || "";
+    }
 
     // --- Add Instructions from Toolkits --- (Simplified Logic)
     let toolInstructions = "";
@@ -311,108 +367,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // If retriever exists and we have input, get context
     if (this.retriever && input && historyEntryId) {
-      // [NEW EVENT SYSTEM] Create a retriever:start event
-      const retrieverStartTime = new Date().toISOString(); // Capture start time
-      const retrieverStartEvent: RetrieverStartEvent = {
-        id: crypto.randomUUID(),
-        name: "retriever:start",
-        type: "retriever",
-        startTime: retrieverStartTime,
-        status: "running",
-        input: { query: input },
-        output: null,
-        metadata: {
-          displayName: this.retriever?.tool.name || "Retriever",
-          id: this.retriever?.tool.name,
-          agentId: this.id,
-        },
-        traceId: historyEntryId,
-      };
-
-      // Publish the retriever:start event (background) with parent context
-      this.publishTimelineEvent(operationContext, retrieverStartEvent);
-
-      try {
-        const context = await this.retriever.retrieve(input, {
-          userContext: operationContext?.userContext,
-        });
-        if (context?.trim()) {
-          finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${context}`;
-
-          // [NEW EVENT SYSTEM] Create a retriever:success event
-          const retrieverSuccessEvent: RetrieverSuccessEvent = {
-            id: crypto.randomUUID(),
-            name: "retriever:success",
-            type: "retriever",
-            startTime: new Date().toISOString(), // Use the original start time
-            endTime: new Date().toISOString(), // Current time as end time
-            status: "completed",
-            input: null,
-            output: { context },
-            metadata: {
-              displayName: this.retriever.tool.name || "Retriever",
-              id: this.retriever.tool.name,
-              agentId: this.id,
-            },
-            traceId: historyEntryId,
-            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-          };
-
-          // Publish the retriever:success event (background) with parent context
-          this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
-        } else {
-          // If there was no context returned, still create a success event
-          // but with a note that no context was found
-          const retrieverSuccessEvent: RetrieverSuccessEvent = {
-            id: crypto.randomUUID(),
-            name: "retriever:success",
-            type: "retriever",
-            startTime: new Date().toISOString(), // Use the original start time
-            endTime: new Date().toISOString(), // Current time as end time
-            status: "completed",
-            input: null,
-            output: { context: "No relevant context found" },
-            metadata: {
-              displayName: this.retriever.tool.name || "Retriever",
-              id: this.retriever.tool.name,
-              agentId: this.id,
-            },
-            traceId: historyEntryId,
-            parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-          };
-
-          // Publish the retriever:success event (empty result, background) with parent context
-          this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
-        }
-      } catch (error) {
-        // [NEW EVENT SYSTEM] Create a retriever:error event
-        const retrieverErrorEvent: RetrieverErrorEvent = {
-          id: crypto.randomUUID(),
-          name: "retriever:error",
-          type: "retriever",
-          startTime: new Date().toISOString(), // Use the original start time
-          endTime: new Date().toISOString(), // Current time as end time
-          status: "error",
-          level: "ERROR",
-          input: null,
-          output: null,
-          statusMessage: {
-            message: error instanceof Error ? error.message : "Unknown retriever error",
-            ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
-          },
-          metadata: {
-            displayName: this.retriever.tool.name || "Retriever",
-            id: this.retriever.tool.name,
-            agentId: this.id,
-          },
-          traceId: historyEntryId,
-          parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-        };
-
-        // Publish the retriever:error event (background) with parent context
-        this.publishTimelineEvent(operationContext, retrieverErrorEvent);
-
-        devLogger.warn("Failed to retrieve context:", error);
+      const contextContent = await this.getRetrieverContext(
+        input,
+        historyEntryId,
+        operationContext,
+      );
+      if (contextContent) {
+        finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${contextContent}`;
       }
     }
 
@@ -428,14 +389,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       );
 
       return {
-        role: "system",
-        content: finalInstructions,
+        systemMessages: {
+          role: "system",
+          content: finalInstructions,
+        },
+        promptMetadata,
       };
     }
 
     return {
-      role: "system",
-      content: `You are ${this.name}. ${finalInstructions}`,
+      systemMessages: {
+        role: "system",
+        content: `You are ${this.name}. ${finalInstructions}`,
+      },
+      promptMetadata,
     };
   }
 
@@ -514,8 +481,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Resolve dynamic tools if available
     let resolvedTools: (Tool<any> | Toolkit)[] = [];
     if (operationContext) {
+      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
+        this.id,
+        this.name,
+        this.instructions,
+      );
       const dynamicValueOptions: DynamicValueOptions = {
         userContext: operationContext.userContext || new Map(),
+        prompts: promptHelper,
       };
       resolvedTools = await this.resolveTools(dynamicValueOptions);
     }
@@ -969,14 +942,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     try {
       await this.hooks.onStart?.({ agent: this, context: operationContext });
 
-      const systemMessage = await this.getSystemMessage({
+      const systemMessageResponse = await this.getSystemMessage({
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
         operationContext,
       });
 
-      messages = [systemMessage, ...contextMessages];
+      // Handle both single message and array of messages from getSystemMessage
+      const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
+        ? systemMessageResponse.systemMessages
+        : [systemMessageResponse.systemMessages];
+      messages = [...systemMessages, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
       // [NEW EVENT SYSTEM] Create an agent:start event
@@ -992,13 +969,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         metadata: {
           displayName: this.name,
           id: this.id,
-          instructions: this.instructions,
           userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
             string,
             unknown
           >,
-          systemPrompt: systemMessage,
+          systemPrompt: systemMessages,
           messages,
+          // ✅ Include prompt metadata from system message response
+          promptMetadata: systemMessageResponse.promptMetadata,
           modelParameters: {
             model: this.getModelName(),
             maxTokens: internalOptions.provider?.maxTokens,
@@ -1031,8 +1009,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Resolve dynamic model based on user context
+      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
+        this.id,
+        this.name,
+        this.instructions,
+      );
       const dynamicValueOptions: DynamicValueOptions = {
         userContext: operationContext.userContext || new Map(),
+        prompts: promptHelper,
       };
       const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
@@ -1377,13 +1361,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     await this.hooks.onStart?.({ agent: this, context: operationContext });
 
-    const systemMessage = await this.getSystemMessage({
+    const systemMessageResponse = await this.getSystemMessage({
       input,
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
       operationContext,
     });
-    let messages = [systemMessage, ...contextMessages];
+
+    // Handle both single message and array of messages from getSystemMessage
+    const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
+      ? systemMessageResponse.systemMessages
+      : [systemMessageResponse.systemMessages];
+    let messages = [...systemMessages, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
 
     // [NEW EVENT SYSTEM] Create an agent:start event
@@ -1399,13 +1388,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       metadata: {
         displayName: this.name,
         id: this.id,
-        instructions: this.instructions,
         userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
           string,
           unknown
         >,
-        systemPrompt: systemMessage,
+        systemPrompt: systemMessages,
         messages,
+        // ✅ Include prompt metadata from system message response
+        promptMetadata: systemMessageResponse.promptMetadata,
         modelParameters: {
           model: this.getModelName(),
           maxTokens: internalOptions.provider?.maxTokens,
@@ -1487,8 +1477,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     });
 
     // Resolve dynamic model based on user context
+    const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
+      this.id,
+      this.name,
+      this.instructions,
+    );
     const dynamicValueOptions: DynamicValueOptions = {
       userContext: operationContext.userContext || new Map(),
+      prompts: promptHelper,
     };
     const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
@@ -1914,13 +1910,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     try {
       await this.hooks.onStart?.({ agent: this, context: operationContext });
 
-      const systemMessage = await this.getSystemMessage({
+      const systemMessageResponse = await this.getSystemMessage({
         input,
         historyEntryId: operationContext.historyEntry.id,
         contextMessages,
         operationContext,
       });
-      messages = [systemMessage, ...contextMessages];
+
+      // Handle both single message and array of messages from getSystemMessage
+      const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
+        ? systemMessageResponse.systemMessages
+        : [systemMessageResponse.systemMessages];
+      messages = [...systemMessages, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
       // [NEW EVENT SYSTEM] Create an agent:start event
@@ -1936,13 +1937,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         metadata: {
           displayName: this.name,
           id: this.id,
-          instructions: this.instructions,
           userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
             string,
             unknown
           >,
-          systemPrompt: systemMessage,
+          systemPrompt: systemMessages,
           messages,
+          // ✅ Include prompt metadata from system message response
+          promptMetadata: systemMessageResponse.promptMetadata,
           modelParameters: {
             model: this.getModelName(),
             maxTokens: internalOptions.provider?.maxTokens,
@@ -1969,8 +1971,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       );
 
       // Resolve dynamic model based on user context
+      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
+        this.id,
+        this.name,
+        this.instructions,
+      );
       const dynamicValueOptions: DynamicValueOptions = {
         userContext: operationContext.userContext || new Map(),
+        prompts: promptHelper,
       };
       const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
@@ -2192,13 +2200,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     await this.hooks.onStart?.({ agent: this, context: operationContext });
 
-    const systemMessage = await this.getSystemMessage({
+    const systemMessageResponse = await this.getSystemMessage({
       input,
       historyEntryId: operationContext.historyEntry.id,
       contextMessages,
       operationContext,
     });
-    let messages = [systemMessage, ...contextMessages];
+
+    // Handle both single message and array of messages from getSystemMessage
+    const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
+      ? systemMessageResponse.systemMessages
+      : [systemMessageResponse.systemMessages];
+    let messages = [...systemMessages, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
 
     // [NEW EVENT SYSTEM] Create an agent:start event
@@ -2214,13 +2227,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       metadata: {
         displayName: this.name,
         id: this.id,
-        instructions: this.instructions,
         userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
           string,
           unknown
         >,
-        systemPrompt: systemMessage,
+        systemPrompt: systemMessages,
         messages,
+        // ✅ Include prompt metadata from system message response
+        promptMetadata: systemMessageResponse.promptMetadata,
         modelParameters: {
           model: this.getModelName(),
           maxTokens: internalOptions.provider?.maxTokens,
@@ -2247,8 +2261,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     );
 
     // Resolve dynamic model based on user context
+    const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
+      this.id,
+      this.name,
+      this.instructions,
+    );
     const dynamicValueOptions: DynamicValueOptions = {
       userContext: operationContext.userContext || new Map(),
+      prompts: promptHelper,
     };
     const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
@@ -2574,6 +2594,123 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   public _INTERNAL_setVoltAgentExporter(exporter: VoltAgentExporter): void {
     if (this.historyManager) {
       this.historyManager.setExporter(exporter);
+    }
+  }
+
+  /**
+   * Helper method to get retriever context with event handling
+   */
+  private async getRetrieverContext(
+    input: string | BaseMessage[],
+    historyEntryId: string,
+    operationContext?: OperationContext,
+  ): Promise<string | null> {
+    if (!this.retriever) return null;
+
+    // [NEW EVENT SYSTEM] Create a retriever:start event
+    const retrieverStartTime = new Date().toISOString(); // Capture start time
+    const retrieverStartEvent: RetrieverStartEvent = {
+      id: crypto.randomUUID(),
+      name: "retriever:start",
+      type: "retriever",
+      startTime: retrieverStartTime,
+      status: "running",
+      input: { query: input },
+      output: null,
+      metadata: {
+        displayName: this.retriever?.tool.name || "Retriever",
+        id: this.retriever?.tool.name,
+        agentId: this.id,
+      },
+      traceId: historyEntryId,
+    };
+
+    // Publish the retriever:start event (background) with parent context
+    this.publishTimelineEvent(operationContext, retrieverStartEvent);
+
+    try {
+      const context = await this.retriever.retrieve(input, {
+        userContext: operationContext?.userContext,
+      });
+
+      if (context?.trim()) {
+        // [NEW EVENT SYSTEM] Create a retriever:success event
+        const retrieverSuccessEvent: RetrieverSuccessEvent = {
+          id: crypto.randomUUID(),
+          name: "retriever:success",
+          type: "retriever",
+          startTime: new Date().toISOString(), // Use the original start time
+          endTime: new Date().toISOString(), // Current time as end time
+          status: "completed",
+          input: null,
+          output: { context },
+          metadata: {
+            displayName: this.retriever.tool.name || "Retriever",
+            id: this.retriever.tool.name,
+            agentId: this.id,
+          },
+          traceId: historyEntryId,
+          parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+        };
+
+        // Publish the retriever:success event (background) with parent context
+        this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
+        return context;
+      }
+
+      // If there was no context returned, still create a success event
+      // but with a note that no context was found
+      const retrieverSuccessEvent: RetrieverSuccessEvent = {
+        id: crypto.randomUUID(),
+        name: "retriever:success",
+        type: "retriever",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "completed",
+        input: null,
+        output: { context: "No relevant context found" },
+        metadata: {
+          displayName: this.retriever.tool.name || "Retriever",
+          id: this.retriever.tool.name,
+          agentId: this.id,
+        },
+        traceId: historyEntryId,
+        parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+      };
+
+      // Publish the retriever:success event (empty result, background) with parent context
+      this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
+      return null;
+    } catch (error) {
+      // [NEW EVENT SYSTEM] Create a retriever:error event
+      const retrieverErrorEvent: RetrieverErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "retriever:error",
+        type: "retriever",
+        startTime: new Date().toISOString(), // Use the original start time
+        endTime: new Date().toISOString(), // Current time as end time
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        statusMessage: {
+          message: error instanceof Error ? error.message : "Unknown retriever error",
+          ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
+        },
+        metadata: {
+          displayName: this.retriever.tool.name || "Retriever",
+          id: this.retriever.tool.name,
+          agentId: this.id,
+        },
+        traceId: historyEntryId,
+        parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
+      };
+
+      // Publish the retriever:error event (background) with parent context
+      this.publishTimelineEvent(operationContext, retrieverErrorEvent);
+
+      devLogger.warn("Failed to retrieve context:", error);
+      return null;
     }
   }
 }

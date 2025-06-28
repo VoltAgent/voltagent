@@ -1,6 +1,7 @@
 import type { Agent } from "../agent";
 import { AgentEventEmitter } from "../events";
 import type { VoltAgentExporter } from "../telemetry/exporter";
+import type { VoltOpsClient } from "../voltops/types";
 
 /**
  * Registry to manage and track agents
@@ -10,6 +11,7 @@ export class AgentRegistry {
   private agents: Map<string, Agent<any>> = new Map();
   private isInitialized = false;
   private globalVoltAgentExporter?: VoltAgentExporter;
+  private globalVoltOpsClient?: VoltOpsClient;
 
   /**
    * Track parent-child relationships between agents (child -> parents)
@@ -173,5 +175,25 @@ export class AgentRegistry {
    */
   public getGlobalVoltAgentExporter(): VoltAgentExporter | undefined {
     return this.globalVoltAgentExporter;
+  }
+
+  /**
+   * Set the global VoltOpsClient instance.
+   * This replaces the old telemetryExporter approach with a unified solution.
+   */
+  public setGlobalVoltOpsClient(client: VoltOpsClient): void {
+    this.globalVoltOpsClient = client;
+
+    // Also set the telemetry exporter for backward compatibility
+    if (client.telemetry) {
+      this.globalVoltAgentExporter = client.telemetry;
+    }
+  }
+
+  /**
+   * Get the global VoltOpsClient instance.
+   */
+  public getGlobalVoltOpsClient(): VoltOpsClient | undefined {
+    return this.globalVoltOpsClient;
   }
 }

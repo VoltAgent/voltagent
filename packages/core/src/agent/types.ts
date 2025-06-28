@@ -7,6 +7,7 @@ import type {
   ProviderTextResponse,
   ProviderTextStreamResponse,
 } from "../agent/providers/base/types";
+
 import type { Memory, MemoryOptions } from "../memory/types";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
@@ -18,18 +19,20 @@ import type { StepWithContent } from "./providers";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
 
-/**
- * Options object for dynamic value resolution
- */
-export type DynamicValueOptions = {
-  /** User-defined context that can be used for dynamic value resolution */
-  userContext: Map<string | symbol, unknown>;
-};
+import type {
+  DynamicValueOptions,
+  DynamicValue,
+  PromptHelper,
+  PromptContent,
+} from "../voltops/types";
+
+// Re-export for backward compatibility
+export type { DynamicValueOptions, DynamicValue, PromptHelper };
 
 /**
- * A value that can be either static or dynamically computed based on context
+ * Enhanced dynamic value for instructions that supports prompt management
  */
-export type DynamicValue<T> = T | ((options: DynamicValueOptions) => T | Promise<T>);
+export type InstructionsDynamicValue = string | DynamicValue<string | PromptContent>;
 
 /**
  * Provider options type for LLM configurations
@@ -130,9 +133,10 @@ export type AgentOptions = {
       description: string;
       /**
        * Agent instructions. This is the preferred field.
-       * Can be static or dynamic based on user context
+       * Can be static or dynamic based on user context.
+       * Enhanced to support prompt management via helper functions.
        */
-      instructions?: DynamicValue<string>;
+      instructions?: InstructionsDynamicValue;
     }
   | {
       /**
@@ -143,11 +147,30 @@ export type AgentOptions = {
       /**
        * Agent instructions. This is the preferred field.
        * Required if description is not provided.
-       * Can be static or dynamic based on user context
+       * Can be static or dynamic based on user context.
+       * Enhanced to support prompt management via helper functions.
        */
-      instructions: DynamicValue<string>;
+      instructions: InstructionsDynamicValue;
     }
 );
+
+/**
+ * System message response with optional prompt metadata
+ */
+export interface SystemMessageResponse {
+  systemMessages: BaseMessage | BaseMessage[];
+  promptMetadata?: {
+    name?: string;
+    version?: number;
+    labels?: string[];
+    tags?: string[];
+    config?: {
+      model?: string;
+      temperature?: number;
+      [key: string]: any;
+    };
+  };
+}
 
 /**
  * Provider instance type helper

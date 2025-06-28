@@ -7,6 +7,15 @@ import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 
 import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
 import type { VoltAgentExporter } from "./telemetry/exporter";
+import type { VoltOpsClient } from "./voltops/types";
+
+// Re-export VoltOps types for convenience
+export type {
+  PromptReference,
+  PromptHelper,
+  VoltOpsClientOptions,
+  VoltOpsPromptManager,
+} from "./voltops/types";
 
 /**
  * Server configuration options for VoltAgent
@@ -44,6 +53,23 @@ export type VoltAgentOptions = {
    * Server configuration options
    */
   server?: ServerOptions;
+
+  /**
+   * Unified VoltOps client for telemetry and prompt management
+   * Replaces the old telemetryExporter approach with a comprehensive solution.
+   */
+  voltOpsClient?: VoltOpsClient;
+
+  /**
+   * @deprecated Use `voltOpsClient` instead. Will be removed in a future version.
+   * Optional OpenTelemetry SpanExporter instance or array of instances.
+   * or a VoltAgentExporter instance or array of instances.
+   * If provided, VoltAgent will attempt to initialize and register
+   * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
+   * It's recommended to only provide this in one VoltAgent instance per application process.
+   */
+  telemetryExporter?: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[];
+
   /**
    * @deprecated Use `server.port` instead
    */
@@ -61,12 +87,4 @@ export type VoltAgentOptions = {
    * @deprecated Use `server.enableSwaggerUI` instead
    */
   enableSwaggerUI?: boolean;
-  /**
-   * Optional OpenTelemetry SpanExporter instance or array of instances.
-   * or a VoltAgentExporter instance or array of instances.
-   * If provided, VoltAgent will attempt to initialize and register
-   * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
-   * It's recommended to only provide this in one VoltAgent instance per application process.
-   */
-  telemetryExporter?: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[];
 };

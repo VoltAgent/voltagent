@@ -51,6 +51,7 @@ export {
   CustomEndpointError,
 } from "./server/custom-endpoints";
 export * from "./telemetry/exporter";
+export * from "./voltops";
 export type {
   UsageInfo,
   StreamPart,
@@ -72,6 +73,42 @@ export class VoltAgent {
 
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
+
+    // 🔥 FIX: Set up telemetry BEFORE registering agents
+    // NEW: Handle unified VoltOps client
+    if (options.voltOpsClient) {
+      this.registry.setGlobalVoltOpsClient(options.voltOpsClient);
+
+      // 🔥 CRITICAL FIX: Explicitly set global telemetry exporter for Agent access
+      if (options.voltOpsClient.telemetry) {
+        this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.telemetry);
+        this.initializeGlobalTelemetry(options.voltOpsClient.telemetry);
+      }
+
+      devLogger.info("[VoltAgent] VoltOpsClient initialized with telemetry and prompt management");
+    }
+    // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
+    else if (options.telemetryExporter) {
+      devLogger.warn(
+        "⚠️  telemetryExporter is deprecated. Use VoltOpsClient instead for enhanced functionality.",
+      );
+
+      // Find the VoltAgentExporter and set it globally
+      const exporters = Array.isArray(options.telemetryExporter)
+        ? options.telemetryExporter
+        : [options.telemetryExporter];
+      const voltExporter = exporters.find(
+        (exp): exp is VoltAgentExporter =>
+          typeof (exp as VoltAgentExporter).exportHistoryEntry === "function" &&
+          typeof (exp as VoltAgentExporter).publicKey === "string",
+      );
+      if (voltExporter) {
+        this.registry.setGlobalVoltAgentExporter(voltExporter);
+      }
+      this.initializeGlobalTelemetry(options.telemetryExporter);
+    }
+
+    // ✅ NOW register agents - they can access global telemetry exporter
     this.registerAgents(options.agents);
 
     // Merge server options with backward compatibility
@@ -92,31 +129,6 @@ export class VoltAgent {
     }
     if (this.serverOptions.port !== undefined) {
       this.serverConfig.port = this.serverOptions.port;
-    }
-
-    if (options.telemetryExporter) {
-      // Find the VoltAgentExporter and set it globally
-      const exporters = Array.isArray(options.telemetryExporter)
-        ? options.telemetryExporter
-        : [options.telemetryExporter];
-      const voltExporter = exporters.find(
-        (exp): exp is VoltAgentExporter =>
-          typeof (exp as VoltAgentExporter).exportHistoryEntry === "function" &&
-          typeof (exp as VoltAgentExporter).publicKey === "string",
-      );
-      if (voltExporter) {
-        this.registry.setGlobalVoltAgentExporter(voltExporter);
-
-        // Distribute the exporter to all currently registered agents
-        const allAgents = this.registry.getAllAgents();
-        allAgents.forEach((agent) => {
-          // Check if the agent has the internal method to set the exporter
-          if (typeof (agent as any)._INTERNAL_setVoltAgentExporter === "function") {
-            (agent as any)._INTERNAL_setVoltAgentExporter(voltExporter);
-          }
-        });
-      }
-      this.initializeGlobalTelemetry(options.telemetryExporter);
     }
 
     // Check dependencies if enabled
@@ -158,6 +170,13 @@ export class VoltAgent {
    * Register an agent
    */
   public registerAgent(agent: Agent<any>): void {
+    // 🔥 FIX: Set telemetry on existing agents that didn't have it during construction
+    const globalExporter = this.registry.getGlobalVoltAgentExporter();
+    if (globalExporter && !agent.isTelemetryConfigured()) {
+      agent._INTERNAL_setVoltAgentExporter(globalExporter);
+      devLogger.info(`[VoltAgent] Telemetry set on existing agent: ${agent.id}`);
+    }
+
     // Register the main agent
     this.registry.registerAgent(agent);
 
