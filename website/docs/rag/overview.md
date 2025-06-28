@@ -158,9 +158,24 @@ npm create voltagent-app@latest -- --example with-chroma
 
 [**→ Full Chroma Guide**](/docs/rag/chroma)
 
+### Pinecone Vector Database
+
+Production-ready managed vector database with serverless scaling and enterprise features.
+
+```bash
+# No setup needed - fully managed service
+# Just get your API key and run
+
+npm create voltagent-app@latest -- --example with-pinecone
+```
+
+[**→ Full Pinecone Guide**](/docs/rag/pinecone)
+
 ## Choose Your Path
 
-**I want to try it now** → [Chroma Tutorial](/docs/rag/chroma) (10 mins)
+**I want to try locally** → [Chroma Tutorial](/docs/rag/chroma) (10 mins)
+
+**I want production-ready** → [Pinecone Tutorial](/docs/rag/pinecone) (15 mins)
 
 **I want to build custom** → [Build Your Own Retriever](/docs/rag/custom-retrievers)
 
