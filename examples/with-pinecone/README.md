@@ -51,7 +51,7 @@ This example demonstrates VoltAgent integration with Pinecone vector database fo
 
 ```bash
 npm create voltagent-app@latest -- --example with-pinecone
-cd voltagent-example-with-pinecone
+cd with-pinecone
 ```
 
 **2. Set up environment variables:**

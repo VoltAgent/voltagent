@@ -22,7 +22,7 @@ Create a new VoltAgent project with Pinecone integration:
 
 ```bash
 npm create voltagent-app@latest -- --example with-pinecone
-cd voltagent-example-with-pinecone
+cd with-pinecone
 ```
 
 This creates a complete VoltAgent + Pinecone setup with sample data and two different agent configurations.
