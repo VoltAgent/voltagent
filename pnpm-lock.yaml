@@ -785,7 +785,7 @@ importers:
         specifier: ^0.1.48
         version: link:../../packages/core
       '@voltagent/postgres':
-        specifier: ^0.1.6
+        specifier: ^0.1.7
         version: link:../../packages/postgres
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
