@@ -2,4 +2,4 @@
 "@voltagent/postgres": patch
 ---
 
-updated the offending fields with single quotes in order to be interpreted as string literals
+fix: errors related to missing columns "timestamp" and "utc" in Postgres schema - #316 
