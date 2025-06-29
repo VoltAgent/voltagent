@@ -1,11 +1,14 @@
 import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
-import { ChromaClient } from "chromadb";
+import { ChromaClient, CloudClient, type QueryRowResult, type Metadata } from "chromadb";
 import { OpenAIEmbeddingFunction } from "@chroma-core/openai";
 
-// Initialize Chroma client
-const chromaClient = new ChromaClient({
-  path: process.env.CHROMA_URL || "http://localhost:8000",
-});
+// Initialize Chroma client - supports both local and cloud
+const chromaClient = process.env.CHROMA_API_KEY
+  ? new CloudClient() // Uses CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE env vars
+  : new ChromaClient({
+      host: process.env.CHROMA_HOST || "localhost",
+      port: parseInt(process.env.CHROMA_PORT || "8000"),
+    });
 
 const embeddingFunction = new OpenAIEmbeddingFunction({
   apiKey: process.env.OPENAI_API_KEY,
@@ -66,16 +69,19 @@ async function retrieveDocuments(query: string, nResults = 3) {
       nResults,
     });
 
-    if (!results.documents || !results.documents[0]) {
+    // Use the new .rows() method for cleaner data access
+    const rows = results.rows();
+
+    if (!rows || rows.length === 0 || !rows[0]) {
       return [];
     }
 
-    // Format results with metadata
-    return results.documents[0].map((doc, index) => ({
-      content: doc,
-      metadata: results.metadatas?.[0]?.[index] || {},
-      distance: results.distances?.[0]?.[index] || 0,
-      id: results.ids?.[0]?.[index] || `unknown_${index}`,
+    // Format results - rows[0] contains the actual row data
+    return rows[0].map((row: QueryRowResult<Metadata>, index: number) => ({
+      content: row.document || "",
+      metadata: row.metadata || {},
+      distance: results.distances?.[0]?.[index] || 0, // Distance still comes from the original results
+      id: row.id,
     }));
   } catch (error) {
     console.error("Error retrieving documents:", error);

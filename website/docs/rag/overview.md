@@ -150,7 +150,7 @@ Perfect for beginners. Run locally with Docker and get started immediately.
 
 ```bash
 # Start Chroma server
-docker run -p 8000:8000 chromadb/chroma
+npx chromadb run
 
 # Try the example
 npm create voltagent-app@latest -- --example with-chroma
