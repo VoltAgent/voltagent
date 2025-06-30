@@ -80,7 +80,7 @@ jobs:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: voltagent_test
         ports:
-          - 5433:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -127,9 +127,9 @@ jobs:
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         run: |
           cd packages/postgres
-          npm run test:integration
+          npm run test:integration:ci
         env:
-          CI: true
+          DATABASE_URL: postgresql://test:test@localhost:5432/voltagent_test
 
   tsdoc-check:
     runs-on: ubuntu-latest

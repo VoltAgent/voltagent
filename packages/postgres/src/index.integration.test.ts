@@ -2,15 +2,9 @@ import type { Conversation, MemoryMessage } from "@voltagent/core";
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { PostgresStorage } from ".";
 
-// Test configuration using Docker container
+// Test configuration - uses DATABASE_URL with fallback to local Docker defaults as defined in docker-compose.test.yaml
 const TEST_CONFIG = {
-  connection: {
-    host: "localhost",
-    port: 5433,
-    database: "voltagent_test",
-    user: "test",
-    password: "test",
-  },
+  connection: process.env.DATABASE_URL || "postgresql://test:test@localhost:5433/voltagent_test",
   tablePrefix: "test_voltagent",
   debug: true,
 };
