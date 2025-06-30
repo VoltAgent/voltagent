@@ -121,7 +121,7 @@ jobs:
       
       - name: Build Core Dependencies
         if: steps.check_postgres.outputs.postgres_changed == 'true'
-        run: pnpm build --filter @voltagent/core
+        run: pnpm build --scope @voltagent/core
       
       - name: Run PostgreSQL Integration Tests
         if: steps.check_postgres.outputs.postgres_changed == 'true'
