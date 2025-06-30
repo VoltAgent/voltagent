@@ -18,6 +18,20 @@ jobs:
       cancel-in-progress: true
     outputs:
       published: ${{ steps.changesets.outputs.published }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: voltagent_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v3
         with:
@@ -49,6 +63,14 @@ jobs:
 
       - name: Test
         run: pnpm test:all
+      
+      - name: PostgreSQL Integration Tests
+        run: |
+          cd packages/postgres
+          npm run test:integration
+        env:
+          CI: true
+      
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1

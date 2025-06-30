@@ -20,7 +20,10 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "npm run test:integration:setup && vitest run --config vitest.integration.config.mts && npm run test:integration:teardown",
+    "test:integration:setup": "docker compose -f docker-compose.test.yaml up -d && sleep 10",
+    "test:integration:teardown": "docker compose -f docker-compose.test.yaml down -v"
   },
   "dependencies": {
     "@voltagent/core": "^0.1.45",
