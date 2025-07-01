@@ -21,6 +21,7 @@ import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
+import type { VoltOpsClient } from "../voltops/client";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
@@ -166,6 +167,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private retriever?: BaseRetriever;
 
   /**
+   * VoltOps client for this specific agent (optional)
+   * Takes priority over global VoltOpsClient for prompt management
+   */
+  private readonly voltOpsClient?: VoltOpsClient;
+
+  /**
    * Create a new agent
    */
   constructor(
@@ -178,6 +185,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         retriever?: BaseRetriever;
         voice?: Voice;
         markdown?: boolean;
+        voltOpsClient?: VoltOpsClient;
         telemetryExporter?: VoltAgentExporter;
       },
   ) {
@@ -212,6 +220,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.voice = options.voice;
     this.markdown = options.markdown ?? false;
 
+    // Store VoltOps client for agent-specific prompt management
+    this.voltOpsClient = options.voltOpsClient;
+
     // Initialize hooks
     if (options.hooks) {
       this.hooks = options.hooks;
@@ -229,9 +240,33 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Initialize sub-agent manager
     this.subAgentManager = new SubAgentManager(this.name, options.subAgents || []);
 
-    // Initialize history manager
-    const chosenExporter =
-      options.telemetryExporter || AgentRegistry.getInstance().getGlobalVoltAgentExporter();
+    // Initialize history manager with VoltOpsClient or legacy telemetryExporter support
+    let chosenExporter: VoltAgentExporter | undefined;
+
+    // NEW: Handle unified VoltOps client
+    if (options.voltOpsClient) {
+      if (options.voltOpsClient.telemetry) {
+        chosenExporter = options.voltOpsClient.telemetry;
+        devLogger.info(
+          `[Agent ${this.id}] VoltOpsClient initialized with telemetry and prompt management`,
+        );
+      }
+    }
+    // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
+    else if (options.telemetryExporter) {
+      devLogger.warn(
+        `⚠️  [Agent ${this.id}] DEPRECATION WARNING: 'telemetryExporter' will be removed in v2.0.0
+   → Replace with: voltOpsClient: new VoltOpsClient({ publicKey, secretKey })
+   → Benefits: Unified telemetry + prompt management + enhanced observability
+   → Migration guide: https://docs.voltagent.ai/migration/voltops-client`,
+      );
+      chosenExporter = options.telemetryExporter;
+    }
+    // Fallback to global exporter
+    else {
+      chosenExporter = AgentRegistry.getInstance().getGlobalVoltAgentExporter();
+    }
+
     this.historyManager = new HistoryManager(
       this.id,
       this.memoryManager,
@@ -251,6 +286,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.id,
         this.name,
         this.instructions,
+        this.voltOpsClient,
       );
       const enhancedOptions = { ...options, prompts: promptHelper };
       const result = await this.dynamicInstructions(enhancedOptions);
@@ -310,6 +346,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.id,
       this.name,
       this.instructions,
+      this.voltOpsClient,
     );
     const dynamicValueOptions: DynamicValueOptions = {
       userContext: operationContext?.userContext || new Map(),
@@ -531,6 +568,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.id,
         this.name,
         this.instructions,
+        this.voltOpsClient,
       );
       const dynamicValueOptions: DynamicValueOptions = {
         userContext: operationContext.userContext || new Map(),
@@ -1060,6 +1098,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.id,
         this.name,
         this.instructions,
+        this.voltOpsClient,
       );
       const dynamicValueOptions: DynamicValueOptions = {
         userContext: operationContext.userContext || new Map(),
@@ -1528,6 +1567,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.id,
       this.name,
       this.instructions,
+      this.voltOpsClient,
     );
     const dynamicValueOptions: DynamicValueOptions = {
       userContext: operationContext.userContext || new Map(),
@@ -2022,6 +2062,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.id,
         this.name,
         this.instructions,
+        this.voltOpsClient,
       );
       const dynamicValueOptions: DynamicValueOptions = {
         userContext: operationContext.userContext || new Map(),
@@ -2312,6 +2353,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.id,
       this.name,
       this.instructions,
+      this.voltOpsClient,
     );
     const dynamicValueOptions: DynamicValueOptions = {
       userContext: operationContext.userContext || new Map(),

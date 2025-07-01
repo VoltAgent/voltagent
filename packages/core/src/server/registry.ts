@@ -181,11 +181,11 @@ export class AgentRegistry {
    * Set the global VoltOpsClient instance.
    * This replaces the old telemetryExporter approach with a unified solution.
    */
-  public setGlobalVoltOpsClient(client: VoltOpsClient): void {
+  public setGlobalVoltOpsClient(client: VoltOpsClient | undefined): void {
     this.globalVoltOpsClient = client;
 
     // Also set the telemetry exporter for backward compatibility
-    if (client.telemetry) {
+    if (client?.telemetry) {
       this.globalVoltAgentExporter = client.telemetry;
     }
   }

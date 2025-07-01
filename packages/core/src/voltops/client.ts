@@ -144,52 +144,77 @@ export class VoltOpsClient implements IVoltOpsClient {
   }
 
   /**
-   * Static method to create prompt helper with fallback
-   * Used by agents when VoltOpsClient might not be available
+   * Static method to create prompt helper with priority-based fallback
+   * Priority: Agent VoltOpsClient > Global VoltOpsClient > Fallback instructions
    */
   public static createPromptHelperWithFallback(
     agentId: string,
     agentName: string,
     fallbackInstructions: string,
+    agentVoltOpsClient?: VoltOpsClient,
   ): PromptHelper {
-    const voltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
+    // Priority 1: Agent-specific VoltOpsClient (highest priority)
+    if (agentVoltOpsClient?.prompts) {
+      devLogger.info(`[Agent ${agentId}] Using agent-specific VoltOpsClient for prompts`);
+      return agentVoltOpsClient.createPromptHelper(agentId);
+    }
 
-    if (!voltOpsClient?.prompts) {
-      // Return a fallback helper that provides default instructions and shows helpful message
-      return {
-        getPrompt: async () => {
-          console.log(`
-💡 VoltAgent Dynamic Prompts
+    // Priority 2: Global VoltOpsClient
+    const globalVoltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
+    if (globalVoltOpsClient?.prompts) {
+      devLogger.info(`[Agent ${agentId}] Using global VoltOpsClient for prompts`);
+      return globalVoltOpsClient.createPromptHelper(agentId);
+    }
+
+    // Priority 3: Fallback to default instructions
+    devLogger.warn(`[Agent ${agentId}] No VoltOpsClient available, using fallback instructions`);
+    return {
+      getPrompt: async () => {
+        console.log(`
+💡 VoltAgent Dynamic Prompts Priority System
    
-   ❌ VoltOpsClient not configured - using fallback instructions
+   Agent: ${agentName}
+   ❌ Agent VoltOpsClient: ${agentVoltOpsClient ? "Found but prompts disabled" : "Not configured"}
+   ❌ Global VoltOpsClient: ${globalVoltOpsClient ? "Found but prompts disabled" : "Not configured"}
+   ✅ Using fallback instructions
+   
+   Priority Order:
+   1. Agent VoltOpsClient (agent-specific, highest priority)
+   2. Global VoltOpsClient (from VoltAgent constructor)  
+   3. Fallback instructions (current)
    
    To enable dynamic prompt management:
-   1. Create prompts at: http://console.voltagent.dev/prompts  
-   2. Initialize VoltOpsClient in your code:
+   1. Create prompts at: http://console.voltagent.dev/prompts
+   2. Configure VoltOpsClient:
    
-   const voltOpsClient = new VoltOpsClient({
-     baseUrl: 'https://api.voltops.dev',
-     publicKey: 'your-public-key',
-     secretKey: 'your-secret-key'
+   // Option A: Agent-specific (highest priority)
+   const agent = new Agent({
+     voltOpsClient: new VoltOpsClient({
+       baseUrl: 'https://api.voltops.dev',
+       publicKey: 'your-public-key',
+       secretKey: 'your-secret-key'
+     })
+   });
+   
+   // Option B: Global (lower priority)
+   new VoltAgent({
+     voltOpsClient: new VoltOpsClient({ ... })
    });
    
    📖 Full documentation: https://docs.voltops.dev/prompts
-          `);
+        `);
 
-          console.warn(
-            `⚠️  Using fallback instructions for agent '${agentName}'. Enable prompt management to use dynamic prompts.`,
-          );
+        console.warn(
+          `⚠️  Using fallback instructions for agent '${agentName}'. Configure VoltOpsClient to use dynamic prompts.`,
+        );
 
-          // Return fallback as PromptContent
-          return {
-            type: "text",
-            text: fallbackInstructions,
-          };
-        },
-      };
-    }
-
-    return voltOpsClient.createPromptHelper(agentId);
+        // Return fallback as PromptContent
+        return {
+          type: "text",
+          text: fallbackInstructions,
+        };
+      },
+    };
   }
 
   /**
