@@ -155,27 +155,31 @@ export class VoltOpsClient implements IVoltOpsClient {
     const voltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
 
     if (!voltOpsClient?.prompts) {
-      // Give user a helpful message instead of throwing error TODO: fix me supervisor
-      console.log(`
-🔥 VoltAgent Prompt Management Available! 
-   Agent '${agentName}' can use dynamic prompts from VoltOps console.
+      // Return a fallback helper that provides default instructions and shows helpful message
+      return {
+        getPrompt: async () => {
+          console.log(`
+💡 VoltAgent Dynamic Prompts
    
-   ✅ Initialize VoltOpsClient:
+   ❌ VoltOpsClient not configured - using fallback instructions
+   
+   To enable dynamic prompt management:
+   1. Create prompts at: http://console.voltagent.dev/prompts  
+   2. Initialize VoltOpsClient in your code:
+   
    const voltOpsClient = new VoltOpsClient({
      baseUrl: 'https://api.voltops.dev',
      publicKey: 'your-public-key',
      secretKey: 'your-secret-key'
    });
    
-   📚 Learn more: https://docs.voltops.dev/prompts
-      `);
+   📖 Full documentation: https://docs.voltops.dev/prompts
+          `);
 
-      // Return a fallback helper that provides default instructions
-      return {
-        getPrompt: async () => {
           console.warn(
-            `⚠️  Prompt management not available for agent '${agentName}'. Using fallback.`,
+            `⚠️  Using fallback instructions for agent '${agentName}'. Enable prompt management to use dynamic prompts.`,
           );
+
           // Return fallback as PromptContent
           return {
             type: "text",
