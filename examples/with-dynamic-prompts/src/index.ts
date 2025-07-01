@@ -4,19 +4,20 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Create VoltOps client for prompt management
 const voltOpsClient = new VoltOpsClient({
-  baseUrl: process.env.VOLTOPS_BASE_URL || "http://localhost:3003",
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY || "pk_3078221058f9ba8ce79d28095038a01a",
-  secretKey:
-    process.env.VOLTOPS_SECRET_KEY ||
-    "sk_live_aab8c9b476201f1d52a55a6e379e0107ba84fe8b4bbc7c50028b880b0a6549d2",
+  baseUrl: process.env.VOLTOPS_BASE_URL || "",
+  publicKey: process.env.VOLTOPS_PUBLIC_KEY || "",
+  secretKey: process.env.VOLTOPS_SECRET_KEY || "",
   telemetry: true,
   prompts: true,
+  promptCache: {
+    enabled: true,
+  },
 });
 
 const longNamePromptAgent = new Agent({
   name: "LongNamePromptAgent",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini") as any,
+  model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
       promptName: "bu uzun isimli bir prompt",
@@ -28,7 +29,7 @@ const longNamePromptAgent = new Agent({
 const customerSupportAgent = new Agent({
   name: "CustomerSupport",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini") as any,
+  model: openai("gpt-4o-mini"),
   instructions: async ({ prompts, userContext }) => {
     const prompt = await prompts.getPrompt({
       promptName: "bu uzun isimli bir prompt",
@@ -39,6 +40,10 @@ const customerSupportAgent = new Agent({
         language: userContext.get("language") || "en",
         hede: "hede değeri",
       },
+      promptCache: {
+        enabled: true,
+        ttl: 600,
+      },
     });
 
     return prompt;
@@ -46,14 +51,19 @@ const customerSupportAgent = new Agent({
   subAgents: [longNamePromptAgent],
 });
 
-// Create agent with dynamic prompts
+// Create agent with dynamic prompts and custom cache settings
 const weatherAgent = new Agent({
   name: "WeatherAgent",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini") as any,
+  model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
-      promptName: "chat-test",
+      promptName: "weather-prompt",
+      label: "staging",
+      promptCache: {
+        enabled: false,
+        ttl: 60,
+      },
     });
   },
 });
@@ -61,8 +71,15 @@ const weatherAgent = new Agent({
 const assistantAgent = new Agent({
   name: "AssistantAgent",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini") as any,
+  model: openai("gpt-4o-mini"),
   instructions: "You are a helpful assistant.",
+});
+
+const dynamicInstructionsAgent = new Agent({
+  name: "DynamicInstructionsAgent2",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  instructions: () => "You are a helpful assistant.",
 });
 
 // Initialize VoltAgent with VoltOps client
@@ -71,6 +88,7 @@ new VoltAgent({
     customerSupportAgent,
     weatherAgent,
     assistantAgent,
+    dynamicInstructionsAgent,
   },
   voltOpsClient: voltOpsClient,
 });

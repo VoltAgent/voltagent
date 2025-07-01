@@ -1,38 +1,38 @@
 # VoltAgent with Dynamic Prompts Example
 
-Bu örnek, VoltAgent'ta dynamic prompt management'ın nasıl kullanılacağını gösterir.
+This example demonstrates how to use dynamic prompt management with VoltAgent.
 
-## 🎯 Bu Örnekte Neler Var
+## 🎯 What's in This Example
 
-- **VoltOpsClient** ile unified telemetry ve prompt management
-- **Dynamic instructions** ile context-aware prompt loading
-- **Template variables** ile personalized responses
-- **Graceful fallback** VoltOps mevcut değilse static instructions kullanır
+- **VoltOpsClient** for unified telemetry and prompt management
+- **Dynamic instructions** with context-aware prompt loading
+- **Template variables** for personalized responses
+- **Graceful fallback** - uses static instructions when VoltOps is not available
 
-## 🚀 Kurulum
+## 🚀 Setup
 
-1. Dependencies'leri yükleyin:
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-2. Environment variables'ları ayarlayın (opsiyonel):
+2. Set up environment variables (optional):
 
 ```bash
 cp .env.example .env
-# .env dosyasını OpenAI API key ile düzenleyin
+# Edit .env file with your OpenAI API key
 ```
 
-3. Örneği çalıştırın:
+3. Run the example:
 
 ```bash
 npm run dev
 ```
 
-## 🔧 Nasıl Çalışır
+## 🔧 How It Works
 
-### 1. VoltOpsClient Kurulumu
+### 1. VoltOpsClient Setup
 
 ```typescript
 const voltOpsClient = new VoltOpsClient({
@@ -49,7 +49,7 @@ const voltOpsClient = new VoltOpsClient({
 ```typescript
 instructions: async (context) => {
   try {
-    // VoltOps'tan dynamic prompt al
+    // Get dynamic prompt from VoltOps
     return await context.prompts.getPrompt({
       promptName: "customer-support-agent",
       variables: {
@@ -59,13 +59,13 @@ instructions: async (context) => {
       },
     });
   } catch (error) {
-    // Fallback static instructions
+    // Fallback to static instructions
     return "You are a helpful customer support agent...";
   }
 };
 ```
 
-### 3. Context ile Kullanım
+### 3. Usage with Context
 
 ```typescript
 const response = await agent.generateText("Hi, I need help with my account", {
@@ -76,19 +76,19 @@ const response = await agent.generateText("Hi, I need help with my account", {
 });
 ```
 
-## 📊 Test Senaryoları
+## 📊 Test Scenarios
 
-Örnek 3 farklı test senaryosu çalıştırır:
+The example runs 3 different test scenarios:
 
 1. **Standard Customer** (tier: standard, language: en)
 2. **Premium Customer** (tier: premium, language: en)
 3. **Spanish Customer** (tier: standard, language: es)
 
-Her test, farklı context'lerle dynamic prompt'un nasıl adapt olduğunu gösterir.
+Each test shows how the dynamic prompt adapts to different contexts.
 
 ## 🎨 VoltOps Console Integration
 
-VoltOps console'da `customer-support-agent` prompt'unu şu template ile oluşturabilirsiniz:
+In the VoltOps console, you can create the `customer-support-agent` prompt with this template:
 
 ```liquid
 You are a helpful customer support agent for {{companyName}}.
@@ -118,7 +118,7 @@ Support Guidelines:
 
 ## 🔄 Fallback Mechanism
 
-Eğer VoltOps mevcut değilse veya prompt bulunammazsa, kod otomatik olarak static instructions'a fallback yapar:
+If VoltOps is not available or the prompt is not found, the code automatically falls back to static instructions:
 
 ```typescript
 catch (error) {
@@ -127,10 +127,10 @@ catch (error) {
 }
 ```
 
-Bu sayede development sırasında bile örnek sorunsuz çalışır!
+This ensures the example works seamlessly even during development!
 
-## 📝 Notlar
+## 📝 Notes
 
-- Environment variables opsiyoneldir - demo keys ile fallback çalışır
-- OpenAI API key gereklidir
-- Gerçek production'da VoltOps credentials'larınızı kullanın
+- Environment variables are optional - works with demo keys and fallback
+- OpenAI API key is required
+- Use your real VoltOps credentials in production
