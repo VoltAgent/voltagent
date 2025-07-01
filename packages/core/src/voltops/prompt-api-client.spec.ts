@@ -1,6 +1,7 @@
 import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
+import { expectTypeOf } from "vitest";
 import { VoltOpsPromptApiClient } from "./prompt-api-client";
-import type { VoltOpsClientOptions, PromptReference } from "./types";
+import type { VoltOpsClientOptions, PromptReference, PromptApiClient } from "./types";
 
 describe("VoltOpsPromptApiClient", () => {
   let client: VoltOpsPromptApiClient;
@@ -40,15 +41,19 @@ describe("VoltOpsPromptApiClient", () => {
       const reference: PromptReference = { promptName: "test" };
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ content: "test content" }),
+        json: () => Promise.resolve({ prompt: "test content" }),
       });
 
       clientWithSlash.fetchPrompt(reference);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.voltops.com/api/prompts/test?version=latest",
-        expect.any(Object),
-      );
+      expect(mockFetch).toHaveBeenCalledWith("https://api.voltops.com/prompts/public/test", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Public-Key": "pub_test_key",
+          "X-Secret-Key": "sec_test_key",
+        },
+      });
     });
 
     it("should use global fetch if custom fetch not provided", () => {
@@ -73,10 +78,15 @@ describe("VoltOpsPromptApiClient", () => {
     it("should fetch prompt successfully", async () => {
       const reference: PromptReference = {
         promptName: "customer-support",
-        version: "latest",
+        version: 1,
       };
 
-      const mockResponse = { content: "Hello {{name}}!" };
+      const mockResponse = {
+        prompt: "Hello {{name}}!",
+        type: "text",
+        name: "customer-support",
+        version: 1,
+      };
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse),
@@ -84,15 +94,15 @@ describe("VoltOpsPromptApiClient", () => {
 
       const result = await client.fetchPrompt(reference);
 
-      expect(result).toEqual({ content: "Hello {{name}}!" });
+      expect(result).toEqual(mockResponse);
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.voltops.com/api/prompts/customer-support?version=latest",
+        "https://api.voltops.com/prompts/public/customer-support?version=1",
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer sec_test_key",
             "X-Public-Key": "pub_test_key",
+            "X-Secret-Key": "sec_test_key",
           },
         },
       );
@@ -106,65 +116,134 @@ describe("VoltOpsPromptApiClient", () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ content: "Version 5 content" }),
+        json: () =>
+          Promise.resolve({
+            prompt: "Version 5 content",
+            type: "text",
+            name: "customer-support",
+            version: 5,
+          }),
       });
 
       await client.fetchPrompt(reference);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.voltops.com/api/prompts/customer-support?version=5",
-        expect.any(Object),
+        "https://api.voltops.com/prompts/public/customer-support?version=5",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Public-Key": "pub_test_key",
+            "X-Secret-Key": "sec_test_key",
+          },
+        },
       );
     });
 
     it("should URL encode prompt name", async () => {
       const reference: PromptReference = {
         promptName: "customer support/special chars",
-        version: "latest",
+        version: 1,
       };
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ content: "content" }),
+        json: () =>
+          Promise.resolve({
+            prompt: "content",
+            type: "text",
+            name: "customer support/special chars",
+            version: 1,
+          }),
       });
 
       await client.fetchPrompt(reference);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.voltops.com/api/prompts/customer%20support%2Fspecial%20chars?version=latest",
-        expect.any(Object),
+        "https://api.voltops.com/prompts/public/customer%20support%2Fspecial%20chars?version=1",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Public-Key": "pub_test_key",
+            "X-Secret-Key": "sec_test_key",
+          },
+        },
       );
     });
 
-    it("should default to latest version when version not specified", async () => {
+    it("should not include version query when version not specified", async () => {
       const reference: PromptReference = {
         promptName: "test-prompt",
       };
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ content: "content" }),
+        json: () =>
+          Promise.resolve({
+            prompt: "content",
+            type: "text",
+            name: "test-prompt",
+            version: "latest",
+          }),
+      });
+
+      await client.fetchPrompt(reference);
+
+      expect(mockFetch).toHaveBeenCalledWith("https://api.voltops.com/prompts/public/test-prompt", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Public-Key": "pub_test_key",
+          "X-Secret-Key": "sec_test_key",
+        },
+      });
+    });
+
+    it("should handle label parameter", async () => {
+      const reference: PromptReference = {
+        promptName: "test-prompt",
+        label: "production",
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            prompt: "production content",
+            type: "text",
+            name: "test-prompt",
+            version: "latest",
+            labels: ["production"],
+          }),
       });
 
       await client.fetchPrompt(reference);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.voltops.com/api/prompts/test-prompt?version=latest",
-        expect.any(Object),
+        "https://api.voltops.com/prompts/public/test-prompt?label=production",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Public-Key": "pub_test_key",
+            "X-Secret-Key": "sec_test_key",
+          },
+        },
       );
     });
 
-    it("should handle empty content response", async () => {
+    it("should handle empty response", async () => {
       const reference: PromptReference = { promptName: "empty-prompt" };
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({}), // No content field
+        json: () => Promise.resolve({}), // Empty response
       });
 
       const result = await client.fetchPrompt(reference);
 
-      expect(result).toEqual({ content: "" });
+      expect(result).toEqual({});
     });
 
     it("should throw error on HTTP error response", async () => {
@@ -207,11 +286,21 @@ describe("VoltOpsPromptApiClient", () => {
     it("should handle unknown error types", async () => {
       const reference: PromptReference = { promptName: "unknown-error" };
 
-      mockFetch.mockRejectedValueOnce("Unknown error string");
+      mockFetch.mockRejectedValueOnce("Unknown error");
 
       await expect(client.fetchPrompt(reference)).rejects.toThrow(
         "Failed to fetch prompt: Unknown error",
       );
+    });
+  });
+
+  describe("type checking", () => {
+    it("should implement PromptApiClient interface", () => {
+      expectTypeOf(client).toMatchTypeOf<PromptApiClient>();
+    });
+
+    it("should have correct fetchPrompt method signature", () => {
+      expectTypeOf(client.fetchPrompt).parameter(0).toMatchTypeOf<PromptReference>();
     });
   });
 });

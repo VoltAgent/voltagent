@@ -14,9 +14,10 @@ import { VoltOpsPromptApiClient } from "./prompt-api-client";
 import { createSimpleTemplateEngine, type TemplateEngine } from "./template-engine";
 
 /**
- * Cache TTL constant - 5 minutes
+ * Default cache configuration
  */
-const DEFAULT_CACHE_TTL = 5 * 60 * 1000;
+const DEFAULT_CACHE_TTL = 5 * 60; // 5 minutes in seconds
+const DEFAULT_MAX_SIZE = 100;
 
 /**
  * Cached prompt data with PromptContent structure
@@ -34,10 +35,22 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
   private readonly cache = new Map<string, CachedPromptContent>();
   private readonly apiClient: PromptApiClient;
   private readonly templateEngine: TemplateEngine;
+  private readonly cacheConfig: {
+    enabled: boolean;
+    ttl: number; // in seconds
+    maxSize: number;
+  };
 
   constructor(options: VoltOpsClientOptions) {
     this.apiClient = new VoltOpsPromptApiClient(options);
     this.templateEngine = createSimpleTemplateEngine();
+
+    // Initialize cache configuration from client options
+    this.cacheConfig = {
+      enabled: options.promptCache?.enabled ?? true,
+      ttl: options.promptCache?.ttl ?? DEFAULT_CACHE_TTL,
+      maxSize: options.promptCache?.maxSize ?? DEFAULT_MAX_SIZE,
+    };
   }
 
   /**
@@ -46,10 +59,19 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
   async getPrompt(reference: PromptReference): Promise<PromptContent> {
     const cacheKey = this.getCacheKey(reference);
 
-    // Check cache first
-    const cached = this.getCachedPrompt(cacheKey);
-    if (cached) {
-      return this.processPromptContent(cached.content, reference.variables);
+    // Determine effective cache configuration (per-prompt overrides global)
+    const effectiveCacheConfig = {
+      enabled: reference.promptCache?.enabled ?? this.cacheConfig.enabled,
+      ttl: reference.promptCache?.ttl ?? this.cacheConfig.ttl,
+      maxSize: this.cacheConfig.maxSize, // maxSize is always global
+    };
+
+    // Check cache first (only if enabled)
+    if (effectiveCacheConfig.enabled) {
+      const cached = this.getCachedPrompt(cacheKey, effectiveCacheConfig.ttl);
+      if (cached) {
+        return this.processPromptContent(cached.content, reference.variables);
+      }
     }
 
     // Fetch from API
@@ -58,8 +80,10 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     // Convert API response to PromptContent with metadata
     const promptContent = this.convertApiResponseToPromptContent(promptResponse);
 
-    // Cache the result
-    this.setCachedPrompt(cacheKey, promptContent);
+    // Cache the result (only if enabled)
+    if (effectiveCacheConfig.enabled) {
+      this.setCachedPrompt(cacheKey, promptContent, effectiveCacheConfig.ttl);
+    }
 
     return this.processPromptContent(promptContent, reference.variables);
   }
@@ -98,8 +122,10 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
 
     // Create PromptContent with metadata from API response
     const promptContent: PromptContent = {
-      type: response.type || "text",
+      type: response.type,
       metadata: {
+        prompt_id: response.prompt_id,
+        prompt_version_id: response.prompt_version_id,
         name: response.name,
         version: response.version,
         labels: response.labels,
@@ -140,11 +166,13 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
   /**
    * Get cached prompt if valid
    */
-  private getCachedPrompt = (cacheKey: string): CachedPromptContent | null => {
+  private getCachedPrompt = (cacheKey: string, customTtl?: number): CachedPromptContent | null => {
     const cached = this.cache.get(cacheKey);
     if (!cached) return null;
 
-    const isExpired = Date.now() - cached.fetchedAt > cached.ttl;
+    // Use custom TTL if provided, otherwise use the TTL stored with the cached item
+    const effectiveTtl = customTtl ? customTtl * 1000 : cached.ttl; // Convert seconds to milliseconds if custom TTL provided
+    const isExpired = Date.now() - cached.fetchedAt > effectiveTtl;
     if (isExpired) {
       this.cache.delete(cacheKey);
       return null;
@@ -154,15 +182,40 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
   };
 
   /**
-   * Set cached prompt with TTL
+   * Set cached prompt with TTL and size limit enforcement
    */
-  private setCachedPrompt = (cacheKey: string, content: PromptContent): void => {
+  private setCachedPrompt = (
+    cacheKey: string,
+    content: PromptContent,
+    customTtl?: number,
+  ): void => {
+    // Note: Cache enablement is already checked in getPrompt method before calling this
+    // This method assumes cache should be enabled when called
+
+    // Enforce max size limit
+    if (this.cache.size >= this.cacheConfig.maxSize) {
+      this.evictOldestEntry();
+    }
+
+    // Use custom TTL if provided, otherwise use global config
+    const effectiveTtl = customTtl ?? this.cacheConfig.ttl;
+
     this.cache.set(cacheKey, {
       content,
       fetchedAt: Date.now(),
-      ttl: DEFAULT_CACHE_TTL,
+      ttl: effectiveTtl * 1000, // Convert seconds to milliseconds
     });
   };
+
+  /**
+   * Evict oldest cache entry to make room for new one
+   */
+  private evictOldestEntry(): void {
+    const oldestKey = this.cache.keys().next().value;
+    if (oldestKey) {
+      this.cache.delete(oldestKey);
+    }
+  }
 
   /**
    * Process template variables using configured template engine

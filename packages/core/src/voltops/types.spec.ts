@@ -7,6 +7,8 @@ import type {
   PromptApiClient,
   VoltOpsPromptManager,
   VoltOpsClient,
+  PromptContent,
+  PromptApiResponse,
 } from "./types";
 
 describe("VoltOps Types", () => {
@@ -33,13 +35,13 @@ describe("VoltOps Types", () => {
       expect(ref.variables).toEqual({ name: "John", age: 30 });
     });
 
-    it("should accept latest version string", () => {
+    it("should accept version number", () => {
       const ref: PromptReference = {
         promptName: "test-prompt",
-        version: "latest",
+        version: 1,
       };
 
-      expect(ref.version).toBe("latest");
+      expect(ref.version).toBe(1);
     });
   });
 
@@ -87,19 +89,19 @@ describe("VoltOps Types", () => {
   describe("Type Checking", () => {
     it("should have correct PromptHelper interface", () => {
       expectTypeOf<PromptHelper>().toEqualTypeOf<{
-        getPrompt: (reference: PromptReference) => Promise<string>;
+        getPrompt: (reference: PromptReference) => Promise<PromptContent>;
       }>();
     });
 
     it("should have correct PromptApiClient interface", () => {
       expectTypeOf<PromptApiClient>().toEqualTypeOf<{
-        fetchPrompt: (reference: PromptReference) => Promise<{ content: string }>;
+        fetchPrompt: (reference: PromptReference) => Promise<PromptApiResponse>;
       }>();
     });
 
     it("should have correct VoltOpsPromptManager interface", () => {
       expectTypeOf<VoltOpsPromptManager>().toEqualTypeOf<{
-        getPrompt: (reference: PromptReference) => Promise<string>;
+        getPrompt: (reference: PromptReference) => Promise<PromptContent>;
         preload: (references: PromptReference[]) => Promise<void>;
         clearCache: () => void;
         getCacheStats: () => { size: number; entries: string[] };
@@ -107,10 +109,60 @@ describe("VoltOps Types", () => {
     });
 
     it("should have correct VoltOpsClient interface", () => {
-      expectTypeOf<VoltOpsClient>().toEqualTypeOf<{
-        prompts: VoltOpsPromptManager;
+      expectTypeOf<VoltOpsClient>().toMatchTypeOf<{
+        prompts?: VoltOpsPromptManager;
         options: VoltOpsClientOptions;
       }>();
+    });
+
+    it("should have correct PromptReference interface with per-prompt cache", () => {
+      expectTypeOf<PromptReference>().toMatchTypeOf<{
+        promptName: string;
+        version?: number;
+        label?: string;
+        variables?: Record<string, any>;
+        promptCache?: {
+          enabled?: boolean;
+          ttl?: number;
+          maxSize?: number;
+        };
+      }>();
+    });
+
+    it("should allow creating PromptReference with per-prompt cache configuration", () => {
+      const reference: PromptReference = {
+        promptName: "test-prompt",
+        variables: { name: "world" },
+        promptCache: {
+          enabled: true,
+          ttl: 300,
+        },
+      };
+
+      expectTypeOf(reference.promptCache?.enabled).toEqualTypeOf<boolean | undefined>();
+      expectTypeOf(reference.promptCache?.ttl).toEqualTypeOf<number | undefined>();
+      expectTypeOf(reference.promptCache?.maxSize).toEqualTypeOf<number | undefined>();
+    });
+
+    it("should allow partial per-prompt cache configuration", () => {
+      const minimalReference: PromptReference = {
+        promptName: "test",
+        promptCache: {
+          enabled: false,
+          // ttl and maxSize are optional
+        },
+      };
+
+      const ttlOnlyReference: PromptReference = {
+        promptName: "test",
+        promptCache: {
+          ttl: 120,
+          // enabled and maxSize are optional
+        },
+      };
+
+      expectTypeOf(minimalReference).toMatchTypeOf<PromptReference>();
+      expectTypeOf(ttlOnlyReference).toMatchTypeOf<PromptReference>();
     });
   });
 });

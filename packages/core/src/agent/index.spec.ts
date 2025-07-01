@@ -3452,16 +3452,25 @@ describe("Agent Dynamic Values", () => {
         isActive: true,
       } as any;
 
-      const systemMessage = await (agent as any).getSystemMessage({
+      const systemMessageResponse = await (agent as any).getSystemMessage({
         input: "test input",
         historyEntryId: "test-history",
         contextMessages: [],
         operationContext,
       });
 
-      expect(systemMessage.content).toContain(
+      // systemMessages can be single BaseMessage or array of BaseMessages
+      const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
+        ? systemMessageResponse.systemMessages
+        : [systemMessageResponse.systemMessages];
+
+      const systemMessageContent = systemMessages[0]?.content;
+      expect(systemMessageContent).toContain(
         "You are Test Agent. You are a admin assistant with special privileges.",
       );
+
+      // Also verify isDynamicInstructions is set correctly
+      expect(systemMessageResponse.isDynamicInstructions).toBe(true);
     });
 
     it("should resolve dynamic model during text generation", async () => {
@@ -3686,5 +3695,183 @@ describe("Agent Dynamic Values", () => {
 
       generateTextSpy.mockRestore();
     });
+  });
+});
+
+describe("Dynamic Instructions Detection", () => {
+  it("should detect static instructions as not dynamic", async () => {
+    // Create agent with static string instructions
+    const staticAgent = new TestAgent({
+      name: "StaticAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant with static instructions.",
+    });
+
+    // Get system message and check isDynamicInstructions
+    const systemMessageResponse = await (staticAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(false);
+  });
+
+  it("should detect function instructions as dynamic", async () => {
+    // Create agent with dynamic function instructions
+    const dynamicAgent = new TestAgent({
+      name: "DynamicAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: ({ userContext }: DynamicValueOptions) => {
+        const userName = userContext.get("userName") || "user";
+        return `You are a helpful assistant for ${userName}.`;
+      },
+    });
+
+    // Get system message and check isDynamicInstructions
+    const systemMessageResponse = await (dynamicAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map([["userName", "Alice"]]),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(true);
+
+    // Also check that dynamic instructions were resolved properly
+    expect(systemMessageResponse.systemMessages).toEqual({
+      role: "system",
+      content: "You are DynamicAgent. You are a helpful assistant for Alice.",
+    });
+  });
+
+  it("should detect async function instructions as dynamic", async () => {
+    // Create agent with async dynamic function instructions
+    const asyncDynamicAgent = new TestAgent({
+      name: "AsyncDynamicAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: async ({ userContext }: DynamicValueOptions) => {
+        // Simulate async operation
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        const role = userContext.get("role") || "assistant";
+        return `You are a ${role} with async instructions.`;
+      },
+    });
+
+    // Get system message and check isDynamicInstructions
+    const systemMessageResponse = await (asyncDynamicAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map([["role", "supervisor"]]),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(true);
+
+    // Check that async instructions were resolved properly
+    expect(systemMessageResponse.systemMessages).toEqual({
+      role: "system",
+      content: "You are AsyncDynamicAgent. You are a supervisor with async instructions.",
+    });
+  });
+
+  it("should handle VoltOps prompt content with isDynamicInstructions flag", async () => {
+    // Mock VoltOps prompt response
+    const mockPromptContent = {
+      type: "text" as const,
+      text: "You are a VoltOps-powered assistant.",
+      metadata: {
+        name: "test-prompt",
+        version: 1,
+        labels: ["production"],
+      },
+    };
+
+    // Create agent with function that returns PromptContent
+    const voltOpsAgent = new TestAgent({
+      name: "VoltOpsAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: async ({ prompts }: DynamicValueOptions) => {
+        // Simulate VoltOps prompt fetch
+        return mockPromptContent;
+      },
+    });
+
+    // Get system message and check both isDynamicInstructions and promptMetadata
+    const systemMessageResponse = await (voltOpsAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(true);
+    expect(systemMessageResponse.promptMetadata).toEqual(mockPromptContent.metadata);
+    expect(systemMessageResponse.systemMessages).toEqual({
+      role: "system",
+      content: "You are VoltOpsAgent. You are a VoltOps-powered assistant.",
+    });
+  });
+
+  it("should work correctly during generateText with dynamic instructions", async () => {
+    const dynamicAgent = new TestAgent({
+      name: "DynamicTestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: ({ userContext }: DynamicValueOptions) => {
+        const mode = userContext.get("mode") || "default";
+        return `You are in ${mode} mode.`;
+      },
+    });
+
+    // Execute generateText with userContext
+    const response = await dynamicAgent.generateText("Hello", {
+      userContext: new Map([["mode", "testing"]]),
+    });
+
+    expect(response.text).toBe("Hello, I am a test agent!");
+
+    // Check that the provider received the correct system message with dynamic instructions
+    const provider = dynamicAgent.llm as MockProvider;
+    const lastMessages = provider.lastMessages;
+
+    expect(lastMessages[0]).toEqual({
+      role: "system",
+      content: "You are DynamicTestAgent. You are in testing mode.",
+    });
+
+    // Most importantly, check that isDynamicInstructions was correctly set
+    expect(response.userContext).toBeDefined();
+
+    expect(response.userContext?.get("mode")).toBe("testing");
   });
 });

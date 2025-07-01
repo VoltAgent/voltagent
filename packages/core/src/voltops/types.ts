@@ -20,6 +20,12 @@ export type PromptReference = {
   label?: string;
   /** Variables to substitute in the template */
   variables?: Record<string, any>;
+  /** Per-prompt cache configuration (overrides global settings) */
+  promptCache?: {
+    enabled?: boolean;
+    ttl?: number; // Cache TTL in seconds
+    maxSize?: number; // Max cache entries (not applicable per-prompt, but kept for consistency)
+  };
 };
 
 /**
@@ -109,6 +115,10 @@ export type PromptApiResponse = {
   labels: string[];
   /** Tags array */
   tags: string[];
+  /** Base prompt ID for tracking */
+  prompt_id: string;
+  /** PromptVersion ID (the actual entity ID) */
+  prompt_version_id: string;
 };
 
 /**
@@ -172,6 +182,10 @@ export interface PromptContent {
    * Available when prompt is fetched from VoltOps
    */
   metadata?: {
+    /** Base prompt ID for tracking */
+    prompt_id?: string;
+    /** Specific PromptVersion ID (critical for analytics) */
+    prompt_version_id?: string;
     /** Prompt name */
     name?: string;
     /** Prompt version number */

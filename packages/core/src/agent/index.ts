@@ -50,6 +50,7 @@ import type {
   DynamicValueOptions,
   GenerateObjectResponse,
   GenerateTextResponse,
+  ModelDynamicValue,
   StreamObjectResponse,
   StreamTextResponse,
   InternalGenerateOptions,
@@ -170,7 +171,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   constructor(
     options: AgentOptions &
       TProvider & {
-        model: DynamicValue<ModelType<TProvider>>;
+        model: ModelDynamicValue<ModelType<TProvider>>;
         subAgents?: Agent<any>[]; // Reverted to Agent<any>[] temporarily
         maxHistoryEntries?: number;
         hooks?: AgentHooks;
@@ -185,9 +186,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.purpose = options.purpose;
 
     // Store dynamic values separately from resolved values
-    this.dynamicInstructions = options.instructions as DynamicValue<string>;
-    this.dynamicModel = options.model as DynamicValue<ModelType<TProvider>>;
-    this.dynamicTools = options.tools as DynamicValue<(Tool<any> | Toolkit)[]>;
+    this.dynamicInstructions =
+      typeof options.instructions === "function"
+        ? (options.instructions as DynamicValue<string>)
+        : undefined;
+    this.dynamicModel =
+      typeof options.model === "function"
+        ? (options.model as DynamicValue<ModelType<TProvider>>)
+        : undefined;
+    this.dynamicTools =
+      typeof options.tools === "function"
+        ? (options.tools as DynamicValue<(Tool<any> | Toolkit)[]>)
+        : undefined;
 
     // Set default static values for backwards compatibility
     this.instructions =
@@ -317,12 +327,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             content: `You are ${this.name}. ${this.instructions}`,
           },
           promptMetadata: resolvedInstructions.metadata,
+          isDynamicInstructions: typeof this.dynamicInstructions === "function",
         };
       }
 
       return {
         systemMessages: resolvedInstructions.messages,
         promptMetadata: resolvedInstructions.metadata,
+        isDynamicInstructions: typeof this.dynamicInstructions === "function",
       };
     }
 
@@ -394,6 +406,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           content: finalInstructions,
         },
         promptMetadata,
+        isDynamicInstructions: typeof this.dynamicInstructions === "function",
       };
     }
 
@@ -403,6 +416,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         content: `You are ${this.name}. ${finalInstructions}`,
       },
       promptMetadata,
+      isDynamicInstructions: typeof this.dynamicInstructions === "function",
     };
   }
 
@@ -668,7 +682,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       id: this.id,
       name: this.name,
       description: this.description,
-      instructions: this.instructions,
+      instructions:
+        typeof this.dynamicInstructions === "function" ? "Dynamic instructions" : this.instructions,
       status: "idle",
       model: this.getModelName(),
       // Create a node representing this agent
@@ -977,6 +992,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           messages,
           // ✅ Include prompt metadata from system message response
           promptMetadata: systemMessageResponse.promptMetadata,
+          isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
           modelParameters: {
             model: this.getModelName(),
             maxTokens: internalOptions.provider?.maxTokens,
@@ -1176,7 +1192,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         id: crypto.randomUUID(),
         name: "agent:success",
         type: "agent",
-        startTime: new Date().toISOString(), // Use the original start time
+        startTime: agentStartInfo.startTime, // Use the original start time
         endTime: new Date().toISOString(), // Current time as end time
         status: "completed",
         input: null,
@@ -1253,7 +1269,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         id: crypto.randomUUID(),
         name: "agent:error",
         type: "agent",
-        startTime: new Date().toISOString(), // Use the original start time
+        startTime: agentErrorStartInfo.startTime, // Use the original start time
         endTime: new Date().toISOString(), // Current time as end time
         status: "error",
         level: "ERROR",
@@ -1396,6 +1412,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         messages,
         // ✅ Include prompt metadata from system message response
         promptMetadata: systemMessageResponse.promptMetadata,
+        isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
         modelParameters: {
           model: this.getModelName(),
           maxTokens: internalOptions.provider?.maxTokens,
@@ -1659,7 +1676,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           id: crypto.randomUUID(),
           name: "agent:success",
           type: "agent",
-          startTime: new Date().toISOString(), // Use the original start time
+          startTime: agentStartInfo.startTime, // Use the original start time
           endTime: new Date().toISOString(), // Current time as end time
           status: "completed",
           input: null,
@@ -1792,7 +1809,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           id: crypto.randomUUID(),
           name: "agent:error",
           type: "agent",
-          startTime: new Date().toISOString(), // Use the original start time
+          startTime: agentErrorStartInfo.startTime, // Use the original start time
           endTime: new Date().toISOString(), // Current time as end time
           status: "error",
           level: "ERROR",
@@ -1945,6 +1962,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           messages,
           // ✅ Include prompt metadata from system message response
           promptMetadata: systemMessageResponse.promptMetadata,
+          isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
           modelParameters: {
             model: this.getModelName(),
             maxTokens: internalOptions.provider?.maxTokens,
@@ -2017,7 +2035,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         id: crypto.randomUUID(),
         name: "agent:success",
         type: "agent",
-        startTime: new Date().toISOString(), // Use the original start time
+        startTime: agentStartInfo.startTime, // Use the original start time
         endTime: new Date().toISOString(), // Current time as end time
         status: "completed",
         input: null,
@@ -2092,7 +2110,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         id: crypto.randomUUID(),
         name: "agent:error",
         type: "agent",
-        startTime: new Date().toISOString(), // Use the original start time
+        startTime: agentErrorStartInfo.startTime, // Use the original start time
         endTime: new Date().toISOString(), // Current time as end time
         status: "error",
         level: "ERROR",
@@ -2235,6 +2253,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         messages,
         // ✅ Include prompt metadata from system message response
         promptMetadata: systemMessageResponse.promptMetadata,
+        isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
         modelParameters: {
           model: this.getModelName(),
           maxTokens: internalOptions.provider?.maxTokens,
@@ -2309,7 +2328,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             id: crypto.randomUUID(),
             name: "agent:success",
             type: "agent",
-            startTime: new Date().toISOString(), // Use the original start time
+            startTime: agentStartInfo.startTime, // Use the original start time
             endTime: new Date().toISOString(), // Current time as end time
             status: "completed",
             input: null,
@@ -2405,7 +2424,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             id: crypto.randomUUID(),
             name: "agent:error",
             type: "agent",
-            startTime: new Date().toISOString(), // Use the original start time
+            startTime: agentErrorStartInfo.startTime, // Use the original start time
             endTime: new Date().toISOString(), // Current time as end time
             status: "error",
             level: "ERROR",

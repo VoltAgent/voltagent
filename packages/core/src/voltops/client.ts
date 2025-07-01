@@ -28,15 +28,21 @@ export class VoltOpsClient implements IVoltOpsClient {
   public readonly prompts?: VoltOpsPromptManager;
 
   constructor(options: VoltOpsClientOptions) {
+    // Merge promptCache options properly to preserve defaults
+    const defaultPromptCache = {
+      enabled: true,
+      ttl: 5 * 60, // 5 minutes
+      maxSize: 100,
+    };
+
     this.options = {
       telemetry: true,
       prompts: true,
-      promptCache: {
-        enabled: true,
-        ttl: 5 * 60, // 5 minutes
-        maxSize: 100,
-      },
       ...options,
+      promptCache: {
+        ...defaultPromptCache,
+        ...options.promptCache,
+      },
     };
 
     // Initialize telemetry exporter if enabled
@@ -149,7 +155,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     const voltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
 
     if (!voltOpsClient?.prompts) {
-      // Give user a helpful message instead of throwing error
+      // Give user a helpful message instead of throwing error TODO: fix me supervisor
       console.log(`
 🔥 VoltAgent Prompt Management Available! 
    Agent '${agentName}' can use dynamic prompts from VoltOps console.

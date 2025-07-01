@@ -35,6 +35,16 @@ export type { DynamicValueOptions, DynamicValue, PromptHelper };
 export type InstructionsDynamicValue = string | DynamicValue<string | PromptContent>;
 
 /**
+ * Enhanced dynamic value for models that supports static or dynamic values
+ */
+export type ModelDynamicValue<T> = T | DynamicValue<T>;
+
+/**
+ * Enhanced dynamic value for tools that supports static or dynamic values
+ */
+export type ToolsDynamicValue = (Tool<any> | Toolkit)[] | DynamicValue<(Tool<any> | Toolkit)[]>;
+
+/**
  * Provider options type for LLM configurations
  */
 export type ProviderOptions = {
@@ -107,7 +117,7 @@ export type AgentOptions = {
    * Tools and/or Toolkits that the agent can use
    * Can be static or dynamic based on user context
    */
-  tools?: DynamicValue<(Tool<any> | Toolkit)[]>;
+  tools?: ToolsDynamicValue;
 
   /**
    * Sub-agents that this agent can delegate tasks to
@@ -160,6 +170,10 @@ export type AgentOptions = {
 export interface SystemMessageResponse {
   systemMessages: BaseMessage | BaseMessage[];
   promptMetadata?: {
+    /** Base prompt ID for tracking */
+    prompt_id?: string;
+    /** PromptVersion ID (the actual entity ID) */
+    prompt_version_id?: string;
     name?: string;
     version?: number;
     labels?: string[];
@@ -170,6 +184,7 @@ export interface SystemMessageResponse {
       [key: string]: any;
     };
   };
+  isDynamicInstructions?: boolean;
 }
 
 /**
