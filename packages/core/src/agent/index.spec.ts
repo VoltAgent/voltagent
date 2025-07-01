@@ -1207,6 +1207,287 @@ describe("Agent", () => {
       expect(response.text).toBe("Hello, I am a test agent!");
     });
 
+    it("should include retriever context with dynamic text instructions", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Retrieved dynamic context for text";
+
+      // Create agent with dynamic text instructions
+      const dynamicTextAgent = new TestAgent({
+        id: "dynamic-text-retriever-agent",
+        name: "Dynamic Text Retriever Agent",
+        description: "Agent with dynamic text instructions and retriever",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: ({ userContext }: DynamicValueOptions) => {
+          const mode = userContext.get("mode") || "default";
+          return `You are operating in ${mode} mode with dynamic instructions.`;
+        },
+      });
+
+      await dynamicTextAgent.generateText("Test dynamic text with retrieval", {
+        userContext: new Map([["mode", "testing"]]),
+      });
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system message contains both dynamic instructions and retriever context
+      const systemMessage = mockProvider.lastMessages[0];
+      const systemContent = getStringContent(systemMessage.content);
+
+      expect(systemContent).toContain(
+        "You are operating in testing mode with dynamic instructions",
+      );
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should include retriever context with dynamic chat instructions", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Retrieved dynamic context for chat";
+
+      // Create agent with dynamic chat instructions (returns BaseMessage[])
+      const dynamicChatAgent = new TestAgent({
+        id: "dynamic-chat-retriever-agent",
+        name: "Dynamic Chat Retriever Agent",
+        description: "Agent with dynamic chat instructions and retriever",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: ({ userContext }: DynamicValueOptions) => {
+          const userName = userContext.get("userName") || "User";
+          // Return PromptContent with chat type
+          return {
+            type: "chat" as const,
+            messages: [
+              {
+                role: "system" as const,
+                content: `Hello ${userName}, I am your personalized assistant.`,
+              },
+              {
+                role: "system" as const,
+                content: "I can help you with various tasks.",
+              },
+            ],
+            metadata: {
+              name: "dynamic-chat-prompt",
+              version: 1,
+            },
+          };
+        },
+      });
+
+      await dynamicChatAgent.generateText("Test dynamic chat with retrieval", {
+        userContext: new Map([["userName", "Alice"]]),
+      });
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system messages include both dynamic content and retriever context
+      const messages = mockProvider.lastMessages;
+
+      // Should have multiple system messages
+      const systemMessages = messages.filter((m) => m.role === "system");
+      expect(systemMessages.length).toBeGreaterThan(1);
+
+      // First system message should contain dynamic content
+      expect(getStringContent(systemMessages[0].content)).toContain(
+        "Hello Alice, I am your personalized assistant",
+      );
+
+      // Last system message should contain retriever context
+      const lastSystemMessage = systemMessages[systemMessages.length - 1];
+      expect(getStringContent(lastSystemMessage.content)).toContain("Relevant Context:");
+      expect(getStringContent(lastSystemMessage.content)).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should include retriever context in dynamic chat fallback case", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Retrieved context for fallback";
+
+      // Create agent with dynamic chat instructions that return empty messages (fallback case)
+      const fallbackChatAgent = new TestAgent({
+        id: "fallback-chat-retriever-agent",
+        name: "Fallback Chat Retriever Agent",
+        description: "Agent with empty chat messages triggering fallback",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: (_: DynamicValueOptions) => {
+          // Return PromptContent with empty messages to trigger fallback
+          return {
+            type: "chat" as const,
+            messages: [], // Empty messages will trigger fallback
+            metadata: {
+              name: "empty-chat-prompt",
+              version: 1,
+            },
+          };
+        },
+      });
+
+      await fallbackChatAgent.generateText("Test fallback with retrieval");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system message contains fallback content with retriever context
+      const systemMessage = mockProvider.lastMessages[0];
+      const systemContent = getStringContent(systemMessage.content);
+
+      expect(systemContent).toContain("You are Fallback Chat Retriever Agent");
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should append retriever context to existing system message in chat type", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Additional retrieved context";
+
+      // Create agent with chat instructions that have existing system message
+      const chatWithSystemAgent = new TestAgent({
+        id: "chat-with-system-agent",
+        name: "Chat With System Agent",
+        description: "Agent with existing system message in chat",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: () => ({
+          type: "chat" as const,
+          messages: [
+            {
+              role: "user" as const,
+              content: "Hello assistant",
+            },
+            {
+              role: "assistant" as const,
+              content: "Hello! How can I help you?",
+            },
+            {
+              role: "system" as const,
+              content: "You are a helpful assistant with previous conversation context.",
+            },
+          ],
+          metadata: {
+            name: "chat-with-system",
+            version: 1,
+          },
+        }),
+      });
+
+      await chatWithSystemAgent.generateText("Continue our conversation");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Find the system message and verify it contains both original content and retriever context
+      const messages = mockProvider.lastMessages;
+      const systemMessages = messages.filter((m) => m.role === "system");
+
+      expect(systemMessages.length).toBe(1);
+      const systemContent = getStringContent(systemMessages[0].content);
+
+      expect(systemContent).toContain(
+        "You are a helpful assistant with previous conversation context",
+      );
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should create new system message when chat has no system messages but has retriever context", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "New system message context";
+
+      // Create agent with chat instructions that have no system messages
+      const chatNoSystemAgent = new TestAgent({
+        id: "chat-no-system-agent",
+        name: "Chat No System Agent",
+        description: "Agent with no system messages in chat",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: () => ({
+          type: "chat" as const,
+          messages: [
+            {
+              role: "user" as const,
+              content: "What's the weather like?",
+            },
+            {
+              role: "assistant" as const,
+              content: "I'd be happy to help with weather information.",
+            },
+          ],
+          metadata: {
+            name: "chat-no-system",
+            version: 1,
+          },
+        }),
+      });
+
+      await chatNoSystemAgent.generateText("Tell me about the weather");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify a new system message was created with retriever context
+      const messages = mockProvider.lastMessages;
+      const systemMessages = messages.filter((m) => m.role === "system");
+
+      expect(systemMessages.length).toBe(1);
+      const systemContent = getStringContent(systemMessages[0].content);
+
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+      expect(systemContent).not.toContain("You are Chat No System Agent"); // Should be only context
+    });
+
+    it("should handle VoltOps PromptContent with retriever context", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "VoltOps retrieved context";
+
+      // Create agent that returns VoltOps PromptContent text type
+      const voltOpsAgent = new TestAgent({
+        id: "voltops-retriever-agent",
+        name: "VoltOps Retriever Agent",
+        description: "Agent with VoltOps PromptContent and retriever",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: (_: DynamicValueOptions) => {
+          // Simulate VoltOps prompt fetch returning PromptContent
+          return {
+            type: "text" as const,
+            text: "You are a VoltOps-powered assistant with advanced capabilities.",
+            metadata: {
+              name: "voltops-prompt",
+              version: 2,
+              labels: ["production", "retrieval"],
+              tags: ["assistant", "ai"],
+            },
+          };
+        },
+      });
+
+      await voltOpsAgent.generateText("Help me with VoltOps features");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system message includes VoltOps content and retriever context
+      const systemMessage = mockProvider.lastMessages[0];
+      const systemContent = getStringContent(systemMessage.content);
+
+      expect(systemContent).toContain("You are VoltOps Retriever Agent");
+      expect(systemContent).toContain(
+        "You are a VoltOps-powered assistant with advanced capabilities",
+      );
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+    });
+
     it("should include retriever in full state", () => {
       // Create a mock retriever
       const mockRetriever = createMockRetriever();
@@ -3814,7 +4095,7 @@ describe("Dynamic Instructions Detection", () => {
       name: "VoltOpsAgent",
       llm: new MockProvider({ modelId: "test-model" }),
       model: { modelId: "test-model" },
-      instructions: async ({ prompts }: DynamicValueOptions) => {
+      instructions: async (_: DynamicValueOptions) => {
         // Simulate VoltOps prompt fetch
         return mockPromptContent;
       },

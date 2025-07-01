@@ -317,22 +317,61 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
     const resolvedInstructions = await this.resolveInstructions(dynamicValueOptions);
 
+    // Get retriever context if available (needed for both chat and text types)
+    let retrieverContext: string | null = null;
+    if (this.retriever && input && historyEntryId) {
+      retrieverContext = await this.getRetrieverContext(input, historyEntryId, operationContext);
+    }
+
     // Handle chat type prompts first - these return BaseMessage[]
     if (typeof resolvedInstructions === "object" && resolvedInstructions.type === "chat") {
       if (!resolvedInstructions.messages || resolvedInstructions.messages.length === 0) {
         // Fallback to default instructions if chat messages are empty
+        let fallbackContent = `You are ${this.name}. ${this.instructions}`;
+
+        // Add retriever context to fallback
+        if (retrieverContext) {
+          fallbackContent = `${fallbackContent}\n\nRelevant Context:\n${retrieverContext}`;
+        }
+
         return {
           systemMessages: {
             role: "system",
-            content: `You are ${this.name}. ${this.instructions}`,
+            content: fallbackContent,
           },
           promptMetadata: resolvedInstructions.metadata,
           isDynamicInstructions: typeof this.dynamicInstructions === "function",
         };
       }
 
+      // For chat type with messages, add retriever context to the last system message or create a new one
+      const messagesWithContext = [...resolvedInstructions.messages];
+
+      if (retrieverContext) {
+        // Find the last system message and append context, or create a new system message
+        const lastSystemIndex = messagesWithContext
+          .map((m, i) => ({ message: m, index: i }))
+          .filter(({ message }) => message.role === "system")
+          .pop()?.index;
+
+        if (lastSystemIndex !== undefined) {
+          // Append to the last system message
+          const lastSystemMessage = messagesWithContext[lastSystemIndex];
+          messagesWithContext[lastSystemIndex] = {
+            ...lastSystemMessage,
+            content: `${lastSystemMessage.content}\n\nRelevant Context:\n${retrieverContext}`,
+          };
+        } else {
+          // No system message exists, add a new one with context
+          messagesWithContext.push({
+            role: "system",
+            content: `Relevant Context:\n${retrieverContext}`,
+          });
+        }
+      }
+
       return {
-        systemMessages: resolvedInstructions.messages,
+        systemMessages: messagesWithContext,
         promptMetadata: resolvedInstructions.metadata,
         isDynamicInstructions: typeof this.dynamicInstructions === "function",
       };
@@ -377,16 +416,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     let finalInstructions = baseInstructions;
 
-    // If retriever exists and we have input, get context
-    if (this.retriever && input && historyEntryId) {
-      const contextContent = await this.getRetrieverContext(
-        input,
-        historyEntryId,
-        operationContext,
-      );
-      if (contextContent) {
-        finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${contextContent}`;
-      }
+    // Add retriever context for text type prompts
+    if (retrieverContext) {
+      finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${retrieverContext}`;
     }
 
     // If the agent has sub-agents, generate supervisor system message
@@ -990,7 +1022,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           >,
           systemPrompt: systemMessages,
           messages,
-          // ✅ Include prompt metadata from system message response
           promptMetadata: systemMessageResponse.promptMetadata,
           isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
           modelParameters: {
@@ -1410,7 +1441,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         >,
         systemPrompt: systemMessages,
         messages,
-        // ✅ Include prompt metadata from system message response
         promptMetadata: systemMessageResponse.promptMetadata,
         isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
         modelParameters: {
@@ -1960,7 +1990,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           >,
           systemPrompt: systemMessages,
           messages,
-          // ✅ Include prompt metadata from system message response
           promptMetadata: systemMessageResponse.promptMetadata,
           isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
           modelParameters: {
@@ -2251,7 +2280,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         >,
         systemPrompt: systemMessages,
         messages,
-        // ✅ Include prompt metadata from system message response
         promptMetadata: systemMessageResponse.promptMetadata,
         isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
         modelParameters: {

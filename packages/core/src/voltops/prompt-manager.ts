@@ -134,22 +134,10 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
       },
     };
 
-    // Add text or messages based on type
-    if (typeof content === "string") {
-      // Simple text content
+    if (response.type === "chat") {
+      promptContent.messages = content.messages;
+    } else if (response.type === "text") {
       promptContent.text = content;
-    } else if (content && typeof content === "object") {
-      // Structured content (could be PromptContent already)
-      if (content.type === "chat" && content.messages) {
-        promptContent.type = "chat";
-        promptContent.messages = content.messages;
-      } else if (content.type === "text" && content.text) {
-        promptContent.type = "text";
-        promptContent.text = content.text;
-      } else if (content.text) {
-        // Fallback for text content
-        promptContent.text = content.text;
-      }
     }
 
     return promptContent;
