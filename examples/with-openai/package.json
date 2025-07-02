@@ -1,0 +1,26 @@
+{
+  "name": "voltagent-example-with-openai",
+  "private": true,
+  "keywords": ["voltagent", "ai", "agent"],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src ",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "dependencies": {
+    "@voltagent/cli": "^0.1.9",
+    "@voltagent/core": "^0.1.47",
+    "@voltagent/openai-ai": "workspace:*",
+    "openai": "^4.0.0",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
