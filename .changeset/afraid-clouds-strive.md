@@ -1,5 +1,5 @@
 ---
-"@voltagent/core": minor
+"@voltagent/core": patch
 ---
 
 feat: add enterprise-grade VoltOps Prompt Management platform with team collaboration and analytics
