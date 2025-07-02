@@ -23,7 +23,7 @@ import { VoltOpsPromptManagerImpl } from "./prompt-manager";
  * telemetry export and prompt management functionality.
  */
 export class VoltOpsClient implements IVoltOpsClient {
-  public readonly options: VoltOpsClientOptions;
+  public readonly options: VoltOpsClientOptions & { baseUrl: string };
   public readonly telemetry?: VoltAgentExporter;
   public readonly prompts?: VoltOpsPromptManager;
 
@@ -39,6 +39,7 @@ export class VoltOpsClient implements IVoltOpsClient {
       telemetry: true,
       prompts: true,
       ...options,
+      baseUrl: options.baseUrl || "https://api.voltagent.dev",
       promptCache: {
         ...defaultPromptCache,
         ...options.promptCache,

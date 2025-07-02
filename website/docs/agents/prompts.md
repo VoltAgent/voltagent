@@ -4,24 +4,6 @@
 
 VoltAgent provides a three-tier prompt management system that scales from simple prototypes to enterprise-grade production deployments. Choose the approach that best fits your current needs and easily migrate as your requirements grow.
 
-### Quick Decision Guide
-
-```
-Start here: Are you prototyping or building an MVP?
-├─ YES → Use Static Instructions
-│  └─ Ready for context-aware behavior?
-│     ├─ YES → Migrate to Dynamic Instructions
-│     └─ NO → Stay with Static
-│
-└─ NO → Is this a team project?
-   ├─ YES → Do non-developers need to edit prompts?
-   │  ├─ YES → Use VoltOps
-   │  └─ NO → Use Dynamic Instructions, consider VoltOps later
-   │
-   └─ NO → Use Dynamic Instructions for flexibility
-      └─ Need analytics/version control later? → Migrate to VoltOps
-```
-
 ### The Three Approaches
 
 | Approach                 | Best For                 | Setup Time | Team Size       | Flexibility |
@@ -171,7 +153,6 @@ VoltOps provides a complete prompt management platform with version control, tea
 4. **Add to your .env file**:
 
 ```bash
-VOLTOPS_BASE_URL=https://api.voltagent.dev
 VOLTOPS_PUBLIC_KEY=pk_your_public_key_here
 VOLTOPS_SECRET_KEY=sk_your_secret_key_here
 ```
@@ -227,7 +208,6 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const voltOpsClient = new VoltOpsClient({
-  baseUrl: process.env.VOLTOPS_BASE_URL || "",
   publicKey: process.env.VOLTOPS_PUBLIC_KEY || "",
   secretKey: process.env.VOLTOPS_SECRET_KEY || "",
   prompts: true,
@@ -758,7 +738,6 @@ console.log("Secret Key:", process.env.VOLTOPS_SECRET_KEY ? "Set" : "Missing");
 ```typescript
 // Test VoltOps connection outside of agent
 const voltOpsClient = new VoltOpsClient({
-  baseUrl: process.env.VOLTOPS_BASE_URL || "",
   publicKey: process.env.VOLTOPS_PUBLIC_KEY || "",
   secretKey: process.env.VOLTOPS_SECRET_KEY || "",
 });

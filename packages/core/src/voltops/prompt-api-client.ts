@@ -19,7 +19,7 @@ export class VoltOpsPromptApiClient implements PromptApiClient {
   private readonly fetchFn: typeof fetch;
 
   constructor(options: VoltOpsClientOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/$/, ""); // Remove trailing slash
+    this.baseUrl = (options.baseUrl || "https://api.voltagent.dev").replace(/\/$/, ""); // Remove trailing slash
     this.publicKey = options.publicKey;
     this.secretKey = options.secretKey;
     this.fetchFn = options.fetch || fetch;

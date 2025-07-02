@@ -469,7 +469,6 @@ const dynamicAgent = new Agent({
 
 // Option 3: VoltOps Management (enterprise-grade)
 const voltOpsClient = new VoltOpsClient({
-  baseUrl: process.env.VOLTOPS_BASE_URL || "",
   publicKey: process.env.VOLTOPS_PUBLIC_KEY || "",
   secretKey: process.env.VOLTOPS_SECRET_KEY || "",
 });

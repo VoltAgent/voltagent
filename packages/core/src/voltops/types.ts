@@ -55,8 +55,8 @@ export type DynamicValue<T> = (options: DynamicValueOptions) => Promise<T> | T;
  * VoltOps client configuration options
  */
 export type VoltOpsClientOptions = {
-  /** Base URL of the VoltOps API */
-  baseUrl: string;
+  /** Base URL of the VoltOps API (default: https://api.voltagent.dev) */
+  baseUrl?: string;
   /** Public API key */
   publicKey: string;
   /** Secret API key */
@@ -152,7 +152,7 @@ export interface VoltOpsClient {
   /** Telemetry exporter (for backward compatibility) */
   telemetry?: VoltAgentExporter;
   /** Configuration options */
-  options: VoltOpsClientOptions;
+  options: VoltOpsClientOptions & { baseUrl: string };
 
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;
