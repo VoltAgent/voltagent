@@ -77,6 +77,9 @@ export function TwoBlocks() {
                 <span className="px-3 py-1 bg-[#00d992]/10 text-[#00d992] text-xs font-medium rounded-full border border-[#00d992]/20">
                   Workflows
                 </span>
+                <span className="px-3 py-1 bg-[#00d992]/10 text-[#00d992] text-xs font-medium rounded-full border border-[#00d992]/20">
+                  MCP
+                </span>
               </div>
 
               {/* Language Icon */}

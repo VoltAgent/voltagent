@@ -122,6 +122,14 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
+            <Link
+              to="/pricing/"
+              className={`${styles.navLink}   ${
+                isActive("(launch-week-june-25/") ? styles.active : ""
+              }`}
+            >
+              PRICING
+            </Link>
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
                 RESOURCES
@@ -405,6 +413,14 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+          <Link
+            to="/pricing/"
+            className={`${styles.mobileNavLink} ${
+              isActive("/pricing/") ? styles.active : ""
+            }`}
+          >
+            PRICING
+          </Link>
           <div className={styles.mobileNavLink}>
             <button
               type="button"

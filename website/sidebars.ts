@@ -57,7 +57,12 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "RAG",
-      items: ["rag/overview", "rag/custom-retrievers", "rag/chroma"],
+      items: [
+        "rag/overview",
+        "rag/custom-retrievers",
+        "rag/chroma",
+        "rag/pinecone",
+      ],
     },
     {
       type: "category",

@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/postgres",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "VoltAgent PostgreSQL - PostgreSQL Memory provider integration for VoltAgent",
   "license": "MIT",
   "exports": {
@@ -20,7 +20,11 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "npm run test:integration:setup && vitest run --config vitest.integration.config.mts && npm run test:integration:teardown",
+    "test:integration:ci": "vitest run --config vitest.integration.config.mts",
+    "test:integration:setup": "docker compose -f docker-compose.test.yaml up -d && sleep 10",
+    "test:integration:teardown": "docker compose -f docker-compose.test.yaml down -v"
   },
   "dependencies": {
     "@voltagent/core": "^0.1.45",

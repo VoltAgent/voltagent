@@ -1,5 +1,59 @@
 # @voltagent/core
 
+## 0.1.48
+
+### Patch Changes
+
+- [#296](https://github.com/VoltAgent/voltagent/pull/296) [`4621e09`](https://github.com/VoltAgent/voltagent/commit/4621e09118fc652d8a05f40758b02d5108e38967) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - The `UserContext` was properly propagated through tools and hooks, but was not being returned in the final response from `.generateText()` and `.generateObject()` methods. This prevented post-processing logic from accessing the UserContext data.
+
+  **Before**:
+
+  ```typescript
+  const result = await agent.generateText(...);
+
+  result.userContext; // ❌ Missing userContext
+  ```
+
+  **After**:
+
+  ```typescript
+  const result = await agent.generateText(...);
+
+  return result.userContext; // ✅ Includes userContext
+
+  **How users can see the changes**:
+
+  Now users can access the `userContext` in the response from all agent methods:
+
+  // Set custom context before calling the agent
+  const customContext = new Map();
+  customContext.set("sessionId", "user-123");
+  customContext.set("requestId", "req-456");
+
+  // generateText now returns userContext
+  const result = await agent.generateText("Hello", {
+    userContext: customContext,
+  });
+
+  // Access the userContext from the response
+  console.log(result.userContext.get("sessionId")); // 'user-123'
+  console.log(result.userContext.get("requestId")); // 'req-456'
+
+  // GenerateObject
+  const objectResult = await agent.generateObject("Create a summary", schema, {
+    userContext: customContext,
+  });
+  console.log(objectResult.userContext.get("sessionId")); // 'user-123'
+
+  // Streaming methods
+  const streamResult = await agent.streamText("Hello", {
+    userContext: customContext,
+  });
+  console.log(streamResult.userContext?.get("sessionId")); // 'user-123'
+  ```
+
+  Fixes: [#283](https://github.com/VoltAgent/voltagent/issues/283)
+
 ## 0.1.47
 
 ### Patch Changes

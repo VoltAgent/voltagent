@@ -1,0 +1,20 @@
+services:
+  postgres-test:
+    image: postgres:16
+    container_name: 'voltagent-postgres-test'
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: voltagent_test
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d voltagent_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  test_postgres_data: 

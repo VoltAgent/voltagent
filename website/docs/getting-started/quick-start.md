@@ -62,11 +62,23 @@ Let's create your next AI application...
 ? What is your project named? (my-voltagent-app) _
 ```
 
-This command will ask you a few questions and automatically set up a VoltAgent project based on your preferences. Once the setup is complete, navigate to your project directory and start your application:
+This command will ask you a few questions and automatically set up a VoltAgent project based on your preferences. Once the setup is complete, navigate to your project directory:
 
 ```bash
 cd my-voltagent-app
 ```
+
+### Add Your API Key
+
+Create or edit the `.env` file in your project root and add your OpenAI API key:
+
+```bash
+OPENAI_API_KEY=your-api-key-here
+```
+
+> **Get your API key:** Visit [OpenAI Platform](https://platform.openai.com/api-keys) to obtain your API key.
+
+### Start Your Application
 
 <Tabs>
   <TabItem value="npm" label="npm" default>

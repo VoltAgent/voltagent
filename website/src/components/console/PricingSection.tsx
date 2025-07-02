@@ -7,7 +7,21 @@ import { motion } from "framer-motion";
 import React, { useState } from "react";
 import PricingCalculatorModal from "./PricingCalculatorModal";
 
-const PricingSection = () => {
+interface PricingSectionProps {
+  primaryColor?: string;
+  primaryColorHover?: string;
+  primaryColorBorder?: string;
+  primaryColorShadow?: string;
+  primaryColorText?: string;
+}
+
+const PricingSection = ({
+  primaryColor = "emerald-400",
+  primaryColorHover = "emerald-300",
+  primaryColorBorder = "emerald-500/30",
+  primaryColorShadow = "emerald-400/20",
+  primaryColorText = "emerald-500",
+}: PricingSectionProps) => {
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const pricingTiers = [
     {
@@ -216,10 +230,82 @@ const PricingSection = () => {
     },
   ];
 
+  // Create color mappings for dynamic classes
+  const getColorClasses = (colorProp: string) => {
+    const colorMap: Record<string, Record<string, string>> = {
+      "orange-400": {
+        text: "text-orange-400",
+        bg: "bg-orange-400",
+        border: "border-orange-400",
+        hover: "hover:bg-orange-300",
+        shadow: "shadow-orange-400/20",
+      },
+      "orange-300": {
+        text: "text-orange-300",
+        bg: "bg-orange-300",
+        border: "border-orange-300",
+        hover: "hover:bg-orange-300",
+        shadow: "shadow-orange-300/20",
+      },
+      "orange-500": {
+        text: "text-orange-500",
+        bg: "bg-orange-500",
+        border: "border-orange-500",
+        hover: "hover:bg-orange-400",
+        shadow: "shadow-orange-500/20",
+      },
+      "orange-500/30": {
+        text: "text-orange-500",
+        bg: "bg-orange-500/30",
+        border: "border-orange-500/30",
+        hover: "hover:bg-orange-500/40",
+        shadow: "shadow-orange-500/30",
+      },
+      "orange-400/20": {
+        text: "text-orange-400",
+        bg: "bg-orange-400/20",
+        border: "border-orange-400/20",
+        hover: "hover:bg-orange-400/30",
+        shadow: "shadow-orange-400/20",
+      },
+      "emerald-400": {
+        text: "text-emerald-400",
+        bg: "bg-emerald-400",
+        border: "border-emerald-400",
+        hover: "hover:bg-emerald-300",
+        shadow: "shadow-emerald-400/20",
+      },
+      "emerald-300": {
+        text: "text-emerald-300",
+        bg: "bg-emerald-300",
+        border: "border-emerald-300",
+        hover: "hover:bg-emerald-300",
+        shadow: "shadow-emerald-300/20",
+      },
+      "emerald-500": {
+        text: "text-emerald-500",
+        bg: "bg-emerald-500",
+        border: "border-emerald-500",
+        hover: "hover:bg-emerald-400",
+        shadow: "shadow-emerald-500/20",
+      },
+    };
+
+    return colorMap[colorProp] || colorMap["emerald-400"];
+  };
+
+  const primaryColorClasses = getColorClasses(primaryColor);
+  const primaryColorHoverClasses = getColorClasses(primaryColorHover);
+  const primaryColorTextClasses = getColorClasses(primaryColorText);
+  const primaryColorBorderClasses = getColorClasses(primaryColorBorder);
+  const primaryColorShadowClasses = getColorClasses(primaryColorShadow);
+
   const renderFeatureValue = (value: boolean | string) => {
     if (typeof value === "boolean") {
       return value ? (
-        <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mx-auto" />
+        <CheckCircleIcon
+          className={`w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 ${primaryColorClasses.text} mx-auto`}
+        />
       ) : (
         <XMarkIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-gray-500 mx-auto" />
       );
@@ -227,7 +313,9 @@ const PricingSection = () => {
 
     if (value === "soon") {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${primaryColorTextClasses.bg}/20 ${primaryColorTextClasses.text} border ${primaryColorBorderClasses.border}`}
+        >
           Soon
         </span>
       );
@@ -241,25 +329,26 @@ const PricingSection = () => {
   };
 
   return (
-    <section className="relative w-full py-8 landing-xs:py-6 landing-sm:py-12 landing-md:py-16 landing-lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6">
-        {/* Header */}
-        <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12">
-              <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
-                Simple, Transparent Pricing
-              </h2>
-              <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
-                Start free, scale as you grow.
-              </p>
-            </div>
-          </motion.div>
-        </div>
+    <section className="relative w-full py-8 landing-xs:py-6 landing-sm:py-12 landing-md:py-16 ">
+      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6 landing-md:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          data-section="voltops-pricing"
+        >
+          <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12">
+            <h2
+              className={`text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl ${primaryColorTextClasses.text} font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4`}
+            >
+              <span className="text-[#DCDCDC]">Simple, Transparent</span>{" "}
+              VoltOps <span className="text-[#DCDCDC]">Pricing</span>
+            </h2>
+            <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
+              Start free, scale as you grow.
+            </p>
+          </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 landing-md:grid-cols-3 gap-4 landing-xs:gap-3 landing-sm:gap-6 landing-md:gap-8 mb-10 landing-xs:mb-8 landing-sm:mb-12 landing-md:mb-16">
           {pricingTiers.map((tier, index) => (
@@ -268,9 +357,11 @@ const PricingSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative rounded-lg border-solid border-2 bg-[#191c24] backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 ${
+              className={`relative rounded-lg border-solid border-2 bg-[#191c24] backdrop-blur-sm transition-all duration-300 hover:${
+                primaryColorClasses.border
+              }/50 ${
                 tier.popular
-                  ? "border-emerald-400 shadow-lg shadow-emerald-400/20"
+                  ? `${primaryColorClasses.border} shadow-lg ${primaryColorShadowClasses.shadow}`
                   : "border-gray-700/50"
               }`}
             >
@@ -298,8 +389,8 @@ const PricingSection = () => {
                   }}
                   className={`w-full inline-flex mb-4 landing-xs:mb-3 landing-sm:mb-6 items-center justify-center no-underline border-solid border font-semibold rounded transition-colors cursor-pointer px-3 landing-xs:px-2 landing-sm:px-4 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base ${
                     tier.buttonVariant === "primary"
-                      ? "bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300"
-                      : "bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20"
+                      ? `${primaryColorClasses.bg} text-gray-900 ${primaryColorClasses.border} ${primaryColorHoverClasses.hover}`
+                      : `${primaryColorClasses.bg}/10 ${primaryColorClasses.text} ${primaryColorBorderClasses.border} hover:${primaryColorClasses.bg}/20`
                   }`}
                 >
                   {tier.buttonText}
@@ -317,7 +408,9 @@ const PricingSection = () => {
                     )}
                   </div>
                   {tier.name === "Free" && (
-                    <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1">
+                    <p
+                      className={`${primaryColorClasses.text} text-xs landing-xs:text-xs mt-1`}
+                    >
                       No credit card required
                     </p>
                   )}
@@ -327,12 +420,14 @@ const PricingSection = () => {
                   {tier.features.map((feature) => (
                     <div key={`${tier.name}-${feature}`}>
                       <div className="flex items-start">
-                        <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0" />
+                        <CheckCircleIcon
+                          className={`w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 ${primaryColorClasses.text} mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0`}
+                        />
                         <div className="flex-1 flex items-center justify-between">
                           <span
                             className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
                               feature === "Enterprise only features"
-                                ? "text-emerald-500 font-medium"
+                                ? `${primaryColorTextClasses.text} font-medium`
                                 : "text-gray-300"
                             }`}
                           >
@@ -348,7 +443,7 @@ const PricingSection = () => {
                               }}
                               role="button"
                               tabIndex={0}
-                              className="text-emerald-400 hover:text-emerald-300 text-xs cursor-pointer transition-colors ml-2"
+                              className={`${primaryColorClasses.text} hover:${primaryColorHoverClasses.text} text-xs cursor-pointer transition-colors ml-2`}
                             >
                               Calculate
                             </span>
@@ -356,7 +451,9 @@ const PricingSection = () => {
                         </div>
                       </div>
                       {feature === "Up to 10 seats included" && (
-                        <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8">
+                        <p
+                          className={`${primaryColorClasses.text} text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8`}
+                        >
                           $50 per additional seat
                         </p>
                       )}
@@ -380,7 +477,9 @@ const PricingSection = () => {
                   <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
                     Free
                   </th>
-                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-emerald-400 bg-[#191c24] w-[26.67%]">
+                  <th
+                    className={`text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold ${primaryColorClasses.text} bg-[#191c24] w-[26.67%]`}
+                  >
                     Pro
                   </th>
                   <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
@@ -394,7 +493,7 @@ const PricingSection = () => {
                     <tr className="border-b border-gray-700/30">
                       <td
                         colSpan={4}
-                        className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-emerald-400 bg-gray-800/30"
+                        className={`py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold ${primaryColorClasses.text} bg-gray-800/30`}
                       >
                         {category.category}
                       </td>
@@ -441,7 +540,7 @@ const PricingSection = () => {
               href="https://forms.gle/BrnyFF4unP9pZxAh7"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-emerald-400 cursor-pointer hover:underline"
+              className={`${primaryColorClasses.text} cursor-pointer hover:underline`}
             >
               Contact us
             </a>{" "}
