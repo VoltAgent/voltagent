@@ -284,7 +284,9 @@ describe("VoltOpsPromptManagerImpl", () => {
               name: "disabled-prompt",
               version: "latest",
             });
-          } else if (request.promptName === "normal-prompt") {
+          }
+
+          if (request.promptName === "normal-prompt") {
             return Promise.resolve({
               prompt: "Normal prompt",
               type: "text",
@@ -535,7 +537,10 @@ describe("VoltOpsPromptManagerImpl", () => {
   describe("getPrompt", () => {
     beforeEach(() => {
       mockApiClient.fetchPrompt.mockResolvedValue({
-        prompt: "Hello {{name}}!",
+        prompt: {
+          type: "text",
+          text: "Hello {{name}}!",
+        },
         type: "text",
         name: "test-prompt",
         version: "latest",
