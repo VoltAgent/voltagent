@@ -137,7 +137,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     if (response.type === "chat") {
       promptContent.messages = content.messages;
     } else if (response.type === "text") {
-      promptContent.text = content;
+      promptContent.text = content.text;
     }
 
     return promptContent;

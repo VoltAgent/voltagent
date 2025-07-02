@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
       label: "Agents",
       items: [
         "agents/overview",
+        "agents/prompts",
         "agents/tools",
         "agents/mcp",
         "agents/hooks",
