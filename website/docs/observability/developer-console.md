@@ -91,14 +91,11 @@ new VoltAgent({
   voltOpsClient: new VoltOpsClient({
     publicKey: voltOpsPublicKey,
     secretKey: voltOpsSecretKey,
-    baseUrl: "https://api.voltagent.dev", // Default URL for the VoltAgent cloud service
-    observability: true, // Enable observability export (default: true)
-    prompts: true, // Enable prompt management (default: true)
   }),
   // highlight-end
 });
 
-// Your agent is now configured for full observability in the VoltAgent cloud
+// Your agent is now configured for full observability in the VoltOps cloud
 // and can use dynamic prompts from the VoltOps dashboard.
 ```
 
