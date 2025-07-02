@@ -469,8 +469,8 @@ const dynamicAgent = new Agent({
 
 // Option 3: VoltOps Management (enterprise-grade)
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY || "",
-  secretKey: process.env.VOLTOPS_SECRET_KEY || "",
+  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+  secretKey: process.env.VOLTOPS_SECRET_KEY,
 });
 
 const managedAgent = new Agent({

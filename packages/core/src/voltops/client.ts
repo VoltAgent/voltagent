@@ -28,6 +28,9 @@ export class VoltOpsClient implements IVoltOpsClient {
   public readonly prompts?: VoltOpsPromptManager;
 
   constructor(options: VoltOpsClientOptions) {
+    // Validate API keys
+    this.validateApiKeys(options);
+
     // Merge promptCache options properly to preserve defaults
     const defaultPromptCache = {
       enabled: true,
@@ -51,8 +54,8 @@ export class VoltOpsClient implements IVoltOpsClient {
       try {
         this.observability = new VoltAgentExporterClass({
           baseUrl: this.options.baseUrl,
-          publicKey: this.options.publicKey,
-          secretKey: this.options.secretKey,
+          publicKey: this.options.publicKey || "",
+          secretKey: this.options.secretKey || "",
           fetch: this.options.fetch,
         });
         devLogger.info("[VoltOpsClient] Observability exporter initialized");
@@ -216,6 +219,57 @@ export class VoltOpsClient implements IVoltOpsClient {
         };
       },
     };
+  }
+
+  /**
+   * Validate API keys and provide helpful error messages
+   */
+  private validateApiKeys(options: VoltOpsClientOptions): void {
+    const { publicKey, secretKey } = options;
+
+    // Check if keys are provided
+    if (!publicKey || publicKey.trim() === "") {
+      devLogger.warn(`
+⚠️  VoltOps Warning: Missing publicKey
+   
+   VoltOps features will be disabled. To enable:
+   
+   1. Get your API keys: https://console.voltagent.dev/settings/projects
+   2. Add to environment:
+      VOLTOPS_PUBLIC_KEY=pk_your_public_key_here
+   
+   3. Initialize VoltOpsClient:
+      const voltOpsClient = new VoltOpsClient({
+        publicKey: process.env.VOLTOPS_PUBLIC_KEY!,
+        secretKey: process.env.VOLTOPS_SECRET_KEY!
+      });
+      `);
+      return;
+    }
+
+    if (!secretKey || secretKey.trim() === "") {
+      devLogger.warn(`
+⚠️  VoltOps Warning: Missing secretKey
+   
+   VoltOps features will be disabled. To enable:
+   
+   1. Get your API keys: https://console.voltagent.dev/settings/projects
+   2. Add to environment:
+      VOLTOPS_SECRET_KEY=sk_your_secret_key_here
+      `);
+      return;
+    }
+
+    // Validate key formats (optional - helps catch common mistakes)
+    if (!publicKey.startsWith("pk_")) {
+      devLogger.warn("⚠️  VoltOps Warning: publicKey should start with 'pk_'");
+    }
+
+    if (!secretKey.startsWith("sk_")) {
+      devLogger.warn("⚠️  VoltOps Warning: secretKey should start with 'sk_'");
+    }
+
+    devLogger.info("[VoltOpsClient] API keys validated successfully");
   }
 
   /**

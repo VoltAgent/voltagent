@@ -208,8 +208,8 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY || "",
-  secretKey: process.env.VOLTOPS_SECRET_KEY || "",
+  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+  secretKey: process.env.VOLTOPS_SECRET_KEY,
   prompts: true,
   promptCache: {
     enabled: true,
@@ -272,6 +272,37 @@ This approach is useful when you have agents with different VoltOps configuratio
 :::
 
 **💡 Tip**: You can also find complete usage examples in the prompt's **Usage tab** in the console interface, with copy-ready code snippets for different scenarios.
+
+:::tip Direct VoltOpsClient Access
+You can also access prompts directly from the VoltOpsClient outside of agent instructions, which is useful for testing and debugging:
+
+```typescript
+// Direct access for testing or utility functions
+const voltOpsClient = new VoltOpsClient({
+  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+  secretKey: process.env.VOLTOPS_SECRET_KEY,
+});
+
+// Get prompt directly
+const promptContent = await voltOpsClient.prompts.getPrompt({
+  promptName: "customer-support-prompt",
+  variables: {
+    companyName: "VoltAgent Corp",
+    tone: "friendly and professional",
+    supportLevel: "premium",
+  },
+});
+
+console.log("Prompt content:", promptContent);
+```
+
+This approach is perfect for:
+
+- Testing prompts independently
+- Building prompt preview tools
+- Dynamic prompt selection logic
+- Utility functions that need prompt access
+  :::
 
 ### Step 4: Create a New Version
 
@@ -570,20 +601,6 @@ instructions: async ({ prompts }) => {
 };
 ```
 
-**Handle network failures gracefully:**
-
-```typescript
-const voltOpsClient = new VoltOpsClient({
-  // ... config
-  retryPolicy: {
-    maxRetries: 3,
-    baseDelay: 1000, // 1 second
-    maxDelay: 10000, // 10 seconds
-  },
-  fallbackEnabled: true,
-});
-```
-
 ### Performance Optimization
 
 **Strategic caching configuration:**
@@ -620,20 +637,6 @@ await Promise.all(criticalPrompts.map((name) => prompts.getPrompt({ promptName: 
 
 ### Security Best Practices
 
-**Environment variable management:**
-
-```bash
-# .env.development
-VOLTOPS_BASE_URL=https://api-dev.voltagent.dev
-VOLTOPS_PUBLIC_KEY=pk_dev_...
-VOLTOPS_SECRET_KEY=sk_dev_...
-
-# .env.production
-VOLTOPS_BASE_URL=https://api.voltagent.dev
-VOLTOPS_PUBLIC_KEY=pk_prod_...
-VOLTOPS_SECRET_KEY=sk_prod_...
-```
-
 **Input sanitization for template variables:**
 
 ```typescript
@@ -653,20 +656,6 @@ instructions: async ({ prompts, userContext }) => {
     },
   });
 };
-```
-
-**API key rotation strategy:**
-
-```typescript
-// Implement key rotation without downtime
-const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-  secretKey: process.env.VOLTOPS_SECRET_KEY,
-  fallbackKeys: {
-    publicKey: process.env.VOLTOPS_PUBLIC_KEY_BACKUP,
-    secretKey: process.env.VOLTOPS_SECRET_KEY_BACKUP,
-  },
-});
 ```
 
 ## 6. Troubleshooting
@@ -738,8 +727,8 @@ console.log("Secret Key:", process.env.VOLTOPS_SECRET_KEY ? "Set" : "Missing");
 ```typescript
 // Test VoltOps connection outside of agent
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY || "",
-  secretKey: process.env.VOLTOPS_SECRET_KEY || "",
+  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+  secretKey: process.env.VOLTOPS_SECRET_KEY,
 });
 
 const promptManager = voltOpsClient.prompts;
@@ -817,31 +806,6 @@ const agent = new Agent({
 ```
 
 **Why**: Non-technical team members need to edit prompts, you need approval workflows, and analytics are important.
-
-### Migration Checklist
-
-**Moving from Static → Dynamic:**
-
-- [ ] Identify what context your agent needs
-- [ ] Refactor instructions to be a function
-- [ ] Add userContext parameter to agent calls
-- [ ] Test with different context values
-
-**Moving from Dynamic → VoltOps:**
-
-- [ ] Sign up for VoltOps account
-- [ ] Set up API keys in environment variables
-- [ ] Create your first prompt in VoltOps console
-- [ ] Add VoltOpsClient to your agent configuration
-- [ ] Test prompt fetching with fallback handling
-- [ ] Set up environment-specific labels
-
-**Moving from Static → VoltOps (skip Dynamic):**
-
-- [ ] Follow VoltOps setup steps above
-- [ ] Convert static instructions to VoltOps prompts
-- [ ] Add error handling and fallbacks
-- [ ] Test thoroughly before production deployment
 
 ### Quick Start Recommendations
 

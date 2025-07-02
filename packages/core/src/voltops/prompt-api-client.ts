@@ -20,8 +20,8 @@ export class VoltOpsPromptApiClient implements PromptApiClient {
 
   constructor(options: VoltOpsClientOptions) {
     this.baseUrl = (options.baseUrl || "https://api.voltagent.dev").replace(/\/$/, ""); // Remove trailing slash
-    this.publicKey = options.publicKey;
-    this.secretKey = options.secretKey;
+    this.publicKey = options.publicKey || "";
+    this.secretKey = options.secretKey || "";
     this.fetchFn = options.fetch || fetch;
   }
 

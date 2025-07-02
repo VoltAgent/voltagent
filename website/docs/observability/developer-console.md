@@ -108,8 +108,8 @@ The `VoltOpsClient` offers several configuration options:
 
 ```typescript
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
-  secretKey: process.env.VOLTAGENT_SECRET_KEY!,
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
   baseUrl: "https://api.voltagent.dev", // Optional: Custom API endpoint
   observability: true, // Enable/disable observability export
   prompts: true, // Enable/disable prompt management
@@ -132,8 +132,8 @@ const specificAgent = new Agent({
   model: openai("gpt-4o-mini"),
   // highlight-start
   voltOpsClient: new VoltOpsClient({
-    publicKey: process.env.SPECIALIZED_PUBLIC_KEY!,
-    secretKey: process.env.SPECIALIZED_SECRET_KEY!,
+    publicKey: process.env.SPECIALIZED_PUBLIC_KEY,
+    secretKey: process.env.SPECIALIZED_SECRET_KEY,
     // This agent has its own VoltOps configuration
   }),
   // highlight-end

@@ -57,10 +57,42 @@ export type DynamicValue<T> = (options: DynamicValueOptions) => Promise<T> | T;
 export type VoltOpsClientOptions = {
   /** Base URL of the VoltOps API (default: https://api.voltagent.dev) */
   baseUrl?: string;
-  /** Public API key */
-  publicKey: string;
-  /** Secret API key */
-  secretKey: string;
+
+  /**
+   * Public API key for VoltOps authentication
+   *
+   * @description Your VoltOps public key used for API authentication and prompt management.
+   * This key is safe to use in client-side applications as it only provides read access.
+   *
+   * @format Should start with `pk_` prefix (e.g., `pk_1234567890abcdef`)
+   *
+   * @example
+   * ```typescript
+   * publicKey: process.env.VOLTOPS_PUBLIC_KEY
+   * ```
+   *
+   *
+   * @obtain Get your API keys from: https://console.voltagent.dev/settings/projects
+   */
+  publicKey?: string;
+
+  /**
+   * Secret API key for VoltOps authentication
+   *
+   * @description Your VoltOps secret key used for secure API operations and analytics.
+   * This key provides full access to your VoltOps project and should be kept secure.
+   *
+   * @format Should start with `sk_` prefix (e.g., `sk_abcdef1234567890`)
+   *
+   * @example
+   * ```typescript
+   * secretKey: process.env.VOLTOPS_SECRET_KEY
+   * ```
+   *
+   *
+   * @obtain Get your API keys from: https://console.voltagent.dev/settings/projects
+   */
+  secretKey?: string;
   /** Custom fetch implementation (optional) */
   fetch?: typeof fetch;
   /** Enable observability export (default: true) */
