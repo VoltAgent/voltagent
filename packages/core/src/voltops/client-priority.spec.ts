@@ -192,9 +192,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       });
 
       // Should show helpful console messages
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("VoltAgent Dynamic Prompts Priority System"),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("VoltOps Prompts"));
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining("Using fallback instructions for agent 'TestAgent'"),
       );

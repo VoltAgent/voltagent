@@ -246,7 +246,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (options.voltOpsClient) {
       if (options.voltOpsClient.observability) {
         chosenExporter = options.voltOpsClient.observability;
-        devLogger.info(
+        devLogger.debug(
           `[Agent ${this.id}] VoltOpsClient initialized with observability and prompt management`,
         );
       }
@@ -646,7 +646,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (this.subAgentManager.hasSubAgents()) {
       // Create a real-time event forwarder for SubAgent events
       const forwardEvent = async (event: StreamEvent) => {
-        devLogger.info(
+        devLogger.debug(
           `[Agent ${this.id}] Received SubAgent event: ${event.type} from ${event.subAgentName}`,
         );
 
@@ -958,7 +958,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 for (const [subAgentId, status] of subAgentStatus.entries()) {
                   if (status.isActive && !status.isCompleted) {
                     status.isCompleted = true;
-                    devLogger.info(`[Enhanced Stream] SubAgent ${subAgentId} marked as completed`);
+                    devLogger.debug(`[Enhanced Stream] SubAgent ${subAgentId} marked as completed`);
                   }
                 }
 
@@ -1522,7 +1522,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
 
     const internalStreamEventForwarder = async (event: StreamEvent) => {
-      devLogger.info("[Real-time Stream] Received SubAgent event:", {
+      devLogger.debug("[Real-time Stream] Received SubAgent event:", {
         eventType: event.type,
         subAgentId: event.subAgentId,
         subAgentName: event.subAgentName,
@@ -1540,7 +1540,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         (event.type === "text-delta" && event.data?.textDelta?.includes("."))
       ) {
         // This might indicate SubAgent completion, but we'll handle it gracefully
-        devLogger.info(
+        devLogger.debug(
           `[Real-time Stream] Potential completion event from ${event.subAgentId}:`,
           event.type,
         );
@@ -1551,7 +1551,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         try {
           const formattedStreamPart = transformStreamEventToStreamPart(event);
           streamController.current.enqueue(formattedStreamPart);
-          devLogger.info("[Real-time Stream] Event injected into stream:", {
+          devLogger.debug("[Real-time Stream] Event injected into stream:", {
             eventType: event.type,
             subAgentId: event.subAgentId,
           });

@@ -58,7 +58,6 @@ export class VoltOpsClient implements IVoltOpsClient {
           secretKey: this.options.secretKey || "",
           fetch: this.options.fetch,
         });
-        devLogger.info("[VoltOpsClient] Observability exporter initialized");
       } catch (error) {
         devLogger.error("[VoltOpsClient] Failed to initialize observability exporter:", error);
       }
@@ -68,7 +67,6 @@ export class VoltOpsClient implements IVoltOpsClient {
     if (this.options.prompts !== false) {
       try {
         this.prompts = new VoltOpsPromptManagerImpl(this.options);
-        devLogger.info("[VoltOpsClient] Prompt manager initialized");
       } catch (error) {
         devLogger.error("[VoltOpsClient] Failed to initialize prompt manager:", error);
       }
@@ -159,14 +157,14 @@ export class VoltOpsClient implements IVoltOpsClient {
   ): PromptHelper {
     // Priority 1: Agent-specific VoltOpsClient (highest priority)
     if (agentVoltOpsClient?.prompts) {
-      devLogger.info(`[Agent ${agentId}] Using agent-specific VoltOpsClient for prompts`);
+      devLogger.debug(`[Agent ${agentId}] Using agent-specific VoltOpsClient for prompts`);
       return agentVoltOpsClient.createPromptHelper(agentId);
     }
 
     // Priority 2: Global VoltOpsClient
     const globalVoltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
     if (globalVoltOpsClient?.prompts) {
-      devLogger.info(`[Agent ${agentId}] Using global VoltOpsClient for prompts`);
+      devLogger.debug(`[Agent ${agentId}] Using global VoltOpsClient for prompts`);
       return globalVoltOpsClient.createPromptHelper(agentId);
     }
 
@@ -268,8 +266,6 @@ export class VoltOpsClient implements IVoltOpsClient {
     if (!secretKey.startsWith("sk_")) {
       devLogger.warn("⚠️  VoltOps Warning: secretKey should start with 'sk_'");
     }
-
-    devLogger.info("[VoltOpsClient] API keys validated successfully");
   }
 
   /**

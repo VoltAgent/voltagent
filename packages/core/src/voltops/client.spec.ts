@@ -114,9 +114,6 @@ describe("VoltOpsClient", () => {
       new VoltOpsClient(validOptions);
 
       expect(devLogger.warn).not.toHaveBeenCalled();
-      expect(devLogger.info).toHaveBeenCalledWith(
-        "[VoltOpsClient] API keys validated successfully",
-      );
     });
 
     it("should warn when publicKey is missing", () => {

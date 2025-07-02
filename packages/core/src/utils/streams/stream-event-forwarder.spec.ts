@@ -13,6 +13,7 @@ vi.mock("@voltagent/internal/dev", () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+    debug: vi.fn(),
   },
 }));
 
@@ -101,7 +102,7 @@ describe("streamEventForwarder", () => {
         types: customFilterTypes,
       });
 
-      expect(devLogger.info).toHaveBeenCalledWith(
+      expect(devLogger.debug).toHaveBeenCalledWith(
         "[StreamEventForwarder] Forwarded",
         "custom-type",
         "event from",
@@ -138,7 +139,7 @@ describe("streamEventForwarder", () => {
         subAgentName: event.subAgentName,
       });
 
-      expect(devLogger.info).toHaveBeenCalledWith(
+      expect(devLogger.debug).toHaveBeenCalledWith(
         "[StreamEventForwarder] Forwarded",
         event.type,
         "event from",

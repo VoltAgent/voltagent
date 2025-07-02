@@ -88,7 +88,7 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.exportHistoryEntry(historyEntryData);
-          devLogger.info(
+          devLogger.debug(
             `[VoltAgentExporter] History entry exported: ${historyEntryData.history_id}`,
           );
         } catch (error) {
@@ -124,11 +124,10 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.exportTimelineEvent(timelineEventData);
-          devLogger.info(
+          devLogger.debug(
             `[VoltAgentExporter] Timeline event exported: ${timelineEventData.event_id}`,
           );
         } catch (error) {
-          devLogger.error("Failed to export timeline event:", error);
           throw error;
         }
       },
@@ -156,7 +155,7 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.exportHistorySteps(history_id, steps);
-          devLogger.info(`[VoltAgentExporter] History steps exported: ${history_id}`);
+          devLogger.debug(`[VoltAgentExporter] History steps exported: ${history_id}`);
         } catch (error) {
           devLogger.error("Failed to export history steps:", error);
           throw error;
@@ -192,7 +191,7 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.updateHistoryEntry(history_id, updates);
-          devLogger.info(`[VoltAgentExporter] History entry updated: ${history_id}`);
+          devLogger.debug(`[VoltAgentExporter] History entry updated: ${history_id}`);
         } catch (error) {
           devLogger.error("Failed to update history entry:", error);
           throw error;

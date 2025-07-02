@@ -30,3 +30,6 @@ new VoltAgent({
   },
   voltOpsClient: voltOpsClient,
 });
+
+console.log(process.env.VOLTOPS_PUBLIC_KEY);
+console.log(process.env.NODE_ENV);

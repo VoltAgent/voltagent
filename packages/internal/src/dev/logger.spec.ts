@@ -147,22 +147,17 @@ describe("devLogger", () => {
     });
   });
 
-  describe("when NODE_ENV is not development", () => {
-    const testCases = [
+  describe("when NODE_ENV is production, test, or ci", () => {
+    const nonDevTestCases = [
       { env: "production", description: "production" },
       { env: "test", description: "test" },
-      { env: undefined, description: "undefined" },
-      { env: "", description: "empty string" },
+      { env: "ci", description: "ci" },
     ];
 
-    testCases.forEach(({ env, description }) => {
+    nonDevTestCases.forEach(({ env, description }) => {
       describe(`when NODE_ENV is ${description}`, () => {
         beforeEach(() => {
-          if (env === undefined) {
-            process.env.NODE_ENV = undefined;
-          } else {
-            process.env.NODE_ENV = env;
-          }
+          process.env.NODE_ENV = env;
         });
 
         it("should not log info messages", () => {
@@ -178,6 +173,66 @@ describe("devLogger", () => {
         it("should not log error messages", () => {
           devLogger.error("Test message");
           expect(consoleSpy.error).not.toHaveBeenCalled();
+        });
+      });
+    });
+  });
+
+  describe("when NODE_ENV allows dev logging", () => {
+    const devTestCases = [
+      { env: undefined, description: "undefined" },
+      { env: "", description: "empty string" },
+      { env: "staging", description: "staging" },
+      { env: "local", description: "local" },
+    ];
+
+    devTestCases.forEach(({ env, description }) => {
+      describe(`when NODE_ENV is ${description}`, () => {
+        beforeEach(() => {
+          if (env === undefined) {
+            process.env.NODE_ENV = undefined;
+          } else {
+            process.env.NODE_ENV = env;
+          }
+        });
+
+        it("should log info messages", () => {
+          const message = "Test info message";
+          devLogger.info(message);
+
+          expect(consoleSpy.info).toHaveBeenCalledTimes(1);
+          expect(consoleSpy.info).toHaveBeenCalledWith(
+            expect.stringMatching(
+              /^\[VoltAgent\] \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] INFO: $/,
+            ),
+            message,
+          );
+        });
+
+        it("should log warning messages", () => {
+          const message = "Test warning message";
+          devLogger.warn(message);
+
+          expect(consoleSpy.warn).toHaveBeenCalledTimes(1);
+          expect(consoleSpy.warn).toHaveBeenCalledWith(
+            expect.stringMatching(
+              /^\[VoltAgent\] \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] WARN: $/,
+            ),
+            message,
+          );
+        });
+
+        it("should log error messages", () => {
+          const message = "Test error message";
+          devLogger.error(message);
+
+          expect(consoleSpy.error).toHaveBeenCalledTimes(1);
+          expect(consoleSpy.error).toHaveBeenCalledWith(
+            expect.stringMatching(
+              /^\[VoltAgent\] \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] ERROR: $/,
+            ),
+            message,
+          );
         });
       });
     });

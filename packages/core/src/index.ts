@@ -84,10 +84,6 @@ export class VoltAgent {
         this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.observability);
         this.initializeGlobalTelemetry(options.voltOpsClient.observability);
       }
-
-      devLogger.info(
-        "[VoltAgent] VoltOpsClient initialized with observability and prompt management",
-      );
     }
     // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
     else if (options.telemetryExporter) {
@@ -170,7 +166,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       if (result.hasUpdates) {
         devLogger.info("\n");
         devLogger.info(result.message);
-        devLogger.info("Run 'volt update' to update VoltAgent packages");
+        devLogger.info("Run 'npm run volt update' to update VoltAgent packages");
       } else {
         devLogger.info(result.message);
       }
@@ -183,11 +179,9 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    * Register an agent
    */
   public registerAgent(agent: Agent<any>): void {
-    // 🔥 FIX: Set telemetry on existing agents that didn't have it during construction
     const globalExporter = this.registry.getGlobalVoltAgentExporter();
     if (globalExporter && !agent.isTelemetryConfigured()) {
       agent._INTERNAL_setVoltAgentExporter(globalExporter);
-      devLogger.info(`[VoltAgent] Telemetry set on existing agent: ${agent.id}`);
     }
 
     // Register the main agent
