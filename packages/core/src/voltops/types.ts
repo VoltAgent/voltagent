@@ -63,8 +63,8 @@ export type VoltOpsClientOptions = {
   secretKey: string;
   /** Custom fetch implementation (optional) */
   fetch?: typeof fetch;
-  /** Enable telemetry export (default: true) */
-  telemetry?: boolean;
+  /** Enable observability export (default: true) */
+  observability?: boolean;
   /** Enable prompt management (default: true) */
   prompts?: boolean;
   /** Optional configuration for prompt caching */
@@ -149,8 +149,8 @@ export interface VoltOpsPromptManager {
 export interface VoltOpsClient {
   /** Prompt management functionality */
   prompts?: VoltOpsPromptManager;
-  /** Telemetry exporter (for backward compatibility) */
-  telemetry?: VoltAgentExporter;
+  /** Observability exporter (for backward compatibility) */
+  observability?: VoltAgentExporter;
   /** Configuration options */
   options: VoltOpsClientOptions & { baseUrl: string };
 

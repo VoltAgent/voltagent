@@ -130,8 +130,17 @@ export type AgentOptions = {
   userContext?: Map<string | symbol, unknown>;
 
   /**
-   * Telemetry exporter for the agent
-   * Used to send telemetry data to an external service
+   * @deprecated Use `voltOpsClient` instead. Will be removed in a future version.
+   *
+   * Telemetry exporter for the agent - DEPRECATED
+   *
+   * 🔄 MIGRATION REQUIRED:
+   * ❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
+   * ✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
+   *
+   * 📖 Migration guide: https://voltagent.dev/docs/observability/developer-console/#migration-guide-from-telemetryexporter-to-voltopsclient
+   *
+   * ✨ Benefits: Observability + prompt management + dynamic prompts from console
    */
   telemetryExporter?: VoltAgentExporter;
 } & (

@@ -80,17 +80,30 @@ export class VoltAgent {
       this.registry.setGlobalVoltOpsClient(options.voltOpsClient);
 
       // 🔥 CRITICAL FIX: Explicitly set global telemetry exporter for Agent access
-      if (options.voltOpsClient.telemetry) {
-        this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.telemetry);
-        this.initializeGlobalTelemetry(options.voltOpsClient.telemetry);
+      if (options.voltOpsClient.observability) {
+        this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.observability);
+        this.initializeGlobalTelemetry(options.voltOpsClient.observability);
       }
 
-      devLogger.info("[VoltAgent] VoltOpsClient initialized with telemetry and prompt management");
+      devLogger.info(
+        "[VoltAgent] VoltOpsClient initialized with observability and prompt management",
+      );
     }
     // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
     else if (options.telemetryExporter) {
       devLogger.warn(
-        "⚠️  telemetryExporter is deprecated. Use VoltOpsClient instead for enhanced functionality.",
+        `⚠️  DEPRECATION WARNING: 'telemetryExporter' parameter is deprecated!
+        
+🔄 MIGRATION REQUIRED:
+❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
+✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
+
+📖 Complete migration guide:
+https://voltagent.dev/docs/observability/developer-console/#migration-guide-from-telemetryexporter-to-voltopsclient
+
+✨ Benefits of VoltOpsClient:
+• Unified observability + prompt management  
+• Dynamic prompts from console`,
       );
 
       // Find the VoltAgentExporter and set it globally

@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, VoltAgentExporter } from "@voltagent/core";
+import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
@@ -19,9 +19,8 @@ new VoltAgent({
   agents: {
     agent,
   },
-  telemetryExporter: new VoltAgentExporter({
+  voltOpsClient: new VoltOpsClient({
     publicKey,
     secretKey,
-    baseUrl: "https://api.voltagent.dev",
   }),
 });

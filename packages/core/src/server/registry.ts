@@ -184,9 +184,9 @@ export class AgentRegistry {
   public setGlobalVoltOpsClient(client: VoltOpsClient | undefined): void {
     this.globalVoltOpsClient = client;
 
-    // Also set the telemetry exporter for backward compatibility
-    if (client?.telemetry) {
-      this.globalVoltAgentExporter = client.telemetry;
+    // Also set the observability exporter for backward compatibility
+    if (client?.observability) {
+      this.globalVoltAgentExporter = client.observability;
     }
   }
 

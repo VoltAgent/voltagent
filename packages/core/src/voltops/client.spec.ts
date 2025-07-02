@@ -207,7 +207,7 @@ describe("createVoltOpsClient", () => {
     expect(client.options.publicKey).toBe(options.publicKey);
     expect(client.options.secretKey).toBe(options.secretKey);
     expect(client.options.fetch).toBe(options.fetch);
-    expect(client.options.telemetry).toBe(true); // default
+    expect(client.options.observability).toBe(true); // default
     expect(client.options.prompts).toBe(true); // default
   });
 

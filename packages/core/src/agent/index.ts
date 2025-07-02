@@ -186,7 +186,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         voice?: Voice;
         markdown?: boolean;
         voltOpsClient?: VoltOpsClient;
-        telemetryExporter?: VoltAgentExporter;
       },
   ) {
     this.id = options.id || options.name;
@@ -245,20 +244,29 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // NEW: Handle unified VoltOps client
     if (options.voltOpsClient) {
-      if (options.voltOpsClient.telemetry) {
-        chosenExporter = options.voltOpsClient.telemetry;
+      if (options.voltOpsClient.observability) {
+        chosenExporter = options.voltOpsClient.observability;
         devLogger.info(
-          `[Agent ${this.id}] VoltOpsClient initialized with telemetry and prompt management`,
+          `[Agent ${this.id}] VoltOpsClient initialized with observability and prompt management`,
         );
       }
     }
     // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
     else if (options.telemetryExporter) {
       devLogger.warn(
-        `⚠️  [Agent ${this.id}] DEPRECATION WARNING: 'telemetryExporter' will be removed in v2.0.0
-   → Replace with: voltOpsClient: new VoltOpsClient({ publicKey, secretKey })
-   → Benefits: Unified telemetry + prompt management + enhanced observability
-   → Migration guide: https://docs.voltagent.ai/migration/voltops-client`,
+        `⚠️  [Agent ${this.id}] DEPRECATION WARNING: 'telemetryExporter' parameter is deprecated!
+   
+   🔄 MIGRATION REQUIRED:
+   ❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
+   ✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
+   
+   📖 Complete migration guide:
+   ${options.voltOpsClient ? "" : "http://localhost:3000/docs/observability/developer-console/#migration-guide-from-telemetryexporter-to-voltopsclient"}
+   
+   ✨ Benefits of VoltOpsClient:
+   • Unified observability + prompt management  
+   • Dynamic prompts from console
+   `,
       );
       chosenExporter = options.telemetryExporter;
     }

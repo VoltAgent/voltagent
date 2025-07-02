@@ -17,7 +17,7 @@ vi.mock("./prompt-manager", () => ({
   VoltOpsPromptManagerImpl: vi.fn(() => mockPromptManager),
 }));
 
-// Mock telemetry exporter
+// Mock observability exporter
 vi.mock("../telemetry/exporter", () => ({
   VoltAgentExporter: vi.fn(() => ({
     exportHistoryEntry: vi.fn(),
@@ -46,7 +46,7 @@ const createMockVoltOpsClient = (options: Partial<VoltOpsClientOptions> = {}): V
     publicKey: "test-public-key",
     secretKey: "test-secret-key",
     prompts: true,
-    telemetry: false, // Disable telemetry for testing
+    observability: false, // Disable observability for testing
     ...options,
   };
 

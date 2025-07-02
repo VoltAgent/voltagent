@@ -24,7 +24,7 @@ import { VoltOpsPromptManagerImpl } from "./prompt-manager";
  */
 export class VoltOpsClient implements IVoltOpsClient {
   public readonly options: VoltOpsClientOptions & { baseUrl: string };
-  public readonly telemetry?: VoltAgentExporter;
+  public readonly observability?: VoltAgentExporter;
   public readonly prompts?: VoltOpsPromptManager;
 
   constructor(options: VoltOpsClientOptions) {
@@ -36,7 +36,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     };
 
     this.options = {
-      telemetry: true,
+      observability: true,
       prompts: true,
       ...options,
       baseUrl: options.baseUrl || "https://api.voltagent.dev",
@@ -46,18 +46,18 @@ export class VoltOpsClient implements IVoltOpsClient {
       },
     };
 
-    // Initialize telemetry exporter if enabled
-    if (this.options.telemetry !== false) {
+    // Initialize observability exporter if enabled
+    if (this.options.observability !== false) {
       try {
-        this.telemetry = new VoltAgentExporterClass({
+        this.observability = new VoltAgentExporterClass({
           baseUrl: this.options.baseUrl,
           publicKey: this.options.publicKey,
           secretKey: this.options.secretKey,
           fetch: this.options.fetch,
         });
-        devLogger.info("[VoltOpsClient] Telemetry exporter initialized");
+        devLogger.info("[VoltOpsClient] Observability exporter initialized");
       } catch (error) {
-        devLogger.error("[VoltOpsClient] Failed to initialize telemetry exporter:", error);
+        devLogger.error("[VoltOpsClient] Failed to initialize observability exporter:", error);
       }
     }
 
@@ -97,29 +97,29 @@ export class VoltOpsClient implements IVoltOpsClient {
   }
 
   // ========== Backward Compatibility Methods ==========
-  // These methods delegate to the telemetry exporter for seamless migration
+  // These methods delegate to the observability exporter for seamless migration
 
   public get exportHistoryEntry() {
-    return this.telemetry?.exportHistoryEntry?.bind(this.telemetry);
+    return this.observability?.exportHistoryEntry?.bind(this.observability);
   }
 
   public get exportHistoryEntryAsync() {
-    return this.telemetry?.exportHistoryEntryAsync?.bind(this.telemetry);
+    return this.observability?.exportHistoryEntryAsync?.bind(this.observability);
   }
 
   public get exportTimelineEvent() {
-    return this.telemetry?.exportTimelineEvent?.bind(this.telemetry);
+    return this.observability?.exportTimelineEvent?.bind(this.observability);
   }
 
   public get exportTimelineEventAsync() {
-    return this.telemetry?.exportTimelineEventAsync?.bind(this.telemetry);
+    return this.observability?.exportTimelineEventAsync?.bind(this.observability);
   }
 
   /**
-   * Check if telemetry is enabled and configured
+   * Check if observability is enabled and configured
    */
-  public isTelemetryEnabled(): boolean {
-    return this.telemetry !== undefined;
+  public isObservabilityEnabled(): boolean {
+    return this.observability !== undefined;
   }
 
   /**
@@ -130,11 +130,11 @@ export class VoltOpsClient implements IVoltOpsClient {
   }
 
   /**
-   * Get telemetry exporter for backward compatibility
-   * @deprecated Use telemetry property directly
+   * Get observability exporter for backward compatibility
+   * @deprecated Use observability property directly
    */
-  public getTelemetryExporter(): VoltAgentExporter | undefined {
-    return this.telemetry;
+  public getObservabilityExporter(): VoltAgentExporter | undefined {
+    return this.observability;
   }
 
   /**
@@ -172,7 +172,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     return {
       getPrompt: async () => {
         console.log(`
-💡 VoltAgent Dynamic Prompts Priority System
+💡 VoltOps Prompts
    
    Agent: ${agentName}
    ❌ Agent VoltOpsClient: ${agentVoltOpsClient ? "Found but prompts disabled" : "Not configured"}
@@ -202,7 +202,7 @@ export class VoltOpsClient implements IVoltOpsClient {
      voltOpsClient: new VoltOpsClient({ ... })
    });
    
-   📖 Full documentation: https://docs.voltops.dev/prompts
+   📖 Full documentation: https://voltagent.dev/docs/agents/prompts/#3-voltops-prompt-management
         `);
 
         console.warn(
