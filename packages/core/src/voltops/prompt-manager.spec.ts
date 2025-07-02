@@ -86,7 +86,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       it("should cache responses", async () => {
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello {{name}}!",
+          prompt: {
+            type: "text",
+            text: "Hello {{name}}!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -115,7 +118,10 @@ describe("VoltOpsPromptManagerImpl", () => {
         const shortTtlManager = new VoltOpsPromptManagerImpl(shortTtlOptions);
 
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello!",
+          prompt: {
+            type: "text",
+            text: "Hello!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -151,7 +157,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       it("should not cache responses", async () => {
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello {{name}}!",
+          prompt: {
+            type: "text",
+            text: "Hello {{name}}!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -170,7 +179,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       it("should maintain empty cache stats", async () => {
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello!",
+          prompt: {
+            type: "text",
+            text: "Hello!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -203,7 +215,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       it("should use cache for specific prompt when per-prompt cache is enabled", async () => {
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello {{name}}!",
+          prompt: {
+            type: "text",
+            text: "Hello {{name}}!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -228,7 +243,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       it("should not cache prompts without per-prompt cache enabled", async () => {
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello!",
+          prompt: {
+            type: "text",
+            text: "Hello!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -252,7 +270,10 @@ describe("VoltOpsPromptManagerImpl", () => {
     describe("when per-prompt cache is disabled while global cache is enabled", () => {
       it("should not cache specific prompt when per-prompt cache is disabled", async () => {
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello!",
+          prompt: {
+            type: "text",
+            text: "Hello!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -279,7 +300,10 @@ describe("VoltOpsPromptManagerImpl", () => {
         mockApiClient.fetchPrompt.mockImplementation((request: PromptReference) => {
           if (request.promptName === "disabled-prompt") {
             return Promise.resolve({
-              prompt: "Disabled cache prompt",
+              prompt: {
+                type: "text",
+                text: "Disabled cache prompt",
+              },
               type: "text",
               name: "disabled-prompt",
               version: "latest",
@@ -288,7 +312,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
           if (request.promptName === "normal-prompt") {
             return Promise.resolve({
-              prompt: "Normal prompt",
+              prompt: {
+                type: "text",
+                text: "Normal prompt",
+              },
               type: "text",
               name: "normal-prompt",
               version: "latest",
@@ -323,7 +350,10 @@ describe("VoltOpsPromptManagerImpl", () => {
     describe("when per-prompt custom TTL is specified", () => {
       it("should use custom TTL for specific prompt", async () => {
         mockApiClient.fetchPrompt.mockResolvedValue({
-          prompt: "Hello!",
+          prompt: {
+            type: "text",
+            text: "Hello!",
+          },
           type: "text",
           name: "test-prompt",
           version: "latest",
@@ -354,14 +384,21 @@ describe("VoltOpsPromptManagerImpl", () => {
         mockApiClient.fetchPrompt.mockImplementation((request: PromptReference) => {
           if (request.promptName === "short-ttl-prompt") {
             return Promise.resolve({
-              prompt: "Short TTL prompt",
+              prompt: {
+                type: "text",
+                text: "Short TTL prompt",
+              },
               type: "text",
               name: "short-ttl-prompt",
               version: "latest",
             });
-          } else if (request.promptName === "normal-ttl-prompt") {
+          }
+          if (request.promptName === "normal-ttl-prompt") {
             return Promise.resolve({
-              prompt: "Normal TTL prompt",
+              prompt: {
+                type: "text",
+                text: "Normal TTL prompt",
+              },
               type: "text",
               name: "normal-ttl-prompt",
               version: "latest",
@@ -446,25 +483,37 @@ describe("VoltOpsPromptManagerImpl", () => {
       // Mock responses for different prompts
       mockApiClient.fetchPrompt
         .mockResolvedValueOnce({
-          prompt: "Prompt 1",
+          prompt: {
+            type: "text",
+            text: "Prompt 1",
+          },
           type: "text",
           name: "prompt-1",
           version: "latest",
         })
         .mockResolvedValueOnce({
-          prompt: "Prompt 2",
+          prompt: {
+            type: "text",
+            text: "Prompt 2",
+          },
           type: "text",
           name: "prompt-2",
           version: "latest",
         })
         .mockResolvedValueOnce({
-          prompt: "Prompt 3",
+          prompt: {
+            type: "text",
+            text: "Prompt 3",
+          },
           type: "text",
           name: "prompt-3",
           version: "latest",
         })
         .mockResolvedValueOnce({
-          prompt: "Prompt 4",
+          prompt: {
+            type: "text",
+            text: "Prompt 4",
+          },
           type: "text",
           name: "prompt-4",
           version: "latest",
@@ -493,25 +542,37 @@ describe("VoltOpsPromptManagerImpl", () => {
     it("should evict oldest entry when cache is full", async () => {
       mockApiClient.fetchPrompt
         .mockResolvedValueOnce({
-          prompt: "Old prompt",
+          prompt: {
+            type: "text",
+            text: "Old prompt",
+          },
           type: "text",
           name: "old-prompt",
           version: "latest",
         })
         .mockResolvedValueOnce({
-          prompt: "Middle prompt",
+          prompt: {
+            type: "text",
+            text: "Middle prompt",
+          },
           type: "text",
           name: "middle-prompt",
           version: "latest",
         })
         .mockResolvedValueOnce({
-          prompt: "New prompt 1",
+          prompt: {
+            type: "text",
+            text: "New prompt 1",
+          },
           type: "text",
           name: "new-prompt-1",
           version: "latest",
         })
         .mockResolvedValueOnce({
-          prompt: "New prompt 2",
+          prompt: {
+            type: "text",
+            text: "New prompt 2",
+          },
           type: "text",
           name: "new-prompt-2",
           version: "latest",
@@ -604,7 +665,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
     it("should preserve metadata in prompt content", async () => {
       mockApiClient.fetchPrompt.mockResolvedValue({
-        prompt: "Hello world!",
+        prompt: {
+          type: "text",
+          text: "Hello world!",
+        },
         type: "text",
         name: "test-prompt",
         version: "v1.0",
@@ -629,13 +693,19 @@ describe("VoltOpsPromptManagerImpl", () => {
     beforeEach(() => {
       mockApiClient.fetchPrompt
         .mockResolvedValueOnce({
-          prompt: "Prompt 1",
+          prompt: {
+            type: "text",
+            text: "Prompt 1",
+          },
           type: "text",
           name: "prompt-1",
           version: "latest",
         })
         .mockResolvedValueOnce({
-          prompt: "Prompt 2",
+          prompt: {
+            type: "text",
+            text: "Prompt 2",
+          },
           type: "text",
           name: "prompt-2",
           version: "latest",
@@ -660,7 +730,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
     it("should continue preloading even if one fails", async () => {
       mockApiClient.fetchPrompt.mockRejectedValueOnce(new Error("Failed")).mockResolvedValueOnce({
-        prompt: "Prompt 2",
+        prompt: {
+          type: "text",
+          text: "Prompt 2",
+        },
         type: "text",
         name: "prompt-2",
         version: "latest",
@@ -678,7 +751,10 @@ describe("VoltOpsPromptManagerImpl", () => {
     it("should clear all cached prompts", async () => {
       // Add something to cache first
       mockApiClient.fetchPrompt.mockResolvedValue({
-        prompt: "Hello!",
+        prompt: {
+          type: "text",
+          text: "Hello!",
+        },
         type: "text",
         name: "test-prompt",
         version: "latest",
@@ -706,7 +782,10 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       // Add item to cache
       mockApiClient.fetchPrompt.mockResolvedValue({
-        prompt: "Hello!",
+        prompt: {
+          type: "text",
+          text: "Hello!",
+        },
         type: "text",
         name: "test-prompt",
         version: "latest",
@@ -724,7 +803,10 @@ describe("VoltOpsPromptManagerImpl", () => {
   describe("cache expiration", () => {
     it("should expire cached items after TTL", async () => {
       mockApiClient.fetchPrompt.mockResolvedValue({
-        prompt: "Hello!",
+        prompt: {
+          type: "text",
+          text: "Hello!",
+        },
         type: "text",
         name: "test-prompt",
         version: "latest",
@@ -765,8 +847,8 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       expect(result.type).toBe("chat");
       expect(result.messages).toHaveLength(2);
-      expect(result.messages![0].content).toBe("You are a helpful assistant.");
-      expect(result.messages![1].content).toBe("Hello World!");
+      expect(result.messages?.[0].content).toBe("You are a helpful assistant.");
+      expect(result.messages?.[1].content).toBe("Hello World!");
     });
 
     it("should cache chat prompts correctly", async () => {
