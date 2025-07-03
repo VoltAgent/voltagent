@@ -86,7 +86,7 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
                   </div>
 
                   {/* Author Info */}
-                  <div className="flex items-center mt-4">
+                  <div className="flex items-center mt-1">
                     <div>
                       <div className="font-semibold text-[#00d992] text-lg">
                         {testimonials[currentTestimonial].author}

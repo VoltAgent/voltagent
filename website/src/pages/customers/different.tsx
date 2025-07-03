@@ -138,27 +138,31 @@ export default function DifferentCustomerPage(): JSX.Element {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+              className="w-full"
             >
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-md p-6 mb-8"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-md p-3 sm:p-4 md:p-6 mb-8 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
+                  hyphens: "auto",
                 }}
               >
                 <blockquote className="mb-4">
-                  <p className="text-sm sm:text-base text-gray-300 italic leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-gray-300 italic leading-relaxed break-words hyphens-auto">
                     "{quote.text}"
                   </p>
                 </blockquote>
-                <div className="border-t flex items-center border-gray-600 pt-4">
-                  <div className="text-sm sm:text-base font-medium text-[#00d992]">
+                <div className="border-t flex flex-col sm:flex-row flex-wrap items-start sm:items-center border-gray-600 pt-3 gap-1">
+                  <div className="text-xs sm:text-sm md:text-base font-medium text-[#00d992] break-words">
                     {quote.author}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-400 ml-2">
+                  <div className="text-xs sm:text-sm text-gray-400 break-words">
                     {quote.position}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-500 ml-2">
+                  <div className="text-xs sm:text-sm text-gray-500 break-words">
                     {quote.company}
                   </div>
                 </div>
@@ -174,13 +178,13 @@ export default function DifferentCustomerPage(): JSX.Element {
             >
               {/* Challenge */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Challenge
                 </h3>
                 <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
@@ -205,13 +209,13 @@ export default function DifferentCustomerPage(): JSX.Element {
 
               {/* Solution */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Solution: VoltAgent + VoltOps
                 </h3>
                 <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
@@ -246,13 +250,13 @@ export default function DifferentCustomerPage(): JSX.Element {
 
               {/* Results */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Outcome
                 </h3>
                 <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
@@ -275,13 +279,13 @@ export default function DifferentCustomerPage(): JSX.Element {
 
               {/* Call to Action */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   Ready to Build with Confidence?
                 </h3>
                 <p className="text-gray-400 mb-4 text-xs sm:text-sm">
