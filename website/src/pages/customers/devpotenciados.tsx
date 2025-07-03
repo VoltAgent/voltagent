@@ -175,20 +175,22 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="space-y-6 sm:space-y-8"
+              className="space-y-6 sm:space-y-8 w-full"
             >
               {/* Challenge */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Challenge
                 </h3>
-                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <div className="space-y-4 text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed">
                   <p>
                     Francisco leads DEVPotenciados LATAM, a community of
                     developers in Latin America passionate about AI. The mission
@@ -217,16 +219,18 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
 
               {/* Solution */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Solution: VoltAgent + VoltOps
                 </h3>
-                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <div className="space-y-4 text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed">
                   <p>
                     Francisco discovered VoltAgent while looking for a simple
                     and easy-to-understand framework to build truly powerful AI
@@ -257,16 +261,18 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
 
               {/* Results */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Outcome
                 </h3>
-                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <div className="space-y-4 text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed">
                   <p>
                     With VoltAgent, Francisco and the DEVPotenciados LATAM
                     community can now focus on what matters most: empowering
@@ -295,16 +301,18 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
 
               {/* Call to Action */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   Ready to Empower Your Development?
                 </h3>
-                <p className="text-gray-400 mb-4 text-xs sm:text-sm">
+                <p className="text-gray-400 mb-4 text-xs sm:text-sm break-words">
                   Join Francisco and thousands of developers building powerful
                   AI solutions with VoltAgent.
                 </p>

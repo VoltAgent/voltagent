@@ -74,13 +74,13 @@ export default function DifferentCustomerPage(): JSX.Element {
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
 
         <section className="relative py-20">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="max-w-5xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 w-full">
             {/* Back Button */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3 }}
-              className="mb-8"
+              className="mb-8 w-full"
             >
               <Link
                 to="/customers"
@@ -147,7 +147,6 @@ export default function DifferentCustomerPage(): JSX.Element {
                   WebkitBackdropFilter: "blur(4px)",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
-                  hyphens: "auto",
                 }}
               >
                 <blockquote className="mb-4">
@@ -174,20 +173,22 @@ export default function DifferentCustomerPage(): JSX.Element {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="space-y-6 sm:space-y-8"
+              className="space-y-6 sm:space-y-8 w-full"
             >
               {/* Challenge */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Challenge
                 </h3>
-                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <div className="space-y-4 text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed">
                   <p>
                     As the team at Different began integrating LLMs into their
                     internal operations such as summarizing property
@@ -209,16 +210,18 @@ export default function DifferentCustomerPage(): JSX.Element {
 
               {/* Solution */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Solution: VoltAgent + VoltOps
                 </h3>
-                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <div className="space-y-4 text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed">
                   <p>By adopting VoltAgent, the team was able to:</p>
                   <ul className="space-y-2 ml-4">
                     <li>Define custom agents in TypeScript</li>
@@ -250,16 +253,18 @@ export default function DifferentCustomerPage(): JSX.Element {
 
               {/* Results */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   The Outcome
                 </h3>
-                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <div className="space-y-4 text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed">
                   <p>
                     With VoltAgent and VoltOps, Different now runs LLM-powered
                     internal tools with confidence, accelerating development
@@ -279,16 +284,18 @@ export default function DifferentCustomerPage(): JSX.Element {
 
               {/* Call to Action */}
               <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden"
+                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0"
                 style={{
                   backdropFilter: "blur(4px)",
                   WebkitBackdropFilter: "blur(4px)",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
-                <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
+                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-[#00d992] mb-3 sm:mb-4 break-words">
                   Ready to Build with Confidence?
                 </h3>
-                <p className="text-gray-400 mb-4 text-xs sm:text-sm">
+                <p className="text-gray-400 mb-4 text-xs sm:text-sm break-words">
                   Join Different and other companies building AI-powered
                   solutions with full visibility and control.
                 </p>
