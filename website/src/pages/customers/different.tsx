@@ -12,26 +12,27 @@ import { motion } from "framer-motion";
 import React from "react";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
-export default function JoggrCustomerPage(): JSX.Element {
-  // Joggr company data
+export default function DifferentCustomerPage(): JSX.Element {
+  // Different company data
   const customer = {
-    name: "Joggr",
-    industry: "Developer Tooling / Documentation",
-    website: "https://joggr.io",
-    logo_url: "https://cdn.voltagent.dev/website/customers/joggr-logo.png",
+    name: "Different",
+    industry: "Property Management / Real Estate",
+    website: "https://different.com.au/",
+    logo_url: "https://cdn.voltagent.dev/website/customers/different-logo.png",
   };
 
   const caseStudy = {
-    title: "How Joggr Built Documentation Agents with VoltAgent + VoltOps",
+    title:
+      "How Different Built Reliable Property Management Agents with VoltAgent + VoltOps",
     use_case:
-      "AI-first documentation assistant that automatically generates, updates, and syncs Markdown docs",
+      "LLM-powered internal tools for property communications, task routing, and expert assistance",
   };
 
   const quote = {
-    text: "Without Volt, it would almost be impossible to understand what the hell is going on and what the agents are doing. Every time we need help, the founders are there. The responsiveness is unreal.",
-    author: "Zac Rosenbauer",
-    position: "Co-founder",
-    company: "Joggr",
+    text: "We couldn't afford black-box behavior in tools that impact real customer operations. Having insight into how our agents think and act has helped us build with more confidence and catch problems early.",
+    author: "Michael Klevansky",
+    position: "CEO",
+    company: "Different",
   };
 
   // SEO
@@ -184,22 +185,20 @@ export default function JoggrCustomerPage(): JSX.Element {
                 </h3>
                 <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
                   <p>
-                    Joggr is building an AI-first documentation assistant that
-                    keeps developer docs up to date, automatically generating,
-                    updating, and syncing Markdown docs every time your code
-                    changes.
+                    As the team at Different began integrating LLMs into their
+                    internal operations such as summarizing property
+                    communications, routing tasks, and assisting their property
+                    experts they quickly ran into the classic problem:
                   </p>
-                  <p>But early on, Zac and the team faced a challenge:</p>
                   <blockquote className="border-l-4 border-[#00d992] pl-4 italic text-gray-200">
-                    "Everything in the LLM ecosystem is Python-first. We're a
-                    TypeScript shop. We needed a framework that spoke our
-                    language and helped us offload memory and orchestration."
+                    "We couldn't afford black-box behavior in tools that impact
+                    real customer operations."
                   </blockquote>
                   <p>
-                    On top of that, they were managing a tangle of custom
-                    tooling built on top of Vercel's AI libraries. Debugging
-                    flows and understanding what the agents were doing was
-                    painful and hard to scale.
+                    With multiple tools, prompts, and logic paths involved,
+                    debugging and understanding agent decisions became a growing
+                    challenge. They needed a framework that gave them both
+                    structure and visibility.
                   </p>
                 </div>
               </div>
@@ -216,30 +215,32 @@ export default function JoggrCustomerPage(): JSX.Element {
                   The Solution: VoltAgent + VoltOps
                 </h3>
                 <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
-                  <p>
-                    Zac discovered VoltAgent while searching for a flexible,
-                    TypeScript-native AI agent framework and paired it with
-                    VoltOps, VoltAgent's visual observability console.
-                  </p>
-                  <p>With this stack, the Joggr team was able to:</p>
+                  <p>By adopting VoltAgent, the team was able to:</p>
                   <ul className="space-y-2 ml-4">
+                    <li>Define custom agents in TypeScript</li>
                     <li>
-                      Build agents that generate and maintain dev docs in clean,
-                      composable flows
+                      Handle tool orchestration and memory in a clean, modular
+                      way
                     </li>
                     <li>
-                      Offload memory management with VoltAgent's built-in memory
-                      modules
-                    </li>
-                    <li>
-                      Gain visibility into every step of their Supervisor agent
-                      architecture using VoltOps
+                      Build reliable flows for tasks like support summarization
+                      and workflow triage
                     </li>
                   </ul>
-                  <blockquote className="border-l-4 border-[#00d992] pl-4 italic text-gray-200">
-                    "Without Volt, it would almost be impossible to understand
-                    what the hell is going on and what the agents are doing."
-                  </blockquote>
+                  <p>They paired this with VoltOps, which gave them:</p>
+                  <ul className="space-y-2 ml-4">
+                    <li>
+                      Real-time observability into each agent's reasoning steps
+                    </li>
+                    <li>
+                      Visibility into tool calls, memory usage, and intermediate
+                      decisions
+                    </li>
+                    <li>
+                      Faster debugging when something broke or behaved
+                      unexpectedly
+                    </li>
+                  </ul>
                 </div>
               </div>
 
@@ -256,19 +257,18 @@ export default function JoggrCustomerPage(): JSX.Element {
                 </h3>
                 <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
                   <p>
-                    By switching to VoltAgent and VoltOps, Joggr streamlined
-                    their architecture, ditched custom glue code, and unlocked
-                    better visibility into how their agents operate.
+                    With VoltAgent and VoltOps, Different now runs LLM-powered
+                    internal tools with confidence, accelerating development
+                    while maintaining full control.
                   </p>
                   <blockquote className="border-l-4 border-[#00d992] pl-4 italic text-gray-200">
-                    "Every time we need help, the founders are there. The
-                    responsiveness is unreal."
+                    "Having insight into how our agents think and act has helped
+                    us build with more confidence and catch problems early."
                   </blockquote>
                   <p>
-                    With a fast-moving product and an AI-first mindset, Joggr
-                    now ships with full confidence. No black boxes, no
-                    guesswork. Just dev-friendly documentation, powered by
-                    agents they can see, debug, and trust.
+                    This lets the team at Different continue delivering smarter,
+                    faster property management experiences powered by AI, backed
+                    by full visibility.
                   </p>
                 </div>
               </div>
@@ -282,11 +282,11 @@ export default function JoggrCustomerPage(): JSX.Element {
                 }}
               >
                 <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#00d992] mb-3 sm:mb-4">
-                  Ready to Transform Your Workflow?
+                  Ready to Build with Confidence?
                 </h3>
                 <p className="text-gray-400 mb-4 text-xs sm:text-sm">
-                  Join hundreds of companies already using VoltAgent to build
-                  powerful AI agents.
+                  Join Different and other companies building AI-powered
+                  solutions with full visibility and control.
                 </p>
                 <a
                   href="https://discord.gg/voltagent"

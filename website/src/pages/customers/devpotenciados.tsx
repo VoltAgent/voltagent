@@ -2,10 +2,10 @@ import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
 import {
   ArrowLeftIcon,
-  ArrowTopRightOnSquareIcon,
   BuildingOfficeIcon,
-  UsersIcon,
-  GlobeAltIcon,
+  RocketLaunchIcon,
+  UserGroupIcon,
+  BoltIcon,
 } from "@heroicons/react/24/outline";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
@@ -39,7 +39,7 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
   // SEO
   const seoTitle = `${customer.name} Case Study - ${caseStudy.title} | VoltAgent`;
   const seoDescription = `${caseStudy.use_case} - Learn how ${customer.name} transformed their workflow with VoltAgent. Read the full case study and customer testimonial.`;
-  const keywords = `VoltAgent, ${customer.name}, case study, ${customer.industry}, AI agents, TypeScript, automation, customer success, ${customer.location}`;
+  const keywords = `VoltAgent, ${customer.name}, case study, ${customer.industry}, AI agents, TypeScript, automation, customer success`;
 
   return (
     <Layout>
@@ -101,7 +101,7 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
             >
               <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
                 <div className="flex items-start gap-3 sm:gap-4 flex-1">
-                  <BuildingOfficeIcon className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6 " />
+                  <BuildingOfficeIcon className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] p-3" />
                   <div className="flex-1 min-w-0">
                     <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#00d992] mb-1 sm:mb-2 leading-tight">
                       {customer.name}
@@ -109,16 +109,6 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
                     <p className="text-gray-400 text-sm sm:text-base lg:text-lg mb-2">
                       {customer.industry}
                     </p>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                      <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                        <UsersIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        {customer.team_size} employees
-                      </div>
-                      <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                        <BuildingOfficeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        {customer.location}
-                      </div>
-                    </div>
                   </div>
                 </div>
                 <a
@@ -127,7 +117,7 @@ export default function DEVPotenciadosCustomerPage(): JSX.Element {
                   rel="noopener noreferrer"
                   className="flex items-center justify-center no-underline px-3 py-2 sm:px-4 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 rounded-lg transition-colors self-start"
                 >
-                  <GlobeAltIcon className="w-4 h-4 mr-2 text-gray-300" />
+                  <BoltIcon className="w-4 h-4 mr-2 text-gray-300" />
                   <span className="text-gray-300 font-medium text-sm">
                     Visit Website
                   </span>
