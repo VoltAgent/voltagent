@@ -149,7 +149,6 @@ export class AgentEventEmitter extends EventEmitter {
 
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (!agent) {
-      devLogger.warn("Agent not found: ", agentId);
       return undefined;
     }
 

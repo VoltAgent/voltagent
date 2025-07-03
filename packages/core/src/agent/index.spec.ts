@@ -440,6 +440,8 @@ class MockProvider implements LLMProvider<MockModelType> {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
+    onFinish?: (result: any) => Promise<void>;
+    onError?: (error: any) => Promise<void>;
   }): Promise<ProviderObjectStreamResponse<MockStreamObjectResult<z.infer<T>>, z.infer<T>>> {
     this.streamObjectCalls++;
     this.lastMessages = options.messages;
@@ -473,6 +475,23 @@ class MockProvider implements LLMProvider<MockModelType> {
       partialObjectStream,
       textStream,
     };
+
+    // Call onFinish immediately for testing
+    if (options.onFinish) {
+      const mockResult = {
+        object: { name: "John" } as z.infer<T>,
+        usage: {
+          completionTokens: 10,
+          promptTokens: 20,
+          totalTokens: 30,
+        },
+        finishReason: "stop" as const,
+        warnings: undefined,
+        providerResponse: undefined,
+      };
+      // Call onFinish synchronously in microtask to simulate async completion
+      Promise.resolve().then(() => options.onFinish?.(mockResult));
+    }
 
     return {
       provider: result,
@@ -4154,5 +4173,140 @@ describe("Dynamic Instructions Detection", () => {
     expect(response.userContext).toBeDefined();
 
     expect(response.userContext?.get("mode")).toBe("testing");
+  });
+});
+
+describe("onEnd Hook userContext Modifications", () => {
+  it("should reflect userContext changes made in onEnd hook for generateText", async () => {
+    let onEndCalled = false;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context }) => {
+          onEndCalled = true;
+          // Change userContext in onEnd hook
+          context.userContext.set("agent_response", "bye");
+          context.userContext.set("hook_executed", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["agent_response", "hi"]]);
+
+    const response = await agent.generateText("Hello", {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd hook was called
+    expect(onEndCalled).toBe(true);
+
+    // Verify that the final response contains the updated userContext from onEnd hook
+    expect(response.userContext?.get("agent_response")).toBe("bye");
+    expect(response.userContext?.get("hook_executed")).toBe(true);
+  });
+
+  it("should reflect userContext changes made in onEnd hook for generateObject", async () => {
+    let onEndCalled = false;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context }) => {
+          onEndCalled = true;
+          // Change userContext in onEnd hook
+          context.userContext.set("agent_response", "bye");
+          context.userContext.set("hook_executed", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["agent_response", "hi"]]);
+
+    const response = await agent.generateObject("Hello", z.object({ message: z.string() }), {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd hook was called
+    expect(onEndCalled).toBe(true);
+
+    // Verify that the final response contains the updated userContext from onEnd hook
+    expect(response.userContext?.get("agent_response")).toBe("bye");
+    expect(response.userContext?.get("hook_executed")).toBe(true);
+  });
+
+  it("should pass correct userContext to onEnd hook before final response", async () => {
+    let onEndUserContext: Map<string | symbol, unknown> | undefined;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context, output }) => {
+          // Capture userContext at the time onEnd is called
+          onEndUserContext = new Map(context.userContext);
+          // Verify output contains the current userContext
+          expect(output?.userContext?.get("initial_value")).toBe("test");
+          // Modify userContext after verification
+          context.userContext.set("modified_in_onEnd", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["initial_value", "test"]]);
+
+    const response = await agent.generateText("Hello", {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd received the correct userContext
+    expect(onEndUserContext?.get("initial_value")).toBe("test");
+
+    // Verify final response contains the modification from onEnd
+    expect(response.userContext?.get("modified_in_onEnd")).toBe(true);
+  });
+
+  it("should reflect userContext changes made in onEnd hook for streamObject", async () => {
+    let onEndCalled = false;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context }) => {
+          onEndCalled = true;
+          // Change userContext in onEnd hook
+          context.userContext.set("agent_response", "bye");
+          context.userContext.set("hook_executed", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["agent_response", "hi"]]);
+
+    const response = await agent.streamObject("Hello", z.object({ message: z.string() }), {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd hook was called
+    expect(onEndCalled).toBe(true);
+
+    // Verify that the final response contains the updated userContext from onEnd hook
+    expect(response.userContext?.get("agent_response")).toBe("bye");
+    expect(response.userContext?.get("hook_executed")).toBe(true);
   });
 });

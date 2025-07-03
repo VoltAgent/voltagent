@@ -1310,8 +1310,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       operationContext.isActive = false;
 
-      // Extend the original response with userContext for backward compatibility
-      const extendedResponse: GenerateTextResponse<TProvider> = {
+      // Create initial response for onEnd hook
+      const initialResponse: GenerateTextResponse<TProvider> = {
         ...response,
         userContext: new Map(operationContext.userContext),
       };
@@ -1319,10 +1319,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       await this.hooks.onEnd?.({
         conversationId: finalConversationId,
         agent: this,
-        output: extendedResponse,
+        output: initialResponse,
         error: undefined,
         context: operationContext,
       });
+
+      // Extend the original response with userContext AFTER onEnd hook
+      const extendedResponse: GenerateTextResponse<TProvider> = {
+        ...response,
+        userContext: new Map(operationContext.userContext),
+      };
 
       this.updateHistoryEntry(operationContext, {
         output: response.text,
@@ -1797,19 +1803,26 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
         operationContext.isActive = false;
 
-        // Add userContext to result
-        const resultWithContext = {
+        // Create initial result for onEnd hook
+        const initialResult = {
           ...result,
           userContext: new Map(operationContext.userContext),
         };
 
         await this.hooks.onEnd?.({
           agent: this,
-          output: resultWithContext,
+          output: initialResult,
           error: undefined,
           conversationId: finalConversationId,
           context: operationContext,
         });
+
+        // Add userContext to result AFTER onEnd hook
+        const resultWithContext = {
+          ...result,
+          userContext: new Map(operationContext.userContext),
+        };
+
         if (internalOptions.provider?.onFinish) {
           await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(
             resultWithContext,
@@ -2158,19 +2171,25 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
       });
 
-      // Extend the original response with userContext for backward compatibility
-      const extendedResponse: GenerateObjectResponse<TProvider, TSchema> = {
+      // Create initial response for onEnd hook
+      const initialResponse: GenerateObjectResponse<TProvider, TSchema> = {
         ...response,
         userContext: new Map(operationContext.userContext),
       };
 
       await this.hooks.onEnd?.({
         agent: this,
-        output: extendedResponse,
+        output: initialResponse,
         error: undefined,
         conversationId: finalConversationId,
         context: operationContext,
       });
+
+      // Extend the original response with userContext AFTER onEnd hook
+      const extendedResponse: GenerateObjectResponse<TProvider, TSchema> = {
+        ...response,
+        userContext: new Map(operationContext.userContext),
+      };
 
       return extendedResponse;
     } catch (error) {
@@ -2456,19 +2475,26 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
           operationContext.isActive = false;
 
-          // Add userContext to result
-          const resultWithContext = {
+          // Create initial result for onEnd hook
+          const initialResult = {
             ...result,
             userContext: new Map(operationContext.userContext),
           };
 
           await this.hooks.onEnd?.({
             agent: this,
-            output: resultWithContext,
+            output: initialResult,
             error: undefined,
             conversationId: finalConversationId,
             context: operationContext,
           });
+
+          // Add userContext to result AFTER onEnd hook
+          const resultWithContext = {
+            ...result,
+            userContext: new Map(operationContext.userContext),
+          };
+
           if (provider?.onFinish) {
             await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<TSchema>>)(
               resultWithContext,

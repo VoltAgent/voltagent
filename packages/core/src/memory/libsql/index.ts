@@ -346,9 +346,7 @@ export class LibSQLStorage implements Memory {
     try {
       const migrationResult = await this.migrateAgentHistorySchema();
 
-      if (migrationResult.success) {
-        devLogger.info("Agent history schema migration completed successfully");
-      } else {
+      if (!migrationResult.success) {
         devLogger.error("Agent history schema migration error:", migrationResult.error);
       }
     } catch (error) {
