@@ -43,6 +43,7 @@ import type {
   ToolExecuteOptions,
 } from "./providers";
 import { SubAgentManager } from "./subagent";
+import type { SubAgentConfig } from "./subagent/types";
 import type {
   AgentOptions,
   AgentStatus,
@@ -184,7 +185,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     options: AgentOptions &
       TProvider & {
         model: ModelDynamicValue<ModelType<TProvider>>;
-        subAgents?: Agent<any>[]; // Reverted to Agent<any>[] temporarily
+        subAgents?: SubAgentConfig[]; // Updated to support new configuration
         maxHistoryEntries?: number;
         hooks?: AgentHooks;
         retriever?: BaseRetriever;
@@ -2729,8 +2730,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Add a sub-agent that this agent can delegate tasks to
    */
-  public addSubAgent(agent: Agent<any>): void {
-    this.subAgentManager.addSubAgent(agent);
+  public addSubAgent(agentConfig: SubAgentConfig): void {
+    this.subAgentManager.addSubAgent(agentConfig);
 
     // Add delegate tool if this is the first sub-agent
     if (this.subAgentManager.getSubAgents().length === 1) {
@@ -2780,7 +2781,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Get all sub-agents
    */
-  public getSubAgents(): Agent<any>[] {
+  public getSubAgents(): SubAgentConfig[] {
     return this.subAgentManager.getSubAgents();
   }
 

@@ -18,6 +18,7 @@ import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
+import type { SubAgentConfig } from "./subagent/types";
 
 import type {
   DynamicValueOptions,
@@ -122,7 +123,7 @@ export type AgentOptions = {
   /**
    * Sub-agents that this agent can delegate tasks to
    */
-  subAgents?: any[]; // Using unknown to avoid circular dependency
+  subAgents?: SubAgentConfig[];
 
   /**
    * Maximum number of steps (turns) the agent can take before stopping
