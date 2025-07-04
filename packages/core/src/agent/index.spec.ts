@@ -786,6 +786,258 @@ describe("Agent", () => {
       expect(historyManagerArgs[3]).toBeUndefined();
     });
     // --- END NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
+
+    // --- BEGIN SUPERVISOR SYSTEM MESSAGE CONFIG TESTS ---
+    describe("supervisorSystemMessageConfig", () => {
+      it("should pass supervisorSystemMessageConfig to SubAgentManager constructor", () => {
+        const supervisorConfig = {
+          includeMemory: true,
+          systemMessage: "Custom supervisor instructions for testing",
+        };
+
+        const testAgent = new TestAgent({
+          name: "Supervisor Test Agent",
+          instructions: "Base agent instructions",
+          llm: mockProvider,
+          model: mockModel,
+          supervisorSystemMessageConfig: supervisorConfig,
+        });
+
+        // Access the SubAgentManager to verify config was passed
+        const subAgentManager = testAgent.getSubAgentManager();
+        expect(subAgentManager).toBeDefined();
+
+        // Since the config is private, we can test it indirectly through behavior
+        // Add a sub-agent and test the generated system message
+        const mockSubAgent = new TestAgent({
+          name: "SubAgent",
+          instructions: "Sub-agent instructions",
+          llm: mockProvider,
+          model: mockModel,
+        });
+
+        testAgent.addSubAgent(mockSubAgent);
+
+        // Generate supervisor system message to verify config is used
+        const systemMessage = subAgentManager.generateSupervisorSystemMessage(
+          "Original instructions",
+          "some memory",
+        );
+
+        expect(systemMessage).toContain("Custom supervisor instructions for testing");
+        expect(systemMessage).toContain("<agents_memory>"); // includeMemory: true
+        expect(systemMessage).toContain("some memory");
+      });
+
+      it("should work without supervisorSystemMessageConfig (backward compatibility)", () => {
+        const testAgent = new TestAgent({
+          name: "Standard Agent",
+          instructions: "Standard agent instructions",
+          llm: mockProvider,
+          model: mockModel,
+          // No supervisorSystemMessageConfig
+        });
+
+        const subAgentManager = testAgent.getSubAgentManager();
+        expect(subAgentManager).toBeDefined();
+
+        // Add a sub-agent and test default behavior
+        const mockSubAgent = new TestAgent({
+          name: "SubAgent",
+          instructions: "Sub-agent instructions",
+          llm: mockProvider,
+          model: mockModel,
+        });
+
+        testAgent.addSubAgent(mockSubAgent);
+
+        const systemMessage = subAgentManager.generateSupervisorSystemMessage(
+          "Original instructions",
+          "some memory",
+        );
+
+        // Should use default supervisor format
+        expect(systemMessage).toContain("<instructions>");
+        expect(systemMessage).toContain("Original instructions");
+        expect(systemMessage).toContain("<guidelines>");
+      });
+
+      it("should validate supervisorSystemMessageConfig during Agent construction", () => {
+        const invalidConfig = {
+          includeMemory: "true" as any, // Invalid type
+          systemMessage: "Valid message",
+        };
+
+        expect(() => {
+          new TestAgent({
+            name: "Invalid Config Agent",
+            instructions: "Test instructions",
+            llm: mockProvider,
+            model: mockModel,
+            supervisorSystemMessageConfig: invalidConfig,
+          });
+        }).toThrow("supervisorSystemMessageConfig.includeMemory must be a boolean");
+      });
+
+      it("should validate systemMessage during Agent construction", () => {
+        const invalidConfig = {
+          includeMemory: true,
+          systemMessage: "", // Empty string
+        };
+
+        expect(() => {
+          new TestAgent({
+            name: "Invalid Message Agent",
+            instructions: "Test instructions",
+            llm: mockProvider,
+            model: mockModel,
+            supervisorSystemMessageConfig: invalidConfig,
+          });
+        }).toThrow("supervisorSystemMessageConfig.systemMessage must be a non-empty string");
+      });
+
+      it("should handle supervisorSystemMessageConfig with includeMemory false", () => {
+        const supervisorConfig = {
+          includeMemory: false,
+          systemMessage: "Custom supervisor without memory",
+        };
+
+        const testAgent = new TestAgent({
+          name: "No Memory Supervisor Agent",
+          instructions: "Base agent instructions",
+          llm: mockProvider,
+          model: mockModel,
+          supervisorSystemMessageConfig: supervisorConfig,
+        });
+
+        const mockSubAgent = new TestAgent({
+          name: "SubAgent",
+          instructions: "Sub-agent instructions",
+          llm: mockProvider,
+          model: mockModel,
+        });
+
+        testAgent.addSubAgent(mockSubAgent);
+
+        const subAgentManager = testAgent.getSubAgentManager();
+        const systemMessage = subAgentManager.generateSupervisorSystemMessage(
+          "Original instructions",
+          "some memory",
+        );
+
+        expect(systemMessage).toContain("Custom supervisor without memory");
+        expect(systemMessage).not.toContain("<agents_memory>"); // includeMemory: false
+        expect(systemMessage).not.toContain("some memory");
+      });
+
+      it("should work with both subAgents and supervisorSystemMessageConfig", () => {
+        const mockSubAgent1 = new TestAgent({
+          name: "MathAgent",
+          instructions: "Handle math operations",
+          llm: mockProvider,
+          model: mockModel,
+        });
+
+        const mockSubAgent2 = new TestAgent({
+          name: "WriteAgent",
+          instructions: "Handle writing tasks",
+          llm: mockProvider,
+          model: mockModel,
+        });
+
+        const supervisorConfig = {
+          includeMemory: true,
+          systemMessage: "You are a specialized coordinator managing math and writing agents.",
+        };
+
+        const testAgent = new TestAgent({
+          name: "Multi Sub-Agent Supervisor",
+          instructions: "Coordinate multiple agents",
+          llm: mockProvider,
+          model: mockModel,
+          subAgents: [mockSubAgent1, mockSubAgent2],
+          supervisorSystemMessageConfig: supervisorConfig,
+        });
+
+        const subAgentManager = testAgent.getSubAgentManager();
+        expect(subAgentManager.getSubAgents()).toHaveLength(2);
+
+        const systemMessage = subAgentManager.generateSupervisorSystemMessage(
+          "Original instructions",
+          "Previous math calculation completed",
+        );
+
+        // With custom config, only the custom message and memory (if enabled) should be included
+        expect(systemMessage).toContain(
+          "You are a specialized coordinator managing math and writing agents.",
+        );
+        expect(systemMessage).toContain("<agents_memory>");
+        expect(systemMessage).toContain("Previous math calculation completed");
+
+        // The default supervisor structure should NOT be included with custom config
+        expect(systemMessage).not.toContain("- MathAgent: Handle math operations");
+        expect(systemMessage).not.toContain("- WriteAgent: Handle writing tasks");
+        expect(systemMessage).not.toContain("<specialized_agents>");
+      });
+
+      it("should handle edge case with complex systemMessage content", () => {
+        const complexSystemMessage = `
+You are an advanced supervisor with the following capabilities:
+- Coordinate between specialized agents
+- Make strategic decisions
+- Handle escalations
+
+Follow these protocols:
+1. Always verify agent responses
+2. Provide clear instructions
+3. Maintain conversation context
+
+Use the following format for responses:
+{
+  "decision": "...",
+  "instructions": ["...", "..."],
+  "agents_to_contact": ["agent1", "agent2"]
+}
+`;
+
+        const supervisorConfig = {
+          includeMemory: true,
+          systemMessage: complexSystemMessage,
+        };
+
+        const testAgent = new TestAgent({
+          name: "Complex Supervisor Agent",
+          instructions: "Base instructions",
+          llm: mockProvider,
+          model: mockModel,
+          supervisorSystemMessageConfig: supervisorConfig,
+        });
+
+        const mockSubAgent = new TestAgent({
+          name: "TestAgent",
+          instructions: "Test operations",
+          llm: mockProvider,
+          model: mockModel,
+        });
+
+        testAgent.addSubAgent(mockSubAgent);
+
+        const subAgentManager = testAgent.getSubAgentManager();
+        const systemMessage = subAgentManager.generateSupervisorSystemMessage(
+          "Original instructions",
+          "memory content",
+        );
+
+        expect(systemMessage).toContain("You are an advanced supervisor");
+        expect(systemMessage).toContain("Coordinate between specialized agents");
+        expect(systemMessage).toContain('"decision":');
+        expect(systemMessage).toContain("memory content");
+
+        // Should NOT contain agent lists when using custom config
+        expect(systemMessage).not.toContain("- TestAgent: Test operations");
+      });
+    });
+    // --- END SUPERVISOR SYSTEM MESSAGE CONFIG TESTS ---
   });
 
   describe("generate", () => {

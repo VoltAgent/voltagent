@@ -16,6 +16,7 @@ import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
 import type { AgentHandoffOptions, AgentHandoffResult, OperationContext } from "../types";
+import type { SupervisorSystemMessageConfig } from "./types";
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -31,19 +32,46 @@ export class SubAgentManager {
   private subAgents: Agent<any>[] = [];
 
   /**
+   * Configuration for supervisor system message generation
+   */
+  private supervisorSystemMessageConfig?: SupervisorSystemMessageConfig;
+
+  /**
    * Creates a new SubAgentManager instance
    *
    * @param agentName - The name of the agent that owns this sub-agent manager
    * @param subAgents - Initial sub-agents to add
+   * @param supervisorSystemMessageConfig - Optional configuration for supervisor system message
    */
-  constructor(agentName: string, subAgents: Agent<any>[] = []) {
+  constructor(
+    agentName: string,
+    subAgents: Agent<any>[] = [],
+    supervisorSystemMessageConfig?: SupervisorSystemMessageConfig,
+  ) {
     this.agentName = agentName;
+
+    if (supervisorSystemMessageConfig) {
+      this.validateSupervisorSystemMessageConfig(supervisorSystemMessageConfig);
+      this.supervisorSystemMessageConfig = supervisorSystemMessageConfig;
+    }
 
     // Initialize with empty array
     this.subAgents = [];
 
     // Add each sub-agent properly
     subAgents.forEach((agent) => this.addSubAgent(agent));
+  }
+
+  /**
+   * Validate supervisor system message configuration
+   */
+  private validateSupervisorSystemMessageConfig(config: SupervisorSystemMessageConfig): void {
+    if (typeof config.includeMemory !== "boolean") {
+      throw new Error("supervisorSystemMessageConfig.includeMemory must be a boolean");
+    }
+    if (typeof config.systemMessage !== "string" || config.systemMessage.trim() === "") {
+      throw new Error("supervisorSystemMessageConfig.systemMessage must be a non-empty string");
+    }
   }
 
   /**
@@ -106,6 +134,14 @@ export class SubAgentManager {
   public generateSupervisorSystemMessage(baseInstructions: string, agentsMemory = ""): string {
     if (this.subAgents.length === 0) {
       return baseInstructions;
+    }
+
+    if (this.supervisorSystemMessageConfig) {
+      const memorySection = this.supervisorSystemMessageConfig.includeMemory
+        ? `\n<agents_memory>\n${agentsMemory || "No previous agent interactions available."}\n</agents_memory>`
+        : "";
+
+      return `${this.supervisorSystemMessageConfig.systemMessage}${memorySection}`.trim();
     }
 
     const subAgentList = this.subAgents

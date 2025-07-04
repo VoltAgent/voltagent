@@ -856,4 +856,321 @@ describe("SubAgentManager", () => {
       expect(callOptions).toHaveProperty("parentHistoryEntryId", "parent-history");
     });
   });
+
+  describe("SupervisorSystemMessageConfig", () => {
+    describe("constructor validation", () => {
+      it("should accept valid SupervisorSystemMessageConfig", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: "Custom supervisor instructions",
+        };
+
+        expect(() => {
+          new SubAgentManager("Test Agent", [], config);
+        }).not.toThrow();
+      });
+
+      it("should throw error when includeMemory is not a boolean", () => {
+        const config = {
+          includeMemory: "true" as any, // Invalid type
+          systemMessage: "Custom supervisor instructions",
+        };
+
+        expect(() => {
+          new SubAgentManager("Test Agent", [], config);
+        }).toThrow("supervisorSystemMessageConfig.includeMemory must be a boolean");
+      });
+
+      it("should throw error when systemMessage is not a string", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: 123 as any, // Invalid type
+        };
+
+        expect(() => {
+          new SubAgentManager("Test Agent", [], config);
+        }).toThrow("supervisorSystemMessageConfig.systemMessage must be a non-empty string");
+      });
+
+      it("should throw error when systemMessage is an empty string", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: "",
+        };
+
+        expect(() => {
+          new SubAgentManager("Test Agent", [], config);
+        }).toThrow("supervisorSystemMessageConfig.systemMessage must be a non-empty string");
+      });
+
+      it("should throw error when systemMessage is only whitespace", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: "   \n\t   ",
+        };
+
+        expect(() => {
+          new SubAgentManager("Test Agent", [], config);
+        }).toThrow("supervisorSystemMessageConfig.systemMessage must be a non-empty string");
+      });
+
+      it("should accept false for includeMemory", () => {
+        const config = {
+          includeMemory: false,
+          systemMessage: "Custom supervisor instructions",
+        };
+
+        expect(() => {
+          new SubAgentManager("Test Agent", [], config);
+        }).not.toThrow();
+      });
+    });
+
+    describe("generateSupervisorSystemMessage with config", () => {
+      it("should return base instructions when no sub-agents exist, regardless of config", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: "Custom supervisor instructions",
+        };
+        const manager = new SubAgentManager("Test Agent", [], config);
+        const baseInstructions = "Original agent instructions";
+
+        const result = manager.generateSupervisorSystemMessage(baseInstructions, "some memory");
+        expect(result).toBe(baseInstructions);
+      });
+
+      it("should use custom systemMessage when config is provided and sub-agents exist", () => {
+        const customSystemMessage = "You are a specialized coordinator with custom rules.";
+        const config = {
+          includeMemory: false,
+          systemMessage: customSystemMessage,
+        };
+
+        const mockAgent1 = { name: "Agent1", instructions: "Math operations" } as any;
+        const mockAgent2 = { name: "Agent2", purpose: "Writing tasks" } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent1, mockAgent2], config);
+
+        const result = manager.generateSupervisorSystemMessage(
+          "Original instructions",
+          "some memory",
+        );
+
+        // When custom config is provided, it completely replaces the default structure
+        expect(result).toBe(customSystemMessage); // Should only contain the custom message
+        expect(result).not.toContain("some memory"); // includeMemory is false
+        expect(result).not.toContain("You are a supervisor agent that coordinates"); // No default structure
+      });
+
+      it("should include memory section when includeMemory is true", () => {
+        const customSystemMessage = "Custom supervisor with memory.";
+        const config = {
+          includeMemory: true,
+          systemMessage: customSystemMessage,
+        };
+
+        const mockAgent = { name: "TestAgent", instructions: "Test operations" } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent], config);
+        const agentsMemory = "Previous interaction: User asked about math";
+
+        const result = manager.generateSupervisorSystemMessage(
+          "Original instructions",
+          agentsMemory,
+        );
+
+        expect(result).toContain(customSystemMessage);
+        expect(result).toContain("<agents_memory>");
+        expect(result).toContain(agentsMemory);
+        expect(result).toContain("</agents_memory>");
+      });
+
+      it("should not include memory section when includeMemory is false", () => {
+        const customSystemMessage = "Custom supervisor without memory.";
+        const config = {
+          includeMemory: false,
+          systemMessage: customSystemMessage,
+        };
+
+        const mockAgent = { name: "TestAgent", instructions: "Test operations" } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent], config);
+        const agentsMemory = "Previous interaction: User asked about math";
+
+        const result = manager.generateSupervisorSystemMessage(
+          "Original instructions",
+          agentsMemory,
+        );
+
+        expect(result).toContain(customSystemMessage);
+        expect(result).not.toContain("<agents_memory>");
+        expect(result).not.toContain(agentsMemory);
+        expect(result).not.toContain("</agents_memory>");
+      });
+
+      it("should use only custom message and memory when config is provided", () => {
+        const customSystemMessage = "You follow special protocols.";
+        const config = {
+          includeMemory: true,
+          systemMessage: customSystemMessage,
+        };
+
+        const mockAgent1 = { name: "MathAgent", instructions: "Handle calculations" } as any;
+        const mockAgent2 = { name: "WriteAgent", purpose: "Content creation" } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent1, mockAgent2], config);
+
+        const result = manager.generateSupervisorSystemMessage("Original instructions", "");
+
+        // With custom config, it should only contain the custom message and memory section
+        expect(result).toContain(customSystemMessage);
+        expect(result).toContain("<agents_memory>");
+        expect(result).toContain("No previous agent interactions available.");
+        expect(result).toContain("</agents_memory>");
+
+        // Should NOT contain the default supervisor structure
+        expect(result).not.toContain("<specialized_agents>");
+        expect(result).not.toContain("- MathAgent: Handle calculations");
+        expect(result).not.toContain("- WriteAgent: Content creation");
+      });
+
+      it("should fallback to default behavior when no config is provided", () => {
+        const mockAgent = { name: "TestAgent", instructions: "Test operations" } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent]); // No config
+
+        const result = manager.generateSupervisorSystemMessage(
+          "Original instructions",
+          "some memory",
+        );
+
+        // Should use the default supervisor system message format
+        expect(result).toContain(
+          "You are a supervisor agent that coordinates between specialized agents:",
+        );
+        expect(result).toContain("<instructions>");
+        expect(result).toContain("Original instructions");
+        expect(result).toContain("</instructions>");
+        expect(result).toContain("<guidelines>");
+        expect(result).toContain("some memory");
+      });
+
+      it("should handle empty memory string when includeMemory is true", () => {
+        const customSystemMessage = "Custom supervisor message.";
+        const config = {
+          includeMemory: true,
+          systemMessage: customSystemMessage,
+        };
+
+        const mockAgent = { name: "TestAgent", instructions: "Test operations" } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent], config);
+
+        const result = manager.generateSupervisorSystemMessage("Original instructions", "");
+
+        expect(result).toContain("<agents_memory>");
+        expect(result).toContain("No previous agent interactions available.");
+        expect(result).toContain("</agents_memory>");
+      });
+
+      it("should handle undefined memory when includeMemory is true", () => {
+        const customSystemMessage = "Custom supervisor message.";
+        const config = {
+          includeMemory: true,
+          systemMessage: customSystemMessage,
+        };
+
+        const mockAgent = { name: "TestAgent", instructions: "Test operations" } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent], config);
+
+        // Call without memory parameter (should use default empty string)
+        const result = manager.generateSupervisorSystemMessage("Original instructions");
+
+        expect(result).toContain("<agents_memory>");
+        expect(result).toContain("No previous agent interactions available.");
+        expect(result).toContain("</agents_memory>");
+      });
+
+      it("should use only custom system message when includeMemory is false", () => {
+        const customSystemMessage = "Custom supervisor message.";
+        const config = {
+          includeMemory: false,
+          systemMessage: customSystemMessage,
+        };
+
+        const mockAgent = {
+          name: "TestAgent",
+          instructions: "Fallback instructions",
+          purpose: "Primary purpose description",
+        } as any;
+        const manager = new SubAgentManager("Test Agent", [mockAgent], config);
+
+        const result = manager.generateSupervisorSystemMessage("Original instructions", "");
+
+        // When custom config is provided with includeMemory false, should only return the custom message
+        expect(result).toBe(customSystemMessage);
+        expect(result).not.toContain("TestAgent");
+        expect(result).not.toContain("Primary purpose description");
+        expect(result).not.toContain("Fallback instructions");
+        expect(result).not.toContain("<agents_memory>");
+      });
+    });
+
+    describe("validateSupervisorSystemMessageConfig", () => {
+      it("should validate correct config without throwing", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: "Valid message",
+        };
+
+        // Access the private method for testing
+        const manager = new SubAgentManager("Test Agent", []);
+        expect(() => {
+          (manager as any).validateSupervisorSystemMessageConfig(config);
+        }).not.toThrow();
+      });
+
+      it("should throw for null includeMemory", () => {
+        const config = {
+          includeMemory: null as any,
+          systemMessage: "Valid message",
+        };
+
+        const manager = new SubAgentManager("Test Agent", []);
+        expect(() => {
+          (manager as any).validateSupervisorSystemMessageConfig(config);
+        }).toThrow("supervisorSystemMessageConfig.includeMemory must be a boolean");
+      });
+
+      it("should throw for undefined includeMemory", () => {
+        const config = {
+          includeMemory: undefined as any,
+          systemMessage: "Valid message",
+        };
+
+        const manager = new SubAgentManager("Test Agent", []);
+        expect(() => {
+          (manager as any).validateSupervisorSystemMessageConfig(config);
+        }).toThrow("supervisorSystemMessageConfig.includeMemory must be a boolean");
+      });
+
+      it("should throw for null systemMessage", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: null as any,
+        };
+
+        const manager = new SubAgentManager("Test Agent", []);
+        expect(() => {
+          (manager as any).validateSupervisorSystemMessageConfig(config);
+        }).toThrow("supervisorSystemMessageConfig.systemMessage must be a non-empty string");
+      });
+
+      it("should throw for undefined systemMessage", () => {
+        const config = {
+          includeMemory: true,
+          systemMessage: undefined as any,
+        };
+
+        const manager = new SubAgentManager("Test Agent", []);
+        expect(() => {
+          (manager as any).validateSupervisorSystemMessageConfig(config);
+        }).toThrow("supervisorSystemMessageConfig.systemMessage must be a non-empty string");
+      });
+    });
+  });
 });

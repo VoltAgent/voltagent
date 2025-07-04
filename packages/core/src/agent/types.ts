@@ -26,6 +26,9 @@ import type {
   PromptContent,
 } from "../voltops/types";
 
+import type { VoltOpsClient } from "../voltops/client";
+import type { SupervisorSystemMessageConfig } from "./subagent/types";
+
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper };
 
@@ -149,6 +152,11 @@ export type AgentOptions = {
    * ✨ Benefits: Observability + prompt management + dynamic prompts from console
    */
   telemetryExporter?: VoltAgentExporter;
+
+  /**
+   * Supervisor system message configuration
+   */
+  supervisorSystemMessageConfig?: SupervisorSystemMessageConfig;
 } & (
   | {
       /**

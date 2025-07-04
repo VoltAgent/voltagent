@@ -69,6 +69,7 @@ import type {
   VoltAgentError,
 } from "./types";
 import type { PromptContent } from "../voltops/types";
+import type { SupervisorSystemMessageConfig } from "./subagent/types";
 
 /**
  * Agent class for interacting with AI models
@@ -191,6 +192,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         voice?: Voice;
         markdown?: boolean;
         voltOpsClient?: VoltOpsClient;
+        supervisorSystemMessageConfig?: SupervisorSystemMessageConfig;
       },
   ) {
     this.id = options.id || options.name;
@@ -243,7 +245,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.toolManager = new ToolManager(staticTools);
 
     // Initialize sub-agent manager
-    this.subAgentManager = new SubAgentManager(this.name, options.subAgents || []);
+    this.subAgentManager = new SubAgentManager(
+      this.name,
+      options.subAgents || [],
+      options.supervisorSystemMessageConfig,
+    );
 
     // Initialize history manager with VoltOpsClient or legacy telemetryExporter support
     let chosenExporter: VoltAgentExporter | undefined;

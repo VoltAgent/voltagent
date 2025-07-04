@@ -8,3 +8,8 @@ export type SubAgentStreamPart = Merge<
     subAgentName: string;
   }
 >;
+
+export type SupervisorSystemMessageConfig = {
+  includeMemory: boolean;
+  systemMessage: string;
+};
