@@ -39,11 +39,14 @@ async function customersPluginExtended(context, options) {
       const { addRoute, createData } = actions;
       const { customers } = content;
 
-      // Create customers list page
+      // Create customers list page - only include published customers
+      const publishedCustomers = customers.filter(
+        (customer) => customer.metadata.published === true,
+      );
       const customersListPath = await createData(
         "customers-list.json",
         JSON.stringify(
-          customers.map((c) => c.metadata),
+          publishedCustomers.map((c) => c.metadata),
           null,
           2,
         ),
@@ -58,7 +61,7 @@ async function customersPluginExtended(context, options) {
         },
       });
 
-      // Create individual customer pages using slug
+      // Create individual customer pages using slug - include ALL customers (published and unpublished)
       await Promise.all(
         customers.map(async (customer) => {
           const { metadata } = customer;

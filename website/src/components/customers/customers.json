@@ -2,6 +2,7 @@
   {
     "id": 3,
     "slug": "joggr",
+    "published": true,
     "customer": {
       "name": "Joggr",
       "logo_url": "https://cdn.voltagent.dev/website/customers/joggr-logo.png",
@@ -49,6 +50,7 @@
   {
     "id": 4,
     "slug": "devpotenciados",
+    "published": true,
     "customer": {
       "name": "DEVPotenciados LATAM",
       "logo_url": "https://cdn.voltagent.dev/website/customers/devpotenciados-logo.png",
@@ -96,6 +98,7 @@
   {
     "id": 5,
     "slug": "different",
+    "published": false,
     "customer": {
       "name": "Different",
       "logo_url": "https://cdn.voltagent.dev/website/customers/different-logo.png",
