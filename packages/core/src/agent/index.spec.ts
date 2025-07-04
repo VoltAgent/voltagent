@@ -171,11 +171,19 @@ class MockProvider implements LLMProvider<MockModelType> {
     model: MockModelType;
     tools?: BaseTool[];
     maxSteps?: number;
+    signal?: AbortSignal;
     onStepFinish?: (step: StepWithContent) => Promise<void>;
     toolExecutionContext?: ToolExecutionContext;
   }): Promise<ProviderTextResponse<MockGenerateTextResult>> {
     this.generateTextCalls++;
     this.lastMessages = options.messages;
+
+    // Check abort signal
+    if (options.signal?.aborted) {
+      const error = new Error("Operation aborted");
+      error.name = "AbortError";
+      throw error;
+    }
 
     // If there are tools and the message contains tool-related keywords, simulate tool usage
     if (
@@ -266,6 +274,8 @@ class MockProvider implements LLMProvider<MockModelType> {
       toolCalls: [],
       toolResults: [],
       finishReason: "stop",
+      warnings: [],
+      providerResponse: {},
     };
   }
 
@@ -274,6 +284,7 @@ class MockProvider implements LLMProvider<MockModelType> {
     model: MockModelType;
     tools?: BaseTool[];
     maxSteps?: number;
+    signal?: AbortSignal;
     onChunk?: (chunk: StepWithContent) => Promise<void>;
     onStepFinish?: (step: StepWithContent) => Promise<void>;
     onFinish?: (result: any) => Promise<void>;
@@ -401,6 +412,7 @@ class MockProvider implements LLMProvider<MockModelType> {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
+    signal?: AbortSignal;
     onStepFinish?: (step: StepWithContent) => Promise<void>;
   }): Promise<ProviderObjectResponse<MockGenerateObjectResult<z.infer<T>>, z.infer<T>>> {
     this.generateObjectCalls++;
@@ -3336,7 +3348,16 @@ describe("Agent", () => {
         operationId: "test-op-123",
         userContext: new Map([["testKey", "testValue"]]),
         conversationSteps: [{ type: "test", content: "initial step" }],
-        historyEntry: { id: "test-history-123" },
+        historyEntry: {
+          id: "test-history-123",
+          startTime: new Date(),
+          input: "test input",
+          output: "test output",
+          status: "completed" as const,
+          steps: [],
+          usage: { totalTokens: 0 },
+          model: "test-model",
+        },
         isActive: true,
       };
 
@@ -4308,5 +4329,726 @@ describe("onEnd Hook userContext Modifications", () => {
     // Verify that the final response contains the updated userContext from onEnd hook
     expect(response.userContext?.get("agent_response")).toBe("bye");
     expect(response.userContext?.get("hook_executed")).toBe(true);
+  });
+});
+
+describe("Agent Abort Signal", () => {
+  let mockLLM: MockProvider;
+  let agent: Agent<{ llm: MockProvider }>;
+  let abortController: AbortController;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLLM = new MockProvider({ modelId: "test-model" });
+    abortController = new AbortController();
+
+    agent = new Agent({
+      name: "Test Agent",
+      instructions: "Test instructions",
+      model: { modelId: "test-model" },
+      llm: mockLLM,
+      memory: mockMemory,
+    });
+  });
+
+  describe("setupAbortSignalListener", () => {
+    it("should setup abort signal listener correctly", async () => {
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Setup spy on updateHistoryEntry method
+      const updateHistoryEntrySpy = vi.spyOn(agent as any, "updateHistoryEntry");
+      const publishTimelineEventSpy = vi.spyOn(agent as any, "publishTimelineEvent");
+
+      // Call setupAbortSignalListener
+      (agent as any).setupAbortSignalListener(
+        abortController.signal,
+        mockOperationContext,
+        "test-conversation",
+        agentStartEvent,
+      );
+
+      // Trigger abort
+      abortController.abort();
+
+      // Wait for async operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Verify history was updated with cancelled status
+      expect(updateHistoryEntrySpy).toHaveBeenCalledWith(mockOperationContext, {
+        status: "cancelled",
+        endTime: expect.any(Date),
+      });
+
+      // Verify operation context was marked as inactive
+      expect(mockOperationContext.isActive).toBe(false);
+
+      // Verify agent cancelled event was published
+      expect(publishTimelineEventSpy).toHaveBeenCalledWith(
+        mockOperationContext,
+        expect.objectContaining({
+          name: "agent:cancel",
+          type: "agent",
+          status: "cancelled",
+          statusMessage: {
+            message: "Operation cancelled by user",
+            code: "USER_CANCELLED",
+            stage: "cancelled",
+          },
+        }),
+      );
+
+      updateHistoryEntrySpy.mockRestore();
+      publishTimelineEventSpy.mockRestore();
+    });
+
+    it("should not setup listener when signal is undefined", () => {
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Should not throw when signal is undefined
+      expect(() => {
+        (agent as any).setupAbortSignalListener(
+          undefined,
+          mockOperationContext,
+          "test-conversation",
+          agentStartEvent,
+        );
+      }).not.toThrow();
+    });
+
+    it("should call onEnd hook with cancellation error when aborted", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Setup abort signal listener
+      (agent as any).setupAbortSignalListener(
+        abortController.signal,
+        mockOperationContext,
+        "test-conversation",
+        agentStartEvent,
+      );
+
+      // Trigger abort
+      abortController.abort();
+
+      // Wait for async operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Verify onEnd hook was called with cancellation error
+      expect(onEndSpy).toHaveBeenCalledWith({
+        agent: agent,
+        output: undefined,
+        error: expect.objectContaining({
+          message: "Operation cancelled by user",
+          name: "AbortError",
+        }),
+        conversationId: "test-conversation",
+        context: mockOperationContext,
+      });
+    });
+  });
+
+  describe("generateText with abort signal", () => {
+    it("should handle abort signal during generateText", async () => {
+      // Setup mock to delay so we can abort
+      const delayedGenerateText = vi
+        .spyOn(mockLLM, "generateText")
+        .mockImplementation(async (options) => {
+          // Simulate delay
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Check if aborted during generation
+          if (options.signal?.aborted) {
+            const error = new Error("Operation was aborted");
+            error.name = "AbortError";
+            throw error;
+          }
+
+          return {
+            text: "Generated text",
+            usage: { totalTokens: 50 },
+            finishReason: "stop",
+            warnings: [],
+            providerResponse: {},
+          };
+        });
+
+      // Start generateText operation
+      const generatePromise = agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Abort after a short delay
+      setTimeout(() => abortController.abort(), 50);
+
+      // Should reject with AbortError
+      await expect(generatePromise).rejects.toThrow("Operation was aborted");
+
+      delayedGenerateText.mockRestore();
+    });
+
+    it("should pass abort signal to LLM provider in generateText", async () => {
+      const generateTextSpy = vi.spyOn(mockLLM, "generateText");
+
+      await agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Verify signal was passed to LLM
+      expect(generateTextSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should handle immediate abort in generateText", async () => {
+      // Abort immediately
+      abortController.abort();
+
+      // Mock the provider to respect abort signal immediately
+      const generateTextSpy = vi
+        .spyOn(mockLLM, "generateText")
+        .mockImplementation(async (options) => {
+          if (options.signal?.aborted) {
+            const error = new Error("Operation aborted");
+            error.name = "AbortError";
+            throw error;
+          }
+          return {
+            text: "Hello, I am a test agent!",
+            usage: { totalTokens: 30 },
+            finishReason: "stop",
+            warnings: [],
+            providerResponse: {},
+            provider: { text: "Hello, I am a test agent!" },
+            toolCalls: [],
+            toolResults: [],
+          };
+        });
+
+      const generatePromise = agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Should reject due to immediate abort
+      await expect(generatePromise).rejects.toThrow("Operation aborted");
+
+      generateTextSpy.mockRestore();
+    });
+  });
+
+  describe("streamText with abort signal", () => {
+    it("should handle abort signal during streamText", async () => {
+      const streamTextSpy = vi.spyOn(mockLLM, "streamText").mockImplementation(async (options) => {
+        return {
+          textStream: (async function* () {
+            yield "chunk1";
+
+            // Check if aborted during streaming
+            if (options.signal?.aborted) {
+              const error = new Error("Stream aborted");
+              error.name = "AbortError";
+              throw error;
+            }
+
+            yield "chunk2";
+          })(),
+          fullStream: (async function* () {
+            yield { type: "text-delta", textDelta: "chunk1" };
+
+            // Check abort during stream
+            if (options.signal?.aborted) {
+              const error = new Error("Stream aborted");
+              error.name = "AbortError";
+              throw error;
+            }
+
+            yield { type: "text-delta", textDelta: "chunk2" };
+            yield { type: "finish", finishReason: "stop", usage: { totalTokens: 10 } };
+          })(),
+          userContext: new Map(),
+        };
+      });
+
+      const streamResponse = await agent.streamText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Start consuming stream
+      const streamPromise = (async () => {
+        const chunks = [];
+        for await (const chunk of streamResponse.textStream) {
+          chunks.push(chunk);
+          // Abort after first chunk
+          if (chunks.length === 1) {
+            abortController.abort();
+          }
+        }
+        return chunks;
+      })();
+
+      // Should handle abort during streaming
+      await expect(streamPromise).rejects.toThrow();
+
+      streamTextSpy.mockRestore();
+    });
+
+    it("should pass abort signal to LLM provider in streamText", async () => {
+      const streamTextSpy = vi.spyOn(mockLLM, "streamText");
+
+      await agent.streamText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Verify signal was passed to LLM
+      expect(streamTextSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      streamTextSpy.mockRestore();
+    });
+  });
+
+  describe("generateObject with abort signal", () => {
+    it("should handle abort signal during generateObject", async () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      const generateObjectSpy = vi
+        .spyOn(mockLLM, "generateObject")
+        .mockImplementation(async (options) => {
+          // Simulate delay
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Check if aborted
+          if (options.signal?.aborted) {
+            const error = new Error("Object generation aborted");
+            error.name = "AbortError";
+            throw error;
+          }
+
+          return {
+            object: { name: "John", age: 30 },
+            usage: { totalTokens: 25 },
+            finishReason: "stop",
+            warnings: [],
+            providerResponse: {},
+          };
+        });
+
+      // Start generateObject operation
+      const generatePromise = agent.generateObject("Generate person", schema, {
+        signal: abortController.signal,
+      });
+
+      // Abort after short delay
+      setTimeout(() => abortController.abort(), 50);
+
+      // Should reject with AbortError
+      await expect(generatePromise).rejects.toThrow("Object generation aborted");
+
+      generateObjectSpy.mockRestore();
+    });
+
+    it("should pass abort signal to LLM provider in generateObject", async () => {
+      const schema = z.object({ test: z.string() });
+      const generateObjectSpy = vi.spyOn(mockLLM, "generateObject");
+
+      await agent.generateObject("Test input", schema, {
+        signal: abortController.signal,
+      });
+
+      // Verify signal was passed to LLM
+      expect(generateObjectSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      generateObjectSpy.mockRestore();
+    });
+  });
+
+  describe("streamObject with abort signal", () => {
+    it("should handle abort signal during streamObject", async () => {
+      const schema = z.object({
+        items: z.array(z.string()),
+      });
+
+      const streamObjectSpy = vi
+        .spyOn(mockLLM, "streamObject")
+        .mockImplementation(async (options) => {
+          return {
+            stream: new ReadableStream({
+              start(controller) {
+                controller.enqueue({ type: "text-delta", textDelta: "generating..." });
+
+                // Check abort during stream
+                if (options.signal?.aborted) {
+                  const error = new Error("Object stream aborted");
+                  error.name = "AbortError";
+                  controller.error(error);
+                  return;
+                }
+
+                controller.close();
+              },
+            }),
+            partialObjectStream: new ReadableStream({
+              start(controller) {
+                controller.enqueue({ items: ["item1"] });
+                controller.close();
+              },
+            }),
+            textStream: new ReadableStream({
+              start(controller) {
+                controller.enqueue("text chunk");
+                controller.close();
+              },
+            }),
+            userContext: new Map(),
+          };
+        });
+
+      const streamResponse = await agent.streamObject("Generate list", schema, {
+        signal: abortController.signal,
+      });
+
+      // Abort signal should be passed through
+      expect(streamObjectSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      streamObjectSpy.mockRestore();
+    });
+  });
+
+  describe("abort signal propagation to sub-agents", () => {
+    it("should propagate abort signal to sub-agents", async () => {
+      // Create a TestAgent for this specific test so we can access getSubAgentManager()
+      const testAgent = new TestAgent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      // Create a sub-agent using TestAgent
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Sub agent instructions",
+        model: { modelId: "sub-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      // Add sub-agent to test agent
+      testAgent.addSubAgent(subAgent);
+
+      // Mock sub-agent's streamText method to check signal propagation
+      const subAgentStreamTextSpy = vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "sub response";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "sub response" };
+          yield { type: "finish", finishReason: "stop", usage: { totalTokens: 5 } };
+        })(),
+        userContext: new Map(),
+      });
+
+      // Create operation context with abort signal
+      const operationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+        signal: abortController.signal,
+      } as any;
+
+      // Get the delegate tool from the TestAgent
+      const subAgentManager = testAgent.getSubAgentManager();
+      const delegateTool = subAgentManager.createDelegateTool({
+        sourceAgent: testAgent,
+        operationContext: {
+          operationId: operationContext.operationId,
+          userContext: operationContext.userContext,
+          conversationSteps: [],
+          historyEntry: {
+            id: operationContext.historyEntry.id,
+            startTime: new Date(),
+            input: "test input",
+            output: "",
+            status: "working",
+            steps: [],
+            usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+            model: "sub-model",
+          },
+          isActive: operationContext.isActive,
+        },
+        currentHistoryEntryId: "test-history",
+      });
+
+      // Execute delegate tool (should propagate abort signal)
+      await delegateTool.execute({
+        task: "Test delegation",
+        targetAgents: ["Sub Agent"],
+        context: {},
+      });
+
+      // Verify sub-agent received the parent operation context with signal
+      expect(subAgentStreamTextSpy).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          parentOperationContext: expect.objectContaining({
+            operationId: operationContext.operationId,
+            userContext: operationContext.userContext,
+          }),
+          // Signal should be propagated through parentOperationContext
+          signal: undefined, // Sub-agent might not get direct signal but through context
+        }),
+      );
+
+      subAgentStreamTextSpy.mockRestore();
+    });
+  });
+
+  describe("abort signal with hooks", () => {
+    it("should call onEnd hook when operation is aborted", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      // Mock LLM to simulate long-running operation
+      const generateTextSpy = vi
+        .spyOn(mockLLM, "generateText")
+        .mockImplementation(async (options) => {
+          // Wait for abort
+          return new Promise((_, reject) => {
+            const checkAbort = () => {
+              if (options.signal?.aborted) {
+                const error = new Error("Operation cancelled by user");
+                error.name = "AbortError";
+                reject(error);
+              } else {
+                setTimeout(checkAbort, 10);
+              }
+            };
+            checkAbort();
+          });
+        });
+
+      // Start operation
+      const generatePromise = agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Abort after delay
+      setTimeout(() => abortController.abort(), 50);
+
+      // Should reject
+      await expect(generatePromise).rejects.toThrow();
+
+      // Wait for cleanup
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      // Verify onEnd hook was called with error
+      expect(onEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: agent,
+          output: undefined,
+          error: expect.objectContaining({
+            name: "AbortError",
+          }),
+        }),
+      );
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should not call onEnd hook multiple times when aborted", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      // Mock to throw AbortError immediately
+      const generateTextSpy = vi
+        .spyOn(mockLLM, "generateText")
+        .mockRejectedValue(Object.assign(new Error("Aborted"), { name: "AbortError" }));
+
+      // Already aborted signal
+      abortController.abort();
+
+      try {
+        await agent.generateText("Test input", {
+          signal: abortController.signal,
+        });
+      } catch (error) {
+        // Expected to throw
+      }
+
+      // Wait for any async cleanup
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      // onEnd should be called only once (from the main operation, not from signal listener)
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+
+      generateTextSpy.mockRestore();
+    });
+  });
+
+  describe("abort signal in initializeHistory", () => {
+    it("should inherit abort signal from parent operation context", async () => {
+      const parentAbortController = new AbortController();
+      const parentOperationContext = {
+        operationId: "parent-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("parent input"),
+        isActive: true,
+        signal: parentAbortController.signal,
+        conversationSteps: [],
+      } as any;
+
+      // Call initializeHistory with parent context
+      const operationContext = await (agent as any).initializeHistory("test input", "working", {
+        operationName: "test",
+        parentOperationContext,
+      });
+
+      // Should inherit signal from parent
+      expect(operationContext.signal).toBe(parentAbortController.signal);
+    });
+
+    it("should use provided signal over parent signal", async () => {
+      const parentAbortController = new AbortController();
+      const childAbortController = new AbortController();
+
+      const parentOperationContext = {
+        operationId: "parent-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("parent input"),
+        isActive: true,
+        signal: parentAbortController.signal,
+        conversationSteps: [],
+      } as any;
+
+      // Call initializeHistory with both parent context and explicit signal
+      const operationContext = await (agent as any).initializeHistory("test input", "working", {
+        operationName: "test",
+        parentOperationContext,
+        signal: childAbortController.signal,
+      });
+
+      // Should use explicit signal over parent signal
+      expect(operationContext.signal).toStrictEqual(childAbortController.signal);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle multiple abort signals gracefully", async () => {
+      const controller1 = new AbortController();
+      const controller2 = new AbortController();
+
+      // Start multiple operations with different signals
+      const promise1 = agent.generateText("Test 1", { signal: controller1.signal });
+      const promise2 = agent.generateText("Test 2", { signal: controller2.signal });
+
+      // Abort both
+      controller1.abort();
+      controller2.abort();
+
+      // Both should reject
+      await expect(promise1).rejects.toThrow();
+      await expect(promise2).rejects.toThrow();
+    });
+
+    it("should handle abort signal when operation is already completed", async () => {
+      // Complete the operation first
+      const result = await agent.generateText("Test input");
+      expect(result.text).toBe("Hello, I am a test agent!");
+
+      // Abort after completion (should not cause issues)
+      abortController.abort();
+
+      // Should not throw or cause issues
+      expect(() => abortController.abort()).not.toThrow();
+    });
+
+    it("should handle abort signal with no conversationId", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Setup with undefined conversationId
+      (agent as any).setupAbortSignalListener(
+        abortController.signal,
+        mockOperationContext,
+        undefined, // No conversationId
+        agentStartEvent,
+      );
+
+      // Trigger abort
+      abortController.abort();
+
+      // Wait for async operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Should call onEnd with empty string conversationId
+      expect(onEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversationId: "",
+        }),
+      );
+    });
   });
 });

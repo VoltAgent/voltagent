@@ -339,6 +339,14 @@ app.openapi(streamRoute, async (c) => {
       },
     } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
+    // Create AbortController and connect to request signal
+    const abortController = new AbortController();
+
+    // Listen for request abort (when client cancels fetch)
+    c.req.raw.signal?.addEventListener("abort", () => {
+      abortController.abort();
+    });
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -381,6 +389,8 @@ app.openapi(streamRoute, async (c) => {
               // Note: No onError callback needed - tool errors are handled via fullStream
               // Stream errors are handled by try/catch blocks around fullStream iteration
             },
+            // Pass the abort signal to the agent
+            signal: abortController.signal,
           } as any; // Type assertion to bypass userContext type mismatch
 
           const response = await agent.streamText(input, processedStreamOptions);
@@ -676,6 +686,15 @@ app.openapi(streamObjectRoute, async (c) => {
 
     const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
 
+    // Create AbortController and connect to request signal
+    const abortController = new AbortController();
+
+    // Listen for request abort (when client cancels fetch)
+    c.req.raw.signal?.addEventListener("abort", () => {
+      console.log("🛑 API: Client aborted object stream request, stopping agent stream...");
+      abortController.abort();
+    });
+
     const sseStream = new ReadableStream({
       async start(controller) {
         try {
@@ -728,6 +747,8 @@ app.openapi(streamObjectRoute, async (c) => {
                 safeClose();
               },
             },
+            // Pass the abort signal to the agent
+            signal: abortController.signal,
           } as any; // Type assertion to bypass userContext type mismatch
 
           const agentStream = await agent.streamObject(

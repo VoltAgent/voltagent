@@ -707,6 +707,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId?: string;
       conversationId?: string;
       parentOperationContext?: OperationContext;
+      signal?: AbortSignal;
     } = {
       operationName: "unknown",
     },
@@ -747,6 +748,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       otelSpan: otelSpan,
       // Use parent's conversationSteps if available (for SubAgents), otherwise create new array
       conversationSteps: options.parentOperationContext?.conversationSteps || [],
+      // Inherit signal from parent context or use provided signal
+      signal: options.parentOperationContext?.signal || options.signal,
     };
 
     return opContext;
@@ -929,6 +932,71 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Sets up abort signal listener for cancellation handling
+   */
+  private setupAbortSignalListener(
+    signal: AbortSignal | undefined,
+    operationContext: OperationContext,
+    finalConversationId: string | undefined,
+    agentStartEvent: { id: string; startTime: string },
+  ): void {
+    if (!signal) return;
+
+    signal.addEventListener("abort", async () => {
+      // Update history with cancelled status
+      this.updateHistoryEntry(operationContext, {
+        status: "cancelled",
+        endTime: new Date(),
+      });
+
+      // Mark operation as inactive
+      operationContext.isActive = false;
+
+      // Create cancellation error
+      const cancellationError = new Error("Operation cancelled by user");
+      cancellationError.name = "AbortError";
+
+      // Create agent:completed event with cancelled status
+      const agentCancelledEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:cancel",
+        type: "agent",
+        startTime: agentStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        level: "INFO",
+        input: null,
+        statusMessage: {
+          message: cancellationError.message,
+          code: "USER_CANCELLED",
+          stage: "cancelled",
+        },
+        status: "cancelled",
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
+            string,
+            unknown
+          >,
+        },
+        traceId: operationContext.historyEntry.id,
+        parentEventId: agentStartEvent.id,
+      };
+
+      this.publishTimelineEvent(operationContext, agentCancelledEvent);
+
+      // Call onEnd hook with cancellation error if conversationId is available
+      await this.hooks.onEnd?.({
+        agent: this,
+        output: undefined,
+        error: cancellationError,
+        conversationId: finalConversationId || "",
+        context: operationContext,
+      });
+    });
+  }
+
+  /**
    * Create an enhanced fullStream with real-time SubAgent event injection
    */
   private createEnhancedFullStream(
@@ -1004,6 +1072,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentOperationContext,
       contextLimit = 10,
       userContext,
+      signal,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
@@ -1014,6 +1083,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      signal,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1088,6 +1158,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       // Publish the new event through AgentEventEmitter
       this.publishTimelineEvent(operationContext, agentStartEvent);
+
+      // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
+      this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
+        id: agentStartEvent.id,
+        startTime: agentStartTime,
+      });
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -1218,7 +1294,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   id: crypto.randomUUID(),
                   name: "tool:success",
                   type: "tool",
-                  startTime: new Date().toISOString(), // Use the original start time
+                  startTime: toolStartInfo.startTime, // Use the original start time
                   endTime: new Date().toISOString(), // Current time as end time
                   status: "completed",
                   input: null,
@@ -1432,6 +1508,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentOperationContext,
       contextLimit = 10,
       userContext,
+      signal,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
@@ -1442,6 +1519,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      signal,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -1514,6 +1592,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Publish the new event through AgentEventEmitter
     this.publishTimelineEvent(operationContext, agentStartEvent);
+
+    // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
+    this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
+      id: agentStartEvent.id,
+      startTime: agentStartTime,
+    });
 
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
@@ -1666,7 +1750,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 id: crypto.randomUUID(),
                 name: "tool:error",
                 type: "tool",
-                startTime: new Date().toISOString(), // Use the original start time
+                startTime: toolStartInfo.startTime, // Use the original start time
                 endTime: new Date().toISOString(), // Current time as end time
                 status: "error",
                 level: "ERROR",
@@ -1690,7 +1774,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 id: crypto.randomUUID(),
                 name: "tool:success",
                 type: "tool",
-                startTime: new Date().toISOString(), // Use the original start time
+                startTime: toolStartInfo.startTime, // Use the original start time
                 endTime: new Date().toISOString(), // Current time as end time
                 status: "completed",
                 input: null,
@@ -1843,7 +1927,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               id: crypto.randomUUID(),
               name: "tool:error",
               type: "tool",
-              startTime: new Date().toISOString(),
+              startTime: toolStartInfo.startTime,
               endTime: new Date().toISOString(),
               status: "error",
               level: "ERROR",
@@ -1986,6 +2070,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentOperationContext,
       contextLimit = 10,
       userContext,
+      signal,
     } = internalOptions;
 
     // Always create new operation context, but share conversationSteps with parent if provided
@@ -1997,6 +2082,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      signal,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -2071,6 +2157,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       // Publish the new event through AgentEventEmitter
       this.publishTimelineEvent(operationContext, agentStartEvent);
+
+      // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
+      this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
+        id: agentStartEvent.id,
+        startTime: agentStartTime,
+      });
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -2286,6 +2378,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       provider,
       contextLimit = 10,
       userContext,
+      signal,
     } = internalOptions;
 
     const operationContext = await this.initializeHistory(input, "working", {
@@ -2296,6 +2389,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      signal,
     });
 
     const { messages: contextMessages, conversationId: finalConversationId } =
@@ -2368,6 +2462,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Publish the new event through AgentEventEmitter
     this.publishTimelineEvent(operationContext, agentStartEvent);
+
+    // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
+    this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
+      id: agentStartEvent.id,
+      startTime: agentStartTime,
+    });
 
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,

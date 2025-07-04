@@ -313,7 +313,7 @@ export type PublicGenerateOptions = Omit<
 /**
  * Agent status information
  */
-export type AgentStatus = "idle" | "working" | "tool_calling" | "error" | "completed";
+export type AgentStatus = "idle" | "working" | "error" | "completed" | "cancelled";
 
 /**
  * Tool call definition
@@ -424,6 +424,11 @@ export type AgentHandoffOptions = {
    * Parent's operation context to merge SubAgent steps into
    */
   parentOperationContext?: OperationContext;
+
+  /**
+   * AbortSignal to cancel the handoff operation
+   */
+  signal?: AbortSignal;
 };
 
 /**
@@ -497,6 +502,9 @@ export type OperationContext = {
 
   /** Conversation steps for building full message history including tool calls/results */
   conversationSteps?: StepWithContent[];
+
+  /** AbortSignal for cancelling the operation */
+  signal?: AbortSignal;
 };
 
 /**

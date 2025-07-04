@@ -203,6 +203,8 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
         parentOperationContext,
+        // Pass the abort signal from parent's operation context to subagent
+        signal: parentOperationContext?.signal,
       });
 
       // Collect all stream chunks for final result
