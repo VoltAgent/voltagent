@@ -274,8 +274,6 @@ class MockProvider implements LLMProvider<MockModelType> {
       toolCalls: [],
       toolResults: [],
       finishReason: "stop",
-      warnings: [],
-      providerResponse: {},
     };
   }
 
@@ -3655,8 +3653,6 @@ describe("Agent", () => {
         text: "Test response",
         usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
         finishReason: "stop",
-        warnings: [],
-        providerResponse: {},
         provider: { text: "Test response" },
         toolCalls: [],
         toolResults: [],
@@ -5493,6 +5489,422 @@ describe("Agent Abort Signal", () => {
           conversationId: "",
         }),
       );
+    });
+  });
+});
+
+describe("SupervisorConfig", () => {
+  let mockLLM: MockProvider;
+
+  beforeEach(() => {
+    mockLLM = new MockProvider({ modelId: "test-model" });
+  });
+
+  describe("constructor", () => {
+    it("should store supervisorConfig when provided", () => {
+      const supervisorConfig = {
+        systemMessage: "Custom supervisor message",
+        includeAgentsMemory: false,
+        customGuidelines: ["Rule 1", "Rule 2"],
+      };
+
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        supervisorConfig,
+      });
+
+      // Access private property via type assertion for testing
+      expect((agent as any).supervisorConfig).toEqual(supervisorConfig);
+    });
+
+    it("should handle undefined supervisorConfig", () => {
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      expect((agent as any).supervisorConfig).toBeUndefined();
+    });
+
+    it("should store partial supervisorConfig", () => {
+      const supervisorConfig = {
+        systemMessage: "Custom message only",
+      };
+
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        supervisorConfig,
+      });
+
+      expect((agent as any).supervisorConfig).toEqual(supervisorConfig);
+    });
+  });
+
+  describe("getSystemMessage with SupervisorConfig", () => {
+    let agent: Agent<{ llm: MockProvider }>;
+    let subAgent1: Agent<{ llm: MockProvider }>;
+    let subAgent2: Agent<{ llm: MockProvider }>;
+
+    beforeEach(() => {
+      // Create sub-agents
+      subAgent1 = new Agent({
+        name: "Writer Agent",
+        instructions: "Creates written content",
+        purpose: "A specialized writing assistant",
+        model: { modelId: "writer-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      subAgent2 = new Agent({
+        name: "Editor Agent",
+        instructions: "Reviews and edits content",
+        model: { modelId: "editor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+    });
+
+    it("should use supervisorConfig with custom systemMessage", async () => {
+      const supervisorConfig = {
+        systemMessage: "You are a friendly content manager named ContentBot.",
+        includeAgentsMemory: true,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base supervisor instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1, subAgent2],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [
+          { role: "user", content: "Hello" },
+          { role: "assistant", content: "Hi there!" },
+        ],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain(
+        "You are a friendly content manager named ContentBot.",
+      );
+      expect(systemMessage.systemMessages.content).toContain("<agents_memory>");
+      expect(systemMessage.systemMessages.content).not.toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).not.toContain("Base supervisor instructions");
+    });
+
+    it("should use supervisorConfig with includeAgentsMemory false", async () => {
+      const supervisorConfig = {
+        systemMessage: "Custom supervisor without memory.",
+        includeAgentsMemory: false,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [
+          { role: "user", content: "Hello" },
+          { role: "assistant", content: "Response" },
+        ],
+      });
+
+      expect(systemMessage.systemMessages.content).toBe("Custom supervisor without memory.");
+      expect(systemMessage.systemMessages.content).not.toContain("<agents_memory>");
+    });
+
+    it("should use supervisorConfig with customGuidelines in template mode", async () => {
+      const supervisorConfig = {
+        customGuidelines: ["Always be polite", "Respond within 30 seconds"],
+        includeAgentsMemory: true,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Coordinate between agents",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("Always be polite");
+      expect(systemMessage.systemMessages.content).toContain("Respond within 30 seconds");
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Coordinate between agents");
+    });
+
+    it("should work without supervisorConfig when subAgents exist", async () => {
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Default supervisor behavior",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        // No supervisorConfig
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Default supervisor behavior");
+      expect(systemMessage.systemMessages.content).toContain(
+        "Writer Agent: A specialized writing assistant",
+      );
+    });
+
+    it("should ignore supervisorConfig when no subAgents exist", async () => {
+      const supervisorConfig = {
+        systemMessage: "This should be ignored",
+        customGuidelines: ["This should also be ignored"],
+      };
+
+      agent = new Agent({
+        name: "Regular Agent",
+        instructions: "Regular agent instructions",
+        model: { modelId: "regular-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        // No subAgents
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toBe(
+        "You are Regular Agent. Regular agent instructions",
+      );
+      expect(systemMessage.systemMessages.content).not.toContain("This should be ignored");
+      expect(systemMessage.systemMessages.content).not.toContain("You are a supervisor agent");
+    });
+
+    it("should handle empty customGuidelines in supervisorConfig", async () => {
+      const supervisorConfig = {
+        customGuidelines: [],
+        includeAgentsMemory: true,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Provide a final answer to the User"); // Default guideline
+    });
+
+    it("should handle supervisorConfig with all undefined values", async () => {
+      const supervisorConfig = {
+        systemMessage: undefined,
+        includeAgentsMemory: undefined,
+        customGuidelines: undefined,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      // Should fall back to default template behavior
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Base instructions");
+      expect(systemMessage.systemMessages.content).toContain("<agents_memory>");
+    });
+  });
+
+  describe("integration with subAgents", () => {
+    it("should pass supervisorConfig to SubAgentManager", async () => {
+      const supervisorConfig = {
+        systemMessage: "Custom system message",
+        includeAgentsMemory: false,
+      };
+
+      const subAgent = new Agent({
+        name: "Test Sub Agent",
+        instructions: "Sub agent instructions",
+        model: { modelId: "sub-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Supervisor instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent],
+        supervisorConfig,
+      });
+
+      // Spy on SubAgentManager.generateSupervisorSystemMessage
+      const subAgentManager = (agent as any).subAgentManager;
+      const generateSupervisorSystemMessageSpy = vi.spyOn(
+        subAgentManager,
+        "generateSupervisorSystemMessage",
+      );
+
+      await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      // Verify supervisorConfig was passed to SubAgentManager
+      expect(generateSupervisorSystemMessageSpy).toHaveBeenCalledWith(
+        "Supervisor instructions",
+        "No previous agent interactions found.", // agents memory
+        supervisorConfig,
+      );
+
+      generateSupervisorSystemMessageSpy.mockRestore();
+    });
+
+    it("should work with multiple subAgents and supervisorConfig", async () => {
+      const supervisorConfig = {
+        customGuidelines: ["Work efficiently", "Be collaborative"],
+      };
+
+      const subAgent1 = new Agent({
+        name: "Writer",
+        purpose: "Creates content",
+        instructions: "Write great content",
+        model: { modelId: "writer-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const subAgent2 = new Agent({
+        name: "Editor",
+        instructions: "Edit and improve content",
+        model: { modelId: "editor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const agent = new Agent({
+        name: "Content Manager",
+        instructions: "Manage content creation process",
+        model: { modelId: "manager-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1, subAgent2],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "Create an article",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("Work efficiently");
+      expect(systemMessage.systemMessages.content).toContain("Be collaborative");
+      expect(systemMessage.systemMessages.content).toContain("Writer: Creates content");
+      expect(systemMessage.systemMessages.content).toContain("Editor: Edit and improve content");
+      expect(systemMessage.systemMessages.content).toContain("Manage content creation process");
+    });
+  });
+
+  describe("error handling", () => {
+    it("should handle malformed supervisorConfig gracefully", async () => {
+      const supervisorConfig = {
+        systemMessage: null,
+        includeAgentsMemory: "invalid",
+        customGuidelines: "not an array",
+      } as any;
+
+      const subAgent = new Agent({
+        name: "Test Sub Agent",
+        instructions: "Sub agent instructions",
+        model: { modelId: "sub-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Supervisor instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent],
+        supervisorConfig,
+      });
+
+      // Should not throw an error
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      // Should fall back to some reasonable behavior
+      expect(systemMessage.systemMessages.content).toBeDefined();
+      expect(typeof systemMessage.systemMessages.content).toBe("string");
     });
   });
 });
