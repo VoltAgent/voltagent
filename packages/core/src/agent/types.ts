@@ -82,6 +82,29 @@ export type ProviderOptions = {
 };
 
 /**
+ * Configuration for supervisor agents that have subagents
+ */
+export type SupervisorConfig = {
+  /**
+   * Complete custom system message for the supervisor agent
+   * If provided, this completely replaces the default template
+   * Only agents memory section will be appended if includeAgentsMemory is true
+   */
+  systemMessage?: string;
+
+  /**
+   * Whether to include agents memory in the supervisor system message
+   * @default true
+   */
+  includeAgentsMemory?: boolean;
+
+  /**
+   * Additional custom guidelines for the supervisor agent
+   */
+  customGuidelines?: string[];
+};
+
+/**
  * Agent configuration options
  */
 export type AgentOptions = {
@@ -121,11 +144,6 @@ export type AgentOptions = {
   tools?: ToolsDynamicValue;
 
   /**
-   * Sub-agents that this agent can delegate tasks to
-   */
-  subAgents?: SubAgentConfig[];
-
-  /**
    * Maximum number of steps (turns) the agent can take before stopping
    * This overrides any supervisor config maxSteps setting
    */
@@ -153,32 +171,54 @@ export type AgentOptions = {
 } & (
   | {
       /**
-       * @deprecated Use `instructions` instead.
-       * Agent description (deprecated, use instructions)
+       * Sub-agents that this agent can delegate tasks to
        */
-      description: string;
+      subAgents: SubAgentConfig[];
       /**
-       * Agent instructions. This is the preferred field.
-       * Can be static or dynamic based on user context.
-       * Enhanced to support prompt management via helper functions.
+       * Configuration for supervisor behavior when subAgents are present
        */
-      instructions?: InstructionsDynamicValue;
+      supervisorConfig?: SupervisorConfig;
     }
   | {
       /**
-       * @deprecated Use `instructions` instead.
-       * Agent description (deprecated, use instructions)
+       * Sub-agents that this agent can delegate tasks to
        */
-      description?: undefined; // Ensure description is treated as absent
+      subAgents?: undefined;
       /**
-       * Agent instructions. This is the preferred field.
-       * Required if description is not provided.
-       * Can be static or dynamic based on user context.
-       * Enhanced to support prompt management via helper functions.
+       * supervisorConfig is only available when subAgents are provided
        */
-      instructions: InstructionsDynamicValue;
+      supervisorConfig?: never;
     }
-);
+) &
+  (
+    | {
+        /**
+         * @deprecated Use `instructions` instead.
+         * Agent description (deprecated, use instructions)
+         */
+        description: string;
+        /**
+         * Agent instructions. This is the preferred field.
+         * Can be static or dynamic based on user context.
+         * Enhanced to support prompt management via helper functions.
+         */
+        instructions?: InstructionsDynamicValue;
+      }
+    | {
+        /**
+         * @deprecated Use `instructions` instead.
+         * Agent description (deprecated, use instructions)
+         */
+        description?: undefined; // Ensure description is treated as absent
+        /**
+         * Agent instructions. This is the preferred field.
+         * Required if description is not provided.
+         * Can be static or dynamic based on user context.
+         * Enhanced to support prompt management via helper functions.
+         */
+        instructions: InstructionsDynamicValue;
+      }
+  );
 
 /**
  * System message response with optional prompt metadata

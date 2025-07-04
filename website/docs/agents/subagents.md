@@ -71,11 +71,109 @@ The basic example above uses the default `streamText` method for subagents. For 
 **Learn more:** [Advanced SubAgent Configuration](#advanced-subagent-configuration)
 :::
 
-When you initialize an agent with subagents, several things happen automatically:
+## Customizing Supervisor Behavior
 
-1.  **Supervisor Prompt Enhancement**: The supervisor agent's system prompt is automatically modified (`generateSupervisorSystemMessage`) to include instructions on how to manage its subagents effectively. It lists the available subagents and their purpose and provides guidelines for delegation, communication, and response aggregation.
-2.  **`delegate_task` Tool**: A `delegate_task` tool is automatically added to the supervisor agent's available tools. This tool allows the supervisor LLM to decide when and how to delegate tasks.
-3.  **Agent Registry**: The parent-child relationship between the supervisor and its subagents is registered in the `AgentRegistry`, enabling discoverability and management within the broader system.
+By default, supervisor agents use an automatically generated system message that includes guidelines for managing subagents. However, you can customize this behavior using the `supervisorConfig` option for more control over how your supervisor agent behaves.
+
+:::info Default System Message
+To see the current default supervisor system message template and understand how it works, check the [generateSupervisorSystemMessage implementation](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/subagent/index.ts#L131) on GitHub.
+:::
+
+:::note Type Safety
+The `supervisorConfig` option is only available when `subAgents` are provided. TypeScript will prevent you from using `supervisorConfig` on agents without subagents.
+:::
+
+### Basic Supervisor Configuration
+
+```ts
+import { Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const supervisorAgent = new Agent({
+  name: "Content Supervisor",
+  instructions: "Coordinate content creation workflow",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  subAgents: [writerAgent, editorAgent],
+
+  // ✅ Basic supervisor customization
+  supervisorConfig: {
+    // Add custom guidelines to the default ones
+    customGuidelines: [
+      "Always thank the user at the end",
+      "Keep responses concise and actionable",
+      "Prioritize user experience",
+    ],
+
+    // Control whether to include previous agent interactions
+    includeAgentsMemory: true, // default: true
+  },
+});
+```
+
+### Complete System Message Override
+
+For complete control over the supervisor's behavior, you can provide a custom `systemMessage` that entirely replaces the default template:
+
+```ts
+const supervisorAgent = new Agent({
+  name: "Custom Supervisor",
+  instructions: "This will be ignored when systemMessage is provided",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  subAgents: [writerAgent, editorAgent],
+
+  // ✅ Complete system message override
+  supervisorConfig: {
+    systemMessage: `
+You are a professional content manager named "ContentBot".
+
+Your specialist team:
+- Writer: Creates original content
+- Editor: Reviews and improves content
+
+Your workflow:
+1. Analyze user requests carefully
+2. Use delegate_task to assign work to appropriate specialists
+3. Coordinate between specialists as needed
+4. Provide comprehensive final responses
+5. Always maintain a professional but friendly tone
+
+Remember: Use the delegate_task tool to assign tasks to your specialists.
+    `.trim(),
+
+    // Control memory inclusion even with custom system message
+    includeAgentsMemory: true,
+  },
+});
+```
+
+### Quick Usage
+
+**Add custom rules:**
+
+```ts
+supervisorConfig: {
+  customGuidelines: ["Verify sources", "Include confidence levels"];
+}
+```
+
+**Override entire system message:**
+
+```ts
+supervisorConfig: {
+  systemMessage: "You are TaskBot. Use delegate_task(task, [agentNames]) to assign work.";
+}
+```
+
+**Control memory:**
+
+```ts
+supervisorConfig: {
+  includeAgentsMemory: false; // Fresh context each interaction (default: true)
+}
+```
 
 ## How Subagents Work
 
@@ -117,715 +215,159 @@ This tool is the primary interface for delegation.
 7.  The supervisor receives the results from the `delegate_task` tool.
 8.  Based on its instructions and the received results, the supervisor synthesizes the final response and presents it to the user.
 
-## Complete Working Example
-
-Here's a full example you can copy and run to see subagents in action:
+## Complete Example
 
 ```ts
 import { Agent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
-// Create specialized agents
-const storyAgent = new Agent({
-  name: "Story Agent",
-  purpose: "A story writer agent that creates original, engaging short stories.",
-  instructions: "You are a creative story writer. Create original, engaging short stories.",
+// Create specialists
+const writer = new Agent({
+  name: "Writer",
+  instructions: "Write creative stories",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
-const translatorAgent = new Agent({
-  name: "Translator Agent",
-  purpose: "A translator agent that translates text accurately.",
-  instructions: "You are a skilled translator. Translate text accurately.",
+const translator = new Agent({
+  name: "Translator",
+  instructions: "Translate text accurately",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
-// Create the supervisor agent
-const supervisorAgent = new Agent({
-  name: "Supervisor Agent",
-  instructions:
-    "You manage a workflow between specialized agents. When asked for a story, " +
-    "use the Story Agent to create it. Then use the Translator Agent to translate the story. " +
-    "Present both versions to the user.",
+// Create supervisor
+const supervisor = new Agent({
+  name: "Supervisor",
+  instructions: "Coordinate story writing and translation",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  subAgents: [storyAgent, translatorAgent],
+  subAgents: [writer, translator],
 });
 
-// Use the supervisor agent to handle a user request
-const result = await supervisorAgent.streamText(
-  "Write a short story about a robot learning to paint and translate it to German."
-);
+// Use it
+const result = await supervisor.streamText("Write a story about AI and translate to Spanish");
 
-// Process the streamed response
 for await (const chunk of result.textStream) {
   process.stdout.write(chunk);
 }
-
-/* Expected Output:
-1. Supervisor analyzes the request
-2. Supervisor calls delegate_task tool → Story Agent
-3. Story Agent creates the story
-4. Supervisor calls delegate_task tool → Translator Agent  
-5. Translator Agent translates to German
-6. Supervisor presents both versions
-
-Final response includes both the original story and German translation.
-*/
 ```
 
-## Combining with Hooks
+**What happens:**
 
-You can use [hooks](./hooks.md), specifically `onHandoff`, to inject custom logic when a task is delegated from a supervisor to a subagent via the `delegate_task` tool.
+1. Supervisor analyzes request
+2. Calls `delegate_task` → Writer creates story
+3. Calls `delegate_task` → Translator translates
+4. Combines results and responds
+
+## Using Hooks
+
+Monitor task delegation with the `onHandoff` hook:
 
 ```ts
-import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
-
-// Create a supervisor agent with hooks for monitoring subagent interactions
-const supervisorAgent = new Agent({
-  name: "Supervisor Agent",
-  instructions: "You manage a workflow between specialized agents.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  subAgents: [storyAgent, translatorAgent],
+const supervisor = new Agent({
+  name: "Supervisor",
+  subAgents: [writer, translator],
   hooks: {
-    onHandoff: async (targetAgent, sourceAgent) => {
-      // 'sourceAgent' is the supervisor, 'targetAgent' is the subagent receiving the task
-      console.log(`Task being handed off from ${sourceAgent.name} to ${targetAgent.name}`);
-      // --- Use Cases ---
-      // 1. Logging: Log detailed information about the handoff for debugging/monitoring.
-      // 2. Validation: Check if the handoff is appropriate based on agent capabilities or context.
-      // 3. Context Modification: Potentially modify the context being passed (though direct modification isn't standard, you could trigger external updates).
-      // 4. Notification: Send notifications about task delegation.
+    onHandoff: ({ agent, source }) => {
+      console.log(`${source.name} → ${agent.name}`);
     },
   },
 });
 ```
 
-The `onHandoff` hook is triggered within the `handoffTask` method just before the target agent starts processing the delegated task.
+## Context Sharing
 
-## Context Sharing Between Agents
-
-SubAgents automatically inherit the supervisor's operation context, including `userContext` and conversation history. This enables seamless data sharing across the agent hierarchy.
-
-### Automatic Context Inheritance
-
-When a supervisor delegates a task, the subagent receives:
-
-- **userContext**: All custom data from the supervisor's operation
-- **conversationSteps**: Shared conversation history (steps are added to the same array)
-- **parentAgentId**: Reference to the supervisor for traceability
+SubAgents automatically inherit the supervisor's context:
 
 ```ts
-// Supervisor sets context
-const response = await supervisorAgent.streamText("Translate this story", {
-  userContext: new Map([
-    ["projectId", "proj-123"],
-    ["language", "Spanish"],
-    ["priority", "high"],
-  ]),
+// Supervisor passes context
+const response = await supervisor.streamText("Task", {
+  userContext: new Map([["projectId", "123"]]),
 });
 
-// SubAgent automatically receives this context and can access it in hooks/tools
-const translatorAgent = new Agent({
-  name: "Translator Agent",
-  hooks: createHooks({
+// SubAgent receives it automatically
+const subAgent = new Agent({
+  hooks: {
     onStart: ({ context }) => {
-      // Access supervisor's context
-      const projectId = context.userContext.get("projectId");
-      const language = context.userContext.get("language");
-      console.log(`Translating for project ${projectId} to ${language}`);
+      const projectId = context.userContext.get("projectId"); // "123"
     },
-  }),
-  // ... other config
+  },
 });
 ```
 
-### Shared Conversation History
+## Step Control
 
-SubAgents contribute to the same conversation history as their supervisor, making the entire workflow appear as one cohesive operation:
-
-```ts
-const supervisorAgent = new Agent({
-  name: "Supervisor",
-  subAgents: [translatorAgent, reviewerAgent],
-  hooks: createHooks({
-    onEnd: ({ context }) => {
-      // Access all steps from supervisor AND subagents
-      const allSteps = context.conversationSteps;
-      console.log(`Total workflow steps: ${allSteps.length}`);
-
-      // Steps include:
-      // - Supervisor's tool calls (delegate_task)
-      // - SubAgent's processing steps
-      // - All tool executions across agents
-      // This creates a complete audit trail
-    },
-  }),
-  instructions: "Coordinate translation and review workflow",
-});
-
-// When you call the supervisor, you get a unified history
-const response = await supervisorAgent.streamText("Translate and review this text");
-// response.userContext contains the complete workflow state
-```
-
-For detailed examples and patterns, see the [Operation Context guide](./context.md).
-
-## Step Control with maxSteps
-
-When working with subagents, the `maxSteps` parameter controls how many iteration steps the entire workflow can take. This is particularly important for complex workflows involving multiple agents.
-
-### maxSteps Inheritance
-
-The `maxSteps` value is automatically inherited by all subagents in the workflow:
+Control workflow steps with `maxSteps`:
 
 ```ts
-import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
-
-const researchAgent = new Agent({
-  name: "Research Agent",
-  instructions: "Conduct thorough research on topics",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  // No maxSteps defined - will inherit from supervisor
-});
-
-const writerAgent = new Agent({
-  name: "Writer Agent",
-  instructions: "Write engaging content based on research",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  // No maxSteps defined - will inherit from supervisor
-});
-
 const supervisor = new Agent({
-  name: "Content Supervisor",
-  instructions: "Coordinate research and writing workflow",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  subAgents: [researchAgent, writerAgent],
-  maxSteps: 15, // All subagents will inherit this limit
+  subAgents: [writer, editor],
+  maxSteps: 20, // Inherited by all subagents
 });
 
-// Option 1: Use supervisor's maxSteps (15)
-const response1 = await supervisor.generateText("Research and write about AI trends");
-
-// Option 2: Override maxSteps for this specific operation
-const response2 = await supervisor.generateText("Research and write about AI trends", {
-  maxSteps: 25, // Override: supervisor and all subagents use max 25 steps
-});
+// Override per request
+const result = await supervisor.generateText("Task", { maxSteps: 10 });
 ```
 
-### Default maxSteps Calculation
+**Default:** `10 × number_of_subagents` (prevents infinite loops)
 
-If no `maxSteps` is specified, the system calculates a default based on complexity:
+## Observability
 
-```ts
-// Agent with subagents - automatic calculation
-const supervisor = new Agent({
-  name: "Complex Workflow",
-  subAgents: [agent1, agent2, agent3], // 3 subagents
-  // No maxSteps specified - automatically calculated as 10 × 3 = 30 steps
-});
+SubAgent operations are automatically linked to their supervisor for complete traceability in monitoring tools.
 
-// Agent without subagents - default calculation
-const simpleAgent = new Agent({
-  name: "Simple Agent",
-  // No subagents, no maxSteps - defaults to 10 steps
-});
-```
+## Advanced Configuration
 
-### Preventing Runaway Workflows
-
-Complex multi-agent workflows can potentially run indefinitely if agents keep delegating tasks. The `maxSteps` parameter prevents this:
+Use different execution methods for specialized subagents:
 
 ```ts
-// Example of a protected workflow
-const supervisor = new Agent({
-  name: "Protected Supervisor",
-  instructions: "Coordinate complex tasks efficiently",
-  subAgents: [researchAgent, writerAgent, reviewerAgent],
-  maxSteps: 50, // Prevents runaway execution in complex workflows
-});
-
-// This workflow will automatically stop at 50 steps, preventing infinite loops
-const result = await supervisor.generateText("Create a comprehensive report");
-```
-
-## Observability and Event Tracking
-
-To maintain traceability in complex workflows involving multiple agents, the system automatically propagates context during task handoffs:
-
-- When the supervisor's `delegate_task` tool calls a subagent (via `handoffTask`), it includes the supervisor's `agentId` as `parentAgentId` and the supervisor's current `historyEntryId` as `parentHistoryEntryId` in the subagent's operation context.
-- This means any events (like tool calls, LLM steps, errors) generated by the subagent while processing the delegated task will be associated not only with the subagent's own history entry but also linked back to the original history entry in the supervisor agent.
-- This allows monitoring and debugging tools to reconstruct the entire flow of execution across multiple agents for a single user request.
-
-## Advanced SubAgent Configuration
-
-### Execution Methods
-
-By default, subagents use the `streamText` method when delegated tasks. However, you can specify different execution methods for more precise control:
-
-```ts
-import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
+import { createSubagent } from "@voltagent/core";
 import { z } from "zod";
 
-// Create specialized agents
-const dataAnalyzerAgent = new Agent({
-  name: "Data Analyzer",
-  purpose: "Analyzes data and returns structured results",
-  instructions: "Analyze data and provide structured insights.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-const summaryWriterAgent = new Agent({
-  name: "Summary Writer",
-  purpose: "Writes concise summaries of content",
-  instructions: "Create clear, concise summaries of provided content.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-// Define schemas for structured responses
-const DataAnalysisSchema = z.object({
+const AnalysisSchema = z.object({
   insights: z.array(z.string()),
   confidence: z.number().min(0).max(1),
-  recommendations: z.array(z.string()),
-});
-
-// Create supervisor with method-specific subagent configurations
-const supervisorAgent = new Agent({
-  name: "Research Supervisor",
-  instructions: "Coordinate research workflow with specialized agents",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  subAgents: [
-    // Simple subagent - uses default streamText method
-    summaryWriterAgent,
-
-    // Advanced subagent with specific method and schema
-    {
-      agent: dataAnalyzerAgent,
-      method: "generateObject",
-      schema: DataAnalysisSchema,
-      options: {
-        temperature: 0.1, // Lower temperature for more consistent structured output
-        maxTokens: 1000,
-      },
-    },
-  ],
-});
-```
-
-### Available Methods and Their Use Cases
-
-#### `streamText` (Default)
-
-- **Use Case**: General-purpose text generation with real-time streaming
-- **Best For**: Content creation, conversational responses, creative writing
-- **Configuration**: No additional setup required
-
-```ts
-const storyAgent = new Agent({
-  name: "Story Writer",
-  purpose: "Creates engaging stories",
-  instructions: "Write creative, engaging stories.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
 });
 
 const supervisor = new Agent({
-  name: "Content Supervisor",
-  subAgents: [storyAgent], // Uses streamText by default
-  // ...
-});
-```
-
-#### `generateText`
-
-- **Use Case**: Simple text generation without streaming
-- **Best For**: Short responses, titles, single-purpose text generation
-- **Configuration**: Faster execution, no streaming overhead
-
-```ts
-const titleAgent = new Agent({
-  name: "Title Generator",
-  purpose: "Generates catchy titles",
-  instructions: "Create compelling titles for content.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-const supervisor = new Agent({
-  name: "Content Supervisor",
   subAgents: [
-    {
-      agent: titleAgent,
-      method: "generateText",
-      options: {
-        maxTokens: 100,
-        temperature: 0.8,
-      },
-    },
-  ],
-  // ...
-});
-```
-
-#### `generateObject`
-
-- **Use Case**: Structured data generation with validation
-- **Best For**: Data extraction, form filling, structured analysis
-- **Configuration**: Requires a Zod schema for validation
-
-```ts
-const extractorAgent = new Agent({
-  name: "Data Extractor",
-  purpose: "Extracts structured data from text",
-  instructions: "Extract and structure data from unstructured text.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-const ContactSchema = z.object({
-  name: z.string(),
-  email: z.string().email(),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-});
-
-const supervisor = new Agent({
-  name: "Data Processing Supervisor",
-  subAgents: [
-    {
-      agent: extractorAgent,
-      method: "generateObject",
-      schema: ContactSchema,
-      options: {
-        temperature: 0.1, // Lower temperature for more consistent extraction
-      },
-    },
-  ],
-  // ...
-});
-```
-
-#### `streamObject`
-
-- **Use Case**: Streaming structured data generation
-- **Best For**: Real-time structured data with progressive updates
-- **Configuration**: Requires schema, provides streaming updates
-
-```ts
-const realtimeAnalyzerAgent = new Agent({
-  name: "Realtime Analyzer",
-  purpose: "Provides real-time analysis updates",
-  instructions: "Analyze data and provide progressive insights.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-const AnalysisSchema = z.object({
-  progress: z.number().min(0).max(100),
-  currentInsight: z.string(),
-  findings: z.array(z.string()),
-});
-
-const supervisor = new Agent({
-  name: "Analysis Supervisor",
-  subAgents: [
-    {
-      agent: realtimeAnalyzerAgent,
-      method: "streamObject",
-      schema: AnalysisSchema,
-      options: {
-        temperature: 0.3,
-      },
-    },
-  ],
-  // ...
-});
-```
-
-### Working with Structured SubAgent Responses
-
-When using `generateObject` or `streamObject` methods, the supervisor receives structured data that it can process more effectively:
-
-```ts
-const supervisor = new Agent({
-  name: "Smart Supervisor",
-  instructions: `
-    You coordinate specialized agents and process their responses intelligently.
-    
-    When you receive structured data from subagents:
-    - Parse the JSON response to understand the structure
-    - Use the structured data to make informed decisions
-    - Provide comprehensive responses based on the structured insights
-  `,
-  subAgents: [
-    {
-      agent: dataAnalyzerAgent,
-      method: "generateObject",
-      schema: DataAnalysisSchema,
-    },
-  ],
-  // ...
-});
-
-// The supervisor will receive structured responses like:
-// {
-//   "insights": ["User engagement increased by 23%", "Peak usage at 2 PM"],
-//   "confidence": 0.87,
-//   "recommendations": ["Optimize for peak hours", "Focus on engagement features"]
-// }
-```
-
-### Complete Advanced Example
-
-Here's a comprehensive example showing different subagent configurations:
-
-```ts
-import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
-
-// Define schemas
-const AnalysisSchema = z.object({
-  sentiment: z.enum(["positive", "negative", "neutral"]),
-  keyTopics: z.array(z.string()),
-  urgency: z.number().min(1).max(10),
-  summary: z.string(),
-});
-
-const ActionSchema = z.object({
-  priority: z.enum(["low", "medium", "high"]),
-  actions: z.array(
-    z.object({
-      task: z.string(),
-      assignee: z.string(),
-      deadline: z.string(),
-    })
-  ),
-});
-
-// Create specialized agents
-const textAnalyzer = new Agent({
-  name: "Text Analyzer",
-  purpose: "Analyzes text for sentiment, topics, and urgency",
-  instructions: "Analyze text content for sentiment, extract key topics, and assess urgency.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-const actionPlanner = new Agent({
-  name: "Action Planner",
-  purpose: "Creates action plans based on analysis",
-  instructions: "Create actionable plans with priorities and assignments.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-const summaryWriter = new Agent({
-  name: "Summary Writer",
-  purpose: "Writes executive summaries",
-  instructions: "Create clear, executive-level summaries.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-// Create supervisor with mixed configurations
-const workflowSupervisor = new Agent({
-  name: "Workflow Supervisor",
-  instructions: `
-    You coordinate a complete workflow:
-    1. Use Text Analyzer for structured analysis
-    2. Use Action Planner for structured action planning
-    3. Use Summary Writer for final summary
-    
-    Process all inputs through this workflow and provide comprehensive results.
-  `,
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  subAgents: [
-    // Structured analysis with schema validation
-    {
-      agent: textAnalyzer,
+    writer, // Default streamText
+    createSubagent({
+      agent: analyzer,
       method: "generateObject",
       schema: AnalysisSchema,
-      options: {
-        temperature: 0.2,
-        maxTokens: 1000,
-      },
-    },
-    // Structured action planning
-    {
-      agent: actionPlanner,
-      method: "generateObject",
-      schema: ActionSchema,
-      options: {
-        temperature: 0.1,
-      },
-    },
-    // Standard text generation for summary
-    {
-      agent: summaryWriter,
-      method: "generateText",
-      options: {
-        temperature: 0.4,
-        maxTokens: 500,
-      },
-    },
+      options: { temperature: 0.1 },
+    }),
   ],
 });
-
-// Usage example
-const result = await workflowSupervisor.streamText(
-  "Analyze this customer feedback: 'The new feature is great but the interface is confusing. We need better documentation urgently.'"
-);
-
-for await (const chunk of result.textStream) {
-  process.stdout.write(chunk);
-}
-
-/* Expected workflow:
-1. Text Analyzer returns structured analysis:
-   {
-     "sentiment": "neutral",
-     "keyTopics": ["new feature", "interface", "documentation"],
-     "urgency": 7,
-     "summary": "Mixed feedback on new feature with urgent documentation need"
-   }
-
-2. Action Planner returns structured action plan:
-   {
-     "priority": "high",
-     "actions": [
-       {
-         "task": "Improve interface documentation",
-         "assignee": "Documentation Team",
-         "deadline": "2024-01-15"
-       },
-       {
-         "task": "Review interface design",
-         "assignee": "UX Team",
-         "deadline": "2024-01-20"
-       }
-     ]
-   }
-
-3. Summary Writer provides executive summary as text
-
-4. Supervisor synthesizes all results into final response
-*/
 ```
 
-## Adding Subagents After Initialization
+**Available methods:**
 
-You can also add subagents after creating the supervisor agent:
+- `streamText` (default) - Real-time text streaming
+- `generateText` - Simple text generation
+- `generateObject` - Structured data with Zod schema
+- `streamObject` - Streaming structured data
+
+## Dynamic SubAgents
+
+Add subagents after initialization:
 
 ```ts
-import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
-
-// Create a new specialized agent
-const factCheckerAgent = new Agent({
-  name: "Fact Checker Agent",
-  purpose: "A fact checker agent that verifies facts and provides accurate information.",
-  instructions: "You verify facts and provide accurate information.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-// Add the agent as a subagent to the supervisor
-// This also registers the relationship in AgentRegistry
-supervisorAgent.addSubAgent(factCheckerAgent);
-
-// Or add with specific method configuration
-supervisorAgent.addSubAgent({
-  agent: factCheckerAgent,
-  method: "generateObject",
-  schema: FactCheckSchema,
-  options: {
-    temperature: 0.1,
-  },
-});
+supervisor.addSubAgent(newAgent);
 ```
 
-## Removing Subagents
+## Remove SubAgents
 
 ```ts
-// Remove a subagent by its ID
-// This also unregisters the relationship in AgentRegistry
-supervisorAgent.removeSubAgent(factCheckerAgent.id);
+supervisor.removeSubAgent(agentId);
 ```
 
 ## Troubleshooting
 
-### SubAgent Not Being Called?
+**SubAgent not being called?**
 
-1. **Check Agent Names**: The `delegate_task` tool uses agent names, not IDs:
-
-   ```ts
-   // ✅ Correct
-   const subAgent = new Agent({ name: "Story Agent", ... });
-
-   // ❌ Wrong - LLM will try to call "story-agent-id"
-   const subAgent = new Agent({ name: "story-agent-id", ... });
-   ```
-
-2. **Improve Supervisor Instructions**: Be explicit about when to delegate:
-
-   ```ts
-   const supervisor = new Agent({
-     instructions: `
-       You coordinate specialized agents:
-       - For creative writing: use Story Agent
-       - For translation: use Translator Agent
-       
-       Always delegate tasks to the appropriate specialist.
-     `,
-     // ...
-   });
-   ```
-
-3. **Debug Context Passing**: Check if context is being inherited:
-   ```ts
-   const subAgent = new Agent({
-     hooks: createHooks({
-       onStart: ({ context }) => {
-         console.log("SubAgent context:", Object.fromEntries(context.userContext));
-       },
-     }),
-     // ...
-   });
-   ```
-
-### Monitor the Workflow
-
-Enable logging to see the delegation flow:
-
-```ts
-const supervisor = new Agent({
-  hooks: createHooks({
-    onToolStart: ({ tool }) => {
-      if (tool.name === "delegate_task") {
-        console.log("🔄 Delegating task to subagent");
-      }
-    },
-  }),
-  // ...
-});
-```
+- Check agent names match exactly
+- Make supervisor instructions explicit about when to delegate
+- Use `onHandoff` hook to debug delegation flow

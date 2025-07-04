@@ -3,6 +3,7 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { advancedSupervisorAgent } from "./advanced-methods.js";
+import { systemMessageOverrideAgent } from "./override-system-message.js";
 
 const uppercaseTool = createTool({
   name: "uppercase",
@@ -45,5 +46,6 @@ new VoltAgent({
   agents: {
     main: supervisorAgent,
     advanced: advancedSupervisorAgent,
+    override: systemMessageOverrideAgent,
   },
 });

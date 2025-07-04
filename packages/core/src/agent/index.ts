@@ -65,6 +65,7 @@ import type {
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
+  SupervisorConfig,
   SystemMessageResponse,
   ToolExecutionContext,
   VoltAgentError,
@@ -179,6 +180,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private readonly voltOpsClient?: VoltOpsClient;
 
   /**
+   * Supervisor configuration for agents with subagents
+   */
+  private readonly supervisorConfig?: SupervisorConfig;
+
+  /**
    * Create a new agent
    */
   constructor(
@@ -228,6 +234,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Store VoltOps client for agent-specific prompt management
     this.voltOpsClient = options.voltOpsClient;
+
+    // Store supervisor configuration if provided
+    this.supervisorConfig = options.supervisorConfig;
 
     // Initialize hooks
     if (options.hooks) {
@@ -482,6 +491,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
         finalInstructions,
         agentsMemory,
+        this.supervisorConfig,
       );
 
       return {

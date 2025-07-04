@@ -99,14 +99,3 @@ export const advancedSupervisorAgent = new Agent({
     }),
   ],
 });
-
-console.log("🚀 Advanced SubAgent API Example Started!");
-console.log("📊 Available Methods:");
-console.log("  - streamText (default, backward compatible)");
-console.log("  - generateText (with custom options)");
-console.log("  - generateObject (structured output)");
-console.log("  - streamObject (streaming structured output)");
-console.log("\n💡 Try asking the supervisor to:");
-console.log("  - 'Analyze sales data for Q4 and generate a report'");
-console.log("  - 'Create a summary of market trends'");
-console.log("  - 'Calculate revenue growth and provide insights'");
