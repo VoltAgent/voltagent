@@ -168,57 +168,45 @@ export type AgentOptions = {
    * ✨ Benefits: Observability + prompt management + dynamic prompts from console
    */
   telemetryExporter?: VoltAgentExporter;
+
+  /**
+   * Sub-agents that this agent can delegate tasks to
+   */
+  subAgents?: SubAgentConfig[];
+
+  /**
+   * Configuration for supervisor behavior when subAgents are present
+   */
+  supervisorConfig?: SupervisorConfig;
 } & (
   | {
       /**
-       * Sub-agents that this agent can delegate tasks to
+       * @deprecated Use `instructions` instead.
+       * Agent description (deprecated, use instructions)
        */
-      subAgents: SubAgentConfig[];
+      description: string;
       /**
-       * Configuration for supervisor behavior when subAgents are present
+       * Agent instructions. This is the preferred field.
+       * Can be static or dynamic based on user context.
+       * Enhanced to support prompt management via helper functions.
        */
-      supervisorConfig?: SupervisorConfig;
+      instructions?: InstructionsDynamicValue;
     }
   | {
       /**
-       * Sub-agents that this agent can delegate tasks to
+       * @deprecated Use `instructions` instead.
+       * Agent description (deprecated, use instructions)
        */
-      subAgents?: undefined;
+      description?: undefined; // Ensure description is treated as absent
       /**
-       * supervisorConfig is only available when subAgents are provided
+       * Agent instructions. This is the preferred field.
+       * Required if description is not provided.
+       * Can be static or dynamic based on user context.
+       * Enhanced to support prompt management via helper functions.
        */
-      supervisorConfig?: never;
+      instructions: InstructionsDynamicValue;
     }
-) &
-  (
-    | {
-        /**
-         * @deprecated Use `instructions` instead.
-         * Agent description (deprecated, use instructions)
-         */
-        description: string;
-        /**
-         * Agent instructions. This is the preferred field.
-         * Can be static or dynamic based on user context.
-         * Enhanced to support prompt management via helper functions.
-         */
-        instructions?: InstructionsDynamicValue;
-      }
-    | {
-        /**
-         * @deprecated Use `instructions` instead.
-         * Agent description (deprecated, use instructions)
-         */
-        description?: undefined; // Ensure description is treated as absent
-        /**
-         * Agent instructions. This is the preferred field.
-         * Required if description is not provided.
-         * Can be static or dynamic based on user context.
-         * Enhanced to support prompt management via helper functions.
-         */
-        instructions: InstructionsDynamicValue;
-      }
-  );
+);
 
 /**
  * System message response with optional prompt metadata
