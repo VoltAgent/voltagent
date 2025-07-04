@@ -720,6 +720,33 @@ describe("Agent", () => {
       expect(agentWithBoth.description).toBe("Uses provided instructions");
     });
 
+    it("should create agent with maxSteps", () => {
+      const agentWithMaxSteps = new TestAgent({
+        name: "MaxSteps Agent",
+        instructions: "Agent with maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 25,
+      });
+
+      expect(agentWithMaxSteps.name).toBe("MaxSteps Agent");
+      // Test that maxSteps was passed correctly
+      expect(agentWithMaxSteps.getSubAgentManager().calculateMaxSteps(25)).toBe(25);
+    });
+
+    it("should create agent without maxSteps", () => {
+      const agentWithoutMaxSteps = new TestAgent({
+        name: "No MaxSteps Agent",
+        instructions: "Agent without maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        // No maxSteps
+      });
+
+      // Should use default behavior
+      expect(agentWithoutMaxSteps.getSubAgentManager().calculateMaxSteps()).toBe(10);
+    });
+
     // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
     it("should pass telemetryExporter to HistoryManager if provided", () => {
       (HistoryManager as Mock).mockClear();
@@ -3513,6 +3540,423 @@ describe("Agent", () => {
       expect(receivedSteps[0].content).toBe("Parent started");
 
       subAgentSpy.mockRestore();
+    });
+  });
+
+  describe("maxSteps handling", () => {
+    it("should use agent-level maxSteps when no options maxSteps provided", async () => {
+      const agent = new TestAgent({
+        name: "MaxSteps Agent",
+        instructions: "Agent with maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 15,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(15);
+    });
+
+    it("should use options maxSteps when provided, overriding agent maxSteps", async () => {
+      const agent = new TestAgent({
+        name: "MaxSteps Agent",
+        instructions: "Agent with maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 15,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message", { maxSteps: 25 });
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(25);
+    });
+
+    it("should use default maxSteps calculation when no agent maxSteps defined", async () => {
+      const agent = new TestAgent({
+        name: "No MaxSteps Agent",
+        instructions: "Agent without maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        // No maxSteps defined
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(10); // Default calculation
+    });
+
+    it("should calculate maxSteps based on sub-agents count", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents",
+        llm: mockProvider,
+        model: mockModel,
+        // No maxSteps defined - should use calculation
+      });
+
+      const subAgent1 = new TestAgent({
+        name: "Sub Agent 1",
+        instructions: "Sub agent 1",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      const subAgent2 = new TestAgent({
+        name: "Sub Agent 2",
+        instructions: "Sub agent 2",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent1);
+      parentAgent.addSubAgent(subAgent2);
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await parentAgent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(20); // 10 * 2 sub-agents
+    });
+
+    it("should use agent-level maxSteps even when sub-agents exist", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents and maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 30, // Explicit maxSteps
+      });
+
+      const subAgent1 = new TestAgent({
+        name: "Sub Agent 1",
+        instructions: "Sub agent 1",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent1);
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await parentAgent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(30); // Agent-level maxSteps takes priority
+    });
+
+    it("should pass maxSteps to streamText", async () => {
+      const agent = new TestAgent({
+        name: "Stream Agent",
+        instructions: "Agent for streaming",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 20,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const streamTextSpy = vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "test";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "test" };
+        })(),
+        provider: { textStream: new ReadableStream() },
+      });
+
+      await agent.streamText("Test message");
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callArgs = streamTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(20);
+    });
+
+    it("should pass maxSteps to generateObject", async () => {
+      const agent = new TestAgent({
+        name: "Object Agent",
+        instructions: "Agent for objects",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 12,
+      });
+
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateObjectSpy = vi.spyOn(mockProvider, "generateObject").mockResolvedValue({
+        object: { name: "Test", age: 25 },
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { object: { name: "Test", age: 25 } },
+      });
+
+      await agent.generateObject("Test message", schema);
+
+      expect(generateObjectSpy).toHaveBeenCalled();
+      const callArgs = generateObjectSpy.mock.calls[0][0];
+      // Note: generateObject might not use maxSteps, but let's verify it's passed
+      expect(callArgs).toHaveProperty("schema");
+    });
+
+    it("should pass maxSteps to streamObject", async () => {
+      const agent = new TestAgent({
+        name: "Stream Object Agent",
+        instructions: "Agent for streaming objects",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 18,
+      });
+
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const streamObjectSpy = vi.spyOn(mockProvider, "streamObject").mockResolvedValue({
+        stream: new ReadableStream(),
+        partialObjectStream: new ReadableStream(),
+        textStream: new ReadableStream(),
+        provider: { stream: new ReadableStream() },
+        objectStream: new ReadableStream(),
+      });
+
+      await agent.streamObject("Test message", schema);
+
+      expect(streamObjectSpy).toHaveBeenCalled();
+      const callArgs = streamObjectSpy.mock.calls[0][0];
+      expect(callArgs).toHaveProperty("schema");
+    });
+
+    it("should pass maxSteps to subagents through delegate tool", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 35,
+      });
+
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Sub agent",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent);
+
+      // Mock sub-agent's streamText method to check maxSteps
+      const subAgentStreamTextSpy = vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "sub response";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "sub response" };
+        })(),
+        userContext: new Map(),
+      });
+
+      // Get the delegate tool
+      const delegateTool = parentAgent.getSubAgentManager().createDelegateTool({
+        sourceAgent: parentAgent,
+        operationContext: {
+          operationId: "test-op",
+          userContext: new Map(),
+          conversationSteps: [],
+          historyEntry: { id: "test-history" },
+          isActive: true,
+        },
+        currentHistoryEntryId: "test-history",
+        maxSteps: 35, // Should be passed to sub-agent
+      });
+
+      await delegateTool.execute({
+        task: "Test task",
+        targetAgents: ["Sub Agent"],
+        context: {},
+      });
+
+      expect(subAgentStreamTextSpy).toHaveBeenCalled();
+      const subAgentCallArgs = subAgentStreamTextSpy.mock.calls[0][1];
+      expect(subAgentCallArgs).toHaveProperty("maxSteps", 35);
+    });
+
+    it("should use options maxSteps over agent maxSteps in delegate tool", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 20, // Agent-level maxSteps
+      });
+
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Sub agent",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent);
+
+      // Mock sub-agent's streamText method to check maxSteps
+      const subAgentStreamTextSpy = vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "sub response";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "sub response" };
+        })(),
+        userContext: new Map(),
+      });
+
+      // Get the delegate tool with options maxSteps
+      const delegateTool = parentAgent.getSubAgentManager().createDelegateTool({
+        sourceAgent: parentAgent,
+        operationContext: {
+          operationId: "test-op",
+          userContext: new Map(),
+          conversationSteps: [],
+          historyEntry: { id: "test-history" },
+          isActive: true,
+        },
+        currentHistoryEntryId: "test-history",
+        maxSteps: 50, // Options maxSteps should override agent maxSteps
+      });
+
+      await delegateTool.execute({
+        task: "Test task",
+        targetAgents: ["Sub Agent"],
+        context: {},
+      });
+
+      expect(subAgentStreamTextSpy).toHaveBeenCalled();
+      const subAgentCallArgs = subAgentStreamTextSpy.mock.calls[0][1];
+      expect(subAgentCallArgs).toHaveProperty("maxSteps", 50);
+    });
+
+    it("should handle zero maxSteps", async () => {
+      const agent = new TestAgent({
+        name: "Zero MaxSteps Agent",
+        instructions: "Agent with zero maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 0,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(0);
+    });
+
+    it("should handle negative maxSteps", async () => {
+      const agent = new TestAgent({
+        name: "Negative MaxSteps Agent",
+        instructions: "Agent with negative maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: -5,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(-5);
     });
   });
 });

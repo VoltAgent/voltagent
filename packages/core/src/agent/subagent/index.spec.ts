@@ -152,6 +152,33 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent2);
       expect(subAgentManager.calculateMaxSteps()).toBe(20); // 10 * 2
     });
+
+    it("should use agent-level maxSteps when provided", () => {
+      const manager = new SubAgentManager("Test Agent", []);
+      expect(manager.calculateMaxSteps(50)).toBe(50);
+    });
+
+    it("should use agent-level maxSteps even when sub-agents exist", () => {
+      const manager = new SubAgentManager("Test Agent", [mockAgent1, mockAgent2]);
+      expect(manager.calculateMaxSteps(35)).toBe(35);
+      // Should not use the default calculation (which would be 20)
+    });
+
+    it("should fall back to default calculation when no agent maxSteps provided", () => {
+      const manager = new SubAgentManager("Test Agent", [mockAgent1]);
+      expect(manager.calculateMaxSteps()).toBe(10); // 10 * 1 sub-agent
+    });
+
+    it("should use agent-level maxSteps of 1", () => {
+      const manager = new SubAgentManager("Test Agent", [mockAgent1, mockAgent2]);
+      expect(manager.calculateMaxSteps(1)).toBe(1);
+    });
+
+    it("should handle agent maxSteps with no sub-agents", () => {
+      const manager = new SubAgentManager("Test Agent", []);
+      expect(manager.calculateMaxSteps(15)).toBe(15);
+      // Should not fall back to default 10
+    });
   });
 
   describe("generateSupervisorSystemMessage", () => {
@@ -671,6 +698,162 @@ describe("SubAgentManager", () => {
       expect(result.status).toBe("error");
       expect((result.error as Error).message).toContain("Event forwarding failed");
       expect(failingForwardEvent).toHaveBeenCalled();
+    });
+  });
+
+  describe("maxSteps propagation in handoff operations", () => {
+    let subAgentManager: SubAgentManager;
+    let mockAgent1: any;
+
+    beforeEach(() => {
+      mockAgent1 = new MockAgent("agent1", "Math Agent");
+      subAgentManager = new SubAgentManager("Main Agent");
+    });
+
+    it("should pass maxSteps to handoffTask", async () => {
+      // Spy on the target agent's streamText to check maxSteps
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Test task with maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        maxSteps: 42, // Should be passed to the target agent
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      expect(callOptions).toHaveProperty("maxSteps", 42);
+    });
+
+    it("should pass maxSteps through createDelegateTool", async () => {
+      subAgentManager.addSubAgent(mockAgent1 as any);
+
+      // Spy on handoffToMultiple to verify maxSteps propagation
+      const handoffToMultipleSpy = vi.spyOn(subAgentManager, "handoffToMultiple");
+
+      const delegateTool = subAgentManager.createDelegateTool({
+        sourceAgent: { id: "source-agent" } as any,
+        operationContext: {
+          operationId: "test-op",
+          userContext: new Map(),
+          conversationSteps: [],
+          historyEntry: {
+            id: "test-history",
+            startTime: new Date(),
+            input: "test",
+            output: "",
+            status: "completed" as const,
+            steps: [],
+            usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
+            model: "test",
+          },
+          isActive: true,
+        } as any,
+        currentHistoryEntryId: "test-history",
+        maxSteps: 100, // Should be passed through to handoffToMultiple
+      });
+
+      await delegateTool.execute({
+        task: "Delegate task with maxSteps",
+        targetAgents: ["Math Agent"],
+        context: {},
+      });
+
+      expect(handoffToMultipleSpy).toHaveBeenCalled();
+      const handoffOptions = handoffToMultipleSpy.mock.calls[0][0] as any;
+      expect(handoffOptions).toHaveProperty("maxSteps", 100);
+    });
+
+    it("should handle undefined maxSteps in handoffTask", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Task without maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        // No maxSteps provided
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      // maxSteps should be undefined when not provided
+      expect(callOptions.maxSteps).toBeUndefined();
+    });
+
+    it("should handle zero maxSteps in handoff operations", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Task with zero maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        maxSteps: 0, // Zero should be passed through
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      expect(callOptions).toHaveProperty("maxSteps", 0);
+    });
+
+    it("should handle negative maxSteps", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Task with negative maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        maxSteps: -10, // Negative value should be passed through
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      expect(callOptions).toHaveProperty("maxSteps", -10);
+    });
+
+    it("should verify maxSteps is passed with complex handoff options", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Complex handoff task",
+        targetAgent: mockAgent1 as any,
+        context: { complexData: "test" },
+        sharedContext: [{ role: "user", content: "Previous message" }],
+        conversationId: "test-conversation",
+        userId: "test-user",
+        parentAgentId: "parent-agent",
+        parentHistoryEntryId: "parent-history",
+        maxSteps: 50,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callArgs = streamTextSpy.mock.calls[0];
+      const messages = callArgs[0] as any;
+      const callOptions = callArgs[1] as any;
+
+      // Verify task message is included (task message comes after sharedContext)
+      expect(messages[1].content).toContain("Complex handoff task");
+
+      // Verify all options are passed correctly
+      expect(callOptions).toHaveProperty("maxSteps", 50);
+      expect(callOptions).toHaveProperty("conversationId", "test-conversation");
+      expect(callOptions).toHaveProperty("userId", "test-user");
+      expect(callOptions).toHaveProperty("parentAgentId", "parent-agent");
+      expect(callOptions).toHaveProperty("parentHistoryEntryId", "parent-history");
     });
   });
 });

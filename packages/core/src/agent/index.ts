@@ -142,6 +142,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   readonly markdown: boolean;
 
   /**
+   * Maximum number of steps the agent can take before stopping
+   */
+  readonly maxSteps?: number;
+
+  /**
    * Memory manager for the agent
    */
   protected memoryManager: MemoryManager;
@@ -218,6 +223,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.retriever = options.retriever;
     this.voice = options.voice;
     this.markdown = options.markdown ?? false;
+    this.maxSteps = options.maxSteps;
 
     // Store VoltOps client for agent-specific prompt management
     this.voltOpsClient = options.voltOpsClient;
@@ -548,7 +554,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Calculate maximum number of steps based on sub-agents
    */
   private calculateMaxSteps(): number {
-    return this.subAgentManager.calculateMaxSteps();
+    return this.subAgentManager.calculateMaxSteps(this.maxSteps);
   }
 
   /**
@@ -564,6 +570,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }> {
     const {
       tools: dynamicTools,
+      maxSteps: optionsMaxSteps,
       historyEntryId,
       operationContext,
       internalStreamForwarder,
@@ -666,6 +673,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         currentHistoryEntryId: historyEntryId,
         operationContext: options.operationContext,
         forwardEvent, // Pass the real-time event forwarder
+        // Pass effective maxSteps (options override or agent default)
+        maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
         ...options,
       });
 
@@ -685,7 +694,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     return {
       tools: toolsToUse,
-      maxSteps: this.calculateMaxSteps(),
+      maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
     };
   }
 
@@ -1147,6 +1156,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             topP: internalOptions.provider?.topP,
             frequencyPenalty: internalOptions.provider?.frequencyPenalty,
             presencePenalty: internalOptions.provider?.presencePenalty,
+            maxSteps: internalOptions.maxSteps,
           },
         },
         traceId: operationContext.historyEntry.id,
@@ -1366,6 +1376,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             topP: internalOptions.provider?.topP,
             frequencyPenalty: internalOptions.provider?.frequencyPenalty,
             presencePenalty: internalOptions.provider?.presencePenalty,
+            maxSteps: internalOptions.maxSteps,
           },
         },
 
@@ -1581,6 +1592,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           topP: internalOptions.provider?.topP,
           frequencyPenalty: internalOptions.provider?.frequencyPenalty,
           presencePenalty: internalOptions.provider?.presencePenalty,
+          maxSteps: internalOptions.maxSteps,
         },
       },
       traceId: operationContext.historyEntry.id,
@@ -1864,6 +1876,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               topP: internalOptions.provider?.topP,
               frequencyPenalty: internalOptions.provider?.frequencyPenalty,
               presencePenalty: internalOptions.provider?.presencePenalty,
+              maxSteps: internalOptions.maxSteps,
             },
           },
           traceId: operationContext.historyEntry.id,
@@ -2146,6 +2159,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             topP: internalOptions.provider?.topP,
             frequencyPenalty: internalOptions.provider?.frequencyPenalty,
             presencePenalty: internalOptions.provider?.presencePenalty,
+            maxSteps: internalOptions.maxSteps,
           },
         },
         traceId: operationContext.historyEntry.id,
@@ -2238,6 +2252,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             topP: internalOptions.provider?.topP,
             frequencyPenalty: internalOptions.provider?.frequencyPenalty,
             presencePenalty: internalOptions.provider?.presencePenalty,
+            maxSteps: internalOptions.maxSteps,
           },
         },
         traceId: operationContext.historyEntry.id,
@@ -2451,6 +2466,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           topP: internalOptions.provider?.topP,
           frequencyPenalty: internalOptions.provider?.frequencyPenalty,
           presencePenalty: internalOptions.provider?.presencePenalty,
+          maxSteps: internalOptions.maxSteps,
         },
       },
       traceId: operationContext.historyEntry.id,
@@ -2545,6 +2561,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 topP: internalOptions.provider?.topP,
                 frequencyPenalty: internalOptions.provider?.frequencyPenalty,
                 presencePenalty: internalOptions.provider?.presencePenalty,
+                maxSteps: internalOptions.maxSteps,
               },
             },
             traceId: operationContext.historyEntry.id,

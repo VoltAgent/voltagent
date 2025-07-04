@@ -58,6 +58,11 @@ export const GenerateOptionsSchema = z
     contextLimit: z.number().int().positive().optional().default(10).openapi({
       description: "Optional limit for conversation history context",
     }),
+    maxSteps: z.number().int().positive().optional().openapi({
+      description:
+        "Maximum number of steps (turns) for this specific request (overrides agent's maxSteps)",
+      example: 5,
+    }),
     temperature: z
       .number()
       .min(0)

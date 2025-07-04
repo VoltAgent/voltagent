@@ -88,7 +88,13 @@ export class SubAgentManager {
    * Calculate maximum number of steps based on sub-agents
    * More sub-agents means more potential steps
    */
-  public calculateMaxSteps(): number {
+  public calculateMaxSteps(agentMaxSteps?: number): number {
+    // Use agent-level maxSteps if provided (highest priority)
+    if (agentMaxSteps !== undefined) {
+      return agentMaxSteps;
+    }
+
+    // Fall back to original logic
     return this.subAgents.length > 0 ? 10 * this.subAgents.length : 10;
   }
 
@@ -162,6 +168,7 @@ ${agentsMemory || "No previous agent interactions available."}
       parentAgentId,
       parentHistoryEntryId,
       parentOperationContext,
+      maxSteps,
     } = options;
     // TODO: Fix the types here
     const context = options.context as OperationContext | undefined;
@@ -205,6 +212,8 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         parentOperationContext,
         // Pass the abort signal from parent's operation context to subagent
         signal: parentOperationContext?.signal,
+        // Pass maxSteps from parent to subagent (inherits parent's effective maxSteps)
+        maxSteps,
       });
 
       // Collect all stream chunks for final result
@@ -378,6 +387,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
       parentAgentId,
       parentHistoryEntryId,
       parentOperationContext,
+      maxSteps,
       ...restOptions
     } = options;
 
@@ -395,6 +405,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             parentAgentId,
             parentHistoryEntryId,
             parentOperationContext,
+            maxSteps,
           });
         } catch (error) {
           devLogger.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
@@ -433,12 +444,19 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         currentHistoryEntryId?: string;
         operationContext?: OperationContext;
         forwardEvent?: (event: StreamEvent) => Promise<void>;
+        maxSteps?: number;
       },
       Record<string, any>
     >,
   ): BaseTool {
-    const { sourceAgent, forwardEvent, operationContext, currentHistoryEntryId, ...restOptions } =
-      options;
+    const {
+      sourceAgent,
+      forwardEvent,
+      operationContext,
+      currentHistoryEntryId,
+      maxSteps,
+      ...restOptions
+    } = options;
     return createTool({
       id: "delegate_task",
       name: "delegate_task",
@@ -492,6 +510,8 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             parentOperationContext: operationContext,
             // Pass the real-time event forwarder
             forwardEvent,
+            // Pass maxSteps from parent to subagents
+            maxSteps,
             ...restOptions,
           });
 

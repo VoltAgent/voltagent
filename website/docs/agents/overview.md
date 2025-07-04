@@ -796,6 +796,140 @@ Use these standardized options to:
 
 The options are applied consistently whether you're using `generateText`, `streamText`, `generateObject`, or `streamObject` methods.
 
+### Step Control with maxSteps
+
+**Why?** To control the number of iteration steps (turns) an agent can take during a single operation. This is particularly important for agents using tools, as they may need multiple LLM calls to complete a task: one to decide which tools to use, execute the tools, and then continue with the results.
+
+VoltAgent supports `maxSteps` configuration at both the agent level (applies to all operations) and per-operation level (overrides agent setting for specific calls).
+
+```ts
+import { Agent, createTool } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get current weather",
+  parameters: z.object({ location: z.string() }),
+  execute: async ({ location }) => {
+    return { temperature: 22, condition: "sunny" };
+  },
+});
+
+// Agent-level maxSteps (applies to all operations)
+const agent = new Agent({
+  name: "Weather Assistant",
+  instructions: "Help users with weather information using available tools",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: [weatherTool],
+  maxSteps: 5, // All operations will use max 5 steps
+});
+
+// Basic usage - uses agent-level maxSteps (5)
+const response1 = await agent.generateText("What's the weather in London?");
+console.log(response1.text);
+
+// Override maxSteps for specific operation
+const response2 = await agent.generateText("What's the weather in Tokyo?", {
+  maxSteps: 3, // Override: use max 3 steps for this operation
+});
+console.log(response2.text);
+
+// Streaming with maxSteps override
+const streamResponse = await agent.streamText("Check weather in Paris", {
+  maxSteps: 2, // Override: use max 2 steps for this stream
+});
+
+for await (const chunk of streamResponse.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+#### Understanding Steps
+
+Each "step" represents one interaction with the LLM. For example:
+
+- **Step 1**: LLM receives the prompt, decides to use the weather tool, and makes the tool call
+- **Step 2**: LLM receives the tool result and generates the final response
+
+Without `maxSteps`, an agent might continue indefinitely if it keeps making tool calls. Setting `maxSteps` prevents runaway execution and ensures predictable behavior.
+
+#### maxSteps Priority
+
+The system follows this priority order:
+
+1. **Operation-level maxSteps** (highest priority) - specified in `generateText()`, `streamText()`, etc.
+2. **Agent-level maxSteps** - specified in agent constructor
+3. **Default calculation** - based on number of sub-agents (10 × sub-agents count, minimum 10)
+
+#### Default maxSteps Values
+
+VoltAgent provides sensible defaults that work well for most use cases:
+
+```ts
+// Simple agent without sub-agents
+const simpleAgent = new Agent({
+  name: "Simple Assistant",
+  instructions: "A basic assistant",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  // Default: 10 steps (sufficient for most tool usage scenarios)
+});
+
+// Agent with sub-agents - automatic scaling
+const supervisorAgent = new Agent({
+  name: "Supervisor",
+  instructions: "Coordinates specialized tasks",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  subAgents: [agent1, agent2, agent3], // 3 sub-agents
+  // Default: 10 × 3 = 30 steps (scales with complexity)
+});
+```
+
+**Default Values:**
+
+- **Basic agents**: 10 steps (covers initial request + tool usage + response)
+- **Multi-agent workflows**: 10 × number of sub-agents (accommodates delegation overhead)
+
+**When Defaults Are Sufficient:**
+
+- Simple question-answering agents
+- Basic tool usage (1-3 tool calls)
+- Standard customer service interactions
+- Content generation with minimal tool usage
+
+**When to Increase maxSteps:**
+
+- Complex research tasks requiring multiple API calls
+- Advanced workflows with deep sub-agent interactions
+- Iterative problem-solving requiring multiple refinement steps
+- Custom enterprise workflows with specific requirements
+
+```ts
+// Custom solution requiring higher step limits
+const complexResearchAgent = new Agent({
+  name: "Advanced Research Agent",
+  instructions: "Conducts comprehensive research with iterative refinement",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: [webSearchTool, databaseTool, analysisTool],
+  maxSteps: 50, // Custom limit for complex workflows
+});
+
+// Enterprise workflow with multiple coordination layers
+const enterpriseWorkflow = new Agent({
+  name: "Enterprise Coordinator",
+  instructions: "Manages complex business processes",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  subAgents: [dataAgent, analysisAgent, reportAgent, reviewAgent],
+  maxSteps: 100, // High limit for enterprise complexity
+});
+```
+
 ### Cancellation with AbortSignal
 
 **Why?** To provide graceful cancellation of long-running operations like LLM generation, tool execution, or streaming responses. This is essential for user-initiated cancellations, implementing timeouts, and preventing unnecessary work when results are no longer needed.

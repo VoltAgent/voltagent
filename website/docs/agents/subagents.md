@@ -271,6 +271,89 @@ const response = await supervisorAgent.streamText("Translate and review this tex
 
 For detailed examples and patterns, see the [Operation Context guide](./context.md).
 
+## Step Control with maxSteps
+
+When working with subagents, the `maxSteps` parameter controls how many iteration steps the entire workflow can take. This is particularly important for complex workflows involving multiple agents.
+
+### maxSteps Inheritance
+
+The `maxSteps` value is automatically inherited by all subagents in the workflow:
+
+```ts
+import { Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const researchAgent = new Agent({
+  name: "Research Agent",
+  instructions: "Conduct thorough research on topics",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  // No maxSteps defined - will inherit from supervisor
+});
+
+const writerAgent = new Agent({
+  name: "Writer Agent",
+  instructions: "Write engaging content based on research",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  // No maxSteps defined - will inherit from supervisor
+});
+
+const supervisor = new Agent({
+  name: "Content Supervisor",
+  instructions: "Coordinate research and writing workflow",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  subAgents: [researchAgent, writerAgent],
+  maxSteps: 15, // All subagents will inherit this limit
+});
+
+// Option 1: Use supervisor's maxSteps (15)
+const response1 = await supervisor.generateText("Research and write about AI trends");
+
+// Option 2: Override maxSteps for this specific operation
+const response2 = await supervisor.generateText("Research and write about AI trends", {
+  maxSteps: 25, // Override: supervisor and all subagents use max 25 steps
+});
+```
+
+### Default maxSteps Calculation
+
+If no `maxSteps` is specified, the system calculates a default based on complexity:
+
+```ts
+// Agent with subagents - automatic calculation
+const supervisor = new Agent({
+  name: "Complex Workflow",
+  subAgents: [agent1, agent2, agent3], // 3 subagents
+  // No maxSteps specified - automatically calculated as 10 × 3 = 30 steps
+});
+
+// Agent without subagents - default calculation
+const simpleAgent = new Agent({
+  name: "Simple Agent",
+  // No subagents, no maxSteps - defaults to 10 steps
+});
+```
+
+### Preventing Runaway Workflows
+
+Complex multi-agent workflows can potentially run indefinitely if agents keep delegating tasks. The `maxSteps` parameter prevents this:
+
+```ts
+// Example of a protected workflow
+const supervisor = new Agent({
+  name: "Protected Supervisor",
+  instructions: "Coordinate complex tasks efficiently",
+  subAgents: [researchAgent, writerAgent, reviewerAgent],
+  maxSteps: 50, // Prevents runaway execution in complex workflows
+});
+
+// This workflow will automatically stop at 50 steps, preventing infinite loops
+const result = await supervisor.generateText("Create a comprehensive report");
+```
+
 ## Observability and Event Tracking
 
 To maintain traceability in complex workflows involving multiple agents, the system automatically propagates context during task handoffs:

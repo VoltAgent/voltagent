@@ -125,6 +125,12 @@ export type AgentOptions = {
   subAgents?: any[]; // Using unknown to avoid circular dependency
 
   /**
+   * Maximum number of steps (turns) the agent can take before stopping
+   * This overrides any supervisor config maxSteps setting
+   */
+  maxSteps?: number;
+
+  /**
    * Optional user-defined context to be passed around
    */
   userContext?: Map<string | symbol, unknown>;
@@ -266,6 +272,9 @@ export interface CommonGenerateOptions {
 
   // Specific tools to use for this generation (overrides agent's tools)
   tools?: BaseTool[];
+
+  // Maximum number of steps for this specific request (overrides agent's maxSteps)
+  maxSteps?: number;
 
   // Signal for aborting the operation
   signal?: AbortSignal;
@@ -429,6 +438,12 @@ export type AgentHandoffOptions = {
    * AbortSignal to cancel the handoff operation
    */
   signal?: AbortSignal;
+
+  /**
+   * Maximum number of steps for the subagent (inherited from parent or API call)
+   * If not provided, subagent will use its own maxSteps calculation
+   */
+  maxSteps?: number;
 };
 
 /**
