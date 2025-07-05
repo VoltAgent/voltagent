@@ -28,7 +28,7 @@ import type {
 } from "../voltops/types";
 
 // Re-export for backward compatibility
-export type { DynamicValueOptions, DynamicValue, PromptHelper };
+export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
 
 /**
  * Enhanced dynamic value for instructions that supports prompt management
