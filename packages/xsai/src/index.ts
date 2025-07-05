@@ -216,14 +216,14 @@ export class XSAIProvider implements LLMProvider<string> {
   ): Promise<ProviderTextResponse<GenerateTextResult>> => {
     const { generateText } = await import("xsai");
     const xsaiMessages = options.messages.map(this.toMessage);
-    const xsaiTools = (await this.convertTools(options.tools || [])) ?? [];
+    const xsaiTools = (await this.convertTools(options.tools || [])) ?? undefined;
 
     const result = await generateText({
       apiKey: this.apiKey,
       messages: xsaiMessages,
       model: options.model,
       tools: xsaiTools,
-      maxSteps: xsaiTools.length > 0 ? options.maxSteps : undefined,
+      maxSteps: xsaiTools && xsaiTools.length > 0 ? options.maxSteps : undefined,
       baseURL: this.baseURL,
       signal: options.signal,
       ...options.provider,
