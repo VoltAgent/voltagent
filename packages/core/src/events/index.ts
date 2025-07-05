@@ -149,7 +149,6 @@ export class AgentEventEmitter extends EventEmitter {
 
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (!agent) {
-      devLogger.warn("Agent not found: ", agentId);
       return undefined;
     }
 
@@ -202,7 +201,7 @@ export class AgentEventEmitter extends EventEmitter {
   ): Promise<void> {
     // Prevent infinite loops in cyclic agent relationships by tracking visited agents
     if (visited.has(agentId)) {
-      devLogger.info(`[EventPropagation] Skipping already visited agent: ${agentId}`);
+      devLogger.debug(`[EventPropagation] Skipping already visited agent: ${agentId}`);
       return;
     }
     visited.add(agentId);
@@ -210,11 +209,11 @@ export class AgentEventEmitter extends EventEmitter {
     // Get parent agent IDs for this agent
     const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
     if (parentIds.length === 0) {
-      devLogger.info(`[EventPropagation] No parents found for agent: ${agentId}`);
+      devLogger.debug(`[EventPropagation] No parents found for agent: ${agentId}`);
       return; // No parents, nothing to propagate to
     }
 
-    devLogger.info(
+    devLogger.debug(
       `[EventPropagation] Propagating event from ${agentId} to parents: ${parentIds.join(", ")}`,
     );
 
@@ -233,13 +232,13 @@ export class AgentEventEmitter extends EventEmitter {
         try {
           if (!parentHistoryEntryId) {
             // No fallback - skip propagation if no specific parent context provided
-            devLogger.info(
+            devLogger.debug(
               `[EventPropagation] No parentHistoryEntryId provided, skipping propagation to agent: ${parentId}`,
             );
             return;
           }
 
-          devLogger.info(
+          devLogger.debug(
             `[EventPropagation] Using specific parent operation context: ${parentHistoryEntryId} for agent: ${parentId}`,
           );
 
@@ -260,7 +259,7 @@ export class AgentEventEmitter extends EventEmitter {
             skipPropagation: true, // Prevent recursive propagation cycles
           });
 
-          devLogger.info(
+          devLogger.debug(
             `[EventPropagation] Successfully propagated event ${enrichedEvent.id} to parent ${parentId}`,
           );
         } catch (error) {

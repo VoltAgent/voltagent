@@ -66,6 +66,71 @@ jobs:
       - name: Test
         run: pnpm test:all --skip-nx-cache
 
+  postgres-integration:
+    runs-on: ubuntu-latest
+    name: PostgreSQL Integration Tests
+    concurrency:
+      group: ${{ github.ref }}-postgres-integration
+      cancel-in-progress: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: voltagent_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check for PostgreSQL changes
+        id: check_postgres
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -E '^packages/postgres/'; then
+            echo "postgres_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "postgres_changed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Skip if no PostgreSQL changes
+        if: steps.check_postgres.outputs.postgres_changed == 'false'
+        run: echo "No PostgreSQL changes detected, skipping integration tests"
+      
+      - uses: pnpm/action-setup@v3
+        if: steps.check_postgres.outputs.postgres_changed == 'true'
+        with:
+          version: 9
+      
+      - uses: actions/setup-node@v4
+        if: steps.check_postgres.outputs.postgres_changed == 'true'
+        with:
+          node-version: 20
+          cache: "pnpm"
+      
+      - name: Install Dependencies
+        if: steps.check_postgres.outputs.postgres_changed == 'true'
+        run: pnpm install
+      
+      - name: Build Core Dependencies
+        if: steps.check_postgres.outputs.postgres_changed == 'true'
+        run: pnpm build --scope @voltagent/core
+      
+      - name: Run PostgreSQL Integration Tests
+        if: steps.check_postgres.outputs.postgres_changed == 'true'
+        run: |
+          cd packages/postgres
+          npm run test:integration:ci
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/voltagent_test
+
   tsdoc-check:
     runs-on: ubuntu-latest
     name: Check TSDoc Links

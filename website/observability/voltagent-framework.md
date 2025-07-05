@@ -23,12 +23,20 @@ VoltAgent Framework automatically provides:
 
 ```bash
 npm create voltagent-app@latest my-agent-app
+cd my-agent-app
 ```
 
-### Navigate to your project and start development
+### Add your API key
+
+Create or edit the `.env` file and add your OpenAI API key:
 
 ```bash
-cd my-agent-app
+OPENAI_API_KEY=your-api-key-here
+```
+
+### Start development
+
+```bash
 npm run dev
 ```
 

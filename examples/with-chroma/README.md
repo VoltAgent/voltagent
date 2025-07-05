@@ -41,18 +41,31 @@ This example demonstrates VoltAgent integration with Chroma vector database for 
 
 ## Quick Start
 
-**Start Chroma server:**
+**Option 1: Local Development**
+
+Start Chroma server:
 
 ```bash
-docker run -p 8000:8000 chromadb/chroma
+npx chromadb run
 ```
 
-**Run the example:**
+Run the example:
 
 ```bash
 npm create voltagent-app@latest -- --example with-chroma
-cd voltagent-example-with-chroma
+cd with-chroma
 cp .env.example .env  # Add your OPENAI_API_KEY
+npm run dev
+```
+
+**Option 2: [Chroma Cloud](https://www.trychroma.com/)**
+
+No server setup needed! Just configure your environment:
+
+```bash
+npm create voltagent-app@latest -- --example with-chroma
+cd with-chroma
+cp .env.example .env  # Add OPENAI_API_KEY, CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
 npm run dev
 ```
 

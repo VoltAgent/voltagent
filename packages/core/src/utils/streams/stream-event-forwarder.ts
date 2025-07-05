@@ -39,7 +39,7 @@ export async function streamEventForwarder(
 
     // Only forward events that are in the types array
     if (!types.includes(event.type)) {
-      devLogger.info(
+      devLogger.debug(
         "[StreamEventForwarder] Filtered out",
         event.type,
         "event from",
@@ -50,7 +50,7 @@ export async function streamEventForwarder(
 
     await forwarder(formatEvent(event, options));
 
-    devLogger.info(
+    devLogger.debug(
       "[StreamEventForwarder] Forwarded",
       event.type,
       "event from",

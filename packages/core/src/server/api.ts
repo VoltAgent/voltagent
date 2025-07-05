@@ -163,7 +163,7 @@ app.openapi(getAgentsRoute, (c) => {
         // Explicitly list all properties expected by AgentResponseSchema
         id: fullState.id,
         name: fullState.name,
-        description: fullState.description,
+        description: fullState.instructions || fullState.description,
         status: fullState.status as AgentStatus,
         model: fullState.model,
         tools: agent.getToolsForApi() as any, // Cast to any as per schema
@@ -171,7 +171,7 @@ app.openapi(getAgentsRoute, (c) => {
           fullState.subAgents?.map((subAgent: any) => ({
             id: subAgent.id || "",
             name: subAgent.name || "",
-            description: subAgent.description || "",
+            description: subAgent.instructions || subAgent.description || "",
             status: (subAgent.status as AgentStatus) || "idle",
             model: subAgent.model || "",
             tools: subAgent.tools || [],

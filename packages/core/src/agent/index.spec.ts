@@ -440,6 +440,8 @@ class MockProvider implements LLMProvider<MockModelType> {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
+    onFinish?: (result: any) => Promise<void>;
+    onError?: (error: any) => Promise<void>;
   }): Promise<ProviderObjectStreamResponse<MockStreamObjectResult<z.infer<T>>, z.infer<T>>> {
     this.streamObjectCalls++;
     this.lastMessages = options.messages;
@@ -473,6 +475,23 @@ class MockProvider implements LLMProvider<MockModelType> {
       partialObjectStream,
       textStream,
     };
+
+    // Call onFinish immediately for testing
+    if (options.onFinish) {
+      const mockResult = {
+        object: { name: "John" } as z.infer<T>,
+        usage: {
+          completionTokens: 10,
+          promptTokens: 20,
+          totalTokens: 30,
+        },
+        finishReason: "stop" as const,
+        warnings: undefined,
+        providerResponse: undefined,
+      };
+      // Call onFinish synchronously in microtask to simulate async completion
+      Promise.resolve().then(() => options.onFinish?.(mockResult));
+    }
 
     return {
       provider: result,
@@ -1205,6 +1224,287 @@ describe("Agent", () => {
 
       // Verify response was generated
       expect(response.text).toBe("Hello, I am a test agent!");
+    });
+
+    it("should include retriever context with dynamic text instructions", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Retrieved dynamic context for text";
+
+      // Create agent with dynamic text instructions
+      const dynamicTextAgent = new TestAgent({
+        id: "dynamic-text-retriever-agent",
+        name: "Dynamic Text Retriever Agent",
+        description: "Agent with dynamic text instructions and retriever",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: ({ userContext }: DynamicValueOptions) => {
+          const mode = userContext.get("mode") || "default";
+          return `You are operating in ${mode} mode with dynamic instructions.`;
+        },
+      });
+
+      await dynamicTextAgent.generateText("Test dynamic text with retrieval", {
+        userContext: new Map([["mode", "testing"]]),
+      });
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system message contains both dynamic instructions and retriever context
+      const systemMessage = mockProvider.lastMessages[0];
+      const systemContent = getStringContent(systemMessage.content);
+
+      expect(systemContent).toContain(
+        "You are operating in testing mode with dynamic instructions",
+      );
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should include retriever context with dynamic chat instructions", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Retrieved dynamic context for chat";
+
+      // Create agent with dynamic chat instructions (returns BaseMessage[])
+      const dynamicChatAgent = new TestAgent({
+        id: "dynamic-chat-retriever-agent",
+        name: "Dynamic Chat Retriever Agent",
+        description: "Agent with dynamic chat instructions and retriever",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: ({ userContext }: DynamicValueOptions) => {
+          const userName = userContext.get("userName") || "User";
+          // Return PromptContent with chat type
+          return {
+            type: "chat" as const,
+            messages: [
+              {
+                role: "system" as const,
+                content: `Hello ${userName}, I am your personalized assistant.`,
+              },
+              {
+                role: "system" as const,
+                content: "I can help you with various tasks.",
+              },
+            ],
+            metadata: {
+              name: "dynamic-chat-prompt",
+              version: 1,
+            },
+          };
+        },
+      });
+
+      await dynamicChatAgent.generateText("Test dynamic chat with retrieval", {
+        userContext: new Map([["userName", "Alice"]]),
+      });
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system messages include both dynamic content and retriever context
+      const messages = mockProvider.lastMessages;
+
+      // Should have multiple system messages
+      const systemMessages = messages.filter((m) => m.role === "system");
+      expect(systemMessages.length).toBeGreaterThan(1);
+
+      // First system message should contain dynamic content
+      expect(getStringContent(systemMessages[0].content)).toContain(
+        "Hello Alice, I am your personalized assistant",
+      );
+
+      // Last system message should contain retriever context
+      const lastSystemMessage = systemMessages[systemMessages.length - 1];
+      expect(getStringContent(lastSystemMessage.content)).toContain("Relevant Context:");
+      expect(getStringContent(lastSystemMessage.content)).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should include retriever context in dynamic chat fallback case", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Retrieved context for fallback";
+
+      // Create agent with dynamic chat instructions that return empty messages (fallback case)
+      const fallbackChatAgent = new TestAgent({
+        id: "fallback-chat-retriever-agent",
+        name: "Fallback Chat Retriever Agent",
+        description: "Agent with empty chat messages triggering fallback",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: (_: DynamicValueOptions) => {
+          // Return PromptContent with empty messages to trigger fallback
+          return {
+            type: "chat" as const,
+            messages: [], // Empty messages will trigger fallback
+            metadata: {
+              name: "empty-chat-prompt",
+              version: 1,
+            },
+          };
+        },
+      });
+
+      await fallbackChatAgent.generateText("Test fallback with retrieval");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system message contains fallback content with retriever context
+      const systemMessage = mockProvider.lastMessages[0];
+      const systemContent = getStringContent(systemMessage.content);
+
+      expect(systemContent).toContain("You are Fallback Chat Retriever Agent");
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should append retriever context to existing system message in chat type", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "Additional retrieved context";
+
+      // Create agent with chat instructions that have existing system message
+      const chatWithSystemAgent = new TestAgent({
+        id: "chat-with-system-agent",
+        name: "Chat With System Agent",
+        description: "Agent with existing system message in chat",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: () => ({
+          type: "chat" as const,
+          messages: [
+            {
+              role: "user" as const,
+              content: "Hello assistant",
+            },
+            {
+              role: "assistant" as const,
+              content: "Hello! How can I help you?",
+            },
+            {
+              role: "system" as const,
+              content: "You are a helpful assistant with previous conversation context.",
+            },
+          ],
+          metadata: {
+            name: "chat-with-system",
+            version: 1,
+          },
+        }),
+      });
+
+      await chatWithSystemAgent.generateText("Continue our conversation");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Find the system message and verify it contains both original content and retriever context
+      const messages = mockProvider.lastMessages;
+      const systemMessages = messages.filter((m) => m.role === "system");
+
+      expect(systemMessages.length).toBe(1);
+      const systemContent = getStringContent(systemMessages[0].content);
+
+      expect(systemContent).toContain(
+        "You are a helpful assistant with previous conversation context",
+      );
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+    });
+
+    it("should create new system message when chat has no system messages but has retriever context", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "New system message context";
+
+      // Create agent with chat instructions that have no system messages
+      const chatNoSystemAgent = new TestAgent({
+        id: "chat-no-system-agent",
+        name: "Chat No System Agent",
+        description: "Agent with no system messages in chat",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: () => ({
+          type: "chat" as const,
+          messages: [
+            {
+              role: "user" as const,
+              content: "What's the weather like?",
+            },
+            {
+              role: "assistant" as const,
+              content: "I'd be happy to help with weather information.",
+            },
+          ],
+          metadata: {
+            name: "chat-no-system",
+            version: 1,
+          },
+        }),
+      });
+
+      await chatNoSystemAgent.generateText("Tell me about the weather");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify a new system message was created with retriever context
+      const messages = mockProvider.lastMessages;
+      const systemMessages = messages.filter((m) => m.role === "system");
+
+      expect(systemMessages.length).toBe(1);
+      const systemContent = getStringContent(systemMessages[0].content);
+
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
+      expect(systemContent).not.toContain("You are Chat No System Agent"); // Should be only context
+    });
+
+    it("should handle VoltOps PromptContent with retriever context", async () => {
+      const mockRetriever = createMockRetriever();
+      mockRetriever.expectedContext = "VoltOps retrieved context";
+
+      // Create agent that returns VoltOps PromptContent text type
+      const voltOpsAgent = new TestAgent({
+        id: "voltops-retriever-agent",
+        name: "VoltOps Retriever Agent",
+        description: "Agent with VoltOps PromptContent and retriever",
+        model: mockModel,
+        llm: mockProvider,
+        retriever: mockRetriever as unknown as BaseRetriever,
+        instructions: (_: DynamicValueOptions) => {
+          // Simulate VoltOps prompt fetch returning PromptContent
+          return {
+            type: "text" as const,
+            text: "You are a VoltOps-powered assistant with advanced capabilities.",
+            metadata: {
+              name: "voltops-prompt",
+              version: 2,
+              labels: ["production", "retrieval"],
+              tags: ["assistant", "ai"],
+            },
+          };
+        },
+      });
+
+      await voltOpsAgent.generateText("Help me with VoltOps features");
+
+      // Verify retriever was called
+      expect(mockRetriever.retrieve).toHaveBeenCalled();
+
+      // Verify system message includes VoltOps content and retriever context
+      const systemMessage = mockProvider.lastMessages[0];
+      const systemContent = getStringContent(systemMessage.content);
+
+      expect(systemContent).toContain("You are VoltOps Retriever Agent");
+      expect(systemContent).toContain(
+        "You are a VoltOps-powered assistant with advanced capabilities",
+      );
+      expect(systemContent).toContain("Relevant Context:");
+      expect(systemContent).toContain(mockRetriever.expectedContext);
     });
 
     it("should include retriever in full state", () => {
@@ -3452,16 +3752,25 @@ describe("Agent Dynamic Values", () => {
         isActive: true,
       } as any;
 
-      const systemMessage = await (agent as any).getSystemMessage({
+      const systemMessageResponse = await (agent as any).getSystemMessage({
         input: "test input",
         historyEntryId: "test-history",
         contextMessages: [],
         operationContext,
       });
 
-      expect(systemMessage.content).toContain(
+      // systemMessages can be single BaseMessage or array of BaseMessages
+      const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
+        ? systemMessageResponse.systemMessages
+        : [systemMessageResponse.systemMessages];
+
+      const systemMessageContent = systemMessages[0]?.content;
+      expect(systemMessageContent).toContain(
         "You are Test Agent. You are a admin assistant with special privileges.",
       );
+
+      // Also verify isDynamicInstructions is set correctly
+      expect(systemMessageResponse.isDynamicInstructions).toBe(true);
     });
 
     it("should resolve dynamic model during text generation", async () => {
@@ -3686,5 +3995,318 @@ describe("Agent Dynamic Values", () => {
 
       generateTextSpy.mockRestore();
     });
+  });
+});
+
+describe("Dynamic Instructions Detection", () => {
+  it("should detect static instructions as not dynamic", async () => {
+    // Create agent with static string instructions
+    const staticAgent = new TestAgent({
+      name: "StaticAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant with static instructions.",
+    });
+
+    // Get system message and check isDynamicInstructions
+    const systemMessageResponse = await (staticAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(false);
+  });
+
+  it("should detect function instructions as dynamic", async () => {
+    // Create agent with dynamic function instructions
+    const dynamicAgent = new TestAgent({
+      name: "DynamicAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: ({ userContext }: DynamicValueOptions) => {
+        const userName = userContext.get("userName") || "user";
+        return `You are a helpful assistant for ${userName}.`;
+      },
+    });
+
+    // Get system message and check isDynamicInstructions
+    const systemMessageResponse = await (dynamicAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map([["userName", "Alice"]]),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(true);
+
+    // Also check that dynamic instructions were resolved properly
+    expect(systemMessageResponse.systemMessages).toEqual({
+      role: "system",
+      content: "You are DynamicAgent. You are a helpful assistant for Alice.",
+    });
+  });
+
+  it("should detect async function instructions as dynamic", async () => {
+    // Create agent with async dynamic function instructions
+    const asyncDynamicAgent = new TestAgent({
+      name: "AsyncDynamicAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: async ({ userContext }: DynamicValueOptions) => {
+        // Simulate async operation
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        const role = userContext.get("role") || "assistant";
+        return `You are a ${role} with async instructions.`;
+      },
+    });
+
+    // Get system message and check isDynamicInstructions
+    const systemMessageResponse = await (asyncDynamicAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map([["role", "supervisor"]]),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(true);
+
+    // Check that async instructions were resolved properly
+    expect(systemMessageResponse.systemMessages).toEqual({
+      role: "system",
+      content: "You are AsyncDynamicAgent. You are a supervisor with async instructions.",
+    });
+  });
+
+  it("should handle VoltOps prompt content with isDynamicInstructions flag", async () => {
+    // Mock VoltOps prompt response
+    const mockPromptContent = {
+      type: "text" as const,
+      text: "You are a VoltOps-powered assistant.",
+      metadata: {
+        name: "test-prompt",
+        version: 1,
+        labels: ["production"],
+      },
+    };
+
+    // Create agent with function that returns PromptContent
+    const voltOpsAgent = new TestAgent({
+      name: "VoltOpsAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: async (_: DynamicValueOptions) => {
+        // Simulate VoltOps prompt fetch
+        return mockPromptContent;
+      },
+    });
+
+    // Get system message and check both isDynamicInstructions and promptMetadata
+    const systemMessageResponse = await (voltOpsAgent as any).getSystemMessage({
+      input: "test input",
+      historyEntryId: "test-id",
+      contextMessages: [],
+      operationContext: {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test"),
+        isActive: true,
+        conversationSteps: [],
+      },
+    });
+
+    expect(systemMessageResponse.isDynamicInstructions).toBe(true);
+    expect(systemMessageResponse.promptMetadata).toEqual(mockPromptContent.metadata);
+    expect(systemMessageResponse.systemMessages).toEqual({
+      role: "system",
+      content: "You are VoltOpsAgent. You are a VoltOps-powered assistant.",
+    });
+  });
+
+  it("should work correctly during generateText with dynamic instructions", async () => {
+    const dynamicAgent = new TestAgent({
+      name: "DynamicTestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: ({ userContext }: DynamicValueOptions) => {
+        const mode = userContext.get("mode") || "default";
+        return `You are in ${mode} mode.`;
+      },
+    });
+
+    // Execute generateText with userContext
+    const response = await dynamicAgent.generateText("Hello", {
+      userContext: new Map([["mode", "testing"]]),
+    });
+
+    expect(response.text).toBe("Hello, I am a test agent!");
+
+    // Check that the provider received the correct system message with dynamic instructions
+    const provider = dynamicAgent.llm as MockProvider;
+    const lastMessages = provider.lastMessages;
+
+    expect(lastMessages[0]).toEqual({
+      role: "system",
+      content: "You are DynamicTestAgent. You are in testing mode.",
+    });
+
+    // Most importantly, check that isDynamicInstructions was correctly set
+    expect(response.userContext).toBeDefined();
+
+    expect(response.userContext?.get("mode")).toBe("testing");
+  });
+});
+
+describe("onEnd Hook userContext Modifications", () => {
+  it("should reflect userContext changes made in onEnd hook for generateText", async () => {
+    let onEndCalled = false;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context }) => {
+          onEndCalled = true;
+          // Change userContext in onEnd hook
+          context.userContext.set("agent_response", "bye");
+          context.userContext.set("hook_executed", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["agent_response", "hi"]]);
+
+    const response = await agent.generateText("Hello", {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd hook was called
+    expect(onEndCalled).toBe(true);
+
+    // Verify that the final response contains the updated userContext from onEnd hook
+    expect(response.userContext?.get("agent_response")).toBe("bye");
+    expect(response.userContext?.get("hook_executed")).toBe(true);
+  });
+
+  it("should reflect userContext changes made in onEnd hook for generateObject", async () => {
+    let onEndCalled = false;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context }) => {
+          onEndCalled = true;
+          // Change userContext in onEnd hook
+          context.userContext.set("agent_response", "bye");
+          context.userContext.set("hook_executed", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["agent_response", "hi"]]);
+
+    const response = await agent.generateObject("Hello", z.object({ message: z.string() }), {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd hook was called
+    expect(onEndCalled).toBe(true);
+
+    // Verify that the final response contains the updated userContext from onEnd hook
+    expect(response.userContext?.get("agent_response")).toBe("bye");
+    expect(response.userContext?.get("hook_executed")).toBe(true);
+  });
+
+  it("should pass correct userContext to onEnd hook before final response", async () => {
+    let onEndUserContext: Map<string | symbol, unknown> | undefined;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context, output }) => {
+          // Capture userContext at the time onEnd is called
+          onEndUserContext = new Map(context.userContext);
+          // Verify output contains the current userContext
+          expect(output?.userContext?.get("initial_value")).toBe("test");
+          // Modify userContext after verification
+          context.userContext.set("modified_in_onEnd", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["initial_value", "test"]]);
+
+    const response = await agent.generateText("Hello", {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd received the correct userContext
+    expect(onEndUserContext?.get("initial_value")).toBe("test");
+
+    // Verify final response contains the modification from onEnd
+    expect(response.userContext?.get("modified_in_onEnd")).toBe(true);
+  });
+
+  it("should reflect userContext changes made in onEnd hook for streamObject", async () => {
+    let onEndCalled = false;
+
+    const agent = new TestAgent({
+      name: "TestAgent",
+      llm: new MockProvider({ modelId: "test-model" }),
+      model: { modelId: "test-model" },
+      instructions: "You are a helpful assistant.",
+      hooks: createHooks({
+        onEnd: ({ context }) => {
+          onEndCalled = true;
+          // Change userContext in onEnd hook
+          context.userContext.set("agent_response", "bye");
+          context.userContext.set("hook_executed", true);
+        },
+      }),
+    });
+
+    // Set initial userContext
+    const initialContext = new Map([["agent_response", "hi"]]);
+
+    const response = await agent.streamObject("Hello", z.object({ message: z.string() }), {
+      userContext: initialContext,
+    });
+
+    // Verify onEnd hook was called
+    expect(onEndCalled).toBe(true);
+
+    // Verify that the final response contains the updated userContext from onEnd hook
+    expect(response.userContext?.get("agent_response")).toBe("bye");
+    expect(response.userContext?.get("hook_executed")).toBe(true);
   });
 });

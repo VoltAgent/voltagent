@@ -432,6 +432,71 @@ const agent = new Agent({
 
 [Learn more about Hooks](./hooks.md)
 
+### Prompt Management
+
+**Why?** To manage your agent's instructions and behavior efficiently across different environments, enable team collaboration on prompts, maintain version control, and implement A/B testing without code deployments.
+
+VoltAgent provides a three-tier prompt management system: Static Instructions (hardcoded strings), Dynamic Instructions (runtime functions), and VoltOps Management (enterprise-grade remote prompt management with analytics).
+
+```ts
+import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+// Option 1: Static Instructions (simple, hardcoded)
+const staticAgent = new Agent({
+  name: "Static Assistant",
+  instructions: "You are a helpful customer support agent. Be polite and efficient.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+// Option 2: Dynamic Instructions (runtime-based)
+const dynamicAgent = new Agent({
+  name: "Dynamic Assistant",
+  instructions: async ({ userContext }) => {
+    const userTier = userContext.get("userTier") || "basic";
+
+    if (userTier === "premium") {
+      return "You are a premium support agent. Provide detailed, thorough assistance.";
+    } else {
+      return "You are a support agent. Provide helpful but concise answers.";
+    }
+  },
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+// Option 3: VoltOps Management (enterprise-grade)
+const voltOpsClient = new VoltOpsClient({
+  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+  secretKey: process.env.VOLTOPS_SECRET_KEY,
+});
+
+const managedAgent = new Agent({
+  name: "Managed Assistant",
+  instructions: async ({ prompts }) => {
+    return await prompts.getPrompt({
+      promptName: "customer-support-prompt",
+      label: process.env.NODE_ENV === "production" ? "production" : "development",
+      variables: {
+        companyName: "VoltAgent Corp",
+        tone: "friendly and professional",
+      },
+    });
+  },
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+const voltAgent = new VoltAgent({
+  agents: { managedAgent },
+  voltOpsClient: voltOpsClient,
+});
+```
+
+[Learn more about Prompt Management](./prompts.md)
+
 ### Dynamic Agents
 
 **Why?** To create adaptive AI agents that change their behavior, capabilities, and configuration based on runtime context. Instead of having fixed instructions, models, or tools, you can define functions that dynamically determine these properties based on user context, request parameters, or any other runtime information.

@@ -1,5 +1,295 @@
 ## Package: @voltagent/core
 
+## 0.1.49
+
+### Patch Changes
+
+- [#324](https://github.com/VoltAgent/voltagent/pull/324) [`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add enterprise-grade VoltOps Prompt Management platform with team collaboration and analytics
+
+  **VoltOps Prompt Management transforms VoltAgent from a simple framework into an enterprise-grade platform for managing AI prompts at scale.** Think "GitHub for prompts" with built-in team collaboration, version control, environment management, and performance analytics.
+
+  ## 🎯 What's New
+
+  **🚀 VoltOps Prompt Management Platform**
+
+  - **Team Collaboration**: Non-technical team members can edit prompts via web console
+  - **Version Control**: Full prompt versioning with commit messages and rollback capabilities
+  - **Environment Management**: Promote prompts from development → staging → production with labels
+  - **Template Variables**: Dynamic `{{variable}}` substitution with validation
+  - **Performance Analytics**: Track prompt effectiveness, costs, and usage patterns
+
+  ## 📋 Usage Examples
+
+  **Basic VoltOps Setup:**
+
+  ```typescript
+  import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  // 1. Initialize VoltOps client
+  const voltOpsClient = new VoltOpsClient({
+    publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+    secretKey: process.env.VOLTOPS_SECRET_KEY,
+  });
+
+  // 2. Create agent with VoltOps prompts
+  const supportAgent = new Agent({
+    name: "SupportAgent",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    instructions: async ({ prompts }) => {
+      return await prompts.getPrompt({
+        promptName: "customer-support-prompt",
+        label: process.env.NODE_ENV === "production" ? "production" : "development",
+        variables: {
+          companyName: "VoltAgent Corp",
+          tone: "friendly and professional",
+          supportLevel: "premium",
+        },
+      });
+    },
+  });
+
+  // 3. Initialize VoltAgent with global VoltOps client
+  const voltAgent = new VoltAgent({
+    agents: { supportAgent },
+    voltOpsClient: voltOpsClient,
+  });
+  ```
+
+- [#324](https://github.com/VoltAgent/voltagent/pull/324) [`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce VoltOpsClient as unified replacement for deprecated telemetryExporter
+
+  **VoltOpsClient** is the new unified platform client for VoltAgent that replaces the deprecated `telemetryExporter`.
+
+  ## 📋 Usage
+
+  ```typescript
+  import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+
+  const voltOpsClient = new VoltOpsClient({
+    publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+    secretKey: process.env.VOLTOPS_SECRET_KEY,
+    observability: true, // Enable observability - default is true
+    prompts: true, // Enable prompt management - default is true
+  });
+
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+    voltOpsClient: voltOpsClient, // ✅ New approach
+  });
+  ```
+
+  ## 🔄 Migration from telemetryExporter
+
+  Replace the deprecated `telemetryExporter` with the new `VoltOpsClient`:
+
+  ```diff
+  import { Agent, VoltAgent } from "@voltagent/core";
+  - import { VoltAgentExporter } from "@voltagent/core";
+  + import { VoltOpsClient } from "@voltagent/core";
+
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+  - telemetryExporter: new VoltAgentExporter({
+  + voltOpsClient: new VoltOpsClient({
+      publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+      secretKey: process.env.VOLTOPS_SECRET_KEY,
+  -   baseUrl: "https://api.voltagent.dev",
+    }),
+  });
+  ```
+
+  ## ⚠️ Deprecation Notice
+
+  `telemetryExporter` is now **deprecated** and will be removed in future versions:
+
+  ```typescript
+  // ❌ Deprecated - Don't use
+  new VoltAgent({
+    agents: { myAgent },
+    telemetryExporter: new VoltAgentExporter({...}), // Deprecated!
+  });
+
+  // ✅ Correct approach
+  new VoltAgent({
+    agents: { myAgent },
+    voltOpsClient: new VoltOpsClient({...}),
+  });
+  ```
+
+  **For migration guide, see:** `/docs/observability/developer-console#migration-guide`
+
+  ## 🔧 Advanced Configuration
+
+  ```typescript
+  const voltOpsClient = new VoltOpsClient({
+    publicKey: process.env.VOLTOPS_PUBLIC_KEY,
+    secretKey: process.env.VOLTOPS_SECRET_KEY,
+    baseUrl: "https://api.voltagent.dev", // Default
+    observability: true, // Enable observability export - default is true
+    prompts: false, // Observability only - default is true
+    promptCache: {
+      enabled: true, // Enable prompt cache - default is true
+      ttl: 300, // 5 minute cache - default is 300
+      maxSize: 100, // Max size of the cache - default is 100
+    },
+  });
+  ```
+
+- Updated dependencies [[`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479)]:
+  - @voltagent/internal@0.0.4
+
+## 0.1.48
+
+### Patch Changes
+
+- [#296](https://github.com/VoltAgent/voltagent/pull/296) [`4621e09`](https://github.com/VoltAgent/voltagent/commit/4621e09118fc652d8a05f40758b02d5108e38967) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - The `UserContext` was properly propagated through tools and hooks, but was not being returned in the final response from `.generateText()` and `.generateObject()` methods. This prevented post-processing logic from accessing the UserContext data.
+
+  **Before**:
+
+  ```typescript
+  const result = await agent.generateText(...);
+
+  result.userContext; // ❌ Missing userContext
+  ```
+
+  **After**:
+
+  ```typescript
+  const result = await agent.generateText(...);
+
+  return result.userContext; // ✅ Includes userContext
+
+  **How users can see the changes**:
+
+  Now users can access the `userContext` in the response from all agent methods:
+
+  // Set custom context before calling the agent
+  const customContext = new Map();
+  customContext.set("sessionId", "user-123");
+  customContext.set("requestId", "req-456");
+
+  // generateText now returns userContext
+  const result = await agent.generateText("Hello", {
+    userContext: customContext,
+  });
+
+  // Access the userContext from the response
+  console.log(result.userContext.get("sessionId")); // 'user-123'
+  console.log(result.userContext.get("requestId")); // 'req-456'
+
+  // GenerateObject
+  const objectResult = await agent.generateObject("Create a summary", schema, {
+    userContext: customContext,
+  });
+  console.log(objectResult.userContext.get("sessionId")); // 'user-123'
+
+  // Streaming methods
+  const streamResult = await agent.streamText("Hello", {
+    userContext: customContext,
+  });
+  console.log(streamResult.userContext?.get("sessionId")); // 'user-123'
+  ```
+
+  Fixes: [#283](https://github.com/VoltAgent/voltagent/issues/283)
+
+## 0.1.47
+
+### Patch Changes
+
+- [#311](https://github.com/VoltAgent/voltagent/pull/311) [`1f7fa14`](https://github.com/VoltAgent/voltagent/commit/1f7fa140fcc4062fe85220e61f276e439392b0b4) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core, vercel-ui): Currently the `convertToUIMessages` function does not handle tool calls in steps correctly as it does not properly default filter non-tool related steps for sub-agents, same as the `data-stream` functions and in addition in the core the `operationContext` does not have the `subAgent` fields set correctly.
+
+  ### Changes
+
+  - deprecated `isSubAgentStreamPart` in favor of `isSubAgent` for universal use
+  - by default `convertToUIMessages` now filters out non-tool related steps for sub-agents
+  - now able to exclude specific parts or steps (from OperationContext) in `convertToUIMessages`
+
+  ***
+
+  ### Internals
+
+  New utils were added to the internal package:
+
+  - `isObject`
+  - `isFunction`
+  - `isPlainObject`
+  - `isEmptyObject`
+  - `isNil`
+  - `hasKey`
+
+- Updated dependencies [[`1f7fa14`](https://github.com/VoltAgent/voltagent/commit/1f7fa140fcc4062fe85220e61f276e439392b0b4)]:
+  - @voltagent/internal@0.0.3
+
+## 0.1.46
+
+### Patch Changes
+
+- [#309](https://github.com/VoltAgent/voltagent/pull/309) [`b81a6b0`](https://github.com/VoltAgent/voltagent/commit/b81a6b09c33d95f7e586501cc058ae8381c854c4) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core): Default to filtering `error` types from the `fullStream` to allow for error handling to happen properly
+
+## 0.1.45
+
+### Patch Changes
+
+- [#308](https://github.com/VoltAgent/voltagent/pull/308) [`33afe6e`](https://github.com/VoltAgent/voltagent/commit/33afe6ef40ef56c501f7fa69be42da730f87d29d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: subAgents now share conversation steps and context with parent agents
+
+  SubAgents automatically inherit and contribute to their parent agent's operation context, including `userContext` and conversation history. This creates a unified workflow where all agents (supervisor + subagents) add steps to the same `conversationSteps` array, providing complete visibility and traceability across the entire agent hierarchy.
+
+  ## Usage
+
+  ```typescript
+  import { Agent, createHooks } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  // SubAgent automatically receives parent's context
+  const translatorAgent = new Agent({
+    name: "Translator Agent",
+    hooks: createHooks({
+      onStart: ({ context }) => {
+        // Access parent's userContext automatically
+        const projectId = context.userContext.get("projectId");
+        const language = context.userContext.get("language");
+        console.log(`Translating for project ${projectId} to ${language}`);
+      },
+    }),
+    instructions: "You are a skilled translator",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Supervisor agent with context
+  const supervisorAgent = new Agent({
+    name: "Supervisor Agent",
+    subAgents: [translatorAgent],
+    hooks: createHooks({
+      onEnd: ({ context }) => {
+        // Access complete workflow history from all agents
+        const allSteps = context.conversationSteps;
+        console.log(`Total workflow steps: ${allSteps.length}`);
+        // Includes supervisor's delegate_task calls + subagent's processing steps
+      },
+    }),
+    instructions: "Coordinate translation workflow",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Usage - context automatically flows to subagents
+  const response = await supervisorAgent.streamText("Translate this text", {
+    userContext: new Map([
+      ["projectId", "proj-123"],
+      ["language", "Spanish"],
+    ]),
+  });
+
+  // Final context includes data from both supervisor and subagents
+  console.log("Project:", response.userContext?.get("projectId"));
+  ```
+
+- [#306](https://github.com/VoltAgent/voltagent/pull/306) [`b8529b5`](https://github.com/VoltAgent/voltagent/commit/b8529b53313fa97e941ecacb8c1555205de49c19) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core): Revert original fix by @omeraplak to pass the task role as "user" instead of prompt to prevent errors in providers such as Anthropic, Grok, etc.
+
 ## 0.1.44
 
 ### Patch Changes
@@ -2279,6 +2569,58 @@
 
 ## Package: @voltagent/internal
 
+## 0.0.4
+
+### Patch Changes
+
+- [#324](https://github.com/VoltAgent/voltagent/pull/324) [`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improve dev logger environment detection and add debug method
+
+  Enhanced the dev logger to be more intelligent about when to show logs. Previously, the logger only showed logs when `NODE_ENV === "development"`. Now it shows logs unless `NODE_ENV` is explicitly set to `"production"`, `"test"`, or `"ci"`.
+
+  **Changes:**
+
+  - **Improved Environment Detection**: Dev logger now shows logs when `NODE_ENV` is undefined, empty string, or any value other than "production", "test", or "ci"
+  - **Better Developer Experience**: Developers who don't set NODE_ENV will now see logs by default, which is more intuitive
+  - **Added Debug Method**: Included a placeholder `debug` method for future structured logging with Pino
+  - **Updated Tests**: Comprehensive test coverage for the new logging behavior
+
+  **Before:**
+
+  - Logs only shown when `NODE_ENV === "development"`
+  - Empty string or undefined NODE_ENV = no logs ❌
+
+  **After:**
+
+  - Logs hidden only when `NODE_ENV === "production"`, `NODE_ENV === "test"`, or `NODE_ENV === "ci"`
+  - Empty string, undefined, or other values = logs shown ✅
+
+  This change makes the development experience smoother as most developers don't explicitly set NODE_ENV during local development.
+
+## 0.0.3
+
+### Patch Changes
+
+- [#311](https://github.com/VoltAgent/voltagent/pull/311) [`1f7fa14`](https://github.com/VoltAgent/voltagent/commit/1f7fa140fcc4062fe85220e61f276e439392b0b4) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core, vercel-ui): Currently the `convertToUIMessages` function does not handle tool calls in steps correctly as it does not properly default filter non-tool related steps for sub-agents, same as the `data-stream` functions and in addition in the core the `operationContext` does not have the `subAgent` fields set correctly.
+
+  ### Changes
+
+  - deprecated `isSubAgentStreamPart` in favor of `isSubAgent` for universal use
+  - by default `convertToUIMessages` now filters out non-tool related steps for sub-agents
+  - now able to exclude specific parts or steps (from OperationContext) in `convertToUIMessages`
+
+  ***
+
+  ### Internals
+
+  New utils were added to the internal package:
+
+  - `isObject`
+  - `isFunction`
+  - `isPlainObject`
+  - `isEmptyObject`
+  - `isNil`
+  - `hasKey`
+
 ## 0.0.2
 
 ### Patch Changes
@@ -2425,6 +2767,21 @@
 ---
 
 ## Package: @voltagent/postgres
+
+## 0.1.7
+
+### Patch Changes
+
+- [#317](https://github.com/VoltAgent/voltagent/pull/317) [`16bb8d0`](https://github.com/VoltAgent/voltagent/commit/16bb8d003c17799688e8b70eb9236b46a5c339be) Thanks [@thujee](https://github.com/thujee)! - fix: errors related to missing columns "timestamp" and "utc" in Postgres schema - #316
+
+## 0.1.6
+
+### Patch Changes
+
+- [#301](https://github.com/VoltAgent/voltagent/pull/301) [`619e951`](https://github.com/VoltAgent/voltagent/commit/619e9510c05b7e46f8c243db226f220b5fdad824) Thanks [@woutrbe](https://github.com/woutrbe)! - fix(postgres): Fix default value being interpreted as column name
+
+- Updated dependencies [[`33afe6e`](https://github.com/VoltAgent/voltagent/commit/33afe6ef40ef56c501f7fa69be42da730f87d29d), [`b8529b5`](https://github.com/VoltAgent/voltagent/commit/b8529b53313fa97e941ecacb8c1555205de49c19)]:
+  - @voltagent/core@0.1.45
 
 ## 0.1.5
 
@@ -3157,6 +3514,52 @@
 ---
 
 ## Package: @voltagent/vercel-ui
+
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [[`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479), [`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479), [`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479)]:
+  - @voltagent/core@0.1.49
+  - @voltagent/internal@0.0.4
+
+## 0.1.3
+
+### Patch Changes
+
+- [#311](https://github.com/VoltAgent/voltagent/pull/311) [`1f7fa14`](https://github.com/VoltAgent/voltagent/commit/1f7fa140fcc4062fe85220e61f276e439392b0b4) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core, vercel-ui): Currently the `convertToUIMessages` function does not handle tool calls in steps correctly as it does not properly default filter non-tool related steps for sub-agents, same as the `data-stream` functions and in addition in the core the `operationContext` does not have the `subAgent` fields set correctly.
+
+  ### Changes
+
+  - deprecated `isSubAgentStreamPart` in favor of `isSubAgent` for universal use
+  - by default `convertToUIMessages` now filters out non-tool related steps for sub-agents
+  - now able to exclude specific parts or steps (from OperationContext) in `convertToUIMessages`
+
+  ***
+
+  ### Internals
+
+  New utils were added to the internal package:
+
+  - `isObject`
+  - `isFunction`
+  - `isPlainObject`
+  - `isEmptyObject`
+  - `isNil`
+  - `hasKey`
+
+- Updated dependencies [[`1f7fa14`](https://github.com/VoltAgent/voltagent/commit/1f7fa140fcc4062fe85220e61f276e439392b0b4)]:
+  - @voltagent/internal@0.0.3
+  - @voltagent/core@0.1.47
+
+## 0.1.2
+
+### Patch Changes
+
+- [#302](https://github.com/VoltAgent/voltagent/pull/302) [`1e1f563`](https://github.com/VoltAgent/voltagent/commit/1e1f563aeb9ac25880ca56a33285abca0b24b389) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Fix to match the output of `mergeIntoDataStream` and `convertToUIMessages` as the `mergeIntoDataStream` filters out the `SubAgent` prefix of a `toolName` (i.e. `BlogReader: read-blog-post`). `convertToUIMessages` was not filtering out the `SubAgent` prefix by default and it was causing the `toolName` to be different on the server in the `onEnd` hook from whats being sent to the client (and expected by the developer).
+
+- Updated dependencies [[`33afe6e`](https://github.com/VoltAgent/voltagent/commit/33afe6ef40ef56c501f7fa69be42da730f87d29d), [`b8529b5`](https://github.com/VoltAgent/voltagent/commit/b8529b53313fa97e941ecacb8c1555205de49c19)]:
+  - @voltagent/core@0.1.45
 
 ## 0.1.1
 

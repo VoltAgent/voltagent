@@ -69,16 +69,22 @@ export function createDevLogger(options?: DevLoggerOptions) {
         console.error(formatLogPrefix("ERROR"), message, ...args);
       }
     },
+
+    debug: (_message?: any, ..._args: any[]) => {
+      // todo: implement debug logging with pino
+      return;
+    },
   };
 }
 
 export default createDevLogger();
 
 function isDevNodeEnv() {
-  return process.env.NODE_ENV === "development";
+  const nodeEnv = process.env.NODE_ENV;
+  return nodeEnv !== "production" && nodeEnv !== "test" && nodeEnv !== "ci";
 }
 
-function formatLogPrefix(level: "INFO" | "WARN" | "ERROR"): string {
+function formatLogPrefix(level: "INFO" | "WARN" | "ERROR" | "DEBUG"): string {
   return `[VoltAgent] [${timestamp()}] ${level}: `;
 }
 

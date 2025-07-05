@@ -85,6 +85,7 @@ export function Footer() {
               <li>
                 <FooterLink href="/mcp/">MCP Directory</FooterLink>
               </li>
+
               <li>
                 <FooterLink
                   href="https://voltagent.dev/llms.txt"
@@ -119,6 +120,9 @@ export function Footer() {
               </li>
               <li>
                 <FooterLink href="/showcase/">Showcase</FooterLink>
+              </li>
+              <li>
+                <FooterLink href="/oss-friends">OSS Friends</FooterLink>
               </li>
             </ul>
           </div>

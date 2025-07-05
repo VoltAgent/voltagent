@@ -169,10 +169,10 @@ export class ToolManager {
       // Before replacing, ensure no name conflicts are introduced by the *new* toolkit's tools
       // (This check is already done above, but double-checking can be safer depending on logic complexity)
       this.toolkits[existingIndex] = toolkit;
-      devLogger.info(`Replaced toolkit: ${toolkit.name}`);
+      devLogger.debug(`Replaced toolkit: ${toolkit.name}`);
     } else {
       this.toolkits.push(toolkit);
-      devLogger.info(`Added toolkit: ${toolkit.name}`);
+      devLogger.debug(`Added toolkit: ${toolkit.name}`);
     }
     return true;
   }
@@ -220,7 +220,7 @@ export class ToolManager {
     this.tools = this.tools.filter((t) => t.name !== toolName);
     const removed = this.tools.length < initialLength;
     if (removed) {
-      devLogger.info(`Removed standalone tool: ${toolName}`);
+      devLogger.debug(`Removed standalone tool: ${toolName}`);
     }
     return removed;
   }
@@ -234,7 +234,7 @@ export class ToolManager {
     this.toolkits = this.toolkits.filter((tk) => tk.name !== toolkitName);
     const removed = this.toolkits.length < initialLength;
     if (removed) {
-      devLogger.info(`Removed toolkit: ${toolkitName}`);
+      devLogger.debug(`Removed toolkit: ${toolkitName}`);
     }
     return removed;
   }

@@ -7,6 +7,7 @@ import type {
   ProviderTextResponse,
   ProviderTextStreamResponse,
 } from "../agent/providers/base/types";
+
 import type { Memory, MemoryOptions } from "../memory/types";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
@@ -18,18 +19,30 @@ import type { StepWithContent } from "./providers";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
 
-/**
- * Options object for dynamic value resolution
- */
-export type DynamicValueOptions = {
-  /** User-defined context that can be used for dynamic value resolution */
-  userContext: Map<string | symbol, unknown>;
-};
+import type {
+  DynamicValueOptions,
+  DynamicValue,
+  PromptHelper,
+  PromptContent,
+} from "../voltops/types";
+
+// Re-export for backward compatibility
+export type { DynamicValueOptions, DynamicValue, PromptHelper };
 
 /**
- * A value that can be either static or dynamically computed based on context
+ * Enhanced dynamic value for instructions that supports prompt management
  */
-export type DynamicValue<T> = T | ((options: DynamicValueOptions) => T | Promise<T>);
+export type InstructionsDynamicValue = string | DynamicValue<string | PromptContent>;
+
+/**
+ * Enhanced dynamic value for models that supports static or dynamic values
+ */
+export type ModelDynamicValue<T> = T | DynamicValue<T>;
+
+/**
+ * Enhanced dynamic value for tools that supports static or dynamic values
+ */
+export type ToolsDynamicValue = (Tool<any> | Toolkit)[] | DynamicValue<(Tool<any> | Toolkit)[]>;
 
 /**
  * Provider options type for LLM configurations
@@ -104,7 +117,7 @@ export type AgentOptions = {
    * Tools and/or Toolkits that the agent can use
    * Can be static or dynamic based on user context
    */
-  tools?: DynamicValue<(Tool<any> | Toolkit)[]>;
+  tools?: ToolsDynamicValue;
 
   /**
    * Sub-agents that this agent can delegate tasks to
@@ -117,8 +130,17 @@ export type AgentOptions = {
   userContext?: Map<string | symbol, unknown>;
 
   /**
-   * Telemetry exporter for the agent
-   * Used to send telemetry data to an external service
+   * @deprecated Use `voltOpsClient` instead. Will be removed in a future version.
+   *
+   * Telemetry exporter for the agent - DEPRECATED
+   *
+   * 🔄 MIGRATION REQUIRED:
+   * ❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
+   * ✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
+   *
+   * 📖 Migration guide: https://voltagent.dev/docs/observability/developer-console/#migration-guide-from-telemetryexporter-to-voltopsclient
+   *
+   * ✨ Benefits: Observability + prompt management + dynamic prompts from console
    */
   telemetryExporter?: VoltAgentExporter;
 } & (
@@ -130,9 +152,10 @@ export type AgentOptions = {
       description: string;
       /**
        * Agent instructions. This is the preferred field.
-       * Can be static or dynamic based on user context
+       * Can be static or dynamic based on user context.
+       * Enhanced to support prompt management via helper functions.
        */
-      instructions?: DynamicValue<string>;
+      instructions?: InstructionsDynamicValue;
     }
   | {
       /**
@@ -143,11 +166,35 @@ export type AgentOptions = {
       /**
        * Agent instructions. This is the preferred field.
        * Required if description is not provided.
-       * Can be static or dynamic based on user context
+       * Can be static or dynamic based on user context.
+       * Enhanced to support prompt management via helper functions.
        */
-      instructions: DynamicValue<string>;
+      instructions: InstructionsDynamicValue;
     }
 );
+
+/**
+ * System message response with optional prompt metadata
+ */
+export interface SystemMessageResponse {
+  systemMessages: BaseMessage | BaseMessage[];
+  promptMetadata?: {
+    /** Base prompt ID for tracking */
+    prompt_id?: string;
+    /** PromptVersion ID (the actual entity ID) */
+    prompt_version_id?: string;
+    name?: string;
+    version?: number;
+    labels?: string[];
+    tags?: string[];
+    config?: {
+      model?: string;
+      temperature?: number;
+      [key: string]: any;
+    };
+  };
+  isDynamicInstructions?: boolean;
+}
 
 /**
  * Provider instance type helper

@@ -1407,7 +1407,7 @@ export class PostgresStorage implements Memory {
         paramCount++;
       }
 
-      setClauses.push(`updated_at = timezone("utc"::text, now())`);
+      setClauses.push(`updated_at = timezone('utc'::text, now())`);
 
       values.push(id);
 
@@ -1628,7 +1628,7 @@ export class PostgresStorage implements Memory {
         SELECT value 
         FROM ${this.options.tablePrefix}_agent_history_steps 
         WHERE history_id = $1 AND agent_id = $2
-        ORDER BY (value->>"timestamp")::timestamp ASC
+        ORDER BY (value->>'timestamp')::timestamp ASC
         `,
         [key, entry._agentId],
       );
@@ -1768,7 +1768,7 @@ export class PostgresStorage implements Memory {
             SELECT value 
             FROM ${this.options.tablePrefix}_agent_history_steps 
             WHERE history_id = $1 AND agent_id = $2
-            ORDER BY (value->>"timestamp")::timestamp ASC
+            ORDER BY (value->>'timestamp')::timestamp ASC
             `,
             [entry.id, agentId],
           );

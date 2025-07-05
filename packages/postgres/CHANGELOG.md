@@ -1,5 +1,11 @@
 # @voltagent/postgres
 
+## 0.1.7
+
+### Patch Changes
+
+- [#317](https://github.com/VoltAgent/voltagent/pull/317) [`16bb8d0`](https://github.com/VoltAgent/voltagent/commit/16bb8d003c17799688e8b70eb9236b46a5c339be) Thanks [@thujee](https://github.com/thujee)! - fix: errors related to missing columns "timestamp" and "utc" in Postgres schema - #316
+
 ## 0.1.6
 
 ### Patch Changes

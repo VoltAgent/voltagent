@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, VoltAgentExporter } from "@voltagent/core";
+import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
@@ -12,16 +12,12 @@ const agent = new Agent({
   tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],
 });
 
-const publicKey = process.env.VOLTAGENT_PUBLIC_KEY ?? "";
-const secretKey = process.env.VOLTAGENT_SECRET_KEY ?? "";
-
 new VoltAgent({
   agents: {
     agent,
   },
-  telemetryExporter: new VoltAgentExporter({
-    publicKey,
-    secretKey,
-    baseUrl: "https://api.voltagent.dev",
+  voltOpsClient: new VoltOpsClient({
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+    secretKey: process.env.VOLTAGENT_SECRET_KEY,
   }),
 });

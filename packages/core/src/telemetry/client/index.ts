@@ -1,4 +1,3 @@
-import { devLogger } from "@voltagent/internal/dev";
 import type { AgentHistoryEntry, HistoryStep } from "../../agent/history";
 import type { UsageInfo } from "../../agent/providers";
 import type { AgentStatus } from "../../agent/types";
@@ -102,7 +101,6 @@ export class TelemetryServiceApiClient {
 
       return await response.json();
     } catch (error) {
-      devLogger.error("API request error:", error);
       throw error;
     }
   }

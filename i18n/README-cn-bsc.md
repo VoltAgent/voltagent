@@ -134,7 +134,7 @@ VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
 ✓ HTTP Server: http://localhost:3141
 
-VoltOps Platform: https://console.voltagent.dev
+Test your agents with VoltOps Console: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
