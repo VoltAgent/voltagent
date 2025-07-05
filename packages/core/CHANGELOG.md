@@ -1,5 +1,27 @@
 # @voltagent/core
 
+## 0.1.54
+
+### Patch Changes
+
+- [#346](https://github.com/VoltAgent/voltagent/pull/346) [`5100f7f`](https://github.com/VoltAgent/voltagent/commit/5100f7f9419db7e26aa18681b0ad3c09c0957b10) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: export PromptContent type to resolve "cannot be named" TypeScript error
+
+  Fixed a TypeScript compilation error where users would get "cannot be named" errors when exporting variables that use `InstructionsDynamicValue` type. This occurred because `InstructionsDynamicValue` references `PromptContent` type, but `PromptContent` was not being re-exported from the public API.
+
+  **Before:**
+
+  ```typescript
+  export type { DynamicValueOptions, DynamicValue, PromptHelper };
+  ```
+
+  **After:**
+
+  ```typescript
+  export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
+  ```
+
+  This ensures that all types referenced by public API types are properly exported, preventing TypeScript compilation errors when users export agents or variables that use dynamic instructions.
+
 ## 0.1.53
 
 ### Patch Changes
