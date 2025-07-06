@@ -3,154 +3,6 @@ import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 
-const memoryCode = `import { Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { LibSQLStorage } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
-
-// Initialize storage with LibSQL
-const storage = new LibSQLStorage({
-    url: "file:memory.db",  // Local SQLite file for development
-    // For production: url: "libsql://your-turso-database-url"
-    // authToken: "your-auth-token"
-});
-
-// Create a note-taking tool
-const noteTool = createTool({
-    name: "save_note",
-    description: "Save important information or notes for the user",
-    parameters: z.object({
-        title: z.string().describe("Title or topic of the note"),
-        content: z.string().describe("The note content to save")
-    }),
-    execute: async ({ title, content }) => {
-        // In a real app, you'd save this to your database
-        console.log(\`Saving note: \${title} - \${content}\`);
-        return {
-            success: true,
-            message: \`Note "\${title}" saved successfully\`,
-            timestamp: new Date().toISOString()
-        };
-    }
-});
-
-// Create agent with memory storage
-const agent = new Agent({
-    name: "Memory Assistant",
-    instructions: "You are a helpful assistant with memory. Remember what users tell you and reference previous conversations. Use the note tool to save important information users share.",
-    llm: new VercelAIProvider(),
-    model: openai("gpt-4o-mini"),
-    storage: storage,  // Add storage for memory
-    tools: [noteTool]
-});
-
-// Example: Multi-turn conversation with memory
-async function demonstrateMemory() {
-    const userId = "user123";
-    const conversationId = "conv-001";
-    
-    console.log("=== Conversation 1 ===");
-    
-    // First interaction
-    const response1 = await agent.generateText(
-        "Hi! My name is Alex and I'm working on a VoltAgent project.",
-        { userId, conversationId }
-    );
-    console.log("Agent:", response1.text);
-    
-    // Second interaction - agent should remember the name
-    const response2 = await agent.generateText(
-        "Can you save a note that I prefer JavaScript over Python?",
-        { userId, conversationId }
-    );
-    console.log("Agent:", response2.text);
-    
-    // Third interaction - test memory retention
-    const response3 = await agent.generateText(
-        "What's my name and what programming language do I prefer?",
-        { userId, conversationId }
-    );
-    console.log("Agent:", response3.text);
-    
-    console.log("\n=== Later Conversation ===");
-    
-    // Different conversation, same user - should still remember
-    const newConversationId = "conv-002";
-    const response4 = await agent.generateText(
-        "Hello again! Do you remember me?",
-        { userId, conversationId: newConversationId }
-    );
-    console.log("Agent:", response4.text);
-}
-
-// Example: Multiple users with separate memory
-async function demonstrateMultiUser() {
-    console.log("\n=== Multi-User Example ===");
-    
-    // User A
-    const responseA = await agent.generateText(
-        "Hi, I'm Bob and I love cooking Italian food.",
-        { userId: "userA", conversationId: "conv-a1" }
-    );
-    console.log("User A - Agent:", responseA.text);
-    
-    // User B
-    const responseB = await agent.generateText(
-        "Hello, my name is Carol and I'm learning machine learning.",
-        { userId: "userB", conversationId: "conv-b1" }
-    );
-    console.log("User B - Agent:", responseB.text);
-    
-    // Back to User A - should remember Bob, not Carol
-    const responseA2 = await agent.generateText(
-        "What do you remember about me?",
-        { userId: "userA", conversationId: "conv-a2" }
-    );
-    console.log("User A again - Agent:", responseA2.text);
-}
-
-// Run examples
-demonstrateMemory()
-    .then(() => demonstrateMultiUser())
-    .catch(console.error);`;
-
-const packageJsonCode = `{
-  "name": "voltagent-memory-example",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
-  },
-  "dependencies": {
-    "@voltagent/core": "^0.1.52",
-    "@voltagent/vercel-ai": "^0.1.13",
-    "@voltagent/libsql": "^0.1.10",
-    "@ai-sdk/openai": "^1.3.10",
-    "zod": "^3.24.2"
-  }
-}`;
-
-const files = {
-  "src/index.js": {
-    code: memoryCode,
-    active: true,
-  },
-  "package.json": {
-    code: packageJsonCode,
-  },
-};
-
-const dependencies = {
-  "@voltagent/core": "^0.1.52",
-  "@voltagent/vercel-ai": "^0.1.13",
-  "@voltagent/libsql": "^0.1.10",
-  "@ai-sdk/openai": "^1.3.10",
-  zod: "^3.24.2",
-};
-
 export default function TutorialMemory() {
   return (
     <TutorialLayout
@@ -167,7 +19,7 @@ export default function TutorialMemory() {
           <h2 className="text-3xl font-bold text-white">
             The Problem: Your Agent Has Amnesia
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Your weather agent works, but there's a massive problem: it forgets
             everything after each conversation. It's like talking to someone
             with short-term memory loss.
@@ -233,13 +85,13 @@ export default function TutorialMemory() {
           <h2 className="text-3xl font-bold text-white">
             The Solution: Memory System
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             VoltAgent has a built-in memory system that makes your agents
             remember conversations. But there's one crucial thing:{" "}
             <strong>memory only works when you provide a userId</strong>.
           </p>
 
-          <div className="rounded-lg p-6 border-solid border-emerald-500  bg-gray-800/50">
+          <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
             <h3 className="text-xl font-semibold text-[#00d992] mb-4">
               Automatic Memory (Zero Configuration)
             </h3>
@@ -275,11 +127,11 @@ export default function TutorialMemory() {
             </div>
           </div>
 
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-6">
+          <div className="bg-yellow-900/20 border-solid border border-yellow-500/30 rounded-lg p-6">
             <h4 className="text-yellow-300 font-semibold mb-3">
               Critical: userId Required for Memory
             </h4>
-            <p className="text-gray-300">
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
               Without a{" "}
               <code className="bg-gray-800 px-2 py-1 rounded">userId</code>,
               your agent can't properly isolate and store conversations. This is
@@ -293,13 +145,13 @@ export default function TutorialMemory() {
           <h2 className="text-3xl font-bold text-white">
             Memory in Action: Test Your Agent
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Run your weather agent and test memory functionality. The key is
             setting a userId - without it, memory won't work properly.
           </p>
 
           {/* VoltOps Testing */}
-          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
+          <div className="bg-blue-900/20 border-solid border border-blue-500/30 rounded-lg p-6">
             <h4 className="text-blue-300 font-semibold mb-3">
               Testing with VoltOps Console
             </h4>
@@ -311,6 +163,7 @@ export default function TutorialMemory() {
                   <a
                     href="https://console.voltagent.dev"
                     target="_blank"
+                    rel="noreferrer"
                     className="text-blue-400 hover:underline"
                   >
                     console.voltagent.dev
@@ -410,11 +263,11 @@ export default function TutorialMemory() {
             </div>
           </div>
 
-          <div className="rounded-lg p-6 border-solid border-emerald-500  bg-gray-800/50">
+          <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
             <h4 className="text-[#00d992] font-semibold mb-2">
               The Power of Proper Memory Setup!
             </h4>
-            <p className="text-gray-300">
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
               With the correct userId and conversationId, your agent now
               remembers previous conversations and provides a natural,
               contextual experience. This transforms user experience from
@@ -428,7 +281,7 @@ export default function TutorialMemory() {
           <h2 className="text-3xl font-bold text-white">
             User and Conversation IDs
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             In real applications, you have multiple users and conversations.
             VoltAgent uses{" "}
             <code className="bg-gray-800 px-2 py-1 rounded">userId</code> and{" "}
@@ -443,7 +296,7 @@ export default function TutorialMemory() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
+            <div className="bg-blue-900/20 border-solid border border-blue-500/30 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-blue-300 mb-4">
                 userId
               </h3>
@@ -469,7 +322,7 @@ export default function TutorialMemory() {
               </div>
             </div>
 
-            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
+            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-green-300 mb-4">
                 conversationId
               </h3>
@@ -535,7 +388,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
         {/* Memory Providers */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">Memory Options</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             VoltAgent offers different memory types. Choose the one that fits
             your needs.
           </p>
@@ -636,7 +489,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
           <h2 className="text-3xl font-bold text-white">
             Custom Memory Options
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             If the default memory isn't enough, you can create your own memory
             provider.
           </p>
@@ -688,12 +541,12 @@ const productionAgent = new Agent({
         {/* Best Practices */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">Best Practices</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Follow these tips to use memory effectively.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
+            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-green-300 mb-4">
                 Do This
               </h3>
@@ -762,7 +615,7 @@ const productionAgent = new Agent({
           <h2 className="text-3xl font-bold text-white">
             Using Memory via REST API
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             If you're building a web app or mobile app, you'll likely call your
             VoltAgent via REST API. Here's how to properly set userId and
             conversationId in API calls.
@@ -770,7 +623,7 @@ const productionAgent = new Agent({
 
           <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
             <h4 className="text-white font-semibold mb-3">API Server URL</h4>
-            <p className="text-gray-300 mb-3">
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
               Your VoltAgent automatically starts an API server on port 3141 (or
               another available port):
             </p>
@@ -864,7 +717,7 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
             </CodeBlock>
           </ColorModeProvider>
 
-          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
+          <div className="bg-blue-900/20 border-solid border border-blue-500/30 rounded-lg p-6">
             <h4 className="text-blue-300 font-semibold mb-3">
               Key Points for API Usage
             </h4>
@@ -914,6 +767,7 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
                   <a
                     href="http://localhost:3141/ui"
                     target="_blank"
+                    rel="noreferrer"
                     className="text-blue-400 hover:underline"
                   >
                     http://localhost:3141/ui

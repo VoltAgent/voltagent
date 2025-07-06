@@ -19,7 +19,7 @@ export default function TutorialIntroduction() {
           <h2 className="text-3xl font-bold text-white">
             Why Do You Need VoltAgent?
           </h2>
-          <p className="text-base text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Building AI agents from scratch is like building a web app without
             React or Express. You'll spend months writing boilerplate instead of
             focusing on your actual business logic.
@@ -64,7 +64,7 @@ export default function TutorialIntroduction() {
               </div>
             </div>
 
-            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50 ">
+            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-emerald-300 mb-4">
                 With VoltAgent
               </h3>
@@ -107,7 +107,7 @@ export default function TutorialIntroduction() {
         {/* What is VoltAgent? */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">What is VoltAgent?</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             VoltAgent is a <strong>TypeScript-first framework</strong> for
             building AI agents. Think of it as the "Express.js for AI agents" -
             it handles the plumbing so you can focus on building.
@@ -158,7 +158,7 @@ export default function TutorialIntroduction() {
           <h2 className="text-3xl font-bold text-white">
             Your First Agent: Hello World
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's create your first agent with just a few lines of code. This
             agent will introduce itself when you chat with it.
           </p>
@@ -311,7 +311,7 @@ export default function TutorialIntroduction() {
         {/* Code Example */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">Your Agent Code</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             This is what gets generated for you. Simple, clean, and ready to
             extend.
           </p>
@@ -344,7 +344,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             The Developer Journey
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's walk through what you're actually thinking when building this
             agent.
           </p>
@@ -463,7 +463,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Meet VoltOps: Your Agent Console
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             VoltOps is your agent's dashboard. When you start your agent, it
             automatically connects to
             <a

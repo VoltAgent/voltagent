@@ -20,7 +20,7 @@ export default function MCPTutorial() {
           <h2 className="text-3xl font-bold text-white">
             The Problem: Your Agent Lives in a Bubble
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Your agent has memory and tools, but it's still isolated. It can't
             access your GitHub repos, your Slack channels, your databases, or
             any of the systems you actually use.
@@ -84,7 +84,7 @@ export default function MCPTutorial() {
         {/* What is MCP */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">What is MCP?</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             <strong>Model Context Protocol (MCP)</strong> is an open standard
             that enables AI models to securely access external data and tools.
             Think of it as USB for AI agents - a universal connector for any
@@ -141,7 +141,7 @@ export default function MCPTutorial() {
           <h2 className="text-3xl font-bold text-white">
             Real Example: GitHub Integration
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's connect your agent to GitHub so it can read your repos, create
             issues, and manage pull requests.
           </p>
@@ -192,7 +192,7 @@ new VoltAgent({
         {/* Available MCP Servers */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">Popular MCP Servers</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             The MCP ecosystem has ready-made servers for popular services. Here
             are some you can use today:
           </p>
@@ -333,7 +333,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Advanced Example: DevOps Assistant
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's build a DevOps assistant that can access GitHub, AWS, and
             Slack to help manage your infrastructure.
           </p>
@@ -406,8 +406,8 @@ new VoltAgent({
             </CodeBlock>
           </ColorModeProvider>
 
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
-            <h4 className="text-blue-400 font-semibold mb-2">
+          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-6">
+            <h4 className="text-[#00d992] font-semibold mb-2">
               Real-World Workflow
             </h4>
             <p className="text-gray-300 mb-3">
@@ -429,7 +429,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Building Your Own MCP Server
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Need to connect to a system that doesn't have an MCP server yet? You
             can build your own in just a few minutes.
           </p>
@@ -591,13 +591,13 @@ const agent = new Agent({
           <h2 className="text-3xl font-bold text-white">
             Security & Best Practices
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             MCP gives your agent powerful access to external systems. Here's how
             to do it safely.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6">
+            <div className="bg-yellow-500/10 border-solid border border-yellow-500/20 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-yellow-300 mb-4">
                 Security Guidelines
               </h3>
@@ -638,14 +638,16 @@ const agent = new Agent({
         {/* Next Steps */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">What's Next?</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             You now have an agent that can access external systems through MCP.
             In the final tutorial, we'll learn about subagents - creating teams
             of specialized agents that work together.
           </p>
 
-          <div className="bg-[#00d992]/10 border border-[#00d992]/20 rounded-lg p-6">
-            <h4 className="text-[#00d992] font-semibold mb-2">Try This</h4>
+          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-6">
+            <h4 className="text-[#00d992] font-semibold mb-2">
+              Ready to Go Enterprise?
+            </h4>
             <p className="text-gray-300 mb-3">
               Set up the GitHub MCP example above and ask your agent:
             </p>

@@ -19,7 +19,7 @@ export default function ChatbotProblemTutorial() {
           <h2 className="text-3xl font-bold text-white">
             The Problem: Your Agent is Basically a Chatbot
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's be honest - the agent you just built can only chat. It can't{" "}
             <strong>do</strong> anything useful. It's like hiring a consultant
             who can only give advice but never take action.
@@ -31,25 +31,25 @@ export default function ChatbotProblemTutorial() {
             </h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
                 <span className="text-gray-300">
                   "What's the weather in New York?"
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
                 <span className="text-gray-300">
                   "Send an email to my boss"
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
                 <span className="text-gray-300">
                   "Calculate my monthly expenses"
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
                 <span className="text-gray-300">
                   "Create a calendar event for tomorrow"
                 </span>
@@ -66,7 +66,7 @@ export default function ChatbotProblemTutorial() {
           <h2 className="text-3xl font-bold text-white">
             Real-World Example: The Useless Assistant
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Imagine you're building an AI assistant for your company. What would
             users actually want?
           </p>
@@ -113,11 +113,11 @@ export default function ChatbotProblemTutorial() {
             </div>
           </div>
 
-          <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-6">
+          <div className="bg-orange-500/10 border-solid border border-orange-500/20 rounded-lg p-6">
             <h4 className="text-orange-400 font-semibold mb-2">
               The Reality Check
             </h4>
-            <p className="text-gray-300">
+            <p className="text-sm md:text-base text-gray-300">
               After a week, users stop using your "AI assistant" because it's
               just a fancy search engine that can't actually assist with
               anything. Sound familiar?
@@ -130,7 +130,7 @@ export default function ChatbotProblemTutorial() {
           <h2 className="text-3xl font-bold text-white">
             The Solution: Give Your Agent Tools
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's fix your useless chatbot by adding a real tool. We'll create a
             weather agent that can actually check weather data.
           </p>
@@ -183,12 +183,12 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             The Developer Journey: Building Your First Tool
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's walk through what you're thinking as you build this tool.
           </p>
 
           <div className="space-y-6">
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-blue-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-blue-500">
               <h4 className="text-blue-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   1
@@ -201,14 +201,14 @@ new VoltAgent({
                 LLM knows when to use it. Think of this as writing documentation
                 for a function.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-blue-400">
-                  name: "get_weather" // What the LLM will call
+              <div className="">
+                <code className="p-3 text-blue-400">
+                  name: "get_weather" {/* What the LLM will call */}
                 </code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-green-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-green-500">
               <h4 className="text-green-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   2
@@ -220,14 +220,14 @@ new VoltAgent({
                 uses Zod schemas to define and validate inputs. This is like
                 defining function parameters but with runtime validation.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-green-400">
-                  z.object({`{ location: z.string() }`}) // Type-safe inputs
+              <div className="">
+                <code className="p-3 text-green-400">
+                  z.object({"{location: z.string()}"}) {/* Type-safe inputs */}
                 </code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-purple-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-purple-500">
               <h4 className="text-purple-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   3
@@ -240,14 +240,14 @@ new VoltAgent({
                 that does the actual work. Call APIs, query databases, whatever
                 you need.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-purple-400">
-                  execute: async ({`{ location }`}) =&gt; {`{ ... }`}
+              <div className="">
+                <code className="p-3 text-purple-400">
+                  execute: async ({"{location}"}) =&gt; {"{...}"}
                 </code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-orange-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-orange-500">
               <h4 className="text-orange-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   4
@@ -260,14 +260,14 @@ new VoltAgent({
                 The agent will automatically understand when and how to use it
                 based on user input.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-orange-400">
-                  tools: [getWeatherTool] // Agent now has superpowers
+              <div className="">
+                <code className="p-3 text-orange-400">
+                  tools: [getWeatherTool] {/* Agent now has superpowers */}
                 </code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-red-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-red-500">
               <h4 className="text-red-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   5
@@ -279,8 +279,8 @@ new VoltAgent({
                 tool to use, calling your function, and formatting the response.
                 You just write the business logic.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-red-400">
+              <div className="">
+                <code className="p-3 text-red-400">
                   User: "Weather in NYC?" → Tool: get_weather() → Response!
                 </code>
               </div>
@@ -293,11 +293,11 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Testing in VoltOps Console
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Now let's test your tool-powered agent in the VoltOps console.
           </p>
 
-          <div className="bg-[#00d992]/10 border border-[#00d992]/20 rounded-lg p-6">
+          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-6">
             <h3 className="text-xl font-semibold text-[#00d992] mb-4">
               Step-by-Step Testing
             </h3>
@@ -326,6 +326,7 @@ new VoltAgent({
                   <a
                     href="https://console.voltagent.dev"
                     target="_blank"
+                    rel="noreferrer"
                     className="text-[#00d992] hover:underline"
                   >
                     console.voltagent.dev
@@ -342,17 +343,17 @@ new VoltAgent({
                   </p>
                   <div className="bg-gray-800 rounded-lg p-4 space-y-2">
                     <div className="bg-gray-900 rounded p-2">
-                      <code className="text-blue-400">
+                      <code className="p-3 text-blue-400">
                         "What's the weather in New York?"
                       </code>
                     </div>
                     <div className="bg-gray-900 rounded p-2">
-                      <code className="text-blue-400">
+                      <code className="p-3 text-blue-400">
                         "Check weather in San Francisco"
                       </code>
                     </div>
                     <div className="bg-gray-900 rounded p-2">
-                      <code className="text-blue-400">
+                      <code className="p-3 text-blue-400">
                         "Is it sunny in Tokyo?"
                       </code>
                     </div>
@@ -382,7 +383,7 @@ new VoltAgent({
             </p>
           </div>
 
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
+          <div className="bg-blue-500/10 border-solid border border-blue-500/20 rounded-lg p-6">
             <h4 className="text-blue-400 font-semibold mb-2">
               Debug & Monitor
             </h4>
@@ -391,19 +392,19 @@ new VoltAgent({
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
                 <span className="text-gray-300">Tool execution logs</span>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
                 <span className="text-gray-300">Agent reasoning process</span>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
                 <span className="text-gray-300">Response time metrics</span>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
                 <span className="text-gray-300">Error tracking</span>
               </div>
             </div>
@@ -415,7 +416,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             The Transformation: From Chatbot to Agent
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Watch how your agent's behavior completely changes with just one
             tool.
           </p>
@@ -442,7 +443,7 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
+            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-green-300 mb-4">
                 After (Real Agent)
               </h3>
@@ -464,7 +465,7 @@ new VoltAgent({
             </div>
           </div>
 
-          <div className="rounded-lg p-6 border-solid border-emerald-500  bg-gray-800/50">
+          <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
             <h4 className="text-[#00d992] font-semibold mb-2">The Magic</h4>
             <p className="text-gray-300">
               Your agent now <strong>takes action</strong> instead of giving

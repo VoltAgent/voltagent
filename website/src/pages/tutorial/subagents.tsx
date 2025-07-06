@@ -19,7 +19,7 @@ export default function SubagentsTutorial() {
           <h2 className="text-3xl font-bold text-white">
             The Problem: One Agent Can't Do Everything
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             You've built an agent with tools and memory, but as requirements
             grow, you realize one agent trying to do everything becomes a
             nightmare to maintain.
@@ -81,7 +81,7 @@ export default function SubagentsTutorial() {
           <h2 className="text-3xl font-bold text-white">
             Real-World Example: Customer Support Team
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's build a customer support system with specialized agents
             working together.
           </p>
@@ -207,7 +207,7 @@ new VoltAgent({
         {/* How It Works */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">How Subagents Work</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             The supervisor agent automatically knows how to use subagents based
             on the conversation context. Here's what happens:
           </p>
@@ -282,7 +282,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Advanced Example: Content Creation Team
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Let's build a more sophisticated example - a content creation team
             with multiple specialized agents.
           </p>
@@ -419,7 +419,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Best Practices for Subagents
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Here are the key principles for designing effective agent teams:
           </p>
 
@@ -481,7 +481,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Testing Your Agent Team
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Once you've built your agent team, test it with realistic scenarios
             to make sure the coordination works smoothly.
           </p>
@@ -535,7 +535,7 @@ testContentTeam();`}
         {/* What's Next */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">What's Next?</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             Congratulations! You've built a complete AI agent system with:
           </p>
 
@@ -578,7 +578,7 @@ testContentTeam();`}
             </div>
           </div>
 
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
+          <div className="bg-blue-500/10 border-solid border border-blue-500/20 rounded-lg p-6">
             <h4 className="text-blue-400 font-semibold mb-2">
               Ready to Build Something Amazing?
             </h4>
