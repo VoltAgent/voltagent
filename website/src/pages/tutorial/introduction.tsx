@@ -2,6 +2,7 @@ import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function TutorialIntroduction() {
   return (
@@ -18,44 +19,44 @@ export default function TutorialIntroduction() {
           <h2 className="text-3xl font-bold text-white">
             Why Do You Need VoltAgent?
           </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <p className="text-base text-gray-300 leading-relaxed">
             Building AI agents from scratch is like building a web app without
             React or Express. You'll spend months writing boilerplate instead of
             focusing on your actual business logic.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-red-300 mb-4">
                 Without a Framework
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
                     Manual API calls to OpenAI/Claude
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
                     Custom conversation state management
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
                     Manual tool integration and execution
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
                     No debugging, monitoring, or observability
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
                     Complex agent coordination logic
                   </span>
@@ -63,37 +64,37 @@ export default function TutorialIntroduction() {
               </div>
             </div>
 
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-green-300 mb-4">
+            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50 ">
+              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
                 With VoltAgent
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
                     Unified API for all LLM providers
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
                     Built-in conversation memory
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
                     Tool system with automatic execution
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
                     VoltOps: Real-time debugging & monitoring
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
                     Multi-agent coordination out of the box
                   </span>
@@ -118,32 +119,34 @@ export default function TutorialIntroduction() {
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-4">
-                <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2"></div>
+                <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2" />
                 <div>
                   <strong className="text-white text-lg">Modular:</strong>
-                  <p className="text-gray-300 mt-1">Use only what you need</p>
+                  <span className="text-gray-300 ml-1">
+                    Use only what you need
+                  </span>
                 </div>
               </div>
               <div className="flex items-start space-x-4">
-                <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2"></div>
+                <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2" />
                 <div>
                   <strong className="text-white text-lg">
                     Developer-First:
                   </strong>
-                  <p className="text-gray-300 mt-1">
+                  <span className="text-gray-300 ml-1">
                     Built by developers, for developers
-                  </p>
+                  </span>
                 </div>
               </div>
               <div className="flex items-start space-x-4">
-                <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2"></div>
+                <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2" />
                 <div>
                   <strong className="text-white text-lg">
                     Production-Ready:
                   </strong>
-                  <p className="text-gray-300 mt-1">
+                  <span className="text-gray-300 ml-1">
                     Monitoring, scaling, and deployment built-in
-                  </p>
+                  </span>
                 </div>
               </div>
             </div>
@@ -160,74 +163,84 @@ export default function TutorialIntroduction() {
             agent will introduce itself when you chat with it.
           </p>
 
-          <div className="bg-[#00d992]/10 rounded-lg p-6 border border-[#00d992]/20">
-            <h3 className="text-xl font-semibold text-[#00d992] mb-4">
+          <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
+            <h3 className="text-xl font-semibold text-[#00d992] mb-6">
               3-Step Setup
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-8">
+              {/* Step 1 */}
               <div className="flex items-start space-x-4">
-                <span className="text-[#00d992] font-mono font-bold text-lg">
-                  1.
-                </span>
-                <div>
-                  <code className="text-[#00d992] bg-gray-900 px-3 py-2 rounded">
+                <div className="flex-shrink-0 w-8 h-8 bg-[#00d992] rounded-full flex items-center justify-center">
+                  <span className="text-[#1d1d1d] font-bold text-sm">1</span>
+                </div>
+                <div className="flex flex-col">
+                  <code className="text-[#00d992] font-mono p-3  text-sm">
                     npm create voltagent-app@latest my-agent
                   </code>
-                  <p className="text-gray-400 text-sm mt-1">
+                  <p className="text-gray-400 mt-2 text-sm">
                     Creates a new VoltAgent project with all the boilerplate
                   </p>
                 </div>
               </div>
+
+              {/* Step 2 */}
               <div className="flex items-start space-x-4">
-                <span className="text-[#00d992] font-mono font-bold text-lg">
-                  2.
-                </span>
-                <div>
-                  <p className="text-gray-300 mb-2">
+                <div className="flex-shrink-0 w-8 h-8 bg-[#00d992] rounded-full flex items-center justify-center">
+                  <span className="text-[#1d1d1d] font-bold text-sm">2</span>
+                </div>
+                <div className="flex flex-col">
+                  <p className="text-gray-300 mb-4">
                     Get your OpenAI API key and add it to{" "}
-                    <code className="text-blue-400 bg-gray-900 px-2 py-1 rounded">
+                    <code className="text-blue-400 px-2 py-1 rounded text-sm">
                       .env
                     </code>
                   </p>
-                  <div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      <span className="text-blue-400 text-sm font-medium">
-                        Get API Key:
-                      </span>
+                  <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
+                      <div>
+                        <span className="text-blue-400 text-sm font-medium">
+                          Get API Key:
+                        </span>
+                        <p className="text-gray-300 text-sm mt-1">
+                          Visit{" "}
+                          <a
+                            href="https://platform.openai.com/api-keys"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-400 hover:underline"
+                          >
+                            platform.openai.com/api-keys
+                          </a>{" "}
+                          → Create API Key → Copy it
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-gray-300 text-sm mb-2">
-                      Visit{" "}
-                      <a
-                        href="https://platform.openai.com/api-keys"
-                        target="_blank"
-                        className="text-blue-400 hover:underline"
-                      >
-                        platform.openai.com/api-keys
-                      </a>{" "}
-                      → Create API Key → Copy it
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <span className="text-green-400 text-sm font-medium">
-                        Add to .env:
-                      </span>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mt-2" />
+                      <div>
+                        <span className="text-green-400 text-sm font-medium mr-2">
+                          Add to .env:
+                        </span>
+                        <code className="text-orange-400 text-sm">
+                          OPENAI_API_KEY=sk-your-key-here
+                        </code>
+                      </div>
                     </div>
-                    <code className="text-orange-400 bg-gray-900 px-2 py-1 rounded text-sm">
-                      OPENAI_API_KEY=sk-your-key-here
-                    </code>
                   </div>
                 </div>
               </div>
+
+              {/* Step 3 */}
               <div className="flex items-start space-x-4">
-                <span className="text-[#00d992] font-mono font-bold text-lg">
-                  3.
-                </span>
-                <div>
-                  <code className="text-[#00d992] bg-gray-900 px-3 py-2 rounded">
+                <div className="flex-shrink-0 w-8 h-8 bg-[#00d992] rounded-full flex items-center justify-center">
+                  <span className="text-[#1d1d1d] font-bold text-sm">3</span>
+                </div>
+                <div className="flex flex-col">
+                  <code className="text-[#00d992] font-mono text-sm p-3">
                     npm run dev
                   </code>
-                  <p className="text-gray-400 text-sm mt-2 mb-3">
+                  <p className="text-gray-400 mt-2 text-sm mb-4">
                     Starts the server. You'll see this in your terminal:
                   </p>
                   <div className="bg-black rounded-lg p-4 border border-gray-600 font-mono text-sm">
@@ -235,19 +248,15 @@ export default function TutorialIntroduction() {
                       ══════════════════════════════════════════════════
                     </div>
                     <div className="text-white font-bold">
-                      {" "}
                       VOLTAGENT SERVER STARTED SUCCESSFULLY
                     </div>
                     <div className="text-green-400">
                       ══════════════════════════════════════════════════
                     </div>
                     <div className="text-blue-400">
-                      {" "}
                       ✓ HTTP Server: http://localhost:3141
                     </div>
-                    <div className="text-gray-400 mt-2"></div>
-                    <div className="text-yellow-400">
-                      {" "}
+                    <div className="text-yellow-400 mt-2">
                       VoltOps Platform: https://console.voltagent.dev
                     </div>
                     <div className="text-green-400">
@@ -262,6 +271,7 @@ export default function TutorialIntroduction() {
                     <a
                       href="https://console.voltagent.dev"
                       target="_blank"
+                      rel="noreferrer"
                       className="text-[#00d992] hover:underline font-medium"
                     >
                       console.voltagent.dev
@@ -281,7 +291,7 @@ export default function TutorialIntroduction() {
           </h3>
           <p className="text-gray-300 mb-4">
             After running{" "}
-            <code className="text-[#00d992] bg-gray-900 px-2 py-1 rounded">
+            <code className="text-[#00d992] px-2 py-1 rounded">
               npm run dev
             </code>
             , this is what you'll see in VoltOps console:
@@ -340,7 +350,7 @@ new VoltAgent({
           </p>
 
           <div className="space-y-6">
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-blue-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-blue-500">
               <h4 className="text-blue-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   1
@@ -353,12 +363,12 @@ new VoltAgent({
                 think of it as your AI's personality container. It's where you
                 define who your AI is and how it should behave.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-blue-400">new Agent(config)</code>
+              <div className="rounded p-3">
+                <code className="text-blue-400 p-3">new Agent(config)</code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-green-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-solid border-l-4 border-0 border-green-500">
               <h4 className="text-green-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   2
@@ -370,12 +380,12 @@ new VoltAgent({
                 it like naming a function or variable. Choose something
                 descriptive that tells you what this agent does.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-green-400">name: "HelloAgent"</code>
+              <div className="rounded p-3">
+                <code className="text-green-400 p-3">name: "HelloAgent"</code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-purple-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-solid border-l-4 border-0 border-purple-500">
               <h4 className="text-purple-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   3
@@ -389,14 +399,14 @@ new VoltAgent({
                 about personality, tone, and behavior. This is your agent's core
                 personality.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-purple-400">
+              <div className="rounded p-3">
+                <code className="text-purple-400 p-3">
                   instructions: "You are a friendly assistant..."
                 </code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-orange-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-orange-500">
               <h4 className="text-orange-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   4
@@ -410,14 +420,14 @@ new VoltAgent({
                 <span className="text-orange-400 font-mono">gpt-4</span> is more
                 powerful for complex reasoning.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-orange-400">
+              <div className="rounded p-3">
+                <code className="text-orange-400 p-3">
                   model: openai("gpt-4o-mini")
                 </code>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-red-500">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-l-4 border-solid border-0 border-red-500">
               <h4 className="text-red-400 font-semibold mb-3 flex items-center">
                 <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-sm mr-3">
                   5
@@ -430,15 +440,15 @@ new VoltAgent({
                 requests, WebSocket connections, and automatically connects to
                 VoltOps for debugging.
               </p>
-              <div className="bg-gray-900 rounded p-3">
-                <code className="text-red-400">
+              <div className="rounded p-3">
+                <code className="text-red-400 p-3">
                   new VoltAgent(serverConfig)
                 </code>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#00d992]/10 rounded-lg p-6 border border-[#00d992]/20">
+          <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
             <h4 className="text-[#00d992] font-semibold mb-2">The Result</h4>
             <p className="text-gray-300">
               In just 10 lines of code, you've created a production-ready AI
@@ -459,6 +469,7 @@ new VoltAgent({
             <a
               href="https://console.voltagent.dev"
               target="_blank"
+              rel="noreferrer"
               className="text-[#00d992] hover:underline mx-2"
             >
               console.voltagent.dev
@@ -466,27 +477,27 @@ new VoltAgent({
             where you can chat with it in real-time.
           </p>
 
-          <div className="bg-[#00d992]/10 rounded-lg p-6 border border-[#00d992]/20">
+          <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
             <h3 className="text-xl font-semibold text-[#00d992] mb-4">
               What You'll See
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">Real-time chat interface</span>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">Agent performance metrics</span>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">
                   Conversation logs and debugging
                 </span>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">Live code updates</span>
               </div>
             </div>

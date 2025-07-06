@@ -2,86 +2,73 @@ import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-export default function TutorialSubagents() {
+export default function SubagentsTutorial() {
   return (
     <TutorialLayout
       currentStep={5}
       totalSteps={5}
-      stepTitle="Subagents: Multi-Agent Workflows"
-      stepDescription="Build complex systems where agents coordinate to solve bigger problems"
+      stepTitle="Subagents: Building Agent Teams"
+      stepDescription="Create specialized agents that work together to solve complex problems"
       prevStepUrl="/tutorial/mcp"
     >
       <div className="space-y-8">
-        {/* What Are Subagents? */}
+        {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">What Are Subagents?</h2>
+          <h2 className="text-3xl font-bold text-white">
+            The Problem: One Agent Can't Do Everything
+          </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            Subagents are specialized agents that work together under a
-            coordinator (supervisor) agent. Think of it like a team where each
-            member has specific expertise.
+            You've built an agent with tools and memory, but as requirements
+            grow, you realize one agent trying to do everything becomes a
+            nightmare to maintain.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Real-World Analogy
-            </h3>
-            <p className="text-gray-300">
-              Imagine a software company: You have a Project Manager who
-              coordinates between a Frontend Developer, Backend Developer, and
-              QA Tester. Each has their role, but they work together to deliver
-              the project.
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-red-300 mb-4">
-                Single Agent Approach
+                Single Agent Problems
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
-                    One agent tries to do everything
+                    Conflicting instructions
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
-                    Jack of all trades, master of none
+                    Too many tools to manage
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
-                  <span className="text-gray-300">
-                    Difficult to maintain and debug
-                  </span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
+                  <span className="text-gray-300">Mixed responsibilities</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-green-300 mb-4">
-                Multi-Agent Approach
+            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
+              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
+                Subagent Benefits
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
+                  <span className="text-gray-300">Specialized expertise</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
-                    Each agent specialized for specific tasks
+                    Clean separation of concerns
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
-                    Better performance and reliability
-                  </span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
-                  <span className="text-gray-300">
-                    Easier to test and maintain
+                    Easier to maintain and debug
                   </span>
                 </div>
               </div>
@@ -89,204 +76,129 @@ export default function TutorialSubagents() {
           </div>
         </div>
 
-        {/* Real Example: DevOps Team */}
+        {/* Real World Example */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">
-            Real Example: DevOps Team
+            Real-World Example: Customer Support Team
           </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            Let's build a DevOps team where a supervisor coordinates between
-            specialists.
+            Let's build a customer support system with specialized agents
+            working together.
           </p>
 
-          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-blue-300 mb-4">
-              The Team Structure
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                  S
-                </div>
-                <div>
-                  <strong className="text-blue-300">Supervisor Agent:</strong>
-                  <p className="text-gray-300">
-                    Coordinates the team, makes decisions, communicates with
-                    users
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                  C
-                </div>
-                <div>
-                  <strong className="text-green-300">Code Analyzer:</strong>
-                  <p className="text-gray-300">
-                    Reviews code, finds bugs, suggests improvements
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                  D
-                </div>
-                <div>
-                  <strong className="text-purple-300">Deployment Agent:</strong>
-                  <p className="text-gray-300">
-                    Handles deployments, manages infrastructure
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                  M
-                </div>
-                <div>
-                  <strong className="text-orange-300">Monitor Agent:</strong>
-                  <p className="text-gray-300">
-                    Watches system health, alerts on issues
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <ColorModeProvider>
-            <CodeBlock language="typescript" title="DevOps Team Implementation">
+            <CodeBlock language="typescript" title="src/index.ts">
               {`import { VoltAgent, Agent, createTool } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-// Create specialized tools
-const analyzeCodeTool = createTool({
-  name: "analyze_code",
-  description: "Analyze code for bugs and improvements",
-  inputSchema: z.object({
-    code: z.string(),
-    language: z.string(),
-  }),
-  handler: async ({ code, language }) => {
-    // Simulate code analysis
-    const issues = [
-      "Line 15: Potential null pointer exception",
-      "Line 32: Consider using async/await instead of promises",
-      "Line 45: Memory leak in event listener"
-    ];
-    return { issues, language, analyzed: true };
-  },
-});
-
-const deployTool = createTool({
-  name: "deploy_app",
-  description: "Deploy application to production",
-  inputSchema: z.object({
-    version: z.string(),
-    environment: z.string(),
-  }),
-  handler: async ({ version, environment }) => {
-    // Simulate deployment
-    return { 
-      deployed: true, 
-      version, 
-      environment,
-      url: \`https://app-\${version}.\${environment}.com\`
-    };
-  },
-});
-
-const monitorTool = createTool({
-  name: "check_system_health",
-  description: "Check system health and performance",
-  inputSchema: z.object({
-    service: z.string(),
-  }),
-  handler: async ({ service }) => {
-    // Simulate monitoring
-    return {
-      service,
-      status: "healthy",
-      cpu: "45%",
-      memory: "67%",
-      uptime: "15 days",
-    };
-  },
-});
-
-// Create specialized agents
-const codeAnalyzer = new Agent({
-  name: "CodeAnalyzer",
-  description: "Specialized in code analysis and review",
+// Technical Support Agent
+const techSupportAgent = new Agent({
+  name: "tech-support",
+  instructions: \`You are a technical support specialist. You handle:
+  - Bug reports and technical issues
+  - System troubleshooting
+  - Performance problems
+  - Integration questions
+  
+  Be precise and ask for specific details like error messages, steps to reproduce, and system information.\`,
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  instructions: \`You are a senior code reviewer. Your job is to:
-  1. Analyze code for bugs, security issues, and performance problems
-  2. Suggest improvements and best practices
-  3. Provide clear, actionable feedback
-  
-  Be thorough but constructive in your analysis.\`,
-  tools: [analyzeCodeTool],
+  tools: [
+    createTool({
+      name: "check_system_status",
+      description: "Check if our systems are operational",
+      parameters: z.object({
+        service: z.string().describe("Service name to check")
+      }),
+      execute: async ({ service }) => {
+        // Mock system status check
+        return { status: "operational", uptime: "99.9%" };
+      },
+    }),
+    createTool({
+      name: "create_bug_report",
+      description: "Create a bug report in our system",
+      parameters: z.object({
+        title: z.string(),
+        description: z.string(),
+        severity: z.enum(["low", "medium", "high", "critical"])
+      }),
+      execute: async ({ title, description, severity }) => {
+        console.log("Creating bug report:", { title, description, severity });
+        return { ticketId: "BUG-" + Date.now(), status: "created" };
+      },
+    })
+  ]
 });
 
-const deploymentAgent = new Agent({
-  name: "DeploymentAgent", 
-  description: "Handles application deployments",
+// Billing Support Agent
+const billingSupportAgent = new Agent({
+  name: "billing-support",
+  instructions: \`You are a billing support specialist. You handle:
+  - Payment issues
+  - Subscription questions
+  - Invoice inquiries
+  - Refund requests
+  
+  Be empathetic and always verify customer identity before discussing account details.\`,
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  instructions: \`You are a deployment specialist. Your job is to:
-  1. Deploy applications safely to different environments
-  2. Manage rollbacks if needed
-  3. Ensure zero-downtime deployments
-  
-  Always verify deployment success before reporting completion.\`,
-  tools: [deployTool],
+  tools: [
+    createTool({
+      name: "lookup_subscription",
+      description: "Look up customer subscription details",
+      parameters: z.object({
+        email: z.string().describe("Customer email address")
+      }),
+      execute: async ({ email }) => {
+        // Mock subscription lookup
+        return { 
+          plan: "Pro", 
+          status: "active",
+          nextBilling: "2024-02-01",
+          amount: "$49/month"
+        };
+      },
+    }),
+    createTool({
+      name: "process_refund",
+      description: "Process a refund for a customer",
+      parameters: z.object({
+        email: z.string(),
+        amount: z.number(),
+        reason: z.string()
+      }),
+      execute: async ({ email, amount, reason }) => {
+        console.log("Processing refund:", { email, amount, reason });
+        return { refundId: "REF-" + Date.now(), status: "processed" };
+      },
+    })
+  ]
 });
 
-const monitorAgent = new Agent({
-  name: "MonitorAgent",
-  description: "Monitors system health and performance", 
+// Supervisor Agent - Coordinates the team
+const supervisorAgent = new Agent({
+  name: "supervisor",
+  instructions: \`You are a customer support supervisor. Your job is to:
+  1. Understand what the customer needs
+  2. Route them to the right specialist (tech-support or billing-support)
+  3. Coordinate between agents if needed
+  4. Ensure the customer gets complete help
+  
+  Always start by understanding the customer's issue, then delegate to the appropriate specialist.\`,
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  instructions: \`You are a system monitoring specialist. Your job is to:
-  1. Monitor system health and performance
-  2. Alert on issues and anomalies
-  3. Provide recommendations for optimization
-  
-  Be proactive in identifying potential problems.\`,
-  tools: [monitorTool],
+  subAgents: [techSupportAgent, billingSupportAgent],
 });
 
-// Create supervisor agent
-const devOpsSupervisor = new Agent({
-  name: "DevOpsSupervisor",
-  description: "Coordinates DevOps team activities",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  instructions: \`You are a DevOps team leader. You coordinate between:
-  - CodeAnalyzer: For code reviews and analysis
-  - DeploymentAgent: For deployments and infrastructure
-  - MonitorAgent: For system monitoring and health checks
-  
-  When users ask for help:
-  1. Understand what they need
-  2. Delegate tasks to the right specialist
-  3. Coordinate between specialists if needed
-  4. Provide a summary of the results
-  
-  Always explain what you're doing and why.\`,
-  
-  // Key: Define subagents
-  subAgents: {
-    codeAnalyzer,
-    deploymentAgent,
-    monitorAgent,
-  },
-});
-
-// Start VoltAgent
 new VoltAgent({
-  agents: { devOpsSupervisor },
+  agents: {
+    supervisor: supervisorAgent,
+    "tech-support": techSupportAgent,
+    "billing-support": billingSupportAgent,
+  },
 });`}
             </CodeBlock>
           </ColorModeProvider>
@@ -294,167 +206,208 @@ new VoltAgent({
 
         {/* How It Works */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">How It Works</h2>
+          <h2 className="text-3xl font-bold text-white">How Subagents Work</h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            When you talk to the supervisor, it decides which specialists to
-            involve.
+            The supervisor agent automatically knows how to use subagents based
+            on the conversation context. Here's what happens:
           </p>
 
           <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-            <h4 className="text-white font-semibold mb-3">Example Workflow</h4>
+            <h3 className="text-xl font-semibold text-white mb-4">
+              Conversation Flow
+            </h3>
             <div className="space-y-4">
-              <div className="bg-blue-900/20 p-3 rounded border-l-4 border-blue-500">
-                <strong className="text-blue-300">You:</strong>
-                <p className="text-gray-300 mt-1">
-                  "I need to review my React code and deploy it to staging"
-                </p>
-              </div>
-
-              <div className="bg-green-900/20 p-3 rounded border-l-4 border-green-500">
-                <strong className="text-green-300">Supervisor:</strong>
-                <p className="text-gray-300 mt-1">
-                  "I'll help you with that. Let me coordinate the team:"
-                </p>
-                <div className="text-gray-400 text-sm mt-2">
-                  <div>🔧 Delegating to CodeAnalyzer for code review...</div>
-                  <div>
-                    🔧 Delegating to DeploymentAgent for staging deployment...
-                  </div>
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  1
+                </div>
+                <div>
+                  <strong className="text-white">Customer:</strong>
+                  <span className="text-gray-300 ml-2">
+                    "I'm having trouble with my API calls failing"
+                  </span>
                 </div>
               </div>
-
-              <div className="bg-purple-900/20 p-3 rounded border-l-4 border-purple-500">
-                <strong className="text-purple-300">CodeAnalyzer:</strong>
-                <p className="text-gray-300 mt-1">
-                  "I found 3 issues in your React code: [detailed analysis]"
-                </p>
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  2
+                </div>
+                <div>
+                  <strong className="text-white">Supervisor:</strong>
+                  <span className="text-gray-300 ml-2">
+                    Routes to tech-support agent automatically
+                  </span>
+                </div>
               </div>
-
-              <div className="bg-orange-900/20 p-3 rounded border-l-4 border-orange-500">
-                <strong className="text-orange-300">DeploymentAgent:</strong>
-                <p className="text-gray-300 mt-1">
-                  "Deployed to staging successfully:
-                  https://app-v1.2.staging.com"
-                </p>
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  3
+                </div>
+                <div>
+                  <strong className="text-white">Tech Support:</strong>
+                  <span className="text-gray-300 ml-2">
+                    Uses check_system_status tool and provides technical help
+                  </span>
+                </div>
               </div>
-
-              <div className="bg-green-900/20 p-3 rounded border-l-4 border-green-500">
-                <strong className="text-green-300">Supervisor:</strong>
-                <p className="text-gray-300 mt-1">
-                  "Complete! Code review found 3 issues to fix, and your app is
-                  now live on staging. Want me to have the monitor agent check
-                  the deployment health?"
-                </p>
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  4
+                </div>
+                <div>
+                  <strong className="text-white">Customer:</strong>
+                  <span className="text-gray-300 ml-2">
+                    "Thanks! Also, I need to cancel my subscription"
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  5
+                </div>
+                <div>
+                  <strong className="text-white">Supervisor:</strong>
+                  <span className="text-gray-300 ml-2">
+                    Now routes to billing-support agent for the subscription
+                    issue
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Advanced Patterns */}
+        {/* Advanced Example */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Advanced Patterns</h2>
+          <h2 className="text-3xl font-bold text-white">
+            Advanced Example: Content Creation Team
+          </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            More sophisticated multi-agent architectures for complex workflows.
+            Let's build a more sophisticated example - a content creation team
+            with multiple specialized agents.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Hierarchical Teams
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    CEO Agent → Department Heads → Specialists
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    Each level has specific responsibilities
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    Scales to complex organizations
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Pipeline Teams
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    Data flows from agent to agent
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    Each agent processes and passes on
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    Perfect for content creation workflows
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <ColorModeProvider>
-            <CodeBlock language="typescript" title="Content Creation Pipeline">
-              {`// Content Creation Pipeline Example
+            <CodeBlock language="typescript" title="src/content-team.ts">
+              {`import { VoltAgent, Agent, createTool } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+// Research Agent
 const researchAgent = new Agent({
-  name: "ResearchAgent",
-  description: "Researches topics and gathers information",
-  // ... config
+  name: "researcher",
+  instructions: \`You are a research specialist. You:
+  - Gather information on topics
+  - Fact-check claims
+  - Find relevant sources and statistics
+  - Identify key trends and insights
+  
+  Always provide credible sources and be thorough in your research.\`,
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4"),
+  tools: [
+    createTool({
+      name: "search_web",
+      description: "Search for information on the web",
+      parameters: z.object({
+        query: z.string().describe("Search query")
+      }),
+      execute: async ({ query }) => {
+        // Mock web search
+        return {
+          results: [
+            { title: "Relevant article about " + query, url: "https://example.com" }
+          ]
+        };
+      },
+    })
+  ]
 });
 
+// Writer Agent
 const writerAgent = new Agent({
-  name: "WriterAgent", 
-  description: "Writes articles based on research",
-  // ... config
+  name: "writer",
+  instructions: \`You are a skilled content writer. You:
+  - Create engaging, well-structured content
+  - Adapt tone and style to the target audience
+  - Write clear, compelling copy
+  - Follow content guidelines and best practices
+  
+  Use research provided by the research agent to create accurate, informative content.\`,
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4"),
+  tools: [
+    createTool({
+      name: "save_draft",
+      description: "Save a content draft",
+      parameters: z.object({
+        title: z.string(),
+        content: z.string(),
+        type: z.enum(["blog", "email", "social", "documentation"])
+      }),
+      execute: async ({ title, content, type }) => {
+        console.log("Saving draft:", { title, type });
+        return { draftId: "DRAFT-" + Date.now(), status: "saved" };
+      },
+    })
+  ]
 });
 
+// Editor Agent
 const editorAgent = new Agent({
-  name: "EditorAgent",
-  description: "Edits and polishes written content",
-  // ... config
+  name: "editor",
+  instructions: \`You are a content editor. You:
+  - Review and improve content quality
+  - Check for grammar, clarity, and consistency
+  - Ensure content meets brand guidelines
+  - Provide constructive feedback
+  
+  Be thorough but constructive in your feedback.\`,
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4"),
+  tools: [
+    createTool({
+      name: "publish_content",
+      description: "Publish approved content",
+      parameters: z.object({
+        draftId: z.string(),
+        platform: z.enum(["blog", "website", "social", "email"])
+      }),
+      execute: async ({ draftId, platform }) => {
+        console.log("Publishing content:", { draftId, platform });
+        return { publishId: "PUB-" + Date.now(), status: "published" };
+      },
+    })
+  ]
 });
 
-const publisherAgent = new Agent({
-  name: "PublisherAgent",
-  description: "Formats and publishes content",
-  // ... config
+// Content Manager - Coordinates the team
+const contentManager = new Agent({
+  name: "content-manager",
+  instructions: \`You are a content manager coordinating a team of specialists:
+  - Researcher: Gathers information and sources
+  - Writer: Creates the actual content
+  - Editor: Reviews and polishes content
+  
+  Your job is to:
+  1. Understand content requirements
+  2. Coordinate the team to create high-quality content
+  3. Ensure proper workflow (research → write → edit → publish)
+  4. Make sure all requirements are met
+  
+  Always start with research, then writing, then editing before publishing.\`,
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4"),
+  subAgents: [researchAgent, writerAgent, editorAgent],
 });
 
-// Pipeline Supervisor
-const contentPipeline = new Agent({
-  name: "ContentPipeline",
-  description: "Manages content creation from research to publication",
-  instructions: \`You manage a content creation pipeline:
-  1. ResearchAgent: Gathers information and sources
-  2. WriterAgent: Creates first draft from research
-  3. EditorAgent: Refines and polishes the draft
-  4. PublisherAgent: Formats and publishes final content
-  
-  Coordinate the pipeline to ensure quality at each step.\`,
-  
-  subAgents: {
-    researchAgent,
-    writerAgent,
-    editorAgent,
-    publisherAgent,
+new VoltAgent({
+  agents: {
+    "content-manager": contentManager,
+    researcher: researchAgent,
+    writer: writerAgent,
+    editor: editorAgent,
   },
 });`}
             </CodeBlock>
@@ -463,250 +416,190 @@ const contentPipeline = new Agent({
 
         {/* Best Practices */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Best Practices</h2>
+          <h2 className="text-3xl font-bold text-white">
+            Best Practices for Subagents
+          </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            Guidelines for building effective multi-agent systems.
+            Here are the key principles for designing effective agent teams:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-green-300 mb-4">
-                ✅ Do This
+            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
+              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
+                <CheckIcon className="w-5 h-5 text-emerald-500 inline mr-2" />
+                Do This
               </h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    Give each agent a clear, specific role
-                  </span>
+              <div className="space-y-3 text-sm">
+                <div className="text-gray-300">
+                  <strong>Single Responsibility:</strong> Each agent should have
+                  one clear job
                 </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    Make the supervisor's instructions clear
-                  </span>
+                <div className="text-gray-300">
+                  <strong>Clear Instructions:</strong> Define exactly what each
+                  agent does
                 </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    Test each agent individually first
-                  </span>
+                <div className="text-gray-300">
+                  <strong>Proper Tools:</strong> Give agents only the tools they
+                  need
                 </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    Use different models for different tasks
-                  </span>
+                <div className="text-gray-300">
+                  <strong>Logical Hierarchy:</strong> Supervisor coordinates,
+                  specialists execute
                 </div>
               </div>
             </div>
 
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-red-300 mb-4">
-                ❌ Avoid This
+                <XMarkIcon className="w-5 h-5 text-red-500 inline mr-2" />
+                Avoid This
               </h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    Creating too many agents (start simple)
-                  </span>
+              <div className="space-y-3 text-sm">
+                <div className="text-gray-300">
+                  <strong>Overlapping Roles:</strong> Agents with similar or
+                  conflicting jobs
                 </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    Unclear responsibilities between agents
-                  </span>
+                <div className="text-gray-300">
+                  <strong>Too Many Layers:</strong> Agents managing other agents
+                  managing agents
                 </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    Infinite loops between agents
-                  </span>
+                <div className="text-gray-300">
+                  <strong>Circular Dependencies:</strong> Agents that depend on
+                  each other
                 </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
-                  <span className="text-gray-300">
-                    No error handling or fallbacks
-                  </span>
+                <div className="text-gray-300">
+                  <strong>Generic Agents:</strong> Agents that try to do
+                  everything
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Performance Considerations */}
+        {/* Testing Your Team */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Performance & Cost</h2>
+          <h2 className="text-3xl font-bold text-white">
+            Testing Your Agent Team
+          </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            Multi-agent systems can be expensive. Here's how to optimize.
+            Once you've built your agent team, test it with realistic scenarios
+            to make sure the coordination works smoothly.
           </p>
 
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-yellow-300 mb-4">
-              Cost Optimization Tips
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <span className="text-yellow-400 mt-1">💡</span>
-                <span className="text-gray-300">
-                  Use cheaper models (gpt-4o-mini) for specialists
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-yellow-400 mt-1">💡</span>
-                <span className="text-gray-300">
-                  Reserve expensive models (gpt-4o) for supervisors
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-yellow-400 mt-1">💡</span>
-                <span className="text-gray-300">
-                  Set maxSteps to prevent runaway costs
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-yellow-400 mt-1">💡</span>
-                <span className="text-gray-300">
-                  Use memory to avoid re-processing
-                </span>
-              </div>
-            </div>
-          </div>
-
           <ColorModeProvider>
-            <CodeBlock
-              language="typescript"
-              title="Optimized Agent Configuration"
-            >
-              {`// Supervisor: Expensive model for coordination
-const supervisor = new Agent({
-  name: "Supervisor",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"), // Expensive but smart
-  maxSteps: 10, // Limit iterations
-  // ... config
-});
+            <CodeBlock language="typescript" title="test-scenarios.ts">
+              {`// Test the customer support team
+const testCustomerSupport = async () => {
+  console.log("Testing customer support team...");
+  
+  // Scenario 1: Technical issue
+  const techIssue = await supervisorAgent.generateText(
+    "Hi, I'm getting 500 errors when calling your API. Can you help?",
+    { userId: "customer123" }
+  );
+  
+  // Scenario 2: Billing question
+  const billingQuestion = await supervisorAgent.generateText(
+    "I need to upgrade my plan and get an invoice for last month",
+    { userId: "customer123" }
+  );
+  
+  // Scenario 3: Mixed issues
+  const mixedIssue = await supervisorAgent.generateText(
+    "I'm having API issues AND I need to cancel my subscription",
+    { userId: "customer123" }
+  );
+  
+  console.log("All scenarios handled successfully!");
+};
 
-// Specialists: Cheaper models for specific tasks
-const specialist = new Agent({
-  name: "Specialist",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"), // Cheaper but effective
-  maxSteps: 5, // Lower limits for specialists
-  // ... config
-});
+// Test the content creation team
+const testContentTeam = async () => {
+  console.log("Testing content creation team...");
+  
+  const contentRequest = await contentManager.generateText(
+    "I need a blog post about 'The Future of AI in Healthcare' - 1000 words, professional tone, for our company blog",
+    { userId: "marketing123" }
+  );
+  
+  console.log("Content creation workflow completed!");
+};
 
-// Use memory to cache results
-const options = {
-  userId: "user-123",
-  conversationId: "devops-session-1",
-  maxSteps: 8, // Override default if needed
-};`}
+// Run tests
+testCustomerSupport();
+testContentTeam();`}
             </CodeBlock>
           </ColorModeProvider>
         </div>
 
-        {/* Production Deployment */}
+        {/* What's Next */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
-            Production Deployment
-          </h2>
+          <h2 className="text-3xl font-bold text-white">What's Next?</h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            Considerations for deploying multi-agent systems in production.
+            Congratulations! You've built a complete AI agent system with:
           </p>
 
           <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
             <h3 className="text-xl font-semibold text-white mb-4">
-              Production Checklist
+              Your Agent Journey
             </h3>
             <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="mt-1" />
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">
-                  Error handling and fallbacks for each agent
+                  <strong>Step 1:</strong> Built your first agent
                 </span>
               </div>
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="mt-1" />
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">
-                  Logging and monitoring for debugging
+                  <strong>Step 2:</strong> Added tools to make it useful
                 </span>
               </div>
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="mt-1" />
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">
-                  Rate limiting and cost controls
+                  <strong>Step 3:</strong> Implemented memory for conversations
                 </span>
               </div>
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="mt-1" />
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">
-                  Graceful degradation when agents fail
+                  <strong>Step 4:</strong> Connected to external systems with
+                  MCP
                 </span>
               </div>
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="mt-1" />
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300">
-                  Load testing with realistic workflows
+                  <strong>Step 5:</strong> Created specialized agent teams
                 </span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Hands-on Exercise */}
-        <div className="bg-[#00d992]/10 border border-[#00d992]/20 rounded-lg p-6">
-          <div className="flex items-start space-x-4">
-            <div className="w-6 h-6 bg-[#00d992] rounded-lg mt-1"></div>
-            <div>
-              <h4 className="text-xl font-semibold text-[#00d992] mb-2">
-                Final Challenge
-              </h4>
-              <p className="text-gray-300 mb-3">
-                Build your own multi-agent system:
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-gray-300 ml-4">
-                <li>Copy the DevOps team code above</li>
-                <li>
-                  Test in VoltOps: "I need to deploy my new feature to staging"
-                </li>
-                <li>Watch how the supervisor coordinates the team</li>
-                <li>Try: "Check the health of my production app"</li>
-                <li>Experiment with different team compositions</li>
-              </ol>
-              <div className="bg-blue-900/20 p-4 rounded border border-blue-500/30 mt-4">
-                <h5 className="text-blue-300 font-semibold mb-2">
-                  🎯 Your Mission
-                </h5>
-                <p className="text-gray-300">
-                  Create a multi-agent system for your own use case. Some ideas:
-                </p>
-                <ul className="list-disc list-inside text-gray-300 mt-2 space-y-1">
-                  <li>
-                    Customer service team (triage → specialist → escalation)
-                  </li>
-                  <li>
-                    Content creation pipeline (research → write → edit →
-                    publish)
-                  </li>
-                  <li>
-                    E-commerce team (product → marketing → sales → support)
-                  </li>
-                  <li>
-                    Data analysis team (collect → clean → analyze → visualize)
-                  </li>
-                </ul>
-              </div>
-              <div className="bg-green-900/20 p-3 rounded border border-green-500/30 mt-4">
-                <strong className="text-green-300">🎉 Congratulations!</strong>
-                <p className="text-gray-300 mt-1">
-                  You've completed the VoltAgent tutorial! You now know how to
-                  build AI agents with tools, memory, MCP integrations, and
-                  multi-agent workflows. You're ready to build production AI
-                  systems.
-                </p>
-              </div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
+            <h4 className="text-blue-400 font-semibold mb-2">
+              Ready to Build Something Amazing?
+            </h4>
+            <p className="text-gray-300 mb-4">
+              You now have all the tools to build production-ready AI agents.
+              Whether you're creating a customer support system, content
+              creation team, or something completely new, you're ready to go.
+            </p>
+            <div className="flex space-x-4">
+              <a
+                href="/docs"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Read Full Documentation
+              </a>
+              <a
+                href="https://github.com/voltagent/voltagent"
+                className="inline-flex items-center px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Star on GitHub
+              </a>
             </div>
           </div>
         </div>

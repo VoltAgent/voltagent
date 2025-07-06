@@ -2,85 +2,78 @@ import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-export default function TutorialMCP() {
+export default function MCPTutorial() {
   return (
     <TutorialLayout
       currentStep={4}
       totalSteps={5}
-      stepTitle="MCP: Model Context Protocol"
-      stepDescription="Connect your agents to external tools and services using the Model Context Protocol"
-      nextStepUrl="/tutorial/subagents"
+      stepTitle="MCP: Connect to External Systems"
+      stepDescription="Use Model Context Protocol to give your agent access to any external system"
       prevStepUrl="/tutorial/memory"
+      nextStepUrl="/tutorial/subagents"
     >
       <div className="space-y-8">
-        {/* What is MCP? */}
+        {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">What is MCP?</h2>
+          <h2 className="text-3xl font-bold text-white">
+            The Problem: Your Agent Lives in a Bubble
+          </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            The <strong>Model Context Protocol</strong> is a standardized way
-            for AI agents to connect to external tools and services. Think of it
-            as a universal adapter that lets your agents use any tool that
-            speaks MCP.
+            Your agent has memory and tools, but it's still isolated. It can't
+            access your GitHub repos, your Slack channels, your databases, or
+            any of the systems you actually use.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Real-World Analogy
-            </h3>
-            <p className="text-gray-300">
-              MCP is like having a universal translator for your agents. Instead
-              of writing custom code for each service, you connect to
-              MCP-compatible tools and your agent can instantly use them.
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-red-300 mb-4">
                 Without MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
-                    Write custom code for each service
+                    Build custom integrations for every service
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
-                    Maintain multiple API integrations
+                    Manage API keys and authentication
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">❌</span>
+                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
                   <span className="text-gray-300">
-                    Handle authentication separately
+                    Write boilerplate for each external tool
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-green-300 mb-4">
+            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
+              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
                 With MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
-                    One configuration for multiple tools
+                    Plug-and-play external system access
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
-                  <span className="text-gray-300">Standardized protocol</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
+                  <span className="text-gray-300">
+                    Standardized integration protocol
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">✅</span>
+                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
                   <span className="text-gray-300">
-                    Automatic tool discovery
+                    Ready-made servers for popular services
                   </span>
                 </div>
               </div>
@@ -88,400 +81,580 @@ export default function TutorialMCP() {
           </div>
         </div>
 
-        {/* Real Example: GitHub Integration */}
+        {/* What is MCP */}
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-white">What is MCP?</h2>
+          <p className="text-xl text-gray-300 leading-relaxed">
+            <strong>Model Context Protocol (MCP)</strong> is an open standard
+            that enables AI models to securely access external data and tools.
+            Think of it as USB for AI agents - a universal connector for any
+            external system.
+          </p>
+
+          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <h3 className="text-xl font-semibold text-white mb-4">
+              How MCP Works
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  1
+                </div>
+                <div>
+                  <strong className="text-white">MCP Server:</strong>
+                  <span className="text-gray-300 ml-2">
+                    Provides secure access to external resources (GitHub,
+                    databases, APIs, etc.)
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  2
+                </div>
+                <div>
+                  <strong className="text-white">MCP Client:</strong>
+                  <span className="text-gray-300 ml-2">
+                    Your VoltAgent connects to MCP servers to access their
+                    resources
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  3
+                </div>
+                <div>
+                  <strong className="text-white">Secure Access:</strong>
+                  <span className="text-gray-300 ml-2">
+                    All communication is authenticated and controlled by your
+                    permissions
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Real Example */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">
             Real Example: GitHub Integration
           </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            Let's connect your agent to GitHub so it can read repositories,
-            check issues, and create pull requests.
+            Let's connect your agent to GitHub so it can read your repos, create
+            issues, and manage pull requests.
           </p>
 
           <ColorModeProvider>
             <CodeBlock language="typescript" title="src/index.ts">
-              {`import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
+              {`import { VoltAgent, Agent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import { MCPClient } from "@voltagent/mcp";
 
-// Create MCP Configuration
-const mcpConfig = new MCPConfiguration({
-  servers: {
-    // GitHub MCP server
-    github: {
-      type: "streamable-http",
-      url: "https://api.githubcopilot.com/mcp",
-    },
-    
-    // Filesystem access (for reading local files)
-    filesystem: {
-      type: "stdio",
-      command: "npx",
-      args: [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        process.env.HOME + "/Projects", // Allow access to Projects folder
-      ],
-    },
+// Connect to GitHub MCP server
+const githubMCP = new MCPClient({
+  name: "github",
+  serverPath: "npx @modelcontextprotocol/server-github",
+  environment: {
+    GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_TOKEN,
   },
 });
 
-// Get all available tools
-const mcpTools = await mcpConfig.getTools();
+const agent = new Agent({
+  name: "github-agent",
+  instructions: \`You are a GitHub assistant. You can:
+  - Read repository information
+  - Search through code
+  - Create and manage issues
+  - Review pull requests
+  - Get commit history
+  
+  Always be helpful and provide clear information about GitHub repositories.\`,
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  mcpServers: [githubMCP],
+});
 
-// Create agent with MCP tools
-const developerAgent = new Agent({
-  name: "DeveloperAgent",
-  description: "A developer assistant that can interact with GitHub and filesystem",
+new VoltAgent({
+  agents: { "github-agent": agent },
+});
+
+// Now your agent can access GitHub!
+// Try asking: "What are the open issues in my voltagent repo?"
+// Or: "Create an issue titled 'Add user authentication'"
+// Or: "Show me the latest commits in the main branch"`}
+            </CodeBlock>
+          </ColorModeProvider>
+        </div>
+
+        {/* Available MCP Servers */}
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-white">Popular MCP Servers</h2>
+          <p className="text-xl text-gray-300 leading-relaxed">
+            The MCP ecosystem has ready-made servers for popular services. Here
+            are some you can use today:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Development Tools
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>GitHub:</strong> Repositories, issues, PRs
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>GitLab:</strong> Project management
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Docker:</strong> Container management
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>AWS:</strong> Cloud resources
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Productivity
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Slack:</strong> Team communication
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Google Drive:</strong> File management
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Calendar:</strong> Scheduling
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Notion:</strong> Knowledge management
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Data & Analytics
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>PostgreSQL:</strong> Database queries
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>SQLite:</strong> Local databases
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Filesystem:</strong> File operations
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Web Search:</strong> Internet data
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Business Tools
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Salesforce:</strong> CRM data
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>HubSpot:</strong> Marketing automation
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Stripe:</strong> Payment processing
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
+                  <span className="text-gray-300">
+                    <strong>Zendesk:</strong> Customer support
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Multi-MCP Example */}
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-white">
+            Advanced Example: DevOps Assistant
+          </h2>
+          <p className="text-xl text-gray-300 leading-relaxed">
+            Let's build a DevOps assistant that can access GitHub, AWS, and
+            Slack to help manage your infrastructure.
+          </p>
+
+          <ColorModeProvider>
+            <CodeBlock language="typescript" title="devops-agent.ts">
+              {`import { VoltAgent, Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { MCPClient } from "@voltagent/mcp";
+
+// Connect to multiple MCP servers
+const githubMCP = new MCPClient({
+  name: "github",
+  serverPath: "npx @modelcontextprotocol/server-github",
+  environment: {
+    GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_TOKEN,
+  },
+});
+
+const awsMCP = new MCPClient({
+  name: "aws",
+  serverPath: "npx @modelcontextprotocol/server-aws",
+  environment: {
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    AWS_REGION: process.env.AWS_REGION,
+  },
+});
+
+const slackMCP = new MCPClient({
+  name: "slack",
+  serverPath: "npx @modelcontextprotocol/server-slack",
+  environment: {
+    SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN,
+  },
+});
+
+const devopsAgent = new Agent({
+  name: "devops-assistant",
+  instructions: \`You are a DevOps assistant with access to:
+  
+  🐙 GitHub: Repository management, CI/CD, issues, PRs
+  ☁️ AWS: EC2 instances, S3 buckets, Lambda functions, CloudWatch
+  💬 Slack: Team notifications and updates
+  
+  You can help with:
+  - Monitoring system health across GitHub and AWS
+  - Deploying applications and managing releases
+  - Investigating issues and incidents
+  - Keeping the team updated via Slack
+  - Managing infrastructure and resources
+  
+  Always be proactive about security and best practices.\`,
+  
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  instructions: \`You are a developer assistant. You can:
-  - Read and analyze code from GitHub repositories
-  - Check issues and pull requests
-  - Read local files in the Projects folder
-  - Help with code reviews and analysis
-  
-  Always explain what you're doing when using tools.\`,
-  tools: mcpTools, // Add all MCP tools
+  mcpServers: [githubMCP, awsMCP, slackMCP],
 });
 
-// Start VoltAgent
 new VoltAgent({
-  agents: { developerAgent },
+  agents: { "devops-assistant": devopsAgent },
 });
 
-// Remember to disconnect when done
-process.on('SIGINT', async () => {
-  await mcpConfig.disconnect();
-  process.exit(0);
-});`}
+// Example interactions:
+// "Check the status of our production servers and notify the team if there are any issues"
+// "Deploy the latest commit from main branch to staging"
+// "Create a GitHub issue for the high CPU usage we're seeing on the web servers"
+// "Show me the CloudWatch metrics for our Lambda functions in the last hour"`}
             </CodeBlock>
           </ColorModeProvider>
-        </div>
 
-        {/* Different Transport Types */}
-        <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Transport Types</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
-            MCP supports different ways to connect to services. Choose the right
-            transport for your needs.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-blue-300 mb-4">
-                HTTP-based
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <code className="text-blue-400 bg-gray-800 px-2 py-1 rounded">
-                    streamable-http
-                  </code>
-                  <p className="text-gray-300 text-sm mt-1">
-                    Modern, efficient for web services
-                  </p>
-                </div>
-                <div>
-                  <code className="text-blue-400 bg-gray-800 px-2 py-1 rounded">
-                    http
-                  </code>
-                  <p className="text-gray-300 text-sm mt-1">
-                    Auto-fallback for compatibility
-                  </p>
-                </div>
-                <div>
-                  <code className="text-blue-400 bg-gray-800 px-2 py-1 rounded">
-                    sse
-                  </code>
-                  <p className="text-gray-300 text-sm mt-1">
-                    Server-Sent Events
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-purple-300 mb-4">
-                Local Process
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <code className="text-purple-400 bg-gray-800 px-2 py-1 rounded">
-                    stdio
-                  </code>
-                  <p className="text-gray-300 text-sm mt-1">
-                    For local CLI tools and scripts
-                  </p>
-                </div>
-                <div className="text-gray-300 text-sm">
-                  Perfect for filesystem access, database tools, local AI models
-                </div>
-              </div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
+            <h4 className="text-blue-400 font-semibold mb-2">
+              Real-World Workflow
+            </h4>
+            <p className="text-gray-300 mb-3">
+              With this setup, you can ask your agent:{" "}
+              <em>"Our website is slow, can you investigate?"</em>
+            </p>
+            <div className="text-sm text-gray-400">
+              The agent will automatically:
+              <br />• Check AWS CloudWatch for performance metrics
+              <br />• Look at recent GitHub commits for potential issues
+              <br />• Update your team in Slack with findings
+              <br />• Create GitHub issues for any problems found
             </div>
           </div>
         </div>
 
-        {/* Advanced Configuration */}
+        {/* Custom MCP Server */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">
-            Advanced Configuration
+            Building Your Own MCP Server
           </h2>
           <p className="text-xl text-gray-300 leading-relaxed">
-            Real-world examples with authentication and multiple services.
+            Need to connect to a system that doesn't have an MCP server yet? You
+            can build your own in just a few minutes.
           </p>
 
           <ColorModeProvider>
-            <CodeBlock language="typescript" title="Advanced MCP Setup">
-              {`import { MCPConfiguration } from "@voltagent/core";
-import path from "node:path";
+            <CodeBlock language="typescript" title="custom-mcp-server.ts">
+              {`#!/usr/bin/env node
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 
-const mcpConfig = new MCPConfiguration({
-  servers: {
-    // Reddit API with authentication
-    reddit: {
-      type: "http",
-      url: "https://mcp.composio.dev/reddit/your-api-key-here",
-      requestInit: {
-        headers: { 
-          "Authorization": "Bearer your-token",
-          "User-Agent": "VoltAgent/1.0"
-        },
-      },
-    },
-
-    // Linear project management
-    linear: {
-      type: "sse",
-      url: "https://mcp.linear.app/sse",
-    },
-
-    // Local filesystem with specific permissions
-    filesystem: {
-      type: "stdio",
-      command: "npx",
-      args: [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        path.join(process.env.HOME, "Documents"), // Only Documents folder
-        path.join(process.env.HOME, "Downloads"), // And Downloads folder
-      ],
-      cwd: process.env.HOME,
-      env: { NODE_ENV: "production" },
-    },
-
-    // Database MCP server (hypothetical)
-    database: {
-      type: "stdio",
-      command: "node",
-      args: ["./mcp-database-server.js"],
-      env: {
-        DATABASE_URL: process.env.DATABASE_URL,
-        NODE_ENV: "production"
-      },
-    },
-  },
-});
-
-// Get tools organized by server
-const toolsets = await mcpConfig.getToolsets();
-
-// Use specific toolsets
-const redditTools = toolsets.reddit.getTools();
-const filesystemTools = toolsets.filesystem.getTools();
-
-// Or get all tools at once
-const allTools = await mcpConfig.getTools();`}
-            </CodeBlock>
-          </ColorModeProvider>
-        </div>
-
-        {/* Practical Use Cases */}
-        <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Practical Use Cases</h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
-            Here are real scenarios where MCP shines.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Content Creator Assistant
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    Reddit API for trending topics
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    Filesystem for saving drafts
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">Image generation API</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                DevOps Assistant
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">
-                    GitHub for code analysis
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">Database for monitoring</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full"></div>
-                  <span className="text-gray-300">Slack for notifications</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Testing Your Setup */}
-        <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
-            Testing Your MCP Setup
-          </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
-            Let's test the GitHub integration we set up.
-          </p>
-
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-            <h4 className="text-white font-semibold mb-3">Test Conversation</h4>
-            <div className="space-y-3">
-              <div className="bg-blue-900/20 p-3 rounded border-l-4 border-blue-500">
-                <strong className="text-blue-300">You:</strong>
-                <p className="text-gray-300 mt-1">
-                  "Can you analyze the voltagent/core repository on GitHub?"
-                </p>
-              </div>
-              <div className="bg-green-900/20 p-3 rounded border-l-4 border-green-500">
-                <strong className="text-green-300">Agent:</strong>
-                <p className="text-gray-300 mt-1">
-                  "I'll analyze the voltagent/core repository for you. Let me
-                  fetch the repository information..."
-                </p>
-                <div className="text-gray-400 text-sm mt-2 font-mono">
-                  🔧 Using tool: github_get_repository
-                </div>
-                <p className="text-gray-300 mt-2">
-                  "I found the repository! It's a TypeScript project with...
-                  [detailed analysis]"
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Error Handling */}
-        <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
-            Error Handling & Cleanup
-          </h2>
-          <p className="text-xl text-gray-300 leading-relaxed">
-            Always handle errors and clean up MCP connections properly.
-          </p>
-
-          <ColorModeProvider>
-            <CodeBlock language="typescript" title="Proper Error Handling">
-              {`import { MCPConfiguration } from "@voltagent/core";
-
-const mcpConfig = new MCPConfiguration({
-  servers: {
-    github: {
-      type: "streamable-http",
-      url: "https://api.githubcopilot.com/mcp",
-    },
-  },
-});
-
-try {
-  // Get tools (this establishes connections)
-  const tools = await mcpConfig.getTools();
+// Your custom API client
+class CustomAPIClient {
+  constructor(private apiKey: string) {}
   
-  // Use tools with your agent
-  const agent = new Agent({
-    // ... agent config
-    tools: tools,
-  });
-  
-  // Monitor connection events
-  const clients = await mcpConfig.getClients();
-  if (clients.github) {
-    clients.github.on('connect', () => {
-      console.log('✅ Connected to GitHub MCP server');
-    });
-    
-    clients.github.on('error', (error) => {
-      console.error('❌ GitHub MCP error:', error.message);
-    });
+  async getUsers() {
+    // Your API logic here
+    return [{ id: 1, name: "John Doe", email: "john@example.com" }];
   }
   
-} catch (error) {
-  console.error('Failed to setup MCP:', error);
-} finally {
-  // Always disconnect when done
-  await mcpConfig.disconnect();
+  async createTicket(title: string, description: string) {
+    // Your API logic here
+    return { id: "TICK-123", title, status: "open" };
+  }
 }
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Shutting down...');
-  await mcpConfig.disconnect();
-  process.exit(0);
+// Create MCP server
+const server = new Server(
+  {
+    name: "custom-api-server",
+    version: "0.1.0",
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
+
+const apiClient = new CustomAPIClient(process.env.CUSTOM_API_KEY!);
+
+// Define available tools
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "get_users",
+        description: "Get list of users from the system",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
+      {
+        name: "create_ticket",
+        description: "Create a support ticket",
+        inputSchema: {
+          type: "object",
+          properties: {
+            title: { type: "string", description: "Ticket title" },
+            description: { type: "string", description: "Ticket description" },
+          },
+          required: ["title", "description"],
+        },
+      },
+    ],
+  };
+});
+
+// Handle tool calls
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  try {
+    switch (name) {
+      case "get_users":
+        const users = await apiClient.getUsers();
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(users, null, 2),
+            },
+          ],
+        };
+
+      case "create_ticket":
+        const ticket = await apiClient.createTicket(args.title, args.description);
+        return {
+          content: [
+            {
+              type: "text",
+              text: \`Created ticket: \${ticket.id}\`,
+            },
+          ],
+        };
+
+      default:
+        throw new Error(\`Unknown tool: \${name}\`);
+    }
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: \`Error: \${error.message}\`,
+        },
+      ],
+      isError: true,
+    };
+  }
+});
+
+// Start the server
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error('✅ Connected to custom MCP server');
+}
+
+main().catch((error) => {
+  console.error('❌ Custom MCP error:', error.message);
+  process.exit(1);
 });`}
             </CodeBlock>
           </ColorModeProvider>
+
+          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <h3 className="text-xl font-semibold text-white mb-4">
+              Using Your Custom Server
+            </h3>
+            <ColorModeProvider>
+              <CodeBlock language="typescript" title="Using custom MCP server">
+                {`const customMCP = new MCPClient({
+  name: "custom-api",
+  serverPath: "node custom-mcp-server.ts",
+  environment: {
+    CUSTOM_API_KEY: process.env.CUSTOM_API_KEY,
+  },
+});
+
+const agent = new Agent({
+  name: "custom-agent",
+  instructions: "You can access our custom API to manage users and tickets.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  mcpServers: [customMCP],
+});`}
+              </CodeBlock>
+            </ColorModeProvider>
+          </div>
         </div>
 
-        {/* Hands-on Exercise */}
-        <div className="bg-[#00d992]/10 border border-[#00d992]/20 rounded-lg p-6">
-          <div className="flex items-start space-x-4">
-            <div className="w-6 h-6 bg-[#00d992] rounded-lg mt-1"></div>
-            <div>
-              <h4 className="text-xl font-semibold text-[#00d992] mb-2">
-                Try It Yourself
-              </h4>
-              <p className="text-gray-300 mb-3">
-                Set up your first MCP integration:
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-gray-300 ml-4">
-                <li>Copy the GitHub integration code above</li>
-                <li>
-                  Run your agent and check the console for connection logs
-                </li>
-                <li>
-                  Test in VoltOps console: "List files in my Projects folder"
-                </li>
-                <li>Try: "What's trending on r/programming today?"</li>
-                <li>Experiment with different MCP servers</li>
-              </ol>
-              <div className="bg-yellow-900/20 p-3 rounded border border-yellow-500/30 mt-4">
-                <strong className="text-yellow-300">Pro Tip:</strong>
-                <p className="text-gray-300 mt-1">
-                  Start with filesystem MCP - it's the easiest to test and
-                  debug. Once that works, add external services.
-                </p>
+        {/* Security & Best Practices */}
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-white">
+            Security & Best Practices
+          </h2>
+          <p className="text-xl text-gray-300 leading-relaxed">
+            MCP gives your agent powerful access to external systems. Here's how
+            to do it safely.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6">
+              <h3 className="text-xl font-semibold text-yellow-300 mb-4">
+                Security Guidelines
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <span className="text-gray-300">
+                    <strong>Principle of Least Privilege:</strong> Only give
+                    access to what your agent actually needs
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <span className="text-gray-300">
+                    <strong>Environment Variables:</strong> Never hardcode API
+                    keys or secrets in your code
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <span className="text-gray-300">
+                    <strong>Audit Logs:</strong> Monitor what your agent is
+                    doing with external systems
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <span className="text-gray-300">
+                    <strong>Rate Limiting:</strong> Implement safeguards to
+                    prevent API abuse
+                  </span>
+                </div>
               </div>
-              <p className="text-gray-300 mt-3">
-                <strong className="text-white">Next step:</strong> We'll learn
-                about Subagents for complex multi-agent workflows.
-              </p>
             </div>
+          </div>
+        </div>
+
+        {/* Next Steps */}
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-white">What's Next?</h2>
+          <p className="text-xl text-gray-300 leading-relaxed">
+            You now have an agent that can access external systems through MCP.
+            In the final tutorial, we'll learn about subagents - creating teams
+            of specialized agents that work together.
+          </p>
+
+          <div className="bg-[#00d992]/10 border border-[#00d992]/20 rounded-lg p-6">
+            <h4 className="text-[#00d992] font-semibold mb-2">Try This</h4>
+            <p className="text-gray-300 mb-3">
+              Set up the GitHub MCP example above and ask your agent:
+            </p>
+            <ul className="text-gray-300 space-y-1 text-sm">
+              <li>• "What repositories do I have?"</li>
+              <li>• "Show me the latest issues in my main project"</li>
+              <li>• "Create an issue to add better error handling"</li>
+              <li>• "What were the last 5 commits to the main branch?"</li>
+            </ul>
           </div>
         </div>
       </div>

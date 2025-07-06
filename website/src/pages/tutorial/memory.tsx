@@ -173,31 +173,31 @@ export default function TutorialMemory() {
             with short-term memory loss.
           </p>
 
-          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+          <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
             <h3 className="text-xl font-semibold text-red-300 mb-4">
               Without Memory, Your Agent:
             </h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <span className="text-red-400 mt-1">•</span>
+                <span className="text-red-400">•</span>
                 <span className="text-gray-300">
                   Always says "Hello, how can I help?" even to returning users
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-red-400 mt-1">•</span>
+                <span className="text-red-400">•</span>
                 <span className="text-gray-300">
                   Forgets what you asked 5 minutes ago
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-red-400 mt-1">•</span>
+                <span className="text-red-400">•</span>
                 <span className="text-gray-300">
                   Can't remember user preferences or details
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-red-400 mt-1">•</span>
+                <span className="text-red-400">•</span>
                 <span className="text-gray-300">
                   Feels robotic and unnatural
                 </span>
@@ -239,7 +239,7 @@ export default function TutorialMemory() {
             <strong>memory only works when you provide a userId</strong>.
           </p>
 
-          <div className="bg-[#00d992]/10 rounded-lg p-6 border border-[#00d992]/20">
+          <div className="rounded-lg p-6 border-solid border-emerald-500  bg-gray-800/50">
             <h3 className="text-xl font-semibold text-[#00d992] mb-4">
               Automatic Memory (Zero Configuration)
             </h3>
@@ -410,7 +410,7 @@ export default function TutorialMemory() {
             </div>
           </div>
 
-          <div className="bg-[#00d992]/10 rounded-lg p-6 border border-[#00d992]/20">
+          <div className="rounded-lg p-6 border-solid border-emerald-500  bg-gray-800/50">
             <h4 className="text-[#00d992] font-semibold mb-2">
               The Power of Proper Memory Setup!
             </h4>
@@ -469,25 +469,25 @@ export default function TutorialMemory() {
               </div>
             </div>
 
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
+            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-green-300 mb-4">
                 conversationId
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">
                     Unique identifier for each conversation thread
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">
                     Users can have multiple conversations
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">
                     Example: "support-case-456", "chat-xyz"
                   </span>
@@ -581,7 +581,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">!</span>
+                  <span className="text-red-400">!</span>
                   <span className="text-gray-300">
                     Data lost when app restarts
                   </span>
@@ -615,15 +615,15 @@ const response4 = await agent.generateText("Let's talk about something new.", {
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">Cloud-based</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">Easy setup</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">Auto-scaling</span>
                 </div>
               </div>
@@ -693,29 +693,29 @@ const productionAgent = new Agent({
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
+            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-green-300 mb-4">
                 Do This
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">
                     Always use userId and conversationId
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">Consider user privacy</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">
                     Use PostgreSQL/Supabase in production
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-green-400 ">•</span>
                   <span className="text-gray-300">
                     Use InMemory for testing
                   </span>
@@ -723,31 +723,31 @@ const productionAgent = new Agent({
               </div>
             </div>
 
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-red-300 mb-4">
                 Don't Do This
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
+                  <span className="text-red-400">•</span>
                   <span className="text-gray-300">
                     Don't ignore memory limits
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
+                  <span className="text-red-400">•</span>
                   <span className="text-gray-300">
                     Don't log sensitive information
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
+                  <span className="text-red-400">•</span>
                   <span className="text-gray-300">
                     Don't forget to handle memory errors
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-1">•</span>
+                  <span className="text-red-400">•</span>
                   <span className="text-gray-300">
                     Don't use InMemory in production
                   </span>

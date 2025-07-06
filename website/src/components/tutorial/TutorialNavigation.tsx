@@ -1,5 +1,10 @@
-import React from "react";
+import type React from "react";
 import Link from "@docusaurus/Link";
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 
 interface TutorialStep {
   id: string;
@@ -46,7 +51,11 @@ export const TutorialNavigation: React.FC<TutorialNavigationProps> = ({
                     hover:opacity-80 transition-opacity
                   `}
                 >
-                  {step.completed ? "✓" : index + 1}
+                  {step.completed ? (
+                    <CheckIcon className="w-4 h-4" />
+                  ) : (
+                    index + 1
+                  )}
                 </Link>
                 <span
                   className={`
@@ -87,7 +96,8 @@ export const TutorialNavigation: React.FC<TutorialNavigationProps> = ({
               to={previousStep.path}
               className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              ← Previous: {previousStep.title}
+              <ChevronLeftIcon className="w-4 h-4 mr-2" />
+              Previous: {previousStep.title}
             </Link>
           )}
         </div>
@@ -98,7 +108,8 @@ export const TutorialNavigation: React.FC<TutorialNavigationProps> = ({
               to={nextStep.path}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Next: {nextStep.title} →
+              Next: {nextStep.title}
+              <ChevronRightIcon className="w-4 h-4 ml-2" />
             </Link>
           )}
         </div>

@@ -25,7 +25,7 @@ export default function ChatbotProblemTutorial() {
             who can only give advice but never take action.
           </p>
 
-          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+          <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
             <h3 className="text-xl font-semibold text-red-300 mb-4">
               Try Asking Your Agent:
             </h3>
@@ -421,7 +421,7 @@ new VoltAgent({
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-red-300 mb-4">
                 Before (Useless Chatbot)
               </h3>
@@ -442,7 +442,7 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
+            <div className=" border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-green-300 mb-4">
                 After (Real Agent)
               </h3>
@@ -464,7 +464,7 @@ new VoltAgent({
             </div>
           </div>
 
-          <div className="bg-[#00d992]/10 rounded-lg p-6 border border-[#00d992]/20">
+          <div className="rounded-lg p-6 border-solid border-emerald-500  bg-gray-800/50">
             <h4 className="text-[#00d992] font-semibold mb-2">The Magic</h4>
             <p className="text-gray-300">
               Your agent now <strong>takes action</strong> instead of giving
