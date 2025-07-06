@@ -5,6 +5,7 @@ import {
   ArrowTopRightOnSquareIcon,
   BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
+import { getLogoComponent } from "../../utils/logo-helper";
 
 interface CustomerCardProps {
   project: {
@@ -12,11 +13,12 @@ interface CustomerCardProps {
     slug: string;
     customer: {
       name: string;
-      logo_url: string;
+      logo_url?: string;
+      logo?: string;
       website: string;
       industry: string;
-      team_size: string;
-      location: string;
+      team_size?: string;
+      location?: string;
     };
     case_study: {
       title: string;
@@ -56,7 +58,29 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
         <div className="relative p-4 border-b border-[#334155]">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <BuildingOfficeIcon className="w-9 h-9 mr-2" />
+              {(() => {
+                // Check if logo_url exists first
+                if (project.customer.logo_url) {
+                  return (
+                    <img
+                      src={project.customer.logo_url}
+                      alt={`${project.customer.name} logo`}
+                      className="w-9 h-9 mr-2 object-contain rounded"
+                    />
+                  );
+                }
+                // Fall back to SVG component if logo field exists
+                if (project.customer.logo) {
+                  const LogoComponent = getLogoComponent(project.customer.logo);
+                  return (
+                    <LogoComponent className="w-9 h-9 mr-2 text-[#00d992]" />
+                  );
+                }
+                // Final fallback to default icon
+                return (
+                  <BuildingOfficeIcon className="w-9 h-9 mr-2 text-[#00d992]" />
+                );
+              })()}
               <div>
                 <span className="text-[#00d992] font-bold text-base">
                   {project.customer.name}

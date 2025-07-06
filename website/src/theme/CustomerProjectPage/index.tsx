@@ -12,9 +12,33 @@ import { motion } from "framer-motion";
 import React from "react";
 import { GitHubLogo } from "../../../static/img/logos/github";
 import { DotPattern } from "../../components/ui/dot-pattern";
+import { getLogoComponent } from "../../utils/logo-helper";
 
 interface CustomerProjectPageProps {
-  customer: any;
+  customer: {
+    customer: {
+      name: string;
+      logo_url?: string;
+      logo?: string;
+      website: string;
+      industry: string;
+      location?: string;
+    };
+    case_study: {
+      title: string;
+      use_case: string;
+      challenge_paragraph: string;
+      solution_paragraph: string;
+      results_paragraph: string;
+      quote: {
+        text: string;
+        author: string;
+        position: string;
+        company: string;
+        linkedin?: string;
+      };
+    };
+  };
 }
 
 export default function CustomerProjectPage({
@@ -50,7 +74,11 @@ export default function CustomerProjectPage({
   // Create SEO-optimized title and description
   const seoTitle = `${customer.customer.name} Case Study - ${customer.case_study.title} | VoltAgent`;
   const seoDescription = `${customer.case_study.use_case} - Learn how ${customer.customer.name} transformed their workflow with VoltAgent. Read the full case study and customer testimonial.`;
-  const keywords = `VoltAgent, ${customer.customer.name}, case study, ${customer.customer.industry}, AI agents, TypeScript, automation, customer success, ${customer.customer.location}`;
+  const keywords = `VoltAgent, ${customer.customer.name}, case study, ${
+    customer.customer.industry
+  }, AI agents, TypeScript, automation, customer success${
+    customer.customer.location ? `, ${customer.customer.location}` : ""
+  }`;
 
   return (
     <Layout>
@@ -112,7 +140,31 @@ export default function CustomerProjectPage({
             >
               <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
                 <div className="flex items-start gap-3 sm:gap-4 flex-1">
-                  <BuildingOfficeIcon className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6 " />
+                  {(() => {
+                    // Check if logo_url exists first
+                    if (customer.customer.logo_url) {
+                      return (
+                        <img
+                          src={customer.customer.logo_url}
+                          alt={`${customer.customer.name} logo`}
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6 object-contain"
+                        />
+                      );
+                    }
+                    // Fall back to SVG component if logo field exists
+                    if (customer.customer.logo) {
+                      const LogoComponent = getLogoComponent(
+                        customer.customer.logo,
+                      );
+                      return (
+                        <LogoComponent className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6" />
+                      );
+                    }
+                    // Final fallback to default icon
+                    return (
+                      <BuildingOfficeIcon className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6" />
+                    );
+                  })()}
                   <div className="flex-1 min-w-0">
                     <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#00d992] mb-1 sm:mb-2 leading-tight">
                       {customer.customer.name}
@@ -120,16 +172,6 @@ export default function CustomerProjectPage({
                     <p className="text-gray-400 text-sm sm:text-base lg:text-lg mb-2">
                       {customer.customer.industry}
                     </p>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                      <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                        <UsersIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        {customer.customer.team_size} employees
-                      </div>
-                      <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                        <BuildingOfficeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        {customer.customer.location}
-                      </div>
-                    </div>
                   </div>
                 </div>
                 <a
@@ -140,7 +182,7 @@ export default function CustomerProjectPage({
                 >
                   <GlobeAltIcon className="w-4 h-4 mr-2 text-gray-300" />
                   <span className="text-gray-300 font-medium text-sm">
-                    Visit Website
+                    Company Profile
                   </span>
                 </a>
               </div>
@@ -172,9 +214,20 @@ export default function CustomerProjectPage({
                     "{customer.case_study.quote.text}"
                   </p>
                 </blockquote>
-                <div className="border-t flex items-center border-gray-600 pt-4">
+                <div className="border-t flex items-center border-gray-600 pt-4 gap-2">
                   <div className="text-sm sm:text-base font-medium text-[#00d992]">
-                    {customer.case_study.quote.author}
+                    {customer.case_study.quote.linkedin ? (
+                      <a
+                        href={customer.case_study.quote.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#00d992] hover:text-[#00c182] transition-colors no-underline"
+                      >
+                        {customer.case_study.quote.author}
+                      </a>
+                    ) : (
+                      customer.case_study.quote.author
+                    )}
                   </div>
                   <div className="text-xs sm:text-sm text-gray-400">
                     {customer.case_study.quote.position}
@@ -203,9 +256,74 @@ export default function CustomerProjectPage({
                 <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
                   The Challenge
                 </h3>
-                <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
-                  {customer.case_study.challenge_paragraph}
-                </p>
+                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                  {(() => {
+                    const content = customer.case_study.challenge_paragraph;
+                    const parts = [];
+                    let currentText = "";
+                    let inQuote = false;
+                    let quoteText = "";
+
+                    for (let i = 0; i < content.length; i++) {
+                      const char = content[i];
+
+                      if (char === '"' && !inQuote) {
+                        // Starting a quote
+                        if (currentText.trim()) {
+                          parts.push({
+                            type: "text",
+                            content: currentText.trim(),
+                          });
+                          currentText = "";
+                        }
+                        inQuote = true;
+                        quoteText = "";
+                      } else if (char === '"' && inQuote) {
+                        // Ending a quote
+                        if (quoteText.trim()) {
+                          parts.push({
+                            type: "quote",
+                            content: quoteText.trim(),
+                          });
+                          quoteText = "";
+                        }
+                        inQuote = false;
+                      } else if (inQuote) {
+                        quoteText += char;
+                      } else {
+                        currentText += char;
+                      }
+                    }
+
+                    if (currentText.trim()) {
+                      parts.push({ type: "text", content: currentText.trim() });
+                    }
+
+                    return parts.map((part) => {
+                      if (part.type === "quote") {
+                        return (
+                          <blockquote
+                            key={`challenge-quote-${part.content
+                              .substring(0, 30)
+                              .replace(/\s+/g, "-")}`}
+                            className="border-l-4 border-[#00d992] pl-4 italic text-gray-200"
+                          >
+                            "{part.content}"
+                          </blockquote>
+                        );
+                      }
+                      return (
+                        <p
+                          key={`challenge-text-${part.content
+                            .substring(0, 30)
+                            .replace(/\s+/g, "-")}`}
+                        >
+                          {part.content}
+                        </p>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               {/* Solution */}
@@ -217,11 +335,227 @@ export default function CustomerProjectPage({
                 }}
               >
                 <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
-                  The Solution
+                  The Solution: VoltAgent + VoltOps
                 </h3>
-                <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
-                  {customer.case_study.solution_paragraph}
-                </p>
+                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                  {(() => {
+                    const content = customer.case_study.solution_paragraph;
+                    const parts = [];
+                    let currentText = "";
+                    let inQuote = false;
+                    let quoteText = "";
+
+                    for (let i = 0; i < content.length; i++) {
+                      const char = content[i];
+
+                      if (char === '"' && !inQuote) {
+                        // Starting a quote
+                        if (currentText.trim()) {
+                          // Handle multiple bullet point sections
+                          const remainingText = currentText.trim();
+
+                          // Look for patterns like "text: bullet; bullet; bullet. Text: bullet; bullet; bullet"
+                          const bulletSections = [];
+                          const textParts = [];
+
+                          // Split by periods to find sections
+                          const sentences = remainingText.split(". ");
+
+                          for (const sentence of sentences) {
+                            if (
+                              sentence.includes(":") &&
+                              sentence.includes(";")
+                            ) {
+                              // This sentence has bullet points
+                              const colonIndex = sentence.indexOf(":");
+                              const beforeColon = sentence.substring(
+                                0,
+                                colonIndex + 1,
+                              );
+                              const afterColon = sentence.substring(
+                                colonIndex + 1,
+                              );
+
+                              if (beforeColon.trim()) {
+                                textParts.push(beforeColon.trim());
+                              }
+
+                              if (afterColon.trim()) {
+                                const bulletPoints = afterColon
+                                  .split(";")
+                                  .map((point) => point.trim())
+                                  .filter((point) => point);
+                                bulletSections.push(bulletPoints);
+                              }
+                            } else if (sentence.trim()) {
+                              // Regular text
+                              textParts.push(
+                                sentence.trim() +
+                                  (sentence === sentences[sentences.length - 1]
+                                    ? ""
+                                    : "."),
+                              );
+                            }
+                          }
+
+                          // Add text and bullet sections alternately
+                          for (
+                            let j = 0;
+                            j <
+                            Math.max(textParts.length, bulletSections.length);
+                            j++
+                          ) {
+                            if (j < textParts.length && textParts[j]) {
+                              parts.push({
+                                type: "text",
+                                content: textParts[j],
+                              });
+                            }
+                            if (
+                              j < bulletSections.length &&
+                              bulletSections[j]
+                            ) {
+                              parts.push({
+                                type: "bullets",
+                                content: bulletSections[j],
+                              });
+                            }
+                          }
+
+                          currentText = "";
+                        }
+                        inQuote = true;
+                        quoteText = "";
+                      } else if (char === '"' && inQuote) {
+                        // Ending a quote
+                        if (quoteText.trim()) {
+                          parts.push({
+                            type: "quote",
+                            content: quoteText.trim(),
+                          });
+                          quoteText = "";
+                        }
+                        inQuote = false;
+                      } else if (inQuote) {
+                        quoteText += char;
+                      } else {
+                        currentText += char;
+                      }
+                    }
+
+                    if (currentText.trim()) {
+                      // Handle remaining text with same logic
+                      const remainingText = currentText.trim();
+
+                      if (
+                        remainingText.includes(":") &&
+                        remainingText.includes(";")
+                      ) {
+                        const bulletSections = [];
+                        const textParts = [];
+
+                        const sentences = remainingText.split(". ");
+
+                        for (const sentence of sentences) {
+                          if (
+                            sentence.includes(":") &&
+                            sentence.includes(";")
+                          ) {
+                            const colonIndex = sentence.indexOf(":");
+                            const beforeColon = sentence.substring(
+                              0,
+                              colonIndex + 1,
+                            );
+                            const afterColon = sentence.substring(
+                              colonIndex + 1,
+                            );
+
+                            if (beforeColon.trim()) {
+                              textParts.push(beforeColon.trim());
+                            }
+
+                            if (afterColon.trim()) {
+                              const bulletPoints = afterColon
+                                .split(";")
+                                .map((point) => point.trim())
+                                .filter((point) => point);
+                              bulletSections.push(bulletPoints);
+                            }
+                          } else if (sentence.trim()) {
+                            textParts.push(
+                              sentence.trim() +
+                                (sentence === sentences[sentences.length - 1]
+                                  ? ""
+                                  : "."),
+                            );
+                          }
+                        }
+
+                        for (
+                          let j = 0;
+                          j < Math.max(textParts.length, bulletSections.length);
+                          j++
+                        ) {
+                          if (j < textParts.length && textParts[j]) {
+                            parts.push({ type: "text", content: textParts[j] });
+                          }
+                          if (j < bulletSections.length && bulletSections[j]) {
+                            parts.push({
+                              type: "bullets",
+                              content: bulletSections[j],
+                            });
+                          }
+                        }
+                      } else {
+                        parts.push({ type: "text", content: remainingText });
+                      }
+                    }
+
+                    return parts.map((part) => {
+                      if (part.type === "quote") {
+                        return (
+                          <blockquote
+                            key={`solution-quote-${part.content
+                              .substring(0, 30)
+                              .replace(/\s+/g, "-")}`}
+                            className="border-l-4 border-[#00d992] pl-4 italic text-gray-200"
+                          >
+                            "{part.content}"
+                          </blockquote>
+                        );
+                      }
+                      if (part.type === "bullets") {
+                        return (
+                          <ul
+                            key={`solution-bullets-${part.content[0]
+                              .substring(0, 20)
+                              .replace(/\s+/g, "-")}`}
+                            className="space-y-2 ml-4"
+                          >
+                            {part.content.map((bullet, bulletIndex) => (
+                              <li
+                                key={`bullet-${bullet
+                                  .substring(0, 15)
+                                  .replace(/\s+/g, "-")}-${bulletIndex}`}
+                              >
+                                {bullet}
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      }
+                      return (
+                        <p
+                          key={`solution-text-${part.content
+                            .substring(0, 30)
+                            .replace(/\s+/g, "-")}`}
+                        >
+                          {part.content}
+                        </p>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               {/* Results */}
@@ -233,11 +567,76 @@ export default function CustomerProjectPage({
                 }}
               >
                 <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4">
-                  The Results
+                  The Outcome
                 </h3>
-                <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
-                  {customer.case_study.results_paragraph}
-                </p>
+                <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                  {(() => {
+                    const content = customer.case_study.results_paragraph;
+                    const parts = [];
+                    let currentText = "";
+                    let inQuote = false;
+                    let quoteText = "";
+
+                    for (let i = 0; i < content.length; i++) {
+                      const char = content[i];
+
+                      if (char === '"' && !inQuote) {
+                        // Starting a quote
+                        if (currentText.trim()) {
+                          parts.push({
+                            type: "text",
+                            content: currentText.trim(),
+                          });
+                          currentText = "";
+                        }
+                        inQuote = true;
+                        quoteText = "";
+                      } else if (char === '"' && inQuote) {
+                        // Ending a quote
+                        if (quoteText.trim()) {
+                          parts.push({
+                            type: "quote",
+                            content: quoteText.trim(),
+                          });
+                          quoteText = "";
+                        }
+                        inQuote = false;
+                      } else if (inQuote) {
+                        quoteText += char;
+                      } else {
+                        currentText += char;
+                      }
+                    }
+
+                    if (currentText.trim()) {
+                      parts.push({ type: "text", content: currentText.trim() });
+                    }
+
+                    return parts.map((part) => {
+                      if (part.type === "quote") {
+                        return (
+                          <blockquote
+                            key={`results-quote-${part.content
+                              .substring(0, 30)
+                              .replace(/\s+/g, "-")}`}
+                            className="border-l-4 border-[#00d992] pl-4 italic text-gray-200"
+                          >
+                            "{part.content}"
+                          </blockquote>
+                        );
+                      }
+                      return (
+                        <p
+                          key={`results-text-${part.content
+                            .substring(0, 30)
+                            .replace(/\s+/g, "-")}`}
+                        >
+                          {part.content}
+                        </p>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               {/* Call to Action */}
