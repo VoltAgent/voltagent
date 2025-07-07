@@ -1,4 +1,4 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryManager } from ".";
 import type { AgentHistoryEntry } from "../../agent/history";
 import type { BaseMessage } from "../../agent/providers/base/types";
@@ -641,8 +641,7 @@ describe("MemoryManager - History Management", () => {
 
   beforeEach(() => {
     mockMemory = new MockMemory();
-    // ✅ Clean approach: Pass historyMemory as constructor parameter instead of using 'any'
-    memoryManager = new MemoryManager("test-agent", mockMemory, {}, mockMemory);
+    memoryManager = new MemoryManager("test-agent", mockMemory, {});
     mockContext = createMockContext();
   });
 
@@ -1058,11 +1057,9 @@ describe("MemoryManager - ConversationMemory Tests", () => {
 describe("MemoryManager - HistoryMemory Tests", () => {
   let memoryManager: MemoryManager;
   let mockMemory: MockMemory;
-  let mockContext: OperationContext;
 
   beforeEach(() => {
     mockMemory = new MockMemory();
-    mockContext = createMockContext();
   });
 
   describe("historyMemory is always available", () => {
@@ -1079,7 +1076,7 @@ describe("MemoryManager - HistoryMemory Tests", () => {
 
       const historyMemory = memoryManager.getHistoryMemory();
       expect(historyMemory).toBeDefined();
-      expect(historyMemory.constructor.name).toBe("LibSQLStorage");
+      expect(historyMemory.constructor.name).toBe("MockMemory");
     });
 
     it("should have historyMemory when using default conversationMemory", () => {
@@ -1094,7 +1091,7 @@ describe("MemoryManager - HistoryMemory Tests", () => {
   describe("historyMemory operations with mock memory", () => {
     beforeEach(() => {
       // ✅ Clean approach: Pass historyMemory as constructor parameter instead of using 'any'
-      memoryManager = new MemoryManager("test-agent", mockMemory, {}, mockMemory);
+      memoryManager = new MemoryManager("test-agent", mockMemory, {});
     });
 
     it("should store history entry using historyMemory", async () => {
@@ -1327,127 +1324,5 @@ describe("MemoryManager - HistoryMemory Tests", () => {
       expect(originalEntry.status).toBe("running");
       expect(originalEntry.output).toBe("");
     });
-  });
-});
-
-describe("MemoryManager - Memory Separation Tests", () => {
-  let memoryManager: MemoryManager;
-  let mockConversationMemory: MockMemory;
-  let mockHistoryMemory: MockMemory;
-  let mockContext: OperationContext;
-
-  beforeEach(() => {
-    mockConversationMemory = new MockMemory();
-    mockHistoryMemory = new MockMemory();
-    mockContext = createMockContext();
-
-    mockConversationMemory.setCurrentUserId("user1");
-
-    // ✅ Clean approach: Pass both memories as constructor parameters instead of using 'any'
-    memoryManager = new MemoryManager("test-agent", mockConversationMemory, {}, mockHistoryMemory);
-  });
-
-  it("should use separate memory instances for conversations and history", () => {
-    const conversationMemory = memoryManager.getMemory();
-    const historyMemory = memoryManager.getHistoryMemory();
-
-    expect(conversationMemory).toBe(mockConversationMemory);
-    expect(historyMemory).toBe(mockHistoryMemory);
-    expect(conversationMemory).not.toBe(historyMemory);
-  });
-
-  it("should store conversation messages in conversationMemory only", async () => {
-    const message: BaseMessage = { role: "user", content: "Conversation message" };
-
-    await memoryManager.saveMessage(mockContext, message, "user1", "conversation1");
-
-    // Give time for background operations
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Check conversationMemory has the message
-    const conversationMessages = await mockConversationMemory.getMessages({
-      userId: "user1",
-      conversationId: "conversation1",
-    });
-    expect(conversationMessages.length).toBe(1);
-    expect(conversationMessages[0].content).toBe("Conversation message");
-
-    // Check historyMemory doesn't have the message
-    const historyMessages = await mockHistoryMemory.getMessages({
-      userId: "user1",
-      conversationId: "conversation1",
-    });
-    expect(historyMessages.length).toBe(0);
-  });
-
-  it("should store history entries in historyMemory only", async () => {
-    const agentId = "test-agent";
-    const entry = {
-      id: "test-history-entry",
-      timestamp: new Date(),
-      status: "completed",
-      input: "test input",
-      output: "test output",
-      usage: { totalTokens: 100 },
-      events: [],
-      steps: [],
-    };
-
-    await memoryManager.storeHistoryEntry(agentId, entry);
-
-    // Check historyMemory has the entry
-    const historyEntries = mockHistoryMemory.getHistoryEntries();
-    expect(historyEntries["test-history-entry"]).toBeDefined();
-    expect(historyEntries["test-history-entry"]._agentId).toBe(agentId);
-
-    // Check conversationMemory doesn't have the entry
-    const conversationEntries = mockConversationMemory.getHistoryEntries();
-    expect(conversationEntries["test-history-entry"]).toBeUndefined();
-  });
-
-  it("should isolate conversation and history operations", async () => {
-    const agentId = "test-agent";
-
-    // Store a conversation message
-    const message: BaseMessage = { role: "user", content: "Conversation message" };
-    await memoryManager.saveMessage(mockContext, message, "user1", "conversation1");
-
-    // Store a history entry
-    const entry = {
-      id: "test-history-entry",
-      timestamp: new Date(),
-      status: "completed",
-      input: "test input",
-      output: "test output",
-      usage: { totalTokens: 100 },
-      events: [],
-      steps: [],
-    };
-    await memoryManager.storeHistoryEntry(agentId, entry);
-
-    // Give time for background operations
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Verify conversation memory only has conversation data
-    const conversationMessages = await mockConversationMemory.getMessages({
-      userId: "user1",
-      conversationId: "conversation1",
-    });
-    expect(conversationMessages.length).toBe(1);
-    expect(conversationMessages[0].content).toBe("Conversation message");
-
-    const conversationHistoryEntries = mockConversationMemory.getHistoryEntries();
-    expect(Object.keys(conversationHistoryEntries)).toHaveLength(0);
-
-    // Verify history memory only has history data
-    const historyEntries = mockHistoryMemory.getHistoryEntries();
-    expect(historyEntries["test-history-entry"]).toBeDefined();
-    expect(historyEntries["test-history-entry"]._agentId).toBe(agentId);
-
-    const historyMessages = await mockHistoryMemory.getMessages({
-      userId: "user1",
-      conversationId: "conversation1",
-    });
-    expect(historyMessages.length).toBe(0);
   });
 });
