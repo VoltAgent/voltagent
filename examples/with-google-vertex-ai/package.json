@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@voltagent/cli": "^0.1.9",
-    "@voltagent/core": "^0.1.52",
+    "@voltagent/core": "^0.1.56",
     "@voltagent/google-ai": "^0.4.0",
     "zod": "3.24.2"
   },

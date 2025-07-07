@@ -1,5 +1,14 @@
 # @voltagent/xsai
 
+## 0.2.4
+
+### Patch Changes
+
+- [#348](https://github.com/VoltAgent/voltagent/pull/348) [`9581df0`](https://github.com/VoltAgent/voltagent/commit/9581df02bce2ba8b25f9f2964b781095bc50b004) Thanks [@Adherentman](https://github.com/Adherentman)! - fix: xsai empty tools will sent undefined - #337
+
+- Updated dependencies [[`b7dcded`](https://github.com/VoltAgent/voltagent/commit/b7dcdedfbbdda5bfb1885317b59b4d4e2495c956), [`822739c`](https://github.com/VoltAgent/voltagent/commit/822739c901bbc679cd11dd2c9df99cd041fc40c7)]:
+  - @voltagent/core@0.1.55
+
 ## 0.2.3
 
 ### Patch Changes

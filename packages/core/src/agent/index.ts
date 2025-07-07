@@ -43,6 +43,7 @@ import type {
   ToolExecuteOptions,
 } from "./providers";
 import { SubAgentManager } from "./subagent";
+import type { SubAgentConfig } from "./subagent/types";
 import type {
   AgentOptions,
   AgentStatus,
@@ -64,6 +65,7 @@ import type {
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
+  SupervisorConfig,
   SystemMessageResponse,
   ToolExecutionContext,
   VoltAgentError,
@@ -178,13 +180,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private readonly voltOpsClient?: VoltOpsClient;
 
   /**
+   * Supervisor configuration for agents with subagents
+   */
+  private readonly supervisorConfig?: SupervisorConfig;
+
+  /**
+   * User-defined context passed at agent creation
+   * Can be overridden during execution
+   */
+  private readonly defaultUserContext?: Map<string | symbol, unknown>;
+
+  /**
    * Create a new agent
    */
   constructor(
     options: AgentOptions &
       TProvider & {
         model: ModelDynamicValue<ModelType<TProvider>>;
-        subAgents?: Agent<any>[]; // Reverted to Agent<any>[] temporarily
+        subAgents?: SubAgentConfig[]; // Updated to support new configuration
         maxHistoryEntries?: number;
         hooks?: AgentHooks;
         retriever?: BaseRetriever;
@@ -228,6 +241,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Store VoltOps client for agent-specific prompt management
     this.voltOpsClient = options.voltOpsClient;
 
+    // Store supervisor configuration if provided
+    this.supervisorConfig = options.supervisorConfig;
+
+    // Store user context if provided
+    this.defaultUserContext = options.userContext;
+
     // Initialize hooks
     if (options.hooks) {
       this.hooks = options.hooks;
@@ -236,7 +255,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     // Initialize memory manager
-    this.memoryManager = new MemoryManager(this.id, options.memory, options.memoryOptions || {});
+    this.memoryManager = new MemoryManager(
+      this.id,
+      options.memory,
+      options.memoryOptions || {},
+      options.historyMemory,
+    );
 
     // Initialize tool manager with empty array if dynamic, will be resolved later
     const staticTools = typeof options.tools === "function" ? [] : options.tools || [];
@@ -481,6 +505,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
         finalInstructions,
         agentsMemory,
+        this.supervisorConfig,
       );
 
       return {
@@ -748,7 +773,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const opContext: OperationContext = {
       operationId: historyEntry.id,
       userContext:
-        (options.parentOperationContext?.userContext || options.userContext) ??
+        (options.parentOperationContext?.userContext ||
+          options.userContext ||
+          this.defaultUserContext) ??
         new Map<string | symbol, unknown>(),
       historyEntry,
       isActive: true,
@@ -2729,8 +2756,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Add a sub-agent that this agent can delegate tasks to
    */
-  public addSubAgent(agent: Agent<any>): void {
-    this.subAgentManager.addSubAgent(agent);
+  public addSubAgent(agentConfig: SubAgentConfig): void {
+    this.subAgentManager.addSubAgent(agentConfig);
 
     // Add delegate tool if this is the first sub-agent
     if (this.subAgentManager.getSubAgents().length === 1) {
@@ -2780,7 +2807,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Get all sub-agents
    */
-  public getSubAgents(): Agent<any>[] {
+  public getSubAgents(): SubAgentConfig[] {
     return this.subAgentManager.getSubAgents();
   }
 
