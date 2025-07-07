@@ -1,5 +1,5 @@
 ---
-"@voltagent/xsai": major
+"@voltagent/xsai": patch
 ---
 
-fix xsai empyt tools will sent undefined
+fix: xsai empty tools will sent undefined - #337
