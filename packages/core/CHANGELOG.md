@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.56
+
+### Patch Changes
+
+- [#351](https://github.com/VoltAgent/voltagent/pull/351) [`f8f8d04`](https://github.com/VoltAgent/voltagent/commit/f8f8d04340d6f9609450f6ae000c9fe1d71072d7) Thanks [@alasano](https://github.com/alasano)! - fix: add historyMemory option to Agent configuration
+
 ## 0.1.55
 
 ### Patch Changes
