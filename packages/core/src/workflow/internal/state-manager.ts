@@ -1,8 +1,9 @@
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import { v4 as uuid } from "uuid";
-import type { AllowedAny } from "#/utils/types";
 import type { WorkflowRunOptions, WorkflowState } from "../types";
 
+// TODO: Add in the core context from VoltAgent
 export interface WorkflowStateManager<DATA, RESULT> {
   /**
    * The current state of the workflow
@@ -124,7 +125,7 @@ function hasState(value: BaseWorkflowState | null): value is BaseWorkflowState {
   return value !== null;
 }
 
-type BaseWorkflowState = WorkflowState<AllowedAny, AllowedAny>;
+type BaseWorkflowState = WorkflowState<DangerouslyAllowAny, DangerouslyAllowAny>;
 
 type RunningWorkflowState = TF.Simplify<
   Omit<BaseWorkflowState, "status"> & {

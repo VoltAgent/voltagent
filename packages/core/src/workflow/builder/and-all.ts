@@ -1,4 +1,5 @@
 import type { InternalAnyStep, InternalInferStepsResult, WorkflowStepParallelAll } from "../types";
+import { matchStep } from "./helpers";
 
 /**
  * Creates a parallel execution step that runs multiple steps simultaneously
@@ -16,7 +17,7 @@ export function andAll<
     // @ts-expect-error - need to fix but upstream types work
     steps,
     execute: async (data: DATA) => {
-      const promises = steps.map((step) => step.execute(data));
+      const promises = steps.map((step) => matchStep(step).execute(data));
       return (await Promise.all(promises)) as INFERRED_RESULT;
     },
   };

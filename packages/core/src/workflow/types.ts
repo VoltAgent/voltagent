@@ -1,6 +1,5 @@
-import type { VercelAIProvider } from "@voltagent/vercel-ai";
-import type { AllowedAny } from "#/utils/types";
-import type { Agent } from "../agents";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { Agent } from "../agent/index";
 import type { ConditionalWith } from "./internal/pattern";
 
 export interface WorkflowRunOptions {
@@ -38,7 +37,7 @@ export type WorkflowStepType =
 
 export interface WorkflowStepAgent<DATA, RESULT> extends InternalBaseStep<DATA, RESULT> {
   type: "agent";
-  agent: Agent<{ llm: VercelAIProvider }>;
+  agent: Agent<{ llm: DangerouslyAllowAny }>;
 }
 
 export interface WorkflowStepFunc<DATA, RESULT> extends InternalBaseStep<DATA, RESULT> {
@@ -90,11 +89,16 @@ export interface InternalBaseStep<DATA, RESULT> {
 }
 
 /** @private */
-export type InternalAnyStep<DATA = AllowedAny, RESULT = AllowedAny> = InternalBaseStep<
-  DATA,
-  RESULT
->;
+export type InternalAnyStep<DATA = DangerouslyAllowAny, RESULT = DangerouslyAllowAny> =
+  | InternalBaseStep<DATA, RESULT>
+  | WorkflowFunc<DATA, RESULT>;
 
 export type InternalInferStepsResult<
-  STEPS extends ReadonlyArray<InternalAnyStep<AllowedAny, AllowedAny>>,
-> = { [K in keyof STEPS]: Awaited<ReturnType<STEPS[K]["execute"]>> };
+  STEPS extends ReadonlyArray<InternalAnyStep<DangerouslyAllowAny, DangerouslyAllowAny>>,
+> = { [K in keyof STEPS]: Awaited<ReturnType<GetFunc<STEPS[K]>>> };
+
+type GetFunc<T> = T extends (...args: any) => any
+  ? T
+  : T extends InternalBaseStep<any, any>
+    ? T["execute"]
+    : never;

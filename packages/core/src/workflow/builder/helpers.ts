@@ -1,14 +1,12 @@
 import { P, match } from "ts-pattern";
-import type { WorkflowFunc, WorkflowStep, WorkflowStepFunc } from "../types";
+import type { InternalAnyStep, WorkflowFunc, WorkflowStepFunc } from "../types";
 
 /**
  * Matches a step or agent to the appropriate step type
  * @param stepOrAgent - Either a workflow step or an agent
  * @returns The matched workflow step
  */
-export function matchStep<DATA, RESULT>(
-  stepOrAgent: WorkflowStep<DATA, RESULT> | WorkflowFunc<DATA, RESULT>,
-) {
+export function matchStep<DATA, RESULT>(stepOrAgent: InternalAnyStep<DATA, RESULT>) {
   return match(stepOrAgent)
     .with({ type: "agent" }, (agentStep) => agentStep)
     .with({ type: "func" }, (funcStep) => funcStep)
@@ -17,7 +15,9 @@ export function matchStep<DATA, RESULT>(
     .with({ type: "parallel-all" }, (allStep) => allStep)
     .with({ type: "parallel-race" }, (raceStep) => raceStep)
     .with(P.instanceOf(Function), (fn) => createFuncStep<DATA, RESULT>(fn))
-    .exhaustive();
+    .otherwise(() => {
+      throw new Error("Invalid step or agent");
+    });
 }
 
 /**

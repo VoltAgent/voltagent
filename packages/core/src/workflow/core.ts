@@ -1,5 +1,5 @@
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
-import type { AllowedAny } from "#/utils/types";
 import { createWorkflowStateManager } from "./internal/state-manager";
 import type { WorkflowHooks, WorkflowStep } from "./types";
 
@@ -636,4 +636,4 @@ export function createWorkflow<
 /**
  * Base type for workflow steps to avoid repetition
  */
-type BaseStep = WorkflowStep<AllowedAny, AllowedAny>;
+type BaseStep = WorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>;

@@ -1,4 +1,4 @@
-import type { WorkflowFunc, WorkflowStep, WorkflowStepConditionalWhen } from "../types";
+import type { InternalAnyStep, WorkflowStepConditionalWhen } from "../types";
 import { matchStep } from "./helpers";
 
 /**
@@ -9,7 +9,7 @@ import { matchStep } from "./helpers";
  */
 export function andWhen<DATA, RESULT>(
   condition: (data: DATA) => boolean,
-  stepInput: WorkflowStep<DATA, RESULT> | WorkflowFunc<DATA, RESULT>,
+  stepInput: InternalAnyStep<DATA, RESULT>,
 ) {
   const step = matchStep<DATA, RESULT>(stepInput);
   return {

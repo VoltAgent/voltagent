@@ -1,6 +1,6 @@
 import { match } from "ts-pattern";
 import type { ConditionalWith } from "../internal/pattern";
-import type { WorkflowFunc, WorkflowStep, WorkflowStepConditionalWith } from "../types";
+import type { InternalAnyStep, WorkflowStepConditionalWith } from "../types";
 import { matchStep } from "./helpers";
 
 /**
@@ -11,14 +11,15 @@ import { matchStep } from "./helpers";
  */
 export function andWith<DATA, RESULT>(
   patterns: ConditionalWith<DATA, RESULT>,
-  stepInput: WorkflowStep<DATA, RESULT> | WorkflowFunc<DATA, RESULT>,
-): WorkflowStepConditionalWith<DATA, RESULT> {
+  stepInput: InternalAnyStep<DATA, RESULT>,
+) {
   const step = matchStep<DATA, RESULT>(stepInput);
   return {
     type: "conditional-with",
     condition: patterns,
     execute: async (data) => {
       const result = await match(data)
+        .returnType<Promise<RESULT | DATA>>()
         .with(patterns, async (d) => {
           return await step.execute(d);
         })
