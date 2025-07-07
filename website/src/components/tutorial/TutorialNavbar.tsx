@@ -35,7 +35,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
               <span className="text-lg font-bold text-[#00d992]">
                 voltagent
               </span>
-              <span className="ml-2 text-sm font-medium text-gray-400">
+              <span className="ml-2  text-sm  font-medium text-gray-400">
                 Tutorial
               </span>
             </div>
@@ -107,10 +107,10 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
             <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
               <BoltIcon className="w-5 h-5 sm:w-5 sm:h-5 text-[#00d992]" />
             </div>
-            <span className="text-xl sm:text-2xl font-bold text-[#00d992]">
-              voltagent
-            </span>
-            <div className="relative">
+            <div className="flex items-baseline">
+              <span className="text-xl sm:text-2xl font-bold text-[#00d992]">
+                voltagent
+              </span>
               <span className="ml-2 font-medium text-gray-400">Tutorial</span>
             </div>
           </div>
@@ -168,7 +168,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
             {/* Console Link */}
             <Link
               to="https://console.voltagent.dev"
-              className="inline-flex items-center px-4 py-2 text-sm font-medium bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-lg hover:bg-[#00c085] transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-lg hover:bg-emerald-400/40 transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
               target="_blank"
               rel="noopener noreferrer"
             >
