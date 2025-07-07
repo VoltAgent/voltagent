@@ -28,7 +28,7 @@ export default function MCPTutorial() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-300 mb-4">
+              <h3 className="text-xl font-semibold text-red-500 mb-4">
                 Without MCP
               </h3>
               <div className="space-y-3">
@@ -54,7 +54,7 @@ export default function MCPTutorial() {
             </div>
 
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 With MCP
               </h3>
               <div className="space-y-3">
@@ -91,13 +91,13 @@ export default function MCPTutorial() {
             external system.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
             <h3 className="text-xl font-semibold text-white mb-4">
               How MCP Works
             </h3>
             <div className="space-y-4">
-              <div className="flex items-start space-x-4">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+              <div className="flex items-center space-x-4">
+                <div className="w-8 h-8 bg-blue-500  rounded-full flex items-center justify-center text-white text-sm font-bold">
                   1
                 </div>
                 <div>
@@ -108,7 +108,7 @@ export default function MCPTutorial() {
                   </span>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                   2
                 </div>
@@ -120,7 +120,7 @@ export default function MCPTutorial() {
                   </span>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                   3
                 </div>
@@ -198,7 +198,7 @@ new VoltAgent({
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Development Tools
               </h3>
@@ -230,7 +230,7 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Productivity
               </h3>
@@ -262,7 +262,7 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Data & Analytics
               </h3>
@@ -294,7 +294,7 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Business Tools
               </h3>
@@ -406,20 +406,24 @@ new VoltAgent({
             </CodeBlock>
           </ColorModeProvider>
 
-          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-6">
-            <h4 className="text-[#00d992] font-semibold mb-2">
+          <div className="bg-gray-800/50 border-solid border border-emerald-500 rounded-lg p-6">
+            <h4 className="text-emerald-500 font-semibold mb-2">
               Real-World Workflow
             </h4>
             <p className="text-gray-300 mb-3">
               With this setup, you can ask your agent:{" "}
               <em>"Our website is slow, can you investigate?"</em>
             </p>
-            <div className="text-sm text-gray-400">
-              The agent will automatically:
-              <br />• Check AWS CloudWatch for performance metrics
-              <br />• Look at recent GitHub commits for potential issues
-              <br />• Update your team in Slack with findings
-              <br />• Create GitHub issues for any problems found
+            <div className="text-sm flex flex-col gap-1 text-gray-300">
+              <span>The agent will automatically:</span>
+
+              <span>• Check AWS CloudWatch for performance metrics</span>
+
+              <span>• Look at recent GitHub commits for potential issues</span>
+
+              <span>• Update your team in Slack with findings</span>
+
+              <span>• Create GitHub issues for any problems found</span>
             </div>
           </div>
         </div>
@@ -429,7 +433,7 @@ new VoltAgent({
           <h2 className="text-3xl font-bold text-white">
             Building Your Own MCP Server
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 mb-0 leading-relaxed">
             Need to connect to a system that doesn't have an MCP server yet? You
             can build your own in just a few minutes.
           </p>
@@ -560,13 +564,9 @@ main().catch((error) => {
             </CodeBlock>
           </ColorModeProvider>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Using Your Custom Server
-            </h3>
-            <ColorModeProvider>
-              <CodeBlock language="typescript" title="Using custom MCP server">
-                {`const customMCP = new MCPClient({
+          <ColorModeProvider>
+            <CodeBlock language="typescript" title="Using custom MCP server">
+              {`const customMCP = new MCPClient({
   name: "custom-api",
   serverPath: "node custom-mcp-server.ts",
   environment: {
@@ -581,9 +581,8 @@ const agent = new Agent({
   model: openai("gpt-4o-mini"),
   mcpServers: [customMCP],
 });`}
-              </CodeBlock>
-            </ColorModeProvider>
-          </div>
+            </CodeBlock>
+          </ColorModeProvider>
         </div>
 
         {/* Security & Best Practices */}
@@ -597,34 +596,34 @@ const agent = new Agent({
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-            <div className="bg-yellow-500/10 border-solid border border-yellow-500/20 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-yellow-300 mb-4">
+            <div className="bg-gray-800/50 border-solid border-solid  border-yellow-500 rounded-lg p-6">
+              <h3 className="text-xl font-semibold text-yellow-500 mb-4">
                 Security Guidelines
               </h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
                   <span className="text-gray-300">
                     <strong>Principle of Least Privilege:</strong> Only give
                     access to what your agent actually needs
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
                   <span className="text-gray-300">
                     <strong>Environment Variables:</strong> Never hardcode API
                     keys or secrets in your code
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
                   <span className="text-gray-300">
                     <strong>Audit Logs:</strong> Monitor what your agent is
                     doing with external systems
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
                   <span className="text-gray-300">
                     <strong>Rate Limiting:</strong> Implement safeguards to
                     prevent API abuse
@@ -644,18 +643,18 @@ const agent = new Agent({
             of specialized agents that work together.
           </p>
 
-          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-6">
-            <h4 className="text-[#00d992] font-semibold mb-2">
+          <div className="bg-gray-800/50 border-solid border border-emerald-500 rounded-lg p-6">
+            <h4 className="text-emerald-500 font-semibold mb-2">
               Ready to Go Enterprise?
             </h4>
             <p className="text-gray-300 mb-3">
               Set up the GitHub MCP example above and ask your agent:
             </p>
             <ul className="text-gray-300 space-y-1 text-sm">
-              <li>• "What repositories do I have?"</li>
-              <li>• "Show me the latest issues in my main project"</li>
-              <li>• "Create an issue to add better error handling"</li>
-              <li>• "What were the last 5 commits to the main branch?"</li>
+              <li>"What repositories do I have?"</li>
+              <li>"Show me the latest issues in my main project"</li>
+              <li>"Create an issue to add better error handling"</li>
+              <li>"What were the last 5 commits to the main branch?"</li>
             </ul>
           </div>
         </div>

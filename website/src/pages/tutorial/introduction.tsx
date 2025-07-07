@@ -27,7 +27,7 @@ export default function TutorialIntroduction() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-300 mb-4">
+              <h3 className="text-xl font-semibold text-red-500 mb-4">
                 Without a Framework
               </h3>
               <div className="space-y-3">
@@ -65,7 +65,7 @@ export default function TutorialIntroduction() {
             </div>
 
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 With VoltAgent
               </h3>
               <div className="space-y-3">
@@ -113,7 +113,7 @@ export default function TutorialIntroduction() {
             it handles the plumbing so you can focus on building.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border-gray-700">
             <h3 className="text-xl font-semibold text-white mb-4">
               Core Philosophy
             </h3>
@@ -177,7 +177,7 @@ export default function TutorialIntroduction() {
                   <code className="text-[#00d992] font-mono p-3  text-sm">
                     npm create voltagent-app@latest my-agent
                   </code>
-                  <p className="text-gray-400 mt-2 text-sm">
+                  <p className="text-gray-400 mt-2 mb-0 text-sm">
                     Creates a new VoltAgent project with all the boilerplate
                   </p>
                 </div>
@@ -191,24 +191,24 @@ export default function TutorialIntroduction() {
                 <div className="flex flex-col">
                   <p className="text-gray-300 mb-4">
                     Get your OpenAI API key and add it to{" "}
-                    <code className="text-blue-400 px-2 py-1 rounded text-sm">
+                    <code className="text-[#00d992] px-2 py-1 rounded text-sm">
                       .env
                     </code>
                   </p>
-                  <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 space-y-3">
+                  <div className="bg-gray-800/50 rounded-lg p-4 border-solid border-gray-700 space-y-3">
                     <div className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
+                      <div className="w-2 h-2 bg-[#00d992] rounded-full mt-2" />
                       <div>
-                        <span className="text-blue-400 text-sm font-medium">
+                        <span className="text-[#00d992] text-sm font-medium">
                           Get API Key:
                         </span>
-                        <p className="text-gray-300 text-sm mt-1">
+                        <p className="text-gray-300 text-sm mt-1 mb-0">
                           Visit{" "}
                           <a
                             href="https://platform.openai.com/api-keys"
                             target="_blank"
                             rel="noreferrer"
-                            className="text-blue-400 hover:underline"
+                            className="text-[#00d992] hover:underline"
                           >
                             platform.openai.com/api-keys
                           </a>{" "}
@@ -217,12 +217,12 @@ export default function TutorialIntroduction() {
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-green-400 rounded-full mt-2" />
+                      <div className="w-2 h-2 bg-[#00d992] rounded-full mt-2" />
                       <div>
-                        <span className="text-green-400 text-sm font-medium mr-2">
+                        <span className="text-[#00d992] text-sm font-medium mr-2">
                           Add to .env:
                         </span>
-                        <code className="text-orange-400 text-sm">
+                        <code className="text-[#00d992] text-sm">
                           OPENAI_API_KEY=sk-your-key-here
                         </code>
                       </div>
@@ -266,7 +266,7 @@ export default function TutorialIntroduction() {
                       [VoltAgent] All packages are up to date
                     </div>
                   </div>
-                  <p className="text-gray-400 text-sm mt-3">
+                  <p className="text-gray-400 text-sm mt-3 mb-0">
                     Click the{" "}
                     <a
                       href="https://console.voltagent.dev"
@@ -285,7 +285,7 @@ export default function TutorialIntroduction() {
         </div>
 
         {/* Demo GIF */}
-        <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+        <div className="bg-gray-800/50 rounded-lg p-6 border-solid border-gray-700">
           <h3 className="text-xl font-semibold text-white mb-4">
             See VoltOps in Action
           </h3>
@@ -450,7 +450,7 @@ new VoltAgent({
 
           <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
             <h4 className="text-[#00d992] font-semibold mb-2">The Result</h4>
-            <p className="text-gray-300">
+            <p className="text-gray-300 mb-0">
               In just 10 lines of code, you've created a production-ready AI
               agent with monitoring, debugging, and a web interface. That's the
               power of VoltAgent - less boilerplate, more building.

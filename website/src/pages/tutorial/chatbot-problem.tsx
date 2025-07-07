@@ -26,7 +26,7 @@ export default function ChatbotProblemTutorial() {
           </p>
 
           <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-            <h3 className="text-xl font-semibold text-red-300 mb-4">
+            <h3 className="text-xl font-semibold text-red-500 mb-4">
               Try Asking Your Agent:
             </h3>
             <div className="space-y-3">
@@ -55,7 +55,7 @@ export default function ChatbotProblemTutorial() {
                 </span>
               </div>
             </div>
-            <p className="text-red-300 mt-4 font-medium">
+            <p className="text-red-500 mt-4 mb-0 font-medium">
               Response: "I'm sorry, I can't actually do that for you..."
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function ChatbotProblemTutorial() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-solid border-gray-700">
               <h4 className="text-white font-semibold mb-3">
                 What Users Want:
               </h4>
@@ -89,8 +89,8 @@ export default function ChatbotProblemTutorial() {
               </div>
             </div>
 
-            <div className="bg-red-900/20 p-6 rounded-lg border border-red-500/30">
-              <h4 className="text-red-300 font-semibold mb-3">
+            <div className="bg-gray-800/50 p-6 rounded-lg border-solid border-red-500">
+              <h4 className="text-red-500 font-semibold mb-3">
                 What Your Agent Says:
               </h4>
               <div className="space-y-2 text-sm">
@@ -113,11 +113,11 @@ export default function ChatbotProblemTutorial() {
             </div>
           </div>
 
-          <div className="bg-orange-500/10 border-solid border border-orange-500/20 rounded-lg p-6">
+          <div className="bg-gray-800/50 border-solid  border-orange-500 rounded-lg p-6">
             <h4 className="text-orange-400 font-semibold mb-2">
               The Reality Check
             </h4>
-            <p className="text-sm md:text-base text-gray-300">
+            <p className="text-sm md:text-base text-gray-300 mb-0">
               After a week, users stop using your "AI assistant" because it's
               just a fancy search engine that can't actually assist with
               anything. Sound familiar?
@@ -297,15 +297,15 @@ new VoltAgent({
             Now let's test your tool-powered agent in the VoltOps console.
           </p>
 
-          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-6">
+          <div className="bg-gray-800/50 border-solid border border-[#00d992]/20 rounded-lg p-6">
             <h3 className="text-xl font-semibold text-[#00d992] mb-4">
               Step-by-Step Testing
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-4">
-                <span className="text-[#00d992] font-mono font-bold text-lg">
-                  1.
-                </span>
+                <div className="flex-shrink-0 w-8 h-8 bg-[#00d992] rounded-full flex items-center justify-center">
+                  <span className="text-[#1d1d1d] font-bold text-sm">1</span>
+                </div>
                 <div>
                   <p className="text-gray-300 mb-2">
                     Update your code with the tool (above) and save the file
@@ -316,9 +316,9 @@ new VoltAgent({
                 </div>
               </div>
               <div className="flex items-start space-x-4">
-                <span className="text-[#00d992] font-mono font-bold text-lg">
-                  2.
-                </span>
+                <div className="flex-shrink-0 w-8 h-8 bg-[#00d992] rounded-full flex items-center justify-center">
+                  <span className="text-[#1d1d1d] font-bold text-sm">2</span>
+                </div>
                 <div>
                   <p className="text-gray-300 mb-2">
                     Go back to VoltOps Console:
@@ -334,26 +334,26 @@ new VoltAgent({
                 </div>
               </div>
               <div className="flex items-start space-x-4">
-                <span className="text-[#00d992] font-mono font-bold text-lg">
-                  3.
-                </span>
+                <div className="flex-shrink-0 w-8 h-8 bg-[#00d992] rounded-full flex items-center justify-center">
+                  <span className="text-[#1d1d1d] font-bold text-sm">3</span>
+                </div>
                 <div>
                   <p className="text-gray-300 mb-2">
                     Try these inputs to see your tool in action:
                   </p>
-                  <div className="bg-gray-800 rounded-lg p-4 space-y-2">
-                    <div className="bg-gray-900 rounded p-2">
-                      <code className="p-3 text-blue-400">
+                  <div className="bg-gray-800 my-2 flex flex-col items-start rounded-lg  ">
+                    <div className="rounded p-2 my-2">
+                      <code className="p-3 text-gray-300">
                         "What's the weather in New York?"
                       </code>
                     </div>
-                    <div className="bg-gray-900 rounded p-2">
-                      <code className="p-3 text-blue-400">
+                    <div className="rounded p-2 my-2">
+                      <code className="p-3 text-gray-300">
                         "Check weather in San Francisco"
                       </code>
                     </div>
-                    <div className="bg-gray-900 rounded p-2">
-                      <code className="p-3 text-blue-400">
+                    <div className="rounded p-2 my-2">
+                      <code className="p-3 text-gray-300">
                         "Is it sunny in Tokyo?"
                       </code>
                     </div>
@@ -383,7 +383,7 @@ new VoltAgent({
             </p>
           </div>
 
-          <div className="bg-blue-500/10 border-solid border border-blue-500/20 rounded-lg p-6">
+          <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-6">
             <h4 className="text-blue-400 font-semibold mb-2">
               Debug & Monitor
             </h4>
@@ -423,7 +423,7 @@ new VoltAgent({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-300 mb-4">
+              <h3 className="text-xl font-semibold text-red-500 mb-4">
                 Before (Useless Chatbot)
               </h3>
               <div className="space-y-3">
@@ -435,7 +435,7 @@ new VoltAgent({
                 </div>
                 <div className="bg-gray-800 rounded p-3">
                   <div className="text-gray-400 text-sm">Agent:</div>
-                  <div className="text-red-300">
+                  <div className="text-red-500">
                     "I can't check current weather data. Try checking
                     weather.com or your local weather app."
                   </div>
@@ -444,7 +444,7 @@ new VoltAgent({
             </div>
 
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-green-300 mb-4">
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 After (Real Agent)
               </h3>
               <div className="space-y-3">
@@ -456,7 +456,7 @@ new VoltAgent({
                 </div>
                 <div className="bg-gray-800 rounded p-3">
                   <div className="text-gray-400 text-sm">Agent:</div>
-                  <div className="text-green-300">
+                  <div className="text-emerald-500">
                     "Let me check that for you... The current weather in New
                     York is 18°C with partly cloudy conditions."
                   </div>
@@ -467,10 +467,10 @@ new VoltAgent({
 
           <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
             <h4 className="text-[#00d992] font-semibold mb-2">The Magic</h4>
-            <p className="text-gray-300">
+            <p className="text-gray-300 mb-0">
               Your agent now <strong>takes action</strong> instead of giving
               advice. It calls your{" "}
-              <span className="text-[#00d992] font-mono">get_weather</span>{" "}
+              <code className="text-[#00d992] font-mono">get_weather</code>{" "}
               function automatically and provides real data. This is the power
               of tools.
             </p>

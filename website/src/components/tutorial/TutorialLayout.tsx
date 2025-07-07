@@ -96,7 +96,7 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
                 {prevStepUrl && (
                   <Link
                     to={prevStepUrl}
-                    className="inline-flex items-center px-6 py-3 text-sm font-medium text-[#cbd5e0] bg-[#2d3748] border border-[#4a5568] rounded-lg hover:bg-[#4a5568] hover:text-[#f7fafc] transition-colors shadow-sm"
+                    className="inline-flex items-center px-6 py-3 text-sm font-medium  no-underline text-[#cbd5e0]/80 bg-[#2d3748]/50 border-solid border-[#4a5568]/50 rounded-lg hover:bg-[#4a5568] hover:text-[#f7fafc] transition-colors shadow-sm"
                   >
                     <ChevronLeftIcon className="w-4 h-4 mr-2" />
                     Previous

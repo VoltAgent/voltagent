@@ -26,30 +26,30 @@ export default function TutorialMemory() {
           </p>
 
           <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-            <h3 className="text-xl font-semibold text-red-300 mb-4">
+            <h3 className="text-xl font-semibold text-red-500 mb-4">
               Without Memory, Your Agent:
             </h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <span className="text-red-400">•</span>
+                <span className="text-red-500">•</span>
                 <span className="text-gray-300">
                   Always says "Hello, how can I help?" even to returning users
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-red-400">•</span>
+                <span className="text-red-500">•</span>
                 <span className="text-gray-300">
                   Forgets what you asked 5 minutes ago
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-red-400">•</span>
+                <span className="text-red-500">•</span>
                 <span className="text-gray-300">
                   Can't remember user preferences or details
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-red-400">•</span>
+                <span className="text-red-500">•</span>
                 <span className="text-gray-300">
                   Feels robotic and unnatural
                 </span>
@@ -57,23 +57,25 @@ export default function TutorialMemory() {
             </div>
           </div>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-            <h4 className="text-white font-semibold mb-3">Real Example</h4>
+          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border-gray-700">
+            <h4 className="text-white text-xl font-semibold mb-3">
+              Real Example
+            </h4>
             <div className="space-y-3">
-              <div className="bg-blue-900/20 p-3 rounded border-l-4 border-blue-400">
+              <div className=" p-3 rounded border-l-2 border-solid border-0 border-blue-400">
                 <strong className="text-blue-400">User:</strong> "Hi, my name is
                 John."
               </div>
-              <div className="bg-green-900/20 p-3 rounded border-l-4 border-green-400">
+              <div className=" p-3 rounded border-l-2 border-solid border-0 border-green-400">
                 <strong className="text-green-400">Agent:</strong> "Hello John!
                 How can I help you?"
               </div>
-              <div className="bg-blue-900/20 p-3 rounded border-l-4 border-blue-400">
+              <div className=" p-3 rounded border-l-2 border-solid border-0 border-blue-400">
                 <strong className="text-blue-400">User:</strong> "What's my
                 name?"
               </div>
-              <div className="bg-red-900/20 p-3 rounded border-l-4 border-red-400">
-                <strong className="text-red-400">Agent (No Memory):</strong> "I
+              <div className="p-3 rounded border-l-2 border-solid border-0 border-red-500">
+                <strong className="text-red-500">Agent (No Memory):</strong> "I
                 don't know your name."
               </div>
             </div>
@@ -97,13 +99,13 @@ export default function TutorialMemory() {
             </h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <span className="text-[#00d992] mt-1">•</span>
+                <span className="text-[#00d992] ">•</span>
                 <span className="text-gray-300">
                   Memory is enabled by default when you create an agent
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-[#00d992] mt-1">•</span>
+                <span className="text-[#00d992] ">•</span>
                 <span className="text-gray-300">
                   Creates{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded">
@@ -113,13 +115,13 @@ export default function TutorialMemory() {
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-[#00d992] mt-1">•</span>
+                <span className="text-[#00d992] ">•</span>
                 <span className="text-gray-300">
                   Conversation history is automatically saved
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-yellow-400 mt-1">!</span>
+                <span className="text-yellow-400 ">!</span>
                 <span className="text-gray-300">
                   <strong>Requires userId to function properly</strong>
                 </span>
@@ -127,11 +129,13 @@ export default function TutorialMemory() {
             </div>
           </div>
 
-          <div className="bg-yellow-900/20 border-solid border border-yellow-500/30 rounded-lg p-6">
+          <div className="bg-gray-800/50 border-solid border border-yellow-500 rounded-lg p-6">
             <h4 className="text-yellow-300 font-semibold mb-3">
-              Critical: userId Required for Memory
+              Critical:{" "}
+              <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
+              Required for Memory
             </h4>
-            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+            <p className="text-sm mb-0 md:text-base text-gray-300 leading-relaxed">
               Without a{" "}
               <code className="bg-gray-800 px-2 py-1 rounded">userId</code>,
               your agent can't properly isolate and store conversations. This is
@@ -151,13 +155,13 @@ export default function TutorialMemory() {
           </p>
 
           {/* VoltOps Testing */}
-          <div className="bg-blue-900/20 border-solid border border-blue-500/30 rounded-lg p-6">
+          <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-6">
             <h4 className="text-blue-300 font-semibold mb-3">
               Testing with VoltOps Console
             </h4>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">1.</span>
+                <span className="text-blue-400">1.</span>
                 <span className="text-gray-300">
                   Go to{" "}
                   <a
@@ -171,14 +175,14 @@ export default function TutorialMemory() {
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">2.</span>
+                <span className="text-blue-400">2.</span>
                 <span className="text-gray-300">
                   Click the <strong>Settings icon</strong> (gear) in the chat
                   interface
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">3.</span>
+                <span className="text-blue-400">3.</span>
                 <span className="text-gray-300">
                   Set{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
@@ -189,7 +193,7 @@ export default function TutorialMemory() {
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">4.</span>
+                <span className="text-blue-400">4.</span>
                 <span className="text-gray-300">
                   Set{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded">
@@ -202,7 +206,7 @@ export default function TutorialMemory() {
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">5.</span>
+                <span className="text-blue-400">5.</span>
                 <span className="text-gray-300">
                   Now test the conversation below!
                 </span>
@@ -211,7 +215,7 @@ export default function TutorialMemory() {
           </div>
 
           {/* Memory Demo GIF */}
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
             <h4 className="text-white font-semibold mb-3">
               See Memory in Action
             </h4>
@@ -226,7 +230,7 @@ export default function TutorialMemory() {
                 className="w-full h-auto"
               />
             </div>
-            <p className="text-gray-400 text-sm mt-3 text-center">
+            <p className="text-gray-400 text-sm mt-3 mb-0 text-center">
               Memory working: Agent remembers the user's name across messages
             </p>
           </div>
@@ -236,27 +240,27 @@ export default function TutorialMemory() {
               Test Scenario (with userId set)
             </h4>
             <div className="space-y-3">
-              <div className="bg-blue-900/20 p-3 rounded border-l-4 border-blue-400">
+              <div className="p-3 rounded border-l-2 border-solid border-0 border-blue-400">
                 <strong className="text-blue-400">1st Message:</strong> "Hi, my
                 name is Sarah."
               </div>
-              <div className="bg-green-900/20 p-3 rounded border-l-4 border-green-400">
+              <div className="p-3 rounded border-l-2 border-solid border-0 border-green-400">
                 <strong className="text-green-400">Agent:</strong> "Hello Sarah!
                 How can I help you?"
               </div>
-              <div className="bg-blue-900/20 p-3 rounded border-l-4 border-blue-400">
+              <div className="p-3 rounded border-l-2 border-solid border-0 border-blue-400">
                 <strong className="text-blue-400">2nd Message:</strong> "What's
                 the weather in London today?"
               </div>
-              <div className="bg-green-900/20 p-3 rounded border-l-4 border-green-400">
+              <div className=" p-3 rounded border-l-2 border-solid border-0 border-green-400">
                 <strong className="text-green-400">Agent:</strong> "Checking
                 London weather for you..."
               </div>
-              <div className="bg-blue-900/20 p-3 rounded border-l-4 border-blue-400">
+              <div className="p-3 rounded border-l-2 border-solid border-0 border-blue-400">
                 <strong className="text-blue-400">3rd Message:</strong> "What's
                 my name again?"
               </div>
-              <div className="bg-green-900/20 p-3 rounded border-l-4 border-green-400">
+              <div className=" p-3 rounded border-l-2 border-solid border-0 border-green-400">
                 <strong className="text-green-400">Agent (with memory):</strong>{" "}
                 "Your name is Sarah!"
               </div>
@@ -267,7 +271,7 @@ export default function TutorialMemory() {
             <h4 className="text-[#00d992] font-semibold mb-2">
               The Power of Proper Memory Setup!
             </h4>
-            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+            <p className="text-sm md:text-base mb-0 text-gray-300 leading-relaxed">
               With the correct userId and conversationId, your agent now
               remembers previous conversations and provides a natural,
               contextual experience. This transforms user experience from
@@ -289,32 +293,32 @@ export default function TutorialMemory() {
               conversationId
             </code>{" "}
             to keep them separate.
-            <strong className="text-[#00d992]">
+            <strong className="text-emerald-500">
               {" "}
               userId is mandatory for proper memory functionality.
             </strong>
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-blue-900/20 border-solid border border-blue-500/30 rounded-lg p-6">
+            <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-blue-300 mb-4">
                 userId
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-blue-400 mt-1">•</span>
+                  <span className="text-blue-400 ">•</span>
                   <span className="text-gray-300">
                     Unique identifier for each user
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-blue-400 mt-1">•</span>
+                  <span className="text-blue-400 ">•</span>
                   <span className="text-gray-300">
                     Users can't see each other's conversations
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-blue-400 mt-1">•</span>
+                  <span className="text-blue-400 ">•</span>
                   <span className="text-gray-300">
                     Example: "user-123", "john@email.com"
                   </span>
@@ -323,24 +327,24 @@ export default function TutorialMemory() {
             </div>
 
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-green-300 mb-4">
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 conversationId
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 ">•</span>
+                  <span className="text-emerald-400 ">•</span>
                   <span className="text-gray-300">
                     Unique identifier for each conversation thread
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 ">•</span>
+                  <span className="text-emerald-400 ">•</span>
                   <span className="text-gray-300">
                     Users can have multiple conversations
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 ">•</span>
+                  <span className="text-emerald-400 ">•</span>
                   <span className="text-gray-300">
                     Example: "support-case-456", "chat-xyz"
                   </span>
@@ -394,47 +398,47 @@ const response4 = await agent.generateText("Let's talk about something new.", {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 LibSQLStorage (Default)
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-[#00d992] mt-1">•</span>
+                  <span className="text-[#00d992] ">•</span>
                   <span className="text-gray-300">Used automatically</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-[#00d992] mt-1">•</span>
+                  <span className="text-[#00d992] ">•</span>
                   <span className="text-gray-300">Local SQLite file</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-[#00d992] mt-1">•</span>
+                  <span className="text-[#00d992] ">•</span>
                   <span className="text-gray-300">Turso support</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-[#00d992] mt-1">•</span>
+                  <span className="text-[#00d992] ">•</span>
                   <span className="text-gray-300">Perfect for development</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 InMemoryStorage
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-yellow-400 mt-1">•</span>
+                  <span className="text-yellow-400 ">•</span>
                   <span className="text-gray-300">Very fast</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-yellow-400 mt-1">•</span>
+                  <span className="text-yellow-400 ">•</span>
                   <span className="text-gray-300">
                     Ideal for testing and development
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400">!</span>
+                  <span className="text-red-500">!</span>
                   <span className="text-gray-300">
                     Data lost when app restarts
                   </span>
@@ -442,27 +446,27 @@ const response4 = await agent.generateText("Let's talk about something new.", {
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 PostgreSQL
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-purple-400 mt-1">•</span>
+                  <span className="text-purple-400 ">•</span>
                   <span className="text-gray-300">Enterprise-grade</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-purple-400 mt-1">•</span>
+                  <span className="text-purple-400 ">•</span>
                   <span className="text-gray-300">Complex queries</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-purple-400 mt-1">•</span>
+                  <span className="text-purple-400 ">•</span>
                   <span className="text-gray-300">Perfect for production</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Supabase
               </h3>
@@ -547,28 +551,28 @@ const productionAgent = new Agent({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-green-300 mb-4">
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 Do This
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 ">•</span>
+                  <span className="text-emerald-400 ">•</span>
                   <span className="text-gray-300">
                     Always use userId and conversationId
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 ">•</span>
+                  <span className="text-emerald-400 ">•</span>
                   <span className="text-gray-300">Consider user privacy</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 ">•</span>
+                  <span className="text-emerald-400 ">•</span>
                   <span className="text-gray-300">
                     Use PostgreSQL/Supabase in production
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-green-400 ">•</span>
+                  <span className="text-emerald-400 ">•</span>
                   <span className="text-gray-300">
                     Use InMemory for testing
                   </span>
@@ -577,30 +581,30 @@ const productionAgent = new Agent({
             </div>
 
             <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-300 mb-4">
+              <h3 className="text-xl font-semibold text-red-500 mb-4">
                 Don't Do This
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400">•</span>
+                  <span className="text-red-500">•</span>
                   <span className="text-gray-300">
                     Don't ignore memory limits
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400">•</span>
+                  <span className="text-red-500">•</span>
                   <span className="text-gray-300">
                     Don't log sensitive information
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400">•</span>
+                  <span className="text-red-500">•</span>
                   <span className="text-gray-300">
                     Don't forget to handle memory errors
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-red-400">•</span>
+                  <span className="text-red-500">•</span>
                   <span className="text-gray-300">
                     Don't use InMemory in production
                   </span>
@@ -621,13 +625,13 @@ const productionAgent = new Agent({
             conversationId in API calls.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
             <h4 className="text-white font-semibold mb-3">API Server URL</h4>
             <p className="text-sm md:text-base text-gray-300 leading-relaxed">
               Your VoltAgent automatically starts an API server on port 3141 (or
               another available port):
             </p>
-            <div className="bg-black rounded-lg p-4 border border-gray-600 font-mono text-sm">
+            <div className="bg-black rounded-lg p-4 border-solid border border-gray-600 font-mono text-sm">
               <div className="text-green-400">
                 ✓ HTTP Server: http://localhost:3141
               </div>
@@ -717,13 +721,13 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
             </CodeBlock>
           </ColorModeProvider>
 
-          <div className="bg-blue-900/20 border-solid border border-blue-500/30 rounded-lg p-6">
+          <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-6">
             <h4 className="text-blue-300 font-semibold mb-3">
               Key Points for API Usage
             </h4>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">1.</span>
+                <span className="text-blue-400 ">1.</span>
                 <span className="text-gray-300">
                   Always include{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
@@ -733,7 +737,7 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">2.</span>
+                <span className="text-blue-400 ">2.</span>
                 <span className="text-gray-300">
                   Use the same{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
@@ -741,7 +745,7 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">3.</span>
+                <span className="text-blue-400 ">3.</span>
                 <span className="text-gray-300">
                   Use the same{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded">
@@ -751,7 +755,7 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">4.</span>
+                <span className="text-blue-400 ">4.</span>
                 <span className="text-gray-300">
                   Generate new{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded">
@@ -761,7 +765,7 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-blue-400 mt-1">5.</span>
+                <span className="text-blue-400 ">5.</span>
                 <span className="text-gray-300">
                   Check{" "}
                   <a
