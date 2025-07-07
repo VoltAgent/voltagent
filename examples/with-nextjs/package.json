@@ -17,7 +17,7 @@
     "@voltagent/cli": "^0.1.9",
     "@voltagent/core": "^0.1.56",
     "@voltagent/vercel-ai": "^0.1.13",
-    "@voltagent/vercel-ui": "^0.1.4",
+    "@voltagent/vercel-ui": "^0.1.5",
     "ai": "^4.2.11",
     "next": "15.3.1",
     "npm-check-updates": "^17.1.18",

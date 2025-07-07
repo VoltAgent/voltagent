@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/vercel-ui",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "VoltAgent Vercel UI - Vercel UI integration for VoltAgent",
   "license": "MIT",
   "exports": {
