@@ -20,7 +20,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.3.10",
     "@voltagent/cli": "^0.1.9",
-    "@voltagent/core": "^0.1.54",
+    "@voltagent/core": "^0.1.55",
     "@voltagent/vercel-ai": "^0.1.13",
     "@voltagent/voice": "^0.2.1",
     "zod": "3.24.2"

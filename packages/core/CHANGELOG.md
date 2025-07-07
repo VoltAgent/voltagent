@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 0.1.55
+
+### Patch Changes
+
+- [#352](https://github.com/VoltAgent/voltagent/pull/352) [`b7dcded`](https://github.com/VoltAgent/voltagent/commit/b7dcdedfbbdda5bfb1885317b59b4d4e2495c956) Thanks [@alasano](https://github.com/alasano)! - fix(core): store and use userContext from Agent constructor
+
+- [#345](https://github.com/VoltAgent/voltagent/pull/345) [`822739c`](https://github.com/VoltAgent/voltagent/commit/822739c901bbc679cd11dd2c9df99cd041fc40c7) Thanks [@thujee](https://github.com/thujee)! - fix: moves zod from direct to dev dependency to avoid version conflicts in consuming app
+
 ## 0.1.54
 
 ### Patch Changes
