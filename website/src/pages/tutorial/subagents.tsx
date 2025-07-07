@@ -16,62 +16,62 @@ export default function SubagentsTutorial() {
       <div className="space-y-8">
         {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             The Problem: One Agent Can't Do Everything
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             You've built an agent with tools and memory, but as requirements
             grow, you realize one agent trying to do everything becomes a
             nightmare to maintain.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
-              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
+            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Single Agent Problems
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Conflicting instructions
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Too many tools to manage
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Mixed responsibilities
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
-              <h3 className="text-lg md:text-xl font-semibold text-emerald-500 mb-3 md:mb-4">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 Subagent Benefits
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Specialized expertise
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Clean separation of concerns
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Easier to maintain and debug
                   </span>
                 </div>
@@ -82,10 +82,10 @@ export default function SubagentsTutorial() {
 
         {/* Real World Example */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Real-World Example: Customer Support Team
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Let's build a customer support system with specialized agents
             working together.
           </p>
@@ -210,80 +210,80 @@ new VoltAgent({
 
         {/* How It Works */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             How Subagents Work
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             The supervisor agent automatically knows how to use subagents based
             on the conversation context. Here's what happens:
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
-            <h3 className="text-lg md:text-xl font-semibold text-white mb-3 md:mb-4">
+          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               Conversation Flow
             </h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   1
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     Customer:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     "I'm having trouble with my API calls failing"
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   2
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     Supervisor:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     Routes to tech-support agent automatically
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   3
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     Tech Support:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     Uses check_system_status tool and provides technical help
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   4
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     Customer:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     "Thanks! Also, I need to cancel my subscription"
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   5
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     Supervisor:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     Now routes to billing-support agent for the subscription
                     issue
                   </span>
@@ -295,10 +295,10 @@ new VoltAgent({
 
         {/* Advanced Example */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Advanced Example: Content Creation Team
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Let's build a more sophisticated example - a content creation team
             with multiple specialized agents.
           </p>
@@ -432,19 +432,19 @@ new VoltAgent({
 
         {/* Best Practices */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Best Practices for Subagents
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Here are the key principles for designing effective agent teams:
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 Do This
               </h3>
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3 text-xs landing-md:text-landing-sm">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
@@ -476,11 +476,11 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
-              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
+            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Avoid This
               </h3>
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3 text-xs landing-md:text-landing-sm">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
@@ -516,10 +516,10 @@ new VoltAgent({
 
         {/* Testing Your Team */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Testing Your Agent Team
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Once you've built your agent team, test it with realistic scenarios
             to make sure the coordination works smoothly.
           </p>
@@ -572,69 +572,71 @@ testContentTeam();`}
 
         {/* What's Next */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">What's Next?</h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            What's Next?
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Congratulations! You've built a complete AI agent system with:
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4">
+          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               Your Agent Journey
             </h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300">
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
                   <strong>Step 1:</strong> Built your first agent
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300">
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
                   <strong>Step 2:</strong> Added tools to make it useful
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300">
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
                   <strong>Step 3:</strong> Implemented memory for conversations
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300">
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
                   <strong>Step 4:</strong> Connected to external systems with
                   MCP
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300">
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
                   <strong>Step 5:</strong> Created specialized agent teams
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="bg-blue-500/10 border-solid border border-blue-500/20 rounded-lg p-6">
-            <h4 className="text-blue-400 font-semibold mb-2">
+          <div className="bg-blue-500/10 border-solid border border-blue-500/20 rounded-lg p-4 landing-md:p-6">
+            <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
               Ready to Build Something Amazing?
             </h4>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-300 mb-4 text-xs landing-md:text-landing-sm">
               You now have all the tools to build production-ready AI agents.
               Whether you're creating a customer support system, content
               creation team, or something completely new, you're ready to go.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex flex-col landing-md:flex-row gap-3 landing-md:gap-4">
               <a
                 href="/docs"
-                className="inline-flex items-center px-4 py-2 bg-blue-500 no-underline text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-blue-500 no-underline text-white rounded-lg hover:bg-blue-700 transition-colors text-xs landing-md:text-landing-sm justify-center"
               >
                 Read Full Documentation
               </a>
               <a
                 href="https://github.com/voltagent/voltagent"
-                className="inline-flex items-center px-4 py-2 border no-underline border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center px-4 py-2 border no-underline border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-landing-sm justify-center"
               >
                 Star on GitHub
               </a>

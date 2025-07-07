@@ -17,62 +17,62 @@ export default function TutorialMemory() {
       <div className="space-y-8">
         {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             The Problem: Agents with Amnesia
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Your agent can use tools, but every conversation starts from
             scratch. It can't remember previous interactions, learn from past
             conversations, or build context over time.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
-              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
+            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Without Memory
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Asks for the same information repeatedly
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Can't build on previous conversations
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     No user preferences or context
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
-              <h3 className="text-lg md:text-xl font-semibold text-emerald-500 mb-3 md:mb-4">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 With Memory
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Remembers user details and preferences
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Builds context across conversations
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Learns from interactions
                   </span>
                 </div>
@@ -83,10 +83,10 @@ export default function TutorialMemory() {
 
         {/* Types of Memory */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Types of Agent Memory
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Different types of memory serve different purposes. Let's understand
             what each one does:
           </p>
@@ -133,7 +133,7 @@ export default function TutorialMemory() {
               <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
               Required for Memory
             </h4>
-            <p className="text-sm mb-0 md:text-base text-gray-300 leading-relaxed">
+            <p className="text-xs landing-md:text-landing-sm mb-0 text-gray-300 leading-relaxed">
               Without a{" "}
               <code className="bg-gray-800 px-2 py-1 rounded">userId</code>,
               your agent can't properly isolate and store conversations. This is
@@ -144,10 +144,10 @@ export default function TutorialMemory() {
 
         {/* Memory in Action */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Memory in Action: Test Your Agent
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Run your weather agent and test memory functionality. The key is
             setting a userId - without it, memory won't work properly.
           </p>
@@ -280,10 +280,10 @@ export default function TutorialMemory() {
 
         {/* User and Conversation IDs */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             User and Conversation IDs
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             In real applications, you have multiple users and conversations.
             VoltAgent uses{" "}
             <code className="bg-gray-800 px-2 py-1 rounded">userId</code> and{" "}
@@ -297,7 +297,7 @@ export default function TutorialMemory() {
             </strong>
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-blue-300 mb-4">
                 userId
@@ -389,13 +389,15 @@ const response4 = await agent.generateText("Let's talk about something new.", {
 
         {/* Memory Providers */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Memory Options</h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            Memory Options
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             VoltAgent offers different memory types. Choose the one that fits
             your needs.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 LibSQLStorage (Default)
@@ -488,10 +490,10 @@ const response4 = await agent.generateText("Let's talk about something new.", {
 
         {/* Custom Memory Options */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Custom Memory Options
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             If the default memory isn't enough, you can create your own memory
             provider.
           </p>
@@ -542,12 +544,14 @@ const productionAgent = new Agent({
 
         {/* Best Practices */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Best Practices</h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            Best Practices
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Follow these tips to use memory effectively.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
               <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 Do This
@@ -614,10 +618,10 @@ const productionAgent = new Agent({
 
         {/* REST API Usage */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Using Memory via REST API
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             If you're building a web app or mobile app, you'll likely call your
             VoltAgent via REST API. Here's how to properly set userId and
             conversationId in API calls.
@@ -625,11 +629,11 @@ const productionAgent = new Agent({
 
           <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
             <h4 className="text-white font-semibold mb-3">API Server URL</h4>
-            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+            <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
               Your VoltAgent automatically starts an API server on port 3141 (or
               another available port):
             </p>
-            <div className="bg-black rounded-lg p-4 border-solid border border-gray-600 font-mono text-sm">
+            <div className="bg-black rounded-lg p-4 border-solid border border-gray-600 font-mono text-landing-sm">
               <div className="text-green-400">
                 ✓ HTTP Server: http://localhost:3141
               </div>

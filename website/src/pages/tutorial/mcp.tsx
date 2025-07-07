@@ -17,62 +17,62 @@ export default function MCPTutorial() {
       <div className="space-y-8">
         {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             The Problem: Your Agent Lives in a Bubble
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Your agent has memory and tools, but it's still isolated. It can't
             access your GitHub repos, your Slack channels, your databases, or
             any of the systems you actually use.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
-              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
+            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Without MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Build custom integrations for every service
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Manage API keys and authentication
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Write boilerplate for each external tool
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
-              <h3 className="text-lg md:text-xl font-semibold text-emerald-500 mb-3 md:mb-4">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+              <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 With MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Plug-and-play external system access
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Standardized integration protocol
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-sm md:text-base text-gray-300">
+                  <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Ready-made servers for popular services
                   </span>
                 </div>
@@ -83,58 +83,58 @@ export default function MCPTutorial() {
 
         {/* What is MCP */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             What is MCP?
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             <strong>Model Context Protocol (MCP)</strong> is an open standard
             that enables AI models to securely access external data and tools.
             Think of it as USB for AI agents - a universal connector for any
             external system.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
-            <h3 className="text-lg md:text-xl font-semibold text-white mb-3 md:mb-4">
+          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               How MCP Works
             </h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   1
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     MCP Server:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     Provides secure access to external resources (GitHub,
                     databases, APIs, etc.)
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   2
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     MCP Client:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     Your VoltAgent connects to MCP servers to access their
                     resources
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
                   3
                 </div>
                 <div>
-                  <strong className="text-white text-sm md:text-base">
+                  <strong className="text-white text-landing-sm landing-md:text-base">
                     Secure Access:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-sm md:text-base">
+                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
                     All communication is authenticated and controlled by your
                     permissions
                   </span>
@@ -146,10 +146,10 @@ export default function MCPTutorial() {
 
         {/* Real Example */}
         <div className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Real Example: GitHub Integration
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Let's connect your agent to GitHub so it can read your repos, create
             issues, and manage pull requests.
           </p>
@@ -199,13 +199,15 @@ new VoltAgent({
 
         {/* Available MCP Servers */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">Popular MCP Servers</h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            Popular MCP Servers
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             The MCP ecosystem has ready-made servers for popular services. Here
             are some you can use today:
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Development Tools
@@ -338,10 +340,10 @@ new VoltAgent({
 
         {/* Multi-MCP Example */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Advanced Example: DevOps Assistant
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Let's build a DevOps assistant that can access GitHub, AWS, and
             Slack to help manage your infrastructure.
           </p>
@@ -422,7 +424,7 @@ new VoltAgent({
               With this setup, you can ask your agent:{" "}
               <em>"Our website is slow, can you investigate?"</em>
             </p>
-            <div className="text-sm flex flex-col gap-1 text-gray-300">
+            <div className="text-landing-sm flex flex-col gap-1 text-gray-300">
               <span>The agent will automatically:</span>
 
               <span>• Check AWS CloudWatch for performance metrics</span>
@@ -438,10 +440,10 @@ new VoltAgent({
 
         {/* Custom MCP Server */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Building Your Own MCP Server
           </h2>
-          <p className="text-sm md:text-base text-gray-300 mb-0 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 mb-0 leading-relaxed">
             Need to connect to a system that doesn't have an MCP server yet? You
             can build your own in just a few minutes.
           </p>
@@ -595,20 +597,20 @@ const agent = new Agent({
 
         {/* Security & Best Practices */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Security & Best Practices
           </h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             MCP gives your agent powerful access to external systems. Here's how
             to do it safely.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-            <div className="bg-gray-800/50 border-solid border-solid  border-yellow-500 rounded-lg p-6">
+          <div className="grid grid-cols-1 landing-md:grid-cols-1 gap-6">
+            <div className="bg-gray-800/50 border-solid border-yellow-500 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-yellow-500 mb-4">
                 Security Guidelines
               </h3>
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3 text-landing-sm">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
                   <span className="text-gray-300">
@@ -644,8 +646,10 @@ const agent = new Agent({
 
         {/* Next Steps */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">What's Next?</h2>
-          <p className="text-sm md:text-base text-gray-300 leading-relaxed">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            What's Next?
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             You now have an agent that can access external systems through MCP.
             In the final tutorial, we'll learn about subagents - creating teams
             of specialized agents that work together.
@@ -658,7 +662,7 @@ const agent = new Agent({
             <p className="text-gray-300 mb-3">
               Set up the GitHub MCP example above and ask your agent:
             </p>
-            <ul className="text-gray-300 space-y-1 text-sm">
+            <ul className="text-gray-300 space-y-1 text-landing-sm">
               <li>"What repositories do I have?"</li>
               <li>"Show me the latest issues in my main project"</li>
               <li>"Create an issue to add better error handling"</li>

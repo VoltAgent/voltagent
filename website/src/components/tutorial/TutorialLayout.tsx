@@ -50,7 +50,7 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
         <TutorialNavbar currentStep={currentStep} totalSteps={totalSteps} />
 
         {/* Main Content - Centered Single Column */}
-        <div className="pt-20 md:pt-24">
+        <div className="pt-28 landing-md:pt-24">
           <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-8">
             {/* Header Section */}
             <div className="mb-8 md:mb-12">
@@ -125,7 +125,7 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
         <div className="fixed bottom-6 md:bottom-8 right-4 md:right-8 z-40">
           <button
             type="button"
-            className="w-10 h-10 md:w-12 md:h-12 bg-[#2d3748] rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-[#cbd5e0] hover:text-[#00d992] border border-[#4a5568]"
+            className="w-10 cursor-pointer h-10 md:w-12 md:h-12 bg-[#2d3748] rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-[#cbd5e0] hover:text-[#00d992] border border-[#4a5568]"
             aria-label="Help"
           >
             <QuestionMarkCircleIcon className="w-4 h-4 md:w-5 md:h-5" />
