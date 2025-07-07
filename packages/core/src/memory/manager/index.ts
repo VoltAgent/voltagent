@@ -64,12 +64,7 @@ export class MemoryManager {
   /**
    * Creates a new MemoryManager
    */
-  constructor(
-    resourceId: string,
-    memory?: Memory | false,
-    options: MemoryOptions = {},
-    historyMemory?: Memory,
-  ) {
+  constructor(resourceId: string, memory?: Memory | false, options: MemoryOptions = {}) {
     this.resourceId = resourceId;
 
     // Create base memory configuration
@@ -78,20 +73,17 @@ export class MemoryManager {
       ...options,
     };
 
-    // Handle conversation memory
     if (memory === false) {
-      // Conversation memory explicitly disabled
       this.conversationMemory = undefined;
+      // History Memory is always available so default to LibSQLStorage
+      this.historyMemory = new LibSQLStorage(baseMemoryConfig);
     } else if (memory) {
-      // Use provided memory instance for conversations
       this.conversationMemory = memory;
+      this.historyMemory = memory;
     } else {
-      // Create default memory for conversations if not provided or disabled
       this.conversationMemory = new LibSQLStorage(baseMemoryConfig);
+      this.historyMemory = new LibSQLStorage(baseMemoryConfig);
     }
-
-    // History storage is always available (uses same database file or provided instance)
-    this.historyMemory = historyMemory || new LibSQLStorage(baseMemoryConfig);
 
     this.options = options;
 
