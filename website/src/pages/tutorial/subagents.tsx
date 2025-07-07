@@ -16,7 +16,7 @@ export default function SubagentsTutorial() {
       <div className="space-y-8">
         {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
             The Problem: One Agent Can't Do Everything
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
@@ -25,49 +25,53 @@ export default function SubagentsTutorial() {
             nightmare to maintain.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-500 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
                 Single Agent Problems
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Conflicting instructions
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Too many tools to manage
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">Mixed responsibilities</span>
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Mixed responsibilities
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-emerald-500 mb-3 md:mb-4">
                 Subagent Benefits
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">Specialized expertise</span>
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Specialized expertise
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Clean separation of concerns
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Easier to maintain and debug
                   </span>
                 </div>
@@ -78,7 +82,7 @@ export default function SubagentsTutorial() {
 
         {/* Real World Example */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
             Real-World Example: Customer Support Team
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
@@ -206,68 +210,80 @@ new VoltAgent({
 
         {/* How It Works */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">How Subagents Work</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            How Subagents Work
+          </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             The supervisor agent automatically knows how to use subagents based
             on the conversation context. Here's what happens:
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4">
+          <div className="bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+            <h3 className="text-lg md:text-xl font-semibold text-white mb-3 md:mb-4">
               Conversation Flow
             </h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   1
                 </div>
                 <div>
-                  <strong className="text-white">Customer:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    Customer:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     "I'm having trouble with my API calls failing"
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   2
                 </div>
                 <div>
-                  <strong className="text-white">Supervisor:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    Supervisor:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     Routes to tech-support agent automatically
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   3
                 </div>
                 <div>
-                  <strong className="text-white">Tech Support:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    Tech Support:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     Uses check_system_status tool and provides technical help
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   4
                 </div>
                 <div>
-                  <strong className="text-white">Customer:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    Customer:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     "Thanks! Also, I need to cancel my subscription"
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   5
                 </div>
                 <div>
-                  <strong className="text-white">Supervisor:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    Supervisor:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     Now routes to billing-support agent for the subscription
                     issue
                   </span>
@@ -279,7 +295,7 @@ new VoltAgent({
 
         {/* Advanced Example */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
             Advanced Example: Content Creation Team
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
@@ -460,26 +476,38 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-500 mb-4">
+            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
                 Avoid This
               </h3>
               <div className="space-y-3 text-sm">
-                <div className="text-gray-300">
-                  <strong>Overlapping Roles:</strong> Agents with similar or
-                  conflicting jobs
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Overlapping Roles:</strong> Agents with similar or
+                    conflicting jobs
+                  </span>
                 </div>
-                <div className="text-gray-300">
-                  <strong>Too Many Layers:</strong> Agents managing other agents
-                  managing agents
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Too Many Layers:</strong> Agents managing other
+                    agents managing agents
+                  </span>
                 </div>
-                <div className="text-gray-300">
-                  <strong>Circular Dependencies:</strong> Agents that depend on
-                  each other
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Circular Dependencies:</strong> Agents that depend
+                    on each other
+                  </span>
                 </div>
-                <div className="text-gray-300">
-                  <strong>Generic Agents:</strong> Agents that try to do
-                  everything
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Generic Agents:</strong> Agents that try to do
+                    everything
+                  </span>
                 </div>
               </div>
             </div>

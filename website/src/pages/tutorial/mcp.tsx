@@ -17,7 +17,7 @@ export default function MCPTutorial() {
       <div className="space-y-8">
         {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
             The Problem: Your Agent Lives in a Bubble
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
@@ -26,53 +26,53 @@ export default function MCPTutorial() {
             any of the systems you actually use.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-500 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
                 Without MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Build custom integrations for every service
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Manage API keys and authentication
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Write boilerplate for each external tool
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-emerald-500 mb-3 md:mb-4">
                 With MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Plug-and-play external system access
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Standardized integration protocol
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
                     Ready-made servers for popular services
                   </span>
                 </div>
@@ -83,7 +83,9 @@ export default function MCPTutorial() {
 
         {/* What is MCP */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">What is MCP?</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            What is MCP?
+          </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
             <strong>Model Context Protocol (MCP)</strong> is an open standard
             that enables AI models to securely access external data and tools.
@@ -91,42 +93,48 @@ export default function MCPTutorial() {
             external system.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4">
+          <div className="bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+            <h3 className="text-lg md:text-xl font-semibold text-white mb-3 md:mb-4">
               How MCP Works
             </h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-blue-500  rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   1
                 </div>
                 <div>
-                  <strong className="text-white">MCP Server:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    MCP Server:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     Provides secure access to external resources (GitHub,
                     databases, APIs, etc.)
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   2
                 </div>
                 <div>
-                  <strong className="text-white">MCP Client:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    MCP Client:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     Your VoltAgent connects to MCP servers to access their
                     resources
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                   3
                 </div>
                 <div>
-                  <strong className="text-white">Secure Access:</strong>
-                  <span className="text-gray-300 ml-2">
+                  <strong className="text-white text-sm md:text-base">
+                    Secure Access:
+                  </strong>
+                  <span className="text-gray-300 ml-2 text-sm md:text-base">
                     All communication is authenticated and controlled by your
                     permissions
                   </span>
@@ -138,7 +146,7 @@ export default function MCPTutorial() {
 
         {/* Real Example */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
             Real Example: GitHub Integration
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">

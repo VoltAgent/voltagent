@@ -2,6 +2,7 @@ import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 export default function TutorialMemory() {
   return (
@@ -14,83 +15,80 @@ export default function TutorialMemory() {
       prevStepUrl="/tutorial/chatbot-problem"
     >
       <div className="space-y-8">
-        {/* The Problem: Forgetful Agents */}
+        {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
-            The Problem: Your Agent Has Amnesia
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            The Problem: Agents with Amnesia
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-            Your weather agent works, but there's a massive problem: it forgets
-            everything after each conversation. It's like talking to someone
-            with short-term memory loss.
+            Your agent can use tools, but every conversation starts from
+            scratch. It can't remember previous interactions, learn from past
+            conversations, or build context over time.
           </p>
 
-          <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-            <h3 className="text-xl font-semibold text-red-500 mb-4">
-              Without Memory, Your Agent:
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <span className="text-red-500">•</span>
-                <span className="text-gray-300">
-                  Always says "Hello, how can I help?" even to returning users
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-red-500">•</span>
-                <span className="text-gray-300">
-                  Forgets what you asked 5 minutes ago
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-red-500">•</span>
-                <span className="text-gray-300">
-                  Can't remember user preferences or details
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-red-500">•</span>
-                <span className="text-gray-300">
-                  Feels robotic and unnatural
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
+                Without Memory
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Asks for the same information repeatedly
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Can't build on previous conversations
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    No user preferences or context
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border-gray-700">
-            <h4 className="text-white text-xl font-semibold mb-3">
-              Real Example
-            </h4>
-            <div className="space-y-3">
-              <div className=" p-3 rounded border-l-2 border-solid border-0 border-blue-400">
-                <strong className="text-blue-400">User:</strong> "Hi, my name is
-                John."
-              </div>
-              <div className=" p-3 rounded border-l-2 border-solid border-0 border-green-400">
-                <strong className="text-green-400">Agent:</strong> "Hello John!
-                How can I help you?"
-              </div>
-              <div className=" p-3 rounded border-l-2 border-solid border-0 border-blue-400">
-                <strong className="text-blue-400">User:</strong> "What's my
-                name?"
-              </div>
-              <div className="p-3 rounded border-l-2 border-solid border-0 border-red-500">
-                <strong className="text-red-500">Agent (No Memory):</strong> "I
-                don't know your name."
+            <div className="border-solid border-emerald-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-emerald-500 mb-3 md:mb-4">
+                With Memory
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Remembers user details and preferences
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Builds context across conversations
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Learns from interactions
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Solution: Memory */}
+        {/* Types of Memory */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
-            The Solution: Memory System
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Types of Agent Memory
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-            VoltAgent has a built-in memory system that makes your agents
-            remember conversations. But there's one crucial thing:{" "}
-            <strong>memory only works when you provide a userId</strong>.
+            Different types of memory serve different purposes. Let's understand
+            what each one does:
           </p>
 
           <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">

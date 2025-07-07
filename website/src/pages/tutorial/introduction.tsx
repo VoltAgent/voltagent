@@ -2,18 +2,35 @@ import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
-import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  CheckIcon,
+  XMarkIcon,
+  BoltIcon,
+  DocumentTextIcon,
+  ServerIcon,
+} from "@heroicons/react/24/outline";
 
 export default function TutorialIntroduction() {
   return (
     <TutorialLayout
       currentStep={1}
       totalSteps={5}
-      stepTitle="Why VoltAgent? Your First Agent"
-      stepDescription="Understanding the need for AI agent frameworks and creating your first agent"
+      stepTitle="Introduction: Build AI Agents That Actually Work"
+      stepDescription="Learn the fundamentals of creating production-ready AI agents"
       nextStepUrl="/tutorial/chatbot-problem"
     >
       <div className="space-y-8">
+        {/* Hero Section */}
+        <div className="text-center space-y-6">
+          <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+            Build AI Agents That Actually Work
+          </h1>
+          <p className="text-base md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Learn to create production-ready AI agents with tools, memory, and
+            real-world integrations. No fluff, just working code.
+          </p>
+        </div>
+
         {/* Why Do You Need VoltAgent? */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">
@@ -501,6 +518,192 @@ new VoltAgent({
                 <span className="text-gray-300">Live code updates</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Learning Path */}
+        <div className="space-y-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-white text-center">
+            Your Learning Journey
+          </h2>
+          <p className="text-sm md:text-base text-gray-300 text-center leading-relaxed">
+            We'll build your agent step by step, each tutorial adding one
+            crucial capability:
+          </p>
+
+          <div className="space-y-4 md:space-y-6">
+            {/* Step 1 */}
+            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm md:text-base font-bold flex-shrink-0">
+                1
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+                  The Chatbot Problem
+                </h3>
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-0">
+                  Why simple chatbots fail and what makes AI agents different.
+                  Learn the fundamental concepts before diving into code.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-sm md:text-base font-bold flex-shrink-0">
+                2
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+                  Tools: Give Your Agent Superpowers
+                </h3>
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-0">
+                  Create custom tools that let your agent actually do things:
+                  send emails, manage databases, call APIs, and more.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm md:text-base font-bold flex-shrink-0">
+                3
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+                  Memory: Remember Every Conversation
+                </h3>
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-0">
+                  Add persistent memory so your agent remembers users, past
+                  conversations, and builds context over time.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 4 */}
+            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm md:text-base font-bold flex-shrink-0">
+                4
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+                  MCP: Connect to Everything
+                </h3>
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-0">
+                  Use Model Context Protocol to connect your agent to GitHub,
+                  Slack, databases, and any external system you need.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 5 */}
+            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center text-white text-sm md:text-base font-bold flex-shrink-0">
+                5
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+                  Subagents: Build Agent Teams
+                </h3>
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-0">
+                  Create specialized agents that work together to handle complex
+                  workflows and enterprise use cases.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Prerequisites */}
+        <div className="space-y-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-white text-center">
+            What You Need to Know
+          </h2>
+          <p className="text-sm md:text-base text-gray-300 text-center leading-relaxed">
+            This tutorial assumes basic familiarity with:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+              <h3 className="text-lg md:text-xl font-semibold text-white mb-3 md:mb-4">
+                Required
+              </h3>
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex items-center space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-[#00d992]" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Basic TypeScript/JavaScript
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-[#00d992]" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Node.js and npm
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-[#00d992]" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Understanding of APIs
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-4 md:p-6 border-solid border border-gray-700">
+              <h3 className="text-lg md:text-xl font-semibold text-white mb-3 md:mb-4">
+                Helpful (But Not Required)
+              </h3>
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-gray-600" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Experience with AI/LLMs
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-gray-600" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Database knowledge
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-gray-600" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    DevOps experience
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Getting Started */}
+        <div className="space-y-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-white text-center">
+            Ready to Start Building?
+          </h2>
+          <p className="text-sm md:text-base text-gray-300 text-center leading-relaxed">
+            Each tutorial builds on the previous one, so we recommend following
+            them in order. You can always jump ahead if you're already familiar
+            with certain concepts.
+          </p>
+
+          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-4 md:p-6 text-center">
+            <h4 className="text-lg md:text-xl text-[#00d992] font-semibold mb-3 md:mb-4">
+              ⚡ Start Building Now
+            </h4>
+            <p className="text-sm md:text-base text-gray-300 mb-4 md:mb-6">
+              Ready to build AI agents that actually work? Let's start with
+              understanding why most chatbots fail and what makes agents
+              different.
+            </p>
+            <a
+              href="/tutorial/chatbot-problem"
+              className="inline-flex items-center px-6 py-3 bg-[#00d992] text-black font-semibold rounded-lg hover:bg-[#00c085] transition-all duration-300 shadow-lg hover:shadow-xl no-underline text-sm md:text-base"
+            >
+              Start Tutorial →
+            </a>
           </div>
         </div>
       </div>

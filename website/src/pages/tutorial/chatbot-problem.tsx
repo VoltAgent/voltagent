@@ -2,6 +2,7 @@ import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 export default function ChatbotProblemTutorial() {
   return (
@@ -16,59 +17,90 @@ export default function ChatbotProblemTutorial() {
       <div className="space-y-8">
         {/* The Problem */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
-            The Problem: Your Agent is Basically a Chatbot
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Why Most Chatbots Fail
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-            Let's be honest - the agent you just built can only chat. It can't{" "}
-            <strong>do</strong> anything useful. It's like hiring a consultant
-            who can only give advice but never take action.
+            You've probably interacted with dozens of chatbots. Most of them are
+            frustrating, limited, and feel like talking to a very sophisticated
+            answering machine. Here's why:
           </p>
 
-          <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-            <h3 className="text-xl font-semibold text-red-500 mb-4">
-              Try Asking Your Agent:
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
-                <span className="text-gray-300">
-                  "What's the weather in New York?"
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
-                <span className="text-gray-300">
-                  "Send an email to my boss"
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
-                <span className="text-gray-300">
-                  "Calculate my monthly expenses"
-                </span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2" />
-                <span className="text-gray-300">
-                  "Create a calendar event for tomorrow"
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="border-solid border-red-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-red-500 mb-3 md:mb-4">
+                Traditional Chatbots
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Pre-scripted responses only
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Can't perform real actions
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    No memory between conversations
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <XMarkIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Break with unexpected inputs
+                  </span>
+                </div>
               </div>
             </div>
-            <p className="text-red-500 mt-4 mb-0 font-medium">
-              Response: "I'm sorry, I can't actually do that for you..."
-            </p>
+
+            <div className="border-solid border-emerald-500 rounded-lg p-4 md:p-6 bg-gray-800/50">
+              <h3 className="text-lg md:text-xl font-semibold text-emerald-500 mb-3 md:mb-4">
+                AI Agents
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Understand context and intent
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Use tools to take real actions
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Remember and learn from interactions
+                  </span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckIcon className="w-4 h-4 md:w-5 md:h-5 text-emerald-500 mt-1" />
+                  <span className="text-sm md:text-base text-gray-300">
+                    Handle complex, multi-step tasks
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Real World Example */}
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-white">
-            Real-World Example: The Useless Assistant
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Real-World Example: Customer Support
           </h2>
           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-            Imagine you're building an AI assistant for your company. What would
-            users actually want?
+            Let's see the difference in action. Imagine a customer needs help
+            with a billing issue:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
