@@ -27,7 +27,7 @@ export default function SubagentsTutorial() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-300 mb-4">
+              <h3 className="text-xl font-semibold text-red-500 mb-4">
                 Single Agent Problems
               </h3>
               <div className="space-y-3">
@@ -51,7 +51,7 @@ export default function SubagentsTutorial() {
             </div>
 
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 Subagent Benefits
               </h3>
               <div className="space-y-3">
@@ -212,12 +212,12 @@ new VoltAgent({
             on the conversation context. Here's what happens:
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
             <h3 className="text-xl font-semibold text-white mb-4">
               Conversation Flow
             </h3>
             <div className="space-y-4">
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                   1
                 </div>
@@ -228,7 +228,7 @@ new VoltAgent({
                   </span>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                   2
                 </div>
@@ -239,7 +239,7 @@ new VoltAgent({
                   </span>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                   3
                 </div>
@@ -250,7 +250,7 @@ new VoltAgent({
                   </span>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                   4
                 </div>
@@ -261,7 +261,7 @@ new VoltAgent({
                   </span>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                   5
                 </div>
@@ -425,33 +425,43 @@ new VoltAgent({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-emerald-300 mb-4">
-                <CheckIcon className="w-5 h-5 text-emerald-500 inline mr-2" />
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 Do This
               </h3>
               <div className="space-y-3 text-sm">
-                <div className="text-gray-300">
-                  <strong>Single Responsibility:</strong> Each agent should have
-                  one clear job
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Single Responsibility:</strong> Each agent should
+                    have one clear job
+                  </span>
                 </div>
-                <div className="text-gray-300">
-                  <strong>Clear Instructions:</strong> Define exactly what each
-                  agent does
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Clear Instructions:</strong> Define exactly what
+                    each agent does
+                  </span>
                 </div>
-                <div className="text-gray-300">
-                  <strong>Proper Tools:</strong> Give agents only the tools they
-                  need
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Proper Tools:</strong> Give agents only the tools
+                    they need
+                  </span>
                 </div>
-                <div className="text-gray-300">
-                  <strong>Logical Hierarchy:</strong> Supervisor coordinates,
-                  specialists execute
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
+                  <span className="text-gray-300">
+                    <strong>Logical Hierarchy:</strong> Supervisor coordinates,
+                    specialists execute
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
-              <h3 className="text-xl font-semibold text-red-300 mb-4">
-                <XMarkIcon className="w-5 h-5 text-red-500 inline mr-2" />
+              <h3 className="text-xl font-semibold text-red-500 mb-4">
                 Avoid This
               </h3>
               <div className="space-y-3 text-sm">
@@ -539,7 +549,7 @@ testContentTeam();`}
             Congratulations! You've built a complete AI agent system with:
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
             <h3 className="text-xl font-semibold text-white mb-4">
               Your Agent Journey
             </h3>
@@ -590,13 +600,13 @@ testContentTeam();`}
             <div className="flex space-x-4">
               <a
                 href="/docs"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-blue-500 no-underline text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Read Full Documentation
               </a>
               <a
                 href="https://github.com/voltagent/voltagent"
-                className="inline-flex items-center px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center px-4 py-2 border no-underline border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
               >
                 Star on GitHub
               </a>
