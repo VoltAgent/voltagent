@@ -49,10 +49,9 @@ VoltAgent is an open-source TypeScript framework for creating and managing AI ag
 ## Try Example
 
 ```bash
-npm create voltagent-app@latest -- --example with-dynamic-prompts
+npm create voltagent-app@latest -- --example with-workflow
 ```
 
 ## More Information
 
-For detailed information about prompt management and VoltOps features, visit:
-[VoltOps Prompt Management Documentation](https://voltagent.dev/docs/agents/prompts/#3-voltops-prompt-management)
+TBD
