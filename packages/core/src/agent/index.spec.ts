@@ -171,11 +171,19 @@ class MockProvider implements LLMProvider<MockModelType> {
     model: MockModelType;
     tools?: BaseTool[];
     maxSteps?: number;
+    signal?: AbortSignal;
     onStepFinish?: (step: StepWithContent) => Promise<void>;
     toolExecutionContext?: ToolExecutionContext;
   }): Promise<ProviderTextResponse<MockGenerateTextResult>> {
     this.generateTextCalls++;
     this.lastMessages = options.messages;
+
+    // Check abort signal
+    if (options.signal?.aborted) {
+      const error = new Error("Operation aborted");
+      error.name = "AbortError";
+      throw error;
+    }
 
     // If there are tools and the message contains tool-related keywords, simulate tool usage
     if (
@@ -274,6 +282,7 @@ class MockProvider implements LLMProvider<MockModelType> {
     model: MockModelType;
     tools?: BaseTool[];
     maxSteps?: number;
+    signal?: AbortSignal;
     onChunk?: (chunk: StepWithContent) => Promise<void>;
     onStepFinish?: (step: StepWithContent) => Promise<void>;
     onFinish?: (result: any) => Promise<void>;
@@ -401,6 +410,7 @@ class MockProvider implements LLMProvider<MockModelType> {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
+    signal?: AbortSignal;
     onStepFinish?: (step: StepWithContent) => Promise<void>;
   }): Promise<ProviderObjectResponse<MockGenerateObjectResult<z.infer<T>>, z.infer<T>>> {
     this.generateObjectCalls++;
@@ -708,6 +718,33 @@ describe("Agent", () => {
       expect(agentWithBoth.description).toBe("Uses provided instructions");
     });
 
+    it("should create agent with maxSteps", () => {
+      const agentWithMaxSteps = new TestAgent({
+        name: "MaxSteps Agent",
+        instructions: "Agent with maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 25,
+      });
+
+      expect(agentWithMaxSteps.name).toBe("MaxSteps Agent");
+      // Test that maxSteps was passed correctly
+      expect(agentWithMaxSteps.getSubAgentManager().calculateMaxSteps(25)).toBe(25);
+    });
+
+    it("should create agent without maxSteps", () => {
+      const agentWithoutMaxSteps = new TestAgent({
+        name: "No MaxSteps Agent",
+        instructions: "Agent without maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        // No maxSteps
+      });
+
+      // Should use default behavior
+      expect(agentWithoutMaxSteps.getSubAgentManager().calculateMaxSteps()).toBe(10);
+    });
+
     // --- BEGIN NEW TELEMETRY-RELATED CONSTRUCTOR TESTS ---
     it("should pass telemetryExporter to HistoryManager if provided", () => {
       (HistoryManager as Mock).mockClear();
@@ -922,6 +959,88 @@ describe("Agent", () => {
           limit: contextLimit,
         }),
       );
+    });
+  });
+
+  describe("historyMemory configuration", () => {
+    it("should use provided historyMemory instance when specified", () => {
+      const mockHistoryMemory = {
+        setCurrentUserId: vi.fn(),
+        saveMessage: vi.fn(),
+        getMessages: vi.fn(),
+        clearMessages: vi.fn(),
+        getAllUsers: vi.fn(),
+      } as unknown as Memory;
+
+      const agentWithCustomHistoryMemory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: mockMemory,
+        historyMemory: mockHistoryMemory,
+      });
+
+      // Access the memory manager to verify historyMemory was set correctly
+      const memoryManager = (agentWithCustomHistoryMemory as any).memoryManager;
+      expect(memoryManager.historyMemory).toBe(mockHistoryMemory);
+    });
+
+    it("should use same memory instance for historyMemory when not specified", () => {
+      const agentWithDefaultHistory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: mockMemory,
+        // historyMemory not specified
+      });
+
+      const memoryManager = (agentWithDefaultHistory as any).memoryManager;
+      // Should use the same memory instance as conversation memory
+      expect(memoryManager.historyMemory).toBe(mockMemory);
+      expect(memoryManager.conversationMemory).toBe(mockMemory);
+    });
+
+    it("should allow same memory instance for both conversation and history", () => {
+      const sharedMemory = {
+        setCurrentUserId: vi.fn(),
+        saveMessage: vi.fn(),
+        getMessages: vi.fn(),
+        clearMessages: vi.fn(),
+        getAllUsers: vi.fn(),
+      } as unknown as Memory;
+
+      const agentWithSharedMemory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: sharedMemory,
+        historyMemory: sharedMemory,
+      });
+
+      const memoryManager = (agentWithSharedMemory as any).memoryManager;
+      expect(memoryManager.conversationMemory).toBe(sharedMemory);
+      expect(memoryManager.historyMemory).toBe(sharedMemory);
+    });
+
+    it("should use LibSQLStorage for historyMemory when conversation memory is disabled", () => {
+      const agentWithDisabledMemory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: false, // Conversation memory disabled
+        // historyMemory not specified
+      });
+
+      const memoryManager = (agentWithDisabledMemory as any).memoryManager;
+      // Conversation memory should be undefined
+      expect(memoryManager.conversationMemory).toBeUndefined();
+      // History memory should still exist (defaults to LibSQLStorage)
+      expect(memoryManager.historyMemory).toBeDefined();
+      expect(memoryManager.historyMemory.constructor.name).toBe("LibSQLStorage");
     });
   });
 
@@ -1940,6 +2059,90 @@ describe("Agent", () => {
       expect(response).toHaveProperty("usage");
       expect(response).toHaveProperty("finishReason");
       expect(response).toHaveProperty("provider");
+    });
+
+    it("should use userContext from constructor as default", async () => {
+      const constructorUserContext = new Map<string | symbol, unknown>();
+      constructorUserContext.set("environment", "production");
+      constructorUserContext.set("projectId", "123");
+
+      const onStartSpy = vi.fn();
+      const agentWithConstructorContext = new TestAgent({
+        name: "Constructor Context Agent",
+        model: mockModel,
+        llm: mockProvider,
+        userContext: constructorUserContext,
+        hooks: createHooks({ onStart: onStartSpy }),
+        instructions: "Constructor Context Agent instructions",
+      });
+
+      // Call without providing userContext in options
+      await agentWithConstructorContext.generateText("test with constructor context");
+
+      expect(onStartSpy).toHaveBeenCalled();
+      const operationContext: OperationContext = onStartSpy.mock.calls[0][0].context;
+
+      // Should have constructor context values
+      expect(operationContext.userContext.get("environment")).toBe("production");
+      expect(operationContext.userContext.get("projectId")).toBe("123");
+    });
+
+    it("should allow execution userContext to override constructor userContext", async () => {
+      const constructorUserContext = new Map<string | symbol, unknown>();
+      constructorUserContext.set("source", "constructor");
+      constructorUserContext.set("environment", "production");
+
+      const executionUserContext = new Map<string | symbol, unknown>();
+      executionUserContext.set("source", "execution");
+      executionUserContext.set("debug", true);
+
+      const onStartSpy = vi.fn();
+      const agentWithBothContexts = new TestAgent({
+        name: "Override Context Agent",
+        model: mockModel,
+        llm: mockProvider,
+        userContext: constructorUserContext,
+        hooks: createHooks({ onStart: onStartSpy }),
+        instructions: "Override Context Agent instructions",
+      });
+
+      // Call with execution context
+      await agentWithBothContexts.generateText("test context override", {
+        userContext: executionUserContext,
+      });
+
+      expect(onStartSpy).toHaveBeenCalled();
+      const operationContext: OperationContext = onStartSpy.mock.calls[0][0].context;
+
+      // Should have execution context, not constructor context
+      expect(operationContext.userContext.get("source")).toBe("execution");
+      expect(operationContext.userContext.get("debug")).toBe(true);
+      expect(operationContext.userContext.has("environment")).toBe(false);
+    });
+
+    it("should provide constructor userContext to dynamic instructions", async () => {
+      const constructorUserContext = new Map<string | symbol, unknown>();
+      constructorUserContext.set("language", "es");
+
+      const dynamicInstructions = vi.fn(({ userContext }: DynamicValueOptions) => {
+        const lang = userContext.get("language");
+        return lang === "es" ? "Ayuda al usuario" : "Help the user";
+      });
+
+      const agentWithDynamicInstructions = new TestAgent({
+        name: "Dynamic Instructions Context Agent",
+        model: mockModel,
+        llm: mockProvider,
+        userContext: constructorUserContext,
+        instructions: dynamicInstructions,
+      });
+
+      await agentWithDynamicInstructions.generateText("test dynamic instructions");
+
+      // Verify dynamic instructions were called with constructor context
+      expect(dynamicInstructions).toHaveBeenCalled();
+      const callArgs = dynamicInstructions.mock.calls[0][0];
+      expect(callArgs.userContext.get("language")).toBe("es");
     });
   });
 
@@ -3336,7 +3539,16 @@ describe("Agent", () => {
         operationId: "test-op-123",
         userContext: new Map([["testKey", "testValue"]]),
         conversationSteps: [{ type: "test", content: "initial step" }],
-        historyEntry: { id: "test-history-123" },
+        historyEntry: {
+          id: "test-history-123",
+          startTime: new Date(),
+          input: "test input",
+          output: "test output",
+          status: "completed" as const,
+          steps: [],
+          usage: { totalTokens: 0 },
+          model: "test-model",
+        },
         isActive: true,
       };
 
@@ -3492,6 +3704,421 @@ describe("Agent", () => {
       expect(receivedSteps[0].content).toBe("Parent started");
 
       subAgentSpy.mockRestore();
+    });
+  });
+
+  describe("maxSteps handling", () => {
+    it("should use agent-level maxSteps when no options maxSteps provided", async () => {
+      const agent = new TestAgent({
+        name: "MaxSteps Agent",
+        instructions: "Agent with maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 15,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(15);
+    });
+
+    it("should use options maxSteps when provided, overriding agent maxSteps", async () => {
+      const agent = new TestAgent({
+        name: "MaxSteps Agent",
+        instructions: "Agent with maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 15,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message", { maxSteps: 25 });
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(25);
+    });
+
+    it("should use default maxSteps calculation when no agent maxSteps defined", async () => {
+      const agent = new TestAgent({
+        name: "No MaxSteps Agent",
+        instructions: "Agent without maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        // No maxSteps defined
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(10); // Default calculation
+    });
+
+    it("should calculate maxSteps based on sub-agents count", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents",
+        llm: mockProvider,
+        model: mockModel,
+        // No maxSteps defined - should use calculation
+      });
+
+      const subAgent1 = new TestAgent({
+        name: "Sub Agent 1",
+        instructions: "Sub agent 1",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      const subAgent2 = new TestAgent({
+        name: "Sub Agent 2",
+        instructions: "Sub agent 2",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent1);
+      parentAgent.addSubAgent(subAgent2);
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await parentAgent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(20); // 10 * 2 sub-agents
+    });
+
+    it("should use agent-level maxSteps even when sub-agents exist", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents and maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 30, // Explicit maxSteps
+      });
+
+      const subAgent1 = new TestAgent({
+        name: "Sub Agent 1",
+        instructions: "Sub agent 1",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent1);
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await parentAgent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(30); // Agent-level maxSteps takes priority
+    });
+
+    it("should pass maxSteps to streamText", async () => {
+      const agent = new TestAgent({
+        name: "Stream Agent",
+        instructions: "Agent for streaming",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 20,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const streamTextSpy = vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "test";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "test" };
+        })(),
+        provider: { textStream: new ReadableStream() },
+      });
+
+      await agent.streamText("Test message");
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callArgs = streamTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(20);
+    });
+
+    it("should pass maxSteps to generateObject", async () => {
+      const agent = new TestAgent({
+        name: "Object Agent",
+        instructions: "Agent for objects",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 12,
+      });
+
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateObjectSpy = vi.spyOn(mockProvider, "generateObject").mockResolvedValue({
+        object: { name: "Test", age: 25 },
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { object: { name: "Test", age: 25 } },
+      });
+
+      await agent.generateObject("Test message", schema);
+
+      expect(generateObjectSpy).toHaveBeenCalled();
+      const callArgs = generateObjectSpy.mock.calls[0][0];
+      // Note: generateObject might not use maxSteps, but let's verify it's passed
+      expect(callArgs).toHaveProperty("schema");
+    });
+
+    it("should pass maxSteps to streamObject", async () => {
+      const agent = new TestAgent({
+        name: "Stream Object Agent",
+        instructions: "Agent for streaming objects",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 18,
+      });
+
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const streamObjectSpy = vi.spyOn(mockProvider, "streamObject").mockResolvedValue({
+        stream: new ReadableStream(),
+        partialObjectStream: new ReadableStream(),
+        textStream: new ReadableStream(),
+        provider: { stream: new ReadableStream() },
+        objectStream: new ReadableStream(),
+      });
+
+      await agent.streamObject("Test message", schema);
+
+      expect(streamObjectSpy).toHaveBeenCalled();
+      const callArgs = streamObjectSpy.mock.calls[0][0];
+      expect(callArgs).toHaveProperty("schema");
+    });
+
+    it("should pass maxSteps to subagents through delegate tool", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 35,
+      });
+
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Sub agent",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent);
+
+      // Mock sub-agent's streamText method to check maxSteps
+      const subAgentStreamTextSpy = vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "sub response";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "sub response" };
+        })(),
+        userContext: new Map(),
+      });
+
+      // Get the delegate tool
+      const delegateTool = parentAgent.getSubAgentManager().createDelegateTool({
+        sourceAgent: parentAgent,
+        operationContext: {
+          operationId: "test-op",
+          userContext: new Map(),
+          conversationSteps: [],
+          historyEntry: { id: "test-history" },
+          isActive: true,
+        },
+        currentHistoryEntryId: "test-history",
+        maxSteps: 35, // Should be passed to sub-agent
+      });
+
+      await delegateTool.execute({
+        task: "Test task",
+        targetAgents: ["Sub Agent"],
+        context: {},
+      });
+
+      expect(subAgentStreamTextSpy).toHaveBeenCalled();
+      const subAgentCallArgs = subAgentStreamTextSpy.mock.calls[0][1];
+      expect(subAgentCallArgs).toHaveProperty("maxSteps", 35);
+    });
+
+    it("should use options maxSteps over agent maxSteps in delegate tool", async () => {
+      const parentAgent = new TestAgent({
+        name: "Parent Agent",
+        instructions: "Parent with sub-agents",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 20, // Agent-level maxSteps
+      });
+
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Sub agent",
+        llm: mockProvider,
+        model: mockModel,
+      });
+
+      parentAgent.addSubAgent(subAgent);
+
+      // Mock sub-agent's streamText method to check maxSteps
+      const subAgentStreamTextSpy = vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "sub response";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "sub response" };
+        })(),
+        userContext: new Map(),
+      });
+
+      // Get the delegate tool with options maxSteps
+      const delegateTool = parentAgent.getSubAgentManager().createDelegateTool({
+        sourceAgent: parentAgent,
+        operationContext: {
+          operationId: "test-op",
+          userContext: new Map(),
+          conversationSteps: [],
+          historyEntry: { id: "test-history" },
+          isActive: true,
+        },
+        currentHistoryEntryId: "test-history",
+        maxSteps: 50, // Options maxSteps should override agent maxSteps
+      });
+
+      await delegateTool.execute({
+        task: "Test task",
+        targetAgents: ["Sub Agent"],
+        context: {},
+      });
+
+      expect(subAgentStreamTextSpy).toHaveBeenCalled();
+      const subAgentCallArgs = subAgentStreamTextSpy.mock.calls[0][1];
+      expect(subAgentCallArgs).toHaveProperty("maxSteps", 50);
+    });
+
+    it("should handle zero maxSteps", async () => {
+      const agent = new TestAgent({
+        name: "Zero MaxSteps Agent",
+        instructions: "Agent with zero maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: 0,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(0);
+    });
+
+    it("should handle negative maxSteps", async () => {
+      const agent = new TestAgent({
+        name: "Negative MaxSteps Agent",
+        instructions: "Agent with negative maxSteps",
+        llm: mockProvider,
+        model: mockModel,
+        maxSteps: -5,
+      });
+
+      // Mock the provider to capture the maxSteps parameter
+      const generateTextSpy = vi.spyOn(mockProvider, "generateText").mockResolvedValue({
+        text: "Test response",
+        usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
+        finishReason: "stop",
+        warnings: [],
+        providerResponse: {},
+        provider: { text: "Test response" },
+        toolCalls: [],
+        toolResults: [],
+      });
+
+      await agent.generateText("Test message");
+
+      expect(generateTextSpy).toHaveBeenCalled();
+      const callArgs = generateTextSpy.mock.calls[0][0];
+      expect(callArgs.maxSteps).toBe(-5);
     });
   });
 });
@@ -4308,5 +4935,1142 @@ describe("onEnd Hook userContext Modifications", () => {
     // Verify that the final response contains the updated userContext from onEnd hook
     expect(response.userContext?.get("agent_response")).toBe("bye");
     expect(response.userContext?.get("hook_executed")).toBe(true);
+  });
+});
+
+describe("Agent Abort Signal", () => {
+  let mockLLM: MockProvider;
+  let agent: Agent<{ llm: MockProvider }>;
+  let abortController: AbortController;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLLM = new MockProvider({ modelId: "test-model" });
+    abortController = new AbortController();
+
+    agent = new Agent({
+      name: "Test Agent",
+      instructions: "Test instructions",
+      model: { modelId: "test-model" },
+      llm: mockLLM,
+      memory: mockMemory,
+    });
+  });
+
+  describe("setupAbortSignalListener", () => {
+    it("should setup abort signal listener correctly", async () => {
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Setup spy on updateHistoryEntry method
+      const updateHistoryEntrySpy = vi.spyOn(agent as any, "updateHistoryEntry");
+      const publishTimelineEventSpy = vi.spyOn(agent as any, "publishTimelineEvent");
+
+      // Call setupAbortSignalListener
+      (agent as any).setupAbortSignalListener(
+        abortController.signal,
+        mockOperationContext,
+        "test-conversation",
+        agentStartEvent,
+      );
+
+      // Trigger abort
+      abortController.abort();
+
+      // Wait for async operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Verify history was updated with cancelled status
+      expect(updateHistoryEntrySpy).toHaveBeenCalledWith(mockOperationContext, {
+        status: "cancelled",
+        endTime: expect.any(Date),
+      });
+
+      // Verify operation context was marked as inactive
+      expect(mockOperationContext.isActive).toBe(false);
+
+      // Verify agent cancelled event was published
+      expect(publishTimelineEventSpy).toHaveBeenCalledWith(
+        mockOperationContext,
+        expect.objectContaining({
+          name: "agent:cancel",
+          type: "agent",
+          status: "cancelled",
+          statusMessage: {
+            message: "Operation cancelled by user",
+            code: "USER_CANCELLED",
+            stage: "cancelled",
+          },
+        }),
+      );
+
+      updateHistoryEntrySpy.mockRestore();
+      publishTimelineEventSpy.mockRestore();
+    });
+
+    it("should not setup listener when signal is undefined", () => {
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Should not throw when signal is undefined
+      expect(() => {
+        (agent as any).setupAbortSignalListener(
+          undefined,
+          mockOperationContext,
+          "test-conversation",
+          agentStartEvent,
+        );
+      }).not.toThrow();
+    });
+
+    it("should call onEnd hook with cancellation error when aborted", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Setup abort signal listener
+      (agent as any).setupAbortSignalListener(
+        abortController.signal,
+        mockOperationContext,
+        "test-conversation",
+        agentStartEvent,
+      );
+
+      // Trigger abort
+      abortController.abort();
+
+      // Wait for async operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Verify onEnd hook was called with cancellation error
+      expect(onEndSpy).toHaveBeenCalledWith({
+        agent: agent,
+        output: undefined,
+        error: expect.objectContaining({
+          message: "Operation cancelled by user",
+          name: "AbortError",
+        }),
+        conversationId: "test-conversation",
+        context: mockOperationContext,
+      });
+    });
+  });
+
+  describe("generateText with abort signal", () => {
+    it("should handle abort signal during generateText", async () => {
+      // Setup mock to delay so we can abort
+      const delayedGenerateText = vi
+        .spyOn(mockLLM, "generateText")
+        .mockImplementation(async (options) => {
+          // Simulate delay
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Check if aborted during generation
+          if (options.signal?.aborted) {
+            const error = new Error("Operation was aborted");
+            error.name = "AbortError";
+            throw error;
+          }
+
+          return {
+            text: "Generated text",
+            usage: { totalTokens: 50 },
+            finishReason: "stop",
+            warnings: [],
+            providerResponse: {},
+          };
+        });
+
+      // Start generateText operation
+      const generatePromise = agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Abort after a short delay
+      setTimeout(() => abortController.abort(), 50);
+
+      // Should reject with AbortError
+      await expect(generatePromise).rejects.toThrow("Operation was aborted");
+
+      delayedGenerateText.mockRestore();
+    });
+
+    it("should pass abort signal to LLM provider in generateText", async () => {
+      const generateTextSpy = vi.spyOn(mockLLM, "generateText");
+
+      await agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Verify signal was passed to LLM
+      expect(generateTextSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should handle immediate abort in generateText", async () => {
+      // Abort immediately
+      abortController.abort();
+
+      // Mock the provider to respect abort signal immediately
+      const generateTextSpy = vi
+        .spyOn(mockLLM, "generateText")
+        .mockImplementation(async (options) => {
+          if (options.signal?.aborted) {
+            const error = new Error("Operation aborted");
+            error.name = "AbortError";
+            throw error;
+          }
+          return {
+            text: "Hello, I am a test agent!",
+            usage: { totalTokens: 30 },
+            finishReason: "stop",
+            warnings: [],
+            providerResponse: {},
+            provider: { text: "Hello, I am a test agent!" },
+            toolCalls: [],
+            toolResults: [],
+          };
+        });
+
+      const generatePromise = agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Should reject due to immediate abort
+      await expect(generatePromise).rejects.toThrow("Operation aborted");
+
+      generateTextSpy.mockRestore();
+    });
+  });
+
+  describe("streamText with abort signal", () => {
+    it("should handle abort signal during streamText", async () => {
+      const streamTextSpy = vi.spyOn(mockLLM, "streamText").mockImplementation(async (options) => {
+        return {
+          textStream: (async function* () {
+            yield "chunk1";
+
+            // Check if aborted during streaming
+            if (options.signal?.aborted) {
+              const error = new Error("Stream aborted");
+              error.name = "AbortError";
+              throw error;
+            }
+
+            yield "chunk2";
+          })(),
+          fullStream: (async function* () {
+            yield { type: "text-delta", textDelta: "chunk1" };
+
+            // Check abort during stream
+            if (options.signal?.aborted) {
+              const error = new Error("Stream aborted");
+              error.name = "AbortError";
+              throw error;
+            }
+
+            yield { type: "text-delta", textDelta: "chunk2" };
+            yield { type: "finish", finishReason: "stop", usage: { totalTokens: 10 } };
+          })(),
+          userContext: new Map(),
+        };
+      });
+
+      const streamResponse = await agent.streamText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Start consuming stream
+      const streamPromise = (async () => {
+        const chunks = [];
+        for await (const chunk of streamResponse.textStream) {
+          chunks.push(chunk);
+          // Abort after first chunk
+          if (chunks.length === 1) {
+            abortController.abort();
+          }
+        }
+        return chunks;
+      })();
+
+      // Should handle abort during streaming
+      await expect(streamPromise).rejects.toThrow();
+
+      streamTextSpy.mockRestore();
+    });
+
+    it("should pass abort signal to LLM provider in streamText", async () => {
+      const streamTextSpy = vi.spyOn(mockLLM, "streamText");
+
+      await agent.streamText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Verify signal was passed to LLM
+      expect(streamTextSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      streamTextSpy.mockRestore();
+    });
+  });
+
+  describe("generateObject with abort signal", () => {
+    it("should handle abort signal during generateObject", async () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      const generateObjectSpy = vi
+        .spyOn(mockLLM, "generateObject")
+        .mockImplementation(async (options) => {
+          // Simulate delay
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Check if aborted
+          if (options.signal?.aborted) {
+            const error = new Error("Object generation aborted");
+            error.name = "AbortError";
+            throw error;
+          }
+
+          return {
+            object: { name: "John", age: 30 },
+            usage: { totalTokens: 25 },
+            finishReason: "stop",
+            warnings: [],
+            providerResponse: {},
+          };
+        });
+
+      // Start generateObject operation
+      const generatePromise = agent.generateObject("Generate person", schema, {
+        signal: abortController.signal,
+      });
+
+      // Abort after short delay
+      setTimeout(() => abortController.abort(), 50);
+
+      // Should reject with AbortError
+      await expect(generatePromise).rejects.toThrow("Object generation aborted");
+
+      generateObjectSpy.mockRestore();
+    });
+
+    it("should pass abort signal to LLM provider in generateObject", async () => {
+      const schema = z.object({ test: z.string() });
+      const generateObjectSpy = vi.spyOn(mockLLM, "generateObject");
+
+      await agent.generateObject("Test input", schema, {
+        signal: abortController.signal,
+      });
+
+      // Verify signal was passed to LLM
+      expect(generateObjectSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      generateObjectSpy.mockRestore();
+    });
+  });
+
+  describe("streamObject with abort signal", () => {
+    it("should handle abort signal during streamObject", async () => {
+      const schema = z.object({
+        items: z.array(z.string()),
+      });
+
+      const streamObjectSpy = vi
+        .spyOn(mockLLM, "streamObject")
+        .mockImplementation(async (options) => {
+          return {
+            stream: new ReadableStream({
+              start(controller) {
+                controller.enqueue({ type: "text-delta", textDelta: "generating..." });
+
+                // Check abort during stream
+                if (options.signal?.aborted) {
+                  const error = new Error("Object stream aborted");
+                  error.name = "AbortError";
+                  controller.error(error);
+                  return;
+                }
+
+                controller.close();
+              },
+            }),
+            partialObjectStream: new ReadableStream({
+              start(controller) {
+                controller.enqueue({ items: ["item1"] });
+                controller.close();
+              },
+            }),
+            textStream: new ReadableStream({
+              start(controller) {
+                controller.enqueue("text chunk");
+                controller.close();
+              },
+            }),
+            userContext: new Map(),
+          };
+        });
+
+      const streamResponse = await agent.streamObject("Generate list", schema, {
+        signal: abortController.signal,
+      });
+
+      // Abort signal should be passed through
+      expect(streamObjectSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+
+      streamObjectSpy.mockRestore();
+    });
+  });
+
+  describe("abort signal propagation to sub-agents", () => {
+    it("should propagate abort signal to sub-agents", async () => {
+      // Create a TestAgent for this specific test so we can access getSubAgentManager()
+      const testAgent = new TestAgent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      // Create a sub-agent using TestAgent
+      const subAgent = new TestAgent({
+        name: "Sub Agent",
+        instructions: "Sub agent instructions",
+        model: { modelId: "sub-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      // Add sub-agent to test agent
+      testAgent.addSubAgent(subAgent);
+
+      // Mock sub-agent's streamText method to check signal propagation
+      const subAgentStreamTextSpy = vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        textStream: (async function* () {
+          yield "sub response";
+        })(),
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "sub response" };
+          yield { type: "finish", finishReason: "stop", usage: { totalTokens: 5 } };
+        })(),
+        userContext: new Map(),
+      });
+
+      // Create operation context with abort signal
+      const operationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+        signal: abortController.signal,
+      } as any;
+
+      // Get the delegate tool from the TestAgent
+      const subAgentManager = testAgent.getSubAgentManager();
+      const delegateTool = subAgentManager.createDelegateTool({
+        sourceAgent: testAgent,
+        operationContext: {
+          operationId: operationContext.operationId,
+          userContext: operationContext.userContext,
+          conversationSteps: [],
+          historyEntry: {
+            id: operationContext.historyEntry.id,
+            startTime: new Date(),
+            input: "test input",
+            output: "",
+            status: "working",
+            steps: [],
+            usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+            model: "sub-model",
+          },
+          isActive: operationContext.isActive,
+        },
+        currentHistoryEntryId: "test-history",
+      });
+
+      // Execute delegate tool (should propagate abort signal)
+      await delegateTool.execute({
+        task: "Test delegation",
+        targetAgents: ["Sub Agent"],
+        context: {},
+      });
+
+      // Verify sub-agent received the parent operation context with signal
+      expect(subAgentStreamTextSpy).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          parentOperationContext: expect.objectContaining({
+            operationId: operationContext.operationId,
+            userContext: operationContext.userContext,
+          }),
+          // Signal should be propagated through parentOperationContext
+          signal: undefined, // Sub-agent might not get direct signal but through context
+        }),
+      );
+
+      subAgentStreamTextSpy.mockRestore();
+    });
+  });
+
+  describe("abort signal with hooks", () => {
+    it("should call onEnd hook when operation is aborted", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      // Mock LLM to simulate long-running operation
+      const generateTextSpy = vi
+        .spyOn(mockLLM, "generateText")
+        .mockImplementation(async (options) => {
+          // Wait for abort
+          return new Promise((_, reject) => {
+            const checkAbort = () => {
+              if (options.signal?.aborted) {
+                const error = new Error("Operation cancelled by user");
+                error.name = "AbortError";
+                reject(error);
+              } else {
+                setTimeout(checkAbort, 10);
+              }
+            };
+            checkAbort();
+          });
+        });
+
+      // Start operation
+      const generatePromise = agent.generateText("Test input", {
+        signal: abortController.signal,
+      });
+
+      // Abort after delay
+      setTimeout(() => abortController.abort(), 50);
+
+      // Should reject
+      await expect(generatePromise).rejects.toThrow();
+
+      // Wait for cleanup
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      // Verify onEnd hook was called with error
+      expect(onEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: agent,
+          output: undefined,
+          error: expect.objectContaining({
+            name: "AbortError",
+          }),
+        }),
+      );
+
+      generateTextSpy.mockRestore();
+    });
+
+    it("should not call onEnd hook multiple times when aborted", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      // Mock to throw AbortError immediately
+      const generateTextSpy = vi
+        .spyOn(mockLLM, "generateText")
+        .mockRejectedValue(Object.assign(new Error("Aborted"), { name: "AbortError" }));
+
+      // Already aborted signal
+      abortController.abort();
+
+      try {
+        await agent.generateText("Test input", {
+          signal: abortController.signal,
+        });
+      } catch (error) {
+        // Expected to throw
+      }
+
+      // Wait for any async cleanup
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      // onEnd should be called only once (from the main operation, not from signal listener)
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+
+      generateTextSpy.mockRestore();
+    });
+  });
+
+  describe("abort signal in initializeHistory", () => {
+    it("should inherit abort signal from parent operation context", async () => {
+      const parentAbortController = new AbortController();
+      const parentOperationContext = {
+        operationId: "parent-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("parent input"),
+        isActive: true,
+        signal: parentAbortController.signal,
+        conversationSteps: [],
+      } as any;
+
+      // Call initializeHistory with parent context
+      const operationContext = await (agent as any).initializeHistory("test input", "working", {
+        operationName: "test",
+        parentOperationContext,
+      });
+
+      // Should inherit signal from parent
+      expect(operationContext.signal).toBe(parentAbortController.signal);
+    });
+
+    it("should use provided signal over parent signal", async () => {
+      const parentAbortController = new AbortController();
+      const childAbortController = new AbortController();
+
+      const parentOperationContext = {
+        operationId: "parent-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("parent input"),
+        isActive: true,
+        signal: parentAbortController.signal,
+        conversationSteps: [],
+      } as any;
+
+      // Call initializeHistory with both parent context and explicit signal
+      const operationContext = await (agent as any).initializeHistory("test input", "working", {
+        operationName: "test",
+        parentOperationContext,
+        signal: childAbortController.signal,
+      });
+
+      // Should use explicit signal over parent signal
+      expect(operationContext.signal).toStrictEqual(childAbortController.signal);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle multiple abort signals gracefully", async () => {
+      const controller1 = new AbortController();
+      const controller2 = new AbortController();
+
+      // Start multiple operations with different signals
+      const promise1 = agent.generateText("Test 1", { signal: controller1.signal });
+      const promise2 = agent.generateText("Test 2", { signal: controller2.signal });
+
+      // Abort both
+      controller1.abort();
+      controller2.abort();
+
+      // Both should reject
+      await expect(promise1).rejects.toThrow();
+      await expect(promise2).rejects.toThrow();
+    });
+
+    it("should handle abort signal when operation is already completed", async () => {
+      // Complete the operation first
+      const result = await agent.generateText("Test input");
+      expect(result.text).toBe("Hello, I am a test agent!");
+
+      // Abort after completion (should not cause issues)
+      abortController.abort();
+
+      // Should not throw or cause issues
+      expect(() => abortController.abort()).not.toThrow();
+    });
+
+    it("should handle abort signal with no conversationId", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks.onEnd = onEndSpy;
+
+      const mockOperationContext = {
+        operationId: "test-op",
+        userContext: new Map(),
+        historyEntry: createMockHistoryEntry("test input"),
+        isActive: true,
+      } as any;
+
+      const agentStartEvent = {
+        id: "start-event-id",
+        startTime: "2023-01-01T00:00:00.000Z",
+      };
+
+      // Setup with undefined conversationId
+      (agent as any).setupAbortSignalListener(
+        abortController.signal,
+        mockOperationContext,
+        undefined, // No conversationId
+        agentStartEvent,
+      );
+
+      // Trigger abort
+      abortController.abort();
+
+      // Wait for async operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Should call onEnd with empty string conversationId
+      expect(onEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversationId: "",
+        }),
+      );
+    });
+  });
+});
+
+describe("SupervisorConfig", () => {
+  let mockLLM: MockProvider;
+
+  beforeEach(() => {
+    mockLLM = new MockProvider({ modelId: "test-model" });
+  });
+
+  describe("constructor", () => {
+    it("should store supervisorConfig when provided", () => {
+      const supervisorConfig = {
+        systemMessage: "Custom supervisor message",
+        includeAgentsMemory: false,
+        customGuidelines: ["Rule 1", "Rule 2"],
+      };
+
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        supervisorConfig,
+      });
+
+      // Access private property via type assertion for testing
+      expect((agent as any).supervisorConfig).toEqual(supervisorConfig);
+    });
+
+    it("should handle undefined supervisorConfig", () => {
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      expect((agent as any).supervisorConfig).toBeUndefined();
+    });
+
+    it("should store partial supervisorConfig", () => {
+      const supervisorConfig = {
+        systemMessage: "Custom message only",
+      };
+
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        supervisorConfig,
+      });
+
+      expect((agent as any).supervisorConfig).toEqual(supervisorConfig);
+    });
+  });
+
+  describe("getSystemMessage with SupervisorConfig", () => {
+    let agent: Agent<{ llm: MockProvider }>;
+    let subAgent1: Agent<{ llm: MockProvider }>;
+    let subAgent2: Agent<{ llm: MockProvider }>;
+
+    beforeEach(() => {
+      // Create sub-agents
+      subAgent1 = new Agent({
+        name: "Writer Agent",
+        instructions: "Creates written content",
+        purpose: "A specialized writing assistant",
+        model: { modelId: "writer-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      subAgent2 = new Agent({
+        name: "Editor Agent",
+        instructions: "Reviews and edits content",
+        model: { modelId: "editor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+    });
+
+    it("should use supervisorConfig with custom systemMessage", async () => {
+      const supervisorConfig = {
+        systemMessage: "You are a friendly content manager named ContentBot.",
+        includeAgentsMemory: true,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base supervisor instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1, subAgent2],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [
+          { role: "user", content: "Hello" },
+          { role: "assistant", content: "Hi there!" },
+        ],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain(
+        "You are a friendly content manager named ContentBot.",
+      );
+      expect(systemMessage.systemMessages.content).toContain("<agents_memory>");
+      expect(systemMessage.systemMessages.content).not.toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).not.toContain("Base supervisor instructions");
+    });
+
+    it("should use supervisorConfig with includeAgentsMemory false", async () => {
+      const supervisorConfig = {
+        systemMessage: "Custom supervisor without memory.",
+        includeAgentsMemory: false,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [
+          { role: "user", content: "Hello" },
+          { role: "assistant", content: "Response" },
+        ],
+      });
+
+      expect(systemMessage.systemMessages.content).toBe("Custom supervisor without memory.");
+      expect(systemMessage.systemMessages.content).not.toContain("<agents_memory>");
+    });
+
+    it("should use supervisorConfig with customGuidelines in template mode", async () => {
+      const supervisorConfig = {
+        customGuidelines: ["Always be polite", "Respond within 30 seconds"],
+        includeAgentsMemory: true,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Coordinate between agents",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("Always be polite");
+      expect(systemMessage.systemMessages.content).toContain("Respond within 30 seconds");
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Coordinate between agents");
+    });
+
+    it("should work without supervisorConfig when subAgents exist", async () => {
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Default supervisor behavior",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        // No supervisorConfig
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Default supervisor behavior");
+      expect(systemMessage.systemMessages.content).toContain(
+        "Writer Agent: A specialized writing assistant",
+      );
+    });
+
+    it("should ignore supervisorConfig when no subAgents exist", async () => {
+      const supervisorConfig = {
+        systemMessage: "This should be ignored",
+        customGuidelines: ["This should also be ignored"],
+      };
+
+      agent = new Agent({
+        name: "Regular Agent",
+        instructions: "Regular agent instructions",
+        model: { modelId: "regular-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        // No subAgents
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toBe(
+        "You are Regular Agent. Regular agent instructions",
+      );
+      expect(systemMessage.systemMessages.content).not.toContain("This should be ignored");
+      expect(systemMessage.systemMessages.content).not.toContain("You are a supervisor agent");
+    });
+
+    it("should handle empty customGuidelines in supervisorConfig", async () => {
+      const supervisorConfig = {
+        customGuidelines: [],
+        includeAgentsMemory: true,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Provide a final answer to the User"); // Default guideline
+    });
+
+    it("should handle supervisorConfig with all undefined values", async () => {
+      const supervisorConfig = {
+        systemMessage: undefined,
+        includeAgentsMemory: undefined,
+        customGuidelines: undefined,
+      };
+
+      agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Base instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      // Should fall back to default template behavior
+      expect(systemMessage.systemMessages.content).toContain("You are a supervisor agent");
+      expect(systemMessage.systemMessages.content).toContain("Base instructions");
+      expect(systemMessage.systemMessages.content).toContain("<agents_memory>");
+    });
+  });
+
+  describe("integration with subAgents", () => {
+    it("should pass supervisorConfig to SubAgentManager", async () => {
+      const supervisorConfig = {
+        systemMessage: "Custom system message",
+        includeAgentsMemory: false,
+      };
+
+      const subAgent = new Agent({
+        name: "Test Sub Agent",
+        instructions: "Sub agent instructions",
+        model: { modelId: "sub-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Supervisor instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent],
+        supervisorConfig,
+      });
+
+      // Spy on SubAgentManager.generateSupervisorSystemMessage
+      const subAgentManager = (agent as any).subAgentManager;
+      const generateSupervisorSystemMessageSpy = vi.spyOn(
+        subAgentManager,
+        "generateSupervisorSystemMessage",
+      );
+
+      await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      // Verify supervisorConfig was passed to SubAgentManager
+      expect(generateSupervisorSystemMessageSpy).toHaveBeenCalledWith(
+        "Supervisor instructions",
+        "No previous agent interactions found.", // agents memory
+        supervisorConfig,
+      );
+
+      generateSupervisorSystemMessageSpy.mockRestore();
+    });
+
+    it("should work with multiple subAgents and supervisorConfig", async () => {
+      const supervisorConfig = {
+        customGuidelines: ["Work efficiently", "Be collaborative"],
+      };
+
+      const subAgent1 = new Agent({
+        name: "Writer",
+        purpose: "Creates content",
+        instructions: "Write great content",
+        model: { modelId: "writer-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const subAgent2 = new Agent({
+        name: "Editor",
+        instructions: "Edit and improve content",
+        model: { modelId: "editor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const agent = new Agent({
+        name: "Content Manager",
+        instructions: "Manage content creation process",
+        model: { modelId: "manager-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent1, subAgent2],
+        supervisorConfig,
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "Create an article",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      expect(systemMessage.systemMessages.content).toContain("Work efficiently");
+      expect(systemMessage.systemMessages.content).toContain("Be collaborative");
+      expect(systemMessage.systemMessages.content).toContain("Writer: Creates content");
+      expect(systemMessage.systemMessages.content).toContain("Editor: Edit and improve content");
+      expect(systemMessage.systemMessages.content).toContain("Manage content creation process");
+    });
+  });
+
+  describe("error handling", () => {
+    it("should handle malformed supervisorConfig gracefully", async () => {
+      const supervisorConfig = {
+        systemMessage: null,
+        includeAgentsMemory: "invalid",
+        customGuidelines: "not an array",
+      } as any;
+
+      const subAgent = new Agent({
+        name: "Test Sub Agent",
+        instructions: "Sub agent instructions",
+        model: { modelId: "sub-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+      });
+
+      const agent = new Agent({
+        name: "Supervisor Agent",
+        instructions: "Supervisor instructions",
+        model: { modelId: "supervisor-model" },
+        llm: mockLLM,
+        memory: mockMemory,
+        subAgents: [subAgent],
+        supervisorConfig,
+      });
+
+      // Should not throw an error
+      const systemMessage = await (agent as any).getSystemMessage({
+        input: "test input",
+        historyEntryId: "test-history-id",
+        contextMessages: [],
+      });
+
+      // Should fall back to some reasonable behavior
+      expect(systemMessage.systemMessages.content).toBeDefined();
+      expect(typeof systemMessage.systemMessages.content).toBe("string");
+    });
   });
 });

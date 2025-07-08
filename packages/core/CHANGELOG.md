@@ -1,5 +1,460 @@
 # @voltagent/core
 
+## 0.1.57
+
+### Patch Changes
+
+- [`894be7f`](https://github.com/VoltAgent/voltagent/commit/894be7feb97630c10e036cf3691974a5e351472c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: export PromptContent type to resolve "cannot be named" TypeScript error
+
+## 0.1.56
+
+### Patch Changes
+
+- [#351](https://github.com/VoltAgent/voltagent/pull/351) [`f8f8d04`](https://github.com/VoltAgent/voltagent/commit/f8f8d04340d6f9609450f6ae000c9fe1d71072d7) Thanks [@alasano](https://github.com/alasano)! - fix: add historyMemory option to Agent configuration
+
+## 0.1.55
+
+### Patch Changes
+
+- [#352](https://github.com/VoltAgent/voltagent/pull/352) [`b7dcded`](https://github.com/VoltAgent/voltagent/commit/b7dcdedfbbdda5bfb1885317b59b4d4e2495c956) Thanks [@alasano](https://github.com/alasano)! - fix(core): store and use userContext from Agent constructor
+
+- [#345](https://github.com/VoltAgent/voltagent/pull/345) [`822739c`](https://github.com/VoltAgent/voltagent/commit/822739c901bbc679cd11dd2c9df99cd041fc40c7) Thanks [@thujee](https://github.com/thujee)! - fix: moves zod from direct to dev dependency to avoid version conflicts in consuming app
+
+## 0.1.54
+
+### Patch Changes
+
+- [#346](https://github.com/VoltAgent/voltagent/pull/346) [`5100f7f`](https://github.com/VoltAgent/voltagent/commit/5100f7f9419db7e26aa18681b0ad3c09c0957b10) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: export PromptContent type to resolve "cannot be named" TypeScript error
+
+  Fixed a TypeScript compilation error where users would get "cannot be named" errors when exporting variables that use `InstructionsDynamicValue` type. This occurred because `InstructionsDynamicValue` references `PromptContent` type, but `PromptContent` was not being re-exported from the public API.
+
+  **Before:**
+
+  ```typescript
+  export type { DynamicValueOptions, DynamicValue, PromptHelper };
+  ```
+
+  **After:**
+
+  ```typescript
+  export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
+  ```
+
+  This ensures that all types referenced by public API types are properly exported, preventing TypeScript compilation errors when users export agents or variables that use dynamic instructions.
+
+## 0.1.53
+
+### Patch Changes
+
+- [#343](https://github.com/VoltAgent/voltagent/pull/343) [`096bda4`](https://github.com/VoltAgent/voltagent/commit/096bda41d5333e110da2c034e57f60b4ce7b9076) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: extend SubAgent functionality with support for multiple execution methods and flexible configuration API
+
+  **SubAgent functionality has been significantly enhanced to support all four agent execution methods (generateText, streamText, generateObject, streamObject) with flexible per-subagent configuration.** Previously, SubAgents only supported `streamText` method. Now you can configure each SubAgent to use different execution methods with custom options and schemas.
+
+  ## 📋 Usage
+
+  **New SubAgent API with createSubagent():**
+
+  ```typescript
+  import { Agent, createSubagent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+  import { z } from "zod";
+
+  // Define schemas for structured output
+  const analysisSchema = z.object({
+    summary: z.string(),
+    keyFindings: z.array(z.string()),
+    confidence: z.number().min(0).max(1),
+  });
+
+  const reportSchema = z.object({
+    title: z.string(),
+    sections: z.array(
+      z.object({
+        heading: z.string(),
+        content: z.string(),
+        priority: z.enum(["high", "medium", "low"]),
+      })
+    ),
+  });
+
+  // Create specialized subagents
+  const dataAnalyst = new Agent({
+    name: "DataAnalyst",
+    instructions: "Analyze data and provide structured insights",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  const reportGenerator = new Agent({
+    name: "ReportGenerator",
+    instructions: "Generate comprehensive reports",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  const summaryWriter = new Agent({
+    name: "SummaryWriter",
+    instructions: "Create concise summaries",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Supervisor with enhanced SubAgent configuration
+  const supervisor = new Agent({
+    name: "AdvancedSupervisor",
+    instructions: "Coordinate specialized agents with different methods",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    subAgents: [
+      // ✅ OLD STYLE: Direct agent (defaults to streamText) - still supported
+      summaryWriter,
+
+      // ✅ NEW STYLE: generateObject with schema
+      createSubagent({
+        agent: dataAnalyst,
+        method: "generateObject",
+        schema: analysisSchema,
+        options: {
+          temperature: 0.3, // Precise analysis
+          maxTokens: 1500,
+        },
+      }),
+
+      // ✅ NEW STYLE: streamObject with schema
+      createSubagent({
+        agent: reportGenerator,
+        method: "streamObject",
+        schema: reportSchema,
+        options: {
+          temperature: 0.5,
+          maxTokens: 2000,
+        },
+      }),
+
+      // ✅ NEW STYLE: generateText with custom options
+      createSubagent({
+        agent: summaryWriter,
+        method: "generateText",
+        options: {
+          temperature: 0.7, // Creative writing
+          maxTokens: 800,
+        },
+      }),
+    ],
+  });
+  ```
+
+  **Backward Compatibility:**
+
+  ```typescript
+  // ✅ OLD STYLE: Still works (defaults to streamText)
+  const supervisor = new Agent({
+    name: "Supervisor",
+    subAgents: [agent1, agent2, agent3], // Direct Agent instances
+    // ... other config
+  });
+  ```
+
+- [#344](https://github.com/VoltAgent/voltagent/pull/344) [`5d908c5`](https://github.com/VoltAgent/voltagent/commit/5d908c5a83569848c91d86c5ecfcd3d4d4ffae42) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add supervisorConfig API for customizing supervisor agent behavior
+
+  **SupervisorConfig API enables complete control over supervisor agent system messages and behavior** when working with SubAgents, allowing users to customize guidelines, override system messages, and control memory inclusion.
+
+  ## 🎯 What's New
+
+  **🚀 SupervisorConfig API:**
+
+  ```typescript
+  const supervisor = new Agent({
+    name: "Custom Supervisor",
+    instructions: "Coordinate specialized tasks",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    subAgents: [writerAgent, editorAgent],
+
+    supervisorConfig: {
+      // Complete system message override
+      systemMessage: "You are TaskBot. Use delegate_task to assign work.",
+
+      // Add custom rules to default guidelines
+      customGuidelines: ["Always verify sources", "Include confidence levels"],
+
+      // Control memory inclusion (default: true)
+      includeAgentsMemory: false,
+    },
+  });
+  ```
+
+  ## 🔧 Configuration Options
+
+  - **`systemMessage`**: Complete system message override - replaces default template
+  - **`customGuidelines`**: Add custom rules to default supervisor guidelines
+  - **`includeAgentsMemory`**: Control whether previous agent interactions are included
+
+- [#340](https://github.com/VoltAgent/voltagent/pull/340) [`ef778c5`](https://github.com/VoltAgent/voltagent/commit/ef778c543acb229edd049da2e7bbed2ae5fe40cf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: separate conversation memory from history storage when memory: false
+
+  When `memory: false` is set, conversation memory and user messages should be disabled, but history storage and timeline events should continue working. Previously, both conversation memory and history storage were being disabled together.
+
+  **Before:**
+
+  ```typescript
+  const agent = new Agent({
+    name: "TestAgent",
+    instructions: "You are a helpful assistant",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    memory: false, // ❌ Disabled both conversation memory AND history storage
+  });
+
+  // Result: No conversation context + No history/events tracking
+  ```
+
+  **After:**
+
+  ```typescript
+  const agent = new Agent({
+    name: "TestAgent",
+    instructions: "You are a helpful assistant",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    memory: false, // ✅ Disables only conversation memory, history storage remains active
+  });
+
+  // Result: No conversation context + History/events tracking still works
+  ```
+
+  **What this means for users:**
+
+  - ✅ `memory: false` now only disables conversation memory (user messages and context)
+  - ✅ History storage and timeline events continue to work for debugging and observability
+  - ✅ Agent interactions are still tracked in VoltAgent Console
+  - ✅ Tools and sub-agents can still access operation context and history
+
+  This change improves the observability experience while maintaining the expected behavior of disabling conversation memory when `memory: false` is set.
+
+  Fixes the issue where setting `memory: false` would prevent history and events from being tracked in the VoltAgent Console.
+
+## 0.1.52
+
+### Patch Changes
+
+- [#338](https://github.com/VoltAgent/voltagent/pull/338) [`3e9a863`](https://github.com/VoltAgent/voltagent/commit/3e9a8631c0e4774d0623825263040ad3a14c23d0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: implement configurable maxSteps parameter with parent-child agent inheritance
+
+  **Agents now support configurable maxSteps parameter at the API level, allowing fine-grained control over computational resources. Parent agents automatically pass their effective maxSteps to subagents, ensuring consistent resource management across the agent hierarchy.**
+
+  ## 🎯 What's New
+
+  **🚀 Configurable MaxSteps System**
+
+  - **API-Level Configuration**: Set maxSteps dynamically for any agent call
+  - **Agent-Level Defaults**: Configure default maxSteps when creating agents
+  - **Automatic Inheritance**: SubAgents automatically inherit parent's effective maxSteps
+  - **Configurable Supervisor**: Enhanced supervisor system message generation with agent memory
+
+  ## 📋 Usage Examples
+
+  **API-Level MaxSteps Configuration:**
+
+  ```typescript
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  // Create agent with default maxSteps
+  const agent = new Agent({
+    name: "AssistantAgent",
+    instructions: "Help users with their questions",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    maxSteps: 10, // Default maxSteps for this agent
+  });
+
+  // Usage examples:
+
+  // 1. Use agent's default maxSteps (10)
+  const result1 = await agent.generateText("Simple question");
+
+  // 2. Override with API-level maxSteps
+  const result2 = await agent.generateText("Complex question", {
+    maxSteps: 25, // Override agent's default (10) with API-level (25)
+  });
+
+  // 3. Stream with custom maxSteps
+  const stream = await agent.streamText("Long conversation", {
+    maxSteps: 50, // Allow more steps for complex interactions
+  });
+
+  // 4. Generate object with specific maxSteps
+  const objectResult = await agent.generateObject("Create structure", schema, {
+    maxSteps: 5, // Limit steps for simple object generation
+  });
+  ```
+
+  **Parent-Child Agent Inheritance:**
+
+  ```typescript
+  // Create specialized subagents
+  const contentCreator = new Agent({
+    name: "ContentCreator",
+    instructions: "Create engaging content",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  const formatter = new Agent({
+    name: "Formatter",
+    instructions: "Format and style content",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Create supervisor with subagents
+  const supervisor = new Agent({
+    name: "Supervisor",
+    instructions: "Coordinate content creation and formatting",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    subAgents: [contentCreator, formatter],
+    maxSteps: 15, // Agent limit
+  });
+
+  // Parent-child inheritance examples:
+
+  // 1. Use supervisor's default maxSteps
+  const result1 = await supervisor.generateText("Create a blog post");
+  // Supervisor uses: maxSteps: 15
+  // SubAgents inherit: maxSteps: 15
+
+  // 2. Override with API-level maxSteps
+  const result2 = await supervisor.generateText("Create a blog post", {
+    maxSteps: 8, // API-level override
+  });
+  // Supervisor uses: maxSteps: 8
+  // SubAgents inherit: maxSteps: 8
+
+  // 3. Direct subagent calls use their own defaults
+  const directResult = await contentCreator.generateText("Create content");
+  // Uses contentCreator's own maxSteps or default calculation
+  ```
+
+  **REST API Usage:**
+
+  ```bash
+  # with generateText
+  curl -X POST http://localhost:3141/agents/my-agent-id/generate \
+       -H "Content-Type: application/json" \
+       -d '{
+         "input": "Explain quantum physics",
+         "options": {
+           "maxSteps": 10,
+         }
+       }'
+
+  # with streamText
+  curl -N -X POST http://localhost:3141/agents/supervisor-agent-id/stream \
+       -H "Content-Type: application/json" \
+       -d '{
+         "input": "Coordinate research and writing workflow",
+         "options": {
+           "maxSteps": 15,
+         }
+       }'
+  ```
+
+  This enhancement provides fine-grained control over agent computational resources while maintaining backward compatibility with existing agent configurations.
+
+## 0.1.51
+
+### Patch Changes
+
+- [#333](https://github.com/VoltAgent/voltagent/pull/333) [`721372a`](https://github.com/VoltAgent/voltagent/commit/721372a59edab1095ee608488ca96b81326fd1cc) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add abort signal support for operation cancellation
+
+  **Abort Signal Support enables graceful cancellation of agent operations.** Users can now cancel expensive operations when they navigate away or change their minds.
+
+  ## 🎯 Key Features
+
+  - **Stream API Cancellation**: `/stream` and `/stream-object` endpoints now handle client disconnection automatically
+  - **Agent Method Support**: All agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) support abort signals
+  - **SubAgent Propagation**: Abort signals cascade through sub-agent hierarchies
+
+  ## 📋 Usage
+
+  ```typescript
+  // Create AbortController
+  const abortController = new AbortController();
+
+  // Cancel when user navigates away or clicks stop
+  window.addEventListener("beforeunload", () => abortController.abort());
+
+  // Stream request with abort signal
+  const response = await fetch("http://localhost:3141/agents/my-agent/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: "Write a very long story...",
+      options: { maxTokens: 4000 },
+    }),
+    signal: abortController.signal, // ✅ Automatic cancellation
+  });
+
+  // Manual cancellation after 10 seconds
+  setTimeout(() => abortController.abort(), 10000);
+  ```
+
+  This prevents unnecessary computation and improves resource efficiency.
+
+## 0.1.50
+
+### Patch Changes
+
+- [#329](https://github.com/VoltAgent/voltagent/pull/329) [`9406552`](https://github.com/VoltAgent/voltagent/commit/94065520f51a1743be91c3b5be9ab5370d47f666) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: userContext changes in onEnd hook now properly reflected in final response
+
+  The `userContext` changes made in the `onEnd` hook were not being reflected in the final response from `.generateText()` and `.generateObject()` methods. This was because the userContext snapshot was taken before the `onEnd` hook execution, causing any modifications made within the hook to be lost.
+
+  **Before**:
+
+  ```typescript
+  const agent = new Agent({
+    name: "TestAgent",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    hooks: createHooks({
+      onEnd: ({ context }) => {
+        // This change was lost in the final response
+        context.userContext.set("agent_response", "bye");
+      },
+    }),
+  });
+
+  const response = await agent.generateText("Hello", {
+    userContext: new Map([["agent_response", "hi"]]),
+  });
+
+  console.log(response.userContext?.get("agent_response")); // ❌ "hi" (old value)
+  ```
+
+  **After**:
+
+  ```typescript
+  const agent = new Agent({
+    name: "TestAgent",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    hooks: createHooks({
+      onEnd: ({ context }) => {
+        // This change is now preserved in the final response
+        context.userContext.set("agent_response", "bye");
+      },
+    }),
+  });
+
+  const response = await agent.generateText("Hello", {
+    userContext: new Map([["agent_response", "hi"]]),
+  });
+
+  console.log(response.userContext?.get("agent_response")); // ✅ "bye" (updated value)
+  ```
+
 ## 0.1.49
 
 ### Patch Changes

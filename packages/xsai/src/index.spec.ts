@@ -162,7 +162,6 @@ describe("XSAIProvider", () => {
           apiKey,
           messages: [{ role: "user", content: "Hello" }],
           model: "test-model",
-          tools: [], // No tools provided
         }),
       );
       expect(result.text).toBe(mockResult.text);
@@ -271,7 +270,6 @@ describe("XSAIProvider", () => {
           apiKey,
           messages: [{ role: "user", content: "Stream this" }],
           model: "test-model",
-          tools: [],
         }),
       );
       expect(result.provider).toBe(mockResult);

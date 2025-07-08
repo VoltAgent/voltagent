@@ -13,6 +13,13 @@ import type { VoltOpsClient } from "./voltops/types";
 export type {
   PromptReference,
   PromptHelper,
+  PromptContent,
+  CachedPrompt,
+  ChatMessage,
+  DynamicValue,
+  DynamicValueOptions,
+  PromptApiClient,
+  PromptApiResponse,
   VoltOpsClientOptions,
   VoltOpsPromptManager,
 } from "./voltops/types";

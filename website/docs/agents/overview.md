@@ -26,6 +26,50 @@ const agent = new Agent({
 });
 ```
 
+## Constructor Options
+
+The `Agent` constructor accepts an options object with these properties:
+
+```typescript
+const agent = new Agent({
+  // Required
+  name: "MyAgent", // Agent identifier
+  instructions: "You are a helpful assistant", // Behavior guidelines
+  llm: new VercelAIProvider(), // LLM provider instance
+  model: openai("gpt-4o"), // AI model to use
+
+  // Optional
+  id: "custom-id", // Unique ID (auto-generated if not provided)
+  purpose: "Customer support agent", // Agent purpose for supervisor context
+  tools: [weatherTool, searchTool], // Available tools
+  memory: new LibSQLStorage(), // Memory storage (or false to disable)
+  memoryOptions: { maxMessages: 100 }, // Memory configuration
+  userContext: new Map([
+    // Default context for all operations
+    ["environment", "production"],
+  ]),
+  maxSteps: 10, // Maximum tool-use iterations
+  subAgents: [researchAgent], // Sub-agents for delegation
+  supervisorConfig: {
+    // Supervisor behavior config
+    systemMessage: "Custom supervisor instructions",
+    includeAgentsMemory: true,
+  },
+
+  // Additional constructor parameters
+  hooks: createHooks({ onStart, onEnd }), // Lifecycle event handlers
+  retriever: new PineconeRetriever(), // RAG retriever
+  voice: new ElevenLabsVoice(), // Voice configuration
+  markdown: true, // Enable markdown formatting
+  voltOpsClient: new VoltOpsClient({
+    // Observability & prompt management
+    publicKey: "...",
+    secretKey: "...",
+  }),
+  maxHistoryEntries: 1000, // Max history entries to store
+});
+```
+
 ## Core Interaction Methods
 
 The primary ways to interact with an agent are through the `generate*` and `stream*` methods. These methods handle sending your input to the configured LLM, processing the response, and potentially orchestrating tool usage or memory retrieval based on the agent's configuration and the LLM's decisions.
@@ -795,6 +839,220 @@ Use these standardized options to:
 - Create reproducible outputs with the same seed value
 
 The options are applied consistently whether you're using `generateText`, `streamText`, `generateObject`, or `streamObject` methods.
+
+### Step Control with maxSteps
+
+**Why?** To control the number of iteration steps (turns) an agent can take during a single operation. This is particularly important for agents using tools, as they may need multiple LLM calls to complete a task: one to decide which tools to use, execute the tools, and then continue with the results.
+
+VoltAgent supports `maxSteps` configuration at both the agent level (applies to all operations) and per-operation level (overrides agent setting for specific calls).
+
+```ts
+import { Agent, createTool } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get current weather",
+  parameters: z.object({ location: z.string() }),
+  execute: async ({ location }) => {
+    return { temperature: 22, condition: "sunny" };
+  },
+});
+
+// Agent-level maxSteps (applies to all operations)
+const agent = new Agent({
+  name: "Weather Assistant",
+  instructions: "Help users with weather information using available tools",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: [weatherTool],
+  maxSteps: 5, // All operations will use max 5 steps
+});
+
+// Basic usage - uses agent-level maxSteps (5)
+const response1 = await agent.generateText("What's the weather in London?");
+console.log(response1.text);
+
+// Override maxSteps for specific operation
+const response2 = await agent.generateText("What's the weather in Tokyo?", {
+  maxSteps: 3, // Override: use max 3 steps for this operation
+});
+console.log(response2.text);
+
+// Streaming with maxSteps override
+const streamResponse = await agent.streamText("Check weather in Paris", {
+  maxSteps: 2, // Override: use max 2 steps for this stream
+});
+
+for await (const chunk of streamResponse.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+#### Understanding Steps
+
+Each "step" represents one interaction with the LLM. For example:
+
+- **Step 1**: LLM receives the prompt, decides to use the weather tool, and makes the tool call
+- **Step 2**: LLM receives the tool result and generates the final response
+
+Without `maxSteps`, an agent might continue indefinitely if it keeps making tool calls. Setting `maxSteps` prevents runaway execution and ensures predictable behavior.
+
+#### maxSteps Priority
+
+The system follows this priority order:
+
+1. **Operation-level maxSteps** (highest priority) - specified in `generateText()`, `streamText()`, etc.
+2. **Agent-level maxSteps** - specified in agent constructor
+3. **Default calculation** - based on number of sub-agents (10 × sub-agents count, minimum 10)
+
+#### Default maxSteps Values
+
+VoltAgent provides sensible defaults that work well for most use cases:
+
+```ts
+// Simple agent without sub-agents
+const simpleAgent = new Agent({
+  name: "Simple Assistant",
+  instructions: "A basic assistant",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  // Default: 10 steps (sufficient for most tool usage scenarios)
+});
+
+// Agent with sub-agents - automatic scaling
+const supervisorAgent = new Agent({
+  name: "Supervisor",
+  instructions: "Coordinates specialized tasks",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  subAgents: [agent1, agent2, agent3], // 3 sub-agents
+  // Default: 10 × 3 = 30 steps (scales with complexity)
+});
+```
+
+**Default Values:**
+
+- **Basic agents**: 10 steps (covers initial request + tool usage + response)
+- **Multi-agent workflows**: 10 × number of sub-agents (accommodates delegation overhead)
+
+**When Defaults Are Sufficient:**
+
+- Simple question-answering agents
+- Basic tool usage (1-3 tool calls)
+- Standard customer service interactions
+- Content generation with minimal tool usage
+
+**When to Increase maxSteps:**
+
+- Complex research tasks requiring multiple API calls
+- Advanced workflows with deep sub-agent interactions
+- Iterative problem-solving requiring multiple refinement steps
+- Custom enterprise workflows with specific requirements
+
+```ts
+// Custom solution requiring higher step limits
+const complexResearchAgent = new Agent({
+  name: "Advanced Research Agent",
+  instructions: "Conducts comprehensive research with iterative refinement",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: [webSearchTool, databaseTool, analysisTool],
+  maxSteps: 50, // Custom limit for complex workflows
+});
+
+// Enterprise workflow with multiple coordination layers
+const enterpriseWorkflow = new Agent({
+  name: "Enterprise Coordinator",
+  instructions: "Manages complex business processes",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  subAgents: [dataAgent, analysisAgent, reportAgent, reviewAgent],
+  maxSteps: 100, // High limit for enterprise complexity
+});
+```
+
+### Cancellation with AbortSignal
+
+**Why?** To provide graceful cancellation of long-running operations like LLM generation, tool execution, or streaming responses. This is essential for user-initiated cancellations, implementing timeouts, and preventing unnecessary work when results are no longer needed.
+
+VoltAgent supports the standard `AbortSignal` API across all generation methods. When an operation is aborted, it immediately stops processing, cancels any ongoing tool executions, and cleans up resources.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "Cancellable Assistant",
+  instructions: "An assistant that supports operation cancellation",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+});
+
+// Example 1: User-initiated cancellation
+const controller = new AbortController();
+const signal = controller.signal;
+
+// Set up a cancel button or timeout
+const cancelButton = document.getElementById("cancel-btn");
+cancelButton?.addEventListener("click", () => {
+  controller.abort("User cancelled the operation");
+});
+
+try {
+  // Pass the signal to any generation method
+  const response = await agent.generateText("Write a very long story...", {
+    signal, // The operation will be cancelled if signal is aborted
+  });
+  console.log(response.text);
+} catch (error) {
+  if (error.name === "AbortError") {
+    console.log("Operation was cancelled by user");
+  } else {
+    console.error("Generation failed:", error);
+  }
+}
+```
+
+#### Tool Cancellation
+
+When an `AbortSignal` is provided to agent methods, it's automatically propagated to any tools that the agent uses. Tools receive this signal as part of their execution options and can implement cancellation logic:
+
+```ts
+const searchTool = createTool({
+  name: "search_web",
+  description: "Search the web for information",
+  parameters: z.object({
+    query: z.string().describe("The search query"),
+  }),
+  execute: async (args, options) => {
+    // AbortSignal is available in options.signal
+    const signal = options?.signal;
+
+    // Pass signal to cancellable operations like fetch
+    const response = await fetch(`https://api.search.com?q=${args.query}`, {
+      signal: signal,
+    });
+
+    return await response.json();
+  },
+});
+```
+
+This means if you cancel an agent operation, any active tool executions will also be cancelled gracefully if the tools implement signal handling.
+
+**Common Cancellation Scenarios:**
+
+- **User Interface**: Let users cancel long-running operations
+- **Timeouts**: Prevent operations from running too long
+- **Resource Management**: Stop unnecessary work when switching contexts
+- **Error Recovery**: Cancel related operations when one fails
+- **Batch Processing**: Cancel remaining operations when stopping a batch
+
+For detailed examples of implementing cancellable tools, including error handling and best practices, see the [Tools documentation on AbortSignal](./tools.md#cancellable-tools-with-abortsignal).
 
 ### MCP (Model Context Protocol)
 

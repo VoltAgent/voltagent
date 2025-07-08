@@ -18,6 +18,7 @@ import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
 import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
+import type { SubAgentConfig } from "./subagent/types";
 
 import type {
   DynamicValueOptions,
@@ -27,7 +28,7 @@ import type {
 } from "../voltops/types";
 
 // Re-export for backward compatibility
-export type { DynamicValueOptions, DynamicValue, PromptHelper };
+export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
 
 /**
  * Enhanced dynamic value for instructions that supports prompt management
@@ -81,6 +82,29 @@ export type ProviderOptions = {
 };
 
 /**
+ * Configuration for supervisor agents that have subagents
+ */
+export type SupervisorConfig = {
+  /**
+   * Complete custom system message for the supervisor agent
+   * If provided, this completely replaces the default template
+   * Only agents memory section will be appended if includeAgentsMemory is true
+   */
+  systemMessage?: string;
+
+  /**
+   * Whether to include agents memory in the supervisor system message
+   * @default true
+   */
+  includeAgentsMemory?: boolean;
+
+  /**
+   * Additional custom guidelines for the supervisor agent
+   */
+  customGuidelines?: string[];
+};
+
+/**
  * Agent configuration options
  */
 export type AgentOptions = {
@@ -114,15 +138,24 @@ export type AgentOptions = {
   memoryOptions?: MemoryOptions;
 
   /**
+   * Memory instance for storing execution history and telemetry.
+   * If not provided, defaults to LibSQLStorage.
+   * Use InMemoryStorage for environments without filesystem access (e.g., AWS Lambda).
+   * @since 0.1.55
+   */
+  historyMemory?: Memory;
+
+  /**
    * Tools and/or Toolkits that the agent can use
    * Can be static or dynamic based on user context
    */
   tools?: ToolsDynamicValue;
 
   /**
-   * Sub-agents that this agent can delegate tasks to
+   * Maximum number of steps (turns) the agent can take before stopping
+   * This overrides any supervisor config maxSteps setting
    */
-  subAgents?: any[]; // Using unknown to avoid circular dependency
+  maxSteps?: number;
 
   /**
    * Optional user-defined context to be passed around
@@ -143,6 +176,16 @@ export type AgentOptions = {
    * ✨ Benefits: Observability + prompt management + dynamic prompts from console
    */
   telemetryExporter?: VoltAgentExporter;
+
+  /**
+   * Sub-agents that this agent can delegate tasks to
+   */
+  subAgents?: SubAgentConfig[];
+
+  /**
+   * Configuration for supervisor behavior when subAgents are present
+   */
+  supervisorConfig?: SupervisorConfig;
 } & (
   | {
       /**
@@ -267,6 +310,9 @@ export interface CommonGenerateOptions {
   // Specific tools to use for this generation (overrides agent's tools)
   tools?: BaseTool[];
 
+  // Maximum number of steps for this specific request (overrides agent's maxSteps)
+  maxSteps?: number;
+
   // Signal for aborting the operation
   signal?: AbortSignal;
 
@@ -313,7 +359,7 @@ export type PublicGenerateOptions = Omit<
 /**
  * Agent status information
  */
-export type AgentStatus = "idle" | "working" | "tool_calling" | "error" | "completed";
+export type AgentStatus = "idle" | "working" | "error" | "completed" | "cancelled";
 
 /**
  * Tool call definition
@@ -424,6 +470,17 @@ export type AgentHandoffOptions = {
    * Parent's operation context to merge SubAgent steps into
    */
   parentOperationContext?: OperationContext;
+
+  /**
+   * AbortSignal to cancel the handoff operation
+   */
+  signal?: AbortSignal;
+
+  /**
+   * Maximum number of steps for the subagent (inherited from parent or API call)
+   * If not provided, subagent will use its own maxSteps calculation
+   */
+  maxSteps?: number;
 };
 
 /**
@@ -497,6 +554,9 @@ export type OperationContext = {
 
   /** Conversation steps for building full message history including tool calls/results */
   conversationSteps?: StepWithContent[];
+
+  /** AbortSignal for cancelling the operation */
+  signal?: AbortSignal;
 };
 
 /**

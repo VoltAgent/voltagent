@@ -17,7 +17,6 @@ import { createAsyncIterableStream } from "@voltagent/core";
 import type {
   GenerateObjectResult,
   GenerateTextResult,
-  GenerateTextStepResult,
   ImagePart,
   Message,
   StreamObjectResult,
@@ -119,8 +118,8 @@ export class XSAIProvider implements LLMProvider<string> {
 
   createStepFinishHandler = (onStepFinish?: (step: StepWithContent) => void | Promise<void>) => {
     if (!onStepFinish) return undefined;
-
-    return async (result: GenerateTextStepResult | StreamTextStep) => {
+    // TODO: Handle GenerateTextResult and StreamTextResult
+    return async (result: any) => {
       // Handle text response
       if ("text" in result && result.text) {
         const step = {
@@ -217,14 +216,14 @@ export class XSAIProvider implements LLMProvider<string> {
   ): Promise<ProviderTextResponse<GenerateTextResult>> => {
     const { generateText } = await import("xsai");
     const xsaiMessages = options.messages.map(this.toMessage);
-    const xsaiTools = (await this.convertTools(options.tools || [])) ?? [];
+    const xsaiTools = options.tools ? await this.convertTools(options.tools) : undefined;
 
     const result = await generateText({
       apiKey: this.apiKey,
       messages: xsaiMessages,
       model: options.model,
       tools: xsaiTools,
-      maxSteps: xsaiTools.length > 0 ? options.maxSteps : undefined,
+      maxSteps: xsaiTools ? options.maxSteps : undefined,
       baseURL: this.baseURL,
       signal: options.signal,
       ...options.provider,
@@ -253,14 +252,14 @@ export class XSAIProvider implements LLMProvider<string> {
   ): Promise<ProviderTextStreamResponse<StreamTextResult>> {
     const { streamText } = await import("xsai");
     const xsaiMessages = options.messages.map(this.toMessage);
-    const xsaiTools = (await this.convertTools(options.tools || [])) || [];
+    const xsaiTools = options.tools ? await this.convertTools(options.tools) : undefined;
 
     const result = await streamText({
       apiKey: this.apiKey,
       messages: xsaiMessages,
       model: options.model,
       tools: xsaiTools,
-      maxSteps: xsaiTools.length > 0 ? options.maxSteps : undefined,
+      maxSteps: xsaiTools ? options.maxSteps : undefined,
       baseURL: this.baseURL,
       signal: options.signal,
       streamOptions: {
@@ -293,7 +292,8 @@ export class XSAIProvider implements LLMProvider<string> {
     const xsaiMessages = options.messages.map(this.toMessage);
 
     const onStepFinishWrapper = options.onStepFinish
-      ? async (result: GenerateTextStepResult) => {
+      ? // TODO: fix type
+        async (result: any) => {
           // For generateObject, we need to wrap text content in a special format
           const handler = this.createStepFinishHandler(async (step) => {
             if (step.type === "text") {

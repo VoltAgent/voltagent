@@ -37,9 +37,14 @@ const convertToMemoryMessage = (
  */
 export class MemoryManager {
   /**
-   * The memory storage instance
+   * The memory storage instance for conversations
    */
-  private memory: Memory;
+  private conversationMemory: Memory | undefined;
+
+  /**
+   * The memory storage instance for history (always available)
+   */
+  private historyMemory: Memory;
 
   /**
    * Memory configuration options
@@ -59,22 +64,42 @@ export class MemoryManager {
   /**
    * Creates a new MemoryManager
    */
-  constructor(resourceId: string, memory?: Memory | false, options: MemoryOptions = {}) {
+  constructor(
+    resourceId: string,
+    memory?: Memory | false,
+    options: MemoryOptions = {},
+    historyMemory?: Memory,
+  ) {
     this.resourceId = resourceId;
 
-    // Use provided memory, disable memory if false, or create default
+    // Create base memory configuration
+    const baseMemoryConfig = {
+      url: "file:memory.db",
+      ...options,
+    };
+
+    // Handle conversation memory
     if (memory === false) {
-      // Memory explicitly disabled, leave it undefined
-      this.memory = undefined as any;
+      // Conversation memory explicitly disabled
+      this.conversationMemory = undefined;
     } else if (memory) {
-      // Use provided memory instance
-      this.memory = memory;
+      // Use provided memory instance for conversations
+      this.conversationMemory = memory;
     } else {
-      // Create default memory if not provided or disabled
-      this.memory = new LibSQLStorage({
-        url: "file:memory.db",
-        ...options,
-      });
+      // Create default memory for conversations if not provided or disabled
+      this.conversationMemory = new LibSQLStorage(baseMemoryConfig);
+    }
+
+    // History storage is always available
+    // Priority: 1) Explicit historyMemory, 2) Same as conversation memory, 3) Default LibSQLStorage
+    if (historyMemory) {
+      this.historyMemory = historyMemory;
+    } else if (this.conversationMemory) {
+      // Use same memory instance as conversation memory (when it exists)
+      this.historyMemory = this.conversationMemory;
+    } else {
+      // Default to LibSQLStorage if no memory configured
+      this.historyMemory = new LibSQLStorage(baseMemoryConfig);
     }
 
     this.options = options;
@@ -115,7 +140,7 @@ export class MemoryManager {
     conversationId?: string,
     type: "text" | "tool-call" | "tool-result" = "text",
   ): Promise<void> {
-    if (!this.memory || !userId) return;
+    if (!this.conversationMemory || !userId) return;
 
     // Create memory write start event for new timeline
     const memoryWriteStartEvent: MemoryWriteStartEvent = {
@@ -145,7 +170,7 @@ export class MemoryManager {
     try {
       // Perform the operation
       const memoryMessage = convertToMemoryMessage(message, type);
-      await this.memory.addMessage(memoryMessage, conversationId);
+      await this.conversationMemory.addMessage(memoryMessage, conversationId);
 
       // Create memory write success event for new timeline
       const memoryWriteSuccessEvent: MemoryWriteSuccessEvent = {
@@ -208,8 +233,8 @@ export class MemoryManager {
    * Create a step finish handler to save messages during generation
    */
   createStepFinishHandler(context: OperationContext, userId?: string, conversationId?: string) {
-    // If there's no memory or userId, return an empty handler
-    if (!this.memory || !userId) {
+    // If there's no conversation memory or userId, return an empty handler
+    if (!this.conversationMemory || !userId) {
       return () => {};
     }
 
@@ -258,8 +283,8 @@ export class MemoryManager {
       return { messages: [], conversationId };
     }
 
-    // Return empty context immediately if no memory/userId
-    if (!this.memory || !userId) {
+    // Return empty context immediately if no conversation memory/userId
+    if (!this.conversationMemory || !userId) {
       return { messages: [], conversationId };
     }
 
@@ -292,7 +317,7 @@ export class MemoryManager {
 
     try {
       // This MUST complete for proper conversation flow - no shortcuts
-      const memoryMessages = await this.memory.getMessages({
+      const memoryMessages = await this.conversationMemory.getMessages({
         userId,
         conversationId,
         limit: contextLimit,
@@ -381,7 +406,7 @@ export class MemoryManager {
     userId: string,
     conversationId: string,
   ): void {
-    if (!this.memory) return;
+    if (!this.conversationMemory) return;
 
     // Single atomic operation combining conversation setup and input saving
     this.backgroundQueue.enqueue({
@@ -405,12 +430,12 @@ export class MemoryManager {
    * Ensure conversation exists (background task)
    */
   private async ensureConversationExists(userId: string, conversationId: string): Promise<void> {
-    if (!this.memory) return;
+    if (!this.conversationMemory) return;
 
     try {
-      const existingConversation = await this.memory.getConversation(conversationId);
+      const existingConversation = await this.conversationMemory.getConversation(conversationId);
       if (!existingConversation) {
-        await this.memory.createConversation({
+        await this.conversationMemory.createConversation({
           id: conversationId,
           resourceId: this.resourceId,
           userId: userId,
@@ -420,7 +445,7 @@ export class MemoryManager {
         devLogger.info("[Memory] Created new conversation", conversationId);
       } else {
         // Update conversation's updatedAt
-        await this.memory.updateConversation(conversationId, {});
+        await this.conversationMemory.updateConversation(conversationId, {});
         devLogger.info(`[Memory] Updated conversation ${conversationId}`);
       }
     } catch (error) {
@@ -437,7 +462,7 @@ export class MemoryManager {
     userId: string,
     conversationId: string,
   ): Promise<void> {
-    if (!this.memory) return;
+    if (!this.conversationMemory) return;
 
     try {
       // Handle input based on type
@@ -463,10 +488,17 @@ export class MemoryManager {
   }
 
   /**
-   * Get the memory instance
+   * Get the conversation memory instance
    */
   getMemory(): Memory | undefined {
-    return this.memory;
+    return this.conversationMemory;
+  }
+
+  /**
+   * Get the history memory instance
+   */
+  getHistoryMemory(): Memory {
+    return this.historyMemory;
   }
 
   /**
@@ -483,7 +515,7 @@ export class MemoryManager {
     // Create a standard node ID
     const memoryNodeId = createNodeId(NodeType.MEMORY, this.resourceId);
 
-    if (!this.memory) {
+    if (!this.conversationMemory) {
       return {
         type: "NoMemory",
         resourceId: this.resourceId,
@@ -495,10 +527,10 @@ export class MemoryManager {
     }
 
     const memoryObject = {
-      type: this.memory?.constructor.name || "NoMemory",
+      type: this.conversationMemory?.constructor.name || "NoMemory",
       resourceId: this.resourceId,
       options: this.getOptions(),
-      available: !!this.memory,
+      available: !!this.conversationMemory,
       status: "idle", // Default to idle since we're only updating status during operations
       node_id: memoryNodeId,
     };
@@ -514,8 +546,7 @@ export class MemoryManager {
    * @returns A promise that resolves when the entry is stored
    */
   async storeHistoryEntry(agentId: string, entry: any): Promise<void> {
-    if (!this.memory) return;
-
+    // Always use history memory for storing history entries
     try {
       // Create the main history record (without events and steps)
       const mainEntry = {
@@ -532,7 +563,7 @@ export class MemoryManager {
       };
 
       // Save the main record (using addHistoryEntry and passing agentId)
-      await this.memory.addHistoryEntry(entry.id, mainEntry, agentId);
+      await this.historyMemory.addHistoryEntry(entry.id, mainEntry, agentId);
 
       // Add steps if they exist
       if (entry.steps && entry.steps.length > 0) {
@@ -551,11 +582,9 @@ export class MemoryManager {
    * @returns A promise that resolves to the entry or undefined
    */
   async getHistoryEntryById(agentId: string, entryId: string): Promise<any | undefined> {
-    if (!this.memory) return undefined;
-
     try {
-      // Get the main record
-      const entry = await this.memory.getHistoryEntry(entryId);
+      // Get the main record from history memory
+      const entry = await this.historyMemory.getHistoryEntry(entryId);
 
       // Only return if it belongs to this agent
       if (entry && entry._agentId === agentId) {
@@ -575,11 +604,9 @@ export class MemoryManager {
    * @returns A promise that resolves to an array of entries
    */
   async getAllHistoryEntries(agentId: string): Promise<any[]> {
-    if (!this.memory) return [];
-
     try {
-      // Get history records directly by agent ID (now includes events and steps)
-      const agentEntries = await this.memory.getAllHistoryEntriesByAgent(agentId);
+      // Get history records directly by agent ID from history memory
+      const agentEntries = await this.historyMemory.getAllHistoryEntriesByAgent(agentId);
       return agentEntries;
     } catch (error) {
       devLogger.error("Failed to get all history entries:", error);
@@ -600,11 +627,9 @@ export class MemoryManager {
     entryId: string,
     updates: any,
   ): Promise<any | undefined> {
-    if (!this.memory) return undefined;
-
     try {
-      // Get the main record
-      const entry = await this.memory.getHistoryEntry(entryId);
+      // Get the main record from history memory
+      const entry = await this.historyMemory.getHistoryEntry(entryId);
       if (!entry || entry._agentId !== agentId) return undefined;
 
       // Update the main record (only update the main fields)
@@ -619,7 +644,7 @@ export class MemoryManager {
       };
 
       // Save the main record to the database and pass agentId
-      await this.memory.updateHistoryEntry(entryId, updatedMainEntry, agentId);
+      await this.historyMemory.updateHistoryEntry(entryId, updatedMainEntry, agentId);
 
       // If there are step updates
       if (updates.steps) {
@@ -648,11 +673,9 @@ export class MemoryManager {
     entryId: string,
     steps: any[],
   ): Promise<any | undefined> {
-    if (!this.memory) return undefined;
-
     try {
-      // Check the main record
-      const entry = await this.memory.getHistoryEntry(entryId);
+      // Check the main record from history memory
+      const entry = await this.historyMemory.getHistoryEntry(entryId);
       if (!entry || entry._agentId !== agentId) return undefined;
 
       // Add each step as a separate record
@@ -673,7 +696,7 @@ export class MemoryManager {
         };
 
         // Save with addHistoryStep and pass agentId
-        await this.memory.addHistoryStep(stepId, stepData, entryId, agentId);
+        await this.historyMemory.addHistoryStep(stepId, stepData, entryId, agentId);
       }
 
       // Return the updated record with all relationships
@@ -700,14 +723,13 @@ export class MemoryManager {
     eventId: string,
     event: NewTimelineEvent,
   ): Promise<any | undefined> {
-    if (!this.memory) return undefined;
-
     try {
-      const entry = await this.memory.getHistoryEntry(historyId);
+      // Use history memory for timeline events
+      const entry = await this.historyMemory.getHistoryEntry(historyId);
       if (!entry || entry._agentId !== agentId) return undefined;
 
       // Save the timeline event directly to the new table
-      await this.memory.addTimelineEvent(eventId, event, historyId, agentId);
+      await this.historyMemory.addTimelineEvent(eventId, event, historyId, agentId);
 
       return await this.getHistoryEntryById(agentId, historyId);
     } catch (error) {

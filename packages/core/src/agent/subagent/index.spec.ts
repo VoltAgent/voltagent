@@ -1,3 +1,4 @@
+import { vi, describe, expect, it, beforeEach } from "vitest";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { AgentHandoffOptions } from "../types";
@@ -152,6 +153,33 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent2);
       expect(subAgentManager.calculateMaxSteps()).toBe(20); // 10 * 2
     });
+
+    it("should use agent-level maxSteps when provided", () => {
+      const manager = new SubAgentManager("Test Agent", []);
+      expect(manager.calculateMaxSteps(50)).toBe(50);
+    });
+
+    it("should use agent-level maxSteps even when sub-agents exist", () => {
+      const manager = new SubAgentManager("Test Agent", [mockAgent1, mockAgent2]);
+      expect(manager.calculateMaxSteps(35)).toBe(35);
+      // Should not use the default calculation (which would be 20)
+    });
+
+    it("should fall back to default calculation when no agent maxSteps provided", () => {
+      const manager = new SubAgentManager("Test Agent", [mockAgent1]);
+      expect(manager.calculateMaxSteps()).toBe(10); // 10 * 1 sub-agent
+    });
+
+    it("should use agent-level maxSteps of 1", () => {
+      const manager = new SubAgentManager("Test Agent", [mockAgent1, mockAgent2]);
+      expect(manager.calculateMaxSteps(1)).toBe(1);
+    });
+
+    it("should handle agent maxSteps with no sub-agents", () => {
+      const manager = new SubAgentManager("Test Agent", []);
+      expect(manager.calculateMaxSteps(15)).toBe(15);
+      // Should not fall back to default 10
+    });
   });
 
   describe("generateSupervisorSystemMessage", () => {
@@ -222,6 +250,347 @@ describe("SubAgentManager", () => {
       const description = "Some base instructions";
       const result = subAgentManager.generateSupervisorSystemMessage(description);
       expect(result).toMatchSnapshot();
+    });
+
+    describe("SupervisorConfig", () => {
+      let subAgentManager: SubAgentManager;
+      let mockAgent1: any;
+      let mockAgent2: any;
+
+      beforeEach(() => {
+        mockAgent1 = {
+          id: "agent1",
+          name: "Writer Agent",
+          purpose: "Creates written content",
+          instructions: "You are a writing assistant",
+        } as Agent<any>;
+
+        mockAgent2 = {
+          id: "agent2",
+          name: "Editor Agent",
+          instructions: "You review and edit content",
+        } as Agent<any>;
+
+        subAgentManager = new SubAgentManager("SupervisorAgent", [mockAgent1, mockAgent2]);
+      });
+
+      describe("systemMessage override", () => {
+        it("should use custom systemMessage when provided", () => {
+          const customSystemMessage = "You are a friendly content manager named ContentBot.";
+          const config = {
+            systemMessage: customSystemMessage,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "Some memory",
+            config,
+          );
+
+          expect(result).toContain(customSystemMessage);
+          expect(result).not.toContain("You are a supervisor agent");
+          expect(result).not.toContain("Base instructions");
+        });
+
+        it("should include agents memory by default with custom systemMessage", () => {
+          const customSystemMessage = "Custom supervisor message";
+          const agentsMemory = "user: Hello\nassistant: Hi there!";
+          const config = {
+            systemMessage: customSystemMessage,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            agentsMemory,
+            config,
+          );
+
+          expect(result).toContain(customSystemMessage);
+          expect(result).toContain("<agents_memory>");
+          expect(result).toContain(agentsMemory);
+        });
+
+        it("should exclude agents memory when includeAgentsMemory is false", () => {
+          const customSystemMessage = "Custom supervisor message";
+          const agentsMemory = "user: Hello\nassistant: Hi there!";
+          const config = {
+            systemMessage: customSystemMessage,
+            includeAgentsMemory: false,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            agentsMemory,
+            config,
+          );
+
+          expect(result).toBe(customSystemMessage);
+          expect(result).not.toContain("<agents_memory>");
+          expect(result).not.toContain(agentsMemory);
+        });
+
+        it("should handle empty agentsMemory with custom systemMessage", () => {
+          const customSystemMessage = "Custom supervisor message";
+          const config = {
+            systemMessage: customSystemMessage,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "",
+            config,
+          );
+
+          expect(result).toContain(customSystemMessage);
+          expect(result).toContain("<agents_memory>");
+          expect(result).toContain("No previous agent interactions available.");
+        });
+
+        it("should handle undefined agentsMemory with custom systemMessage", () => {
+          const customSystemMessage = "Custom supervisor message";
+          const config = {
+            systemMessage: customSystemMessage,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            undefined as any,
+            config,
+          );
+
+          expect(result).toContain(customSystemMessage);
+          expect(result).toContain("<agents_memory>");
+          expect(result).toContain("No previous agent interactions available.");
+        });
+      });
+
+      describe("includeAgentsMemory option", () => {
+        it("should include agents memory by default in template mode", () => {
+          const agentsMemory = "user: Test\nassistant: Response";
+          const config = {}; // No explicit includeAgentsMemory setting
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            agentsMemory,
+            config,
+          );
+
+          expect(result).toContain("<agents_memory>");
+          expect(result).toContain(agentsMemory);
+        });
+
+        it("should exclude agents memory when includeAgentsMemory is false in template mode", () => {
+          const agentsMemory = "user: Test\nassistant: Response";
+          const config = {
+            includeAgentsMemory: false,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            agentsMemory,
+            config,
+          );
+
+          // Should not contain the actual memory section with the provided content
+          expect(result).not.toContain(agentsMemory);
+          expect(result).toContain("You are a supervisor agent");
+          // The actual memory section should not be present (this check is more specific)
+          expect(result).not.toMatch(/<agents_memory>\s*user: Test/);
+        });
+
+        it("should explicitly include agents memory when includeAgentsMemory is true", () => {
+          const agentsMemory = "user: Test\nassistant: Response";
+          const config = {
+            includeAgentsMemory: true,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            agentsMemory,
+            config,
+          );
+
+          expect(result).toContain("<agents_memory>");
+          expect(result).toContain(agentsMemory);
+        });
+      });
+
+      describe("customGuidelines", () => {
+        it("should add custom guidelines to default template", () => {
+          const customGuidelines = [
+            "Always be polite and professional",
+            "Respond within 30 seconds",
+          ];
+          const config = {
+            customGuidelines,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "",
+            config,
+          );
+
+          expect(result).toContain("Always be polite and professional");
+          expect(result).toContain("Respond within 30 seconds");
+          expect(result).toContain("Provide a final answer to the User"); // Default guideline should still be there
+        });
+
+        it("should handle empty customGuidelines array", () => {
+          const config = {
+            customGuidelines: [],
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "",
+            config,
+          );
+
+          expect(result).toContain("You are a supervisor agent");
+          expect(result).toContain("Provide a final answer to the User"); // Default guidelines should still be there
+        });
+
+        it("should combine custom guidelines with default ones", () => {
+          const customGuidelines = ["Custom rule 1", "Custom rule 2"];
+          const config = {
+            customGuidelines,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "",
+            config,
+          );
+
+          // Should contain both default and custom guidelines
+          expect(result).toContain("Custom rule 1");
+          expect(result).toContain("Custom rule 2");
+          expect(result).toContain("Provide a final answer to the User");
+          expect(result).toContain("Do not mention the name of any agent");
+        });
+      });
+
+      describe("combined SupervisorConfig options", () => {
+        it("should handle all config options together in template mode", () => {
+          const agentsMemory = "user: Hello\nassistant: Hi!";
+          const config = {
+            includeAgentsMemory: true,
+            customGuidelines: ["Be helpful", "Be concise"],
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            agentsMemory,
+            config,
+          );
+
+          expect(result).toContain("You are a supervisor agent");
+          expect(result).toContain("Base instructions");
+          expect(result).toContain("<agents_memory>");
+          expect(result).toContain(agentsMemory);
+          expect(result).toContain("Be helpful");
+          expect(result).toContain("Be concise");
+        });
+
+        it("should not use customGuidelines when systemMessage is provided", () => {
+          const customSystemMessage = "You are a content manager.";
+          const config = {
+            systemMessage: customSystemMessage,
+            customGuidelines: ["This should be ignored"],
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "",
+            config,
+          );
+
+          expect(result).toContain(customSystemMessage);
+          expect(result).not.toContain("This should be ignored");
+          expect(result).not.toContain("You are a supervisor agent");
+        });
+      });
+
+      describe("edge cases", () => {
+        it("should handle empty systemMessage", () => {
+          const config = {
+            systemMessage: "",
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "Some memory",
+            config,
+          );
+
+          expect(result).toContain("<agents_memory>");
+          expect(result).toContain("Some memory");
+        });
+
+        it("should handle systemMessage with only whitespace", () => {
+          const config = {
+            systemMessage: "   \n\t   ",
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "Some memory",
+            config,
+          );
+
+          expect(result.trim()).not.toBe("");
+          expect(result).toContain("<agents_memory>");
+        });
+
+        it("should handle null and undefined config values gracefully", () => {
+          const config = {
+            systemMessage: undefined,
+            includeAgentsMemory: undefined,
+            customGuidelines: undefined,
+          };
+
+          const result = subAgentManager.generateSupervisorSystemMessage(
+            "Base instructions",
+            "Memory",
+            config,
+          );
+
+          // Should fall back to default template behavior
+          expect(result).toContain("You are a supervisor agent");
+          expect(result).toContain("Base instructions");
+          expect(result).toContain("<agents_memory>");
+        });
+      });
+
+      it("should match snapshot with custom systemMessage", () => {
+        const config = {
+          systemMessage: "You are a friendly content manager named ContentBot.",
+          includeAgentsMemory: true,
+        };
+
+        const result = subAgentManager.generateSupervisorSystemMessage(
+          "Base instructions",
+          "user: Hello\nassistant: Hi there!",
+          config,
+        );
+
+        expect(result).toMatchSnapshot();
+      });
+
+      it("should match snapshot with customGuidelines", () => {
+        const config = {
+          customGuidelines: ["Always be polite", "Respond quickly"],
+        };
+
+        const result = subAgentManager.generateSupervisorSystemMessage(
+          "Base instructions",
+          "user: Test\nassistant: Response",
+          config,
+        );
+
+        expect(result).toMatchSnapshot();
+      });
     });
   });
 
@@ -671,6 +1040,162 @@ describe("SubAgentManager", () => {
       expect(result.status).toBe("error");
       expect((result.error as Error).message).toContain("Event forwarding failed");
       expect(failingForwardEvent).toHaveBeenCalled();
+    });
+  });
+
+  describe("maxSteps propagation in handoff operations", () => {
+    let subAgentManager: SubAgentManager;
+    let mockAgent1: any;
+
+    beforeEach(() => {
+      mockAgent1 = new MockAgent("agent1", "Math Agent");
+      subAgentManager = new SubAgentManager("Main Agent");
+    });
+
+    it("should pass maxSteps to handoffTask", async () => {
+      // Spy on the target agent's streamText to check maxSteps
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Test task with maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        maxSteps: 42, // Should be passed to the target agent
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      expect(callOptions).toHaveProperty("maxSteps", 42);
+    });
+
+    it("should pass maxSteps through createDelegateTool", async () => {
+      subAgentManager.addSubAgent(mockAgent1 as any);
+
+      // Spy on handoffToMultiple to verify maxSteps propagation
+      const handoffToMultipleSpy = vi.spyOn(subAgentManager, "handoffToMultiple");
+
+      const delegateTool = subAgentManager.createDelegateTool({
+        sourceAgent: { id: "source-agent" } as any,
+        operationContext: {
+          operationId: "test-op",
+          userContext: new Map(),
+          conversationSteps: [],
+          historyEntry: {
+            id: "test-history",
+            startTime: new Date(),
+            input: "test",
+            output: "",
+            status: "completed" as const,
+            steps: [],
+            usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
+            model: "test",
+          },
+          isActive: true,
+        } as any,
+        currentHistoryEntryId: "test-history",
+        maxSteps: 100, // Should be passed through to handoffToMultiple
+      });
+
+      await delegateTool.execute({
+        task: "Delegate task with maxSteps",
+        targetAgents: ["Math Agent"],
+        context: {},
+      });
+
+      expect(handoffToMultipleSpy).toHaveBeenCalled();
+      const handoffOptions = handoffToMultipleSpy.mock.calls[0][0] as any;
+      expect(handoffOptions).toHaveProperty("maxSteps", 100);
+    });
+
+    it("should handle undefined maxSteps in handoffTask", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Task without maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        // No maxSteps provided
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      // maxSteps should be undefined when not provided
+      expect(callOptions.maxSteps).toBeUndefined();
+    });
+
+    it("should handle zero maxSteps in handoff operations", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Task with zero maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        maxSteps: 0, // Zero should be passed through
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      expect(callOptions).toHaveProperty("maxSteps", 0);
+    });
+
+    it("should handle negative maxSteps", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Task with negative maxSteps",
+        targetAgent: mockAgent1 as any,
+        context: {},
+        sharedContext: [],
+        maxSteps: -10, // Negative value should be passed through
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callOptions = streamTextSpy.mock.calls[0][1] as any;
+      expect(callOptions).toHaveProperty("maxSteps", -10);
+    });
+
+    it("should verify maxSteps is passed with complex handoff options", async () => {
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
+
+      const options: AgentHandoffOptions = {
+        task: "Complex handoff task",
+        targetAgent: mockAgent1 as any,
+        context: { complexData: "test" },
+        sharedContext: [{ role: "user", content: "Previous message" }],
+        conversationId: "test-conversation",
+        userId: "test-user",
+        parentAgentId: "parent-agent",
+        parentHistoryEntryId: "parent-history",
+        maxSteps: 50,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      expect(streamTextSpy).toHaveBeenCalled();
+      const callArgs = streamTextSpy.mock.calls[0];
+      const messages = callArgs[0] as any;
+      const callOptions = callArgs[1] as any;
+
+      // Verify task message is included (task message comes after sharedContext)
+      expect(messages[1].content).toContain("Complex handoff task");
+
+      // Verify all options are passed correctly
+      expect(callOptions).toHaveProperty("maxSteps", 50);
+      expect(callOptions).toHaveProperty("conversationId", "test-conversation");
+      expect(callOptions).toHaveProperty("userId", "test-user");
+      expect(callOptions).toHaveProperty("parentAgentId", "parent-agent");
+      expect(callOptions).toHaveProperty("parentHistoryEntryId", "parent-history");
     });
   });
 });

@@ -230,13 +230,19 @@ function convertToV4UIMessages(
     responseMessages,
   }).map((message) => ({
     ...message,
+    id: getId(message),
   }));
 
   return finalMessages as UIMessage[];
 }
 
+/**
+ * Get the id of a message or generate a new one if it doesn't exist.
+ * @param message - The message to get the id of.
+ * @returns The id of the message.
+ */
 function getId(message: unknown): string {
-  if (hasKey(message, "id") && typeof message.id === "string") {
+  if (hasKey(message, "id") && typeof message.id === "string" && message.id.length > 0) {
     return message.id;
   }
   return generateMessageId();

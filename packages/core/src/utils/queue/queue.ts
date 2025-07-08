@@ -98,10 +98,6 @@ export class BackgroundQueue {
         lastError = error instanceof Error ? error : new Error(String(error));
 
         if (attempt < maxAttempts) {
-          devLogger.warn(
-            `[Queue] Task ${task.id} failed (attempt ${attempt}/${maxAttempts}), retrying:`,
-            lastError.message,
-          );
           // Wait a bit before retry
           await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
         } else {

@@ -6,6 +6,7 @@ import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 import { AgentRegistry } from "./server/registry";
 import type { ServerOptions, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
+import type { SubAgentConfig } from "./agent/subagent/types";
 
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
@@ -14,6 +15,14 @@ import type { VoltAgentExporter } from "./telemetry/exporter";
 
 export * from "./agent";
 export * from "./agent/hooks";
+export { createSubagent } from "./agent/subagent/types";
+export type {
+  SubAgentConfig,
+  SubAgentConfigObject,
+  SubAgentMethod,
+  TextSubAgentConfig,
+  ObjectSubAgentConfig,
+} from "./agent/subagent/types";
 export * from "./tool";
 export * from "./tool/reasoning/index";
 export * from "./memory";
@@ -188,10 +197,26 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
     this.registry.registerAgent(agent);
 
     // Also register all subagents recursively
-    const subAgents = agent.getSubAgents();
-    if (subAgents && subAgents.length > 0) {
-      subAgents.forEach((subAgent) => this.registerAgent(subAgent));
+    const subAgentConfigs = agent.getSubAgents();
+    if (subAgentConfigs && subAgentConfigs.length > 0) {
+      subAgentConfigs.forEach((subAgentConfig) => {
+        // Extract the actual agent from SubAgentConfig
+        const subAgent = this.extractAgentFromConfig(subAgentConfig);
+        this.registerAgent(subAgent);
+      });
     }
+  }
+
+  /**
+   * Helper method to extract Agent instance from SubAgentConfig
+   */
+  private extractAgentFromConfig(config: SubAgentConfig): Agent<any> {
+    // If it's a SubAgentConfigObject, extract the agent
+    if (config && typeof config === "object" && "agent" in config && "method" in config) {
+      return config.agent;
+    }
+    // Otherwise, it's already an Agent instance
+    return config;
   }
 
   /**

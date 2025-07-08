@@ -97,20 +97,112 @@ new VoltAgent({
 
 When using the generation endpoints (`/text`, `/stream`, `/object`, `/stream-object`), you can provide an `options` object in the request body to customize the generation process. All options are optional.
 
-| Option             | Description                                                                   | Type                | Default |
-| ------------------ | ----------------------------------------------------------------------------- | ------------------- | ------- |
-| `userId`           | Optional user ID for context tracking.                                        | `string`            | -       |
-| `conversationId`   | Optional conversation ID for context tracking.                                | `string`            | -       |
-| `contextLimit`     | Optional limit for conversation history context.                              | `number` (integer)  | `10`    |
-| `temperature`      | Controls randomness (0-1). Lower is more deterministic.                       | `number`            | `0.7`   |
-| `maxTokens`        | Maximum number of tokens to generate in the response.                         | `number` (integer)  | `4000`  |
-| `topP`             | Controls diversity via nucleus sampling (0-1).                                | `number`            | `1.0`   |
-| `frequencyPenalty` | Penalizes repeated tokens (0-2). Higher values decrease repetition.           | `number`            | `0.0`   |
-| `presencePenalty`  | Penalizes tokens based on presence (0-2). Higher values encourage new topics. | `number`            | `0.0`   |
-| `seed`             | Optional integer seed for reproducible results.                               | `number` (integer)  | -       |
-| `stopSequences`    | An array of strings that will stop generation if encountered.                 | `array` of `string` | -       |
-| `extraOptions`     | A key-value object for provider-specific options.                             | `object`            | -       |
-| `userContext`      | A key-value object for dynamic agent context (roles, tiers, etc.).            | `object`            | -       |
+| Option             | Description                                                                      | Type                | Default |
+| ------------------ | -------------------------------------------------------------------------------- | ------------------- | ------- |
+| `userId`           | Optional user ID for context tracking.                                           | `string`            | -       |
+| `conversationId`   | Optional conversation ID for context tracking.                                   | `string`            | -       |
+| `contextLimit`     | Optional limit for conversation history context.                                 | `number` (integer)  | `10`    |
+| `maxSteps`         | Maximum number of iteration steps for this request (overrides agent's maxSteps). | `number` (integer)  | -       |
+| `temperature`      | Controls randomness (0-1). Lower is more deterministic.                          | `number`            | `0.7`   |
+| `maxTokens`        | Maximum number of tokens to generate in the response.                            | `number` (integer)  | `4000`  |
+| `topP`             | Controls diversity via nucleus sampling (0-1).                                   | `number`            | `1.0`   |
+| `frequencyPenalty` | Penalizes repeated tokens (0-2). Higher values decrease repetition.              | `number`            | `0.0`   |
+| `presencePenalty`  | Penalizes tokens based on presence (0-2). Higher values encourage new topics.    | `number`            | `0.0`   |
+| `seed`             | Optional integer seed for reproducible results.                                  | `number` (integer)  | -       |
+| `stopSequences`    | An array of strings that will stop generation if encountered.                    | `array` of `string` | -       |
+| `extraOptions`     | A key-value object for provider-specific options.                                | `object`            | -       |
+| `userContext`      | A key-value object for dynamic agent context (roles, tiers, etc.).               | `object`            | -       |
+
+### Understanding maxSteps
+
+The `maxSteps` parameter controls the number of iteration steps an agent can take during a single operation. This is particularly important for agents that use tools or coordinate with sub-agents, as they may require multiple LLM interactions to complete a task.
+
+**When to Use maxSteps:**
+
+- **Tool-using Agents**: Agents that make API calls, database queries, or other tool executions may need multiple steps to complete complex tasks
+- **Multi-agent Workflows**: Supervisor agents coordinating sub-agents need step limits to prevent runaway execution
+- **Resource Control**: Limit computational costs and execution time for expensive operations
+
+**Step Examples:**
+
+```json
+{
+  "input": "Research the latest AI trends and write a summary",
+  "options": {
+    "maxSteps": 8,
+    "temperature": 0.7
+  }
+}
+```
+
+This might result in:
+
+1. Agent analyzes the request
+2. Agent uses research tool to gather data
+3. Agent processes research results
+4. Agent uses writing tool to draft content
+5. Agent reviews and refines the output
+6. Agent finalizes the response
+
+**Priority Order:**
+
+1. API request `maxSteps` option (highest priority)
+2. Agent-level `maxSteps` configuration
+3. Default calculation (10 × number of sub-agents, minimum 10)
+
+**For Sub-agent Workflows**: The `maxSteps` limit applies to the entire workflow. All sub-agents inherit and share the same step budget, preventing infinite delegation loops.
+
+## Abort Signal Support
+
+VoltAgent Core API now supports graceful operation cancellation using the standard Web API `AbortSignal`. This enables clients to cancel expensive operations when users navigate away or manually stop requests.
+
+### Client-Side Cancellation
+
+Use the standard `AbortController` to cancel requests:
+
+```javascript
+// Create AbortController
+const abortController = new AbortController();
+
+// Cancel when user navigates away
+window.addEventListener("beforeunload", () => abortController.abort());
+
+// Stream request with abort signal
+const response = await fetch("http://localhost:3141/agents/my-agent/stream", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    input: "Write a very long story...",
+    options: { maxTokens: 4000 },
+  }),
+  signal: abortController.signal, // ✅ Automatic cancellation
+});
+
+// Manual cancellation after timeout
+setTimeout(() => abortController.abort(), 10000);
+```
+
+### Supported Endpoints
+
+All generation endpoints support abort signals:
+
+- **`/text`** - Non-streaming text generation
+- **`/stream`** - Streaming text generation
+- **`/object`** - Non-streaming object generation
+- **`/stream-object`** - Streaming object generation
+
+### Cancellation Behavior
+
+When a request is cancelled:
+
+1. **Server-side**: Agent operations stop gracefully and resources are cleaned up
+2. **Non-streaming**: HTTP request terminates with standard abort behavior
+3. **Streaming**: SSE stream closes and no further events are sent
+4. **SubAgents**: Cancellation propagates through sub-agent hierarchies
+
+### Error Handling with Abort
+
+For abort-related errors, see the Error Handling section below for details on how cancellation is reported.
 
 ## OpenAPI Specification
 
@@ -450,6 +542,7 @@ Common HTTP status codes:
 
 - `404`: Agent not found
 - `500`: Internal server error (e.g., invalid schema, agent processing error)
+- **Request cancelled**: When using `AbortSignal`, the request will be cancelled according to standard fetch abort behavior
 
 ## Passing User Context for Dynamic Agents
 
@@ -563,6 +656,7 @@ data: {
 | `SETUP_ERROR`     | Error during initial setup     | Agent initialization or configuration issues          |
 | `STREAM_ERROR`    | Generic streaming error        | LLM provider errors, network issues, invalid API keys |
 | `ITERATION_ERROR` | Error during stream processing | Issues while processing stream chunks                 |
+| `USER_CANCELLED`  | Operation cancelled by user    | When `AbortSignal` is triggered by client             |
 
 #### Streaming Event Flow
 
@@ -708,6 +802,14 @@ curl -X POST http://localhost:3141/agents/your-agent-id/text \
      -d '{ "input": "Tell me a joke!", "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
 ```
 
+**Generate text (With maxSteps Control):**
+
+```bash
+curl -X POST http://localhost:3141/agents/your-agent-id/text \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Use tools to research and analyze this topic", "options": { "maxSteps": 5, "temperature": 0.7 } }'
+```
+
 **Stream text (Basic):**
 
 ```bash
@@ -724,6 +826,15 @@ curl -N -X POST http://localhost:3141/agents/your-agent-id/stream \
 curl -N -X POST http://localhost:3141/agents/your-agent-id/stream \
      -H "Content-Type: application/json" \
      -d '{ "input": "Tell me a joke!", "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
+```
+
+**Stream text (With maxSteps Control for Complex Workflows):**
+
+```bash
+# Example for agents with tools or sub-agents - limits iteration steps
+curl -N -X POST http://localhost:3141/agents/supervisor-agent-id/stream \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Coordinate research and writing workflow", "options": { "maxSteps": 15, "temperature": 0.8 } }'
 ```
 
 **Generate object (Basic - requires a Zod schema JSON representation, see warning above):**
@@ -762,6 +873,48 @@ curl -N -X POST http://localhost:3141/agents/your-agent-id/stream-object \
 curl -N -X POST http://localhost:3141/agents/your-agent-id/stream-object \
      -H "Content-Type: application/json" \
      -d '{ "input": "Generate user profile: Name: Alice, City: Wonderland", "schema": {"type":"object", "properties": {"name": {"type": "string"}, "city": {"type": "string"}}, "required": ["name", "city"]}, "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
+```
+
+## Abort Signal Examples
+
+**JavaScript with Abort Signal:**
+
+```javascript
+// Create abort controller
+const abortController = new AbortController();
+
+// Cancel after 5 seconds
+setTimeout(() => abortController.abort(), 5000);
+
+// Stream with cancellation support
+try {
+  const response = await fetch("http://localhost:3141/agents/your-agent-id/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: "Write a very long story...",
+      options: { maxTokens: 4000 },
+    }),
+    signal: abortController.signal,
+  });
+
+  // Process stream...
+  const reader = response.body.getReader();
+  // ... stream processing code ...
+} catch (error) {
+  if (error.name === "AbortError") {
+    console.log("Request was cancelled");
+  }
+}
+```
+
+**cURL with timeout (simulating cancellation):**
+
+```bash
+# Cancel stream after 3 seconds using timeout
+timeout 3s curl -N -X POST http://localhost:3141/agents/your-agent-id/stream \
+     -H "Content-Type: application/json" \
+     -d '{ "input": "Write a very long story...", "options": { "maxTokens": 4000 } }'
 ```
 
 (Replace `your-agent-id` with the actual ID of one of your agents)

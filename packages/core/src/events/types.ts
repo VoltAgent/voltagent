@@ -115,6 +115,7 @@ export type AgentStartEventMetadata = {
     stop?: string[];
     system?: string;
     toolChoice?: string;
+    maxSteps?: number;
   };
   systemPrompt?: string | BaseMessage | BaseMessage[];
   messages?: BaseMessage[];
@@ -132,6 +133,7 @@ export interface AgentSuccessEventMetadata extends BaseEventMetadata {
     stop?: string[];
     system?: string;
     toolChoice?: string;
+    maxSteps?: number;
   };
 }
 

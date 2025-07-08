@@ -18,7 +18,8 @@ A tool requires:
 - `execute`: An asynchronous function that contains the tool's logic, taking the validated arguments as input.
 
 ```typescript
-import { Agent, createTool, z } from "@voltagent/core";
+import { Agent, createTool } from "@voltagent/core";
+import { z } from "zod";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
