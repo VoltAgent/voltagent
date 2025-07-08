@@ -19,11 +19,10 @@ export {
   andAgent,
   andThen,
   andWhen,
-  andWith,
   andAll,
   andRace,
 } from "./workflow";
-export type { Workflow, WorkflowChain, WorkflowConfig } from "./workflow";
+export type { Workflow, WorkflowConfig } from "./workflow";
 
 export * from "./agent";
 export * from "./agent/hooks";

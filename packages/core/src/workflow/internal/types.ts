@@ -1,4 +1,4 @@
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { DangerouslyAllowAny, PlainObject } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
@@ -28,14 +28,49 @@ export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
   state: InternalWorkflowStateParam<INPUT>,
 ) => Promise<RESULT>;
 
+export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
+  /**
+   * Unique identifier for the step
+   * @default uuidv4
+   */
+  id?: string;
+  /**
+   * Human-readable name for the step
+   */
+  name?: string;
+  /**
+   * Description of what the step does
+   */
+  purpose?: string;
+} & T;
+
 /**
  * Base step interface for building new steps
  * @private - INTERNAL USE ONLY
  */
 export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
-  /** Type identifier for the step */
+  /**
+   * Unique identifier for the step
+   */
+  id: string;
+  /**
+   * Human-readable name for the step
+   */
+  name: string | null;
+  /**
+   * Description of what the step does
+   */
+  purpose: string | null;
+  /**
+   * Type identifier for the step
+   */
   type: string;
-  /** Execute the step with the given data */
+  /**
+   * Execute the step with the given data
+   * @param data - The data to execute the step with
+   * @param state - The state of the workflow
+   * @returns The result of the step
+   */
   execute: (
     data: InternalExtractWorkflowInputData<DATA>,
     state: InternalWorkflowStateParam<INPUT>,
@@ -50,15 +85,23 @@ export type InternalAnyWorkflowStep<
   INPUT,
   DATA = DangerouslyAllowAny,
   RESULT = DangerouslyAllowAny,
-> = InternalBaseWorkflowStep<INPUT, DATA, RESULT> | InternalWorkflowFunc<INPUT, DATA, RESULT>;
+> =
+  | InternalBaseWorkflowStep<INPUT, DATA, RESULT>
+  | Omit<InternalBaseWorkflowStep<INPUT, DATA, RESULT>, "type">;
 
 /**
  * Infer the result type from a list of steps
  * @private - INTERNAL USE ONLY
  */
 export type InternalInferWorkflowStepsResult<
-  STEPS extends ReadonlyArray<InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>>,
-> = { [K in keyof STEPS]: Awaited<ReturnType<GetFunc<STEPS[K]>>> };
+  STEPS extends ReadonlyArray<
+    InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>
+  >,
+> = {
+  [K in keyof STEPS]: Awaited<ReturnType<STEPS[K]["execute"]>>;
+};
+
+// Awaited<ReturnType<GetFunc<STEPS[K]>>>
 
 export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
   ? BaseMessage | BaseMessage[] | string
@@ -66,12 +109,10 @@ export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
     ? BaseMessage | BaseMessage[] | string
     : T;
 
-type GetFunc<T> = T extends (...args: DangerouslyAllowAny) => DangerouslyAllowAny
-  ? T
-  : T extends InternalBaseWorkflowStep<
-        DangerouslyAllowAny,
-        DangerouslyAllowAny,
-        DangerouslyAllowAny
-      >
-    ? T["execute"]
-    : never;
+// type GetFunc<T> = T extends InternalAnyWorkflowStep<
+//   DangerouslyAllowAny,
+//   DangerouslyAllowAny,
+//   DangerouslyAllowAny
+// >
+//   ? T["execute"]
+//   : never;

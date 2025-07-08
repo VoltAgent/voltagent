@@ -76,14 +76,14 @@ export function createWorkflowStateManager<DATA, RESULT>(): WorkflowStateManager
 */
 
 class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager<DATA, RESULT> {
-  #state: WorkflowState<DATA, RESULT> | null = null;
+  #state: Omit<WorkflowState<DATA, RESULT>, "input"> | null = null;
   #input: DATA | null = null;
 
   get state(): WorkflowState<DATA, RESULT> {
     if (hasState(this.#state) && this.#input !== null) {
       return {
         ...this.#state,
-        input: this.#input,
+        input: this.#input as InternalExtractWorkflowInputData<DATA>,
       };
     }
     throw new Error("State is not set and cannot be accessed");
@@ -96,7 +96,6 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       active: config?.active ?? 0,
       startAt: new Date(),
       endAt: null,
-      input: data,
       data: data,
       status: "running",
       result: null,
@@ -112,7 +111,10 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       ...this.#state,
       ...stateUpdate,
     };
-    return this.#state;
+    return {
+      ...this.#state,
+      input: this.#input as InternalExtractWorkflowInputData<DATA>,
+    };
   }
 
   finish() {
@@ -144,13 +146,13 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
   }
 }
 
-function assertCanMutate(value: BaseWorkflowState | null): asserts value is RunningWorkflowState {
+function assertCanMutate(value: unknown): asserts value is RunningWorkflowState {
   if (!hasState(value) || value.status === "completed" || value.status === "failed") {
     throw new Error("Cannot mutate state after workflow has finished");
   }
 }
 
-function hasState(value: BaseWorkflowState | null): value is BaseWorkflowState {
+function hasState(value: unknown): value is BaseWorkflowState {
   return value !== null;
 }
 

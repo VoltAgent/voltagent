@@ -1,6 +1,7 @@
 import type { InternalAnyWorkflowStep, InternalInferWorkflowStepsResult } from "../internal/types";
+import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
-import type { WorkflowStepParallelAll } from "./types";
+import type { WorkflowStepParallelAll, WorkflowStepParallelAllConfig } from "./types";
 
 /**
  * Creates a parallel execution step that runs multiple steps simultaneously and waits for all to complete
@@ -39,13 +40,14 @@ export function andAll<
   RESULT,
   STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>,
   INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>,
->(steps: STEPS): WorkflowStepParallelAll<INPUT, DATA, INFERRED_RESULT> {
+>({ steps, ...config }: WorkflowStepParallelAllConfig<STEPS>) {
   return {
+    ...defaultStepConfig(config),
     type: "parallel-all",
     steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
     execute: async (data, state) => {
       const promises = steps.map((step) => matchStep(step).execute(data, state));
       return (await Promise.all(promises)) as INFERRED_RESULT;
     },
-  };
+  } satisfies WorkflowStepParallelAll<INPUT, DATA, INFERRED_RESULT>;
 }

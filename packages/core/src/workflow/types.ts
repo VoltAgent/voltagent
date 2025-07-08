@@ -1,11 +1,9 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
+import type { BaseMessage } from "../agent/providers";
 import type { WorkflowState } from "./internal/state";
-import type {
-  InternalBaseWorkflowInputMessage,
-  InternalBaseWorkflowInputSchema,
-} from "./internal/types";
+import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
 
 export interface WorkflowRunOptions {
@@ -63,7 +61,7 @@ export type WorkflowHooks<DATA, RESULT> = {
 
 export type WorkflowInput<INPUT_SCHEMA extends InternalBaseWorkflowInputSchema> =
   TF.IsUnknown<INPUT_SCHEMA> extends true
-    ? InternalBaseWorkflowInputMessage
+    ? BaseMessage | BaseMessage[] | string
     : INPUT_SCHEMA extends z.ZodTypeAny
       ? z.infer<INPUT_SCHEMA>
       : undefined;
@@ -125,7 +123,7 @@ export type Workflow<
   /**
    * Array of steps to execute in order
    */
-  steps: WorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>[];
+  steps: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, DangerouslyAllowAny, DangerouslyAllowAny>[];
   /**
    * Execute the workflow with the given input
    * @param input - The input to the workflow

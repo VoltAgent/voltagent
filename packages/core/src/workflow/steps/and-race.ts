@@ -1,4 +1,9 @@
-import type { InternalAnyWorkflowStep, InternalInferWorkflowStepsResult } from "../internal/types";
+import type {
+  InternalAnyWorkflowStep,
+  InternalInferWorkflowStepsResult,
+  InternalWorkflowStepConfig,
+} from "../internal/types";
+import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepParallelRace } from "./types";
 
@@ -41,13 +46,19 @@ export function andRace<
   RESULT,
   STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>,
   INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>[number],
->(steps: STEPS): WorkflowStepParallelRace<INPUT, DATA, INFERRED_RESULT> {
+>({
+  steps,
+  ...config
+}: InternalWorkflowStepConfig<{
+  steps: STEPS;
+}>) {
   return {
+    ...defaultStepConfig(config),
     type: "parallel-race",
     steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
     execute: async (data, state) => {
       const promises = steps.map((step) => matchStep(step).execute(data, state));
       return (await Promise.race(promises)) as INFERRED_RESULT;
     },
-  };
+  } satisfies WorkflowStepParallelRace<INPUT, DATA, INFERRED_RESULT>;
 }

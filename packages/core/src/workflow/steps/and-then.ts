@@ -1,6 +1,5 @@
-import type { InternalWorkflowFunc } from "../internal/types";
-import { createFuncStep } from "./helpers";
-import type { WorkflowStepFunc } from "./types";
+import { defaultStepConfig } from "../internal/utils";
+import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 
 /**
  * Creates an async function step for the workflow
@@ -21,6 +20,13 @@ import type { WorkflowStepFunc } from "./types";
  * @param fn - The async function to execute with the workflow data
  * @returns A workflow step that executes the function and returns the result
  */
-export function andThen<INPUT, DATA, RESULT>(fn: InternalWorkflowFunc<INPUT, DATA, RESULT>) {
-  return createFuncStep<INPUT, DATA, RESULT>(fn) satisfies WorkflowStepFunc<INPUT, DATA, RESULT>;
+export function andThen<INPUT, DATA, RESULT>({
+  execute,
+  ...config
+}: WorkflowStepFuncConfig<INPUT, DATA, RESULT>) {
+  return {
+    ...defaultStepConfig(config),
+    type: "func",
+    execute,
+  } satisfies WorkflowStepFunc<INPUT, DATA, RESULT>;
 }

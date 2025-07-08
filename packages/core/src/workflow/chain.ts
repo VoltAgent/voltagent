@@ -1,14 +1,19 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
-import type { Agent } from "../agent/index";
 import { createWorkflow } from "./core";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowInputSchema,
   InternalInferWorkflowStepsResult,
-  InternalWorkflowFunc,
 } from "./internal/types";
-import type { WorkflowStep } from "./steps";
+import type {
+  WorkflowStep,
+  WorkflowStepAgentConfig,
+  WorkflowStepConditionalWhenConfig,
+  WorkflowStepFuncConfig,
+  WorkflowStepParallelAllConfig,
+  WorkflowStepParallelRaceConfig,
+} from "./steps";
 import { andAgent } from "./steps/and-agent";
 import { andAll } from "./steps/and-all";
 import { andRace } from "./steps/and-race";
@@ -91,15 +96,20 @@ export class WorkflowChain<
    * @param config - The config for the agent (schema) `generateObject` call
    * @returns A workflow step that executes the agent with the task
    */
-  andAgent<SCHEMA extends z.ZodTypeAny>(
-    task: string | InternalWorkflowFunc<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, string>,
-    agent: Agent<{ llm: DangerouslyAllowAny }>,
-    config: AgentConfig<SCHEMA>,
-  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>> {
-    const step = andAgent(task, agent, config) as WorkflowStep<
+  andAgent<SCHEMA extends z.ZodTypeAny>({
+    task,
+    agent,
+    config,
+    ...restConfig
+  }: WorkflowStepAgentConfig<INPUT_SCHEMA, CURRENT_DATA, SCHEMA>): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    z.infer<SCHEMA>
+  > {
+    const step = andAgent({ task, agent, config, ...restConfig }) as unknown as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
-      z.infer<SCHEMA>
+      z.infer<SCHEMA> | DangerouslyAllowAny
     >;
     this.steps.push(step);
     return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>>;
@@ -124,10 +134,19 @@ export class WorkflowChain<
    * @param fn - The async function to execute with the current workflow data
    * @returns A new chain with the function step added
    */
-  andThen<NEW_DATA>(
-    fn: InternalWorkflowFunc<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
-  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA> {
-    const step = andThen(fn) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>;
+  andThen<NEW_DATA>({
+    execute,
+    ...config
+  }: WorkflowStepFuncConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    NEW_DATA
+  > {
+    const step = andThen({ execute, ...config }) as WorkflowStep<
+      WorkflowInput<INPUT_SCHEMA>,
+      CURRENT_DATA,
+      NEW_DATA
+    >;
     this.steps.push(step);
     return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA>;
   }
@@ -160,16 +179,21 @@ export class WorkflowChain<
    * @param stepInput - Either a workflow step or an agent to execute when the condition is true
    * @returns A new chain with the conditional step added
    */
-  andWhen<NEW_DATA>(
-    condition: InternalWorkflowFunc<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, boolean>,
-    stepInput: InternalAnyWorkflowStep<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
-  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA | CURRENT_DATA> {
-    const step = andWhen(condition, stepInput) as WorkflowStep<
+  andWhen<NEW_DATA>({
+    condition,
+    step,
+    ...config
+  }: WorkflowStepConditionalWhenConfig<
+    WorkflowInput<INPUT_SCHEMA>,
+    CURRENT_DATA,
+    NEW_DATA
+  >): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA | CURRENT_DATA> {
+    const finalStep = andWhen({ condition, step, ...config }) as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
       NEW_DATA
     >;
-    this.steps.push(step);
+    this.steps.push(finalStep);
     return this as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA | CURRENT_DATA>;
   }
 
@@ -209,8 +233,15 @@ export class WorkflowChain<
       InternalAnyWorkflowStep<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>
     >,
     INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>,
-  >(steps: STEPS): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, INFERRED_RESULT> {
-    this.steps.push(andAll<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA, STEPS>(steps));
+  >({
+    steps,
+    ...config
+  }: WorkflowStepParallelAllConfig<STEPS>): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    INFERRED_RESULT
+  > {
+    this.steps.push(andAll({ steps, ...config }));
     return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, INFERRED_RESULT>;
   }
 
@@ -252,8 +283,24 @@ export class WorkflowChain<
       InternalAnyWorkflowStep<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>
     >,
     INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>[number],
-  >(steps: STEPS): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, INFERRED_RESULT> {
-    this.steps.push(andRace<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA, STEPS>(steps));
+  >({
+    steps,
+    ...config
+  }: WorkflowStepParallelRaceConfig<STEPS, CURRENT_DATA, NEW_DATA>): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    INFERRED_RESULT
+  > {
+    this.steps.push(
+      andRace({
+        steps: steps as unknown as InternalAnyWorkflowStep<
+          WorkflowInput<INPUT_SCHEMA>,
+          CURRENT_DATA,
+          INFERRED_RESULT
+        >[],
+        ...config,
+      }),
+    );
     return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, INFERRED_RESULT>;
   }
 
