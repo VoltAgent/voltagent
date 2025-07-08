@@ -687,6 +687,34 @@ importers:
         specifier: ^5
         version: 5.8.2
 
+  examples/with-openai:
+    dependencies:
+      '@voltagent/cli':
+        specifier: ^0.1.9
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^0.1.47
+        version: link:../../packages/core
+      '@voltagent/openai-ai':
+        specifier: workspace:*
+        version: link:../../packages/openai-ai
+      openai:
+        specifier: ^4.0.0
+        version: 4.104.0(zod@3.24.2)
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.15.21
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.3
+
   examples/with-peaka-mcp:
     dependencies:
       '@ai-sdk/openai':
@@ -1666,6 +1694,21 @@ importers:
       vitest:
         specifier: ^3.2.3
         version: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+
+  packages/openai-ai:
+    dependencies:
+      '@voltagent/core':
+        specifier: workspace:*
+        version: link:../core
+      openai:
+        specifier: ^4.0.0
+        version: 4.104.0(zod@3.24.2)
+      zod:
+        specifier: ^3.0.0
+        version: 3.24.2
+      zod-to-json-schema:
+        specifier: ^3.0.0
+        version: 3.24.5(zod@3.24.2)
 
   packages/postgres:
     dependencies:
