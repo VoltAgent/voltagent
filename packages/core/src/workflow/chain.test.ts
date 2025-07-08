@@ -33,7 +33,6 @@ describe("WorkflowChain", () => {
     expect(typeof chain.andAgent).toBe("function");
     expect(typeof chain.andThen).toBe("function");
     expect(typeof chain.andWhen).toBe("function");
-    expect(typeof chain.andWith).toBe("function");
     expect(typeof chain.andAll).toBe("function");
     expect(typeof chain.andRace).toBe("function");
     expect(typeof chain.run).toBe("function");
@@ -49,7 +48,7 @@ describe("WorkflowChain", () => {
     });
 
     const result = await chain
-      .andAgent(mockAgent, { schema: z.object({ greeting: z.string() }) })
+      .andAgent("Generate greeting", mockAgent, { schema: z.object({ greeting: z.string() }) })
       .andThen(async (data: any) => ({ ...data, isAdult: true }))
       .run({ name: "John", age: 25 });
 

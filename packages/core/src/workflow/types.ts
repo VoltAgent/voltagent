@@ -1,104 +1,141 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { Agent } from "../agent/index";
-import type { ConditionalWith } from "./internal/pattern";
+import type * as TF from "type-fest";
+import type { z } from "zod";
+import type { WorkflowState } from "./internal/state";
+import type {
+  InternalBaseWorkflowInputMessage,
+  InternalBaseWorkflowInputSchema,
+} from "./internal/types";
+import type { WorkflowStep } from "./steps";
 
 export interface WorkflowRunOptions {
+  /**
+   * The active step, this can be used to track the current step in a workflow
+   * @default 0
+   */
   active?: number;
+  /**
+   * The execution ID, this can be used to track the current execution in a workflow
+   * @default uuidv4
+   */
   executionId?: string;
+  /**
+   * The conversation ID, this can be used to track the current conversation in a workflow
+   */
+  conversationId?: string;
+  /**
+   * The user ID, this can be used to track the current user in a workflow
+   */
+  userId?: string;
 }
 
+/**
+ * Hooks for the workflow
+ * @param DATA - The type of the data
+ * @param RESULT - The type of the result
+ */
 export type WorkflowHooks<DATA, RESULT> = {
+  /**
+   * Called when the workflow starts
+   * @param state - The current state of the workflow
+   * @returns void
+   */
   onStart?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when a step starts
+   * @param state - The current state of the workflow
+   * @returns void
+   */
   onStepStart?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when a step ends
+   * @param state - The current state of the workflow
+   * @returns void
+   */
   onStepEnd?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when the workflow ends
+   * @param state - The current state of the workflow
+   * @returns void
+   */
   onEnd?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
 };
 
-export type WorkflowState<DATA, RESULT> = {
-  executionId: string;
-  active: number;
-  startAt: Date;
-  endAt: Date | null;
-  status: "pending" | "running" | "completed" | "failed";
-  data: DATA;
-  result: RESULT | null;
-  error: Error | null;
+export type WorkflowInput<INPUT_SCHEMA extends InternalBaseWorkflowInputSchema> =
+  TF.IsUnknown<INPUT_SCHEMA> extends true
+    ? InternalBaseWorkflowInputMessage
+    : INPUT_SCHEMA extends z.ZodTypeAny
+      ? z.infer<INPUT_SCHEMA>
+      : undefined;
+
+export type WorkflowResult<RESULT_SCHEMA extends z.ZodTypeAny> = RESULT_SCHEMA extends z.ZodTypeAny
+  ? z.infer<RESULT_SCHEMA>
+  : RESULT_SCHEMA;
+
+export type WorkflowConfig<
+  INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
+  RESULT_SCHEMA extends z.ZodTypeAny,
+> = {
+  /**
+   * Unique identifier for the workflow
+   */
+  id: string;
+  /**
+   * Human-readable name for the workflow
+   */
+  name: string;
+  /**
+   * Description of what the workflow does
+   */
+  purpose?: string;
+  /**
+   * Schema for the input data
+   */
+  input?: INPUT_SCHEMA;
+  /**
+   * Schema for the result data
+   */
+  result: RESULT_SCHEMA;
+  /**
+   * Hooks for the workflow
+   */
+  hooks?: WorkflowHooks<WorkflowInput<INPUT_SCHEMA>, WorkflowResult<RESULT_SCHEMA>>;
 };
 
-export type WorkflowFunc<DATA, RESULT> = (data: DATA) => Promise<RESULT>;
-
-export type WorkflowStepType =
-  | "agent"
-  | "func"
-  | "conditional-when"
-  | "conditional-with"
-  | "parallel-all"
-  | "parallel-race";
-
-export interface WorkflowStepAgent<DATA, RESULT> extends InternalBaseStep<DATA, RESULT> {
-  type: "agent";
-  agent: Agent<{ llm: DangerouslyAllowAny }>;
-}
-
-export interface WorkflowStepFunc<DATA, RESULT> extends InternalBaseStep<DATA, RESULT> {
-  type: "func";
-  fn: WorkflowFunc<DATA, RESULT>;
-}
-
-export interface WorkflowStepConditionalWhen<DATA, RESULT>
-  extends InternalBaseStep<DATA, RESULT | DATA> {
-  type: "conditional-when";
-  condition: (data: DATA) => boolean;
-}
-
-export interface WorkflowStepConditionalWith<DATA, RESULT>
-  extends InternalBaseStep<DATA, RESULT | DATA> {
-  type: "conditional-with";
-  condition: ConditionalWith<DATA, RESULT>;
-}
-
-export interface WorkflowStepParallelRace<DATA, RESULT> extends InternalBaseStep<DATA, RESULT> {
-  type: "parallel-race";
-  steps: ReadonlyArray<InternalAnyStep<DATA, RESULT>>;
-}
-
-export interface WorkflowStepParallelAll<DATA, RESULT> extends InternalBaseStep<DATA, RESULT> {
-  type: "parallel-all";
-  steps: ReadonlyArray<InternalAnyStep<DATA, RESULT>>;
-}
-
-export type WorkflowStep<DATA, RESULT> =
-  | WorkflowStepAgent<DATA, RESULT>
-  | WorkflowStepFunc<DATA, RESULT>
-  | WorkflowStepConditionalWhen<DATA, RESULT>
-  | WorkflowStepConditionalWith<DATA, RESULT>
-  | WorkflowStepParallelAll<DATA, RESULT>
-  | WorkflowStepParallelRace<DATA, RESULT>;
-
-/*
-|------------------
-| Internals
-|------------------
-*/
-
-export interface InternalBaseStep<DATA, RESULT> {
-  /** Type identifier for the step */
-  type: string;
-  /** Execute the step with the given data */
-  execute: (data: DATA) => Promise<RESULT>;
-}
-
-/** @private */
-export type InternalAnyStep<DATA = DangerouslyAllowAny, RESULT = DangerouslyAllowAny> =
-  | InternalBaseStep<DATA, RESULT>
-  | WorkflowFunc<DATA, RESULT>;
-
-export type InternalInferStepsResult<
-  STEPS extends ReadonlyArray<InternalAnyStep<DangerouslyAllowAny, DangerouslyAllowAny>>,
-> = { [K in keyof STEPS]: Awaited<ReturnType<GetFunc<STEPS[K]>>> };
-
-type GetFunc<T> = T extends (...args: any) => any
-  ? T
-  : T extends InternalBaseStep<any, any>
-    ? T["execute"]
-    : never;
+/**
+ * A workflow instance that can be executed
+ */
+export type Workflow<
+  INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
+  RESULT_SCHEMA extends z.ZodTypeAny,
+> = {
+  /**
+   * Unique identifier for the workflow
+   */
+  id: string;
+  /**
+   * Human-readable name for the workflow
+   */
+  name: string;
+  /**
+   * Description of what the workflow does
+   * @default "No purpose provided"
+   */
+  purpose: string;
+  /**
+   * Array of steps to execute in order
+   */
+  steps: WorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>[];
+  /**
+   * Execute the workflow with the given input
+   * @param input - The input to the workflow
+   * @returns The result of the workflow
+   */
+  run: (input: WorkflowInput<INPUT_SCHEMA>) => Promise<{
+    executionId: string;
+    startAt: Date;
+    endAt: Date;
+    status: "completed";
+    result: z.infer<RESULT_SCHEMA>;
+  }>;
+};
