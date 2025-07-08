@@ -340,7 +340,7 @@ import { openai } from "@ai-sdk/openai";
 
 // Create your first agent
 const myFirstAgent = new Agent({
-  name: "HelloAgent",
+  name: "my-agent",
   description: "A simple agent that introduces itself",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
@@ -404,7 +404,7 @@ new VoltAgent({
               </p>
               <div className="bg-gray-900/50 rounded p-2 landing-md:p-3 overflow-x-auto">
                 <code className="text-green-400 text-xs landing-md:text-landing-sm">
-                  name: "HelloAgent"
+                  name: "my-agent"
                 </code>
               </div>
             </div>

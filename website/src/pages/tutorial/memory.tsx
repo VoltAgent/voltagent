@@ -505,7 +505,7 @@ const statelessAgent = new Agent({
   name: "Stateless Agent",
   instructions: "This agent remembers nothing.",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
+  model: openai("gpt-4o-mini"),
   memory: false // Memory disabled
 });`}
             </CodeBlock>
@@ -519,7 +519,7 @@ const fastAgent = new Agent({
   name: "Fast Agent",
   instructions: "This agent stores memory in RAM.",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
+  model: openai("gpt-4o-mini"),
   memory: new InMemoryStorage()
 });`}
             </CodeBlock>
@@ -533,7 +533,7 @@ const productionAgent = new Agent({
   name: "Production Agent",
   instructions: "This agent stores memory in PostgreSQL.",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
+  model: openai("gpt-4o-mini"),
   memory: new PostgreSQLStorage({
     connectionString: process.env.DATABASE_URL
   })
@@ -649,7 +649,7 @@ const productionAgent = new Agent({
               title="Basic API Call (Without Memory - Don't Do This)"
             >
               {`# ❌ Without userId - Memory won't work
-curl -X POST http://localhost:3141/agents/your-agent-id/text \\
+curl -X POST http://localhost:3141/agents/my-agent/text \\
      -H "Content-Type: application/json" \\
      -d '{ 
        "input": "Hi, my name is Sarah. What's the weather like?" 
@@ -663,7 +663,7 @@ curl -X POST http://localhost:3141/agents/your-agent-id/text \\
               title="Proper API Call (With Memory - Do This)"
             >
               {`# ✅ With userId and conversationId - Memory works!
-curl -X POST http://localhost:3141/agents/your-agent-id/text \\
+curl -X POST http://localhost:3141/agents/my-agent/text \\
      -H "Content-Type: application/json" \\
      -d '{
        "input": "Hi, my name is Sarah. What\\'s the weather like?",
@@ -674,7 +674,7 @@ curl -X POST http://localhost:3141/agents/your-agent-id/text \\
      }'
 
 # Follow-up message in same conversation
-curl -X POST http://localhost:3141/agents/your-agent-id/text \\
+curl -X POST http://localhost:3141/agents/my-agent/text \\
      -H "Content-Type: application/json" \\
      -d '{
        "input": "What was my name again?",
@@ -697,7 +697,7 @@ const userId = getCurrentUserId(); // Get from your auth system
 const conversationId = generateConversationId(); // Generate or get existing
 
 async function chatWithAgent(message) {
-  const response = await fetch('http://localhost:3141/agents/your-agent-id/text', {
+  const response = await fetch('http://localhost:3141/agents/my-agent/text', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -147,499 +147,587 @@ export default function MCPTutorial() {
         {/* Real Example */}
         <div className="space-y-6">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Real Example: GitHub Integration
+            Add MCP to Your Weather Agent
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's connect your agent to GitHub so it can read your repos, create
-            issues, and manage pull requests.
+            Let's upgrade your weather agent from the previous tutorial with
+            file system access through MCP.
           </p>
 
           <ColorModeProvider>
             <CodeBlock language="typescript" title="src/index.ts">
-              {`import { VoltAgent, Agent } from "@voltagent/core";
+              {`import { VoltAgent, Agent, createTool, MCPConfiguration } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
-import { MCPClient } from "@voltagent/mcp";
+import { z } from "zod";
+import path from "node:path";
 
-// Connect to GitHub MCP server
-const githubMCP = new MCPClient({
-  name: "github",
-  serverPath: "npx @modelcontextprotocol/server-github",
-  environment: {
-    GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_TOKEN,
+// Your existing weather tool
+const getWeatherTool = createTool({
+  name: "get_weather",
+  description: "Get current weather for any city",
+  parameters: z.object({
+    location: z.string().describe("City and state, e.g. New York, NY"),
+  }),
+  execute: async ({ location }) => {
+    console.log("Getting weather for " + location + "...");
+    if (location.toLowerCase().includes("new york")) {
+      return { temperature: "18°C", condition: "Partly cloudy" };
+    }
+    return { temperature: "24°C", condition: "Sunny" };
   },
 });
 
-const agent = new Agent({
-  name: "github-agent",
-  instructions: \`You are a GitHub assistant. You can:
-  - Read repository information
-  - Search through code
-  - Create and manage issues
-  - Review pull requests
-  - Get commit history
+// NEW: Add MCP for file system access
+const mcpConfig = new MCPConfiguration({
+  servers: {
+    filesystem: {
+      type: "stdio", // Connects via standard input/output
+      command: "npx", // The command to execute
+      args: [
+        // Arguments for the command
+        "-y",
+        "@modelcontextprotocol/server-filesystem", // Example: A filesystem server package
+        // Optional arguments for the server itself, like specifying allowed paths:
+        path.join(process.env.HOME || "", "Desktop"),
+      ],
+      // Optional: Specify the working directory for the command
+      cwd: process.env.HOME,
+    },
+  },
+});
+
+(async () => {
+  const tools = await mcpConfig.getTools();
+  const agent = new Agent({
+    name: "my-agent",
+    instructions: \`You are a helpful assistant that can check weather and manage files. You can:
+  - Get weather information for any city
+  - Read and write files
+  - Save weather reports to files
+  - Manage data storage
   
-  Always be helpful and provide clear information about GitHub repositories.\`,
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  mcpServers: [githubMCP],
-});
+  Always be helpful and provide clear information.\`,
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    tools: [
+      getWeatherTool,
+      ...tools
+    ],
+  });
 
-new VoltAgent({
-  agents: { "github-agent": agent },
-});
+  new VoltAgent({
+    agents: { agent },
+  });
+})();
 
-// Now your agent can access GitHub!
-// Try asking: "What are the open issues in my voltagent repo?"
-// Or: "Create an issue titled 'Add user authentication'"
-// Or: "Show me the latest commits in the main branch"`}
+// Now your agent can do both weather AND file operations!
+// Try: "Check weather in London and save it to a file"
+// Or: "What files are in the Desktop directory?"
+// Or: "Read yesterday's weather report"`}
             </CodeBlock>
           </ColorModeProvider>
+        </div>
+
+        {/* MCP Demo GIF */}
+        <div className="space-y-6">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            See MCP in Action
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+            Here's what happens when your agent uses MCP filesystem tools in
+            VoltOps console:
+          </p>
+
+          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border border-gray-700">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
+              MCP Filesystem Demo
+            </h3>
+            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-landing-sm">
+              Watch your agent read files, create directories, and manage your
+              filesystem through MCP:
+            </p>
+            <div className="rounded-lg overflow-hidden border border-gray-600">
+              <img
+                src="https://cdn.voltagent.dev/docs/mco-demo.gif"
+                alt="MCP Filesystem Demo - Agent managing files through MCP in VoltOps"
+                className="w-full h-auto"
+              />
+            </div>
+            <p className="text-gray-400 text-xs landing-md:text-landing-sm mt-2 landing-md:mt-3 text-center">
+              Real-time MCP filesystem operations: reading, writing, and
+              managing files
+            </p>
+          </div>
+
+          <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-4 landing-md:p-6">
+            <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
+              What You're Seeing
+            </h4>
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+              In the demo above, the agent:
+            </p>
+            <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  Connects to MCP filesystem server
+                </span>
+              </div>
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  Reads and writes files
+                </span>
+              </div>
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  Lists directory contents
+                </span>
+              </div>
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  Provides real-time feedback
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* HTTP MCP Example */}
+        <div className="space-y-6">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            HTTP MCP: Access AI Models & Remote Services
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+            MCP isn't just for local files - it works over HTTP for remote
+            services too. Let's connect your agent to Hugging Face's massive
+            collection of AI models.
+          </p>
+
+          {/* Setup Section */}
+          <div className="bg-gray-800/50 border-solid border border-orange-500 rounded-lg p-4 landing-md:p-6">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-orange-400 mb-3 landing-md:mb-4">
+              Setup: Get Your Hugging Face Token
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 landing-md:space-x-4">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xs landing-md:text-landing-sm">
+                    1
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                    Visit{" "}
+                    <a
+                      href="https://huggingface.co/settings/tokens"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-orange-400 hover:underline"
+                    >
+                      huggingface.co/settings/tokens
+                    </a>
+                  </p>
+                  <p className="text-gray-400 text-xs">
+                    Create a free account if you don't have one
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3 landing-md:space-x-4">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xs landing-md:text-landing-sm">
+                    2
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-300 mb-1 text-xs landing-md:text-landing-sm">
+                    Click "New token" → Select "Read" access
+                  </p>
+                  <p className="text-gray-400 text-xs">
+                    Copy the token that starts with "hf_..."
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3 landing-md:space-x-4">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xs landing-md:text-landing-sm">
+                    3
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-300 mb-1 text-xs landing-md:text-landing-sm">
+                    Add to your .env file:
+                  </p>
+                  <code className="bg-gray-800 px-2 py-1 rounded text-orange-400 text-xs landing-md:text-landing-sm">
+                    HUGGING_FACE_TOKEN=hf_your_token_here
+                  </code>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ColorModeProvider>
+            <CodeBlock
+              language="typescript"
+              title="Add HTTP MCP: Complete Agent with Both Local & Remote Tools"
+            >
+              {`import { VoltAgent, Agent, createTool, MCPConfiguration } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+import path from "node:path";
+
+// Your existing weather tool (keep it!)
+const getWeatherTool = createTool({
+  name: "get_weather",
+  description: "Get current weather for any city",
+  parameters: z.object({
+    location: z.string().describe("City and state, e.g. New York, NY"),
+  }),
+  execute: async ({ location }) => {
+    console.log("Getting weather for " + location + "...");
+    if (location.toLowerCase().includes("new york")) {
+      return { temperature: "18°C", condition: "Partly cloudy" };
+    }
+    return { temperature: "24°C", condition: "Sunny" };
+  },
+});
+
+// UPGRADE: Now we have BOTH local filesystem AND remote AI models!
+const mcpConfig = new MCPConfiguration({
+  servers: {
+    // Local filesystem access (from previous example)
+    filesystem: {
+      type: "stdio",
+      command: "npx",
+      args: [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        path.join(process.env.HOME || "", "Desktop"),
+      ],
+      cwd: process.env.HOME,
+    },
+    // NEW: Remote Hugging Face AI models
+    "hf-mcp-server": {
+      url: "https://huggingface.co/mcp",
+      requestInit: {
+        headers: { 
+          Authorization: \`Bearer \${process.env.HUGGING_FACE_TOKEN}\`
+        },
+      },
+      type: "http",
+    },
+  },
+});
+
+(async () => {
+  try {
+    const tools = await mcpConfig.getTools();
+    
+    const agent = new Agent({
+      name: "my-agent",
+      instructions: \`You are a powerful assistant with comprehensive capabilities:
+        
+        Weather Services:
+        - Get current weather for any city
+        
+        File Management (Local MCP):
+        - Read and write files
+        - List directory contents
+        - Manage file storage
+        - Save weather reports to files
+        
+        AI & ML Services (Remote MCP via Hugging Face):
+        - Generate images from text descriptions
+        - Analyze and classify images
+        - Process and understand text
+        - Translate between languages
+        - Answer questions about various topics
+        
+        You can combine ALL these capabilities in creative ways!
+        Always explain what you're doing when using different tools.\`,
+      llm: new VercelAIProvider(),
+      model: openai("gpt-4o-mini"),
+      tools: [
+        getWeatherTool,  // Local weather tool
+        ...tools         // BOTH filesystem + AI tools
+      ],
+    });
+
+    new VoltAgent({
+      agents: { agent },
+    });
+  } catch (error) {
+    console.error("Failed to initialize VoltAgent:", error);
+  }
+})();
+
+// Now your agent is a POWERHOUSE with weather + files + AI!
+// Try these incredible combinations:
+// "Check weather in Paris, generate an image of that weather, and save the report to a file"
+// "Read my todo.txt file, translate it to Spanish, and generate an image for each task"
+// "Create a weather report file for Tokyo with generated weather images"`}
+            </CodeBlock>
+          </ColorModeProvider>
+
+          {/* Test Scenarios */}
+          <div className="bg-gray-800/50 border-solid border border-purple-500 rounded-lg p-4 landing-md:p-6">
+            <h4 className="text-purple-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
+              Try These Amazing AI Combinations
+            </h4>
+            <p className="text-gray-300 mb-4 text-xs landing-md:text-landing-sm">
+              Your agent now has access to thousands of AI models. Test these
+              scenarios in VoltOps:
+            </p>
+            <div className="space-y-3">
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-purple-400 text-xs font-medium mb-1">
+                  Weather + Image Generation:
+                </div>
+                <code className="text-gray-300 text-xs">
+                  "Check weather in San Francisco and generate an image matching
+                  those conditions"
+                </code>
+              </div>
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-purple-400 text-xs font-medium mb-1">
+                  Weather + Translation:
+                </div>
+                <code className="text-gray-300 text-xs">
+                  "What's the weather in Barcelona? Also translate this to
+                  Spanish: 'It's a beautiful day!'"
+                </code>
+              </div>
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-purple-400 text-xs font-medium mb-1">
+                  Image Analysis + AI:
+                </div>
+                <code className="text-gray-300 text-xs">
+                  "Generate an image of a rainy day, then analyze what you see
+                  in that image"
+                </code>
+              </div>
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-purple-400 text-xs font-medium mb-1">
+                  Text Processing + Weather:
+                </div>
+                <code className="text-gray-300 text-xs">
+                  "Summarize this text and check the weather: 'I'm planning a
+                  trip to London next week...'"
+                </code>
+              </div>
+            </div>
+          </div>
+
+          {/* Hugging Face MCP Demo GIF */}
+          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border border-gray-700">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
+              HTTP MCP in Action: AI Models Demo
+            </h3>
+            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-landing-sm">
+              Watch your agent use both local filesystem and remote AI models
+              through HTTP MCP:
+            </p>
+            <div className="rounded-lg overflow-hidden border border-gray-600">
+              <img
+                src="https://cdn.voltagent.dev/docs/tutorial/mcp-hugging-face-demo.gif"
+                alt="HTTP MCP Hugging Face Demo - Agent using AI models and filesystem together"
+                className="w-full h-auto"
+              />
+            </div>
+            <p className="text-gray-400 text-xs landing-md:text-landing-sm mt-2 landing-md:mt-3 text-center">
+              Powerful combination: Local file operations + Remote AI model
+              access via HTTP MCP
+            </p>
+          </div>
+
+          <div className="bg-gray-800/50 border-solid border border-green-500 rounded-lg p-4 landing-md:p-6">
+            <h4 className="text-green-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
+              What Makes This Incredible
+            </h4>
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+              In the demo above, you're seeing:
+            </p>
+            <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  Local weather data retrieval
+                </span>
+              </div>
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  Remote AI image generation
+                </span>
+              </div>
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  File system write operations
+                </span>
+              </div>
+              <div className="flex items-start space-x-2 landing-md:space-x-3">
+                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  Seamless tool coordination
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Capabilities */}
+          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
+            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+              <h4 className="text-white font-semibold mb-3">
+                AI Capabilities You Get
+              </h4>
+              <div className="space-y-2 text-landing-sm">
+                <div className="text-gray-300">
+                  • Image generation from text
+                </div>
+                <div className="text-gray-300">
+                  • Image analysis & classification
+                </div>
+                <div className="text-gray-300">• Language translation</div>
+                <div className="text-gray-300">• Text summarization</div>
+                <div className="text-gray-300">• Question answering</div>
+                <div className="text-gray-300">• Sentiment analysis</div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+              <h4 className="text-white font-semibold mb-3">
+                Why This is Powerful
+              </h4>
+              <div className="space-y-2 text-landing-sm">
+                <div className="text-gray-300">
+                  • Zero AI model hosting costs
+                </div>
+                <div className="text-gray-300">
+                  • Access to latest models instantly
+                </div>
+                <div className="text-gray-300">
+                  • Combine multiple AI capabilities
+                </div>
+                <div className="text-gray-300">
+                  • Scale without infrastructure
+                </div>
+                <div className="text-gray-300">
+                  • Mix local tools + remote AI
+                </div>
+                <div className="text-gray-300">
+                  • Production-ready immediately
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Available MCP Servers */}
         <div className="space-y-6">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Popular MCP Servers
+            Ready-to-Use MCP Servers
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            The MCP ecosystem has ready-made servers for popular services. Here
-            are some you can use today:
+            VoltAgent maintains a comprehensive directory of MCP servers for
+            popular services. Here are some examples to get you started:
           </p>
 
-          <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Development Tools
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>GitHub:</strong> Repositories, issues, PRs
-                  </span>
+          <div className="grid grid-cols-1 landing-md:grid-cols-3 gap-4">
+            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+              <h4 className="text-white font-semibold mb-3">Communication</h4>
+              <div className="space-y-2 text-landing-sm">
+                <div className="text-gray-300">
+                  • <strong>Slack</strong> - Send messages, manage channels
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>GitLab:</strong> Project management
-                  </span>
+                <div className="text-gray-300">
+                  • <strong>Discord</strong> - Bot interactions, server
+                  management
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Docker:</strong> Container management
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>AWS:</strong> Cloud resources
-                  </span>
+                <div className="text-gray-300">
+                  • <strong>Gmail</strong> - Email sending, inbox management
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Productivity
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Slack:</strong> Team communication
-                  </span>
+            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+              <h4 className="text-white font-semibold mb-3">Productivity</h4>
+              <div className="space-y-2 text-landing-sm">
+                <div className="text-gray-300">
+                  • <strong>Notion</strong> - Create pages, manage databases
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Google Drive:</strong> File management
-                  </span>
+                <div className="text-gray-300">
+                  • <strong>Google Sheets</strong> - Spreadsheet operations
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Calendar:</strong> Scheduling
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Notion:</strong> Knowledge management
-                  </span>
+                <div className="text-gray-300">
+                  • <strong>Google Calendar</strong> - Event scheduling
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Data & Analytics
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>PostgreSQL:</strong> Database queries
-                  </span>
+            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+              <h4 className="text-white font-semibold mb-3">
+                Development & Data
+              </h4>
+              <div className="space-y-2 text-landing-sm">
+                <div className="text-gray-300">
+                  • <strong>GitHub</strong> - Repository management
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>SQLite:</strong> Local databases
-                  </span>
+                <div className="text-gray-300">
+                  • <strong>Ahrefs</strong> - SEO data analysis
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Filesystem:</strong> File operations
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Web Search:</strong> Internet data
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Business Tools
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Salesforce:</strong> CRM data
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>HubSpot:</strong> Marketing automation
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Stripe:</strong> Payment processing
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                  <span className="text-gray-300">
-                    <strong>Zendesk:</strong> Customer support
-                  </span>
+                <div className="text-gray-300">
+                  • <strong>PostgreSQL</strong> - Database operations
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Multi-MCP Example */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Advanced Example: DevOps Assistant
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's build a DevOps assistant that can access GitHub, AWS, and
-            Slack to help manage your infrastructure.
-          </p>
-
-          <ColorModeProvider>
-            <CodeBlock language="typescript" title="devops-agent.ts">
-              {`import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
-import { MCPClient } from "@voltagent/mcp";
-
-// Connect to multiple MCP servers
-const githubMCP = new MCPClient({
-  name: "github",
-  serverPath: "npx @modelcontextprotocol/server-github",
-  environment: {
-    GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_TOKEN,
-  },
-});
-
-const awsMCP = new MCPClient({
-  name: "aws",
-  serverPath: "npx @modelcontextprotocol/server-aws",
-  environment: {
-    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-    AWS_REGION: process.env.AWS_REGION,
-  },
-});
-
-const slackMCP = new MCPClient({
-  name: "slack",
-  serverPath: "npx @modelcontextprotocol/server-slack",
-  environment: {
-    SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN,
-  },
-});
-
-const devopsAgent = new Agent({
-  name: "devops-assistant",
-  instructions: \`You are a DevOps assistant with access to:
-  
-  🐙 GitHub: Repository management, CI/CD, issues, PRs
-  ☁️ AWS: EC2 instances, S3 buckets, Lambda functions, CloudWatch
-  💬 Slack: Team notifications and updates
-  
-  You can help with:
-  - Monitoring system health across GitHub and AWS
-  - Deploying applications and managing releases
-  - Investigating issues and incidents
-  - Keeping the team updated via Slack
-  - Managing infrastructure and resources
-  
-  Always be proactive about security and best practices.\`,
-  
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  mcpServers: [githubMCP, awsMCP, slackMCP],
-});
-
-new VoltAgent({
-  agents: { "devops-assistant": devopsAgent },
-});
-
-// Example interactions:
-// "Check the status of our production servers and notify the team if there are any issues"
-// "Deploy the latest commit from main branch to staging"
-// "Create a GitHub issue for the high CPU usage we're seeing on the web servers"
-// "Show me the CloudWatch metrics for our Lambda functions in the last hour"`}
-            </CodeBlock>
-          </ColorModeProvider>
-
-          <div className="bg-gray-800/50 border-solid border border-emerald-500 rounded-lg p-6">
-            <h4 className="text-emerald-500 font-semibold mb-2">
-              Real-World Workflow
+          {/* Directory Link */}
+          <div className="bg-gray-800/50 border-solid border border-emerald-500 rounded-lg p-4 landing-md:p-6">
+            <h4 className="text-emerald-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
+              Explore the Complete MCP Directory
             </h4>
-            <p className="text-gray-300 mb-3">
-              With this setup, you can ask your agent:{" "}
-              <em>"Our website is slow, can you investigate?"</em>
+            <p className="text-gray-300 mb-4 text-xs landing-md:text-landing-sm">
+              This is just a sample! VoltAgent maintains a growing directory of
+              MCP servers with detailed setup instructions, code examples, and
+              tool capabilities for each service.
             </p>
-            <div className="text-landing-sm flex flex-col gap-1 text-gray-300">
-              <span>The agent will automatically:</span>
-
-              <span>• Check AWS CloudWatch for performance metrics</span>
-
-              <span>• Look at recent GitHub commits for potential issues</span>
-
-              <span>• Update your team in Slack with findings</span>
-
-              <span>• Create GitHub issues for any problems found</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Custom MCP Server */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Building Your Own MCP Server
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 mb-0 leading-relaxed">
-            Need to connect to a system that doesn't have an MCP server yet? You
-            can build your own in just a few minutes.
-          </p>
-
-          <ColorModeProvider>
-            <CodeBlock language="typescript" title="custom-mcp-server.ts">
-              {`#!/usr/bin/env node
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
-
-// Your custom API client
-class CustomAPIClient {
-  constructor(private apiKey: string) {}
-  
-  async getUsers() {
-    // Your API logic here
-    return [{ id: 1, name: "John Doe", email: "john@example.com" }];
-  }
-  
-  async createTicket(title: string, description: string) {
-    // Your API logic here
-    return { id: "TICK-123", title, status: "open" };
-  }
-}
-
-// Create MCP server
-const server = new Server(
-  {
-    name: "custom-api-server",
-    version: "0.1.0",
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
-
-const apiClient = new CustomAPIClient(process.env.CUSTOM_API_KEY!);
-
-// Define available tools
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "get_users",
-        description: "Get list of users from the system",
-        inputSchema: {
-          type: "object",
-          properties: {},
-        },
-      },
-      {
-        name: "create_ticket",
-        description: "Create a support ticket",
-        inputSchema: {
-          type: "object",
-          properties: {
-            title: { type: "string", description: "Ticket title" },
-            description: { type: "string", description: "Ticket description" },
-          },
-          required: ["title", "description"],
-        },
-      },
-    ],
-  };
-});
-
-// Handle tool calls
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
-
-  try {
-    switch (name) {
-      case "get_users":
-        const users = await apiClient.getUsers();
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(users, null, 2),
-            },
-          ],
-        };
-
-      case "create_ticket":
-        const ticket = await apiClient.createTicket(args.title, args.description);
-        return {
-          content: [
-            {
-              type: "text",
-              text: \`Created ticket: \${ticket.id}\`,
-            },
-          ],
-        };
-
-      default:
-        throw new Error(\`Unknown tool: \${name}\`);
-    }
-  } catch (error) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: \`Error: \${error.message}\`,
-        },
-      ],
-      isError: true,
-    };
-  }
-});
-
-// Start the server
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('✅ Connected to custom MCP server');
-}
-
-main().catch((error) => {
-  console.error('❌ Custom MCP error:', error.message);
-  process.exit(1);
-});`}
-            </CodeBlock>
-          </ColorModeProvider>
-
-          <ColorModeProvider>
-            <CodeBlock language="typescript" title="Using custom MCP server">
-              {`const customMCP = new MCPClient({
-  name: "custom-api",
-  serverPath: "node custom-mcp-server.ts",
-  environment: {
-    CUSTOM_API_KEY: process.env.CUSTOM_API_KEY,
-  },
-});
-
-const agent = new Agent({
-  name: "custom-agent",
-  instructions: "You can access our custom API to manage users and tickets.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  mcpServers: [customMCP],
-});`}
-            </CodeBlock>
-          </ColorModeProvider>
-        </div>
-
-        {/* Security & Best Practices */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Security & Best Practices
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            MCP gives your agent powerful access to external systems. Here's how
-            to do it safely.
-          </p>
-
-          <div className="grid grid-cols-1 landing-md:grid-cols-1 gap-6">
-            <div className="bg-gray-800/50 border-solid border-yellow-500 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-yellow-500 mb-4">
-                Security Guidelines
-              </h3>
-              <div className="space-y-3 text-landing-sm">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
-                  <span className="text-gray-300">
-                    <strong>Principle of Least Privilege:</strong> Only give
-                    access to what your agent actually needs
-                  </span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
-                  <span className="text-gray-300">
-                    <strong>Environment Variables:</strong> Never hardcode API
-                    keys or secrets in your code
-                  </span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
-                  <span className="text-gray-300">
-                    <strong>Audit Logs:</strong> Monitor what your agent is
-                    doing with external systems
-                  </span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5" />
-                  <span className="text-gray-300">
-                    <strong>Rate Limiting:</strong> Implement safeguards to
-                    prevent API abuse
-                  </span>
-                </div>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  <strong>10+ Ready-to-use servers</strong> with copy-paste
+                  configurations
+                </span>
               </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  <strong>Detailed tool listings</strong> showing exactly what
+                  each server can do
+                </span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  <strong>Live examples</strong> and implementation guides
+                </span>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <a
+                href="https://voltagent.dev/mcp/"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-300 no-underline text-xs landing-md:text-landing-sm"
+              >
+                Browse Full MCP Directory →
+              </a>
             </div>
           </div>
         </div>
@@ -656,18 +744,15 @@ const agent = new Agent({
           </p>
 
           <div className="bg-gray-800/50 border-solid border border-emerald-500 rounded-lg p-6">
-            <h4 className="text-emerald-500 font-semibold mb-2">
-              Ready to Go Enterprise?
-            </h4>
+            <h4 className="text-emerald-500 font-semibold mb-2">Try It Now</h4>
             <p className="text-gray-300 mb-3">
-              Set up the GitHub MCP example above and ask your agent:
+              Test the file system example above:
             </p>
-            <ul className="text-gray-300 space-y-1 text-landing-sm">
-              <li>"What repositories do I have?"</li>
-              <li>"Show me the latest issues in my main project"</li>
-              <li>"Create an issue to add better error handling"</li>
-              <li>"What were the last 5 commits to the main branch?"</li>
-            </ul>
+            <div className="text-gray-300 space-y-1 text-landing-sm">
+              <div>"Check weather in London and save it to a file"</div>
+              <div>"What files are in the Desktop directory?"</div>
+              <div>"Read yesterday's weather report"</div>
+            </div>
           </div>
         </div>
       </div>
