@@ -202,9 +202,9 @@ export default function TutorialIntroduction() {
             ) : (
               <div className="flex items-center justify-between gap-8">
                 {/* Code Section - Left Side */}
-                <div className="w-[55%] border border-solid border-white/10 rounded-lg bg-gray-900/50">
-                  <pre className="text-left h-full bg-transparent p-0 text-xs md:text-sm font-mono m-0">
-                    <div className="flex">
+                <div className="w-[55%] border border-solid border-white/10 rounded-lg bg-gray-900/50 min-h-[520px] flex flex-col">
+                  <pre className="text-left flex-1 bg-transparent p-0 text-xs md:text-sm font-mono m-0">
+                    <div className="flex h-full">
                       <div className="py-5 px-2 text-right text-gray-500 select-none border-r border-gray-500/30/50 min-w-[40px] text-xs">
                         <div>1</div>
                         <div>2</div>
@@ -221,8 +221,13 @@ export default function TutorialIntroduction() {
                         <div>13</div>
                         <div>14</div>
                         <div>15</div>
+                        <div>16</div>
+                        <div>17</div>
+                        <div>18</div>
+                        <div>19</div>
+                        <div>20</div>
                       </div>
-                      <code className="py-5 px-3 block text-xs">
+                      <code className="py-5 px-3 block text-xs flex-1">
                         {/* Imports */}
                         <span
                           className={`block ${getHighlightClasses("imports")}`}
@@ -355,6 +360,17 @@ export default function TutorialIntroduction() {
                           </span>
                           <br />
                           <span>{"});"}</span>
+                          <br />
+                          <br />
+                          <br />
+                          <br />
+                          <span className="text-gray-300">
+                            {"// 🎉 Your agent is now running!"}
+                          </span>
+                          <br />
+                          <span className="text-gray-300">
+                            {"// Visit console.voltagent.dev to interact"}
+                          </span>
                         </span>
                       </code>
                     </div>
