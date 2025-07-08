@@ -4,11 +4,14 @@ import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import { MobileAgentCode } from "../../components/tutorial";
 
 export default function TutorialIntroduction() {
   const [highlightedSection, setHighlightedSection] = useState<string | null>(
     "agent",
   );
+  const isMobile = useMediaQuery("(max-width: 1023px)");
 
   // Function to define code sections
   const getHighlightClasses = (section: string) => {
@@ -194,320 +197,336 @@ export default function TutorialIntroduction() {
 
           {/* Interactive Code Section - Wider Container */}
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between gap-8">
-              {/* Code Section - Left Side */}
-              <div className="w-[55%] border border-solid border-white/10 rounded-lg bg-gray-900/50">
-                <pre className="text-left h-full bg-transparent p-0 text-xs md:text-sm font-mono m-0">
-                  <div className="flex">
-                    <div className="py-5 px-2 text-right text-gray-500 select-none border-r border-gray-500/30/50 min-w-[40px] text-xs">
-                      <div>1</div>
-                      <div>2</div>
-                      <div>3</div>
-                      <div>4</div>
-                      <div>5</div>
-                      <div>6</div>
-                      <div>7</div>
-                      <div>8</div>
-                      <div>9</div>
-                      <div>10</div>
-                      <div>11</div>
-                      <div>12</div>
-                      <div>13</div>
-                      <div>14</div>
-                      <div>15</div>
+            {isMobile ? (
+              <MobileAgentCode isVisible={true} />
+            ) : (
+              <div className="flex items-center justify-between gap-8">
+                {/* Code Section - Left Side */}
+                <div className="w-[55%] border border-solid border-white/10 rounded-lg bg-gray-900/50">
+                  <pre className="text-left h-full bg-transparent p-0 text-xs md:text-sm font-mono m-0">
+                    <div className="flex">
+                      <div className="py-5 px-2 text-right text-gray-500 select-none border-r border-gray-500/30/50 min-w-[40px] text-xs">
+                        <div>1</div>
+                        <div>2</div>
+                        <div>3</div>
+                        <div>4</div>
+                        <div>5</div>
+                        <div>6</div>
+                        <div>7</div>
+                        <div>8</div>
+                        <div>9</div>
+                        <div>10</div>
+                        <div>11</div>
+                        <div>12</div>
+                        <div>13</div>
+                        <div>14</div>
+                        <div>15</div>
+                      </div>
+                      <code className="py-5 px-3 block text-xs">
+                        {/* Imports */}
+                        <span
+                          className={`block ${getHighlightClasses("imports")}`}
+                        >
+                          <span className="text-blue-400">import</span>
+                          <span>
+                            {" "}
+                            {"{"} VoltAgent, Agent {"}"}{" "}
+                          </span>
+                          <span className="text-blue-400">from</span>
+                          <span className="text-yellow-300">
+                            {" "}
+                            "@voltagent/core"
+                          </span>
+                          <span>;</span>
+                          <br />
+                          <span className="text-blue-400">import</span>
+                          <span>
+                            {" "}
+                            {"{"} VercelAIProvider {"}"}{" "}
+                          </span>
+                          <span className="text-blue-400">from</span>
+                          <span className="text-yellow-300">
+                            {" "}
+                            "@voltagent/vercel-ai"
+                          </span>
+                          <span>;</span>
+                          <br />
+                          <span className="text-blue-400">import</span>
+                          <span>
+                            {" "}
+                            {"{"} openai {"}"}{" "}
+                          </span>
+                          <span className="text-blue-400">from</span>
+                          <span className="text-yellow-300">
+                            {" "}
+                            "@ai-sdk/openai"
+                          </span>
+                          <span>;</span>
+                          <br />
+                          <br />
+                        </span>
+
+                        {/* Agent Creation */}
+                        <span
+                          className={`block ${getHighlightClasses("agent")}`}
+                        >
+                          <span className="text-gray-300">
+                            {"// Create your first agent"}
+                          </span>
+                          <br />
+                          <span className="text-blue-400">const</span>
+                          <span> myFirstAgent = </span>
+                          <span className="text-blue-400">new</span>
+                          <span className="text-green-400"> Agent</span>
+                          <span>{"({"}</span>
+                          <br />
+                        </span>
+
+                        {/* Agent Name */}
+                        <span
+                          className={`block ${getHighlightClasses("name")}`}
+                        >
+                          <span className="ml-4">name: </span>
+                          <span className="text-yellow-300">"my-agent"</span>
+                          <span>,</span>
+                          <br />
+                        </span>
+
+                        {/* Agent Description & Instructions */}
+                        <span
+                          className={`block ${getHighlightClasses("behavior")}`}
+                        >
+                          <span className="ml-4">description: </span>
+                          <span className="text-yellow-300">
+                            "A simple agent that introduces itself"
+                          </span>
+                          <span>,</span>
+                          <br />
+                          <span className="ml-4">llm: </span>
+                          <span className="text-blue-400">new</span>
+                          <span className="text-green-400">
+                            {" "}
+                            VercelAIProvider
+                          </span>
+                          <span>(),</span>
+                          <br />
+                        </span>
+
+                        {/* Model Selection */}
+                        <span
+                          className={`block ${getHighlightClasses("model")}`}
+                        >
+                          <span className="ml-4">model: </span>
+                          <span className="text-green-400">openai</span>
+                          <span>(</span>
+                          <span className="text-yellow-300">"gpt-4o-mini"</span>
+                          <span>),</span>
+                          <br />
+                          <span className="ml-4">instructions: </span>
+                          <span className="text-yellow-300">
+                            "You are a friendly assistant. Always greet users
+                            warmly."
+                          </span>
+                          <br />
+                        </span>
+
+                        <span
+                          className={`block ${getHighlightClasses("agent")}`}
+                        >
+                          <span>{"});"}</span>
+                          <br />
+                          <br />
+                        </span>
+
+                        {/* Server Setup */}
+                        <span
+                          className={`block ${getHighlightClasses("server")}`}
+                        >
+                          <span className="text-gray-300">
+                            {"// Start VoltAgent server"}
+                          </span>
+                          <br />
+                          <span className="text-blue-400">new</span>
+                          <span className="text-green-400"> VoltAgent</span>
+                          <span>{"({"}</span>
+                          <br />
+                          <span className="ml-4">
+                            agents: {"{"} myFirstAgent {"}"},
+                          </span>
+                          <br />
+                          <span>{"});"}</span>
+                        </span>
+                      </code>
                     </div>
-                    <code className="py-5 px-3 block text-xs">
-                      {/* Imports */}
-                      <span
-                        className={`block ${getHighlightClasses("imports")}`}
-                      >
-                        <span className="text-blue-400">import</span>
-                        <span>
-                          {" "}
-                          {"{"} VoltAgent, Agent {"}"}{" "}
-                        </span>
-                        <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300">
-                          {" "}
-                          "@voltagent/core"
-                        </span>
-                        <span>;</span>
-                        <br />
-                        <span className="text-blue-400">import</span>
-                        <span>
-                          {" "}
-                          {"{"} VercelAIProvider {"}"}{" "}
-                        </span>
-                        <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300">
-                          {" "}
-                          "@voltagent/vercel-ai"
-                        </span>
-                        <span>;</span>
-                        <br />
-                        <span className="text-blue-400">import</span>
-                        <span>
-                          {" "}
-                          {"{"} openai {"}"}{" "}
-                        </span>
-                        <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300">
-                          {" "}
-                          "@ai-sdk/openai"
-                        </span>
-                        <span>;</span>
-                        <br />
-                        <br />
-                      </span>
+                  </pre>
+                </div>
 
-                      {/* Agent Creation */}
-                      <span className={`block ${getHighlightClasses("agent")}`}>
-                        <span className="text-gray-300">
-                          {"// Create your first agent"}
-                        </span>
-                        <br />
-                        <span className="text-blue-400">const</span>
-                        <span> myFirstAgent = </span>
-                        <span className="text-blue-400">new</span>
-                        <span className="text-green-400"> Agent</span>
-                        <span>{"({"}</span>
-                        <br />
-                      </span>
-
-                      {/* Agent Name */}
-                      <span className={`block ${getHighlightClasses("name")}`}>
-                        <span className="ml-4">name: </span>
-                        <span className="text-yellow-300">"my-agent"</span>
-                        <span>,</span>
-                        <br />
-                      </span>
-
-                      {/* Agent Description & Instructions */}
-                      <span
-                        className={`block ${getHighlightClasses("behavior")}`}
-                      >
-                        <span className="ml-4">description: </span>
-                        <span className="text-yellow-300">
-                          "A simple agent that introduces itself"
-                        </span>
-                        <span>,</span>
-                        <br />
-                        <span className="ml-4">llm: </span>
-                        <span className="text-blue-400">new</span>
-                        <span className="text-green-400">
-                          {" "}
-                          VercelAIProvider
-                        </span>
-                        <span>(),</span>
-                        <br />
-                      </span>
-
-                      {/* Model Selection */}
-                      <span className={`block ${getHighlightClasses("model")}`}>
-                        <span className="ml-4">model: </span>
-                        <span className="text-green-400">openai</span>
-                        <span>(</span>
-                        <span className="text-yellow-300">"gpt-4o-mini"</span>
-                        <span>),</span>
-                        <br />
-                        <span className="ml-4">instructions: </span>
-                        <span className="text-yellow-300">
-                          "You are a friendly assistant. Always greet users
-                          warmly."
-                        </span>
-                        <br />
-                      </span>
-
-                      <span className={`block ${getHighlightClasses("agent")}`}>
-                        <span>{"});"}</span>
-                        <br />
-                        <br />
-                      </span>
-
-                      {/* Server Setup */}
-                      <span
-                        className={`block ${getHighlightClasses("server")}`}
-                      >
-                        <span className="text-gray-300">
-                          {"// Start VoltAgent server"}
-                        </span>
-                        <br />
-                        <span className="text-blue-400">new</span>
-                        <span className="text-green-400"> VoltAgent</span>
-                        <span>{"({"}</span>
-                        <br />
-                        <span className="ml-4">
-                          agents: {"{"} myFirstAgent {"}"},
-                        </span>
-                        <br />
-                        <span>{"});"}</span>
-                      </span>
-                    </code>
-                  </div>
-                </pre>
-              </div>
-
-              {/* Explanation Cards - Right Side */}
-              <div className="flex w-[45%] flex-col gap-4">
-                {/* Card 1 - Agent Creation */}
-                <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
-                  <div
-                    className={`h-[100px] p-3 rounded-lg ${
-                      highlightedSection === "agent"
-                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
-                        : "border-solid border-gray-500/30 hover:bg-white/5"
-                    } flex flex-col cursor-pointer transition-all duration-300`}
-                    onMouseEnter={() => handleMouseEnter("agent")}
-                    onMouseLeave={handleMouseLeave}
-                    onClick={() => handleClick("agent")}
-                  >
+                {/* Explanation Cards - Right Side */}
+                <div className="flex w-[45%] flex-col gap-4">
+                  {/* Card 1 - Agent Creation */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
-                      className={`text-base font-semibold mb-3 ${
+                      className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "agent"
-                          ? "text-emerald-500"
-                          : "text-white"
-                      }`}
+                          ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("agent")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("agent")}
                     >
-                      "I need an AI agent"
-                    </div>
-                    <div className="text-gray-400 text-xs leading-relaxed">
-                      The Agent class is your AI's personality container. It
-                      defines who your AI is and how it should behave.
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "agent"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "I need an AI agent"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        The Agent class is your AI's personality container. It
+                        defines who your AI is and how it should behave.
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Card 2 - Naming */}
-                <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
-                  <div
-                    className={`h-[100px] p-3 rounded-lg ${
-                      highlightedSection === "name"
-                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
-                        : "border-solid border-gray-500/30 hover:bg-white/5"
-                    } flex flex-col cursor-pointer transition-all duration-300`}
-                    onMouseEnter={() => handleMouseEnter("name")}
-                    onMouseLeave={handleMouseLeave}
-                    onClick={() => handleClick("name")}
-                  >
+                  {/* Card 2 - Naming */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
-                      className={`text-base font-semibold mb-3 ${
+                      className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "name"
-                          ? "text-emerald-500"
-                          : "text-white"
-                      }`}
+                          ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("name")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("name")}
                     >
-                      "What to call it?"
-                    </div>
-                    <div className="text-gray-400 text-xs leading-relaxed">
-                      Give it a descriptive name. Think of it like naming a
-                      function - choose something that tells you what this agent
-                      does.
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "name"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "What to call it?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        Give it a descriptive name. Think of it like naming a
+                        function - choose something that tells you what this
+                        agent does.
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Card 3 - Behavior */}
-                <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
-                  <div
-                    className={`h-[100px] p-3 rounded-lg ${
-                      highlightedSection === "behavior"
-                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
-                        : "border-solid border-gray-500/30 hover:bg-white/5"
-                    } flex flex-col cursor-pointer transition-all duration-300`}
-                    onMouseEnter={() => handleMouseEnter("behavior")}
-                    onMouseLeave={handleMouseLeave}
-                    onClick={() => handleClick("behavior")}
-                  >
+                  {/* Card 3 - Behavior */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
-                      className={`text-base font-semibold mb-3 ${
+                      className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "behavior"
-                          ? "text-emerald-500"
-                          : "text-white"
-                      }`}
+                          ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("behavior")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("behavior")}
                     >
-                      "How should it behave?"
-                    </div>
-                    <div className="text-gray-400 text-xs leading-relaxed">
-                      Instructions are like giving directions to a colleague. Be
-                      specific about personality, tone, and behavior.
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "behavior"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "How should it behave?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        Instructions are like giving directions to a colleague.
+                        Be specific about personality, tone, and behavior.
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Card 4 - Model Selection */}
-                <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
-                  <div
-                    className={`h-[100px] p-3 rounded-lg ${
-                      highlightedSection === "model"
-                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
-                        : "border-solid border-gray-500/30 hover:bg-white/5"
-                    } flex flex-col cursor-pointer transition-all duration-300`}
-                    onMouseEnter={() => handleMouseEnter("model")}
-                    onMouseLeave={handleMouseLeave}
-                    onClick={() => handleClick("model")}
-                  >
+                  {/* Card 4 - Model Selection */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
-                      className={`text-base font-semibold mb-3 ${
+                      className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "model"
-                          ? "text-emerald-500"
-                          : "text-white"
-                      }`}
+                          ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("model")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("model")}
                     >
-                      "Which AI to use?"
-                    </div>
-                    <div className="text-gray-400 text-xs leading-relaxed">
-                      Choose your AI model like a database. gpt-4o-mini is fast
-                      and cheap, gpt-4 is more powerful for complex reasoning.
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "model"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "Which AI to use?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        Choose your AI model like a database. gpt-4o-mini is
+                        fast and cheap, gpt-4 is more powerful for complex
+                        reasoning.
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Card 5 - Server */}
-                <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
-                  <div
-                    className={`h-[100px] p-3 rounded-lg ${
-                      highlightedSection === "server"
-                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
-                        : "border-solid border-gray-500/30 hover:bg-white/5"
-                    } flex flex-col cursor-pointer transition-all duration-300`}
-                    onMouseEnter={() => handleMouseEnter("server")}
-                    onMouseLeave={handleMouseLeave}
-                    onClick={() => handleClick("server")}
-                  >
+                  {/* Card 5 - Server */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
-                      className={`text-base font-semibold mb-3 ${
+                      className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "server"
-                          ? "text-emerald-500"
-                          : "text-white"
-                      }`}
+                          ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("server")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("server")}
                     >
-                      "How to make it accessible?"
-                    </div>
-                    <div className="text-gray-400 text-xs leading-relaxed">
-                      VoltAgent is your server - like Express.js but for AI
-                      agents. Handles HTTP, WebSocket, and connects to VoltOps.
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "server"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "How to make it accessible?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        VoltAgent is your server - like Express.js but for AI
+                        agents. Handles HTTP, WebSocket, and connects to
+                        VoltOps.
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          <div className="  mt-8">
-            <h4 className="text-[#00d992] font-semibold mb-2 text-landing-sm landing-md:text-base">
-              The Result
-            </h4>
-            <p className="text-gray-300 mb-0 text-xs landing-md:text-base">
-              In just 15 lines of code, you've created a production-ready AI
-              agent with monitoring, debugging, and a web interface. That's the
-              power of VoltAgent - less boilerplate, more building.
-            </p>
-          </div>
+          {!isMobile && (
+            <div className="  mt-8">
+              <h4 className="text-[#00d992] font-semibold mb-2 text-landing-sm landing-md:text-base">
+                The Result
+              </h4>
+              <p className="text-gray-300 mb-0 text-xs landing-md:text-base">
+                In just 15 lines of code, you've created a production-ready AI
+                agent with monitoring, debugging, and a web interface. That's
+                the power of VoltAgent - less boilerplate, more building.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* VoltOps Integration */}

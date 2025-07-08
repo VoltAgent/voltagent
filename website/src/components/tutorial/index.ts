@@ -1,10 +1,6 @@
 export { TutorialLayout } from "./TutorialLayout";
 export { TutorialNavbar } from "./TutorialNavbar";
-export { VoltAgentSandpack } from "./VoltAgentSandpack";
 export { TutorialNavigation } from "./TutorialNavigation";
-export {
-  tutorialSteps,
-  getTutorialStep,
-  getTutorialStepsForNavigation,
-} from "./tutorialSteps";
+export { tutorialSteps } from "./tutorialSteps";
+export { MobileAgentCode } from "./mobile-agent-code";
 export type { TutorialStep } from "./tutorialSteps";
