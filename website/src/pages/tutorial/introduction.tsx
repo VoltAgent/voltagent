@@ -734,27 +734,16 @@ export default function TutorialIntroduction() {
 
         {/* Getting Started */}
         <div className="">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-center">
-            Ready to Start Building?
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 text-center leading-relaxed">
-            Each tutorial builds on the previous one, so we recommend following
-            them in order. You can always jump ahead if you're already familiar
-            with certain concepts.
-          </p>
-
-          <div className="bg-[#00d992]/10 border-solid border border-[#00d992]/20 rounded-lg p-4 landing-md:p-6 text-center">
-            <h4 className="text-lg landing-md:text-xl text-[#00d992] font-semibold mb-3 landing-md:mb-4">
+          <div className="bg-emerald-500/10 border border-solid border-emerald-500/20 rounded-lg p-6 text-center">
+            <h3 className="text-xl text-emerald-500 font-semibold mb-3">
               ⚡ Start Building Now
-            </h4>
-            <p className="text-landing-sm landing-md:text-base text-gray-300 mb-4 landing-md:mb-6">
-              Ready to build AI agents that actually work? Let's start with
-              understanding why most chatbots fail and what makes agents
-              different.
+            </h3>
+            <p className="text-sm text-gray-300 mb-4">
+              Ready to build AI agents that actually work? Let's dive in!
             </p>
             <a
               href="/tutorial/chatbot-problem"
-              className="inline-flex items-center px-6 py-3 bg-[#00d992] text-black font-semibold rounded-lg hover:bg-[#00c085] transition-all duration-300 shadow-lg hover:shadow-xl no-underline text-landing-sm landing-md:text-base"
+              className="inline-flex items-center px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 transition-all duration-300 shadow-lg hover:shadow-xl no-underline text-sm"
             >
               Start Tutorial →
             </a>
