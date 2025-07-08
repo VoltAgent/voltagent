@@ -2,15 +2,36 @@ import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
-import {
-  CheckIcon,
-  XMarkIcon,
-  BoltIcon,
-  DocumentTextIcon,
-  ServerIcon,
-} from "@heroicons/react/24/outline";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
 
 export default function TutorialIntroduction() {
+  const [highlightedSection, setHighlightedSection] = useState<string | null>(
+    "agent",
+  );
+
+  // Function to define code sections
+  const getHighlightClasses = (section: string) => {
+    const baseHighlightClass = "transition-all duration-300 ease-in-out";
+
+    return highlightedSection === section
+      ? `bg-gradient-to-r from-blue-600/40 to-blue-500/20 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-blue-500 pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
+      : `text-gray-400 ${baseHighlightClass}`;
+  };
+
+  // Handlers for mouse over and click
+  const handleMouseEnter = (section: string) => {
+    setHighlightedSection(section);
+  };
+
+  const handleMouseLeave = () => {
+    setHighlightedSection(null);
+  };
+
+  const handleClick = (section: string) => {
+    setHighlightedSection(section === highlightedSection ? null : section);
+  };
+
   return (
     <TutorialLayout
       currentStep={1}
@@ -19,9 +40,9 @@ export default function TutorialIntroduction() {
       stepDescription="Learn to create production-ready AI agents with tools, memory, and real-world integrations. No fluff, just working code."
       nextStepUrl="/tutorial/chatbot-problem"
     >
-      <div className="space-y-8">
+      <div className="space-y-20">
         {/* Why Do You Need VoltAgent? */}
-        <div className="space-y-6">
+        <div className="mb-20 ">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Why Do You Need VoltAgent?
           </h2>
@@ -32,7 +53,7 @@ export default function TutorialIntroduction() {
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-6 bg-gray-800/50">
+            <div className="border-solid border-red-500 rounded-lg p-6  ">
               <h3 className="text-xl font-semibold text-red-500 mb-4">
                 Without a Framework
               </h3>
@@ -70,7 +91,7 @@ export default function TutorialIntroduction() {
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-6 bg-gray-800/50">
+            <div className="border-solid border-emerald-500 rounded-lg p-6  ">
               <h3 className="text-xl font-semibold text-emerald-500 mb-4">
                 With VoltAgent
               </h3>
@@ -111,7 +132,7 @@ export default function TutorialIntroduction() {
         </div>
 
         {/* What is VoltAgent? */}
-        <div className="space-y-6">
+        <div className="  mb-20">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             What is VoltAgent?
           </h2>
@@ -121,7 +142,7 @@ export default function TutorialIntroduction() {
             it handles the plumbing so you can focus on building.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-6 border-solid border-gray-700">
+          <div className="   ">
             <h3 className="text-xl font-semibold text-white mb-4">
               Core Philosophy
             </h3>
@@ -161,329 +182,328 @@ export default function TutorialIntroduction() {
           </div>
         </div>
 
-        {/* Your First Agent */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Your First Agent: Hello World
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's create your first agent with just a few lines of code. This
-            agent will introduce itself when you chat with it.
-          </p>
-
-          <div className="rounded-lg p-4 landing-md:p-6 border-solid border-emerald-500 bg-gray-800/50">
-            <h3 className="text-lg landing-md:text-xl font-semibold text-[#00d992] mb-4 landing-md:mb-6">
-              3-Step Setup
-            </h3>
-            <div className="space-y-6 landing-md:space-y-8">
-              {/* Step 1 */}
-              <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
-                    1
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <code className="text-[#00d992] font-mono p-2 landing-md:p-3 text-xs landing-md:text-landing-sm">
-                    npm create voltagent-app@latest my-agent
-                  </code>
-                  <p className="text-gray-400 mt-2 mb-0 text-xs landing-md:text-landing-sm">
-                    Creates a new VoltAgent project with all the boilerplate
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
-                    2
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <p className="text-gray-300 mb-3 landing-md:mb-4 text-landing-sm landing-md:text-base">
-                    Get your OpenAI API key and add it to{" "}
-                    <code className="text-[#00d992] px-1 landing-md:px-2 py-1 rounded text-xs landing-md:text-landing-sm">
-                      .env
-                    </code>
-                  </p>
-                  <div className="bg-gray-800/50 rounded-lg p-3 landing-md:p-4 border-solid border-gray-700 space-y-3">
-                    <div className="flex items-start space-x-2 landing-md:space-x-3">
-                      <div className="w-2 h-2 bg-[#00d992] rounded-full mt-2" />
-                      <div>
-                        <span className="text-[#00d992] text-xs landing-md:text-landing-sm font-medium">
-                          Get API Key:
-                        </span>
-                        <p className="text-gray-300 text-xs landing-md:text-landing-sm mt-1 mb-0">
-                          Visit{" "}
-                          <a
-                            href="https://platform.openai.com/api-keys"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[#00d992] hover:underline"
-                          >
-                            platform.openai.com/api-keys
-                          </a>{" "}
-                          → Create API Key → Copy it
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-2 landing-md:space-x-3">
-                      <div className="w-2 h-2 bg-[#00d992] rounded-full mt-2" />
-                      <div>
-                        <span className="text-[#00d992] text-xs landing-md:text-landing-sm font-medium mr-2">
-                          Add to .env:
-                        </span>
-                        <code className="text-[#00d992] text-xs landing-md:text-landing-sm">
-                          OPENAI_API_KEY=sk-your-key-here
-                        </code>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
-                    3
-                  </span>
-                </div>
-                <div className="flex flex-col w-[100%]">
-                  <code className="text-[#00d992] font-mono text-xs landing-md:text-landing-sm p-2 landing-md:p-3">
-                    npm run dev
-                  </code>
-                  <p className="text-gray-400 mt-2 text-xs landing-md:text-landing-sm mb-3 landing-md:mb-4">
-                    Starts the server. You'll see this in your terminal:
-                  </p>
-                  <div className="bg-black rounded-lg p-3 landing-md:p-4 border border-gray-600 font-mono text-xs landing-md:text-landing-sm  landing-md:w-[100%] w-[75%]">
-                    <div className="text-green-400">
-                      ══════════════════════════════════════════════════
-                    </div>
-                    <div className="text-white font-bold">
-                      VOLTAGENT SERVER STARTED SUCCESSFULLY
-                    </div>
-                    <div className="text-green-400">
-                      ══════════════════════════════════════════════════
-                    </div>
-                    <div className="text-blue-400">
-                      ✓ HTTP Server: http://localhost:3141
-                    </div>
-                    <div className="text-yellow-400 mt-2">
-                      VoltOps Platform: https://console.voltagent.dev
-                    </div>
-                    <div className="text-green-400">
-                      ══════════════════════════════════════════════════
-                    </div>
-                    <div className="text-gray-300">
-                      [VoltAgent] All packages are up to date
-                    </div>
-                  </div>
-                  <p className="text-gray-400 text-xs landing-md:text-landing-sm mt-3 mb-0">
-                    Click the{" "}
-                    <a
-                      href="https://console.voltagent.dev"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[#00d992] hover:underline font-medium"
-                    >
-                      console.voltagent.dev
-                    </a>{" "}
-                    link to test your agent!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Demo GIF */}
-        <div className="bg-gray-800/50 rounded-lg p-6 border-solid border-gray-700">
-          <h3 className="text-xl font-semibold text-white mb-4">
-            See VoltOps in Action
-          </h3>
-          <p className="text-gray-300 mb-4">
-            After running{" "}
-            <code className="text-[#00d992] px-2 py-1 rounded">
-              npm run dev
-            </code>
-            , this is what you'll see in VoltOps console:
-          </p>
-          <div className="rounded-lg overflow-hidden border border-gray-600">
-            <img
-              src="https://cdn.voltagent.dev/docs/tutorial/voltagent-voltops-demo.gif"
-              alt="VoltOps Demo - Testing your agent in real-time"
-              className="w-full h-auto"
-            />
-          </div>
-          <p className="text-gray-400 text-landing-sm mt-3 text-center">
-            Real-time agent testing and debugging in VoltOps console
-          </p>
-        </div>
-
-        {/* Code Example */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+        {/* your agent code - Interactive Version */}
+        <div className=" mb-20">
+          <h2 className="text-2xl landing-md:text-3xl  font-bold text-white">
             Your Agent Code
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            This is what gets generated for you. Simple, clean, and ready to
-            extend.
+          <p className="text-landing-sm landing-md:text-base mb-12 text-gray-300 leading-relaxed">
+            This is what gets generated for you. Hover over the explanations to
+            see how each part works.
           </p>
 
-          <ColorModeProvider>
-            <CodeBlock language="typescript" title="src/index.ts">
-              {`import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
+          {/* Interactive Code Section - Wider Container */}
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between gap-8">
+              {/* Code Section - Left Side */}
+              <div className="w-[55%] border border-solid border-white/10 rounded-lg bg-gray-900/50">
+                <pre className="text-left h-full bg-transparent p-0 text-xs md:text-sm font-mono m-0">
+                  <div className="flex">
+                    <div className="py-5 px-2 text-right text-gray-500 select-none border-r border-gray-500/30/50 min-w-[40px] text-xs">
+                      <div>1</div>
+                      <div>2</div>
+                      <div>3</div>
+                      <div>4</div>
+                      <div>5</div>
+                      <div>6</div>
+                      <div>7</div>
+                      <div>8</div>
+                      <div>9</div>
+                      <div>10</div>
+                      <div>11</div>
+                      <div>12</div>
+                      <div>13</div>
+                      <div>14</div>
+                      <div>15</div>
+                    </div>
+                    <code className="py-5 px-3 block text-xs">
+                      {/* Imports */}
+                      <span
+                        className={`block ${getHighlightClasses("imports")}`}
+                      >
+                        <span className="text-blue-400">import</span>
+                        <span>
+                          {" "}
+                          {"{"} VoltAgent, Agent {"}"}{" "}
+                        </span>
+                        <span className="text-blue-400">from</span>
+                        <span className="text-yellow-300">
+                          {" "}
+                          "@voltagent/core"
+                        </span>
+                        <span>;</span>
+                        <br />
+                        <span className="text-blue-400">import</span>
+                        <span>
+                          {" "}
+                          {"{"} VercelAIProvider {"}"}{" "}
+                        </span>
+                        <span className="text-blue-400">from</span>
+                        <span className="text-yellow-300">
+                          {" "}
+                          "@voltagent/vercel-ai"
+                        </span>
+                        <span>;</span>
+                        <br />
+                        <span className="text-blue-400">import</span>
+                        <span>
+                          {" "}
+                          {"{"} openai {"}"}{" "}
+                        </span>
+                        <span className="text-blue-400">from</span>
+                        <span className="text-yellow-300">
+                          {" "}
+                          "@ai-sdk/openai"
+                        </span>
+                        <span>;</span>
+                        <br />
+                        <br />
+                      </span>
 
-// Create your first agent
-const myFirstAgent = new Agent({
-  name: "my-agent",
-  description: "A simple agent that introduces itself",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  instructions: "You are a friendly assistant. Always greet users warmly."
-});
+                      {/* Agent Creation */}
+                      <span className={`block ${getHighlightClasses("agent")}`}>
+                        <span className="text-gray-300">
+                          {"// Create your first agent"}
+                        </span>
+                        <br />
+                        <span className="text-blue-400">const</span>
+                        <span> myFirstAgent = </span>
+                        <span className="text-blue-400">new</span>
+                        <span className="text-green-400"> Agent</span>
+                        <span>{"({"}</span>
+                        <br />
+                      </span>
 
-// Start VoltAgent server
-new VoltAgent({
-  agents: { myFirstAgent },
-});`}
-            </CodeBlock>
-          </ColorModeProvider>
-        </div>
+                      {/* Agent Name */}
+                      <span className={`block ${getHighlightClasses("name")}`}>
+                        <span className="ml-4">name: </span>
+                        <span className="text-yellow-300">"my-agent"</span>
+                        <span>,</span>
+                        <br />
+                      </span>
 
-        {/* Developer Journey */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            The Developer Journey
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's walk through what you're actually thinking when building this
-            agent.
-          </p>
+                      {/* Agent Description & Instructions */}
+                      <span
+                        className={`block ${getHighlightClasses("behavior")}`}
+                      >
+                        <span className="ml-4">description: </span>
+                        <span className="text-yellow-300">
+                          "A simple agent that introduces itself"
+                        </span>
+                        <span>,</span>
+                        <br />
+                        <span className="ml-4">llm: </span>
+                        <span className="text-blue-400">new</span>
+                        <span className="text-green-400">
+                          {" "}
+                          VercelAIProvider
+                        </span>
+                        <span>(),</span>
+                        <br />
+                      </span>
 
-          <div className="space-y-4 landing-md:space-y-6">
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-blue-500">
-              <h4 className="text-blue-400 font-semibold mb-3 flex items-center">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm mr-3 flex-shrink-0">
-                  1
-                </div>
-                <span className="text-landing-sm landing-md:text-base">
-                  "I need an AI agent"
-                </span>
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                You start with the{" "}
-                <span className="text-blue-400 font-mono">Agent</span> class -
-                think of it as your AI's personality container. It's where you
-                define who your AI is and how it should behave.
-              </p>
-              <div className="bg-gray-900/50 rounded p-2 landing-md:p-3 overflow-x-auto">
-                <code className="text-blue-400 text-xs landing-md:text-landing-sm">
-                  new Agent(config)
-                </code>
+                      {/* Model Selection */}
+                      <span className={`block ${getHighlightClasses("model")}`}>
+                        <span className="ml-4">model: </span>
+                        <span className="text-green-400">openai</span>
+                        <span>(</span>
+                        <span className="text-yellow-300">"gpt-4o-mini"</span>
+                        <span>),</span>
+                        <br />
+                        <span className="ml-4">instructions: </span>
+                        <span className="text-yellow-300">
+                          "You are a friendly assistant. Always greet users
+                          warmly."
+                        </span>
+                        <br />
+                      </span>
+
+                      <span className={`block ${getHighlightClasses("agent")}`}>
+                        <span>{"});"}</span>
+                        <br />
+                        <br />
+                      </span>
+
+                      {/* Server Setup */}
+                      <span
+                        className={`block ${getHighlightClasses("server")}`}
+                      >
+                        <span className="text-gray-300">
+                          {"// Start VoltAgent server"}
+                        </span>
+                        <br />
+                        <span className="text-blue-400">new</span>
+                        <span className="text-green-400"> VoltAgent</span>
+                        <span>{"({"}</span>
+                        <br />
+                        <span className="ml-4">
+                          agents: {"{"} myFirstAgent {"}"},
+                        </span>
+                        <br />
+                        <span>{"});"}</span>
+                      </span>
+                    </code>
+                  </div>
+                </pre>
               </div>
-            </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-green-500">
-              <h4 className="text-green-400 font-semibold mb-3 flex items-center">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm mr-3 flex-shrink-0">
-                  2
+              {/* Explanation Cards - Right Side */}
+              <div className="flex w-[45%] flex-col gap-4">
+                {/* Card 1 - Agent Creation */}
+                <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                  <div
+                    className={`h-[100px] p-3 rounded-lg ${
+                      highlightedSection === "agent"
+                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                        : "border-solid border-gray-500/30 hover:bg-white/5"
+                    } flex flex-col cursor-pointer transition-all duration-300`}
+                    onMouseEnter={() => handleMouseEnter("agent")}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => handleClick("agent")}
+                  >
+                    <div
+                      className={`text-base font-semibold mb-3 ${
+                        highlightedSection === "agent"
+                          ? "text-emerald-500"
+                          : "text-white"
+                      }`}
+                    >
+                      "I need an AI agent"
+                    </div>
+                    <div className="text-gray-400 text-xs leading-relaxed">
+                      The Agent class is your AI's personality container. It
+                      defines who your AI is and how it should behave.
+                    </div>
+                  </div>
                 </div>
-                <span className="text-landing-sm landing-md:text-base">
-                  "What should I call it?"
-                </span>
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                Give it a name - this is how you'll reference it later. Think of
-                it like naming a function or variable. Choose something
-                descriptive that tells you what this agent does.
-              </p>
-              <div className="bg-gray-900/50 rounded p-2 landing-md:p-3 overflow-x-auto">
-                <code className="text-green-400 text-xs landing-md:text-landing-sm">
-                  name: "my-agent"
-                </code>
-              </div>
-            </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-purple-500">
-              <h4 className="text-purple-400 font-semibold mb-3 flex items-center">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm mr-3 flex-shrink-0">
-                  3
+                {/* Card 2 - Naming */}
+                <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                  <div
+                    className={`h-[100px] p-3 rounded-lg ${
+                      highlightedSection === "name"
+                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                        : "border-solid border-gray-500/30 hover:bg-white/5"
+                    } flex flex-col cursor-pointer transition-all duration-300`}
+                    onMouseEnter={() => handleMouseEnter("name")}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => handleClick("name")}
+                  >
+                    <div
+                      className={`text-base font-semibold mb-3 ${
+                        highlightedSection === "name"
+                          ? "text-emerald-500"
+                          : "text-white"
+                      }`}
+                    >
+                      "What to call it?"
+                    </div>
+                    <div className="text-gray-400 text-xs leading-relaxed">
+                      Give it a descriptive name. Think of it like naming a
+                      function - choose something that tells you what this agent
+                      does.
+                    </div>
+                  </div>
                 </div>
-                <span className="text-landing-sm landing-md:text-base">
-                  "How should it behave?"
-                </span>
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                The{" "}
-                <span className="text-purple-400 font-mono">instructions</span>{" "}
-                are like giving directions to a human colleague. Be specific
-                about personality, tone, and behavior. This is your agent's core
-                personality.
-              </p>
-              <div className="bg-gray-900/50 rounded p-2 landing-md:p-3 overflow-x-auto">
-                <code className="text-purple-400 text-xs landing-md:text-landing-sm">
-                  instructions: "You are a friendly assistant..."
-                </code>
-              </div>
-            </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-orange-500">
-              <h4 className="text-orange-400 font-semibold mb-3 flex items-center">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm mr-3 flex-shrink-0">
-                  4
+                {/* Card 3 - Behavior */}
+                <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                  <div
+                    className={`h-[100px] p-3 rounded-lg ${
+                      highlightedSection === "behavior"
+                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                        : "border-solid border-gray-500/30 hover:bg-white/5"
+                    } flex flex-col cursor-pointer transition-all duration-300`}
+                    onMouseEnter={() => handleMouseEnter("behavior")}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => handleClick("behavior")}
+                  >
+                    <div
+                      className={`text-base font-semibold mb-3 ${
+                        highlightedSection === "behavior"
+                          ? "text-emerald-500"
+                          : "text-white"
+                      }`}
+                    >
+                      "How should it behave?"
+                    </div>
+                    <div className="text-gray-400 text-xs leading-relaxed">
+                      Instructions are like giving directions to a colleague. Be
+                      specific about personality, tone, and behavior.
+                    </div>
+                  </div>
                 </div>
-                <span className="text-landing-sm landing-md:text-base">
-                  "Which AI should power this?"
-                </span>
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                Choose your AI model like you'd choose a database.{" "}
-                <span className="text-orange-400 font-mono">gpt-4o-mini</span>{" "}
-                is fast and cheap for simple tasks.{" "}
-                <span className="text-orange-400 font-mono">gpt-4</span> is more
-                powerful for complex reasoning.
-              </p>
-              <div className="bg-gray-900/50 rounded p-2 landing-md:p-3 overflow-x-auto">
-                <code className="text-orange-400 text-xs landing-md:text-landing-sm">
-                  model: openai("gpt-4o-mini")
-                </code>
-              </div>
-            </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-red-500">
-              <h4 className="text-red-400 font-semibold mb-3 flex items-center">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm mr-3 flex-shrink-0">
-                  5
+                {/* Card 4 - Model Selection */}
+                <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                  <div
+                    className={`h-[100px] p-3 rounded-lg ${
+                      highlightedSection === "model"
+                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                        : "border-solid border-gray-500/30 hover:bg-white/5"
+                    } flex flex-col cursor-pointer transition-all duration-300`}
+                    onMouseEnter={() => handleMouseEnter("model")}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => handleClick("model")}
+                  >
+                    <div
+                      className={`text-base font-semibold mb-3 ${
+                        highlightedSection === "model"
+                          ? "text-emerald-500"
+                          : "text-white"
+                      }`}
+                    >
+                      "Which AI to use?"
+                    </div>
+                    <div className="text-gray-400 text-xs leading-relaxed">
+                      Choose your AI model like a database. gpt-4o-mini is fast
+                      and cheap, gpt-4 is more powerful for complex reasoning.
+                    </div>
+                  </div>
                 </div>
-                <span className="text-landing-sm landing-md:text-base">
-                  "How do I make it accessible?"
-                </span>
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                <span className="text-red-400 font-mono">VoltAgent</span> is
-                your server - like Express.js but for AI agents. It handles HTTP
-                requests, WebSocket connections, and automatically connects to
-                VoltOps for debugging.
-              </p>
-              <div className="bg-gray-900/50 rounded p-2 landing-md:p-3 overflow-x-auto">
-                <code className="text-red-400 text-xs landing-md:text-landing-sm">
-                  new VoltAgent(serverConfig)
-                </code>
+
+                {/* Card 5 - Server */}
+                <div className="relative h-full">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                  <div
+                    className={`h-[100px] p-3 rounded-lg ${
+                      highlightedSection === "server"
+                        ? "border-1 border-solid border-emerald-400 bg-white/10 "
+                        : "border-solid border-gray-500/30 hover:bg-white/5"
+                    } flex flex-col cursor-pointer transition-all duration-300`}
+                    onMouseEnter={() => handleMouseEnter("server")}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => handleClick("server")}
+                  >
+                    <div
+                      className={`text-base font-semibold mb-3 ${
+                        highlightedSection === "server"
+                          ? "text-emerald-500"
+                          : "text-white"
+                      }`}
+                    >
+                      "How to make it accessible?"
+                    </div>
+                    <div className="text-gray-400 text-xs leading-relaxed">
+                      VoltAgent is your server - like Express.js but for AI
+                      agents. Handles HTTP, WebSocket, and connects to VoltOps.
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg p-4 landing-md:p-6 border border-emerald-500 bg-gray-800/50">
+          <div className="  mt-8">
             <h4 className="text-[#00d992] font-semibold mb-2 text-landing-sm landing-md:text-base">
               The Result
             </h4>
-            <p className="text-gray-300 mb-0 text-xs landing-md:text-landing-sm">
-              In just 10 lines of code, you've created a production-ready AI
+            <p className="text-gray-300 mb-0 text-xs landing-md:text-base">
+              In just 15 lines of code, you've created a production-ready AI
               agent with monitoring, debugging, and a web interface. That's the
               power of VoltAgent - less boilerplate, more building.
             </p>
@@ -491,7 +511,7 @@ new VoltAgent({
         </div>
 
         {/* VoltOps Integration */}
-        <div className="space-y-6">
+        <div className="">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Meet VoltOps: Your Agent Console
           </h2>
@@ -509,7 +529,7 @@ new VoltAgent({
             where you can chat with it in real-time.
           </p>
 
-          <div className="rounded-lg p-6 border-solid border-emerald-500 bg-gray-800/50">
+          <div className=" ">
             <h3 className="text-xl font-semibold text-[#00d992] mb-4">
               What You'll See
             </h3>
@@ -537,26 +557,26 @@ new VoltAgent({
         </div>
 
         {/* Learning Path */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-center">
+        <div className="">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-left">
             Your Learning Journey
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 text-center leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 text-left leading-relaxed mb-8">
             We'll build your agent step by step, each tutorial adding one
             crucial capability:
           </p>
 
-          <div className="space-y-4 landing-md:space-y-6">
+          <div className="space-y-3">
             {/* Step 1 */}
-            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
-              <div className="w-8 h-8 landing-md:w-10 landing-md:h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-landing-sm landing-md:text-base font-bold flex-shrink-0">
+            <div className="flex items-start space-x-3 bg-white/5 rounded-lg p-3 border-solid border border-gray-500/30">
+              <div className="w-8 h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                 1
               </div>
               <div>
-                <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-2">
+                <h3 className="text-base font-semibold text-white mb-1">
                   The Chatbot Problem
                 </h3>
-                <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed mb-0">
+                <p className="text-xs text-gray-300 leading-relaxed mb-0">
                   Why simple chatbots fail and what makes AI agents different.
                   Learn the fundamental concepts before diving into code.
                 </p>
@@ -564,15 +584,15 @@ new VoltAgent({
             </div>
 
             {/* Step 2 */}
-            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
-              <div className="w-8 h-8 landing-md:w-10 landing-md:h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-landing-sm landing-md:text-base font-bold flex-shrink-0">
+            <div className="flex items-start space-x-3 bg-white/5 rounded-lg p-3 border-solid border border-gray-500/30">
+              <div className="w-8 h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                 2
               </div>
               <div>
-                <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-2">
+                <h3 className="text-base font-semibold text-white mb-1">
                   Tools: Give Your Agent Superpowers
                 </h3>
-                <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed mb-0">
+                <p className="text-xs text-gray-300 leading-relaxed mb-0">
                   Create custom tools that let your agent actually do things:
                   send emails, manage databases, call APIs, and more.
                 </p>
@@ -580,15 +600,15 @@ new VoltAgent({
             </div>
 
             {/* Step 3 */}
-            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
-              <div className="w-8 h-8 landing-md:w-10 landing-md:h-10 bg-purple-500 rounded-full flex items-center justify-center text-white text-landing-sm landing-md:text-base font-bold flex-shrink-0">
+            <div className="flex items-start space-x-3 bg-white/5 rounded-lg p-3 border-solid border border-gray-500/30">
+              <div className="w-8 h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                 3
               </div>
               <div>
-                <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-2">
+                <h3 className="text-base font-semibold text-white mb-1">
                   Memory: Remember Every Conversation
                 </h3>
-                <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed mb-0">
+                <p className="text-xs text-gray-300 leading-relaxed mb-0">
                   Add persistent memory so your agent remembers users, past
                   conversations, and builds context over time.
                 </p>
@@ -596,15 +616,15 @@ new VoltAgent({
             </div>
 
             {/* Step 4 */}
-            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
-              <div className="w-8 h-8 landing-md:w-10 landing-md:h-10 bg-orange-500 rounded-full flex items-center justify-center text-white text-landing-sm landing-md:text-base font-bold flex-shrink-0">
+            <div className="flex items-start space-x-3 bg-white/5 rounded-lg p-3 border-solid border border-gray-500/30">
+              <div className="w-8 h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                 4
               </div>
               <div>
-                <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-2">
+                <h3 className="text-base font-semibold text-white mb-1">
                   MCP: Connect to Everything
                 </h3>
-                <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed mb-0">
+                <p className="text-xs text-gray-300 leading-relaxed mb-0">
                   Use Model Context Protocol to connect your agent to GitHub,
                   Slack, databases, and any external system you need.
                 </p>
@@ -612,15 +632,15 @@ new VoltAgent({
             </div>
 
             {/* Step 5 */}
-            <div className="flex items-start space-x-4 bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
-              <div className="w-8 h-8 landing-md:w-10 landing-md:h-10 bg-red-500 rounded-full flex items-center justify-center text-white text-landing-sm landing-md:text-base font-bold flex-shrink-0">
+            <div className="flex items-start space-x-3 bg-white/5 rounded-lg p-3 border-solid border border-gray-500/30">
+              <div className="w-8 h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                 5
               </div>
               <div>
-                <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-2">
+                <h3 className="text-base font-semibold text-white mb-1">
                   Subagents: Build Agent Teams
                 </h3>
-                <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed mb-0">
+                <p className="text-xs text-gray-300 leading-relaxed mb-0">
                   Create specialized agents that work together to handle complex
                   workflows and enterprise use cases.
                 </p>
@@ -630,16 +650,16 @@ new VoltAgent({
         </div>
 
         {/* Prerequisites */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-center">
+        <div className="">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-left">
             What You Need to Know
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 text-center leading-relaxed">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 text-left leading-relaxed">
             This tutorial assumes basic familiarity with:
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
-            <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
+            <div className="  rounded-lg p-4 landing-md:p-6 border-solid border border-gray-500/30">
               <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
                 Required
               </h3>
@@ -665,25 +685,25 @@ new VoltAgent({
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
+            <div className="  rounded-lg p-4 landing-md:p-6 border-solid border border-gray-500/30">
               <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
                 Helpful (But Not Required)
               </h3>
               <div className="space-y-2 landing-md:space-y-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-4 h-4 landing-md:w-5 landing-md:h-5 rounded-full bg-gray-600" />
+                  <div className="w-3 h-3 landing-md:w-3 landing-md:h-3 rounded-full bg-gray-600" />
                   <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Experience with AI/LLMs
                   </span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-4 h-4 landing-md:w-5 landing-md:h-5 rounded-full bg-gray-600" />
+                  <div className="w-3 h-3 landing-md:w-3 landing-md:h-3 rounded-full bg-gray-600" />
                   <span className="text-landing-sm landing-md:text-base text-gray-300">
                     Database knowledge
                   </span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-4 h-4 landing-md:w-5 landing-md:h-5 rounded-full bg-gray-600" />
+                  <div className="w-3 h-3 landing-md:w-3 landing-md:h-3 rounded-full bg-gray-600" />
                   <span className="text-landing-sm landing-md:text-base text-gray-300">
                     DevOps experience
                   </span>
@@ -694,7 +714,7 @@ new VoltAgent({
         </div>
 
         {/* Getting Started */}
-        <div className="space-y-6">
+        <div className="">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-center">
             Ready to Start Building?
           </h2>
