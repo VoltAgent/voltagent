@@ -44,77 +44,77 @@ export default function ChatbotProblemTutorial() {
       prevStepUrl="/tutorial/introduction"
       nextStepUrl="/tutorial/memory"
     >
-      <div className="space-y-8">
+      <div className="space-y-20">
         {/* The Problem */}
         <div className="space-y-6">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Why Most Chatbots Fail
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             You've probably interacted with dozens of chatbots. Most of them are
             frustrating, limited, and feel like talking to a very sophisticated
             answering machine. Here's why:
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 ">
               <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Traditional Chatbots
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Pre-scripted responses only
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Can't perform real actions
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     No memory between conversations
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Break with unexpected inputs
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 ">
               <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 AI Agents
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Understand context and intent
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Use tools to take real actions
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Remember and learn from interactions
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Handle complex, multi-step tasks
                   </span>
                 </div>
@@ -128,14 +128,14 @@ export default function ChatbotProblemTutorial() {
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Real-World Example: Customer Support
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             Let's see the difference in action. Imagine a customer needs help
             with a billing issue:
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-solid border-gray-700">
-              <h4 className="text-white font-semibold mb-3 text-landing-sm landing-md:text-base">
+            <div className=" p-4 landing-md:p-6 rounded-lg border-solid border-gray-700">
+              <h4 className="text-white font-semibold mb-3 text-sm landing-md:text-base">
                 What Users Want:
               </h4>
               <div className="space-y-2 text-xs landing-md:text-sm">
@@ -151,8 +151,8 @@ export default function ChatbotProblemTutorial() {
               </div>
             </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-solid border-red-500">
-              <h4 className="text-red-500 font-semibold mb-3 text-landing-sm landing-md:text-base">
+            <div className=" p-4 landing-md:p-6 rounded-lg border-solid border-red-500">
+              <h4 className="text-red-500 font-semibold mb-3 text-sm landing-md:text-base">
                 What Your Agent Says:
               </h4>
               <div className="space-y-2 text-xs landing-md:text-sm">
@@ -175,11 +175,11 @@ export default function ChatbotProblemTutorial() {
             </div>
           </div>
 
-          <div className="bg-gray-800/50 border-solid border-orange-500 rounded-lg p-4 landing-md:p-6">
-            <h4 className="text-orange-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
+          <div className="border-solid border-orange-500 rounded-lg p-4 landing-md:p-6">
+            <h4 className="text-orange-400 font-semibold mb-2 text-sm landing-md:text-base">
               The Reality Check
             </h4>
-            <p className="text-xs landing-md:text-sm text-gray-300 mb-0">
+            <p className="text-xs landing-md:text-base text-gray-300 mb-0">
               After a week, users stop using your "AI assistant" because it's
               just a fancy search engine that can't actually assist with
               anything. Sound familiar?
@@ -192,7 +192,7 @@ export default function ChatbotProblemTutorial() {
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             The Solution: Give Your Agent Tools
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             Let's fix your useless chatbot by adding a real tool. Hover over the
             explanations to see how each part works.
           </p>
@@ -634,7 +634,7 @@ export default function ChatbotProblemTutorial() {
               <p className="text-gray-300 mb-0 text-xs landing-md:text-base">
                 Your agent now <strong>takes action</strong> instead of giving
                 advice. It calls your{" "}
-                <code className="text-emerald-500 font-mono text-xs landing-md:text-sm">
+                <code className="text-emerald-500 font-mono text-xs landing-md:text-base">
                   get_weather
                 </code>{" "}
                 function automatically and provides real data. This is the power
@@ -645,77 +645,77 @@ export default function ChatbotProblemTutorial() {
         </div>
 
         {/* Testing in VoltOps */}
-        <div className="space-y-6">
+        <div className="">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Testing in VoltOps Console
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             Now let's test your tool-powered agent in the VoltOps console.
           </p>
 
-          <div className="bg-gray-800/50 border-solid border border-[#00d992]/20 rounded-lg p-4 landing-md:p-6">
+          <div className=" ">
             <h3 className="text-lg landing-md:text-xl font-semibold text-[#00d992] mb-4">
               Step-by-Step Testing
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-sm">
                     1
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
+                  <p className="text-gray-300 mb-0 pt-1 text-xs landing-md:text-base">
                     Update your code with the tool (above) and save the file
                   </p>
-                  <p className="text-gray-400 text-xs landing-md:text-sm">
+                  <p className="text-gray-400 text-xs mb-0 landing-md:text-sm">
                     Your agent will automatically reload with the new tool
                   </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-base">
                     2
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
+                  <p className="text-gray-300 mb-0 pt-1 text-xs landing-md:text-base">
                     Go back to VoltOps Console:
                   </p>
                   <a
                     href="https://console.voltagent.dev"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[#00d992] hover:underline text-xs landing-md:text-sm"
+                    className="text-[#00d992] hover:underline text-xs landing-md:text-base"
                   >
                     console.voltagent.dev
                   </a>
                 </div>
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-base">
                     3
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
+                  <p className="text-gray-300 mb-0 pt-1 text-xs landing-md:text-base">
                     Try these inputs to see your tool in action:
                   </p>
-                  <div className="bg-gray-800 my-2 flex flex-col items-start rounded-lg p-2 landing-md:p-3">
+                  <div className="border-solid border border-gray-500/30 my-2 flex flex-col items-start rounded-lg p-2 landing-md:p-3">
                     <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm p-2 break-all">
                         "What's the weather in New York?"
                       </code>
                     </div>
                     <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm p-2 break-all">
                         "Check weather in San Francisco"
                       </code>
                     </div>
                     <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm p-2 break-all">
                         "Is it sunny in Tokyo?"
                       </code>
                     </div>
@@ -726,11 +726,11 @@ export default function ChatbotProblemTutorial() {
           </div>
 
           {/* Demo GIF */}
-          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border border-gray-700">
-            <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
+          <div className="  mt-20 ">
+            <h3 className="text-2xl landing-md:text-3xl  font-semibold text-white mb-3 landing-md:mb-4">
               See Your Tool in Action
             </h3>
-            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
+            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-base">
               This is what happens when you ask your agent about weather:
             </p>
             <div className="rounded-lg overflow-hidden border border-gray-600">
@@ -745,35 +745,35 @@ export default function ChatbotProblemTutorial() {
             </p>
           </div>
 
-          <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-4 landing-md:p-6">
-            <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
+          <div className=" ">
+            <h4 className="text-emerald-400 font-semibold mb-2 text-sm landing-md:text-base">
               Debug & Monitor
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-base">
               In the VoltOps console, you'll see:
             </p>
-            <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
+            <div className="flex flex-col gap-2">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Tool execution logs
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Agent reasoning process
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Response time metrics
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Error tracking
                 </span>
               </div>
@@ -786,18 +786,18 @@ export default function ChatbotProblemTutorial() {
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             The Transformation: From Chatbot to Agent
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             Watch how your agent's behavior completely changes with just one
             tool.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 ">
               <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Before (Useless Chatbot)
               </h3>
               <div className="space-y-2 landing-md:space-y-3">
-                <div className="bg-gray-800 rounded p-2 landing-md:p-3">
+                <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
                   <div className="text-gray-400 text-xs landing-md:text-sm">
                     User:
                   </div>
@@ -805,7 +805,7 @@ export default function ChatbotProblemTutorial() {
                     "What's the weather in NYC?"
                   </div>
                 </div>
-                <div className="bg-gray-800 rounded p-2 landing-md:p-3">
+                <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
                   <div className="text-gray-400 text-xs landing-md:text-sm">
                     Agent:
                   </div>
@@ -817,12 +817,12 @@ export default function ChatbotProblemTutorial() {
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 ">
               <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 After (Real Agent)
               </h3>
               <div className="space-y-2 landing-md:space-y-3">
-                <div className="bg-gray-800 rounded p-2 landing-md:p-3">
+                <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
                   <div className="text-gray-400 text-xs landing-md:text-sm">
                     User:
                   </div>
@@ -830,7 +830,7 @@ export default function ChatbotProblemTutorial() {
                     "What's the weather in NYC?"
                   </div>
                 </div>
-                <div className="bg-gray-800 rounded p-2 landing-md:p-3">
+                <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
                   <div className="text-gray-400 text-xs landing-md:text-sm">
                     Agent:
                   </div>
@@ -843,14 +843,14 @@ export default function ChatbotProblemTutorial() {
             </div>
           </div>
 
-          <div className="rounded-lg p-4 landing-md:p-6 border-solid border-emerald-500 bg-gray-800/50">
-            <h4 className="text-[#00d992] font-semibold mb-2 text-landing-sm landing-md:text-base">
+          <div className=" ">
+            <h4 className="text-[#00d992] font-semibold mb-2 text-sm landing-md:text-base">
               The Magic
             </h4>
-            <p className="text-gray-300 mb-0 text-xs landing-md:text-sm leading-relaxed">
+            <p className="text-gray-300 mb-0 text-xs landing-md:text-base leading-relaxed">
               Your agent now <strong>takes action</strong> instead of giving
               advice. It calls your{" "}
-              <code className="text-[#00d992] font-mono text-xs landing-md:text-sm">
+              <code className="text-[#00d992] font-mono text-xs landing-md:text-base">
                 get_weather
               </code>{" "}
               function automatically and provides real data. This is the power
