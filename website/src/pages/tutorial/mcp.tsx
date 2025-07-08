@@ -99,7 +99,7 @@ export default function MCPTutorial() {
             </h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   1
                 </div>
                 <div>
@@ -113,7 +113,7 @@ export default function MCPTutorial() {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   2
                 </div>
                 <div>
@@ -127,7 +127,7 @@ export default function MCPTutorial() {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   3
                 </div>
                 <div>
@@ -243,7 +243,7 @@ const mcpConfig = new MCPConfiguration({
             <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               MCP Filesystem Demo
             </h3>
-            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
               Watch your agent read files, create directories, and manage your
               filesystem through MCP:
             </p>
@@ -254,7 +254,7 @@ const mcpConfig = new MCPConfiguration({
                 className="w-full h-auto"
               />
             </div>
-            <p className="text-gray-400 text-xs landing-md:text-landing-sm mt-2 landing-md:mt-3 text-center">
+            <p className="text-gray-400 text-xs landing-md:text-sm mt-2 landing-md:mt-3 text-center">
               Real-time MCP filesystem operations: reading, writing, and
               managing files
             </p>
@@ -264,31 +264,31 @@ const mcpConfig = new MCPConfiguration({
             <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
               What You're Seeing
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
               In the demo above, the agent:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Connects to MCP filesystem server
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Reads and writes files
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Lists directory contents
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Provides real-time feedback
                 </span>
               </div>
@@ -315,12 +315,12 @@ const mcpConfig = new MCPConfiguration({
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-white font-bold text-xs landing-md:text-sm">
                     1
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
                     Visit{" "}
                     <a
                       href="https://huggingface.co/settings/tokens"
@@ -338,12 +338,12 @@ const mcpConfig = new MCPConfiguration({
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-white font-bold text-xs landing-md:text-sm">
                     2
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-1 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-1 text-xs landing-md:text-sm">
                     Click "New token" → Select "Read" access
                   </p>
                   <p className="text-gray-400 text-xs">
@@ -353,15 +353,15 @@ const mcpConfig = new MCPConfiguration({
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-white font-bold text-xs landing-md:text-sm">
                     3
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-1 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-1 text-xs landing-md:text-sm">
                     Add to your .env file:
                   </p>
-                  <code className="bg-gray-800 px-2 py-1 rounded text-orange-400 text-xs landing-md:text-landing-sm">
+                  <code className="bg-gray-800 px-2 py-1 rounded text-orange-400 text-xs landing-md:text-sm">
                     HUGGING_FACE_TOKEN=hf_your_token_here
                   </code>
                 </div>
@@ -478,7 +478,7 @@ const mcpConfig = new MCPConfiguration({
             <h4 className="text-purple-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
               Try These Amazing AI Combinations
             </h4>
-            <p className="text-gray-300 mb-4 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
               Your agent now has access to thousands of AI models. Test these
               scenarios in VoltOps:
             </p>
@@ -527,7 +527,7 @@ const mcpConfig = new MCPConfiguration({
             <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               HTTP MCP in Action: AI Models Demo
             </h3>
-            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
               Watch your agent use both local filesystem and remote AI models
               through HTTP MCP:
             </p>
@@ -538,7 +538,7 @@ const mcpConfig = new MCPConfiguration({
                 className="w-full h-auto"
               />
             </div>
-            <p className="text-gray-400 text-xs landing-md:text-landing-sm mt-2 landing-md:mt-3 text-center">
+            <p className="text-gray-400 text-xs landing-md:text-sm mt-2 landing-md:mt-3 text-center">
               Powerful combination: Local file operations + Remote AI model
               access via HTTP MCP
             </p>
@@ -548,31 +548,31 @@ const mcpConfig = new MCPConfiguration({
             <h4 className="text-green-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
               What Makes This Incredible
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
               In the demo above, you're seeing:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Local weather data retrieval
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Remote AI image generation
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   File system write operations
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Seamless tool coordination
                 </span>
               </div>
@@ -692,7 +692,7 @@ const mcpConfig = new MCPConfiguration({
             <h4 className="text-emerald-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
               Explore the Complete MCP Directory
             </h4>
-            <p className="text-gray-300 mb-4 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
               This is just a sample! VoltAgent maintains a growing directory of
               MCP servers with detailed setup instructions, code examples, and
               tool capabilities for each service.
@@ -700,21 +700,21 @@ const mcpConfig = new MCPConfiguration({
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>10+ Ready-to-use servers</strong> with copy-paste
                   configurations
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>Detailed tool listings</strong> showing exactly what
                   each server can do
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>Live examples</strong> and implementation guides
                 </span>
               </div>
@@ -724,7 +724,7 @@ const mcpConfig = new MCPConfiguration({
                 href="https://voltagent.dev/mcp/"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-300 no-underline text-xs landing-md:text-landing-sm"
+                className="inline-flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-300 no-underline text-xs landing-md:text-sm"
               >
                 Browse Full MCP Directory →
               </a>

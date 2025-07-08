@@ -212,7 +212,7 @@ new VoltAgent({
             </h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   1
                 </div>
                 <div>
@@ -225,7 +225,7 @@ new VoltAgent({
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   2
                 </div>
                 <div>
@@ -239,7 +239,7 @@ new VoltAgent({
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   3
                 </div>
                 <div>
@@ -252,7 +252,7 @@ new VoltAgent({
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   4
                 </div>
                 <div>
@@ -265,7 +265,7 @@ new VoltAgent({
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
                   5
                 </div>
                 <div>
@@ -298,16 +298,16 @@ new VoltAgent({
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
                     1
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
                     Update your code with the story writing team (above) and
                     save the file
                   </p>
-                  <p className="text-gray-400 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-400 text-xs landing-md:text-sm">
                     Your agents will automatically reload with the new creative
                     team configuration
                   </p>
@@ -315,12 +315,12 @@ new VoltAgent({
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
                     2
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
                     Go to VoltOps Console and set userId:
                   </p>
                   <div className="space-y-2">
@@ -328,7 +328,7 @@ new VoltAgent({
                       href="https://console.voltagent.dev"
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[#00d992] hover:underline text-xs landing-md:text-landing-sm"
+                      className="text-[#00d992] hover:underline text-xs landing-md:text-sm"
                     >
                       console.voltagent.dev
                     </a>
@@ -346,12 +346,12 @@ new VoltAgent({
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
                     3
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
                     Try these test scenarios to see immediate subagent routing:
                   </p>
                   <div className="bg-gray-800 my-2 flex flex-col items-start rounded-lg p-2 landing-md:p-3">
@@ -359,7 +359,7 @@ new VoltAgent({
                       <div className="text-blue-400 text-xs mb-1">
                         Story Request (Should coordinate writer + translator):
                       </div>
-                      <code className="text-gray-300 text-xs landing-md:text-landing-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
                         "Write a story about a magical cat"
                       </code>
                       <div className="text-gray-500 text-xs mt-1">
@@ -371,7 +371,7 @@ new VoltAgent({
                       <div className="text-green-400 text-xs mb-1">
                         Simple Story Request:
                       </div>
-                      <code className="text-gray-300 text-xs landing-md:text-landing-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
                         "Tell me a story about space adventure"
                       </code>
                       <div className="text-gray-500 text-xs mt-1">
@@ -382,7 +382,7 @@ new VoltAgent({
                       <div className="text-purple-400 text-xs mb-1">
                         Themed Story Request:
                       </div>
-                      <code className="text-gray-300 text-xs landing-md:text-landing-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
                         "Create a mystery story set in Victorian London"
                       </code>
                       <div className="text-gray-500 text-xs mt-1">
@@ -409,7 +409,7 @@ new VoltAgent({
             <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               See Subagents in Action
             </h3>
-            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
               Watch how the creative director coordinates the writer and
               translator agents:
             </p>
@@ -420,7 +420,7 @@ new VoltAgent({
                 className="w-full h-auto"
               />
             </div>
-            <p className="text-gray-400 text-xs landing-md:text-landing-sm mt-2 landing-md:mt-3 text-center">
+            <p className="text-gray-400 text-xs landing-md:text-sm mt-2 landing-md:mt-3 text-center">
               Creative coordination: Story creation followed by multilingual
               translation
             </p>
@@ -430,31 +430,31 @@ new VoltAgent({
             <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
               Debug & Monitor Creative Workflow
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
               In the VoltOps console, you'll see the complete creative process:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Creative director coordination
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Story creation and saving
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Translation workflow tracking
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Multi-language output generation
                 </span>
               </div>
@@ -478,7 +478,7 @@ new VoltAgent({
               <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 Custom Guidelines
               </h3>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+              <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
                 Add custom rules to your creative director's behavior:
               </p>
               <ColorModeProvider>
@@ -506,7 +506,7 @@ new VoltAgent({
               <h3 className="text-lg landing-md:text-xl font-semibold text-blue-500 mb-3 landing-md:mb-4">
                 Monitor Delegation
               </h3>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+              <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
                 See exactly when tasks are handed off between agents:
               </p>
               <ColorModeProvider>
@@ -533,7 +533,7 @@ new VoltAgent({
               <h3 className="text-lg landing-md:text-xl font-semibold text-purple-500 mb-3 landing-md:mb-4">
                 Control Workflow Steps
               </h3>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+              <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
                 Prevent infinite loops and control complexity:
               </p>
               <ColorModeProvider>
@@ -562,7 +562,7 @@ const response = await creativeDirector.generateText(
               <h3 className="text-lg landing-md:text-xl font-semibold text-orange-500 mb-3 landing-md:mb-4">
                 Dynamic Team Management
               </h3>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+              <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
                 Add or remove team members on the fly:
               </p>
               <ColorModeProvider>
@@ -624,32 +624,32 @@ managerAgent.removeTool("illustrator");`}
             <h4 className="text-yellow-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
               Pro Tip: Combine All Tricks
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
               Use custom guidelines + monitoring + step control for
               production-ready agent teams:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Guidelines ensure consistent behavior
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Hooks provide debugging visibility
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Step limits prevent runaway costs
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Dynamic teams adapt to requirements
                 </span>
               </div>
@@ -673,7 +673,7 @@ managerAgent.removeTool("illustrator");`}
               <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 ❌ Bad UX: Asking for Known Info
               </h3>
-              <div className="space-y-3 text-xs landing-md:text-landing-sm">
+              <div className="space-y-3 text-xs landing-md:text-sm">
                 <div className="bg-gray-800 rounded p-2">
                   <div className="text-gray-400">User:</div>
                   <div className="text-gray-300">
@@ -696,7 +696,7 @@ managerAgent.removeTool("illustrator");`}
               <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 ✅ Good UX: Using Context
               </h3>
-              <div className="space-y-3 text-xs landing-md:text-landing-sm">
+              <div className="space-y-3 text-xs landing-md:text-sm">
                 <div className="bg-gray-800 rounded p-2">
                   <div className="text-gray-400">User:</div>
                   <div className="text-gray-300">
@@ -724,14 +724,14 @@ managerAgent.removeTool("illustrator");`}
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>userId</strong> is automatically passed to all tool
                   executions
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Tools use{" "}
                   <code className="bg-gray-800 px-1 rounded">
                     context.userId
@@ -741,13 +741,13 @@ managerAgent.removeTool("illustrator");`}
               </div>
               <div className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   No need to ask users for information we already have
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Much better user experience and faster resolution
                 </span>
               </div>
@@ -769,7 +769,7 @@ managerAgent.removeTool("illustrator");`}
               <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 Do This
               </h3>
-              <div className="space-y-3 text-xs landing-md:text-landing-sm">
+              <div className="space-y-3 text-xs landing-md:text-sm">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
@@ -805,7 +805,7 @@ managerAgent.removeTool("illustrator");`}
               <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Avoid This
               </h3>
-              <div className="space-y-3 text-xs landing-md:text-landing-sm">
+              <div className="space-y-3 text-xs landing-md:text-sm">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
@@ -951,31 +951,31 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
             <h4 className="text-green-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
               The Power of Creative Team Coordination
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
               With this creative team setup:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   One request → Story + 3 translations
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Automatic workflow coordination
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Specialized agents for quality output
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Perfect for content generation apps
                 </span>
               </div>
@@ -999,32 +999,32 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>Step 1:</strong> Built your first agent
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>Step 2:</strong> Added tools to make it useful
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>Step 3:</strong> Implemented memory for conversations
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>Step 4:</strong> Connected to external systems with
                   MCP
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   <strong>Step 5:</strong> Created specialized agent teams
                 </span>
               </div>
@@ -1035,7 +1035,7 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
             <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
               Ready to Build Something Amazing?
             </h4>
-            <p className="text-gray-300 mb-4 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
               You now have all the tools to build production-ready AI agents.
               Whether you're creating a customer support system, content
               creation team, or something completely new, you're ready to go.
@@ -1043,13 +1043,13 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
             <div className="flex flex-col landing-md:flex-row gap-3 landing-md:gap-4">
               <a
                 href="/docs"
-                className="inline-flex items-center px-4 py-2 bg-blue-500 no-underline text-white rounded-lg hover:bg-blue-700 transition-colors text-xs landing-md:text-landing-sm justify-center"
+                className="inline-flex items-center px-4 py-2 bg-blue-500 no-underline text-white rounded-lg hover:bg-blue-700 transition-colors text-xs landing-md:text-sm justify-center"
               >
                 Read Full Documentation
               </a>
               <a
                 href="https://github.com/voltagent/voltagent"
-                className="inline-flex items-center px-4 py-2 border no-underline border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-landing-sm justify-center"
+                className="inline-flex items-center px-4 py-2 border no-underline border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center"
               >
                 Star on GitHub
               </a>

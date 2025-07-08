@@ -3,8 +3,38 @@ import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import { MobileToolCode } from "../../components/tutorial";
 
 export default function ChatbotProblemTutorial() {
+  const [highlightedSection, setHighlightedSection] = useState<string | null>(
+    "tool_definition",
+  );
+  const isMobile = useMediaQuery("(max-width: 1023px)");
+
+  // Function to define code sections
+  const getHighlightClasses = (section: string) => {
+    const baseHighlightClass = "transition-all duration-300 ease-in-out";
+
+    return highlightedSection === section
+      ? `bg-gradient-to-r from-emerald-600/40 to-emerald-500/20 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-emerald-500 pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
+      : `text-gray-400 ${baseHighlightClass}`;
+  };
+
+  // Handlers for mouse over and click
+  const handleMouseEnter = (section: string) => {
+    setHighlightedSection(section);
+  };
+
+  const handleMouseLeave = () => {
+    setHighlightedSection(null);
+  };
+
+  const handleClick = (section: string) => {
+    setHighlightedSection(section === highlightedSection ? null : section);
+  };
+
   return (
     <TutorialLayout
       currentStep={2}
@@ -108,7 +138,7 @@ export default function ChatbotProblemTutorial() {
               <h4 className="text-white font-semibold mb-3 text-landing-sm landing-md:text-base">
                 What Users Want:
               </h4>
-              <div className="space-y-2 text-xs landing-md:text-landing-sm">
+              <div className="space-y-2 text-xs landing-md:text-sm">
                 <div className="text-gray-300">
                   "Book a meeting room for 3pm"
                 </div>
@@ -125,7 +155,7 @@ export default function ChatbotProblemTutorial() {
               <h4 className="text-red-500 font-semibold mb-3 text-landing-sm landing-md:text-base">
                 What Your Agent Says:
               </h4>
-              <div className="space-y-2 text-xs landing-md:text-landing-sm">
+              <div className="space-y-2 text-xs landing-md:text-sm">
                 <div className="text-gray-300">
                   "I can't book rooms, but here's how..."
                 </div>
@@ -149,7 +179,7 @@ export default function ChatbotProblemTutorial() {
             <h4 className="text-orange-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
               The Reality Check
             </h4>
-            <p className="text-xs landing-md:text-landing-sm text-gray-300 mb-0">
+            <p className="text-xs landing-md:text-sm text-gray-300 mb-0">
               After a week, users stop using your "AI assistant" because it's
               just a fancy search engine that can't actually assist with
               anything. Sound familiar?
@@ -157,167 +187,461 @@ export default function ChatbotProblemTutorial() {
           </div>
         </div>
 
-        {/* The Solution: Real Code Example */}
+        {/* The Solution: Interactive Code Example */}
         <div className="space-y-6">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             The Solution: Give Your Agent Tools
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's fix your useless chatbot by adding a real tool. We'll create a
-            weather agent that can actually check weather data.
+            Let's fix your useless chatbot by adding a real tool. Hover over the
+            explanations to see how each part works.
           </p>
 
-          <ColorModeProvider>
-            <CodeBlock language="typescript" title="src/index.ts">
-              {`import { VoltAgent, Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+          {/* Interactive Code Section - Wider Container */}
+          <div className="max-w-7xl mx-auto">
+            {isMobile ? (
+              <MobileToolCode isVisible={true} />
+            ) : (
+              <div className="flex items-center justify-between gap-8">
+                {/* Code Section - Left Side */}
+                <div className="w-[55%] border border-solid border-white/10 rounded-lg bg-gray-900/50">
+                  <pre className="text-left h-full bg-transparent p-0 text-xs md:text-sm font-mono m-0">
+                    <div className="flex">
+                      <div className="py-5 px-2 text-right text-gray-500 select-none border-r border-gray-500/30 min-w-[40px] text-xs">
+                        <div>1</div>
+                        <div>2</div>
+                        <div>3</div>
+                        <div>4</div>
+                        <div>5</div>
+                        <div>6</div>
+                        <div>7</div>
+                        <div>8</div>
+                        <div>9</div>
+                        <div>10</div>
+                        <div>11</div>
+                        <div>12</div>
+                        <div>13</div>
+                        <div>14</div>
+                        <div>15</div>
+                        <div>16</div>
+                        <div>17</div>
+                        <div>18</div>
+                        <div>19</div>
+                        <div>20</div>
+                        <div>21</div>
+                        <div>22</div>
+                        <div>23</div>
+                        <div>24</div>
+                        <div>25</div>
+                        <div>26</div>
+                        <div>27</div>
+                        <div>28</div>
+                        <div>29</div>
+                        <div>30</div>
+                      </div>
+                      <code className="py-5 px-3 block text-xs">
+                        {/* Imports */}
+                        <span
+                          className={`block ${getHighlightClasses("imports")}`}
+                        >
+                          <span className="text-blue-400">import</span>
+                          <span>
+                            {" "}
+                            {"{"} VoltAgent, Agent, createTool {"}"}{" "}
+                          </span>
+                          <span className="text-blue-400">from</span>
+                          <span className="text-yellow-300">
+                            {" "}
+                            "@voltagent/core"
+                          </span>
+                          <span>;</span>
+                          <br />
+                          <span className="text-blue-400">import</span>
+                          <span>
+                            {" "}
+                            {"{"} VercelAIProvider {"}"}{" "}
+                          </span>
+                          <span className="text-blue-400">from</span>
+                          <span className="text-yellow-300">
+                            {" "}
+                            "@voltagent/vercel-ai"
+                          </span>
+                          <span>;</span>
+                          <br />
+                          <span className="text-blue-400">import</span>
+                          <span>
+                            {" "}
+                            {"{"} openai {"}"}{" "}
+                          </span>
+                          <span className="text-blue-400">from</span>
+                          <span className="text-yellow-300">
+                            {" "}
+                            "@ai-sdk/openai"
+                          </span>
+                          <span>;</span>
+                          <br />
+                          <span className="text-blue-400">import</span>
+                          <span>
+                            {" "}
+                            {"{"} z {"}"}{" "}
+                          </span>
+                          <span className="text-blue-400">from</span>
+                          <span className="text-yellow-300"> "zod"</span>
+                          <span>;</span>
+                          <br />
+                          <br />
+                        </span>
 
-import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
+                        {/* Tool Definition */}
+                        <span
+                          className={`block ${getHighlightClasses(
+                            "tool_definition",
+                          )}`}
+                        >
+                          <span className="text-blue-400">const</span>
+                          <span> getWeatherTool = </span>
+                          <span className="text-green-400">createTool</span>
+                          <span>{"({"}</span>
+                          <br />
+                        </span>
 
-const getWeatherTool = createTool({
-  name: "get_weather",
-  description: "Get current weather for any city",
-  parameters: z.object({
-    location: z.string().describe("City and state, e.g. New York, NY"),
-  }),
-  execute: async ({ location }) => {
-    // In production, you'd call a real weather API
-    console.log("Getting weather for " + location + "...");
-    
-    // Simple demo logic
-    if (location.toLowerCase().includes("new york")) {
-      return { temperature: "18°C", condition: "Partly cloudy" };
-    }
-    return { temperature: "24°C", condition: "Sunny" };
-  },
-});
+                        {/* Tool Name & Description */}
+                        <span
+                          className={`block ${getHighlightClasses(
+                            "tool_meta",
+                          )}`}
+                        >
+                          <span className="ml-4">name: </span>
+                          <span className="text-yellow-300">"get_weather"</span>
+                          <span>,</span>
+                          <br />
+                          <span className="ml-4">description: </span>
+                          <span className="text-yellow-300">
+                            "Get current weather for any city"
+                          </span>
+                          <span>,</span>
+                          <br />
+                        </span>
 
-const agent = new Agent({
-  name: "my-agent",
-  instructions: "A helpful assistant that answers questions without using tools",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  tools: [getWeatherTool],
-});
+                        {/* Parameters */}
+                        <span
+                          className={`block ${getHighlightClasses(
+                            "parameters",
+                          )}`}
+                        >
+                          <span className="ml-4">parameters: </span>
+                          <span className="text-green-400">z</span>
+                          <span>.object({"{"}</span>
+                          <br />
+                          <span className="ml-8">location: </span>
+                          <span className="text-green-400">z</span>
+                          <span>.string().describe(</span>
+                          <span className="text-yellow-300">
+                            "City and state, e.g. New York, NY"
+                          </span>
+                          <span>),</span>
+                          <br />
+                          <span className="ml-4">{"}),"}</span>
+                          <br />
+                        </span>
 
-new VoltAgent({
-  agents: {
-    agent,
-  },
-}); `}
-            </CodeBlock>
-          </ColorModeProvider>
-        </div>
+                        {/* Execute Function */}
+                        <span
+                          className={`block ${getHighlightClasses("execute")}`}
+                        >
+                          <span className="ml-4">execute: </span>
+                          <span className="text-blue-400">async</span>
+                          <span>
+                            {" "}
+                            ({"{"} location {"}"}) =&gt; {"{"}
+                          </span>
+                          <br />
+                          <span className="ml-8 text-gray-300">
+                            {"// In production, you'd call a real weather API"}
+                          </span>
+                          <br />
+                          <span className="ml-8">console.log(</span>
+                          <span className="text-yellow-300">
+                            "Getting weather for "
+                          </span>
+                          <span> + location + </span>
+                          <span className="text-yellow-300">"..."</span>
+                          <span>);</span>
+                          <br />
+                          <span className="ml-8 text-gray-300">
+                            {"// Simple demo logic"}
+                          </span>
+                          <br />
+                          <span className="ml-8">
+                            <span className="text-blue-400">if</span>
+                            <span> (location.toLowerCase().includes(</span>
+                            <span className="text-yellow-300">"new york"</span>
+                            <span>)) {"{"}</span>
+                          </span>
+                          <br />
+                          <span className="ml-12">
+                            <span className="text-blue-400">return</span>
+                            <span> {"{"} temperature: </span>
+                            <span className="text-yellow-300">"18°C"</span>
+                            <span>, condition: </span>
+                            <span className="text-yellow-300">
+                              "Partly cloudy"
+                            </span>
+                            <span> {"}"};</span>
+                          </span>
+                          <br />
+                          <span className="ml-8">{"}"}</span>
+                          <br />
+                          <span className="ml-8">
+                            <span className="text-blue-400">return</span>
+                            <span> {"{"} temperature: </span>
+                            <span className="text-yellow-300">"24°C"</span>
+                            <span>, condition: </span>
+                            <span className="text-yellow-300">"Sunny"</span>
+                            <span> {"}"};</span>
+                          </span>
+                          <br />
+                          <span className="ml-4">{"}"}</span>
+                          <br />
+                        </span>
 
-        {/* Developer Journey */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            The Developer Journey: Building Your First Tool
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's walk through what you're thinking as you build this tool.
-          </p>
+                        <span
+                          className={`block ${getHighlightClasses(
+                            "tool_definition",
+                          )}`}
+                        >
+                          <span>{"});"}</span>
+                          <br />
+                          <br />
+                        </span>
 
-          <div className="space-y-4 landing-md:space-y-6">
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-blue-500">
-              <h4 className="text-blue-400 font-semibold mb-3 flex items-center text-landing-sm landing-md:text-base">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm mr-2 landing-md:mr-3 flex-shrink-0">
-                  1
+                        {/* Agent Creation */}
+                        <span
+                          className={`block ${getHighlightClasses("agent")}`}
+                        >
+                          <span className="text-blue-400">const</span>
+                          <span> agent = </span>
+                          <span className="text-blue-400">new</span>
+                          <span className="text-green-400"> Agent</span>
+                          <span>{"({"}</span>
+                          <br />
+                          <span className="ml-4">name: </span>
+                          <span className="text-yellow-300">"my-agent"</span>
+                          <span>,</span>
+                          <br />
+                          <span className="ml-4">instructions: </span>
+                          <span className="text-yellow-300">
+                            "A helpful assistant that can check weather"
+                          </span>
+                          <span>,</span>
+                          <br />
+                          <span className="ml-4">llm: </span>
+                          <span className="text-blue-400">new</span>
+                          <span className="text-green-400">
+                            {" "}
+                            VercelAIProvider
+                          </span>
+                          <span>(),</span>
+                          <br />
+                          <span className="ml-4">model: </span>
+                          <span className="text-green-400">openai</span>
+                          <span>(</span>
+                          <span className="text-yellow-300">"gpt-4o-mini"</span>
+                          <span>),</span>
+                          <br />
+                          <span className="ml-4">tools: [getWeatherTool],</span>
+                          <br />
+                          <span>{"});"}</span>
+                          <br />
+                          <br />
+                        </span>
+
+                        {/* Server Setup */}
+                        <span
+                          className={`block ${getHighlightClasses("server")}`}
+                        >
+                          <span className="text-blue-400">new</span>
+                          <span className="text-green-400"> VoltAgent</span>
+                          <span>{"({"}</span>
+                          <br />
+                          <span className="ml-4">
+                            agents: {"{"} agent {"}"},
+                          </span>
+                          <br />
+                          <span>{"});"}</span>
+                        </span>
+                      </code>
+                    </div>
+                  </pre>
                 </div>
-                "I need to define what the tool does"
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                <span className="text-blue-400 font-mono">createTool</span> is
-                your starting point. Give it a clear name and description so the
-                LLM knows when to use it. Think of this as writing documentation
-                for a function.
-              </p>
-              <div className="">
-                <code className="p-2 landing-md:p-3 text-blue-400 text-xs landing-md:text-landing-sm">
-                  name: "get_weather" {/* What the LLM will call */}
-                </code>
-              </div>
-            </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-green-500">
-              <h4 className="text-green-400 font-semibold mb-3 flex items-center text-landing-sm landing-md:text-base">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm mr-2 landing-md:mr-3 flex-shrink-0">
-                  2
-                </div>
-                "What inputs does it need?"
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                <span className="text-green-400 font-mono">parameters</span>{" "}
-                uses Zod schemas to define and validate inputs. This is like
-                defining function parameters but with runtime validation.
-              </p>
-              <div className="">
-                <code className="p-2 landing-md:p-3 text-green-400 text-xs landing-md:text-landing-sm">
-                  z.object({"{location: z.string()}"}) {/* Type-safe inputs */}
-                </code>
-              </div>
-            </div>
+                {/* Explanation Cards - Right Side */}
+                <div className="flex w-[45%] flex-col gap-4">
+                  {/* Card 1 - Tool Definition */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                    <div
+                      className={`h-[100px] p-3 rounded-lg ${
+                        highlightedSection === "tool_definition"
+                          ? "border-1 border-solid border-emerald-400 bg-white/10"
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("tool_definition")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("tool_definition")}
+                    >
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "tool_definition"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "I need to define what the tool does"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        createTool is your starting point. Give it a clear name
+                        and description so the LLM knows when to use it.
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-purple-500">
-              <h4 className="text-purple-400 font-semibold mb-3 flex items-center text-landing-sm landing-md:text-base">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm mr-2 landing-md:mr-3 flex-shrink-0">
-                  3
-                </div>
-                "What should it actually do?"
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                <span className="text-purple-400 font-mono">execute</span> is
-                where the magic happens. This is your regular async function
-                that does the actual work. Call APIs, query databases, whatever
-                you need.
-              </p>
-              <div className="">
-                <code className="p-2 landing-md:p-3 text-purple-400 text-xs landing-md:text-landing-sm">
-                  execute: async ({"{location}"}) =&gt; {"{...}"}
-                </code>
-              </div>
-            </div>
+                  {/* Card 2 - Tool Meta */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                    <div
+                      className={`h-[100px] p-3 rounded-lg ${
+                        highlightedSection === "tool_meta"
+                          ? "border-1 border-solid border-emerald-400 bg-white/10"
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("tool_meta")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("tool_meta")}
+                    >
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "tool_meta"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "What should I call it?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        Name and description tell the LLM what this tool does
+                        and when to use it. Be descriptive but concise.
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-orange-500">
-              <h4 className="text-orange-400 font-semibold mb-3 flex items-center text-landing-sm landing-md:text-base">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm mr-2 landing-md:mr-3 flex-shrink-0">
-                  4
-                </div>
-                "How do I give it to my agent?"
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                Add the tool to your agent's{" "}
-                <span className="text-orange-400 font-mono">tools</span> array.
-                The agent will automatically understand when and how to use it
-                based on user input.
-              </p>
-              <div className="">
-                <code className="p-2 landing-md:p-3 text-orange-400 text-xs landing-md:text-landing-sm">
-                  tools: [getWeatherTool] {/* Agent now has superpowers */}
-                </code>
-              </div>
-            </div>
+                  {/* Card 3 - Parameters */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                    <div
+                      className={`h-[100px] p-3 rounded-lg ${
+                        highlightedSection === "parameters"
+                          ? "border-1 border-solid border-emerald-400 bg-white/10"
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("parameters")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("parameters")}
+                    >
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "parameters"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "What inputs does it need?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        Use Zod schemas to define and validate inputs. This
+                        gives you type safety and runtime validation.
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="bg-gray-800/50 p-4 landing-md:p-6 rounded-lg border-l-4 border-red-500">
-              <h4 className="text-red-400 font-semibold mb-3 flex items-center text-landing-sm landing-md:text-base">
-                <div className="w-5 h-5 landing-md:w-6 landing-md:h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-landing-sm mr-2 landing-md:mr-3 flex-shrink-0">
-                  5
+                  {/* Card 4 - Execute */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                    <div
+                      className={`h-[100px] p-3 rounded-lg ${
+                        highlightedSection === "execute"
+                          ? "border-1 border-solid border-emerald-400 bg-white/10"
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("execute")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("execute")}
+                    >
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "execute"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "What should it actually do?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        The execute function is where the magic happens. Call
+                        APIs, query databases, whatever you need.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 5 - Agent */}
+                  <div className="relative h-full">
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+                    <div
+                      className={`h-[100px] p-3 rounded-lg ${
+                        highlightedSection === "agent"
+                          ? "border-1 border-solid border-emerald-400 bg-white/10"
+                          : "border-solid border-gray-500/30 hover:bg-white/5"
+                      } flex flex-col cursor-pointer transition-all duration-300`}
+                      onMouseEnter={() => handleMouseEnter("agent")}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleClick("agent")}
+                    >
+                      <div
+                        className={`text-base font-semibold mb-3 ${
+                          highlightedSection === "agent"
+                            ? "text-emerald-500"
+                            : "text-white"
+                        }`}
+                      >
+                        "How do I give it to my agent?"
+                      </div>
+                      <div className="text-gray-400 text-xs leading-relaxed">
+                        Add the tool to your agent's tools array. The agent will
+                        automatically understand when to use it.
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                "The magic happens automatically"
-              </h4>
-              <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
-                VoltAgent handles everything: parsing user input, deciding which
-                tool to use, calling your function, and formatting the response.
-                You just write the business logic.
-              </p>
-              <div className="">
-                <code className="p-2 landing-md:p-3 text-red-400 text-xs landing-md:text-landing-sm break-all">
-                  User: "Weather in NYC?" → Tool: get_weather() → Response!
-                </code>
               </div>
-            </div>
+            )}
           </div>
+
+          {!isMobile && (
+            <div className="mt-8">
+              <h4 className="text-emerald-500 font-semibold mb-2 text-sm landing-md:text-base">
+                The Magic
+              </h4>
+              <p className="text-gray-300 mb-0 text-xs landing-md:text-base">
+                Your agent now <strong>takes action</strong> instead of giving
+                advice. It calls your{" "}
+                <code className="text-emerald-500 font-mono text-xs landing-md:text-sm">
+                  get_weather
+                </code>{" "}
+                function automatically and provides real data. This is the power
+                of tools.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Testing in VoltOps */}
@@ -336,34 +660,34 @@ new VoltAgent({
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
                     1
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
                     Update your code with the tool (above) and save the file
                   </p>
-                  <p className="text-gray-400 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-400 text-xs landing-md:text-sm">
                     Your agent will automatically reload with the new tool
                   </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
                     2
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
                     Go back to VoltOps Console:
                   </p>
                   <a
                     href="https://console.voltagent.dev"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[#00d992] hover:underline text-xs landing-md:text-landing-sm"
+                    className="text-[#00d992] hover:underline text-xs landing-md:text-sm"
                   >
                     console.voltagent.dev
                   </a>
@@ -371,27 +695,27 @@ new VoltAgent({
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-[#00d992] rounded-full flex items-center justify-center">
-                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-landing-sm">
+                  <span className="text-[#1d1d1d] font-bold text-xs landing-md:text-sm">
                     3
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-landing-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
                     Try these inputs to see your tool in action:
                   </p>
                   <div className="bg-gray-800 my-2 flex flex-col items-start rounded-lg p-2 landing-md:p-3">
                     <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-landing-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
                         "What's the weather in New York?"
                       </code>
                     </div>
                     <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-landing-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
                         "Check weather in San Francisco"
                       </code>
                     </div>
                     <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-landing-sm break-all">
+                      <code className="text-gray-300 text-xs landing-md:text-sm break-all">
                         "Is it sunny in Tokyo?"
                       </code>
                     </div>
@@ -406,7 +730,7 @@ new VoltAgent({
             <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               See Your Tool in Action
             </h3>
-            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
               This is what happens when you ask your agent about weather:
             </p>
             <div className="rounded-lg overflow-hidden border border-gray-600">
@@ -416,7 +740,7 @@ new VoltAgent({
                 className="w-full h-auto"
               />
             </div>
-            <p className="text-gray-400 text-xs landing-md:text-landing-sm mt-2 landing-md:mt-3 text-center">
+            <p className="text-gray-400 text-xs landing-md:text-sm mt-2 landing-md:mt-3 text-center">
               Your agent now executes tools automatically and provides real data
             </p>
           </div>
@@ -425,31 +749,31 @@ new VoltAgent({
             <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
               Debug & Monitor
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-landing-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
               In the VoltOps console, you'll see:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Tool execution logs
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Agent reasoning process
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Response time metrics
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-landing-sm">
+                <span className="text-gray-300 text-xs landing-md:text-sm">
                   Error tracking
                 </span>
               </div>
@@ -474,18 +798,18 @@ new VoltAgent({
               </h3>
               <div className="space-y-2 landing-md:space-y-3">
                 <div className="bg-gray-800 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-landing-sm">
+                  <div className="text-gray-400 text-xs landing-md:text-sm">
                     User:
                   </div>
-                  <div className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  <div className="text-gray-300 text-xs landing-md:text-sm">
                     "What's the weather in NYC?"
                   </div>
                 </div>
                 <div className="bg-gray-800 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-landing-sm">
+                  <div className="text-gray-400 text-xs landing-md:text-sm">
                     Agent:
                   </div>
-                  <div className="text-red-500 text-xs landing-md:text-landing-sm leading-relaxed">
+                  <div className="text-red-500 text-xs landing-md:text-sm leading-relaxed">
                     "I can't check current weather data. Try checking
                     weather.com or your local weather app."
                   </div>
@@ -499,18 +823,18 @@ new VoltAgent({
               </h3>
               <div className="space-y-2 landing-md:space-y-3">
                 <div className="bg-gray-800 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-landing-sm">
+                  <div className="text-gray-400 text-xs landing-md:text-sm">
                     User:
                   </div>
-                  <div className="text-gray-300 text-xs landing-md:text-landing-sm">
+                  <div className="text-gray-300 text-xs landing-md:text-sm">
                     "What's the weather in NYC?"
                   </div>
                 </div>
                 <div className="bg-gray-800 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-landing-sm">
+                  <div className="text-gray-400 text-xs landing-md:text-sm">
                     Agent:
                   </div>
-                  <div className="text-emerald-500 text-xs landing-md:text-landing-sm leading-relaxed">
+                  <div className="text-emerald-500 text-xs landing-md:text-sm leading-relaxed">
                     "Let me check that for you... The current weather in New
                     York is 18°C with partly cloudy conditions."
                   </div>
@@ -523,10 +847,10 @@ new VoltAgent({
             <h4 className="text-[#00d992] font-semibold mb-2 text-landing-sm landing-md:text-base">
               The Magic
             </h4>
-            <p className="text-gray-300 mb-0 text-xs landing-md:text-landing-sm leading-relaxed">
+            <p className="text-gray-300 mb-0 text-xs landing-md:text-sm leading-relaxed">
               Your agent now <strong>takes action</strong> instead of giving
               advice. It calls your{" "}
-              <code className="text-[#00d992] font-mono text-xs landing-md:text-landing-sm">
+              <code className="text-[#00d992] font-mono text-xs landing-md:text-sm">
                 get_weather
               </code>{" "}
               function automatically and provides real data. This is the power

@@ -133,7 +133,7 @@ export default function TutorialMemory() {
               <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
               Required for Memory
             </h4>
-            <p className="text-xs landing-md:text-landing-sm mb-0 text-gray-300 leading-relaxed">
+            <p className="text-xs landing-md:text-sm mb-0 text-gray-300 leading-relaxed">
               Without a{" "}
               <code className="bg-gray-800 px-2 py-1 rounded">userId</code>,
               your agent can't properly isolate and store conversations. This is
