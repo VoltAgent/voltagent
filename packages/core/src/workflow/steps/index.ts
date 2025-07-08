@@ -8,7 +8,6 @@ export type {
   WorkflowStep,
   WorkflowStepParallelAllConfig,
   WorkflowStepParallelRaceConfig,
-  WorkflowStepAgentConfig,
   WorkflowStepFuncConfig,
   WorkflowStepConditionalWhenConfig,
   WorkflowStepParallelAll,

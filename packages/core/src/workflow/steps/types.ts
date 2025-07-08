@@ -1,7 +1,5 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { z } from "zod";
 import type { Agent } from "../../agent";
-import type { PublicGenerateOptions } from "../../agent/types";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowStep,
@@ -16,18 +14,6 @@ export type WorkflowStepType =
   | "conditional-when"
   | "parallel-all"
   | "parallel-race";
-
-export type WorkflowStepAgentConfig<
-  INPUT,
-  DATA,
-  SCHEMA extends z.ZodTypeAny,
-> = InternalWorkflowStepConfig<{
-  task: string | InternalWorkflowFunc<INPUT, DATA, string>;
-  agent: Agent<{ llm: DangerouslyAllowAny }>;
-  config: PublicGenerateOptions & {
-    schema: SCHEMA;
-  };
-}>;
 
 export interface WorkflowStepAgent<INPUT, DATA, RESULT>
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {

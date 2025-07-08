@@ -1,7 +1,9 @@
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
+import type { Agent } from "../../agent/index";
 import type { PublicGenerateOptions } from "../../agent/types";
-import { defaultStepConfig } from "../internal/utils";
-import type { WorkflowStepAgent, WorkflowStepAgentConfig } from "./types";
+import type { InternalWorkflowFunc } from "../internal/types";
+import type { WorkflowStepAgent } from "./types";
 
 export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
   schema: SCHEMA;
@@ -27,14 +29,16 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
  * @param config - The config for the agent (schema) `generateObject` call
  * @returns A workflow step that executes the agent with the task
  */
-export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>({
-  task,
-  agent,
-  config,
-}: WorkflowStepAgentConfig<INPUT, DATA, SCHEMA>) {
+export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
+  task: string | InternalWorkflowFunc<INPUT, DATA, string>,
+  agent: Agent<{ llm: DangerouslyAllowAny }>,
+  config: AgentConfig<SCHEMA>,
+) {
   return {
-    ...defaultStepConfig(config),
     type: "agent",
+    id: agent.id,
+    name: agent.name ?? null,
+    purpose: agent.purpose ?? null,
     agent,
     execute: async (data, state) => {
       const { schema, ...restConfig } = config;

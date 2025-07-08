@@ -1,14 +1,15 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
+import type { Agent } from "../agent";
 import { createWorkflow } from "./core";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowInputSchema,
   InternalInferWorkflowStepsResult,
+  InternalWorkflowFunc,
 } from "./internal/types";
 import type {
   WorkflowStep,
-  WorkflowStepAgentConfig,
   WorkflowStepConditionalWhenConfig,
   WorkflowStepFuncConfig,
   WorkflowStepParallelAllConfig,
@@ -96,17 +97,12 @@ export class WorkflowChain<
    * @param config - The config for the agent (schema) `generateObject` call
    * @returns A workflow step that executes the agent with the task
    */
-  andAgent<SCHEMA extends z.ZodTypeAny>({
-    task,
-    agent,
-    config,
-    ...restConfig
-  }: WorkflowStepAgentConfig<INPUT_SCHEMA, CURRENT_DATA, SCHEMA>): WorkflowChain<
-    INPUT_SCHEMA,
-    RESULT_SCHEMA,
-    z.infer<SCHEMA>
-  > {
-    const step = andAgent({ task, agent, config, ...restConfig }) as unknown as WorkflowStep<
+  andAgent<SCHEMA extends z.ZodTypeAny>(
+    task: string | InternalWorkflowFunc<INPUT_SCHEMA, CURRENT_DATA, string>,
+    agent: Agent<{ llm: DangerouslyAllowAny }>,
+    config: AgentConfig<SCHEMA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>> {
+    const step = andAgent(task, agent, config) as unknown as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
       z.infer<SCHEMA> | DangerouslyAllowAny
