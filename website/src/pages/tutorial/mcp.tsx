@@ -14,65 +14,65 @@ export default function MCPTutorial() {
       prevStepUrl="/tutorial/memory"
       nextStepUrl="/tutorial/subagents"
     >
-      <div className="space-y-8">
+      <div className="space-y-20">
         {/* The Problem */}
         <div className="space-y-6">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             The Problem: Your Agent Lives in a Bubble
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             Your agent has memory and tools, but it's still isolated. It can't
             access your GitHub repos, your Slack channels, your databases, or
             any of the systems you actually use.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
-            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+            <div className="border-solid border-red-500 rounded-lg p-4 landing-md:p-6 ">
               <h3 className="text-lg landing-md:text-xl font-semibold text-red-500 mb-3 landing-md:mb-4">
                 Without MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Build custom integrations for every service
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Manage API keys and authentication
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-red-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Write boilerplate for each external tool
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 bg-gray-800/50">
+            <div className="border-solid border-emerald-500 rounded-lg p-4 landing-md:p-6 ">
               <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-500 mb-3 landing-md:mb-4">
                 With MCP
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Plug-and-play external system access
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Standardized integration protocol
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-4 h-4 landing-md:w-5 landing-md:h-5 text-emerald-500 mt-1" />
-                  <span className="text-landing-sm landing-md:text-base text-gray-300">
+                  <span className="text-sm landing-md:text-base text-gray-300">
                     Ready-made servers for popular services
                   </span>
                 </div>
@@ -86,55 +86,55 @@ export default function MCPTutorial() {
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             What is MCP?
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             <strong>Model Context Protocol (MCP)</strong> is an open standard
             that enables AI models to securely access external data and tools.
             Think of it as USB for AI agents - a universal connector for any
             external system.
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
+          <div className=" rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
             <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               How MCP Works
             </h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center  text-xs landing-md:text-sm font-bold">
                   1
                 </div>
                 <div>
-                  <strong className="text-white text-landing-sm landing-md:text-base">
+                  <strong className="text-white text-sm landing-md:text-base">
                     MCP Server:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
+                  <span className="text-gray-300 ml-2 text-sm landing-md:text-base">
                     Provides secure access to external resources (GitHub,
                     databases, APIs, etc.)
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center text-xs landing-md:text-sm font-bold">
                   2
                 </div>
                 <div>
-                  <strong className="text-white text-landing-sm landing-md:text-base">
+                  <strong className="text-white text-sm landing-md:text-base">
                     MCP Client:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
+                  <span className="text-gray-300 ml-2 text-sm landing-md:text-base">
                     Your VoltAgent connects to MCP servers to access their
                     resources
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs landing-md:text-sm font-bold">
+                <div className="w-6 h-6 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center  text-xs landing-md:text-sm font-bold">
                   3
                 </div>
                 <div>
-                  <strong className="text-white text-landing-sm landing-md:text-base">
+                  <strong className="text-white text-sm landing-md:text-base">
                     Secure Access:
                   </strong>
-                  <span className="text-gray-300 ml-2 text-landing-sm landing-md:text-base">
+                  <span className="text-gray-300 ml-2 text-sm landing-md:text-base">
                     All communication is authenticated and controlled by your
                     permissions
                   </span>
@@ -149,7 +149,7 @@ export default function MCPTutorial() {
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Add MCP to Your Weather Agent
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             Let's upgrade your weather agent from the previous tutorial with
             file system access through MCP.
           </p>
@@ -234,12 +234,12 @@ const mcpConfig = new MCPConfiguration({
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             See MCP in Action
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             Here's what happens when your agent uses MCP filesystem tools in
             VoltOps console:
           </p>
 
-          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border border-gray-700">
+          <div className=" 0">
             <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               MCP Filesystem Demo
             </h3>
@@ -260,8 +260,8 @@ const mcpConfig = new MCPConfiguration({
             </p>
           </div>
 
-          <div className="bg-gray-800/50 border-solid border border-blue-500 rounded-lg p-4 landing-md:p-6">
-            <h4 className="text-blue-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
+          <div className="">
+            <h4 className="text-emerald-500 font-semibold mb-2 text-sm landing-md:text-base">
               What You're Seeing
             </h4>
             <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
@@ -269,26 +269,26 @@ const mcpConfig = new MCPConfiguration({
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Connects to MCP filesystem server
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Reads and writes files
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Lists directory contents
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Provides real-time feedback
                 </span>
               </div>
@@ -301,32 +301,32 @@ const mcpConfig = new MCPConfiguration({
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             HTTP MCP: Access AI Models & Remote Services
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             MCP isn't just for local files - it works over HTTP for remote
             services too. Let's connect your agent to Hugging Face's massive
             collection of AI models.
           </p>
 
           {/* Setup Section */}
-          <div className="bg-gray-800/50 border-solid border border-orange-500 rounded-lg p-4 landing-md:p-6">
-            <h3 className="text-lg landing-md:text-xl font-semibold text-orange-400 mb-3 landing-md:mb-4">
+          <div className=" ">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-emerald-400 mb-3 landing-md:mb-4">
               Setup: Get Your Hugging Face Token
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs landing-md:text-sm">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-sm">
                     1
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-2 text-xs landing-md:text-sm">
+                  <p className="text-gray-300 mb-2 text-xs landing-md:text-base">
                     Visit{" "}
                     <a
                       href="https://huggingface.co/settings/tokens"
                       target="_blank"
                       rel="noreferrer"
-                      className="text-orange-400 hover:underline"
+                      className="text-emerald-400 hover:underline"
                     >
                       huggingface.co/settings/tokens
                     </a>
@@ -337,13 +337,13 @@ const mcpConfig = new MCPConfiguration({
                 </div>
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs landing-md:text-sm">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-sm">
                     2
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-1 text-xs landing-md:text-sm">
+                  <p className="text-gray-300 mb-1 text-xs landing-md:text-base">
                     Click "New token" → Select "Read" access
                   </p>
                   <p className="text-gray-400 text-xs">
@@ -352,16 +352,16 @@ const mcpConfig = new MCPConfiguration({
                 </div>
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
-                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs landing-md:text-sm">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-sm">
                     3
                   </span>
                 </div>
                 <div>
-                  <p className="text-gray-300 mb-1 text-xs landing-md:text-sm">
+                  <p className="text-gray-300 mb-1 text-xs landing-md:text-base">
                     Add to your .env file:
                   </p>
-                  <code className="bg-gray-800 px-2 py-1 rounded text-orange-400 text-xs landing-md:text-sm">
+                  <code className="bg-gray-800 px-2 py-1 rounded text-emerald-400 text-xs landing-md:text-base">
                     HUGGING_FACE_TOKEN=hf_your_token_here
                   </code>
                 </div>
@@ -474,47 +474,47 @@ const mcpConfig = new MCPConfiguration({
           </ColorModeProvider>
 
           {/* Test Scenarios */}
-          <div className="bg-gray-800/50 border-solid border border-purple-500 rounded-lg p-4 landing-md:p-6">
-            <h4 className="text-purple-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
+          <div className=" ">
+            <h4 className="text-emerald-400 font-semibold mb-3 text-sm landing-md:text-base">
               Try These Amazing AI Combinations
             </h4>
-            <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
+            <p className="text-gray-300 mb-4 text-xs landing-md:text-base">
               Your agent now has access to thousands of AI models. Test these
               scenarios in VoltOps:
             </p>
             <div className="space-y-3">
-              <div className="bg-gray-800 rounded p-3">
-                <div className="text-purple-400 text-xs font-medium mb-1">
+              <div className="border-solid border-gray-500/30 rounded p-3">
+                <div className="text-emerald-400 landing-md:text-base text-xs font-medium mb-1">
                   Weather + Image Generation:
                 </div>
-                <code className="text-gray-300 text-xs">
-                  "Check weather in San Francisco and generate an image matching
-                  those conditions"
+                <code className="text-gray-300 text-xs landing-md:text-base">
+                  What Makes This Incredible "Check weather in San Francisco and
+                  generate an image matching those conditions"
                 </code>
               </div>
-              <div className="bg-gray-800 rounded p-3">
-                <div className="text-purple-400 text-xs font-medium mb-1">
+              <div className="border-solid border-gray-500/30 rounded p-3">
+                <div className="text-emerald-400 landing-md:text-base text-xs font-medium mb-1">
                   Weather + Translation:
                 </div>
-                <code className="text-gray-300 text-xs">
+                <code className="text-gray-300 text-xs landing-md:text-base">
                   "What's the weather in Barcelona? Also translate this to
                   Spanish: 'It's a beautiful day!'"
                 </code>
               </div>
-              <div className="bg-gray-800 rounded p-3">
-                <div className="text-purple-400 text-xs font-medium mb-1">
+              <div className="border-solid border-gray-500/30 rounded p-3">
+                <div className="text-emerald-400 landing-md:text-base text-xs font-medium mb-1">
                   Image Analysis + AI:
                 </div>
-                <code className="text-gray-300 text-xs">
+                <code className="text-gray-300 text-xs landing-md:text-base">
                   "Generate an image of a rainy day, then analyze what you see
                   in that image"
                 </code>
               </div>
-              <div className="bg-gray-800 rounded p-3">
-                <div className="text-purple-400 text-xs font-medium mb-1">
+              <div className="border-solid border-gray-500/30 rounded p-3">
+                <div className="text-emerald-400 landing-md:text-base text-xs font-medium mb-1">
                   Text Processing + Weather:
                 </div>
-                <code className="text-gray-300 text-xs">
+                <code className="text-gray-300 text-xs landing-md:text-base">
                   "Summarize this text and check the weather: 'I'm planning a
                   trip to London next week...'"
                 </code>
@@ -523,7 +523,7 @@ const mcpConfig = new MCPConfiguration({
           </div>
 
           {/* Hugging Face MCP Demo GIF */}
-          <div className="bg-gray-800/50 rounded-lg p-4 landing-md:p-6 border border-gray-700">
+          <div className="">
             <h3 className="text-lg landing-md:text-xl font-semibold text-white mb-3 landing-md:mb-4">
               HTTP MCP in Action: AI Models Demo
             </h3>
@@ -538,41 +538,41 @@ const mcpConfig = new MCPConfiguration({
                 className="w-full h-auto"
               />
             </div>
-            <p className="text-gray-400 text-xs landing-md:text-sm mt-2 landing-md:mt-3 text-center">
+            <p className="text-gray-400 text-xs landing-md:text-base mt-2 landing-md:mt-3 text-center">
               Powerful combination: Local file operations + Remote AI model
               access via HTTP MCP
             </p>
           </div>
 
-          <div className="bg-gray-800/50 border-solid border border-green-500 rounded-lg p-4 landing-md:p-6">
-            <h4 className="text-green-400 font-semibold mb-2 text-landing-sm landing-md:text-base">
+          <div className=" ">
+            <h4 className="text-emerald-500 font-semibold mb-2 text-sm landing-md:text-base">
               What Makes This Incredible
             </h4>
-            <p className="text-gray-300 mb-3 text-xs landing-md:text-sm">
+            <p className="text-gray-300 mb-3 text-xs landing-md:text-base">
               In the demo above, you're seeing:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Local weather data retrieval
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Remote AI image generation
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   File system write operations
                 </span>
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
+                <span className="text-gray-300 text-xs landing-md:text-base">
                   Seamless tool coordination
                 </span>
               </div>
@@ -581,11 +581,11 @@ const mcpConfig = new MCPConfiguration({
 
           {/* Capabilities */}
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
-            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+            <div className=" rounded-lg p-4 border-solid border border-gray-700">
               <h4 className="text-white font-semibold mb-3">
                 AI Capabilities You Get
               </h4>
-              <div className="space-y-2 text-landing-sm">
+              <div className="space-y-2 text-sm">
                 <div className="text-gray-300">
                   • Image generation from text
                 </div>
@@ -599,11 +599,11 @@ const mcpConfig = new MCPConfiguration({
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+            <div className=" rounded-lg p-4 border-solid border border-gray-700">
               <h4 className="text-white font-semibold mb-3">
                 Why This is Powerful
               </h4>
-              <div className="space-y-2 text-landing-sm">
+              <div className="space-y-2 text-sm">
                 <div className="text-gray-300">
                   • Zero AI model hosting costs
                 </div>
@@ -632,15 +632,15 @@ const mcpConfig = new MCPConfiguration({
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Ready-to-Use MCP Servers
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             VoltAgent maintains a comprehensive directory of MCP servers for
             popular services. Here are some examples to get you started:
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-3 gap-4">
-            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+            <div className=" rounded-lg p-4 border-solid border border-gray-700">
               <h4 className="text-white font-semibold mb-3">Communication</h4>
-              <div className="space-y-2 text-landing-sm">
+              <div className="space-y-2 text-sm">
                 <div className="text-gray-300">
                   • <strong>Slack</strong> - Send messages, manage channels
                 </div>
@@ -654,9 +654,9 @@ const mcpConfig = new MCPConfiguration({
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+            <div className=" rounded-lg p-4 border-solid border border-gray-700">
               <h4 className="text-white font-semibold mb-3">Productivity</h4>
-              <div className="space-y-2 text-landing-sm">
+              <div className="space-y-2 text-sm">
                 <div className="text-gray-300">
                   • <strong>Notion</strong> - Create pages, manage databases
                 </div>
@@ -669,11 +669,11 @@ const mcpConfig = new MCPConfiguration({
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-4 border-solid border border-gray-700">
+            <div className=" rounded-lg p-4 border-solid border border-gray-700">
               <h4 className="text-white font-semibold mb-3">
                 Development & Data
               </h4>
-              <div className="space-y-2 text-landing-sm">
+              <div className="space-y-2 text-sm">
                 <div className="text-gray-300">
                   • <strong>GitHub</strong> - Repository management
                 </div>
@@ -688,8 +688,8 @@ const mcpConfig = new MCPConfiguration({
           </div>
 
           {/* Directory Link */}
-          <div className="bg-gray-800/50 border-solid border border-emerald-500 rounded-lg p-4 landing-md:p-6">
-            <h4 className="text-emerald-400 font-semibold mb-3 text-landing-sm landing-md:text-base">
+          <div className=" border-solid border border-emerald-500 rounded-lg p-4 landing-md:p-6">
+            <h4 className="text-emerald-400 font-semibold mb-3 text-sm landing-md:text-base">
               Explore the Complete MCP Directory
             </h4>
             <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
@@ -724,7 +724,7 @@ const mcpConfig = new MCPConfiguration({
                 href="https://voltagent.dev/mcp/"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-300 no-underline text-xs landing-md:text-sm"
+                className="inline-flex items-center px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-300 no-underline text-xs landing-md:text-sm"
               >
                 Browse Full MCP Directory →
               </a>
@@ -737,18 +737,18 @@ const mcpConfig = new MCPConfiguration({
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             What's Next?
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
+          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
             You now have an agent that can access external systems through MCP.
             In the final tutorial, we'll learn about subagents - creating teams
             of specialized agents that work together.
           </p>
 
-          <div className="bg-gray-800/50 border-solid border border-emerald-500 rounded-lg p-6">
+          <div className=" border-solid border border-emerald-500 rounded-lg p-6">
             <h4 className="text-emerald-500 font-semibold mb-2">Try It Now</h4>
             <p className="text-gray-300 mb-3">
               Test the file system example above:
             </p>
-            <div className="text-gray-300 space-y-1 text-landing-sm">
+            <div className="text-gray-300 space-y-1 text-sm">
               <div>"Check weather in London and save it to a file"</div>
               <div>"What files are in the Desktop directory?"</div>
               <div>"Read yesterday's weather report"</div>
