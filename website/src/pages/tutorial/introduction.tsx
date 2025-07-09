@@ -268,7 +268,7 @@ export default function TutorialIntroduction() {
 
           <div className="mt-8 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
             <h4 className="text-emerald-500 font-semibold mb-4">
-              ✅ That's it! Your agent is running
+              Success! Your agent is running
             </h4>
             <p className="text-gray-300 text-sm mb-4">
               You should see this in your terminal:
@@ -491,7 +491,7 @@ export default function TutorialIntroduction() {
                           <br />
                           <br />
                           <span className="text-gray-300">
-                            {"// 🎉 Your agent is now running!"}
+                            {"// Your agent is now running!"}
                           </span>
                           <br />
                           <span className="text-gray-300">
@@ -875,55 +875,57 @@ export default function TutorialIntroduction() {
           </div>
         </div>
 
-        {/* Community & Resources */}
-        <div className="">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-left">
-            Join the VoltAgent Community
-          </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 text-left leading-relaxed mb-6">
-            Connect with other developers building AI agents, get help, and stay
-            updated with the latest features.
-          </p>
-
-          <div className="border-solid border border-gray-700 rounded-lg p-4 landing-md:p-6">
-            <div className="flex flex-col landing-md:flex-row gap-3 landing-md:gap-4 items-center justify-center">
-              <a
-                href="https://github.com/voltagent/voltagent"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center px-4 py-2 border no-underline border-solid border-amber-500 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center w-full landing-md:w-auto"
-              >
-                <GitHubLogo className="w-4 h-4 mr-2" />
-                Star on GitHub
-              </a>
-              <a
-                href="https://discord.gg/voltagent"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center px-4 py-2 border no-underline border-solid border-purple-500 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center w-full landing-md:w-auto"
-              >
-                <DiscordLogo className="w-4 h-4 mr-2" />
-                Join Discord Community
-              </a>
-            </div>
+        {/* Community & Resources - Minimized */}
+        <div className="text-center">
+          <div className="flex flex-col landing-md:flex-row gap-2 items-center justify-center text-xs text-gray-500">
+            <span>Questions?</span>
+            <a
+              href="https://github.com/voltagent/voltagent"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center text-gray-500 hover:text-gray-300 transition-colors no-underline"
+            >
+              <GitHubLogo className="w-3 h-3 mr-1" />
+              GitHub
+            </a>
+            <span className="text-gray-600">•</span>
+            <a
+              href="https://s.voltagent.dev/discord"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center text-gray-500 hover:text-gray-300 transition-colors no-underline"
+            >
+              <DiscordLogo className="w-3 h-3 mr-1" />
+              Discord
+            </a>
           </div>
         </div>
 
-        {/* Getting Started */}
-        <div className="">
-          <div className="bg-emerald-500/10 border border-solid border-emerald-500/20 rounded-lg p-6 text-center">
-            <h3 className="text-xl text-emerald-500 font-semibold mb-3">
-              ⚡ Start Building Now
-            </h3>
-            <p className="text-sm text-gray-300 mb-4">
-              Ready to build AI agents that actually work? Let's dive in!
-            </p>
-            <Link
-              to="/tutorial/chatbot-problem"
-              className="inline-flex items-center px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 hover:text-black transition-all duration-300 shadow-lg hover:shadow-xl no-underline text-sm"
-            >
-              Start Tutorial →
-            </Link>
+        {/* Getting Started - Enhanced */}
+        <div className="mt-16">
+          <div className="bg-gradient-to-r from-emerald-500/20 to-blue-500/20 border-2 border-solid border-emerald-500/30 rounded-xl p-8 landing-md:p-10 text-center relative overflow-hidden">
+            {/* Background glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 blur-xl"></div>
+
+            <div className="relative z-10">
+              <h3 className="text-2xl landing-md:text-3xl text-emerald-400 font-bold mb-4">
+                Ready to Build AI Agents?
+              </h3>
+              <p className="text-base landing-md:text-lg text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
+                Transform from chatbot builder to AI agent architect in just 5
+                tutorials. Let's build something amazing together.
+              </p>
+              <Link
+                to="/tutorial/chatbot-problem"
+                className="inline-flex items-center px-8 py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 hover:text-black transition-all duration-300 shadow-2xl hover:shadow-emerald-500/25 hover:scale-105 no-underline text-lg transform"
+              >
+                Start Tutorial Journey →
+              </Link>
+
+              <div className="mt-6 text-xs text-gray-400">
+                <span>4 steps • 15 minutes • Production-ready agents</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

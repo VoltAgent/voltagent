@@ -1059,7 +1059,7 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
                 Star on GitHub
               </a>
               <a
-                href="https://discord.gg/voltagent"
+                href="https://s.voltagent.dev/discord"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center px-4 py-2 border no-underline border-solid border-purple-500 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center"

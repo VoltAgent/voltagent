@@ -256,7 +256,7 @@ export default function CustomerProjectPage({
                   powerful AI agents.
                 </p>
                 <a
-                  href="https://discord.gg/voltagent"
+                  href="https://s.voltagent.dev/discord"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full text-center px-3 sm:px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 font-semibold rounded-lg transition-colors hover:bg-emerald-400/20 no-underline text-xs sm:text-sm"
