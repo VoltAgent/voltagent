@@ -703,22 +703,14 @@ export default function ChatbotProblemTutorial() {
                   <p className="text-gray-300 mb-0 pt-1 text-xs landing-md:text-base">
                     Try these inputs to see your tool in action:
                   </p>
-                  <div className="border-solid border border-gray-500/30 my-2 flex flex-col items-start rounded-lg p-2 landing-md:p-3">
-                    <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-sm p-2 break-all">
-                        "What's the weather in New York?"
-                      </code>
-                    </div>
-                    <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-sm p-2 break-all">
-                        "Check weather in San Francisco"
-                      </code>
-                    </div>
-                    <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
-                      <code className="text-gray-300 text-xs landing-md:text-sm p-2 break-all">
-                        "Is it sunny in Tokyo?"
-                      </code>
-                    </div>
+                  <div className="space-y-2 my-2">
+                    <CodeBlock language="text">
+                      What's the weather in New York?
+                    </CodeBlock>
+                    <CodeBlock language="text">
+                      Check weather in San Francisco
+                    </CodeBlock>
+                    <CodeBlock language="text">Is it sunny in Tokyo?</CodeBlock>
                   </div>
                 </div>
               </div>

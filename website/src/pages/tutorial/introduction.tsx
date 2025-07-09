@@ -1,7 +1,6 @@
 import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
-import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
@@ -193,75 +192,92 @@ export default function TutorialIntroduction() {
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
             Getting Started in 60 Seconds
           </h2>
-          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed mb-6">
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Create a new VoltAgent project and have a working AI agent in under
             a minute:
           </p>
 
-          {/* Step 1: Create Project */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
-                1. Create Your Project
-              </h3>
-              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
-                <pre className="text-green-400 text-sm font-mono">
-                  <code>npm create voltagent-app@latest my-agent-app</code>
-                </pre>
+          <div className=" ">
+            <h3 className="text-lg landing-md:text-xl font-semibold text-[#00d992] mb-4">
+              Step-by-Step Setup
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 landing-md:space-x-4">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-sm">
+                    1
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
+                    Create Your Project
+                  </p>
+                  <CodeBlock language="bash">
+                    npm create voltagent-app@latest
+                  </CodeBlock>
+                </div>
               </div>
-            </div>
 
-            {/* Step 2: Navigate */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
-                2. Navigate to Project
-              </h3>
-              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
-                <pre className="text-green-400 text-sm font-mono">
-                  <code>cd my-agent-app</code>
-                </pre>
+              <div className="flex items-start space-x-3 landing-md:space-x-4">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-base">
+                    2
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
+                    Navigate to Project
+                  </p>
+                  <CodeBlock language="bash">cd my-agent-app</CodeBlock>
+                </div>
               </div>
-            </div>
 
-            {/* Step 3: Add API Key */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
-                3. Add Your API Key
-              </h3>
-              <p className="text-sm text-gray-300 mb-3">
-                Create or edit the{" "}
-                <code className="bg-gray-800 px-2 py-1 rounded text-yellow-300">
-                  .env
-                </code>{" "}
-                file and add your OpenAI API key:
-              </p>
-              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
-                <pre className="text-green-400 text-sm font-mono">
-                  <code>OPENAI_API_KEY=your-api-key-here</code>
-                </pre>
+              <div className="flex items-start space-x-3 landing-md:space-x-4">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-base">
+                    3
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
+                    Add Your API Key
+                  </p>
+                  <p className="text-gray-400 text-xs mb-2 landing-md:text-sm">
+                    Create or edit the{" "}
+                    <code className="bg-gray-800 px-2 py-1 rounded text-yellow-300">
+                      .env
+                    </code>{" "}
+                    file and add your OpenAI API key:
+                  </p>
+                  <CodeBlock language="bash">
+                    OPENAI_API_KEY=your-api-key-here
+                  </CodeBlock>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Get your API key from{" "}
+                    <a
+                      href="https://platform.openai.com/api-keys"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#00d992] hover:underline"
+                    >
+                      OpenAI Platform
+                    </a>
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Get your API key from{" "}
-                <a
-                  href="https://platform.openai.com/api-keys"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#00d992] hover:underline"
-                >
-                  OpenAI Platform
-                </a>
-              </p>
-            </div>
 
-            {/* Step 4: Run */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
-                4. Start Your Agent
-              </h3>
-              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
-                <pre className="text-green-400 text-sm font-mono">
-                  <code>npm run dev</code>
-                </pre>
+              <div className="flex items-start space-x-3 landing-md:space-x-4">
+                <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
+                  <span className=" font-bold text-xs landing-md:text-base">
+                    4
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
+                    Start Your Agent
+                  </p>
+                  <CodeBlock language="bash">npm run dev</CodeBlock>
+                </div>
               </div>
             </div>
           </div>
@@ -875,32 +891,6 @@ export default function TutorialIntroduction() {
           </div>
         </div>
 
-        {/* Community & Resources - Minimized */}
-        <div className="text-center">
-          <div className="flex flex-col landing-md:flex-row gap-2 items-center justify-center text-xs text-gray-500">
-            <span>Questions?</span>
-            <a
-              href="https://github.com/voltagent/voltagent"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center text-gray-500 hover:text-gray-300 transition-colors no-underline"
-            >
-              <GitHubLogo className="w-3 h-3 mr-1" />
-              GitHub
-            </a>
-            <span className="text-gray-600">•</span>
-            <a
-              href="https://s.voltagent.dev/discord"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center text-gray-500 hover:text-gray-300 transition-colors no-underline"
-            >
-              <DiscordLogo className="w-3 h-3 mr-1" />
-              Discord
-            </a>
-          </div>
-        </div>
-
         {/* Getting Started - Enhanced */}
         <div className="mt-16">
           <div className="bg-gradient-to-r from-emerald-500/20 to-blue-500/20 border-2 border-solid border-emerald-500/30 rounded-xl p-8 landing-md:p-10 text-center relative overflow-hidden">
@@ -923,9 +913,37 @@ export default function TutorialIntroduction() {
               </Link>
 
               <div className="mt-6 text-xs text-gray-400">
-                <span>4 steps • 15 minutes • Production-ready agents</span>
+                <span>
+                  4 more steps remaining • 15 minutes • Production-ready agents
+                </span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Community & Resources - Minimized */}
+        <div className="text-center mt-8">
+          <div className="flex flex-col landing-md:flex-row gap-2 items-center justify-center text-xs text-gray-500">
+            <span>Questions?</span>
+            <a
+              href="https://github.com/voltagent/voltagent"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center text-gray-500 hover:text-gray-300 transition-colors no-underline"
+            >
+              <GitHubLogo className="w-3 h-3 mr-1" />
+              GitHub
+            </a>
+            <span className="text-gray-600">•</span>
+            <a
+              href="https://s.voltagent.dev/discord"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center text-gray-500 hover:text-gray-300 transition-colors no-underline"
+            >
+              <DiscordLogo className="w-3 h-3 mr-1" />
+              Discord
+            </a>
           </div>
         </div>
       </div>
