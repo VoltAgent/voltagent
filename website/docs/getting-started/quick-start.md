@@ -135,7 +135,7 @@ The `dev` script uses `tsx watch`, so it will automatically restart if you make 
 
 Ready to build real AI agents? Follow our step-by-step tutorial:
 
-- **[Start the Tutorial](../tutorial/introduction.md)** - Learn to build agents with tools, memory, and real-world integrations
+- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
 
 Or explore specific topics:
 
@@ -334,7 +334,7 @@ The `dev` script uses `tsx watch`, so it will automatically restart if you make 
 
 Ready to build real AI agents? Follow our step-by-step tutorial:
 
-- **[Start the Tutorial](../tutorial/introduction.md)** - Learn to build agents with tools, memory, and real-world integrations
+- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
 
 Or explore specific topics:
 
