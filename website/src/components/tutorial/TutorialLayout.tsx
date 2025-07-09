@@ -120,17 +120,6 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Floating Help Button */}
-        <div className="fixed bottom-6 md:bottom-8 right-4 md:right-8 z-40">
-          <button
-            type="button"
-            className="w-10 cursor-pointer h-10 md:w-12 md:h-12 bg-[#2d3748] rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-[#cbd5e0] hover:text-[#00d992] border border-[#4a5568]"
-            aria-label="Help"
-          >
-            <QuestionMarkCircleIcon className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-        </div>
       </div>
     </>
   );
