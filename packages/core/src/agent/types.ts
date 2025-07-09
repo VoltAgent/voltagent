@@ -28,7 +28,7 @@ import type {
 } from "../voltops/types";
 
 // Re-export for backward compatibility
-export type { DynamicValueOptions, DynamicValue, PromptHelper };
+export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
 
 /**
  * Enhanced dynamic value for instructions that supports prompt management
@@ -136,6 +136,14 @@ export type AgentOptions = {
    * Memory options for the agent
    */
   memoryOptions?: MemoryOptions;
+
+  /**
+   * Memory instance for storing execution history and telemetry.
+   * If not provided, defaults to LibSQLStorage.
+   * Use InMemoryStorage for environments without filesystem access (e.g., AWS Lambda).
+   * @since 0.1.55
+   */
+  historyMemory?: Memory;
 
   /**
    * Tools and/or Toolkits that the agent can use

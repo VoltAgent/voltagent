@@ -25,12 +25,49 @@ Let's see this in action with simple examples:
 
 ## Initialize userContext
 
-You can provide initial data when calling the agent:
+You can provide initial data in two ways:
+
+### Method 1: Set Default Context in Constructor
+
+You can set default `userContext` when creating the agent, which will be used for all operations unless overridden:
 
 ```typescript
 import { Agent, VercelAIProvider } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
+// Set default context at agent creation
+const defaultContext = new Map();
+defaultContext.set("environment", "production");
+defaultContext.set("projectId", "my-project");
+
+const agent = new Agent({
+  name: "SimpleAgent",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  instructions: "You are a helpful assistant.",
+  userContext: defaultContext, // Default context for all operations
+});
+
+// Uses default context automatically
+const response1 = await agent.generateText("Hello!");
+console.log("Environment:", response1.userContext?.get("environment")); // "production"
+
+// Override with execution context (replaces default completely)
+const response2 = await agent.generateText("Debug this", {
+  userContext: new Map([
+    ["environment", "development"],
+    ["projectId", "my-project"],
+  ]),
+});
+console.log("Environment:", response2.userContext?.get("environment")); // "development"
+console.log("Project ID:", response2.userContext?.get("projectId")); // "my-project"
+```
+
+### Method 2: Pass Context During Execution
+
+You can also pass `userContext` only when calling the agent:
+
+```typescript
 const agent = new Agent({
   name: "SimpleAgent",
   llm: new VercelAIProvider(),
@@ -38,12 +75,12 @@ const agent = new Agent({
   instructions: "You are a helpful assistant.",
 });
 
-// Method 1: Pass userContext when calling the agent
-const initialContext = new Map();
-initialContext.set("language", "English");
+// Pass userContext when calling the agent
+const executionContext = new Map();
+executionContext.set("language", "English");
 
 const response = await agent.generateText("Hello!", {
-  userContext: initialContext,
+  userContext: executionContext,
 });
 
 // Now you can access the data from the response
@@ -328,11 +365,32 @@ async function demonstrateFlow() {
 
 ## Key Points
 
-1. **Initialization**: Pass data via `{ userContext: myMap }` when calling the agent
+1. **Initialization**:
+   - Set default context in constructor: `new Agent({ userContext: defaultMap })`
+   - Override per call: `agent.generateText("...", { userContext: callMap })`
 2. **Hooks**: Access via `context.userContext` in `onStart`/`onEnd`
 3. **Tools**: Access via `options.operationContext.userContext` in `execute`
 4. **Retrievers**: Access via `options.userContext` in `retrieve`
 5. **Sub-Agents**: Automatically get a copy of supervisor's `userContext`
 6. **Response**: Access final state via `response.userContext`
+7. **Dynamic Values**: Constructor context is available in dynamic instructions, model, and tools functions
 
 Each component can read existing data and add new data. The `userContext` travels through the entire operation, making it easy to share state and track information across all parts of your agent system.
+
+### Context Priority
+
+When both constructor and execution contexts are provided:
+
+- Execution context completely replaces constructor context (no automatic merging)
+- Constructor context serves as the default when no execution context is provided
+- Dynamic values (instructions, model, tools) receive whichever context is active
+
+:::tip
+To extend rather than replace the default context, create a new Map from it:
+
+```typescript
+const extendedContext = new Map(defaultContext);
+extendedContext.set("environment", "development"); // Override specific values
+```
+
+:::

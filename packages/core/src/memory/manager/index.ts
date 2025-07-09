@@ -90,8 +90,17 @@ export class MemoryManager {
       this.conversationMemory = new LibSQLStorage(baseMemoryConfig);
     }
 
-    // History storage is always available (uses same database file or provided instance)
-    this.historyMemory = historyMemory || new LibSQLStorage(baseMemoryConfig);
+    // History storage is always available
+    // Priority: 1) Explicit historyMemory, 2) Same as conversation memory, 3) Default LibSQLStorage
+    if (historyMemory) {
+      this.historyMemory = historyMemory;
+    } else if (this.conversationMemory) {
+      // Use same memory instance as conversation memory (when it exists)
+      this.historyMemory = this.conversationMemory;
+    } else {
+      // Default to LibSQLStorage if no memory configured
+      this.historyMemory = new LibSQLStorage(baseMemoryConfig);
+    }
 
     this.options = options;
 

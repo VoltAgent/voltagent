@@ -235,6 +235,32 @@ describe("convertToUIMessages", () => {
     expect(result[0].createdAt).toEqual(customDate);
   });
 
+  it("should generate ID when message has no id property", () => {
+    const message: Message = {
+      role: "user",
+      content: "Hello!",
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].id).toBeDefined();
+    expect(typeof result[0].id).toBe("string");
+    expect(result[0].id.length).toBeGreaterThan(0);
+  });
+
+  it("should generate ID when message has empty string id", () => {
+    const message: Message = {
+      id: "",
+      role: "user",
+      content: "Hello!",
+    };
+    const ctx = createFauxContext([message]);
+    const result = convertToUIMessages(ctx);
+    expect(result[0].id).toBeDefined();
+    expect(typeof result[0].id).toBe("string");
+    expect(result[0].id.length).toBeGreaterThan(0);
+    expect(result[0].id).not.toBe("");
+  });
+
   it("should handle file part with data property in message content", () => {
     const message: Message = {
       role: "user",

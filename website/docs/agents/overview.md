@@ -26,6 +26,50 @@ const agent = new Agent({
 });
 ```
 
+## Constructor Options
+
+The `Agent` constructor accepts an options object with these properties:
+
+```typescript
+const agent = new Agent({
+  // Required
+  name: "MyAgent", // Agent identifier
+  instructions: "You are a helpful assistant", // Behavior guidelines
+  llm: new VercelAIProvider(), // LLM provider instance
+  model: openai("gpt-4o"), // AI model to use
+
+  // Optional
+  id: "custom-id", // Unique ID (auto-generated if not provided)
+  purpose: "Customer support agent", // Agent purpose for supervisor context
+  tools: [weatherTool, searchTool], // Available tools
+  memory: new LibSQLStorage(), // Memory storage (or false to disable)
+  memoryOptions: { maxMessages: 100 }, // Memory configuration
+  userContext: new Map([
+    // Default context for all operations
+    ["environment", "production"],
+  ]),
+  maxSteps: 10, // Maximum tool-use iterations
+  subAgents: [researchAgent], // Sub-agents for delegation
+  supervisorConfig: {
+    // Supervisor behavior config
+    systemMessage: "Custom supervisor instructions",
+    includeAgentsMemory: true,
+  },
+
+  // Additional constructor parameters
+  hooks: createHooks({ onStart, onEnd }), // Lifecycle event handlers
+  retriever: new PineconeRetriever(), // RAG retriever
+  voice: new ElevenLabsVoice(), // Voice configuration
+  markdown: true, // Enable markdown formatting
+  voltOpsClient: new VoltOpsClient({
+    // Observability & prompt management
+    publicKey: "...",
+    secretKey: "...",
+  }),
+  maxHistoryEntries: 1000, // Max history entries to store
+});
+```
+
 ## Core Interaction Methods
 
 The primary ways to interact with an agent are through the `generate*` and `stream*` methods. These methods handle sending your input to the configured LLM, processing the response, and potentially orchestrating tool usage or memory retrieval based on the agent's configuration and the LLM's decisions.

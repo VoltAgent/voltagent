@@ -1079,7 +1079,7 @@ describe("MemoryManager - HistoryMemory Tests", () => {
 
       const historyMemory = memoryManager.getHistoryMemory();
       expect(historyMemory).toBeDefined();
-      expect(historyMemory.constructor.name).toBe("LibSQLStorage");
+      expect(historyMemory).toBe(mockMemory); // Should use same instance as conversation memory
     });
 
     it("should have historyMemory when using default conversationMemory", () => {

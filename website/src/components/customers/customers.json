@@ -5,8 +5,8 @@
     "published": true,
     "customer": {
       "name": "Joggr",
-      "logo_url": "https://cdn.voltagent.dev/website/customers/joggr-logo.png",
-      "website": "https://joggr.io",
+      "logo_url": "https://www.joggr.ai/images/joggr-guy.png",
+      "website": "https://www.linkedin.com/company/joggr/",
       "industry": "Developer Tooling / Documentation"
     },
     "case_study": {
@@ -18,7 +18,7 @@
         "Debugging flows and understanding what the agents were doing was painful and hard to scale",
         "They needed to offload memory and orchestration management from their custom solution"
       ],
-      "challenge_paragraph": "Joggr is building an AI-first documentation assistant that keeps developer docs up to date, automatically generating, updating, and syncing Markdown docs every time code changes. However, they faced significant challenges as everything in the LLM ecosystem was Python-first while they were a TypeScript shop. The team was managing a tangle of custom tooling built on top of Vercel's AI libraries, making debugging flows and understanding agent behavior painful and hard to scale.",
+      "challenge_paragraph": "Joggr is building an AI-first documentation assistant that keeps developer docs up to date, automatically generating, updating, and syncing Markdown docs every time your code changes. But early on, Zac and the team faced a challenge: \"Everything in the LLM ecosystem is Python-first. We're a TypeScript shop. We needed a framework that spoke our language and helped us offload memory and orchestration.\" On top of that, they were managing a tangle of custom tooling built on top of Vercel's AI libraries. Debugging flows and understanding what the agents were doing was painful and hard to scale.",
       "solution": [
         "Joggr adopted VoltAgent as a flexible, TypeScript-native AI agent framework",
         "They paired it with VoltOps, VoltAgent's visual observability console for complete visibility",
@@ -26,7 +26,7 @@
         "Offloaded memory management with VoltAgent's built-in memory modules",
         "Gained visibility into every step of their Supervisor agent architecture using VoltOps"
       ],
-      "solution_paragraph": "Zac discovered VoltAgent while searching for a flexible, TypeScript-native AI agent framework and paired it with VoltOps, VoltAgent's visual observability console. With this stack, the Joggr team was able to build agents that generate and maintain dev docs in clean, composable flows, offload memory management with VoltAgent's built-in memory modules, and gain visibility into every step of their Supervisor agent architecture using VoltOps.",
+      "solution_paragraph": "Zac discovered VoltAgent while searching for a flexible, TypeScript-native AI agent framework and paired it with VoltOps, VoltAgent's visual observability console. With this stack, the Joggr team was able to: Build agents that generate and maintain dev docs in clean, composable flows; Offload memory management with VoltAgent's built-in memory modules; Gain visibility into every step of their Supervisor agent architecture using VoltOps. \"Without Volt, it would almost be impossible to understand what the hell is going on and what the agents are doing.\"",
       "results": [
         "Streamlined architecture by switching from custom glue code to VoltAgent",
         "Gained complete visibility into agent operations, eliminating black boxes",
@@ -34,7 +34,7 @@
         "Faster development cycles with TypeScript-native framework",
         "Enhanced confidence in deployments with full observability"
       ],
-      "results_paragraph": "By switching to VoltAgent and VoltOps, Joggr streamlined their architecture, ditched custom glue code, and unlocked better visibility into how their agents operate. With a fast-moving product and an AI-first mindset, Joggr now ships with full confidence. No black boxes, no guesswork. Just dev-friendly documentation, powered by agents they can see, debug, and trust.",
+      "results_paragraph": "By switching to VoltAgent and VoltOps, Joggr streamlined their architecture, ditched custom glue code, and unlocked better visibility into how their agents operate. \"Every time we need help, the founders are there. The responsiveness is unreal.\" With a fast-moving product and an AI-first mindset, Joggr now ships with full confidence. No black boxes, no guesswork. Just dev-friendly documentation, powered by agents they can see, debug, and trust.",
       "quote": {
         "text": "Without Volt, it would almost be impossible to understand what the hell is going on and what the agents are doing. Every time we need help, the founders are there. The responsiveness is unreal.",
         "author": "Zac Rosenbauer",
@@ -53,8 +53,7 @@
     "published": true,
     "customer": {
       "name": "DEVPotenciados LATAM",
-      "logo_url": "https://cdn.voltagent.dev/website/customers/devpotenciados-logo.png",
-      "website": "https://devpotenciados.com",
+      "website": "https://www.linkedin.com/company/alify-ai/",
       "industry": "Developer Community / AI Education"
     },
     "case_study": {
@@ -66,7 +65,7 @@
         "The complexity of orchestrating agents prevented effective AI adoption",
         "Steep learning curve was blocking developers from building AI solutions"
       ],
-      "challenge_paragraph": "Francisco leads DEVPotenciados LATAM, a community of developers in Latin America passionate about AI. The mission is to empower developers to integrate AI into their applications and daily work to enhance their potential and create truly powerful solutions. However, existing solutions like LangChain or using LLM model APIs directly were often quite complex, and the shift from traditional software to AI agents represented a major paradigm shift that was preventing effective adoption.",
+      "challenge_paragraph": "Francisco leads DEVPotenciados LATAM, a community of developers in Latin America passionate about AI. The mission is to empower developers to integrate AI into their applications and daily work to enhance their potential and create truly powerful solutions. However, Francisco realized that existing solutions posed significant challenges: \"Solutions like LangChain or using LLM model APIs directly can often be quite complex. Additionally, it frequently becomes very complicated because shifting from building traditional software to creating AI agents is a major paradigm shift.\" The complexity of orchestrating agents and the steep learning curve were preventing developers in the community from effectively adopting AI solutions.",
       "solution": [
         "Francisco discovered VoltAgent as a simple and easy-to-understand framework",
         "VoltAgent provided simplified agent orchestration without traditional complexity",
@@ -74,7 +73,7 @@
         "Delivered real-time observability and monitoring through VoltOps",
         "Enhanced developer experience and productivity across the LATAM community"
       ],
-      "solution_paragraph": "Francisco discovered VoltAgent while looking for a simple and easy-to-understand framework to build truly powerful AI solutions for the DEVPotenciados community. VoltAgent provided exactly what the community needed: simplified agent orchestration without the complexity of traditional solutions, customizable tools and memory systems, real-time observability and monitoring through VoltOps, and a developer-friendly experience that enhances productivity.",
+      "solution_paragraph": "Francisco discovered VoltAgent while looking for a simple and easy-to-understand framework to build truly powerful AI solutions for the DEVPotenciados community. VoltAgent provided exactly what the community needed: Simplified agent orchestration without the complexity of traditional solutions; Customizable tools and memory systems; Real-time observability and monitoring through VoltOps; Developer-friendly experience that enhances productivity. \"It helps me see in real time how my agent is behaving, as well as identify which steps are failing, retry them, etc. It's very developer-friendly and enhances the development experience.\"",
       "results": [
         "Empowered LATAM developers to effectively adopt AI solutions",
         "Enabled creation of fast products with full agent visibility",
@@ -82,9 +81,9 @@
         "Enhanced productivity and learning across the developer community",
         "Continued growth in AI solution implementation across Latin America"
       ],
-      "results_paragraph": "With VoltAgent, Francisco and the DEVPotenciados LATAM community can now focus on what matters most: empowering developers across Latin America to build AI-powered solutions. The platform has enabled Francisco to create truly fast products while maintaining full visibility into agent behavior. The ease of use and monitoring capabilities have made AI development accessible to more developers in the community.",
+      "results_paragraph": "With VoltAgent, Francisco and the DEVPotenciados LATAM community can now focus on what matters most: empowering developers across Latin America to build AI-powered solutions. The platform has enabled Francisco to create truly fast products while maintaining full visibility into agent behavior. The ease of use and monitoring capabilities have made AI development accessible to more developers in the community. \"The ease of creating truly fast products, and even the options it offers to monitor the agent.\" Francisco continues to lead the DEVPotenciados LATAM community in discovering and implementing AI solutions that enhance developer productivity and create powerful applications across the region.",
       "quote": {
-        "text": "What I really like is that VoltAgent allows us to customize our own tools, our own memory, and the most amazing part is the observability and monitoring. It's truly fantastic.",
+        "text": "What I really like is that VoltAgent allows us to customize our own tools, our own memory, and the most amazing part is the observability and monitoring.",
         "author": "Francisco Carranza",
         "position": "Software Engineer & Community Leader",
         "company": "DEVPotenciados LATAM"
@@ -101,20 +100,20 @@
     "published": false,
     "customer": {
       "name": "Different",
-      "logo_url": "https://cdn.voltagent.dev/website/customers/different-logo.png",
-      "website": "https://different.com",
+      "logo": "different",
+      "website": "https://www.linkedin.com/company/different/",
       "industry": "Property Management / Real Estate"
     },
     "case_study": {
       "title": "How Different Built Reliable Property Management Agents with VoltAgent + VoltOps",
-      "use_case": "LLM-powered internal tools for property communications, task routing, and expert assistance",
+      "use_case": "Digital twin technology for homes with LLM-powered internal tools for property communications, task routing, and expert assistance",
       "challenge": [
         "Black-box behavior in tools that impact real customer operations was unacceptable",
         "Multiple tools, prompts, and logic paths made debugging complex",
         "Understanding agent decisions became a growing challenge",
         "Needed a framework that provided both structure and visibility"
       ],
-      "challenge_paragraph": "As the team at Different began integrating LLMs into their internal operations such as summarizing property communications, routing tasks, and assisting their property experts they quickly ran into the classic problem: they couldn't afford black-box behavior in tools that impact real customer operations. With multiple tools, prompts, and logic paths involved, debugging and understanding agent decisions became a growing challenge. They needed a framework that gave them both structure and visibility.",
+      "challenge_paragraph": "Different is building a digital twin for your home, revolutionizing property management through advanced technology. As the team at Different began integrating LLMs into their internal operations such as summarizing property communications, routing tasks, and assisting their property experts they quickly ran into the classic problem: \"We couldn't afford black-box behavior in tools that impact real customer operations.\" With multiple tools, prompts, and logic paths involved, debugging and understanding agent decisions became a growing challenge. They needed a framework that gave them both structure and visibility.",
       "solution": [
         "Adopted VoltAgent to define custom agents in TypeScript",
         "Handled tool orchestration and memory in a clean, modular way",
@@ -122,7 +121,7 @@
         "Paired with VoltOps for real-time observability into each agent's reasoning steps",
         "Gained visibility into tool calls, memory usage, and intermediate decisions"
       ],
-      "solution_paragraph": "By adopting VoltAgent, the team was able to define custom agents in TypeScript, handle tool orchestration and memory in a clean, modular way, and build reliable flows for tasks like support summarization and workflow triage. They paired this with VoltOps, which gave them real-time observability into each agent's reasoning steps, visibility into tool calls, memory usage, and intermediate decisions, plus faster debugging when something broke or behaved unexpectedly.",
+      "solution_paragraph": "By adopting VoltAgent, the team was able to: Define custom agents in TypeScript; Handle tool orchestration and memory in a clean, modular way; Build reliable flows for tasks like support summarization and workflow triage. They paired this with VoltOps, which gave them: Real-time observability into each agent's reasoning steps; Visibility into tool calls, memory usage, and intermediate decisions; Faster debugging when something broke or behaved unexpectedly. \"VoltOps gave us the visibility we desperately needed - we could finally see exactly what our agents were thinking and doing at every step.\"",
       "results": [
         "Runs LLM-powered internal tools with confidence",
         "Accelerated development while maintaining full control",
@@ -130,7 +129,7 @@
         "Delivers smarter, faster property management experiences",
         "Achieved full visibility into AI-powered operations"
       ],
-      "results_paragraph": "With VoltAgent and VoltOps, Different now runs LLM-powered internal tools with confidence, accelerating development while maintaining full control. Having insight into how their agents think and act has helped them build with more confidence and catch problems early. This lets the team at Different continue delivering smarter, faster property management experiences powered by AI, backed by full visibility.",
+      "results_paragraph": "With VoltAgent and VoltOps, Different now runs LLM-powered internal tools with confidence, accelerating development while maintaining full control. \"Having insight into how our agents think and act has helped us build with more confidence and catch problems early.\" This lets the team at Different continue delivering smarter, faster property management experiences powered by AI, backed by full visibility.",
       "quote": {
         "text": "We couldn't afford black-box behavior in tools that impact real customer operations. Having insight into how our agents think and act has helped us build with more confidence and catch problems early.",
         "author": "Michael Klevansky",
