@@ -55,12 +55,18 @@ const translationWorkflow = createWorkflowChain({
     processingTime: z.number(),
   }),
 })
-  .andAgent("Detect Language", languageDetectionAgent, {
-    schema: z.object({
-      detectedLanguage: z.string(),
-      confidence: z.number().min(0).max(1),
-    }),
-  })
+  .andAgent(
+    async (data) => {
+      return `Detect the language of the following text: ${data.originalText}`;
+    },
+    languageDetectionAgent,
+    {
+      schema: z.object({
+        detectedLanguage: z.string(),
+        confidence: z.number().min(0).max(1),
+      }),
+    },
+  )
   .andThen({
     execute: async (data, state) => {
       // If the detected language is the same as target language, skip translation
@@ -80,11 +86,17 @@ const translationWorkflow = createWorkflowChain({
       return data;
     },
   })
-  .andAgent("Translate Text", translationAgent, {
-    schema: z.object({
-      translatedText: z.string(),
-    }),
-  })
+  .andAgent(
+    async (data, state) => {
+      return `Translate the following text to ${data.detectedLanguage}: ${state.input.originalText}`;
+    },
+    translationAgent,
+    {
+      schema: z.object({
+        translatedText: z.string(),
+      }),
+    },
+  )
   .andThen({
     execute: async (data, state) => {
       return {

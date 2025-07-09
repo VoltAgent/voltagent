@@ -1,6 +1,7 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
 import type { Agent } from "../../agent/index";
+import type { BaseMessage } from "../../agent/providers";
 import type { PublicGenerateOptions } from "../../agent/types";
 import type { InternalWorkflowFunc } from "../internal/types";
 import type { WorkflowStepAgent } from "./types";
@@ -30,7 +31,7 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
  * @returns A workflow step that executes the agent with the task
  */
 export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
-  task: string | InternalWorkflowFunc<INPUT, DATA, string>,
+  task: BaseMessage[] | string | InternalWorkflowFunc<INPUT, DATA, BaseMessage[] | string>,
   agent: Agent<{ llm: DangerouslyAllowAny }>,
   config: AgentConfig<SCHEMA>,
 ) {
