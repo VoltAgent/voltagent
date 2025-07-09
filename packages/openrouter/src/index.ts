@@ -1,3 +1,4 @@
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type {
   BaseMessage,
   GenerateObjectOptions,
@@ -13,22 +14,26 @@ import type {
   StreamTextOptions,
 } from "@voltagent/core";
 import { createAsyncIterableStream } from "@voltagent/core";
+import { generateObject, generateText, streamObject, streamText } from "ai";
 import type { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
-import type { OpenRouterMessage, OpenRouterProviderOptions } from "./types";
+import zodToJsonSchema from "zod-to-json-schema";
+import type { OpenRouterProviderOptions } from "./types";
 import { convertToolsForSDK } from "./utils";
 
 export class OpenRouterProvider implements LLMProvider<string> {
-  private apiKey: string;
-  private baseURL: string;
-  private httpReferer?: string;
-  private xTitle?: string;
+  private openrouter: ReturnType<typeof createOpenRouter>;
 
   constructor(private options?: OpenRouterProviderOptions) {
-    this.apiKey = this.options?.apiKey || process.env.OPENROUTER_API_KEY!;
-    this.baseURL = this.options?.baseURL || "https://openrouter.ai/api/v1";
-    this.httpReferer = this.options?.httpReferer;
-    this.xTitle = this.options?.xTitle;
+    this.openrouter = createOpenRouter({
+      apiKey: this.options?.apiKey || process.env.OPENROUTER_API_KEY,
+      baseURL: this.options?.baseURL,
+      headers: {
+        ...(this.options?.httpReferer && {
+          "HTTP-Referer": this.options.httpReferer,
+        }),
+        ...(this.options?.xTitle && { "X-Title": this.options.xTitle }),
+      },
+    });
 
     // Bind methods to preserve 'this' context
     this.generateText = this.generateText.bind(this);
@@ -44,19 +49,70 @@ export class OpenRouterProvider implements LLMProvider<string> {
     return model;
   };
 
-  toMessage = (message: BaseMessage): OpenRouterMessage => {
+  toMessage = (message: BaseMessage): any => {
+    // Determine the content first
+    let content: string | Array<any>;
+    if (typeof message.content === "string") {
+      content = message.content;
+    } else if (Array.isArray(message.content)) {
+      const mappedParts: Array<any> = [];
+      for (const part of message.content) {
+        if (part.type === "text" && typeof part.text === "string") {
+          mappedParts.push({ type: "text", text: part.text });
+        } else if (
+          part.type === "image" &&
+          part.image &&
+          part.mimeType &&
+          typeof part.image === "string" &&
+          typeof part.mimeType === "string"
+        ) {
+          // Handle potential data URI in image string
+          const imageUrl = part.image.startsWith("data:")
+            ? part.image
+            : `data:${part.mimeType};base64,${part.image}`;
+          mappedParts.push({
+            type: "image_url",
+            image_url: {
+              url: imageUrl,
+            },
+          });
+        } else {
+          console.warn(
+            `[OpenRouterProvider] Unsupported or incomplete part type in array: ${part.type}. Skipping.`,
+          );
+        }
+      }
+      content = mappedParts.length > 0 ? mappedParts : ""; // Use empty string if array resulted in no parts
+    } else {
+      console.warn(
+        "[OpenRouterProvider] Unknown or unsupported content type for message:",
+        message.content,
+      );
+      content = "";
+    }
+
     // Helper function to ensure content is string when needed
-    const ensureStringContent = (content: any): string => {
-      if (typeof content === "string") {
-        return content;
+    const ensureStringContent = (
+      currentContent: string | Array<any>,
+      roleForWarning: string,
+    ): string => {
+      if (typeof currentContent === "string") {
+        return currentContent || "";
       }
-      if (Array.isArray(content)) {
-        return content
-          .filter((part) => part.type === "text")
-          .map((part) => part.text)
-          .join(" ");
-      }
-      return String(content || "");
+      // If it's an array, convert it to a string representation for roles that require it.
+      console.warn(
+        `[OpenRouterProvider] ${roleForWarning} message content must be a string for OpenRouter. Converting array content to string representation.`,
+      );
+      return (
+        currentContent
+          .map((p) => {
+            if (p && typeof p === "object" && "text" in p) {
+              return p.text;
+            }
+            return String(p);
+          })
+          .join(" ") || ""
+      );
     };
 
     const baseMsg: any = {
@@ -67,19 +123,19 @@ export class OpenRouterProvider implements LLMProvider<string> {
       case "system":
         return {
           ...baseMsg,
-          content: ensureStringContent(message.content),
+          content: ensureStringContent(content, "System"),
         };
 
       case "user":
         return {
           ...baseMsg,
-          content: ensureStringContent(message.content),
+          content: content || "",
         };
 
       case "assistant":
         const assistantMsg: any = {
           ...baseMsg,
-          content: ensureStringContent(message.content),
+          content: ensureStringContent(content, "Assistant"),
         };
 
         // Handle tool calls if present
@@ -98,617 +154,320 @@ export class OpenRouterProvider implements LLMProvider<string> {
 
       case "tool":
         return {
-          role: "tool",
           tool_call_id: (message as any).toolCallId,
-          name: (message as any).toolName,
-          content: ensureStringContent(message.content),
+          role: "tool",
+          content: ensureStringContent(content, "Tool"),
         };
 
       default:
         console.warn(`[OpenRouterProvider] Unknown message role: ${message.role}`);
-        return {
-          role: message.role as any,
-          content: ensureStringContent(message.content),
-        };
+        return { role: "user", content: content || "" };
     }
   };
 
-  createStepFromChunk = (chunk: any): StepWithContent | null => {
-    try {
-      if (chunk.type === "text" && chunk.text) {
-        return {
-          id: "",
-          type: "text",
-          content: chunk.text,
-          role: "assistant" as MessageRole,
-          usage: chunk.usage,
-        };
-      }
-
-      if (chunk.type === "tool_call") {
-        return {
-          id: "",
-          type: "tool_call",
-          content: JSON.stringify({
+  createStepFromChunk = (chunk: {
+    type: string;
+    [key: string]: any;
+  }): StepWithContent | null => {
+    if (chunk.type === "text" && chunk.text) {
+      return {
+        id: "",
+        type: "text",
+        content: chunk.text,
+        role: "assistant" as MessageRole,
+        usage: chunk.usage || undefined,
+      };
+    }
+    if (chunk.type === "tool-call" && chunk.toolCallId) {
+      return {
+        id: chunk.toolCallId,
+        type: "tool_call",
+        content: JSON.stringify([
+          {
+            type: "tool-call",
             toolCallId: chunk.toolCallId,
             toolName: chunk.toolName,
             args: chunk.args,
-          }),
-          role: "assistant" as MessageRole,
-          usage: chunk.usage,
-        };
-      }
-
-      if (chunk.type === "tool_result") {
-        return {
-          id: "",
-          type: "tool_result",
-          content: JSON.stringify({
+          },
+        ]),
+        name: chunk.toolName,
+        role: "assistant" as MessageRole,
+        arguments: chunk.args,
+        usage: chunk.usage || undefined,
+      };
+    }
+    if (chunk.type === "tool-result" && chunk.toolCallId) {
+      return {
+        id: chunk.toolCallId,
+        type: "tool_result",
+        content: JSON.stringify([
+          {
+            type: "tool-result",
             toolCallId: chunk.toolCallId,
             toolName: chunk.toolName,
             result: chunk.result,
-          }),
-          role: "tool" as MessageRole,
-          usage: chunk.usage,
-        };
-      }
-
-      return null;
-    } catch (error) {
-      console.warn("[OpenRouterProvider] Error creating step from chunk:", error);
-      return null;
+          },
+        ]),
+        name: chunk.toolName,
+        role: "tool" as MessageRole,
+        arguments: chunk.args,
+        result: chunk.result,
+        usage: chunk.usage || undefined,
+      };
     }
+    return null;
   };
 
-  private createFlatJsonSchema(zodSchema: z.ZodType): any {
+  generateText = async (
+    options: GenerateTextOptions<string>,
+  ): Promise<ProviderTextResponse<any>> => {
     try {
-      const schema = zodToJsonSchema(zodSchema);
-      return schema;
-    } catch (error) {
-      console.warn("[OpenRouterProvider] Error converting schema:", error);
-      return { type: "object", properties: {}, additionalProperties: false };
-    }
-  }
-
-  async generateText(options: GenerateTextOptions<string>): Promise<ProviderTextResponse<any>> {
-    try {
-      const messages = options.messages.map(this.toMessage);
-
-      // Extract parameters
-      const {
-        temperature = 0.7,
-        maxTokens = 1000,
-        topP = 1.0,
-        frequencyPenalty = 0,
-        presencePenalty = 0,
-        stopSequences,
-      } = options.provider || {};
-
-      // Prepare headers
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      };
-
-      if (this.httpReferer) {
-        headers["HTTP-Referer"] = this.httpReferer;
-      }
-
-      if (this.xTitle) {
-        headers["X-Title"] = this.xTitle;
-      }
-
-      // Prepare request body
-      const body: any = {
-        model: options.model,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-        top_p: topP,
-        frequency_penalty: frequencyPenalty,
-        presence_penalty: presencePenalty,
-        stop: stopSequences,
-      };
-
-      // Add tools if provided
-      if (options.tools && options.tools.length > 0) {
-        body.tools = options.tools.map((tool) => {
-          const parameters = tool.parameters
-            ? this.createFlatJsonSchema(tool.parameters)
-            : { type: "object", properties: {}, additionalProperties: false };
-
-          return {
-            type: "function",
-            function: {
-              name: tool.name,
-              description: tool.description,
-              parameters,
-            },
-          };
-        });
-        body.tool_choice = "auto";
-      }
-
-      const response = await fetch(`${this.baseURL}/chat/completions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`,
-        );
-      }
-
-      const data: any = await response.json();
-      const choice = data.choices?.[0];
-      if (!choice) {
-        throw new Error("No response from OpenRouter API");
-      }
-
-      const usage = data.usage
-        ? {
-            promptTokens: data.usage.prompt_tokens,
-            completionTokens: data.usage.completion_tokens,
-            totalTokens: data.usage.total_tokens,
-          }
-        : undefined;
-
-      // Handle tool calls if present
-      if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
-        const updatedMessages = [
-          ...messages,
-          {
-            role: "assistant" as const,
-            content: choice.message.content || "",
-            tool_calls: choice.message.tool_calls,
-          },
-        ];
-
-        // Execute all tool calls
-        for (const toolCall of choice.message.tool_calls) {
-          try {
-            const tool = options.tools?.find((t) => t.name === toolCall.function.name);
-            if (!tool) {
-              throw new Error(`Tool ${toolCall.function.name} not found`);
-            }
-
-            const toolArgs = JSON.parse(toolCall.function.arguments);
-            const toolResult = await tool.execute(toolArgs);
-
-            updatedMessages.push({
-              role: "tool" as const,
-              tool_call_id: toolCall.id,
-              name: toolCall.function.name,
-              content: JSON.stringify(toolResult),
-            });
-
-            if (options.onStepFinish) {
-              const toolStep = this.createStepFromChunk({
-                type: "tool-call",
-                toolCallType: "function",
-                toolCallId: toolCall.id,
-                toolName: toolCall.function.name,
-                args: toolArgs,
-                result: toolResult,
-                usage,
-              });
-              if (toolStep) await options.onStepFinish(toolStep);
-            }
-          } catch (error) {
-            console.error(
-              `[OpenRouterProvider] Tool execution error for ${toolCall.function.name}:`,
-              error,
-            );
-
-            updatedMessages.push({
-              role: "tool" as const,
-              tool_call_id: toolCall.id,
-              name: toolCall.function.name,
-              content: JSON.stringify({
-                error: error instanceof Error ? error.message : String(error),
-              }),
-            });
-          }
-        }
-
-        // Make follow-up API call with tool results
-        const followUpResponse = await fetch(`${this.baseURL}/chat/completions`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            model: options.model,
-            messages: updatedMessages,
-            temperature,
-            max_tokens: maxTokens,
-            top_p: topP,
-            frequency_penalty: frequencyPenalty,
-            presence_penalty: presencePenalty,
-            stop: stopSequences,
-          }),
-        });
-
-        if (!followUpResponse.ok) {
-          const errorText = await followUpResponse.text();
-          throw new Error(
-            `OpenRouter follow-up error: ${followUpResponse.status} ${followUpResponse.statusText} - ${errorText}`,
-          );
-        }
-
-        const followUpData: any = await followUpResponse.json();
-        const followUpChoice = followUpData.choices?.[0];
-
-        if (!followUpChoice) {
-          throw new Error("No response from OpenRouter API follow-up call");
-        }
-
-        const totalUsage = followUpData.usage
-          ? {
-              promptTokens: (usage?.promptTokens || 0) + followUpData.usage.prompt_tokens,
-              completionTokens:
-                (usage?.completionTokens || 0) + followUpData.usage.completion_tokens,
-              totalTokens: (usage?.totalTokens || 0) + followUpData.usage.total_tokens,
-            }
-          : usage;
-
-        if (options.onStepFinish) {
-          if (followUpChoice.message.content) {
-            const textStep = this.createStepFromChunk({
-              type: "text",
-              text: followUpChoice.message.content,
-              usage: totalUsage,
-            });
-            if (textStep) await options.onStepFinish(textStep);
-          }
-        }
-
-        return {
-          provider: followUpData,
-          text: followUpChoice.message?.content || "",
-          usage: totalUsage,
-          finishReason: followUpChoice.finish_reason,
-        };
-      }
-
-      // Handle non-tool responses
-      if (options.onStepFinish) {
-        if (choice.message.content) {
-          const textStep = this.createStepFromChunk({
-            type: "text",
-            text: choice.message.content,
-            usage,
-          });
-          if (textStep) await options.onStepFinish(textStep);
-        }
-      }
-
-      return {
-        provider: data,
-        text: choice.message?.content || "",
-        usage,
-        finishReason: choice.finish_reason,
-      };
-    } catch (error) {
-      console.error("[OpenRouterProvider] generateText error:", error);
-      throw error;
-    }
-  }
-
-  async streamText(options: StreamTextOptions<string>): Promise<ProviderTextStreamResponse<any>> {
-    try {
-      const messages = options.messages.map(this.toMessage);
-
-      // Extract parameters
-      const {
-        temperature = 0.7,
-        maxTokens = 1000,
-        topP = 1.0,
-        frequencyPenalty = 0,
-        presencePenalty = 0,
-        stopSequences,
-      } = options.provider || {};
-
-      // Prepare headers
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      };
-
-      if (this.httpReferer) {
-        headers["HTTP-Referer"] = this.httpReferer;
-      }
-
-      if (this.xTitle) {
-        headers["X-Title"] = this.xTitle;
-      }
-
-      // Prepare request body
-      const body: any = {
-        model: options.model,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-        top_p: topP,
-        frequency_penalty: frequencyPenalty,
-        presence_penalty: presencePenalty,
-        stop: stopSequences,
-        stream: true,
-      };
-
-      // Add tools if provided
-      if (options.tools && options.tools.length > 0) {
-        const convertedTools = convertToolsForSDK(options.tools);
-        if (convertedTools) {
-          body.tools = convertedTools;
-          body.tool_choice = "auto";
-        }
-      }
-
-      const response = await fetch(`${this.baseURL}/chat/completions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`,
-        );
-      }
-
-      let accumulatedText = "";
-      let usage:
-        | {
-            promptTokens: number;
-            completionTokens: number;
-            totalTokens: number;
-          }
-        | undefined;
-
-      // Create a readable stream to return to the caller
-      const textStream = createAsyncIterableStream(
-        new ReadableStream({
-          async start(controller) {
-            try {
-              if (!response.body) {
-                throw new Error("No response body from OpenRouter API");
-              }
-
-              const reader = response.body.getReader();
-              const decoder = new TextDecoder();
-
-              while (true) {
-                const { done, value } = await reader.read();
-
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split("\n");
-
-                for (const line of lines) {
-                  if (line.startsWith("data: ")) {
-                    const data = line.slice(6);
-                    if (data === "[DONE]") continue;
-
-                    try {
-                      const parsed = JSON.parse(data);
-                      const content = parsed.choices?.[0]?.delta?.content || "";
-
-                      if (content) {
-                        accumulatedText += content;
-                        controller.enqueue(content);
-
-                        // Call onChunk with text chunk
-                        if (options.onChunk) {
-                          const step = {
-                            id: "",
-                            type: "text" as const,
-                            content,
-                            role: "assistant" as MessageRole,
-                          };
-                          await options.onChunk(step);
-                        }
-                      }
-
-                      if (parsed.usage) {
-                        usage = {
-                          promptTokens: parsed.usage.prompt_tokens,
-                          completionTokens: parsed.usage.completion_tokens,
-                          totalTokens: parsed.usage.total_tokens,
-                        };
-                      }
-                    } catch (parseError) {
-                      console.warn(
-                        "[OpenRouterProvider] Error parsing streaming chunk:",
-                        parseError,
-                      );
-                    }
-                  }
-                }
-              }
-
-              // When stream completes, close the controller
-              controller.close();
-
-              // Call onFinish with complete result
-              if (options.onFinish) {
-                await options.onFinish({
-                  text: accumulatedText,
-                });
-              }
-
-              // Call onStepFinish with complete result if provided
-              if (options.onStepFinish) {
-                if (accumulatedText) {
-                  const textStep = {
-                    id: "",
-                    type: "text" as const,
-                    content: accumulatedText,
-                    role: "assistant" as MessageRole,
-                    usage,
-                  };
-                  await options.onStepFinish(textStep);
-                }
-              }
-            } catch (error) {
-              // Handle errors during streaming
-              console.error("[OpenRouterProvider] Error during stream processing:", error);
-              controller.error(error);
-
-              if (options.onError) options.onError(error as any);
-            }
-          },
-        }),
-      );
-
-      // Return provider and text stream
-      return {
-        provider: response,
-        textStream,
-      };
-    } catch (error) {
-      console.error("[OpenRouterProvider] streaming API error:", error);
-
-      if (options.onError) options.onError(error as any);
-      throw error;
-    }
-  }
-
-  async generateObject<TSchema extends z.ZodType>(
-    options: GenerateObjectOptions<string, TSchema>,
-  ): Promise<ProviderObjectResponse<any, z.infer<TSchema>>> {
-    try {
-      const messages = options.messages.map(this.toMessage);
-
-      // Add system message instructing to generate JSON following the schema
-      const schemaDescription =
-        JSON.stringify(zodToJsonSchema(options.schema)) ||
-        "Respond with a JSON object according to the specified schema.";
-      const systemMessage = {
-        role: "system",
-        content: `Schema: ${schemaDescription} \n Respond with ONLY a valid JSON object, nothing else.`,
-      };
+      const openrouterMessages = options.messages.map(this.toMessage);
+      const openrouterTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
 
       // Extract common parameters
       const {
-        temperature = 0.2, // Lower temperature for more deterministic JSON generation
+        temperature = 0.7,
         maxTokens,
         topP,
+        frequencyPenalty,
+        presencePenalty,
+        stopSequences,
       } = options.provider || {};
 
-      // Prepare headers
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      };
+      // Create the model using the OpenRouter provider
+      const model = this.openrouter(options.model);
 
-      if (this.httpReferer) {
-        headers["HTTP-Referer"] = this.httpReferer;
-      }
-
-      if (this.xTitle) {
-        headers["X-Title"] = this.xTitle;
-      }
-
-      // Call OpenRouter API
-      const response = await fetch(`${this.baseURL}/chat/completions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: options.model,
-          messages: [systemMessage, ...messages],
-          temperature,
-          max_tokens: maxTokens,
-          top_p: topP,
-        }),
+      // Call OpenRouter API using the AI SDK's generateText function
+      const response = await generateText({
+        model,
+        messages: openrouterMessages,
+        temperature,
+        maxTokens,
+        topP,
+        frequencyPenalty,
+        presencePenalty,
+        tools: openrouterTools,
+        stop: stopSequences,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`,
-        );
-      }
-
-      const data = await response.json();
-
-      // Parse JSON response
-      let parsedObject: z.infer<TSchema>;
-      try {
-        const content = data.choices[0].message.content || "{}";
-        const rawObject = JSON.parse(content);
-        parsedObject = options.schema.parse(rawObject);
-      } catch (parseError: any) {
-        console.error("[OpenRouterProvider] Error parsing JSON from response:", parseError);
-        throw new Error(`Failed to parse JSON response: ${parseError.message}`);
-      }
-
       // Extract usage information
-      const usage = data.usage
+      const usage = response.usage
         ? {
-            promptTokens: data.usage.prompt_tokens,
-            completionTokens: data.usage.completion_tokens,
-            totalTokens: data.usage.total_tokens,
+            promptTokens: response.usage.promptTokens,
+            completionTokens: response.usage.completionTokens,
+            totalTokens: response.usage.totalTokens,
           }
         : undefined;
 
-      // Call onStepFinish if provided
-      if (options.onStepFinish) {
-        const step = {
-          id: "",
-          type: "text" as const,
-          content: JSON.stringify(parsedObject, null, 2),
-          role: "assistant" as MessageRole,
-          usage,
+      // Extract tool calls and results from the response
+      const toolCalls = response.toolCalls;
+      const toolResults = [];
+
+      if (toolCalls && toolCalls.length > 0 && options && options.tools) {
+        for (const toolCall of toolCalls) {
+          // Handle all tool calls - each as a separate step
+          const step = this.createStepFromChunk({
+            type: "tool-call",
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            args: toolCall.args,
+            usage: usage,
+          });
+          if (step && options.onStepFinish) await options.onStepFinish(step);
+          //Call the function with the arguments
+          const functionName = toolCall.toolName;
+          const functionToCall = options.tools.find(
+            (toolItem) => functionName === toolItem.name,
+          )?.execute;
+          const functionArgs = toolCall.args;
+          if (functionToCall === undefined) {
+            throw `Function ${functionName} not found in tools`;
+          }
+          const functionResponse = await functionToCall(functionArgs);
+          if (functionResponse === undefined) {
+            throw `Function ${functionName} returned undefined`;
+          }
+          toolResults.push({
+            toolCallId: toolCall.toolCallId,
+            name: functionName,
+            output: functionResponse,
+          });
+
+          openrouterMessages.push({
+            tool_call_id: toolCall.toolCallId,
+            role: "tool",
+            content: JSON.stringify(functionResponse),
+          });
+        }
+        // Handle all tool results - each as a separate step
+        if (toolCalls && toolResults && toolResults.length > 0) {
+          for (const toolResult of toolResults) {
+            const step = this.createStepFromChunk({
+              type: "tool-result",
+              toolCallId: toolResult.toolCallId,
+              toolName: toolResult.name,
+              result: toolResult.output,
+              usage: usage,
+            });
+            if (step && options.onStepFinish) await options.onStepFinish(step);
+          }
+        }
+
+        // Call OpenRouter API again with tool results
+        const secondResponse = await this.openrouter.generateText({
+          model: options.model,
+          messages: openrouterMessages,
+          temperature,
+          maxTokens,
+          topP,
+          frequencyPenalty,
+          presencePenalty,
+          tools: openrouterTools,
+          stop: stopSequences,
+        });
+
+        // Create step from final response
+        const responseText = secondResponse.text || "";
+        const textStep = this.createStepFromChunk({
+          type: "text",
+          text: responseText,
+          usage: secondResponse.usage
+            ? {
+                promptTokens: secondResponse.usage.promptTokens,
+                completionTokens: secondResponse.usage.completionTokens,
+                totalTokens: secondResponse.usage.totalTokens,
+              }
+            : undefined,
+        });
+        if (textStep && options.onStepFinish) await options.onStepFinish(textStep);
+
+        return {
+          provider: secondResponse,
+          text: responseText,
+          usage: secondResponse.usage
+            ? {
+                promptTokens: secondResponse.usage.promptTokens,
+                completionTokens: secondResponse.usage.completionTokens,
+                totalTokens: secondResponse.usage.totalTokens,
+              }
+            : undefined,
+          toolCalls: toolCalls?.map((tc: any) => ({
+            type: "tool-call",
+            toolCallId: tc.toolCallId,
+            toolName: tc.toolName,
+            args: tc.args,
+          })),
+          toolResults: toolResults,
         };
-        await options.onStepFinish(step);
+      } else {
+        // No tool calls, simple response
+        const responseText = response.text || "";
+        const textStep = this.createStepFromChunk({
+          type: "text",
+          text: responseText,
+          usage: usage,
+        });
+        if (textStep && options.onStepFinish) await options.onStepFinish(textStep);
+
+        return {
+          provider: response,
+          text: responseText,
+          usage: usage,
+        };
       }
-
-      // Return standardized response
-      return {
-        provider: data,
-        object: parsedObject,
-        usage,
-        finishReason: data.choices[0].finish_reason,
-      };
     } catch (error) {
-      console.error("[OpenRouterProvider] generateObject API error:", error);
+      console.error("[OpenRouterProvider] Error generating text:", error);
       throw error;
     }
-  }
+  };
 
-  async streamObject<TSchema extends z.ZodType>(
-    options: StreamObjectOptions<string, TSchema>,
-  ): Promise<ProviderObjectStreamResponse<any, z.infer<TSchema>>> {
-    // For now, fall back to generateObject since streaming object is complex
-    // This could be enhanced in the future to support true streaming
+  streamText = async (
+    options: StreamTextOptions<string>,
+  ): Promise<ProviderTextStreamResponse<any>> => {
+    // Note: For now, implement streaming as a simple async iterator that yields the final result
+    // This could be improved to use actual streaming in the future
+    const result = await this.generateText(options);
+
+    return {
+      provider: result.provider,
+      textStream: createAsyncIterableStream([
+        this.createStepFromChunk({
+          type: "text",
+          text: result.text,
+          usage: result.usage,
+        }) as StepWithContent,
+      ]),
+    };
+  };
+
+  generateObject = async <T = any>(
+    options: GenerateObjectOptions<string, z.ZodSchema<T>>,
+  ): Promise<ProviderObjectResponse<T, any>> => {
     try {
-      const result = await this.generateObject(options);
+      const openrouterMessages = options.messages.map(this.toMessage);
+      const schema = zodToJsonSchema(options.schema);
 
-      // Create a simple stream that emits the complete object
-      const objectStream = createAsyncIterableStream(
-        new ReadableStream({
-          start(controller) {
-            controller.enqueue(JSON.stringify(result.object));
-            controller.close();
-          },
-        }),
-      );
+      // Extract common parameters
+      const {
+        temperature = 0.7,
+        maxTokens,
+        topP,
+        frequencyPenalty,
+        presencePenalty,
+        stopSequences,
+      } = options.provider || {};
+
+      // Create the model using the OpenRouter provider
+      const model = this.openrouter(options.model);
+
+      // Call OpenRouter API using the AI SDK's generateObject function
+      const response = await generateObject({
+        model,
+        messages: openrouterMessages,
+        schema: options.schema,
+        temperature,
+        maxTokens,
+        topP,
+        frequencyPenalty,
+        presencePenalty,
+        stop: stopSequences,
+      });
 
       return {
-        provider: result.provider,
-        objectStream,
+        object: response.object,
+        usage: response.usage
+          ? {
+              promptTokens: response.usage.promptTokens,
+              completionTokens: response.usage.completionTokens,
+              totalTokens: response.usage.totalTokens,
+            }
+          : undefined,
+        provider: "openrouter",
+        metadata: {
+          model: options.model,
+          provider: "openrouter",
+        },
       };
     } catch (error) {
-      console.error("[OpenRouterProvider] streamObject API error:", error);
-      if (options.onError) options.onError(error as any);
+      console.error("[OpenRouterProvider] Error generating object:", error);
       throw error;
     }
-  }
+  };
+
+  streamObject = async <T = any>(
+    options: StreamObjectOptions<string, z.ZodSchema<T>>,
+  ): Promise<ProviderObjectStreamResponse<T, any>> => {
+    // Note: For now, implement streaming as a simple async iterator that yields the final result
+    // This could be improved to use actual streaming in the future
+    const result = await this.generateObject(options);
+
+    return {
+      provider: result.provider,
+      objectStream: createAsyncIterableStream([result.object]),
+    };
+  };
 }
 
+export type { OpenRouterProviderOptions } from "./types";
 export default OpenRouterProvider;
-export * from "./types";
