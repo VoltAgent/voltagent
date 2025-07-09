@@ -1204,7 +1204,7 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.57
+        specifier: ^0.1.56
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^0.1.13
@@ -10018,7 +10018,7 @@ packages:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/node@20.17.30)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
