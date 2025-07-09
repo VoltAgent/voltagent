@@ -296,7 +296,6 @@ app.get("/workflows/:id", (c: ApiContext) => {
       name: step.name || `Step ${index + 1}`,
       purpose: step.purpose,
       type: step.type,
-      // Agent step için ek bilgiler
       ...(step.type === "agent" &&
         "agent" in step && {
           agentId: step.agent?.id,
