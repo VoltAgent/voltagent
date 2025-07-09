@@ -1,3 +1,4 @@
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "./agent";
 import type { SubAgentConfig } from "./agent/subagent/types";
 import { startServer } from "./server";
@@ -5,7 +6,10 @@ import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 import type { ServerConfig } from "./server/api";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 import { AgentRegistry } from "./server/registry";
+import { WorkflowRegistry } from "./server/workflow-registry";
 import type { ServerOptions, VoltAgentOptions } from "./types";
+import type { Workflow } from "./workflow/types";
+import type { WorkflowChain } from "./workflow/chain";
 import { checkForUpdates } from "./utils/update";
 
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
@@ -86,6 +90,7 @@ let registeredProvider: NodeTracerProvider | null = null;
  */
 export class VoltAgent {
   private registry: AgentRegistry;
+  private workflowRegistry: WorkflowRegistry;
   private serverStarted = false;
   private customEndpoints: CustomEndpointDefinition[] = [];
   private serverConfig: ServerConfig = {};
@@ -93,6 +98,7 @@ export class VoltAgent {
 
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
+    this.workflowRegistry = WorkflowRegistry.getInstance();
 
     // 🔥 FIX: Set up telemetry BEFORE registering agents
     // NEW: Handle unified VoltOps client
@@ -139,6 +145,11 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
 
     // ✅ NOW register agents - they can access global telemetry exporter
     this.registerAgents(options.agents);
+
+    // Register workflows if provided
+    if (options.workflows) {
+      this.registerWorkflows(options.workflows);
+    }
 
     // Merge server options with backward compatibility
     // New server object takes precedence over deprecated individual options
@@ -235,6 +246,51 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    */
   public registerAgents(agents: Record<string, Agent<any>>): void {
     Object.values(agents).forEach((agent) => this.registerAgent(agent));
+  }
+
+  /**
+   * Register workflows
+   */
+  public registerWorkflows(
+    workflows: Record<
+      string,
+      | Workflow<DangerouslyAllowAny, DangerouslyAllowAny>
+      | WorkflowChain<DangerouslyAllowAny, DangerouslyAllowAny>
+    >,
+  ): void {
+    Object.values(workflows).forEach((workflow) => {
+      // If it's a WorkflowChain, convert to Workflow first
+      const workflowInstance = "toWorkflow" in workflow ? workflow.toWorkflow() : workflow;
+      this.workflowRegistry.registerWorkflow(workflowInstance);
+    });
+  }
+
+  /**
+   * Register a single workflow
+   */
+  public registerWorkflow(workflow: Workflow<DangerouslyAllowAny, DangerouslyAllowAny>): void {
+    this.workflowRegistry.registerWorkflow(workflow);
+  }
+
+  /**
+   * Get all registered workflows
+   */
+  public getWorkflows(): Workflow<DangerouslyAllowAny, DangerouslyAllowAny>[] {
+    return this.workflowRegistry.getAllWorkflows();
+  }
+
+  /**
+   * Get workflow by ID
+   */
+  public getWorkflow(id: string): Workflow<DangerouslyAllowAny, DangerouslyAllowAny> | undefined {
+    return this.workflowRegistry.getWorkflow(id);
+  }
+
+  /**
+   * Get workflow count
+   */
+  public getWorkflowCount(): number {
+    return this.workflowRegistry.getWorkflowCount();
   }
 
   /**

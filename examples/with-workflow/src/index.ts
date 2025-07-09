@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient, createWorkflowChain } from "@voltagent/core";
+import { Agent, VoltAgent, VoltOpsClient, createWorkflowChain, andThen } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -28,15 +28,6 @@ const translationAgent = new Agent({
   If translation is not possible or the target language is not supported, explain why.`,
 });
 
-// Initialize VoltAgent with VoltOps client
-new VoltAgent({
-  agents: {
-    languageDetectionAgent,
-    translationAgent,
-  },
-  voltOpsClient: voltOpsClient,
-});
-
 // Create a comprehensive translation workflow
 const translationWorkflow = createWorkflowChain({
   id: "translation-workflow",
@@ -53,6 +44,21 @@ const translationWorkflow = createWorkflowChain({
     translatedText: z.string(),
     confidence: z.number().min(0).max(1),
     processingTime: z.number(),
+    isLongText: z.boolean(),
+    summary: z.string(),
+    qualityScore: z.number(),
+    qualityCheck: z.string(),
+    lengthValid: z.boolean(),
+    wordCount: z.number(),
+    languageValid: z.boolean(),
+    source: z.string(),
+    metadata: z.object({
+      type: z.string(),
+      priority: z.string(),
+    }),
+    enriched: z.boolean(),
+    savedSuccessfully: z.boolean(),
+    fileId: z.string(),
   }),
 })
   .andAgent(
@@ -104,7 +110,36 @@ const translationWorkflow = createWorkflowChain({
         processingTime: Date.now() - state.startAt.getTime(),
       };
     },
-  });
+  })
+  // Text analysis step
+  .andThen({
+    execute: async (data, _state) => {
+      return {
+        ...data,
+        isLongText: data.translatedText.length > 100,
+        summary: `Text with ${data.translatedText.length} characters`,
+        qualityScore: Math.random() * 0.3 + 0.7,
+        qualityCheck: "passed",
+        lengthValid: data.translatedText.length > 0,
+        wordCount: data.translatedText.split(" ").length,
+        languageValid: true,
+        source: "fast-api",
+        metadata: { type: "translation", priority: "high" },
+        enriched: true,
+      };
+    },
+  })
+  // Final save step
+  .andAgent(
+    async (data) => `Save the following translation with metadata: "${data.translatedText}"`,
+    translationAgent,
+    {
+      schema: z.object({
+        savedSuccessfully: z.boolean(),
+        fileId: z.string(),
+      }),
+    },
+  );
 
 // Example usage function
 async function processTranslation(inputText: string, targetLanguage = "en") {
@@ -122,6 +157,13 @@ async function processTranslation(inputText: string, targetLanguage = "en") {
     );
     console.log(`🎯 Target Language: ${result.targetLanguage}`);
     console.log(`🔄 Translated Text: ${result.translatedText}`);
+    console.log(`📊 Quality Score: ${(result.qualityScore * 100).toFixed(1)}%`);
+    console.log(`📏 ${result.summary} (${result.wordCount} words)`);
+    console.log(
+      `✅ Validation: Quality ${result.qualityCheck}, Length ${result.lengthValid ? "valid" : "invalid"}`,
+    );
+    console.log(`💾 Saved: ${result.savedSuccessfully ? "Yes" : "No"} (ID: ${result.fileId})`);
+    console.log(`🔗 Source: ${result.source} (enriched: ${result.enriched})`);
     console.log(`\n⏱️  Processing Time: ${result.processingTime}ms`);
     console.log("=".repeat(50));
 
@@ -132,8 +174,9 @@ async function processTranslation(inputText: string, targetLanguage = "en") {
   }
 }
 
-// Example usage
-async function main() {
+// Example function to demonstrate workflow usage
+// Uncomment the call at the bottom to run examples
+export async function runExamples() {
   console.log("🚀 Starting VoltAgent Translation Workflow Example\n");
 
   // Example 1: Spanish to English
@@ -167,5 +210,17 @@ async function main() {
   );
 }
 
-// Run the example
-main().catch(console.error);
+// Initialize VoltAgent with VoltOps client and workflows
+new VoltAgent({
+  agents: {
+    languageDetectionAgent,
+    translationAgent,
+  },
+  workflows: {
+    translationWorkflow,
+  },
+  voltOpsClient: voltOpsClient,
+});
+
+// Uncomment to run examples
+// runExamples().catch(console.error);

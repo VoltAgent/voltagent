@@ -20,7 +20,9 @@ import {
   type ObjectResponseSchema,
   type TextRequestSchema,
   type TextResponseSchema,
+  executeWorkflowRoute,
   getAgentsRoute,
+  getWorkflowsRoute,
   objectRoute,
   streamObjectRoute,
   streamRoute,
@@ -33,6 +35,7 @@ import {
   validateCustomEndpoints,
 } from "./custom-endpoints";
 import { AgentRegistry } from "./registry";
+import { WorkflowRegistry } from "./workflow-registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 
 // Configuration interface
@@ -239,6 +242,126 @@ app.get("/agents/:id", (c: ApiContext) => {
 app.get("/agents/count", (c: ApiContext) => {
   const registry = AgentRegistry.getInstance();
   const count = registry.getAgentCount();
+
+  const response: ApiResponse<{ count: number }> = {
+    success: true,
+    data: { count },
+  };
+
+  return c.json(response);
+});
+
+// --- Workflow Management Endpoints ---
+
+// Get all workflows
+app.openapi(getWorkflowsRoute, (c) => {
+  const registry = WorkflowRegistry.getInstance();
+  try {
+    const workflows = registry.getWorkflowsForApi();
+
+    const response = {
+      success: true as const,
+      data: workflows,
+    };
+
+    return c.json(response, 200);
+  } catch (error) {
+    console.error("Failed to get workflows:", error);
+    return c.json({ success: false as const, error: "Failed to retrieve workflows" }, 500);
+  }
+});
+
+// Get workflow by ID
+app.get("/workflows/:id", (c: ApiContext) => {
+  const id = c.req.param("id");
+  const registry = WorkflowRegistry.getInstance();
+  const workflow = registry.getWorkflow(id);
+
+  if (!workflow) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: "Workflow not found",
+    };
+    return c.json(response, 404);
+  }
+
+  const workflowData = {
+    id: workflow.id,
+    name: workflow.name,
+    purpose: workflow.purpose,
+    stepsCount: workflow.steps.length,
+    status: "idle" as const,
+    steps: workflow.steps.map((step, index) => ({
+      id: step.id,
+      name: step.name || `Step ${index + 1}`,
+      purpose: step.purpose,
+      type: step.type,
+      // Agent step için ek bilgiler
+      ...(step.type === "agent" &&
+        "agent" in step && {
+          agentId: step.agent?.id,
+          agentName: step.agent?.name,
+        }),
+    })),
+  };
+
+  const response: ApiResponse<typeof workflowData> = {
+    success: true,
+    data: workflowData,
+  };
+
+  return c.json(response);
+});
+
+// Execute workflow
+app.openapi(executeWorkflowRoute, async (c) => {
+  const { id } = c.req.valid("param") as { id: string };
+  const registry = WorkflowRegistry.getInstance();
+  const workflow = registry.getWorkflow(id);
+
+  if (!workflow) {
+    return c.json(
+      { success: false, error: "Workflow not found" } satisfies z.infer<typeof ErrorSchema>,
+      404,
+    );
+  }
+
+  try {
+    const { input } = c.req.valid("json") as {
+      input: any;
+      options?: { userId?: string; conversationId?: string; executionId?: string };
+    };
+
+    const result = await workflow.run(input);
+
+    const response = {
+      success: true as const,
+      data: {
+        executionId: result.executionId,
+        startAt: result.startAt.toISOString(),
+        endAt: result.endAt.toISOString(),
+        status: "completed" as const,
+        result: result.result,
+      },
+    };
+
+    return c.json(response, 200);
+  } catch (error) {
+    console.error("Failed to execute workflow:", error);
+    return c.json(
+      {
+        success: false as const,
+        error: error instanceof Error ? error.message : "Failed to execute workflow",
+      } satisfies z.infer<typeof ErrorSchema>,
+      500,
+    );
+  }
+});
+
+// Get workflow count
+app.get("/workflows/count", (c: ApiContext) => {
+  const registry = WorkflowRegistry.getInstance();
+  const count = registry.getWorkflowCount();
 
   const response: ApiResponse<{ count: number }> = {
     success: true,
