@@ -107,7 +107,9 @@ export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
   ? BaseMessage | BaseMessage[] | string
   : TF.IsAny<T> extends true
     ? BaseMessage | BaseMessage[] | string
-    : T;
+    : T extends z.ZodType
+      ? z.infer<T>
+      : T;
 
 // type GetFunc<T> = T extends InternalAnyWorkflowStep<
 //   DangerouslyAllowAny,
