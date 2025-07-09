@@ -168,7 +168,7 @@ export default function TutorialIntroduction() {
                     Developer-First:
                   </strong>
                   <span className="text-gray-300 ml-1">
-                    Built by developers, for developers
+                    Made for how developers actually work
                   </span>
                 </div>
               </div>
@@ -895,7 +895,7 @@ export default function TutorialIntroduction() {
         <div className="mt-16">
           <div className="bg-gradient-to-r from-emerald-500/20 to-blue-500/20 border-2 border-solid border-emerald-500/30 rounded-xl p-8 landing-md:p-10 text-center relative overflow-hidden">
             {/* Background glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 blur-xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 blur-xl" />
 
             <div className="relative z-10">
               <h3 className="text-2xl landing-md:text-3xl text-emerald-400 font-bold mb-4">
