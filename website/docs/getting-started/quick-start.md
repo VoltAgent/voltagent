@@ -133,6 +133,12 @@ The `dev` script uses `tsx watch`, so it will automatically restart if you make 
 
 ## Next Steps
 
+Ready to build real AI agents? Follow our step-by-step tutorial:
+
+- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
+
+Or explore specific topics:
+
 - Explore [Agent](../agents/overview.md) options
 - Learn about [Memory](../agents/memory/overview.md)
 - Check out [Tool Creation](../agents/tools.md) for more advanced use cases
@@ -325,6 +331,12 @@ You should receive a response from your AI agent in the chat window. This confir
 The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
 
 ## Next Steps
+
+Ready to build real AI agents? Follow our step-by-step tutorial:
+
+- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
+
+Or explore specific topics:
 
 - Explore [Agent](../agents/overview.md) options
 - Learn about [Memory](../agents/memory/overview.md)
