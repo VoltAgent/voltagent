@@ -3,6 +3,8 @@ import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { DiscordLogo } from "../../../static/img/logos/discord";
+import { GitHubLogo } from "../../../static/img/logos/github";
 
 export default function SubagentsTutorial() {
   return (
@@ -1043,15 +1045,27 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
             <div className="flex flex-col landing-md:flex-row gap-3 landing-md:gap-4">
               <a
                 href="/docs"
-                className="inline-flex items-center px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 no-underline rounded-lg hover:bg-blue-700 transition-colors text-xs landing-md:text-sm justify-center"
+                className="inline-flex items-center px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 no-underline rounded-lg hover:bg-emerald-400/20 transition-colors text-xs landing-md:text-sm justify-center"
               >
                 Read Full Documentation
               </a>
               <a
                 href="https://github.com/voltagent/voltagent"
+                target="_blank"
+                rel="noreferrer"
                 className="inline-flex items-center px-4 py-2 border no-underline border-solid border-amber-500 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center"
               >
-                ⭐ Star on GitHub
+                <GitHubLogo className="w-4 h-4 mr-2" />
+                Star on GitHub
+              </a>
+              <a
+                href="https://discord.gg/voltagent"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center px-4 py-2 border no-underline border-solid border-purple-500 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center"
+              >
+                <DiscordLogo className="w-4 h-4 mr-2" />
+                Join Discord Community
               </a>
             </div>
           </div>

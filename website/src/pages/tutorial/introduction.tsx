@@ -6,6 +6,9 @@ import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import { MobileAgentCode } from "../../components/tutorial";
+import Link from "@docusaurus/Link";
+import { DiscordLogo } from "../../../static/img/logos/discord";
+import { GitHubLogo } from "../../../static/img/logos/github";
 
 export default function TutorialIntroduction() {
   const [highlightedSection, setHighlightedSection] = useState<string | null>(
@@ -185,6 +188,134 @@ export default function TutorialIntroduction() {
           </div>
         </div>
 
+        {/* Getting Started Section */}
+        <div className="mb-20">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
+            Getting Started in 60 Seconds
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed mb-6">
+            Create a new VoltAgent project and have a working AI agent in under
+            a minute:
+          </p>
+
+          {/* Step 1: Create Project */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
+                1. Create Your Project
+              </h3>
+              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
+                <pre className="text-green-400 text-sm font-mono">
+                  <code>npm create voltagent-app@latest my-agent-app</code>
+                </pre>
+              </div>
+            </div>
+
+            {/* Step 2: Navigate */}
+            <div>
+              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
+                2. Navigate to Project
+              </h3>
+              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
+                <pre className="text-green-400 text-sm font-mono">
+                  <code>cd my-agent-app</code>
+                </pre>
+              </div>
+            </div>
+
+            {/* Step 3: Add API Key */}
+            <div>
+              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
+                3. Add Your API Key
+              </h3>
+              <p className="text-sm text-gray-300 mb-3">
+                Create or edit the{" "}
+                <code className="bg-gray-800 px-2 py-1 rounded text-yellow-300">
+                  .env
+                </code>{" "}
+                file and add your OpenAI API key:
+              </p>
+              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
+                <pre className="text-green-400 text-sm font-mono">
+                  <code>OPENAI_API_KEY=your-api-key-here</code>
+                </pre>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Get your API key from{" "}
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#00d992] hover:underline"
+                >
+                  OpenAI Platform
+                </a>
+              </p>
+            </div>
+
+            {/* Step 4: Run */}
+            <div>
+              <h3 className="text-lg font-semibold text-[#00d992] mb-3">
+                4. Start Your Agent
+              </h3>
+              <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
+                <pre className="text-green-400 text-sm font-mono">
+                  <code>npm run dev</code>
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
+            <h4 className="text-emerald-500 font-semibold mb-4">
+              ✅ That's it! Your agent is running
+            </h4>
+            <p className="text-gray-300 text-sm mb-4">
+              You should see this in your terminal:
+            </p>
+
+            <div className="bg-gray-900/80 border border-white/10 rounded-lg p-4 mb-4">
+              <pre className="text-green-400 text-xs font-mono leading-relaxed">
+                <code>{`══════════════════════════════════════════════════
+  VOLTAGENT SERVER STARTED SUCCESSFULLY
+══════════════════════════════════════════════════
+  ✓ HTTP Server: http://localhost:3141
+
+  VoltOps Platform:    https://console.voltagent.dev
+══════════════════════════════════════════════════
+[VoltAgent] All packages are up to date`}</code>
+              </pre>
+            </div>
+
+            <p className="text-gray-300 text-sm">
+              Visit{" "}
+              <a
+                href="https://console.voltagent.dev"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#00d992] hover:underline"
+              >
+                console.voltagent.dev
+              </a>{" "}
+              to find your agent and start chatting:
+            </p>
+
+            {/* Demo GIF */}
+            <div className="mt-4 rounded-lg overflow-hidden border border-white/10">
+              <img
+                src="https://cdn.voltagent.dev/docs/tutorial/voltagent-voltops-demo.gif"
+                alt="VoltOps Dashboard Demo - How to find your agent and start chatting"
+                className="w-full h-auto"
+                loading="lazy"
+              />
+            </div>
+
+            <p className="text-gray-300 text-sm mt-4">
+              The code below shows exactly what you just created.
+            </p>
+          </div>
+        </div>
+
         {/* your agent code - Interactive Version */}
         <div className=" mb-20">
           <h2 className="text-2xl landing-md:text-3xl  font-bold text-white">
@@ -276,11 +407,11 @@ export default function TutorialIntroduction() {
                           className={`block ${getHighlightClasses("agent")}`}
                         >
                           <span className="text-gray-300">
-                            {"// Create your first agent"}
+                            {"// Define a simple agent"}
                           </span>
                           <br />
                           <span className="text-blue-400">const</span>
-                          <span> myFirstAgent = </span>
+                          <span> agent = </span>
                           <span className="text-blue-400">new</span>
                           <span className="text-green-400"> Agent</span>
                           <span>{"({"}</span>
@@ -297,13 +428,14 @@ export default function TutorialIntroduction() {
                           <br />
                         </span>
 
-                        {/* Agent Description & Instructions */}
+                        {/* Agent Instructions & Provider */}
                         <span
                           className={`block ${getHighlightClasses("behavior")}`}
                         >
-                          <span className="ml-4">description: </span>
+                          <span className="ml-4">instructions: </span>
                           <span className="text-yellow-300">
-                            "A simple agent that introduces itself"
+                            "A helpful assistant that answers questions without
+                            using tools"
                           </span>
                           <span>,</span>
                           <br />
@@ -327,12 +459,6 @@ export default function TutorialIntroduction() {
                           <span className="text-yellow-300">"gpt-4o-mini"</span>
                           <span>),</span>
                           <br />
-                          <span className="ml-4">instructions: </span>
-                          <span className="text-yellow-300">
-                            "You are a friendly assistant. Always greet users
-                            warmly."
-                          </span>
-                          <br />
                         </span>
 
                         <span
@@ -348,7 +474,7 @@ export default function TutorialIntroduction() {
                           className={`block ${getHighlightClasses("server")}`}
                         >
                           <span className="text-gray-300">
-                            {"// Start VoltAgent server"}
+                            {"// Initialize VoltAgent with your agent(s)"}
                           </span>
                           <br />
                           <span className="text-blue-400">new</span>
@@ -356,7 +482,7 @@ export default function TutorialIntroduction() {
                           <span>{"({"}</span>
                           <br />
                           <span className="ml-4">
-                            agents: {"{"} myFirstAgent {"}"},
+                            agents: {"{"} agent {"}"},
                           </span>
                           <br />
                           <span>{"});"}</span>
@@ -461,8 +587,9 @@ export default function TutorialIntroduction() {
                         "How should it behave?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        Instructions are like giving directions to a colleague.
-                        Be specific about personality, tone, and behavior.
+                        Instructions define your agent's personality and
+                        behavior. The LLM provider handles the AI communication
+                        layer.
                       </div>
                     </div>
                   </div>
@@ -748,6 +875,40 @@ export default function TutorialIntroduction() {
           </div>
         </div>
 
+        {/* Community & Resources */}
+        <div className="">
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white text-left">
+            Join the VoltAgent Community
+          </h2>
+          <p className="text-landing-sm landing-md:text-base text-gray-300 text-left leading-relaxed mb-6">
+            Connect with other developers building AI agents, get help, and stay
+            updated with the latest features.
+          </p>
+
+          <div className="border-solid border border-gray-700 rounded-lg p-4 landing-md:p-6">
+            <div className="flex flex-col landing-md:flex-row gap-3 landing-md:gap-4 items-center justify-center">
+              <a
+                href="https://github.com/voltagent/voltagent"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center px-4 py-2 border no-underline border-solid border-amber-500 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center w-full landing-md:w-auto"
+              >
+                <GitHubLogo className="w-4 h-4 mr-2" />
+                Star on GitHub
+              </a>
+              <a
+                href="https://discord.gg/voltagent"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center px-4 py-2 border no-underline border-solid border-purple-500 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-xs landing-md:text-sm justify-center w-full landing-md:w-auto"
+              >
+                <DiscordLogo className="w-4 h-4 mr-2" />
+                Join Discord Community
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* Getting Started */}
         <div className="">
           <div className="bg-emerald-500/10 border border-solid border-emerald-500/20 rounded-lg p-6 text-center">
@@ -757,12 +918,12 @@ export default function TutorialIntroduction() {
             <p className="text-sm text-gray-300 mb-4">
               Ready to build AI agents that actually work? Let's dive in!
             </p>
-            <a
-              href="/tutorial/chatbot-problem"
-              className="inline-flex items-center px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 transition-all duration-300 shadow-lg hover:shadow-xl no-underline text-sm"
+            <Link
+              to="/tutorial/chatbot-problem"
+              className="inline-flex items-center px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 hover:text-black transition-all duration-300 shadow-lg hover:shadow-xl no-underline text-sm"
             >
               Start Tutorial →
-            </a>
+            </Link>
           </div>
         </div>
       </div>

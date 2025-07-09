@@ -627,108 +627,47 @@ const mcpConfig = new MCPConfiguration({
           </div>
         </div>
 
-        {/* Available MCP Servers */}
-        <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Ready-to-Use MCP Servers
-          </h2>
-          <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            VoltAgent maintains a comprehensive directory of MCP servers for
-            popular services. Here are some examples to get you started:
+        {/* Directory Link */}
+        <div className=" border-solid border border-emerald-500 rounded-lg p-4 landing-md:p-6">
+          <h4 className="text-emerald-400 font-semibold mb-3 text-sm landing-md:text-base">
+            Explore the Complete MCP Directory
+          </h4>
+          <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
+            This is just a sample! VoltAgent maintains a growing directory of
+            MCP servers with detailed setup instructions, code examples, and
+            tool capabilities for each service.
           </p>
-
-          <div className="grid grid-cols-1 landing-md:grid-cols-3 gap-4">
-            <div className=" rounded-lg p-4 border-solid border border-gray-700">
-              <h4 className="text-white font-semibold mb-3">Communication</h4>
-              <div className="space-y-2 text-sm">
-                <div className="text-gray-300">
-                  • <strong>Slack</strong> - Send messages, manage channels
-                </div>
-                <div className="text-gray-300">
-                  • <strong>Discord</strong> - Bot interactions, server
-                  management
-                </div>
-                <div className="text-gray-300">
-                  • <strong>Gmail</strong> - Email sending, inbox management
-                </div>
-              </div>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+              <span className="text-gray-300 text-xs landing-md:text-sm">
+                <strong>10+ Ready-to-use servers</strong> with copy-paste
+                configurations
+              </span>
             </div>
-
-            <div className=" rounded-lg p-4 border-solid border border-gray-700">
-              <h4 className="text-white font-semibold mb-3">Productivity</h4>
-              <div className="space-y-2 text-sm">
-                <div className="text-gray-300">
-                  • <strong>Notion</strong> - Create pages, manage databases
-                </div>
-                <div className="text-gray-300">
-                  • <strong>Google Sheets</strong> - Spreadsheet operations
-                </div>
-                <div className="text-gray-300">
-                  • <strong>Google Calendar</strong> - Event scheduling
-                </div>
-              </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+              <span className="text-gray-300 text-xs landing-md:text-sm">
+                <strong>Detailed tool listings</strong> showing exactly what
+                each server can do
+              </span>
             </div>
-
-            <div className=" rounded-lg p-4 border-solid border border-gray-700">
-              <h4 className="text-white font-semibold mb-3">
-                Development & Data
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="text-gray-300">
-                  • <strong>GitHub</strong> - Repository management
-                </div>
-                <div className="text-gray-300">
-                  • <strong>Ahrefs</strong> - SEO data analysis
-                </div>
-                <div className="text-gray-300">
-                  • <strong>PostgreSQL</strong> - Database operations
-                </div>
-              </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+              <span className="text-gray-300 text-xs landing-md:text-sm">
+                <strong>Live examples</strong> and implementation guides
+              </span>
             </div>
           </div>
-
-          {/* Directory Link */}
-          <div className=" border-solid border border-emerald-500 rounded-lg p-4 landing-md:p-6">
-            <h4 className="text-emerald-400 font-semibold mb-3 text-sm landing-md:text-base">
-              Explore the Complete MCP Directory
-            </h4>
-            <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
-              This is just a sample! VoltAgent maintains a growing directory of
-              MCP servers with detailed setup instructions, code examples, and
-              tool capabilities for each service.
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
-                  <strong>10+ Ready-to-use servers</strong> with copy-paste
-                  configurations
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
-                  <strong>Detailed tool listings</strong> showing exactly what
-                  each server can do
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                <span className="text-gray-300 text-xs landing-md:text-sm">
-                  <strong>Live examples</strong> and implementation guides
-                </span>
-              </div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-700">
-              <a
-                href="https://voltagent.dev/mcp/"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-300 no-underline text-xs landing-md:text-sm"
-              >
-                Browse Full MCP Directory →
-              </a>
-            </div>
+          <div className="mt-4 pt-4 border-t border-gray-700">
+            <a
+              href="https://voltagent.dev/mcp/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-300 no-underline text-xs landing-md:text-sm"
+            >
+              Browse Full MCP Directory →
+            </a>
           </div>
         </div>
 
@@ -742,18 +681,6 @@ const mcpConfig = new MCPConfiguration({
             In the final tutorial, we'll learn about subagents - creating teams
             of specialized agents that work together.
           </p>
-
-          <div className=" border-solid border border-emerald-500 rounded-lg p-6">
-            <h4 className="text-emerald-500 font-semibold mb-2">Try It Now</h4>
-            <p className="text-gray-300 mb-3">
-              Test the file system example above:
-            </p>
-            <div className="text-gray-300 space-y-1 text-sm">
-              <div>"Check weather in London and save it to a file"</div>
-              <div>"What files are in the Desktop directory?"</div>
-              <div>"Read yesterday's weather report"</div>
-            </div>
-          </div>
         </div>
       </div>
     </TutorialLayout>

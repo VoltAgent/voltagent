@@ -28,7 +28,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
           {/* Mobile Header */}
           <div className="flex items-center justify-between mb-3">
             {/* Logo */}
-            <div className="flex items-center">
+            <Link to="/docs" className="flex items-center no-underline">
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-4 h-4 text-[#00d992]" />
               </div>
@@ -38,7 +38,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
               <span className="ml-2  text-sm  font-medium text-gray-400">
                 Tutorial
               </span>
-            </div>
+            </Link>
 
             {/* Mobile Actions */}
             <div className="flex items-center space-x-2">
@@ -87,11 +87,8 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
                       ? "bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20"
                       : step.number < currentStep
                         ? "bg-[#4a5568]/10 text-[#f7fafc] hover:bg-[#718096]"
-                        : "bg-[#2d3748]/40 border-solid border border-[#2d3748]/20 text-[#a0aec0] cursor-not-allowed"
+                        : "bg-[#2d3748]/40 border-solid border border-[#2d3748]/20 text-[#a0aec0] hover:bg-[#4a5568]/10 hover:text-[#cbd5e0]"
                   }`}
-                  style={
-                    step.number > currentStep ? { pointerEvents: "none" } : {}
-                  }
                 >
                   {step.number}
                 </Link>
@@ -103,7 +100,10 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
         {/* Desktop Layout */}
         <div className="hidden md:flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center justify-center">
+          <Link
+            to="/docs"
+            className="flex items-center justify-center no-underline"
+          >
             <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
               <BoltIcon className="w-5 h-5 sm:w-5 sm:h-5 text-[#00d992]" />
             </div>
@@ -113,7 +113,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
               </span>
               <span className="ml-2 font-medium text-gray-400">Tutorial</span>
             </div>
-          </div>
+          </Link>
 
           {/* Tutorial Progress */}
           <div className="flex-1 max-w-2xl mx-8">
@@ -143,11 +143,8 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
                       ? "bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20"
                       : step.number < currentStep
                         ? "bg-[#4a5568]/10 text-[#f7fafc] hover:bg-[#718096]"
-                        : "bg-[#2d3748]/40 border-solid border border-[#2d3748]/20 text-[#a0aec0] cursor-not-allowed"
+                        : "bg-[#2d3748]/40 border-solid border border-[#2d3748]/20 text-[#a0aec0] hover:bg-[#4a5568]/10 hover:text-[#cbd5e0]"
                   }`}
-                  style={
-                    step.number > currentStep ? { pointerEvents: "none" } : {}
-                  }
                 >
                   {step.number}. {step.title}
                 </Link>
