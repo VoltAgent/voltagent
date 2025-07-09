@@ -179,7 +179,7 @@ export default function Navbar() {
                   </div>
                 </Link>
                 <Link to="/about/" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                     <BoltIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
                     <div className="min-w-0 font-['Inter']">
                       <div className="text-sm font-semibold whitespace-nowrap">
@@ -187,6 +187,19 @@ export default function Navbar() {
                       </div>
                       <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
                         Learn more about VoltAgent
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+                <Link to="/launch-week-june-25/" className="no-underline">
+                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                    <BoltIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
+                    <div className="min-w-0 font-['Inter']">
+                      <div className="text-sm font-semibold whitespace-nowrap">
+                        Launch Week #1
+                      </div>
+                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                        Explore our product launch updates
                       </div>
                     </div>
                   </div>
@@ -245,12 +258,12 @@ export default function Navbar() {
             </div>
 
             <Link
-              to="/launch-week-june-25/"
+              to="/tutorial/introduction"
               className={`${styles.navLink}  !text-emerald-400 ${
-                isActive("(launch-week-june-25/") ? styles.active : ""
+                isActive("(tutorial/introduction") ? styles.active : ""
               }`}
             >
-              LAUNCH WEEK #1
+              5 STEPS
             </Link>
           </div>
         </div>
@@ -493,6 +506,19 @@ export default function Navbar() {
                   </div>
                 </div>
               </Link>
+              <Link to="/launch-week-june-25/" className="no-underline">
+                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                  <BoltIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
+                  <div className="min-w-0 font-['Inter']">
+                    <div className="text-sm font-semibold whitespace-nowrap">
+                      Launch Week #1
+                    </div>
+                    <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                      Explore our product launch updates
+                    </div>
+                  </div>
+                </div>
+              </Link>
             </div>
           </div>
           <div className={styles.mobileNavLink}>
@@ -557,12 +583,12 @@ export default function Navbar() {
             </div>
           </div>
           <Link
-            to="/launch-week-june-25/"
+            to="/tutorial/introduction"
             className={`${styles.mobileNavLink}  !text-emerald-400 ${
-              isActive("(launch-week-june-25/") ? styles.active : ""
+              isActive("/tutorial/introduction") ? styles.active : ""
             }`}
           >
-            LAUNCH WEEK #1
+            5 STEPS
           </Link>
           <div className={styles.mobileButtons}>
             <Link

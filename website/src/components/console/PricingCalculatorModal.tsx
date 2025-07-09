@@ -11,30 +11,35 @@ const PricingCalculatorModal = ({
   onClose,
 }: PricingCalculatorModalProps) => {
   const [traceCount, setTraceCount] = useState<number>(10000);
+  const [selectedPlan, setSelectedPlan] = useState<"core" | "pro">("core");
 
   const calculateCost = () => {
     const traces = traceCount;
-    const basePlan = 50; // Base Pro plan cost
-    const includedTraces = 5000;
+    const planConfig =
+      selectedPlan === "core"
+        ? { baseCost: 50, includedTraces: 5000 }
+        : { baseCost: 500, includedTraces: 20000 };
 
-    if (traces <= includedTraces) {
+    if (traces <= planConfig.includedTraces) {
       return {
-        baseCost: basePlan,
+        baseCost: planConfig.baseCost,
         overageCost: 0,
-        totalCost: basePlan,
+        totalCost: planConfig.baseCost,
         extraTraces: 0,
+        includedTraces: planConfig.includedTraces,
       };
     }
 
-    const extraTraces = traces - includedTraces;
+    const extraTraces = traces - planConfig.includedTraces;
     const overageBlocks = Math.ceil(extraTraces / 5000);
     const overageCost = overageBlocks * 10;
 
     return {
-      baseCost: basePlan,
+      baseCost: planConfig.baseCost,
       overageCost,
-      totalCost: basePlan + overageCost,
+      totalCost: planConfig.baseCost + overageCost,
       extraTraces,
+      includedTraces: planConfig.includedTraces,
     };
   };
 
@@ -95,6 +100,37 @@ const PricingCalculatorModal = ({
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
+          </div>
+        </div>
+
+        {/* Plan Selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-300 mb-3">
+            Select Plan:
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("core")}
+              className={`p-3 rounded-lg border font-medium transition-all ${
+                selectedPlan === "core"
+                  ? "border-emerald-400 bg-emerald-400/10 text-emerald-400"
+                  : "border-gray-700 bg-gray-800/50 text-gray-300 hover:border-gray-600"
+              }`}
+            >
+              Core ($50)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("pro")}
+              className={`p-3 rounded-lg border font-medium transition-all ${
+                selectedPlan === "pro"
+                  ? "border-emerald-400 bg-emerald-400/10 text-emerald-400"
+                  : "border-gray-700 bg-gray-800/50 text-gray-300 hover:border-gray-600"
+              }`}
+            >
+              Pro ($500)
+            </button>
           </div>
         </div>
 
@@ -171,7 +207,9 @@ const PricingCalculatorModal = ({
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Pro Plan Base</span>
+                <span className="text-gray-400">
+                  {selectedPlan === "core" ? "Core" : "Pro"} Plan Base
+                </span>
                 <span className="text-gray-100 font-medium">
                   ${cost.baseCost}
                 </span>
@@ -179,7 +217,9 @@ const PricingCalculatorModal = ({
 
               <div className="flex justify-between">
                 <span className="text-gray-400">Included traces</span>
-                <span className="text-gray-100 font-medium">5,000</span>
+                <span className="text-gray-100 font-medium">
+                  {cost.includedTraces.toLocaleString()}
+                </span>
               </div>
 
               {cost.extraTraces > 0 && (
@@ -215,8 +255,9 @@ const PricingCalculatorModal = ({
           {/* Pricing info */}
           <div className="p-3 bg-emerald-400/10 border border-emerald-400/20 rounded-md">
             <p className="text-emerald-400 text-xs">
-              <span className="font-medium">Pricing:</span> $50/month base + $10
-              per 5,000 additional traces
+              <span className="font-medium">Pricing:</span> $
+              {selectedPlan === "core" ? "50" : "500"}/month base + $10 per
+              5,000 additional traces
             </p>
           </div>
         </div>

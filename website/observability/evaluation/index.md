@@ -21,4 +21,4 @@ Stay tuned for updates!
 
 ---
 
-_Want to get notified when this feature launches? [Join our community](https://discord.gg/voltagent) for the latest updates._
+_Want to get notified when this feature launches? [Join our community](https://s.voltagent.dev/discord) for the latest updates._

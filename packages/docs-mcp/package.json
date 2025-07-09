@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/docs-mcp",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "VoltAgent docs-mcp - MCP Docs ",
   "license": "MIT",
   "type": "module",

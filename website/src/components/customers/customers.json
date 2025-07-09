@@ -39,8 +39,11 @@
         "text": "Without Volt, it would almost be impossible to understand what the hell is going on and what the agents are doing. Every time we need help, the founders are there. The responsiveness is unreal.",
         "author": "Zac Rosenbauer",
         "position": "Co-founder",
-        "company": "Joggr",
-        "linkedin": "https://www.linkedin.com/in/zacrosenbauer/"
+        "company": "Joggr"
+      },
+      "links": {
+        "github": "https://github.com/voltagent/voltagent",
+        "discord": "https://s.voltagent.dev/discord"
       }
     }
   },
@@ -84,6 +87,10 @@
         "author": "Francisco Carranza",
         "position": "Software Engineer & Community Leader",
         "company": "DEVPotenciados LATAM"
+      },
+      "links": {
+        "github": "https://github.com/voltagent/voltagent",
+        "discord": "https://s.voltagent.dev/discord"
       }
     }
   },
@@ -127,8 +134,11 @@
         "text": "We couldn't afford black-box behavior in tools that impact real customer operations. Having insight into how our agents think and act has helped us build with more confidence and catch problems early.",
         "author": "Michael Klevansky",
         "position": "CEO",
-        "company": "Different",
-        "linkedin": "https://www.linkedin.com/in/michael-klevansky-6a15513/"
+        "company": "Different"
+      },
+      "links": {
+        "github": "https://github.com/voltagent/voltagent",
+        "discord": "https://s.voltagent.dev/discord"
       }
     }
   }

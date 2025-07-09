@@ -1,5 +1,11 @@
 # @voltagent/vercel-ui
 
+## 0.1.5
+
+### Patch Changes
+
+- [#354](https://github.com/VoltAgent/voltagent/pull/354) [`5bfb1e2`](https://github.com/VoltAgent/voltagent/commit/5bfb1e22162cb69aed0d333072237c68b705f6c0) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Fixed passing along an ID of empty string
+
 ## 0.1.4
 
 ### Patch Changes

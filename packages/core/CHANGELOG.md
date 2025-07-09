@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.57
+
+### Patch Changes
+
+- [`894be7f`](https://github.com/VoltAgent/voltagent/commit/894be7feb97630c10e036cf3691974a5e351472c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: export PromptContent type to resolve "cannot be named" TypeScript error
+
 ## 0.1.56
 
 ### Patch Changes

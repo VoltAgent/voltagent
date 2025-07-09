@@ -39,9 +39,9 @@ export default function Pricing(): JSX.Element {
       question: "How does VoltOps pricing work with trace overages?",
       answer: (
         <span>
-          VoltOps Pro plan includes 5,000 traces per month for $50. If you
-          exceed this limit, you'll be charged $10 for every additional 5,000
-          traces.{" "}
+          VoltOps Core plan includes 5,000 traces per month for $50, and Pro
+          plan includes 20,000 traces per month for $500. If you exceed these
+          limits, you'll be charged $10 for every additional 5,000 traces.{" "}
           <span
             onClick={() => setCalculatorOpen(true)}
             onKeyDown={(e) => {
