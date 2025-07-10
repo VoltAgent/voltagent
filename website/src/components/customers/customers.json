@@ -87,10 +87,6 @@
         "author": "Francisco Carranza",
         "position": "Software Engineer & Community Leader",
         "company": "DEVPotenciados LATAM"
-      },
-      "links": {
-        "github": "https://github.com/voltagent/voltagent",
-        "discord": "https://s.voltagent.dev/discord"
       }
     }
   },
@@ -135,10 +131,49 @@
         "author": "Michael Klevansky",
         "position": "CEO",
         "company": "Different"
-      },
-      "links": {
-        "github": "https://github.com/voltagent/voltagent",
-        "discord": "https://s.voltagent.dev/discord"
+      }
+    }
+  },
+  {
+    "id": 6,
+    "slug": "service-hero-marketing",
+    "published": true,
+    "customer": {
+      "name": "Service Hero Marketing",
+      "website": "https://gowithhero.com/",
+      "industry": "Digital Marketing / Home Services"
+    },
+    "case_study": {
+      "title": "How Service Hero Marketing Scaled Client Operations with AI Agents Using VoltAgent",
+      "use_case": "Marketing agency automation for client onboarding, campaign optimization, and lead qualification across 450+ HVAC, plumbing, and electrical businesses",
+      "challenge": [
+        "Managing personalized campaigns for 450+ home service clients manually was becoming unsustainable",
+        "Client onboarding processes were time-intensive and prone to human error",
+        "Lead qualification and routing required constant manual intervention across multiple client accounts",
+        "Scaling operations while maintaining personalized service quality was a major bottleneck"
+      ],
+      "challenge_paragraph": "Service Hero Marketing has built a reputation as the go-to digital marketing agency for HVAC, plumbing, and electrical businesses, serving over 450 client. But as founder Garrett and his team continued to grow, they hit a scaling wall. \"We were drowning in manual processes. Every client needed personalized campaign management, custom lead qualification, and constant optimization. Our team was working around the clock just to keep up with existing clients, let alone onboard new ones.\" The manual nature of client onboarding, campaign monitoring, and lead routing was preventing them from scaling their proven 5X ROI methodology to serve more home service businesses effectively.",
+      "solution": [
+        "Adopted VoltAgent to build custom agents for client onboarding automation",
+        "Created intelligent campaign monitoring agents that track performance across multiple platforms",
+        "Built lead qualification agents that route high-quality prospects to the right clients instantly",
+        "Implemented automated reporting agents that generate personalized client insights",
+        "Used VoltOps for complete visibility into all agent operations across client accounts"
+      ],
+      "solution_paragraph": "Garrett discovered VoltAgent while searching for a way to automate their proven processes without losing the personal touch that made Service Hero successful. With VoltAgent, the team was able to: Build custom onboarding agents that guide new HVAC, plumbing, and electrical clients through setup; Create intelligent campaign monitoring agents that track PPC, SEO, and social media performance; Develop lead qualification agents that instantly route qualified prospects to the right clients; Implement automated reporting agents that generate personalized insights for each business owner. \"VoltAgent gave us the power to scale our expertise, not just our workload. We could finally automate the repetitive tasks while keeping the strategic thinking that drives results.\"",
+      "results": [
+        "Reduced client onboarding time from 2 weeks to 3 days with automated workflows",
+        "Improved lead qualification accuracy by 40% with consistent AI-driven processes",
+        "Scaled to serve 100+ additional clients without proportional staff increases",
+        "Enhanced client satisfaction with faster response times and personalized reporting",
+        "Maintained their signature 5X ROI while dramatically improving operational efficiency"
+      ],
+      "results_paragraph": "With VoltAgent and VoltOps, Service Hero Marketing transformed from a bottlenecked agency to a scalable operation that delivers consistent results. They reduced client onboarding from 2 weeks to 3 days, improved lead qualification accuracy by 40%, and successfully scaled to serve over 100 additional home service businesses without proportional increases in manual work. \"Now we can focus on what we do best - crafting strategies that make HVAC, plumbing, and electrical businesses dominate their local markets. The agents handle the repetitive work, and we handle the growth strategies.\" Service Hero continues to help home service businesses achieve their signature 5X ROI, now powered by AI agents they can trust and monitor every step of the way.",
+      "quote": {
+        "text": "VoltAgent gave us the power to scale our expertise, not just our workload. We could finally automate the repetitive tasks while keeping the strategic thinking that drives results.",
+        "author": "Garrett Elmore",
+        "position": "Founder",
+        "company": "Service Hero Marketing"
       }
     }
   }
