@@ -64,3 +64,46 @@ export function isEmptyObject(obj: unknown): obj is EmptyObject {
 
   return true;
 }
+
+/**
+ * Check if a value is a Map.
+ *
+ * @param x - The value to check.
+ * @returns True if the value is a Map, false otherwise.
+ */
+export function isMap(x: unknown): x is Map<unknown, unknown> {
+  return x instanceof Map;
+}
+
+/**
+ * A type that mirrors the Map API.
+ */
+export type MapLike = {
+  get: (key: unknown) => unknown;
+  set: (key: unknown, value: unknown) => void;
+  delete: (key: unknown) => void;
+  clear: () => void;
+  entries: () => IterableIterator<[unknown, unknown]>;
+  keys: () => IterableIterator<unknown>;
+  values: () => IterableIterator<unknown>;
+};
+
+/**
+ * Check if a value is a Map-like object that mirrors the Map API.
+ *
+ * @param x - The value to check.
+ * @returns True if the value is a Map-like object, false otherwise.
+ */
+export function isMapLike(x: unknown): x is MapLike {
+  if (isMap(x)) {
+    return true;
+  }
+
+  if (!isObject(x)) {
+    return false;
+  }
+
+  return ["get", "set", "delete", "clear", "entries", "keys", "values"].every((p) => {
+    return p in x && isFunction(x[p as keyof typeof x]);
+  });
+}

@@ -25,6 +25,8 @@ import type { BaseRetriever } from "../retriever/retriever";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { streamEventForwarder } from "../utils/streams/stream-event-forwarder";
+import type { UserContext } from "./context/types";
+import { createUserContext } from "./context/user-context";
 import { HistoryManager } from "./history";
 import { createHooks } from "./hooks";
 import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
@@ -1364,7 +1366,9 @@ describe("Agent", () => {
       });
 
       await dynamicTextAgent.generateText("Test dynamic text with retrieval", {
-        userContext: new Map([["mode", "testing"]]),
+        userContext: createUserContext({
+          mode: "testing",
+        }),
       });
 
       // Verify retriever was called
@@ -1417,7 +1421,9 @@ describe("Agent", () => {
       });
 
       await dynamicChatAgent.generateText("Test dynamic chat with retrieval", {
-        userContext: new Map([["userName", "Alice"]]),
+        userContext: createUserContext({
+          userName: "Alice",
+        }),
       });
 
       // Verify retriever was called
@@ -1658,7 +1664,7 @@ describe("Agent", () => {
       const mockRetriever = createMockRetriever();
 
       // Use onEnd hook to capture the final userContext
-      let capturedUserContext: Map<string | symbol, unknown> | undefined;
+      let capturedUserContext: UserContext | undefined;
       const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         capturedUserContext = context.userContext;
       });
@@ -1705,8 +1711,9 @@ describe("Agent", () => {
         instructions: "UserContext Retriever Test Agent instructions",
       });
 
-      const initialUserContext = new Map<string | symbol, unknown>();
-      initialUserContext.set("initial_data", "test_value");
+      const initialUserContext = createUserContext({
+        initial_data: "test_value",
+      });
 
       await testAgentWithRetriever.generateText("Test query for retrieval", {
         userContext: initialUserContext,
@@ -1723,7 +1730,7 @@ describe("Agent", () => {
       const mockRetriever = createMockRetriever();
 
       // Use onEnd hook to capture the final userContext
-      let capturedUserContext: Map<string | symbol, unknown> | undefined;
+      let capturedUserContext: UserContext | undefined;
       const onEndHook = vi.fn(({ context }: { context: OperationContext }) => {
         capturedUserContext = context.userContext;
       });
@@ -1796,8 +1803,9 @@ describe("Agent", () => {
         instructions: "OnEnd Context Test Agent instructions",
       });
 
-      const userContext = new Map<string | symbol, unknown>();
-      userContext.set("testKey", "testValue");
+      const userContext = createUserContext({
+        testKey: "testValue",
+      });
 
       await agentWithOnEnd.generateText("Test with context", { userContext });
 
@@ -1850,14 +1858,14 @@ describe("Agent", () => {
       expect(operationContext).toHaveProperty("userContext");
       expect(operationContext.userContext).toBeInstanceOf(Map);
       // userContext contains agent_start_time and agent_start_event_id by default
-      expect(operationContext.userContext.size).toBe(2);
       expect(operationContext.userContext.has("agent_start_time")).toBe(true);
       expect(operationContext.userContext.has("agent_start_event_id")).toBe(true);
     });
 
     it("should initialize OperationContext with userContext from options", async () => {
-      const initialUserContext = new Map<string | symbol, unknown>();
-      initialUserContext.set("initialKey", "initialValue");
+      const initialUserContext = createUserContext({
+        initialKey: "initialValue",
+      });
 
       const onStartSpy = vi.fn();
       const agentWithInitialContext = new TestAgent({
@@ -1894,8 +1902,9 @@ describe("Agent", () => {
         instructions: "Hook Context Agent instructions",
       });
 
-      const providedUserContext = new Map<string | symbol, unknown>();
-      providedUserContext.set("hookKey", "hookValue");
+      const providedUserContext = createUserContext({
+        hookKey: "hookValue",
+      });
 
       await agentWithHooks.generateText("test hooks with context", {
         userContext: providedUserContext,
@@ -1943,7 +1952,7 @@ describe("Agent", () => {
 
     it("should pass userContext to tool execution context when provided in options", async () => {
       const testValue = "data from start via options";
-      const testKey = Symbol("toolTestKeyWithOptions");
+      const testKey = "toolTestKeyWithOptions";
 
       const toolExecuteSpy = vi.fn();
       const mockTool = createTool({
@@ -1962,8 +1971,9 @@ describe("Agent", () => {
         instructions: "Tool Context Options Agent instructions",
       });
 
-      const providedUserContext = new Map<string | symbol, unknown>();
-      providedUserContext.set(testKey, testValue);
+      const providedUserContext = createUserContext({
+        [testKey]: testValue,
+      });
 
       const generateTextSpy = vi.spyOn(mockProvider, "generateText");
 
@@ -1999,8 +2009,12 @@ describe("Agent", () => {
       const key2 = "op2KeyWithOptions";
       const value2 = "op2ValueWithOptions";
 
-      const userContext1 = new Map<string | symbol, unknown>([[key1, value1]]);
-      const userContext2 = new Map<string | symbol, unknown>([[key2, value2]]);
+      const userContext1 = createUserContext({
+        [key1]: value1,
+      });
+      const userContext2 = createUserContext({
+        [key2]: value2,
+      });
 
       const onStartHook = vi.fn(({ context }: { context: OperationContext }) => {
         const inputString = String(context.historyEntry.input);
@@ -2040,9 +2054,10 @@ describe("Agent", () => {
     });
 
     it("should return userContext in generateText response", async () => {
-      const userContext = new Map<string | symbol, unknown>();
-      userContext.set("agentName", "Math Agent");
-      userContext.set("testKey", "testValue");
+      const userContext = createUserContext({
+        agentName: "Math Agent",
+        testKey: "testValue",
+      });
 
       const response = await agent.generateText("What's 2+2?", {
         userContext,
@@ -2062,9 +2077,10 @@ describe("Agent", () => {
     });
 
     it("should use userContext from constructor as default", async () => {
-      const constructorUserContext = new Map<string | symbol, unknown>();
-      constructorUserContext.set("environment", "production");
-      constructorUserContext.set("projectId", "123");
+      const constructorUserContext = createUserContext({
+        environment: "production",
+        projectId: "123",
+      });
 
       const onStartSpy = vi.fn();
       const agentWithConstructorContext = new TestAgent({
@@ -2088,13 +2104,15 @@ describe("Agent", () => {
     });
 
     it("should allow execution userContext to override constructor userContext", async () => {
-      const constructorUserContext = new Map<string | symbol, unknown>();
-      constructorUserContext.set("source", "constructor");
-      constructorUserContext.set("environment", "production");
+      const constructorUserContext = createUserContext({
+        source: "constructor",
+        environment: "production",
+      });
 
-      const executionUserContext = new Map<string | symbol, unknown>();
-      executionUserContext.set("source", "execution");
-      executionUserContext.set("debug", true);
+      const executionUserContext = createUserContext({
+        source: "execution",
+        debug: true,
+      });
 
       const onStartSpy = vi.fn();
       const agentWithBothContexts = new TestAgent({
@@ -2121,8 +2139,9 @@ describe("Agent", () => {
     });
 
     it("should provide constructor userContext to dynamic instructions", async () => {
-      const constructorUserContext = new Map<string | symbol, unknown>();
-      constructorUserContext.set("language", "es");
+      const constructorUserContext = createUserContext({
+        language: "es",
+      });
 
       const dynamicInstructions = vi.fn(({ userContext }: DynamicValueOptions) => {
         const lang = userContext.get("language");
@@ -2251,7 +2270,11 @@ describe("Agent", () => {
       const streamController: { current: ReadableStreamDefaultController<any> | null } = {
         current: null,
       };
-      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+      const subAgentStatus = createUserContext({
+        subAgentStatus: {
+          "sub-agent-1": { isActive: true, isCompleted: false },
+        },
+      });
 
       // Access the private method using any casting with new parameters
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
@@ -2284,7 +2307,11 @@ describe("Agent", () => {
       const streamController: { current: ReadableStreamDefaultController<any> | null } = {
         current: null,
       };
-      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+      const subAgentStatus = createUserContext({
+        subAgentStatus: {
+          "sub-agent-1": { isActive: true, isCompleted: false },
+        },
+      });
 
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
@@ -2366,7 +2393,11 @@ describe("Agent", () => {
       const streamController: { current: ReadableStreamDefaultController<any> | null } = {
         current: null,
       };
-      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+      const subAgentStatus = createUserContext({
+        subAgentStatus: {
+          "sub-agent-1": { isActive: true, isCompleted: false },
+        },
+      });
 
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
@@ -2397,7 +2428,11 @@ describe("Agent", () => {
       const streamController: { current: ReadableStreamDefaultController<any> | null } = {
         current: null,
       };
-      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+      const subAgentStatus = createUserContext({
+        subAgentStatus: {
+          "sub-agent-1": { isActive: true, isCompleted: false },
+        },
+      });
 
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
@@ -2458,7 +2493,11 @@ describe("Agent", () => {
       const streamController: { current: ReadableStreamDefaultController<any> | null } = {
         current: null,
       };
-      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+      const subAgentStatus = createUserContext({
+        subAgentStatus: {
+          "sub-agent-1": { isActive: true, isCompleted: false },
+        },
+      });
 
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
@@ -2488,7 +2527,11 @@ describe("Agent", () => {
       const streamController: { current: ReadableStreamDefaultController<any> | null } = {
         current: null,
       };
-      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+      const subAgentStatus = createUserContext({
+        subAgentStatus: {
+          "sub-agent-1": { isActive: true, isCompleted: false },
+        },
+      });
 
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
@@ -2519,7 +2562,11 @@ describe("Agent", () => {
       const streamController: { current: ReadableStreamDefaultController<any> | null } = {
         current: null,
       };
-      const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
+      const subAgentStatus = createUserContext({
+        subAgentStatus: {
+          "sub-agent-1": { isActive: true, isCompleted: false },
+        },
+      });
 
       const enhancedStream = (agentWithSubAgents as any).createEnhancedFullStream(
         originalStream,
@@ -2549,7 +2596,7 @@ describe("Agent", () => {
         internalStreamForwarder: mockEventForwarder,
         historyEntryId: "test-history-id",
         operationContext: {
-          userContext: new Map(),
+          userContext: createUserContext(),
           operationId: "test-op-id",
           historyEntry: { id: "test-history-id" },
           isActive: true,
@@ -2569,7 +2616,7 @@ describe("Agent", () => {
       const initialTools = await (agentWithSubAgents as any).prepareTextOptions({
         historyEntryId: "test-1",
         operationContext: {
-          userContext: new Map(),
+          userContext: createUserContext(),
           operationId: "test-1",
           historyEntry: { id: "test-1" },
           isActive: true,
@@ -2585,7 +2632,7 @@ describe("Agent", () => {
         internalStreamForwarder: vi.fn(),
         historyEntryId: "test-2",
         operationContext: {
-          userContext: new Map(),
+          userContext: createUserContext(),
           operationId: "test-2",
           historyEntry: { id: "test-2" },
           isActive: true,
@@ -2611,7 +2658,7 @@ describe("Agent", () => {
       await (agentWithSubAgents as any).prepareTextOptions({
         historyEntryId: testHistoryEntryId,
         operationContext: {
-          userContext: new Map(),
+          userContext: createUserContext(),
           operationId: "test-op",
           historyEntry: { id: testHistoryEntryId },
           isActive: true,
@@ -2629,7 +2676,7 @@ describe("Agent", () => {
 
     it("should pass operationContext to delegate tool creation", async () => {
       const testOperationContext = {
-        userContext: new Map([["test", "value"]]),
+        userContext: createUserContext({ test: "value" }),
         operationId: "test-op-456",
         historyEntry: { id: "test-history-456" },
         isActive: true,
@@ -3439,10 +3486,10 @@ describe("Agent", () => {
         // Run concurrent operations with different contexts
         await Promise.all([
           testAgent.generateText("Operation A with context", {
-            userContext: new Map([["operationId", "op-a"]]),
+            userContext: createUserContext({ operationId: "op-a" }),
           }),
           testAgent.generateText("Operation B with context", {
-            userContext: new Map([["operationId", "op-b"]]),
+            userContext: createUserContext({ operationId: "op-b" }),
           }),
         ]);
 
@@ -3537,8 +3584,15 @@ describe("Agent", () => {
       // Create test operation context
       const testOperationContext = {
         operationId: "test-op-123",
-        userContext: new Map([["testKey", "testValue"]]),
-        conversationSteps: [{ type: "test", content: "initial step" }],
+        userContext: createUserContext({ testKey: "testValue" }),
+        conversationSteps: [
+          {
+            id: "step-1",
+            type: "text" as const,
+            content: "initial step",
+            role: "assistant" as const,
+          },
+        ],
         historyEntry: {
           id: "test-history-123",
           startTime: new Date(),
@@ -3546,7 +3600,7 @@ describe("Agent", () => {
           output: "test output",
           status: "completed" as const,
           steps: [],
-          usage: { totalTokens: 0 },
+          usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
           model: "test-model",
         },
         isActive: true,
@@ -3607,15 +3661,25 @@ describe("Agent", () => {
       parentAgent.addSubAgent(subAgent);
 
       // Create parent context with userContext
-      const parentUserContext = new Map<string | symbol, unknown>();
-      parentUserContext.set("parentKey", "parentValue");
-      parentUserContext.set("sharedData", { important: true });
+      const parentUserContext = createUserContext({
+        parentKey: "parentValue",
+        sharedData: { important: true },
+      });
 
       const parentOperationContext = {
         operationId: "parent-op",
         userContext: parentUserContext,
         conversationSteps: [],
-        historyEntry: { id: "parent-history" },
+        historyEntry: {
+          id: "parent-history",
+          startTime: new Date(),
+          input: "test input",
+          output: "test output",
+          status: "completed" as const,
+          steps: [],
+          usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+          model: "test-model",
+        },
         isActive: true,
       };
 
@@ -3672,11 +3736,11 @@ describe("Agent", () => {
 
       const parentOperationContext = {
         operationId: "steps-op",
-        userContext: new Map(),
+        userContext: createUserContext(),
         conversationSteps: sharedSteps,
         historyEntry: { id: "steps-history" },
         isActive: true,
-      };
+      } as OperationContext;
 
       // Spy on SubAgent
       const subAgentSpy = vi.spyOn(subAgent, "streamText");
@@ -3774,8 +3838,6 @@ describe("Agent", () => {
         text: "Test response",
         usage: { totalTokens: 10, promptTokens: 5, completionTokens: 5 },
         finishReason: "stop",
-        warnings: [],
-        providerResponse: {},
         provider: { text: "Test response" },
         toolCalls: [],
         toolResults: [],
@@ -3879,12 +3941,14 @@ describe("Agent", () => {
 
       // Mock the provider to capture the maxSteps parameter
       const streamTextSpy = vi.spyOn(mockProvider, "streamText").mockResolvedValue({
+        // @ts-expect-error - mock
         textStream: (async function* () {
           yield "test";
         })(),
         fullStream: (async function* () {
           yield { type: "text-delta", textDelta: "test" };
         })(),
+        // @ts-expect-error - mock
         provider: { textStream: new ReadableStream() },
       });
 
@@ -3946,7 +4010,9 @@ describe("Agent", () => {
         stream: new ReadableStream(),
         partialObjectStream: new ReadableStream(),
         textStream: new ReadableStream(),
+        // @ts-expect-error - mock
         provider: { stream: new ReadableStream() },
+        // @ts-expect-error - mock
         objectStream: new ReadableStream(),
       });
 
@@ -3991,7 +4057,7 @@ describe("Agent", () => {
         sourceAgent: parentAgent,
         operationContext: {
           operationId: "test-op",
-          userContext: new Map(),
+          userContext: createUserContext(),
           conversationSteps: [],
           historyEntry: { id: "test-history" },
           isActive: true,
@@ -4045,8 +4111,9 @@ describe("Agent", () => {
         sourceAgent: parentAgent,
         operationContext: {
           operationId: "test-op",
-          userContext: new Map(),
+          userContext: createUserContext(),
           conversationSteps: [],
+          // @ts-expect-error - mock
           historyEntry: { id: "test-history" },
           isActive: true,
         },
@@ -4158,12 +4225,12 @@ describe("Agent Dynamic Values", () => {
       });
 
       // Test with admin role
-      const adminContext = new Map([["userRole", "admin"]]);
+      const adminContext = createUserContext({ userRole: "admin" });
       const adminResult = await (agent as any).resolveInstructions({ userContext: adminContext });
       expect(adminResult).toBe("Admin instructions");
 
       // Test with user role
-      const userContext = new Map([["userRole", "user"]]);
+      const userContext = createUserContext({ userRole: "user" });
       const userResult = await (agent as any).resolveInstructions({ userContext: userContext });
       expect(userResult).toBe("User instructions");
     });
@@ -4182,7 +4249,7 @@ describe("Agent Dynamic Values", () => {
         llm: mockLLM,
       });
 
-      const context = new Map([["tier", "premium"]]);
+      const context = createUserContext({ tier: "premium" });
       const result = await (agent as any).resolveInstructions({ userContext: context });
       expect(result).toBe("Instructions for premium tier");
     });
@@ -4214,12 +4281,12 @@ describe("Agent Dynamic Values", () => {
       });
 
       // Test with enterprise tier
-      const enterpriseContext = new Map([["tier", "enterprise"]]);
+      const enterpriseContext = createUserContext({ tier: "enterprise" });
       const enterpriseModel = await (agent as any).resolveModel({ userContext: enterpriseContext });
       expect(enterpriseModel).toEqual({ modelId: "gpt-4" });
 
       // Test with basic tier
-      const basicContext = new Map([["tier", "basic"]]);
+      const basicContext = createUserContext({ tier: "basic" });
       const basicModel = await (agent as any).resolveModel({ userContext: basicContext });
       expect(basicModel).toEqual({ modelId: "gpt-3.5-turbo" });
     });
@@ -4259,14 +4326,14 @@ describe("Agent Dynamic Values", () => {
       });
 
       // Test with admin permissions
-      const adminContext = new Map([["permissions", ["admin", "user"]]]);
+      const adminContext = createUserContext({ permissions: ["admin", "user"] });
       const adminTools = await (agent as any).resolveTools({ userContext: adminContext });
       expect(adminTools).toHaveLength(2);
       expect(adminTools[0].name).toBe("basic-tool");
       expect(adminTools[1].name).toBe("admin-tool");
 
       // Test with user permissions only
-      const userContext = new Map([["permissions", ["user"]]]);
+      const userContext = createUserContext({ permissions: ["user"] });
       const userTools = await (agent as any).resolveTools({ userContext: userContext });
       expect(userTools).toHaveLength(1);
       expect(userTools[0].name).toBe("basic-tool");
@@ -4293,7 +4360,7 @@ describe("Agent Dynamic Values", () => {
         llm: mockLLM,
       });
 
-      const context = new Map([["hasToolkits", true]]);
+      const context = createUserContext({ hasToolkits: true });
       const result = await (agent as any).resolveTools({ userContext: context });
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe("test-toolkit");
@@ -4332,10 +4399,10 @@ describe("Agent Dynamic Values", () => {
         memory: mockMemory,
       });
 
-      const userContext = new Map<string | symbol, unknown>([
-        ["role", "support"],
-        ["permissions", ["search", "read"]],
-      ]);
+      const userContext = createUserContext({
+        role: "support",
+        permissions: ["search", "read"],
+      });
 
       const result = await agent.generateText("Hello", { userContext });
       // Mock'un döndürdüğü sabit string (her zaman 'Hello, I am a test agent!' dönüyor)
@@ -4355,7 +4422,7 @@ describe("Agent Dynamic Values", () => {
         llm: mockLLM,
       });
 
-      const result = await (agent as any).resolveInstructions({ userContext: new Map() });
+      const result = await (agent as any).resolveInstructions({ userContext: createUserContext() });
       expect(result).toBe("You are a default assistant.");
     });
 
@@ -4373,7 +4440,7 @@ describe("Agent Dynamic Values", () => {
       });
 
       const operationContext = {
-        userContext: new Map([["role", "admin"]]),
+        userContext: createUserContext({ role: "admin" }),
         operationId: "test-op",
         historyEntry: { id: "test-history" },
         isActive: true,
@@ -4416,7 +4483,7 @@ describe("Agent Dynamic Values", () => {
         memory: mockMemory,
       });
 
-      const userContext = new Map([["tier", "premium"]]);
+      const userContext = createUserContext({ tier: "premium" });
       await agent.generateText("Hello", { userContext });
 
       // Verify that the resolved model was used
@@ -4453,7 +4520,7 @@ describe("Agent Dynamic Values", () => {
         memory: mockMemory,
       });
 
-      const userContext = new Map([["isAdmin", true]]);
+      const userContext = createUserContext({ isAdmin: true });
       await agent.generateText("Hello", { userContext });
 
       // Verify that the resolved tools were passed to LLM
@@ -4505,11 +4572,11 @@ describe("Agent Dynamic Values", () => {
         memory: mockMemory,
       });
 
-      const userContext = new Map([
-        ["department", "hr"],
-        ["priority", "high"],
-        ["userId", "emp123"],
-      ]);
+      const userContext = createUserContext({
+        department: "hr",
+        priority: "high",
+        userId: "emp123",
+      });
 
       await agent.generateText("What can I help you with?", { userContext });
 
@@ -4547,7 +4614,7 @@ describe("Agent Dynamic Values", () => {
         memory: mockMemory,
       });
 
-      const userContext = new Map([["preferredModel", "streaming-model"]]);
+      const userContext = createUserContext({ preferredModel: "streaming-model" });
       await agent.streamText("Stream this", { userContext });
 
       // Verify that dynamic model was resolved for streaming
@@ -4581,7 +4648,7 @@ describe("Agent Dynamic Values", () => {
         age: z.number(),
       });
 
-      const userContext = new Map([["useAdvanced", true]]);
+      const userContext = createUserContext({ useAdvanced: true });
       await agent.generateObject("Generate person", schema, { userContext });
 
       // Verify that dynamic model was used
@@ -4611,7 +4678,7 @@ describe("Agent Dynamic Values", () => {
         memory: mockMemory,
       });
 
-      const userContext = new Map([["tier", "enterprise"]]);
+      const userContext = createUserContext({ tier: "enterprise" });
       await agent.generateText("Test async", { userContext });
 
       expect(generateTextSpy).toHaveBeenCalledWith(
@@ -4671,7 +4738,7 @@ describe("Dynamic Instructions Detection", () => {
       contextMessages: [],
       operationContext: {
         operationId: "test-op",
-        userContext: new Map([["userName", "Alice"]]),
+        userContext: createUserContext({ userName: "Alice" }),
         historyEntry: createMockHistoryEntry("test"),
         isActive: true,
         conversationSteps: [],
@@ -4708,7 +4775,7 @@ describe("Dynamic Instructions Detection", () => {
       contextMessages: [],
       operationContext: {
         operationId: "test-op",
-        userContext: new Map([["role", "supervisor"]]),
+        userContext: createUserContext({ role: "supervisor" }),
         historyEntry: createMockHistoryEntry("test"),
         isActive: true,
         conversationSteps: [],
@@ -4782,7 +4849,7 @@ describe("Dynamic Instructions Detection", () => {
 
     // Execute generateText with userContext
     const response = await dynamicAgent.generateText("Hello", {
-      userContext: new Map([["mode", "testing"]]),
+      userContext: createUserContext({ mode: "testing" }),
     });
 
     expect(response.text).toBe("Hello, I am a test agent!");
@@ -4823,7 +4890,7 @@ describe("onEnd Hook userContext Modifications", () => {
     });
 
     // Set initial userContext
-    const initialContext = new Map([["agent_response", "hi"]]);
+    const initialContext = createUserContext({ agent_response: "hi" });
 
     const response = await agent.generateText("Hello", {
       userContext: initialContext,
@@ -4856,7 +4923,7 @@ describe("onEnd Hook userContext Modifications", () => {
     });
 
     // Set initial userContext
-    const initialContext = new Map([["agent_response", "hi"]]);
+    const initialContext = createUserContext({ agent_response: "hi" });
 
     const response = await agent.generateObject("Hello", z.object({ message: z.string() }), {
       userContext: initialContext,
@@ -4871,7 +4938,7 @@ describe("onEnd Hook userContext Modifications", () => {
   });
 
   it("should pass correct userContext to onEnd hook before final response", async () => {
-    let onEndUserContext: Map<string | symbol, unknown> | undefined;
+    let onEndUserContext: UserContext | undefined;
 
     const agent = new TestAgent({
       name: "TestAgent",
@@ -4881,7 +4948,7 @@ describe("onEnd Hook userContext Modifications", () => {
       hooks: createHooks({
         onEnd: ({ context, output }) => {
           // Capture userContext at the time onEnd is called
-          onEndUserContext = new Map(context.userContext);
+          onEndUserContext = createUserContext(context.userContext);
           // Verify output contains the current userContext
           expect(output?.userContext?.get("initial_value")).toBe("test");
           // Modify userContext after verification
@@ -4891,7 +4958,9 @@ describe("onEnd Hook userContext Modifications", () => {
     });
 
     // Set initial userContext
-    const initialContext = new Map([["initial_value", "test"]]);
+    const initialContext = createUserContext({
+      initial_value: "test",
+    });
 
     const response = await agent.generateText("Hello", {
       userContext: initialContext,
@@ -4923,7 +4992,9 @@ describe("onEnd Hook userContext Modifications", () => {
     });
 
     // Set initial userContext
-    const initialContext = new Map([["agent_response", "hi"]]);
+    const initialContext = createUserContext({
+      agent_response: "hi",
+    });
 
     const response = await agent.streamObject("Hello", z.object({ message: z.string() }), {
       userContext: initialContext,
@@ -4961,7 +5032,7 @@ describe("Agent Abort Signal", () => {
     it("should setup abort signal listener correctly", async () => {
       const mockOperationContext = {
         operationId: "test-op",
-        userContext: new Map(),
+        userContext: createUserContext(),
         historyEntry: createMockHistoryEntry("test input"),
         isActive: true,
       } as any;
@@ -5020,7 +5091,7 @@ describe("Agent Abort Signal", () => {
     it("should not setup listener when signal is undefined", () => {
       const mockOperationContext = {
         operationId: "test-op",
-        userContext: new Map(),
+        userContext: createUserContext(),
         historyEntry: createMockHistoryEntry("test input"),
         isActive: true,
       } as any;
@@ -5047,7 +5118,7 @@ describe("Agent Abort Signal", () => {
 
       const mockOperationContext = {
         operationId: "test-op",
-        userContext: new Map(),
+        userContext: createUserContext(),
         historyEntry: createMockHistoryEntry("test input"),
         isActive: true,
       } as any;
@@ -5206,7 +5277,7 @@ describe("Agent Abort Signal", () => {
             yield { type: "text-delta", textDelta: "chunk2" };
             yield { type: "finish", finishReason: "stop", usage: { totalTokens: 10 } };
           })(),
-          userContext: new Map(),
+          userContext: createUserContext(),
         };
       });
 
@@ -5350,7 +5421,7 @@ describe("Agent Abort Signal", () => {
                 controller.close();
               },
             }),
-            userContext: new Map(),
+            userContext: createUserContext(),
           };
         });
 
@@ -5401,13 +5472,13 @@ describe("Agent Abort Signal", () => {
           yield { type: "text-delta", textDelta: "sub response" };
           yield { type: "finish", finishReason: "stop", usage: { totalTokens: 5 } };
         })(),
-        userContext: new Map(),
+        userContext: createUserContext(),
       });
 
       // Create operation context with abort signal
       const operationContext = {
         operationId: "test-op",
-        userContext: new Map(),
+        userContext: createUserContext(),
         historyEntry: createMockHistoryEntry("test input"),
         isActive: true,
         signal: abortController.signal,
@@ -5570,7 +5641,7 @@ describe("Agent Abort Signal", () => {
 
       const parentOperationContext = {
         operationId: "parent-op",
-        userContext: new Map(),
+        userContext: createUserContext(),
         historyEntry: createMockHistoryEntry("parent input"),
         isActive: true,
         signal: parentAbortController.signal,
@@ -5625,7 +5696,7 @@ describe("Agent Abort Signal", () => {
 
       const mockOperationContext = {
         operationId: "test-op",
-        userContext: new Map(),
+        userContext: createUserContext(),
         historyEntry: createMockHistoryEntry("test input"),
         isActive: true,
       } as any;

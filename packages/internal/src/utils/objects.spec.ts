@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { devLogger } from "../dev";
-import { deepClone, hasKey } from "./objects";
+import { deepClonePlainObject, hasKey } from "./objects";
 
 // Mock devLogger
 vi.mock("../dev", () => ({
@@ -13,10 +13,10 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("deepClone", () => {
+describe("deepClonePlainObject", () => {
   it("should deep clone a simple object", () => {
     const original = { a: 1, b: "test", c: true };
-    const cloned = deepClone(original);
+    const cloned = deepClonePlainObject(original);
 
     expect(cloned).toEqual(original);
     expect(cloned).not.toBe(original);
@@ -33,7 +33,7 @@ describe("deepClone", () => {
         },
       },
     };
-    const cloned = deepClone(original);
+    const cloned = deepClonePlainObject(original);
 
     expect(cloned).toEqual(original);
     expect(cloned).not.toBe(original);
@@ -44,7 +44,7 @@ describe("deepClone", () => {
 
   it("should deep clone arrays", () => {
     const original = [1, 2, { a: 3 }, [4, 5]];
-    const cloned = deepClone(original);
+    const cloned = deepClonePlainObject(original);
 
     expect(cloned).toEqual(original);
     expect(cloned).not.toBe(original);
@@ -53,16 +53,16 @@ describe("deepClone", () => {
   });
 
   it("should handle primitive values", () => {
-    expect(deepClone(42)).toBe(42);
-    expect(deepClone("string")).toBe("string");
-    expect(deepClone(true)).toBe(true);
-    expect(deepClone(null)).toBe(null);
-    expect(deepClone(undefined)).toBe(undefined);
+    expect(deepClonePlainObject(42)).toBe(42);
+    expect(deepClonePlainObject("string")).toBe("string");
+    expect(deepClonePlainObject(true)).toBe(true);
+    expect(deepClonePlainObject(null)).toBe(null);
+    expect(deepClonePlainObject(undefined)).toBe(undefined);
   });
 
   it("should handle Date objects", () => {
     const date = new Date("2023-01-01");
-    const cloned = deepClone(date);
+    const cloned = deepClonePlainObject(date);
 
     expect(cloned).toEqual(date.toISOString());
   });
@@ -72,7 +72,7 @@ describe("deepClone", () => {
       timestamp: new Date("2023-01-01"),
       name: "test",
     };
-    const cloned = deepClone(original);
+    const cloned = deepClonePlainObject(original);
 
     expect(cloned.timestamp).toBe("2023-01-01T00:00:00.000Z");
     expect(cloned.name).toBe("test");
@@ -82,7 +82,7 @@ describe("deepClone", () => {
     const circular: any = { a: 1 };
     circular.circular = circular;
 
-    const cloned = deepClone(circular);
+    const cloned = deepClonePlainObject(circular);
 
     expect(devLogger.warn).toHaveBeenCalledWith(
       "Failed to deep clone object, using shallow clone:",
@@ -98,7 +98,7 @@ describe("deepClone", () => {
       fn: () => "test",
       b: "string",
     };
-    const cloned = deepClone(original);
+    const cloned = deepClonePlainObject(original);
 
     expect(cloned.a).toBe(1);
     expect(cloned.b).toBe("string");
@@ -106,8 +106,8 @@ describe("deepClone", () => {
   });
 
   it("should handle empty objects and arrays", () => {
-    expect(deepClone({})).toEqual({});
-    expect(deepClone([])).toEqual([]);
+    expect(deepClonePlainObject({})).toEqual({});
+    expect(deepClonePlainObject([])).toEqual([]);
   });
 
   it("should handle complex nested structures", () => {
@@ -126,7 +126,7 @@ describe("deepClone", () => {
       },
     };
 
-    const cloned = deepClone(original);
+    const cloned = deepClonePlainObject(original);
 
     expect(cloned).toEqual(original);
     expect(cloned.users).not.toBe(original.users);
@@ -144,7 +144,7 @@ describe("deepClone", () => {
     };
 
     // deepClone will lose symbols due to JSON serialization
-    const deepCloned = deepClone(original);
+    const deepCloned = deepClonePlainObject(original);
     expect(deepCloned.a).toBe(1);
     expect(deepCloned[sym]).toBeUndefined();
   });
@@ -159,7 +159,7 @@ describe("deepClone", () => {
     }
 
     const start = Date.now();
-    const cloned = deepClone(large);
+    const cloned = deepClonePlainObject(large);
     const duration = Date.now() - start;
 
     expect(cloned).toEqual(large);

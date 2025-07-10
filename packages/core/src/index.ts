@@ -1,4 +1,5 @@
 import type { Agent } from "./agent";
+import type { SubAgentConfig } from "./agent/subagent/types";
 import { startServer } from "./server";
 import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 import type { ServerConfig } from "./server/api";
@@ -6,7 +7,6 @@ import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 import { AgentRegistry } from "./server/registry";
 import type { ServerOptions, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
-import type { SubAgentConfig } from "./agent/subagent/types";
 
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
@@ -14,6 +14,7 @@ import { devLogger } from "@voltagent/internal/dev";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 
 export * from "./agent";
+export * from "./agent/context";
 export * from "./agent/hooks";
 export { createSubagent } from "./agent/subagent/types";
 export type {

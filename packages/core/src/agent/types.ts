@@ -21,11 +21,12 @@ import type { UsageInfo } from "./providers/base/types";
 import type { SubAgentConfig } from "./subagent/types";
 
 import type {
-  DynamicValueOptions,
   DynamicValue,
-  PromptHelper,
+  DynamicValueOptions,
   PromptContent,
+  PromptHelper,
 } from "../voltops/types";
+import type { UserContext } from "./context";
 
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
@@ -160,7 +161,7 @@ export type AgentOptions = {
   /**
    * Optional user-defined context to be passed around
    */
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 
   /**
    * @deprecated Use `voltOpsClient` instead. Will be removed in a future version.
@@ -323,7 +324,7 @@ export interface CommonGenerateOptions {
   operationContext?: OperationContext;
 
   // Optional user-defined context to be passed from a parent operation
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 }
 
 /**
@@ -532,7 +533,7 @@ export type OperationContext = {
   readonly operationId: string;
 
   /** User-managed context map for this specific operation */
-  readonly userContext: Map<string | symbol, any>;
+  readonly userContext: UserContext;
 
   /** The history entry associated with this operation */
   historyEntry: AgentHistoryEntry;
@@ -641,7 +642,7 @@ export interface StreamTextFinishResult {
   warnings?: unknown[];
 
   /** User context containing any custom metadata from the operation. */
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 }
 
 /**
@@ -671,7 +672,7 @@ export interface StreamObjectFinishResult<TObject> {
   finishReason?: string;
 
   /** User context containing any custom metadata from the operation. */
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 }
 
 /**
@@ -697,7 +698,7 @@ export interface StandardizedTextResult {
   /** Warnings (if available from provider). */
   warnings?: unknown[];
   /** User context containing any custom metadata from the operation. */
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 }
 
 /**
@@ -716,7 +717,7 @@ export interface StandardizedObjectResult<TObject> {
   /** Warnings (if available from provider). */
   warnings?: unknown[];
   /** User context containing any custom metadata from the operation. */
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 }
 
 /**
@@ -743,24 +744,24 @@ type InferOriginalResponseFromProvider<
 
 export type GenerateTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferGenerateTextResponseFromProvider<TProvider> & {
-    userContext: Map<string | symbol, unknown>;
+    userContext: UserContext;
   };
 
 export type StreamTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferStreamTextResponseFromProvider<TProvider> & {
-    userContext?: Map<string | symbol, unknown>;
+    userContext?: UserContext;
   };
 
 export type GenerateObjectResponse<
   TProvider extends { llm: LLMProvider<any> },
   TSchema extends z.ZodType,
 > = InferGenerateObjectResponseFromProvider<TProvider, TSchema> & {
-  userContext: Map<string | symbol, unknown>;
+  userContext: UserContext;
 };
 
 export type StreamObjectResponse<
   TProvider extends { llm: LLMProvider<any> },
   TSchema extends z.ZodType,
 > = InferStreamObjectResponseFromProvider<TProvider, TSchema> & {
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 };

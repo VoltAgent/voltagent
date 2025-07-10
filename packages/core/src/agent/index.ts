@@ -20,8 +20,6 @@ import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
-import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
-import type { VoltOpsClient } from "../voltops/client";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
@@ -32,6 +30,10 @@ import {
   transformStreamEventToStreamPart,
 } from "../utils/streams";
 import type { Voice } from "../voice";
+import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
+import type { VoltOpsClient } from "../voltops/client";
+import type { PromptContent } from "../voltops/types";
+import { type UserContext, createUserContext, hasUserContext, isUserContext } from "./context";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
@@ -52,25 +54,24 @@ import type {
   DynamicValueOptions,
   GenerateObjectResponse,
   GenerateTextResponse,
-  ModelDynamicValue,
-  StreamObjectResponse,
-  StreamTextResponse,
   InternalGenerateOptions,
+  ModelDynamicValue,
   ModelType,
   OperationContext,
   ProviderInstance,
   PublicGenerateOptions,
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
+  StreamObjectResponse,
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
+  StreamTextResponse,
   SupervisorConfig,
   SystemMessageResponse,
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
-import type { PromptContent } from "../voltops/types";
 
 /**
  * Agent class for interacting with AI models
@@ -185,10 +186,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private readonly supervisorConfig?: SupervisorConfig;
 
   /**
-   * User-defined context passed at agent creation
-   * Can be overridden during execution
+   * Initial user context passed at agent creation, can be overridden during execution
    */
-  private readonly defaultUserContext?: Map<string | symbol, unknown>;
+  private readonly defaultUserContext?: UserContext;
 
   /**
    * Create a new agent
@@ -224,6 +224,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         ? (options.tools as DynamicValue<(Tool<any> | Toolkit)[]>)
         : undefined;
 
+    this.defaultUserContext = isUserContext(options.userContext) ? options.userContext : undefined;
+
     // Set default static values for backwards compatibility
     this.instructions =
       typeof options.instructions === "string" ? options.instructions : (options.description ?? "");
@@ -243,9 +245,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Store supervisor configuration if provided
     this.supervisorConfig = options.supervisorConfig;
-
-    // Store user context if provided
-    this.defaultUserContext = options.userContext;
 
     // Initialize hooks
     if (options.hooks) {
@@ -387,7 +386,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.voltOpsClient,
     );
     const dynamicValueOptions: DynamicValueOptions = {
-      userContext: operationContext?.userContext || new Map(),
+      userContext: this.getUserContextFromOperationContext(operationContext),
       prompts: promptHelper,
     };
     const resolvedInstructions = await this.resolveInstructions(dynamicValueOptions);
@@ -737,7 +736,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId?: string;
       parentHistoryEntryId?: string;
       operationName: string;
-      userContext?: Map<string | symbol, unknown>;
+      userContext?: UserContext;
       userId?: string;
       conversationId?: string;
       parentOperationContext?: OperationContext;
@@ -772,11 +771,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     const opContext: OperationContext = {
       operationId: historyEntry.id,
-      userContext:
-        (options.parentOperationContext?.userContext ||
-          options.userContext ||
-          this.defaultUserContext) ??
-        new Map<string | symbol, unknown>(),
+      userContext: match(options)
+        .returnType<UserContext>()
+        .with(
+          { parentOperationContext: P.not(P.nullish) },
+          (d) => d.parentOperationContext.userContext,
+        )
+        .with({ userContext: P.not(P.nullish) }, (d) => d.userContext)
+        .otherwise(() => this.defaultUserContext || createUserContext()),
       historyEntry,
       isActive: true,
       parentAgentId: options.parentAgentId,
@@ -1427,7 +1429,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Create initial response for onEnd hook
       const initialResponse: GenerateTextResponse<TProvider> = {
         ...response,
-        userContext: new Map(operationContext.userContext),
+        userContext: this.getUserContextFromOperationContext(operationContext),
       };
 
       await this.hooks.onEnd?.({
@@ -1441,7 +1443,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Extend the original response with userContext AFTER onEnd hook
       const extendedResponse: GenerateTextResponse<TProvider> = {
         ...response,
-        userContext: new Map(operationContext.userContext),
+        userContext: this.getUserContextFromOperationContext(operationContext),
       };
 
       this.updateHistoryEntry(operationContext, {
@@ -1707,7 +1709,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.voltOpsClient,
     );
     const dynamicValueOptions: DynamicValueOptions = {
-      userContext: operationContext.userContext || new Map(),
+      userContext: this.getUserContextFromOperationContext(operationContext),
       prompts: promptHelper,
     };
     const resolvedModel = await this.resolveModel(dynamicValueOptions);
@@ -1930,7 +1932,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // Create initial result for onEnd hook
         const initialResult = {
           ...result,
-          userContext: new Map(operationContext.userContext),
+          userContext: this.getUserContextFromOperationContext(operationContext),
         };
 
         await this.hooks.onEnd?.({
@@ -1944,7 +1946,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // Add userContext to result AFTER onEnd hook
         const resultWithContext = {
           ...result,
-          userContext: new Map(operationContext.userContext),
+          userContext: this.getUserContextFromOperationContext(operationContext),
         };
 
         if (internalOptions.provider?.onFinish) {
@@ -2087,7 +2089,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       fullStream: response.fullStream
         ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
         : undefined,
-      userContext: new Map(operationContext.userContext),
+      userContext: this.getUserContextFromOperationContext(operationContext),
     };
 
     return wrappedResponse;
@@ -2308,7 +2310,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Create initial response for onEnd hook
       const initialResponse: GenerateObjectResponse<TProvider, TSchema> = {
         ...response,
-        userContext: new Map(operationContext.userContext),
+        userContext: this.getUserContextFromOperationContext(operationContext),
       };
 
       await this.hooks.onEnd?.({
@@ -2322,7 +2324,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Extend the original response with userContext AFTER onEnd hook
       const extendedResponse: GenerateObjectResponse<TProvider, TSchema> = {
         ...response,
-        userContext: new Map(operationContext.userContext),
+        userContext: this.getUserContextFromOperationContext(operationContext),
       };
 
       return extendedResponse;
@@ -2622,7 +2624,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           // Create initial result for onEnd hook
           const initialResult = {
             ...result,
-            userContext: new Map(operationContext.userContext),
+            userContext: this.getUserContextFromOperationContext(operationContext),
           };
 
           await this.hooks.onEnd?.({
@@ -2636,7 +2638,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           // Add userContext to result AFTER onEnd hook
           const resultWithContext = {
             ...result,
-            userContext: new Map(operationContext.userContext),
+            userContext: this.getUserContextFromOperationContext(operationContext),
           };
 
           if (provider?.onFinish) {
@@ -2735,7 +2737,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Add userContext to the response for backward compatibility
       const extendedResponse: StreamObjectResponse<TProvider, TSchema> = {
         ...response,
-        userContext: new Map(operationContext.userContext),
+        userContext: this.getUserContextFromOperationContext(operationContext),
       };
 
       return extendedResponse;
@@ -2979,5 +2981,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       devLogger.warn("Failed to retrieve context:", error);
       return null;
     }
+  }
+
+  /**
+   * Safely get the user context from the input, by either using the existing userContext or creating a new one
+   * @param operationContext - The operation context to get the user context from
+   * @returns The user context
+   */
+  private getUserContextFromOperationContext(operationContext?: OperationContext): UserContext {
+    if (hasUserContext(operationContext)) {
+      return operationContext.userContext;
+    }
+
+    return createUserContext();
   }
 }

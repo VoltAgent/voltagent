@@ -1,3 +1,5 @@
+import type { UserContext } from "../agent/context";
+
 /**
  * Options for configuring the Retriever
  */
@@ -30,7 +32,7 @@ export interface RetrieveOptions {
    * User-managed context map for this specific retrieval operation
    * Can be used to store metadata, results, or any custom data
    */
-  userContext?: Map<string | symbol, unknown>;
+  userContext?: UserContext;
 }
 
 /**

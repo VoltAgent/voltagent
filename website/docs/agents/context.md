@@ -32,13 +32,14 @@ You can provide initial data in two ways:
 You can set default `userContext` when creating the agent, which will be used for all operations unless overridden:
 
 ```typescript
-import { Agent, VercelAIProvider } from "@voltagent/core";
+import { Agent, VercelAIProvider, createUserContext } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 // Set default context at agent creation
-const defaultContext = new Map();
-defaultContext.set("environment", "production");
-defaultContext.set("projectId", "my-project");
+const defaultContext = createUserContext({
+  environment: "production",
+  projectId: "my-project",
+});
 
 const agent = new Agent({
   name: "SimpleAgent",
@@ -54,10 +55,10 @@ console.log("Environment:", response1.userContext?.get("environment")); // "prod
 
 // Override with execution context (replaces default completely)
 const response2 = await agent.generateText("Debug this", {
-  userContext: new Map([
-    ["environment", "development"],
-    ["projectId", "my-project"],
-  ]),
+  userContext: createUserContext({
+    environment: "development",
+    projectId: "my-project",
+  }),
 });
 console.log("Environment:", response2.userContext?.get("environment")); // "development"
 console.log("Project ID:", response2.userContext?.get("projectId")); // "my-project"
@@ -76,8 +77,9 @@ const agent = new Agent({
 });
 
 // Pass userContext when calling the agent
-const executionContext = new Map();
-executionContext.set("language", "English");
+const executionContext = createUserContext({
+  language: "English",
+});
 
 const response = await agent.generateText("Hello!", {
   userContext: executionContext,
@@ -85,6 +87,26 @@ const response = await agent.generateText("Hello!", {
 
 // Now you can access the data from the response
 console.log("Language:", response.userContext?.get("language"));
+```
+
+## TypeScript Support
+
+You can automatically set the type of the `userContext` by using the `UserContextData` interface and TypeScript module augmentation. Add the following to your root type or index file (or a type root of your choice):
+
+```typescript
+declare module "@voltagent/core" {
+  interface UserContextData {
+    language: "english" | "spanish" | "french" | "arabic" | "mandarin" | "japanese";
+  }
+}
+```
+
+This will allow TypeScript to infer the type of the `userContext` based on the `UserContextData` interface.
+
+```typescript
+const userContext = createUserContext();
+
+const language = userContext.get("language"); // Will be inferred to be 'english' | 'spanish' | 'french' | 'arabic' | 'mandarin' | 'japanese' or null if not set
 ```
 
 ## Hooks Access userContext
@@ -119,8 +141,9 @@ const agent = new Agent({
 });
 
 // Usage
-const context = new Map();
-context.set("language", "English");
+const context = createUserContext({
+  language: "English",
+});
 
 await agent.generateText("Hello!", { userContext: context });
 ```
@@ -167,9 +190,10 @@ const agentWithTool = new Agent({
 });
 
 // Usage
-const context = new Map();
-context.set("language", "English");
-context.set("requestId", "req-456");
+const context = createUserContext({
+  language: "English",
+  requestId: "req-456",
+});
 
 const response = await agentWithTool.generateText("Log this: Hello world!", {
   userContext: context,
@@ -263,9 +287,10 @@ const supervisorAgent = new Agent({
 });
 
 // Usage
-const initialContext = new Map();
-initialContext.set("language", "English");
-initialContext.set("priority", "high");
+const initialContext = createUserContext({
+  language: "English",
+  priority: "high",
+});
 
 const response = await supervisorAgent.generateText("Please delegate this task to the worker", {
   userContext: initialContext,
@@ -347,8 +372,9 @@ const fullAgent = new Agent({
 
 // Usage showing the complete flow
 async function demonstrateFlow() {
-  const initialContext = new Map();
-  initialContext.set("language", "English");
+  const initialContext = createUserContext({
+    language: "English",
+  });
 
   const response = await fullAgent.generateText(
     "Use the increment tool and search for information",
@@ -366,8 +392,8 @@ async function demonstrateFlow() {
 ## Key Points
 
 1. **Initialization**:
-   - Set default context in constructor: `new Agent({ userContext: defaultMap })`
-   - Override per call: `agent.generateText("...", { userContext: callMap })`
+   - Set default context in constructor: `new Agent({ userContext: defaultContext })`
+   - Override per call: `agent.generateText("...", { userContext: callContext })`
 2. **Hooks**: Access via `context.userContext` in `onStart`/`onEnd`
 3. **Tools**: Access via `options.operationContext.userContext` in `execute`
 4. **Retrievers**: Access via `options.userContext` in `retrieve`
@@ -386,10 +412,10 @@ When both constructor and execution contexts are provided:
 - Dynamic values (instructions, model, tools) receive whichever context is active
 
 :::tip
-To extend rather than replace the default context, create a new Map from it:
+To extend rather than replace the default context, create a new one and then set the values you want to override:
 
 ```typescript
-const extendedContext = new Map(defaultContext);
+const extendedContext = createUserContext(defaultContext);
 extendedContext.set("environment", "development"); // Override specific values
 ```
 

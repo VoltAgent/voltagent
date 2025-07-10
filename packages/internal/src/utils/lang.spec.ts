@@ -1,7 +1,16 @@
 import type { EmptyObject } from "type-fest";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type { AnyFunction, Nil } from "../types";
-import { isEmptyObject, isFunction, isNil, isObject, isPlainObject } from "./lang";
+import {
+  type MapLike,
+  isEmptyObject,
+  isFunction,
+  isMap,
+  isMapLike,
+  isNil,
+  isObject,
+  isPlainObject,
+} from "./lang";
 
 describe("isNil", () => {
   it("should return true for null", () => {
@@ -329,5 +338,246 @@ describe("isEmptyObject", () => {
 
     expect(isEmptyObject(emptyObj)).toBe(true);
     expect(isEmptyObject(nonEmptyObj)).toBe(false);
+  });
+});
+
+describe("isMap", () => {
+  it("should return true for Map instances", () => {
+    expect(isMap(new Map())).toBe(true);
+    expect(isMap(new Map([["key", "value"]]))).toBe(true);
+    expect(
+      isMap(
+        new Map([
+          [1, "one"],
+          [2, "two"],
+        ]),
+      ),
+    ).toBe(true);
+  });
+
+  it("should return false for non-Map values", () => {
+    expect(isMap(null)).toBe(false);
+    expect(isMap(undefined)).toBe(false);
+    expect(isMap("string")).toBe(false);
+    expect(isMap(42)).toBe(false);
+    expect(isMap(true)).toBe(false);
+    expect(isMap({})).toBe(false);
+    expect(isMap([])).toBe(false);
+    expect(isMap(() => {})).toBe(false);
+    expect(isMap(new Set())).toBe(false);
+    expect(isMap(new WeakMap())).toBe(false);
+  });
+
+  it("should return false for objects with Map-like properties", () => {
+    const mapLike = {
+      get: () => {},
+      set: (_key: unknown, _value: unknown) => {},
+      delete: (_key: unknown) => {},
+      clear: () => {},
+      entries: () => {},
+      keys: () => {},
+      values: () => {},
+    };
+    expect(isMap(mapLike)).toBe(false);
+  });
+
+  it("should have correct type guard behavior", () => {
+    const testValue: unknown = new Map();
+
+    if (isMap(testValue)) {
+      expectTypeOf(testValue).toEqualTypeOf<Map<unknown, unknown>>();
+    }
+  });
+
+  it("should narrow types correctly in conditional statements", () => {
+    const testValue: unknown = new Map([["key", "value"]]);
+
+    if (isMap(testValue)) {
+      // This branch should only execute for Map instances
+      expectTypeOf(testValue).toEqualTypeOf<Map<unknown, unknown>>();
+      // Should allow Map methods
+      testValue.set("newKey", "newValue");
+      expect(testValue.get("newKey")).toBe("newValue");
+    }
+  });
+
+  it("should work with Map operations", () => {
+    const map = new Map([
+      ["a", 1],
+      ["b", 2],
+    ]);
+
+    expect(isMap(map)).toBe(true);
+    expect(map.get("a")).toBe(1);
+    expect(map.get("b")).toBe(2);
+
+    map.set("c", 3);
+    expect(map.get("c")).toBe(3);
+
+    map.delete("a");
+    expect(map.has("a")).toBe(false);
+    expect(map.has("b")).toBe(true);
+  });
+});
+
+describe("isMapLike", () => {
+  it("should return true for Map instances", () => {
+    expect(isMapLike(new Map())).toBe(true);
+    expect(isMapLike(new Map([["key", "value"]]))).toBe(true);
+  });
+
+  it("should return true for objects with all required Map methods", () => {
+    const mapLike = {
+      get: (_key: unknown) => "value",
+      set: (_key: unknown, _value: unknown) => {},
+      delete: (_key: unknown) => {},
+      clear: () => {},
+      entries: () => [["key", "value"]][Symbol.iterator](),
+      keys: () => ["key"][Symbol.iterator](),
+      values: () => ["value"][Symbol.iterator](),
+    };
+    expect(isMapLike(mapLike)).toBe(true);
+  });
+
+  it("should return false for objects missing required methods", () => {
+    const incompleteMapLike = {
+      get: (_key: unknown) => "value",
+      set: (_key: unknown, _value: unknown) => {},
+      // Missing delete, clear, entries, keys, values
+    };
+    expect(isMapLike(incompleteMapLike)).toBe(false);
+  });
+
+  it("should return false for objects with non-function properties", () => {
+    const invalidMapLike = {
+      get: "not a function",
+      set: (_key: unknown, _value: unknown) => {},
+      delete: (_key: unknown) => {},
+      clear: () => {},
+      entries: () => [][Symbol.iterator](),
+      keys: () => [][Symbol.iterator](),
+      values: () => [][Symbol.iterator](),
+    };
+    expect(isMapLike(invalidMapLike)).toBe(false);
+  });
+
+  it("should return false for null and undefined", () => {
+    expect(isMapLike(null)).toBe(false);
+    expect(isMapLike(undefined)).toBe(false);
+  });
+
+  it("should return false for primitives", () => {
+    expect(isMapLike("string")).toBe(false);
+    expect(isMapLike(42)).toBe(false);
+    expect(isMapLike(true)).toBe(false);
+    expect(isMapLike(Symbol("test"))).toBe(false);
+  });
+
+  it("should return false for regular objects", () => {
+    expect(isMapLike({})).toBe(false);
+    expect(isMapLike({ key: "value" })).toBe(false);
+    expect(isMapLike([])).toBe(false);
+    expect(isMapLike(() => {})).toBe(false);
+  });
+
+  it("should return false for other built-in objects", () => {
+    expect(isMapLike(new Set())).toBe(false);
+    expect(isMapLike(new WeakMap())).toBe(false);
+    expect(isMapLike(new Date())).toBe(false);
+    expect(isMapLike(/test/)).toBe(false);
+  });
+
+  it("should have correct type guard behavior", () => {
+    const testValue: unknown = new Map();
+
+    if (isMapLike(testValue)) {
+      expectTypeOf(testValue).toEqualTypeOf<MapLike>();
+    }
+  });
+
+  it("should narrow types correctly in conditional statements", () => {
+    const testValue: unknown = {
+      get: (_key: unknown) => "value",
+      set: (_key: unknown, _value: unknown) => {},
+      delete: (_key: unknown) => {},
+      clear: () => {},
+      entries: () => [][Symbol.iterator](),
+      keys: () => [][Symbol.iterator](),
+      values: () => [][Symbol.iterator](),
+    };
+
+    if (isMapLike(testValue)) {
+      // This branch should only execute for Map-like objects
+      expectTypeOf(testValue).toEqualTypeOf<MapLike>();
+      // Should allow Map-like operations
+      testValue.set("key", "value");
+      expect(testValue.get("key")).toBe("value");
+    }
+  });
+
+  it("should work with custom Map-like implementations", () => {
+    class CustomMap {
+      private data = new Map<unknown, unknown>();
+
+      get(key: unknown) {
+        return this.data.get(key);
+      }
+
+      set(key: unknown, value: unknown) {
+        this.data.set(key, value);
+      }
+
+      delete(key: unknown) {
+        return this.data.delete(key);
+      }
+
+      clear() {
+        this.data.clear();
+      }
+
+      entries() {
+        return this.data.entries();
+      }
+
+      keys() {
+        return this.data.keys();
+      }
+
+      values() {
+        return this.data.values();
+      }
+    }
+
+    const customMap = new CustomMap();
+    expect(isMapLike(customMap)).toBe(true);
+
+    customMap.set("test", "value");
+    expect(customMap.get("test")).toBe("value");
+  });
+
+  it("should handle edge cases with iterator methods", () => {
+    const mapLikeWithIterators = {
+      get: (_key: unknown) => "value",
+      set: (_key: unknown, _value: unknown) => {},
+      delete: (_key: unknown) => {},
+      clear: () => {},
+      entries: () => ({
+        [Symbol.iterator]: () => ({
+          next: () => ({ done: true, value: undefined }),
+        }),
+      }),
+      keys: () => ({
+        [Symbol.iterator]: () => ({
+          next: () => ({ done: true, value: undefined }),
+        }),
+      }),
+      values: () => ({
+        [Symbol.iterator]: () => ({
+          next: () => ({ done: true, value: undefined }),
+        }),
+      }),
+    };
+
+    expect(isMapLike(mapLikeWithIterators)).toBe(true);
   });
 });

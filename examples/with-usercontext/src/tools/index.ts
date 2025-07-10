@@ -1,0 +1,1 @@
+export { searchTool } from "./search";

@@ -5,8 +5,9 @@
  * prompt management, telemetry, and API interactions.
  */
 
-import type { VoltAgentExporter } from "../telemetry/exporter";
+import type { UserContext } from "../agent/context";
 import type { BaseMessage } from "../agent/providers/base/types";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 
 /**
  * Reference to a prompt in the VoltOps system
@@ -41,7 +42,7 @@ export type PromptHelper = {
  */
 export interface DynamicValueOptions {
   /** User context map */
-  userContext: Map<string | symbol, unknown>;
+  userContext: UserContext;
   /** Prompt helper (available when VoltOpsClient is configured) */
   prompts: PromptHelper;
 }

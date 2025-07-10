@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
 import { type AgentTool, createTool } from "../../tool";
+import { createUserContext } from "../context/user-context";
 import { Agent } from "../index";
 // Import only OperationContext and VoltAgentError
 import type { OperationContext, VoltAgentError } from "../types";
@@ -128,9 +129,10 @@ describe("Agent Hooks Functionality", () => {
       const onEndSpy = vi.fn();
       agent.hooks = createHooks({ onEnd: onEndSpy });
 
-      const userContext = new Map<string | symbol, unknown>();
-      userContext.set("agentName", "Test Agent");
-      userContext.set("sessionId", "test-session-123");
+      const userContext = createUserContext({
+        agentName: "Test Agent",
+        sessionId: "test-session-123",
+      });
 
       const response = await agent.generateText("Test input", { userContext });
 
