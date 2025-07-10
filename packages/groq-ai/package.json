@@ -3,11 +3,11 @@
   "version": "0.1.13",
   "description": "VoltAgent Groq AI - Groq provider integration for VoltAgent",
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     }
   },
   "main": "dist/index.js",
