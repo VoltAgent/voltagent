@@ -176,5 +176,91 @@
         "company": "Service Hero Marketing"
       }
     }
+  },
+  {
+    "id": 7,
+    "slug": "investor-research-team",
+    "published": true,
+    "customer": {
+      "name": "Emre Tezisci",
+      "website": "https://www.linkedin.com/in/emretezisci/",
+      "industry": "Product Marketing / Investment / Tech Strategy"
+    },
+    "case_study": {
+      "title": "How Product Marketing Expert Emre Tezisci Built a 4-Agent Investment Research Team with VoltAgent",
+      "use_case": "Multi-agent research platform for private investment analysis, market intelligence, and competitive research across enterprise and startup landscapes",
+      "challenge": [
+        "Managing investment research across multiple markets and sectors manually was extremely time-consuming",
+        "Tracking market trends and competitive intelligence for portfolio decisions required constant monitoring",
+        "Coordinating research across enterprise PLG strategies and startup landscapes as an active investor was overwhelming",
+        "Scaling investment analysis and product marketing insights without sacrificing depth and accuracy"
+      ],
+      "challenge_paragraph": "Emre Tezisci, a seasoned Product Marketing Expert and Private Investor with 7+ years navigating both corporate and startup landscapes, was facing a familiar challenge in the investment world. With a track record of achieving 5.6x MOIC and 78% IRR through diversified private investments, Emre needed sophisticated research capabilities to maintain his edge. \"As both an investor and board chair across multiple companies, I was spending countless hours researching market trends, analyzing competitive positioning, and tracking emerging opportunities. The manual research process was limiting my ability to scale quality investment decisions and strategic marketing insights.\" Traditional research tools weren't sophisticated enough to handle the complex, multi-dimensional analysis required for both investment due diligence and product marketing strategy.",
+      "solution": [
+        "Built a sophisticated 4-agent research system using VoltAgent with Composio MCP integration",
+        "Created specialized agents for market intelligence, competitive analysis, investment research, and strategic insights",
+        "Implemented a Research Supervisor Agent to orchestrate complex multi-source analysis workflows",
+        "Used VoltOps for real-time visibility into research processes and decision frameworks",
+        "Integrated with multiple financial and market data sources for comprehensive analysis"
+      ],
+      "solution_paragraph": "Leveraging his technical product marketing expertise, Emre designed and built a sophisticated multi-agent platform using VoltAgent, Composio MCP, and OpenAI GPT-4o that revolutionizes investment research and market analysis workflows. His intelligent research team includes: A market intelligence agent that monitors industry trends and emerging opportunities; A competitive analysis agent that tracks positioning across enterprise and PLG landscapes; An investment research agent that conducts due diligence and financial analysis; A strategic insights agent that synthesizes findings into actionable recommendations. \"VoltAgent allowed me to build something that operates like having a dedicated research team from Stanford and Keiretsu Forum, but with the coordination and systematic approach I needed for consistent investment success.\"",
+      "results": [
+        "Reduced investment research time from 15-20 hours to 2 hours per opportunity",
+        "Increased research coverage by 400% across multiple sectors and geographies",
+        "Enhanced due diligence quality with automated competitive and market analysis",
+        "Improved investment decision speed while maintaining rigorous analysis standards",
+        "Scaled from manual research to systematic intelligence gathering across portfolio companies"
+      ],
+      "results_paragraph": "With his 4-agent VoltAgent system, Emre transformed from a time-constrained investor doing manual research to a systematic intelligence operation that enhances both his investment decisions and product marketing strategies. He reduced research time from 15-20 hours to just 2 hours per opportunity while increasing coverage by 400%. \"Now I can focus on strategic decision-making and value creation rather than spending weeks gathering and analyzing market data. The agents handle the comprehensive research, and VoltOps gives me complete visibility into their analytical process.\" The automated competitive intelligence and market monitoring has improved both his investment thesis development and his ability to provide strategic product marketing guidance to portfolio companies. Emre's multi-agent approach has become a model for other investors and marketing executives looking to scale research-driven decision making.",
+      "quote": {
+        "text": "VoltAgent allowed me to build something that operates like having a dedicated research team from Stanford and Keiretsu Forum, but with the coordination and systematic approach I needed for consistent investment success.",
+        "author": "Emre Tezisci",
+        "position": "Product Marketing Expert & Private Investor",
+        "company": "Board Chair & Founder"
+      }
+    }
+  },
+  {
+    "id": 8,
+    "slug": "ai-twins-singularity",
+    "published": true,
+    "customer": {
+      "name": "Singularity",
+      "website": "https://www.linkedin.com/in/robertveloso/",
+      "industry": "AI Technology / Creator Economy"
+    },
+    "case_study": {
+      "title": "How Singularity Built AI Twins for Creators Using VoltAgent",
+      "use_case": "AI twin platform that helps creators engage with fans through personality-driven AI agents",
+      "challenge": [
+        "Building AI twins that could represent creators' personalities consistently was technically complex",
+        "Managing multiple conversations simultaneously required proper orchestration",
+        "Maintaining authentic voice and personality across different conversation types",
+        "Scaling creator-fan interactions without losing quality or breaking character"
+      ],
+      "challenge_paragraph": "Robert Veloso, Co-founder and Technical Lead at Singularity, wanted to help creators engage with their growing fanbase more effectively. \"We had this idea of creating AI twins that could represent creators and chat with fans, but the technical side was more complex than we initially thought,\" explains Robert. With his background as a software engineer, Robert knew they needed more than basic chatbot technology - they needed proper memory systems, personality modeling, and conversation management that could handle multiple interactions while keeping each creator's unique voice.",
+      "solution": [
+        "Used VoltAgent to build AI twin agents with memory and personality features",
+        "Created conversation agents that maintain each creator's specific voice patterns",
+        "Built systems that handle different types of fan interactions at the same time",
+        "Used VoltOps to monitor AI twin performance and conversation quality",
+        "Built architecture that lets creators customize their AI twin's behavior"
+      ],
+      "solution_paragraph": "Robert used VoltAgent's framework to build Singularity's AI twin platform. The solution includes: AI twin agents with memory that learns from each creator; Conversation systems that keep authentic voice patterns; Multi-agent setup that handles fan questions and personal chats simultaneously; Tools that let creators adjust their AI twin's personality. \"VoltAgent gave us the foundation we needed to build something that actually works well. The memory and agent coordination features were exactly what we were looking for.\"",
+      "results": [
+        "Launched AI twins for creators with good fan feedback",
+        "Enabled 24/7 fan engagement with quick response times",
+        "Scaled to handle many conversations per creator without quality issues",
+        "Helped creators engage with fans while maintaining personal connections",
+        "Built a working platform for persistent AI personalities"
+      ],
+      "results_paragraph": "With VoltAgent, Robert and his team built a platform that works well for both creators and fans. They've launched AI twins that fans genuinely like, with 24/7 availability and fast responses. \"It's great seeing fans actually connect with these AI twins. They feel more natural than typical chatbots.\" The platform handles multiple conversations while keeping each creator's personality intact. Singularity has shown that with good AI agent architecture, creators can maintain meaningful relationships with their communities around the clock.",
+      "quote": {
+        "text": "VoltAgent gave us the foundation we needed to build something that actually works well. The memory and agent coordination features were exactly what we were looking for.",
+        "author": "Robert Veloso",
+        "position": "Co-founder & Technical Lead",
+        "company": "Singularity"
+      }
+    }
   }
 ]
