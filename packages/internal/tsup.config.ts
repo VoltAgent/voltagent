@@ -1,7 +1,7 @@
 import { type Options as TsupConfigOptions, defineConfig } from "tsup";
 
 const baseConfig = {
-  format: ["cjs", "esm"],
+  format: "esm",
   splitting: false,
   sourcemap: true,
   clean: false,
