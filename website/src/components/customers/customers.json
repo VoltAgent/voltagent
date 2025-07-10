@@ -262,5 +262,48 @@
         "company": "Singularity"
       }
     }
+  },
+  {
+    "id": 9,
+    "slug": "dave-dupont-housedna",
+    "published": true,
+    "customer": {
+      "name": "HouseDNA",
+      "website": "https://www.linkedin.com/in/dave-dupont/",
+      "industry": "Real Estate Technology / AI Valuations"
+    },
+    "case_study": {
+      "title": "How Dave DuPont Built HouseDNA's AI Valuation Protocol with VoltAgent",
+      "use_case": "Revolutionary HouseDNA protocol that provides real-time, accurate home valuations based on buyer preferences, distinguishing between price estimation and true valuation",
+      "challenge": [
+        "Traditional home valuations relied on basic comparables without considering buyer preferences",
+        "Real estate agents needed better tools to provide accurate, real-time home valuations",
+        "Distinguishing between simple price estimation and true valuation required complex analysis",
+        "Democratizing home valuations while maintaining accuracy across different market conditions"
+      ],
+      "challenge_paragraph": "Dave DuPont, a Redfin Premier Agent and CFP, recognized a fundamental problem in real estate: \"Traditional home valuations were missing the human element. Price estimation and true valuation are completely different concepts, but most tools treated them the same.\" As someone passionate about empowering real estate agents with AI-driven solutions, Dave wanted to create HouseDNA - a protocol that could provide real-time, accurate home valuations based on actual buyer preferences rather than just comparable sales. The challenge was building a system that could analyze multiple data streams and buyer behavior patterns to generate truly meaningful valuations.",
+      "solution": [
+        "Built HouseDNA protocol using VoltAgent to process buyer preference data in real-time",
+        "Created valuation agents that distinguish between price estimation and true valuation",
+        "Developed buyer preference analysis agents that factor in emotional and practical preferences",
+        "Built market sentiment agents that adjust valuations based on current buyer behavior",
+        "Used VoltOps to monitor the entire HouseDNA valuation process for accuracy and transparency"
+      ],
+      "solution_paragraph": "Dave used VoltAgent to build the HouseDNA protocol that places agents at the heart of every transaction. The system includes: Buyer preference analysis agents that understand what drives real purchasing decisions; Valuation agents that separate price estimation from true market value; Real-time market sentiment agents that adjust for current buyer behavior; Transparency agents that democratize home valuation data. \"VoltAgent gave us the foundation to build something that actually understands the difference between what a home costs and what it's worth to buyers.\"",
+      "results": [
+        "Launched HouseDNA protocol with more accurate valuations than traditional methods",
+        "Empowered real estate agents with AI-driven insights they can trust",
+        "Improved transparency in the housing market through democratized valuations",
+        "Scaled buyer preference analysis across different property types and markets",
+        "Created a new standard for distinguishing price estimation from true valuation"
+      ],
+      "results_paragraph": "With VoltAgent powering HouseDNA, Dave has created a new approach to home valuations that real estate agents actually want to use. The protocol provides more accurate valuations by considering buyer preferences alongside traditional metrics. \"We're not just estimating prices - we're understanding true valuation based on what buyers actually care about. The agents handle the complex analysis, and we get insights that help agents serve their clients better.\" HouseDNA is now helping democratize home valuations and bring much-needed transparency to the housing market, with AI agents that understand the human side of real estate decisions.",
+      "quote": {
+        "text": "VoltAgent gave us the foundation to build something that actually understands the difference between what a home costs and what it's worth to buyers.",
+        "author": "Dave DuPont",
+        "position": "Creator of HouseDNA Protocol",
+        "company": "Redfin Premier Agent & CFP"
+      }
+    }
   }
 ]
