@@ -1,4 +1,4 @@
-export { deepClonePlainObject as deepClone, hasKey } from "./objects";
+export { deepClone, hasKey } from "./objects";
 export {
   isNil,
   isObject,

@@ -1,11 +1,11 @@
 {
-  "name": "voltagent-example-with-tools",
+  "name": "voltagent-example-with-usercontext",
   "private": true,
   "keywords": [
     "voltagent",
     "ai",
     "agent",
-    "tools"
+    "usercontext"
   ],
   "license": "MIT",
   "author": "",

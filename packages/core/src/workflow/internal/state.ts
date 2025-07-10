@@ -1,7 +1,7 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import { v4 as uuid } from "uuid";
-import type { UserContext } from "../../agent/types";
+import type { UserContext } from "../../agent/context/types";
 import type { WorkflowRunOptions } from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
 

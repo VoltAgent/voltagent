@@ -621,8 +621,6 @@ export interface VoltAgentError {
  */
 export type StreamOnErrorCallback = (error: VoltAgentError) => Promise<void> | void;
 
-export type UserContext = Map<string | symbol, unknown>;
-
 /**
  * Standardized object structure passed to the onFinish callback
  * when streamText completes successfully.
