@@ -137,7 +137,7 @@
   {
     "id": 6,
     "slug": "service-hero-marketing",
-    "published": true,
+    "published": false,
     "customer": {
       "name": "Service Hero Marketing",
       "website": "https://gowithhero.com/",
@@ -180,7 +180,7 @@
   {
     "id": 7,
     "slug": "investor-research-team",
-    "published": true,
+    "published": false,
     "customer": {
       "name": "Emre Tezisci",
       "website": "https://www.linkedin.com/in/emretezisci/",
@@ -223,7 +223,7 @@
   {
     "id": 8,
     "slug": "ai-twins-singularity",
-    "published": true,
+    "published": false,
     "customer": {
       "name": "Singularity",
       "website": "https://www.linkedin.com/in/robertveloso/",
