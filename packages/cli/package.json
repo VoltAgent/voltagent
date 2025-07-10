@@ -8,7 +8,9 @@
     "agent"
   ],
   "license": "MIT",
+  "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "volt": "dist/index.js"
   },
