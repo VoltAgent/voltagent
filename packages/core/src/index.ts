@@ -13,6 +13,17 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { devLogger } from "@voltagent/internal/dev";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 
+export {
+  createWorkflow,
+  createWorkflowChain,
+  andAgent,
+  andThen,
+  andWhen,
+  andAll,
+  andRace,
+} from "./workflow";
+export type { Workflow, WorkflowConfig } from "./workflow";
+
 export * from "./agent";
 export * from "./agent/context";
 export * from "./agent/hooks";

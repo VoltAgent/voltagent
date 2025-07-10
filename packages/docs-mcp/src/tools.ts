@@ -575,17 +575,10 @@ async function getExampleContent(examplePath: string): Promise<ExampleContent> {
     readme: undefined,
   };
 
-  // Read key files
-  const keyFiles = [
-    "package.json",
-    "README.md",
-    "src/index.ts",
-    "src/index.js",
-    "index.ts",
-    "index.js",
-  ];
+  // Discover all relevant files dynamically
+  const filesToRead = await discoverExampleFiles(examplePath);
 
-  for (const fileName of keyFiles) {
+  for (const fileName of filesToRead) {
     const filePath = path.join(examplePath, fileName);
     if (fs.existsSync(filePath)) {
       try {
@@ -603,7 +596,7 @@ async function getExampleContent(examplePath: string): Promise<ExampleContent> {
         }
 
         result.files.push({
-          path: fileName,
+          path: fileName.replace(/\\/g, "/"), // Normalize to forward slashes
           content,
           type: path.extname(fileName).slice(1) || "text",
         });
@@ -614,6 +607,76 @@ async function getExampleContent(examplePath: string): Promise<ExampleContent> {
   }
 
   return result;
+}
+
+// Helper function to discover all voltagent relevant files in an example
+async function discoverExampleFiles(examplePath: string): Promise<string[]> {
+  const files = new Set<string>();
+
+  // Original hardcoded key files (maintain backwards compatibility)
+  const keyFiles = [
+    "package.json",
+    "README.md",
+    "src/index.ts",
+    "src/index.js",
+    "index.ts",
+    "index.js",
+  ];
+
+  for (const file of keyFiles) {
+    if (await fileExists(path.join(examplePath, file))) {
+      files.add(file);
+    }
+  }
+
+  // Helper function to recursively find .ts files in a directory with depth limit
+  const findTsFiles = async (
+    dirPath: string,
+    relativePath: string = "",
+    currentDepth: number = 0,
+  ): Promise<void> => {
+    if (currentDepth >= 4 || !(await fileExists(dirPath))) return;
+
+    try {
+      const items = await fs.promises.readdir(dirPath, { withFileTypes: true });
+
+      for (const item of items) {
+        const itemPath = path.join(dirPath, item.name);
+        const relativeItemPath = relativePath ? path.join(relativePath, item.name) : item.name;
+
+        if (item.isDirectory()) {
+          // Recursively search subdirectories with depth tracking (sequential)
+          await findTsFiles(itemPath, relativeItemPath, currentDepth + 1);
+        } else if (item.isFile() && item.name.endsWith(".ts")) {
+          // Only include .ts files, Set handles deduplication automatically
+          files.add(relativeItemPath.replace(/\\/g, "/"));
+        }
+      }
+    } catch (error) {
+      console.warn(`Error reading directory ${dirPath}:`, error);
+    }
+  };
+
+  // Apply glob patterns sequentially: src/*.ts and src/**/*.ts
+  await findTsFiles(path.join(examplePath, "src"), "src");
+
+  // Apply glob pattern: app/**/*.ts
+  await findTsFiles(path.join(examplePath, "app"), "app");
+
+  // Apply glob pattern: voltagent/*.ts
+  await findTsFiles(path.join(examplePath, "voltagent"), "voltagent");
+
+  return [...files];
+}
+
+// Utility function for async file existence check
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Helper function to list examples

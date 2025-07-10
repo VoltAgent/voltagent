@@ -31,34 +31,49 @@ const PricingSection = ({
       description: "Perfect for getting started with AI agent monitoring",
       features: [
         "1 seat, 1 project",
-        "100 traces per month",
-        "Limited requests limits",
-        "3 Prompts",
-        "Up to 3 agents",
-        "7-day data retention",
+        "100 traces/month",
+        "3 prompts",
+        "3 agents",
+        "7-day retention",
       ],
       buttonText: "Get Started",
       buttonVariant: "outline",
       popular: false,
     },
     {
-      name: "Pro",
+      name: "Core",
       price: "$50",
       period: "/month",
-      description: "Ideal for growing teams and production environments",
+      description: "Perfect for small teams and production environments",
       features: [
-        "Up to 5 seats included",
-        "5.000 traces per month",
-        "Additional 5,000 traces: $10",
-        "4000 requests/min",
-        "Unlimited agents",
-        "Unlimited Prompts",
-        "90 days data retention",
+        "5 seats included",
+        "5,000 traces/month",
+        "Pay-as-you-scale pricing",
+        "Unlimited agents & prompts",
+        "90 days retention",
         "Priority support",
       ],
       buttonText: "Get Started",
       buttonVariant: "primary",
       popular: true,
+    },
+    {
+      name: "Pro",
+      price: "$500",
+      period: "/month",
+      description: "Ideal for larger teams with advanced needs",
+      features: [
+        "20 seats included",
+        "20,000 traces/month",
+        "Pay-as-you-scale pricing",
+        "Unlimited agents & prompts",
+        "SSO Integration",
+        "Slack support",
+        "Advanced analytics",
+      ],
+      buttonText: "Get Started",
+      buttonVariant: "outline",
+      popular: false,
     },
     {
       name: "Enterprise",
@@ -67,10 +82,10 @@ const PricingSection = ({
       description: "For large organizations with specific requirements",
       features: [
         "Everything in Pro",
-        "Enterprise only features",
-        "Self-hosted deployment",
         "Unlimited users & events",
+        "Self-hosted deployment",
         "Dedicated support",
+        "Custom integrations",
       ],
       buttonText: "Contact Sales",
       buttonVariant: "outline",
@@ -85,24 +100,28 @@ const PricingSection = ({
         {
           name: "LLM Traces & Agent Monitoring",
           free: true,
+          core: true,
           pro: true,
           enterprise: true,
         },
         {
           name: "Session & User Tracking",
           free: true,
+          core: true,
           pro: true,
           enterprise: true,
         },
         {
           name: "Token & Cost Analysis",
           free: true,
+          core: true,
           pro: true,
           enterprise: true,
         },
         {
           name: "Multi-modal Support",
           free: true,
+          core: true,
           pro: true,
           enterprise: true,
         },
@@ -114,24 +133,28 @@ const PricingSection = ({
         {
           name: "Monthly Traces",
           free: "100 traces",
-          pro: "5.000 traces",
+          core: "5,000 traces",
+          pro: "20,000 traces",
           enterprise: "Unlimited",
         },
         {
           name: "Team Members",
           free: "1 seat",
-          pro: "5 seats",
+          core: "5 seats",
+          pro: "20 seats",
           enterprise: "Unlimited",
         },
         {
           name: "Data Retention",
           free: "7 days",
+          core: "90 days",
           pro: "90 days",
           enterprise: "Unlimited",
         },
         {
           name: "API Rate Limit",
           free: "1k req/min",
+          core: "4k req/min",
           pro: "4k req/min",
           enterprise: "Custom",
         },
@@ -143,24 +166,28 @@ const PricingSection = ({
         {
           name: "Python & JavaScript SDKs",
           free: true,
+          core: true,
           pro: true,
           enterprise: true,
         },
         {
           name: "OpenTelemetry Support",
           free: "soon",
+          core: "soon",
           pro: "soon",
           enterprise: "soon",
         },
         {
           name: "LiteLLM Proxy Integration",
           free: "soon",
+          core: "soon",
           pro: "soon",
           enterprise: "soon",
         },
         {
           name: "Custom API Access",
           free: "soon",
+          core: "soon",
           pro: "soon",
           enterprise: "soon",
         },
@@ -171,25 +198,29 @@ const PricingSection = ({
       features: [
         {
           name: "Prompt Management",
-          free: "soon",
-          pro: "soon",
-          enterprise: "soon",
+          free: "3 prompts",
+          core: "Unlimited",
+          pro: "Unlimited",
+          enterprise: "Unlimited",
         },
         {
           name: "Priority Support",
           free: false,
+          core: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "SSO Integration",
+          free: false,
+          core: false,
           pro: true,
           enterprise: true,
         },
         {
           name: "Self-hosted Deployment",
           free: false,
-          pro: false,
-          enterprise: true,
-        },
-        {
-          name: "Enterprise SSO",
-          free: false,
+          core: false,
           pro: false,
           enterprise: true,
         },
@@ -199,32 +230,37 @@ const PricingSection = ({
       category: "Enterprise Features",
       features: [
         {
-          name: "SSO & SAML Integration",
+          name: "SAML Integration",
           free: false,
+          core: false,
           pro: false,
           enterprise: true,
         },
         {
           name: "LDAP & RBAC",
           free: false,
+          core: false,
           pro: false,
           enterprise: true,
         },
         {
           name: "Versioning & Audit Logs",
           free: false,
+          core: false,
           pro: false,
           enterprise: true,
         },
         {
           name: "Custom SLA",
           free: false,
+          core: false,
           pro: false,
           enterprise: true,
         },
         {
           name: "Dedicated Support Team",
           free: false,
+          core: false,
           pro: false,
           enterprise: true,
         },
@@ -352,7 +388,7 @@ const PricingSection = ({
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 landing-md:grid-cols-3 gap-4 landing-xs:gap-3 landing-sm:gap-6 landing-md:gap-8 mb-10 landing-xs:mb-8 landing-sm:mb-12 landing-md:mb-16">
+        <div className="grid grid-cols-1 landing-sm:grid-cols-2 landing-md:grid-cols-4 gap-3 landing-xs:gap-2 landing-sm:gap-4 landing-md:gap-4 mb-10 landing-xs:mb-8 landing-sm:mb-12 landing-md:mb-16">
           {pricingTiers.map((tier, index) => (
             <motion.div
               key={tier.name}
@@ -367,12 +403,12 @@ const PricingSection = ({
                   : "border-gray-700/50"
               }`}
             >
-              <div className="p-4 landing-xs:p-3 landing-sm:p-6 landing-md:p-8">
-                <div className="text-left mb-4 landing-xs:mb-3 landing-sm:mb-6">
-                  <h3 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl font-bold text-white mb-2 landing-xs:mb-1">
+              <div className="p-3 landing-xs:p-2 landing-sm:p-4 landing-md:p-4">
+                <div className="text-left mb-3 landing-xs:mb-2 landing-sm:mb-4">
+                  <h3 className="text-base landing-xs:text-sm landing-sm:text-lg landing-md:text-xl font-bold text-white mb-1">
                     {tier.name}
                   </h3>
-                  <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm">
+                  <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-xs">
                     {tier.description}
                   </p>
                 </div>
@@ -385,11 +421,15 @@ const PricingSection = ({
                         "https://forms.gle/BrnyFF4unP9pZxAh7",
                         "_blank",
                       );
-                    } else if (tier.name === "Free" || tier.name === "Pro") {
+                    } else if (
+                      tier.name === "Free" ||
+                      tier.name === "Core" ||
+                      tier.name === "Pro"
+                    ) {
                       window.open("https://console.voltagent.dev", "_blank");
                     }
                   }}
-                  className={`w-full inline-flex mb-4 landing-xs:mb-3 landing-sm:mb-6 items-center justify-center no-underline border-solid border font-semibold rounded transition-colors cursor-pointer px-3 landing-xs:px-2 landing-sm:px-4 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base ${
+                  className={`w-full inline-flex mb-3 landing-xs:mb-2 landing-sm:mb-4 items-center justify-center no-underline border-solid border font-semibold rounded transition-colors cursor-pointer px-2 landing-xs:px-1.5 landing-sm:px-3 py-1.5 landing-xs:py-1 landing-sm:py-2 text-xs landing-xs:text-xs landing-sm:text-sm ${
                     tier.buttonVariant === "primary"
                       ? `${primaryColorClasses.bg} text-gray-900 ${primaryColorClasses.border} ${primaryColorHoverClasses.hover}`
                       : `${primaryColorClasses.bg}/10 ${primaryColorClasses.text} ${primaryColorBorderClasses.border} hover:${primaryColorClasses.bg}/20`
@@ -398,13 +438,13 @@ const PricingSection = ({
                   {tier.buttonText}
                 </button>
 
-                <div className="text-left mb-6 landing-xs:mb-4 landing-sm:mb-8">
+                <div className="text-left mb-4 landing-xs:mb-3 landing-sm:mb-5">
                   <div className="flex items-baseline justify-start">
-                    <span className="text-2xl landing-xs:text-xl landing-sm:text-3xl landing-md:text-4xl font-bold text-white">
+                    <span className="text-xl landing-xs:text-lg landing-sm:text-2xl landing-md:text-3xl font-bold text-white">
                       {tier.price}
                     </span>
                     {tier.period && (
-                      <span className="text-gray-400 ml-1 text-sm landing-xs:text-xs">
+                      <span className="text-gray-400 ml-1 text-xs landing-xs:text-xs">
                         {tier.period}
                       </span>
                     )}
@@ -418,16 +458,16 @@ const PricingSection = ({
                   )}
                 </div>
 
-                <div className="space-y-3 landing-xs:space-y-2 landing-sm:space-y-4">
+                <div className="space-y-2 landing-xs:space-y-1.5 landing-sm:space-y-2.5">
                   {tier.features.map((feature) => (
                     <div key={`${tier.name}-${feature}`}>
                       <div className="flex items-start">
                         <CheckCircleIcon
-                          className={`w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 ${primaryColorClasses.text} mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0`}
+                          className={`w-3 h-3 landing-xs:w-2.5 landing-xs:h-2.5 landing-sm:w-4 landing-sm:h-4 ${primaryColorClasses.text} mr-1.5 landing-xs:mr-1 landing-sm:mr-2 flex-shrink-0`}
                         />
                         <div className="flex-1 flex items-center justify-between">
                           <span
-                            className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
+                            className={`text-xs landing-xs:text-xs landing-sm:text-xs ${
                               feature === "Enterprise only features"
                                 ? `${primaryColorTextClasses.text} font-medium`
                                 : "text-gray-300"
@@ -435,7 +475,7 @@ const PricingSection = ({
                           >
                             {feature}
                           </span>
-                          {feature === "Additional 5,000 traces: $10" && (
+                          {feature === "Pay-as-you-scale pricing" && (
                             <span
                               onClick={() => setCalculatorOpen(true)}
                               onKeyDown={(e) => {
@@ -445,20 +485,13 @@ const PricingSection = ({
                               }}
                               role="button"
                               tabIndex={0}
-                              className={`${primaryColorClasses.text} hover:${primaryColorHoverClasses.text} text-xs cursor-pointer transition-colors ml-2`}
+                              className={`${primaryColorClasses.text} hover:${primaryColorHoverClasses.text} text-xs cursor-pointer transition-colors ml-1`}
                             >
                               Calculate
                             </span>
                           )}
                         </div>
                       </div>
-                      {feature === "Up to 10 seats included" && (
-                        <p
-                          className={`${primaryColorClasses.text} text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8`}
-                        >
-                          $50 per additional seat
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -476,15 +509,18 @@ const PricingSection = ({
                   <th className="text-left py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-1/5">
                     Features
                   </th>
-                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
+                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-1/5">
                     Free
                   </th>
                   <th
-                    className={`text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold ${primaryColorClasses.text} bg-[#191c24] w-[26.67%]`}
+                    className={`text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold ${primaryColorClasses.text} bg-[#191c24] w-1/5`}
                   >
+                    Core
+                  </th>
+                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-1/5">
                     Pro
                   </th>
-                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
+                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-1/5">
                     Enterprise
                   </th>
                 </tr>
@@ -494,7 +530,7 @@ const PricingSection = ({
                   <React.Fragment key={category.category}>
                     <tr className="border-b border-gray-700/30">
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className={`py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold ${primaryColorClasses.text} bg-gray-800/30`}
                       >
                         {category.category}
@@ -510,6 +546,9 @@ const PricingSection = ({
                         </td>
                         <td className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-center">
                           {renderFeatureValue(feature.free)}
+                        </td>
+                        <td className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-center">
+                          {renderFeatureValue(feature.core)}
                         </td>
                         <td className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-center">
                           {renderFeatureValue(feature.pro)}
