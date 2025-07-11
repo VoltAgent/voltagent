@@ -90,10 +90,10 @@
     "vite": "^5.0.0",
     "vitest": "^3.2.3"
   },
-  "packageManager": "pnpm@8.10.5",
+  "packageManager": "pnpm@10.13.1",
   "engines": {
     "node": ">=20",
-    "pnpm": ">=8"
+    "pnpm": ">=10"
   },
   "nx": {}
 }
