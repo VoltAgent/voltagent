@@ -86,6 +86,14 @@ const translationWorkflow = createWorkflowChain({
       return data;
     },
   })
+  .andTap({
+    id: "sleep",
+    execute: async (data) => {
+      console.log("🔄 Sleeping for 1 second");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return data;
+    },
+  })
   .andAgent(
     async (data, state) => {
       return `Translate the following text to ${data.detectedLanguage}: ${state.input.originalText}`;
@@ -97,6 +105,11 @@ const translationWorkflow = createWorkflowChain({
       }),
     },
   )
+  .andTap({
+    execute: async (data) => {
+      console.log("🔄 Translating text:", data);
+    },
+  })
   .andThen({
     execute: async (data, state) => {
       return {

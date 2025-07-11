@@ -8,18 +8,20 @@ import type {
   InternalInferWorkflowStepsResult,
   InternalWorkflowFunc,
 } from "./internal/types";
-import type {
-  WorkflowStep,
-  WorkflowStepConditionalWhenConfig,
-  WorkflowStepFuncConfig,
-  WorkflowStepParallelAllConfig,
-  WorkflowStepParallelRaceConfig,
+import {
+  type WorkflowStep,
+  type WorkflowStepConditionalWhenConfig,
+  type WorkflowStepFuncConfig,
+  type WorkflowStepParallelAllConfig,
+  type WorkflowStepParallelRaceConfig,
+  type WorkflowStepTapConfig,
+  andAgent,
+  andAll,
+  andRace,
+  andTap,
+  andThen,
+  andWhen,
 } from "./steps";
-import { andAgent } from "./steps/and-agent";
-import { andAll } from "./steps/and-all";
-import { andRace } from "./steps/and-race";
-import { andThen } from "./steps/and-then";
-import { andWhen } from "./steps/and-when";
 import type { WorkflowConfig, WorkflowInput } from "./types";
 
 /**
@@ -191,6 +193,45 @@ export class WorkflowChain<
     >;
     this.steps.push(finalStep);
     return this as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA | CURRENT_DATA>;
+  }
+
+  /**
+   * Add a tap step to the workflow
+   *
+   * @example
+   * ```ts
+   * const workflow = createWorkflowChain(config)
+   *   .andTap({
+   *     execute: async (data) => {
+   *       console.log("🔄 Translating text:", data);
+   *     }
+   *   })
+   *   .andThen({
+   *     // the input data is still the same as the andTap ONLY executes, it doesn't return anything
+   *     execute: async (data) => {
+   *       return { ...data, translatedText: data.translatedText };
+   *     }
+   *   });
+   * ```
+   *
+   * @param fn - The async function to execute with the current workflow data
+   * @returns A new chain with the tap step added
+   */
+  andTap<NEW_DATA>({
+    execute,
+    ...config
+  }: WorkflowStepTapConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    CURRENT_DATA
+  > {
+    const finalStep = andTap({ execute, ...config }) as WorkflowStep<
+      WorkflowInput<INPUT_SCHEMA>,
+      CURRENT_DATA,
+      NEW_DATA
+    >;
+    this.steps.push(finalStep);
+    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA>;
   }
 
   /**
