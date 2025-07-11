@@ -2,12 +2,14 @@
  * Basic type definitions for VoltAgent Core
  */
 
+import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
 import type { Agent } from "./agent";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
-
-import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
 import type { VoltAgentExporter } from "./telemetry/exporter";
-import type { VoltOpsClient } from "./voltops/types";
+import type { VoltOpsClient } from "./voltops";
+import type { Workflow } from "./workflow/types";
+import type { WorkflowChain } from "./workflow/chain";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 
 // Re-export VoltOps types for convenience
 export type {
@@ -56,6 +58,15 @@ export type ServerOptions = {
  */
 export type VoltAgentOptions = {
   agents: Record<string, Agent<any>>;
+  /**
+   * Optional workflows to register with VoltAgent
+   * Can be either Workflow instances or WorkflowChain instances
+   */
+  workflows?: Record<
+    string,
+    | Workflow<DangerouslyAllowAny, DangerouslyAllowAny>
+    | WorkflowChain<DangerouslyAllowAny, DangerouslyAllowAny>
+  >;
   /**
    * Server configuration options
    */

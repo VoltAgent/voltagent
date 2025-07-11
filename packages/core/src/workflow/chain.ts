@@ -301,6 +301,27 @@ export class WorkflowChain<
   }
 
   /**
+   * Convert the workflow chain to a workflow instance for registration
+   *
+   * @example
+   * ```ts
+   * const workflowChain = createWorkflowChain(config)
+   *   .andThen(async (data) => { ... })
+   *   .andAgent(task, agent, { schema });
+   *
+   * // Convert to Workflow for registration
+   * const workflow = workflowChain.toWorkflow();
+   * voltAgent.registerWorkflow(workflow);
+   * ```
+   *
+   * @returns A workflow instance that can be registered with VoltAgent
+   */
+  toWorkflow() {
+    // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+    return createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA>(this.config, ...this.steps);
+  }
+
+  /**
    * Execute the workflow with the given input
    *
    * @example
@@ -334,8 +355,7 @@ export class WorkflowChain<
    * @returns The workflow execution result that matches the result schema
    */
   async run(input: WorkflowInput<INPUT_SCHEMA>) {
-    // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA>(this.config, ...this.steps);
+    const workflow = this.toWorkflow();
     return await workflow.run(input);
   }
 }
