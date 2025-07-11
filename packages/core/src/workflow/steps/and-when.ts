@@ -1,4 +1,11 @@
 import { defaultStepConfig } from "../internal/utils";
+import {
+  createWorkflowStepStartEvent,
+  createWorkflowStepSuccessEvent,
+  createWorkflowStepErrorEvent,
+  publishWorkflowEvent,
+  createStepContext,
+} from "../event-utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } from "./types";
 
@@ -39,11 +46,87 @@ export function andWhen<INPUT, DATA, RESULT>({
     ...defaultStepConfig(config),
     type: "conditional-when",
     condition,
+    originalCondition: condition, // ✅ Store original condition for serialization
     execute: async (data, state) => {
-      if (await condition(data, state)) {
-        return await finalStep.execute(data, state);
+      // No workflow context, execute without events
+      if (!state.workflowContext) {
+        if (await condition(data, state)) {
+          return await finalStep.execute(data, state);
+        }
+        return data;
       }
-      return data;
+
+      // Create step context and publish start event
+      const stepContext = createStepContext(
+        state.workflowContext,
+        "conditional-when",
+        config.name || "Conditional",
+      );
+      const stepStartEvent = createWorkflowStepStartEvent(
+        stepContext,
+        state.workflowContext,
+        data, // ✅ Pass input data
+      );
+
+      try {
+        await publishWorkflowEvent(stepStartEvent, state.workflowContext);
+      } catch (eventError) {
+        console.warn("Failed to publish workflow step start event:", eventError);
+      }
+
+      try {
+        const conditionMet = await condition(data, state);
+        let result: any;
+
+        if (conditionMet) {
+          // ✅ FIXED: Execute nested step WITHOUT workflow context to prevent duplicate events
+          // Wrapper conditional step already publishes the appropriate events
+          const nestedState = {
+            ...state,
+            workflowContext: undefined, // ❌ Remove workflow context to prevent nested event publishing
+          };
+          result = await finalStep.execute(data, nestedState);
+        } else {
+          // Condition not met, return original data
+          result = data;
+        }
+
+        // Publish step success event with condition result
+        const stepSuccessEvent = createWorkflowStepSuccessEvent(
+          stepContext,
+          state.workflowContext,
+          { result, conditionMet }, // ✅ Include conditionMet in output for console visibility
+          stepStartEvent.id,
+          {
+            isSkipped: !conditionMet, // ✅ UNIFIED: Convert conditionMet to isSkipped
+          },
+        );
+
+        try {
+          await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
+        } catch (eventError) {
+          console.warn("Failed to publish workflow step success event:", eventError);
+        }
+
+        return result;
+      } catch (error) {
+        // Publish step error event
+        const stepErrorEvent = createWorkflowStepErrorEvent(
+          stepContext,
+          state.workflowContext,
+          error,
+          stepStartEvent.id,
+          {},
+        );
+
+        try {
+          await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
+        } catch (eventError) {
+          console.warn("Failed to publish workflow step error event:", eventError);
+        }
+
+        throw error;
+      }
     },
-  } satisfies WorkflowStepConditionalWhen<INPUT, DATA, RESULT>;
+  } as WorkflowStepConditionalWhen<INPUT, DATA, RESULT>;
 }

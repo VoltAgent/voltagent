@@ -1,226 +1,529 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient, createWorkflowChain, andThen } from "@voltagent/core";
+import {
+  Agent,
+  VoltAgent,
+  createWorkflowChain,
+  andThen,
+  andAgent,
+  andWhen,
+  andAll,
+  andRace,
+} from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
-const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-  secretKey: process.env.VOLTOPS_SECRET_KEY,
-});
-
-const languageDetectionAgent = new Agent({
-  name: "LanguageDetectionAgent",
+// Simple agent for demonstrations
+const simpleAgent = new Agent({
+  name: "SimpleAgent",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  instructions: `You are a language detection expert. Analyze the input text and determine the language it's written in. 
-  Return the language code (e.g., 'en' for English, 'es' for Spanish, 'fr' for French, 'de' for German, 'it' for Italian, 'pt' for Portuguese, 'ja' for Japanese, 'ko' for Korean, 'zh' for Chinese, 'ar' for Arabic, 'hi' for Hindi, 'ru' for Russian).
-  If the text contains multiple languages, identify the primary language.
-  If you cannot determine the language, return 'unknown'.`,
+  instructions: "You are a helpful assistant. Answer briefly and clearly.",
 });
 
-const translationAgent = new Agent({
-  name: "TranslationAgent",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  instructions: `You are a professional translator. Translate the given text to the target language while preserving the original meaning, tone, and context.
-  Maintain the same level of formality and cultural sensitivity.
-  If the text is already in the target language, return it unchanged.
-  If translation is not possible or the target language is not supported, explain why.`,
-});
-
-// Create a comprehensive translation workflow
-const translationWorkflow = createWorkflowChain({
-  id: "translation-workflow",
-  name: "Multi-Language Translation Workflow",
-  purpose: "Detect language, analyze content, and translate text to target language",
+// ==========================================
+// COMPREHENSIVE EXAMPLE - ALL STEPS TOGETHER
+// ==========================================
+const comprehensiveWorkflow = createWorkflowChain({
+  id: "comprehensive-example",
+  name: "Complete Workflow Example",
+  purpose: "Uses all 5 workflow steps in one simple flow",
   input: z.object({
-    originalText: z.string(),
-    targetLanguage: z.string(),
+    text: z.string(),
   }),
   result: z.object({
-    originalText: z.string(),
-    detectedLanguage: z.string(),
-    targetLanguage: z.string(),
-    translatedText: z.string(),
-    confidence: z.number().min(0).max(1),
-    processingTime: z.number(),
-    isLongText: z.boolean(),
-    summary: z.string(),
-    qualityScore: z.number(),
-    qualityCheck: z.string(),
-    lengthValid: z.boolean(),
-    wordCount: z.number(),
-    languageValid: z.boolean(),
-    source: z.string(),
-    metadata: z.object({
-      type: z.string(),
-      priority: z.string(),
-    }),
-    enriched: z.boolean(),
-    savedSuccessfully: z.boolean(),
-    fileId: z.string(),
+    processed: z.string(),
+    aiResponse: z.string(),
+    calculations: z.array(
+      z.object({
+        operation: z.string(),
+        value: z.number(),
+      }),
+    ),
+    winner: z.string(),
+    isLong: z.boolean(),
+    summary: z.string().optional(),
   }),
 })
-  .andAgent(
-    async (data) => {
-      return `Detect the language of the following text: ${data.originalText}`;
+  // Step 1: andThen - Basic text processing
+  .andThen({
+    name: "process-text",
+    execute: async (data) => {
+      return {
+        processed: data.text.trim().toLowerCase(),
+      };
     },
-    languageDetectionAgent,
+  })
+  // Step 2: andAgent - AI analysis
+  .andAgent(
+    async (data) => `Summarize this text in one sentence: "${data.processed}"`,
+    simpleAgent,
     {
       schema: z.object({
-        detectedLanguage: z.string(),
-        confidence: z.number().min(0).max(1),
+        aiResponse: z.string(),
       }),
     },
   )
+  // Step 3: andAll - Parallel calculations
+  .andAll({
+    name: "parallel-calculations",
+    steps: [
+      andThen({
+        name: "word-count",
+        execute: async (data) => {
+          return { operation: "word_count", value: data.aiResponse.split(" ").length };
+        },
+      }),
+      andThen({
+        name: "char-count",
+        execute: async (data) => {
+          return { operation: "char_count", value: data.aiResponse.length };
+        },
+      }),
+    ],
+  })
   .andThen({
-    execute: async (data, state) => {
-      // If the detected language is the same as target language, skip translation
-      if (data.detectedLanguage === state.input.targetLanguage) {
+    name: "format-calculations",
+    execute: async (data) => {
+      return {
+        calculations: data,
+      };
+    },
+  })
+  // Step 4: andRace - Quick response
+  .andRace({
+    name: "race-responses",
+    steps: [
+      // @ts-ignore
+      andThen({
+        name: "fast",
+        execute: async (data) => {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          return { ...data, winner: "fast" };
+        },
+      }),
+      // @ts-ignore
+      andThen({
+        name: "slow",
+        execute: async (data) => {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          return { ...data, winner: "slow" };
+        },
+      }),
+    ],
+  })
+  // Step 5: andWhen - Conditional summary
+  .andThen({
+    name: "check-length",
+    execute: async (data) => {
+      const wordCount =
+        data.calculations.find((c: any) => c.operation === "word_count")?.value || 0;
+      return {
+        ...data,
+        isLong: wordCount > 5,
+      };
+    },
+  })
+  .andWhen({
+    name: "add-summary",
+    condition: async (data) => data.isLong,
+    step: andThen({
+      execute: async (data) => {
         return {
           ...data,
-          translatedText: state.input.originalText,
-          processingTime: Date.now() - state.startAt.getTime(),
+          summary: "This is a long response that needs a summary.",
         };
-      }
+      },
+    }),
+  });
 
-      // If language is unknown, return error
-      if (data.detectedLanguage === "unknown") {
-        throw new Error("Unable to detect the language of the input text");
-      }
+// ==========================================
+// DEMO FUNCTION FOR COMPREHENSIVE EXAMPLE
+// ==========================================
+export async function runComprehensiveExample() {
+  console.log("🎯 COMPREHENSIVE EXAMPLE - ALL STEPS");
+  console.log("=".repeat(50));
+  console.log("Uses: andThen → andAgent → andAll → andRace → andWhen\n");
 
-      return data;
-    },
-  })
-  .andAgent(
-    async (data, state) => {
-      return `Translate the following text to ${data.detectedLanguage}: ${state.input.originalText}`;
-    },
-    translationAgent,
-    {
-      schema: z.object({
-        translatedText: z.string(),
-      }),
-    },
-  )
-  .andThen({
-    execute: async (data, state) => {
-      return {
-        ...data,
-        processingTime: Date.now() - state.startAt.getTime(),
-      };
-    },
-  })
-  // Text analysis step
-  .andThen({
-    execute: async (data, _state) => {
-      return {
-        ...data,
-        isLongText: data.translatedText.length > 100,
-        summary: `Text with ${data.translatedText.length} characters`,
-        qualityScore: Math.random() * 0.3 + 0.7,
-        qualityCheck: "passed",
-        lengthValid: data.translatedText.length > 0,
-        wordCount: data.translatedText.split(" ").length,
-        languageValid: true,
-        source: "fast-api",
-        metadata: { type: "translation", priority: "high" },
-        enriched: true,
-      };
-    },
-  })
-  // Final save step
-  .andAgent(
-    async (data) => `Save the following translation with metadata: "${data.translatedText}"`,
-    translationAgent,
-    {
-      schema: z.object({
-        savedSuccessfully: z.boolean(),
-        fileId: z.string(),
-      }),
-    },
+  // Test with short text
+  console.log("📝 Testing with SHORT text:");
+  const { result: shortResult } = await comprehensiveWorkflow.run({
+    text: "Hello world!",
+  });
+
+  console.log(`  🔄 Processed: "${shortResult.processed}"`);
+  console.log(`  🤖 AI Response: "${shortResult.aiResponse}"`);
+  console.log(
+    `  📊 Calculations: ${shortResult.calculations.map((c) => `${c.operation}: ${c.value}`).join(", ")}`,
   );
+  console.log(`  🏆 Race Winner: "${shortResult.winner}"`);
+  console.log(`  📏 Is Long: ${shortResult.isLong}`);
+  console.log(`  📝 Summary: ${shortResult.summary || "No summary (short text)"}\n`);
 
-// Example usage function
-async function processTranslation(inputText: string, targetLanguage = "en") {
+  // Test with long text
+  console.log("📝 Testing with LONG text:");
+  const { result: longResult } = await comprehensiveWorkflow.run({
+    text: "This is a much longer text that contains many words and should trigger the conditional summary generation step.",
+  });
+
+  console.log(`  🔄 Processed: "${longResult.processed}"`);
+  console.log(`  🤖 AI Response: "${longResult.aiResponse}"`);
+  console.log(
+    `  📊 Calculations: ${longResult.calculations.map((c) => `${c.operation}: ${c.value}`).join(", ")}`,
+  );
+  console.log(`  🏆 Race Winner: "${longResult.winner}"`);
+  console.log(`  📏 Is Long: ${longResult.isLong}`);
+  console.log(`  📝 Summary: ${longResult.summary || "No summary"}`);
+
+  console.log("\n✅ Comprehensive example completed!");
+  console.log("🎉 All 5 workflow steps used successfully!");
+}
+
+// ==========================================
+// ORIGINAL INDIVIDUAL EXAMPLES
+// ==========================================
+const agentExampleWorkflow = createWorkflowChain({
+  id: "agent-example",
+  name: "Agent Step Example",
+  purpose: "Demonstrates how to use andAgent",
+  input: z.object({
+    question: z.string(),
+  }),
+  result: z.object({
+    answer: z.string(),
+  }),
+}).andAgent(async (data) => `Answer this question briefly: ${data.question}`, simpleAgent, {
+  schema: z.object({
+    answer: z.string(),
+  }),
+});
+
+// ==========================================
+// EXAMPLE 2: andThen - Function Processing
+// ==========================================
+const functionExampleWorkflow = createWorkflowChain({
+  id: "function-example",
+  name: "Function Step Example",
+  purpose: "Demonstrates how to use andThen",
+  input: z.object({
+    text: z.string(),
+  }),
+  result: z.object({
+    original: z.string(),
+    upper: z.string(),
+    wordCount: z.number(),
+  }),
+}).andThen({
+  execute: async (data) => {
+    return {
+      original: data.text,
+      upper: data.text.toUpperCase(),
+      wordCount: data.text.split(" ").length,
+    };
+  },
+});
+
+// ==========================================
+// EXAMPLE 3: andWhen - Conditional Logic
+// ==========================================
+const conditionalExampleWorkflow = createWorkflowChain({
+  id: "conditional-example",
+  name: "Conditional Step Example",
+  purpose: "Demonstrates how to use andWhen",
+  input: z.object({
+    number: z.number(),
+  }),
+  result: z.object({
+    number: z.number(),
+    isLarge: z.boolean(),
+    specialMessage: z.string().optional(),
+  }),
+})
+  .andThen({
+    execute: async (data) => {
+      return {
+        number: data.number,
+        isLarge: data.number > 100,
+      };
+    },
+  })
+  .andWhen({
+    condition: async (data) => data.isLarge,
+    step: andThen({
+      execute: async (data) => {
+        console.log("executed", data);
+        return {
+          ...data,
+          specialMessage: `This is a large number: ${data.number}!`,
+        };
+      },
+    }),
+  });
+
+// ==========================================
+// EXAMPLE 4: andAll - Parallel Execution
+// ==========================================
+const parallelExampleWorkflow = createWorkflowChain({
+  id: "parallel-example",
+  name: "Parallel Step Example",
+  purpose: "Demonstrates how to use andAll with dynamic operations",
+  input: z.object({
+    numbers: z.array(z.number()),
+  }),
+  result: z.object({
+    results: z.array(
+      z.object({
+        operation: z.string(),
+        value: z.number(),
+      }),
+    ),
+  }),
+})
+  .andAll({
+    name: "parallel-example",
+    steps: [
+      // Toplam hesaplama
+      andThen({
+        name: "sum",
+        execute: async (data) => {
+          const sum = data.numbers.reduce((a, b) => a + b, 0);
+          return { operation: "sum", value: sum };
+        },
+      }),
+      // Maksimum değer bulma
+      andThen({
+        execute: async (data) => {
+          const max = Math.max(...data.numbers);
+          return { operation: "max", value: max };
+        },
+      }),
+      // Minimum değer bulma
+      andThen({
+        execute: async (data) => {
+          const min = Math.min(...data.numbers);
+          return { operation: "min", value: min };
+        },
+      }),
+      // Ortalama hesaplama
+      andThen({
+        execute: async (data) => {
+          const avg = data.numbers.reduce((a, b) => a + b, 0) / data.numbers.length;
+          return { operation: "average", value: Math.round(avg * 100) / 100 };
+        },
+      }),
+      // Eleman sayısı
+      andThen({
+        execute: async (data) => {
+          const count = data.numbers.length;
+          return { operation: "count", value: count };
+        },
+      }),
+      // Çift sayıların toplamı
+      andThen({
+        execute: async (data) => {
+          const evenSum = data.numbers.filter((n) => n % 2 === 0).reduce((a, b) => a + b, 0);
+          return { operation: "even_sum", value: evenSum };
+        },
+      }),
+      // Tek sayıların toplamı
+      andThen({
+        name: "odd_sum",
+        execute: async (data) => {
+          const oddSum = data.numbers.filter((n) => n % 2 === 1).reduce((a, b) => a + b, 0);
+          return { operation: "odd_sum", value: oddSum };
+        },
+      }),
+      // Pozitif sayıların sayısı
+      andThen({
+        execute: async (data) => {
+          const positiveCount = data.numbers.filter((n) => n > 0).length;
+          return { operation: "positive_count", value: positiveCount };
+        },
+      }),
+    ],
+  })
+  .andThen({
+    name: "final",
+    execute: async (data) => {
+      return {
+        results: data,
+      };
+    },
+  });
+
+// ==========================================
+// EXAMPLE 5: andRace - Race Execution
+// ==========================================
+// Note: Temporarily disabled due to type complexity
+const raceExampleWorkflow = createWorkflowChain({
+  id: "race-example",
+  name: "Race Step Example",
+  purpose: "Demonstrates how to use andRace",
+  input: z.object({
+    query: z.string(),
+  }),
+  result: z.object({
+    winner: z.string(),
+    response: z.string(),
+    timeMs: z.number(),
+  }),
+}).andRace({
+  name: "race-example",
+  steps: [
+    // @ts-ignore
+    andThen({
+      name: "fast-service",
+      execute: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return {
+          winner: "fast-service",
+          response: "Quick cached response",
+          timeMs: 50,
+        };
+      },
+    }),
+    // @ts-ignore
+    andThen({
+      name: "slow-service",
+      execute: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return {
+          winner: "slow-service",
+          response: "Slow response from database",
+          timeMs: 100,
+        };
+      },
+    }),
+    // @ts-ignore
+    andThen({
+      name: "mid-service",
+      execute: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return {
+          winner: "mid-service",
+          response: "Mid response from database",
+          timeMs: 75,
+        };
+      },
+    }),
+  ],
+});
+
+// ==========================================
+// DEMO FUNCTIONS
+// ==========================================
+export async function runAgentExample() {
+  console.log("🤖 AGENT EXAMPLE (andAgent)");
+  console.log("=".repeat(40));
+
+  const { result } = await agentExampleWorkflow.run({
+    question: "What is the capital of Turkey?",
+  });
+
+  console.log("❓ Question: What is the capital of Turkey?");
+  console.log(`✅ Answer: ${result.answer}`);
+  console.log();
+}
+
+export async function runFunctionExample() {
+  console.log("⚙️  FUNCTION EXAMPLE (andThen)");
+  console.log("=".repeat(40));
+
+  const { result } = await functionExampleWorkflow.run({
+    text: "Hello VoltAgent World",
+  });
+
+  console.log(`📝 Original: ${result.original}`);
+  console.log(`🔠 Uppercase: ${result.upper}`);
+  console.log(`📊 Word Count: ${result.wordCount}`);
+  console.log();
+}
+
+export async function runConditionalExample() {
+  console.log("❓ CONDITIONAL EXAMPLE (andWhen)");
+  console.log("=".repeat(40));
+
+  // Test with small number
+  const { result: result1 } = await conditionalExampleWorkflow.run({ number: 50 });
+  console.log(`🔢 Small Number: ${result1.number} | Large: ${result1.isLarge}`);
+  console.log(`💬 Message: ${result1.specialMessage || "No special message"}`);
+
+  // Test with large number
+  const { result: result2 } = await conditionalExampleWorkflow.run({ number: 150 });
+  console.log(`🔢 Large Number: ${result2.number} | Large: ${result2.isLarge}`);
+  console.log(`💬 Message: ${result2.specialMessage || "No special message"}`);
+  console.log();
+}
+
+export async function runParallelExample() {
+  console.log("🔄 PARALLEL EXAMPLE (andAll)");
+  console.log("=".repeat(40));
+
+  const { result } = await parallelExampleWorkflow.run({
+    numbers: [10, 25, 5, 40, 15],
+  });
+
+  console.log("📊 Input: [10, 25, 5, 40, 15]");
+  result.results.forEach((r) => {
+    console.log(`  ${r.operation}: ${r.value}`);
+  });
+  console.log();
+}
+
+export async function runAllExamples() {
+  console.log("🎯 VoltAgent Workflow Step Examples");
+  console.log("=".repeat(50));
+  console.log("📚 This demonstrates all 5 workflow step types:\n");
+
   try {
-    const { result } = await translationWorkflow.run({
-      originalText: inputText,
-      targetLanguage,
-    });
+    await runComprehensiveExample();
+    console.log(`\n${"=".repeat(50)}\n`);
 
-    console.log("🌍 Translation Workflow Results:");
-    console.log("=".repeat(50));
-    console.log(`📝 Original Text: ${result.originalText}`);
-    console.log(
-      `🔍 Detected Language: ${result.detectedLanguage} (confidence: ${(result.confidence * 100).toFixed(1)}%)`,
-    );
-    console.log(`🎯 Target Language: ${result.targetLanguage}`);
-    console.log(`🔄 Translated Text: ${result.translatedText}`);
-    console.log(`📊 Quality Score: ${(result.qualityScore * 100).toFixed(1)}%`);
-    console.log(`📏 ${result.summary} (${result.wordCount} words)`);
-    console.log(
-      `✅ Validation: Quality ${result.qualityCheck}, Length ${result.lengthValid ? "valid" : "invalid"}`,
-    );
-    console.log(`💾 Saved: ${result.savedSuccessfully ? "Yes" : "No"} (ID: ${result.fileId})`);
-    console.log(`🔗 Source: ${result.source} (enriched: ${result.enriched})`);
-    console.log(`\n⏱️  Processing Time: ${result.processingTime}ms`);
-    console.log("=".repeat(50));
+    await runAgentExample();
+    await runFunctionExample();
+    await runConditionalExample();
+    await runParallelExample();
 
-    return result;
+    console.log("✅ All examples completed successfully!");
   } catch (error) {
-    console.error("❌ Translation workflow failed:", error);
-    throw error;
+    console.error("❌ Error running examples:", error);
   }
 }
 
-// Example function to demonstrate workflow usage
-// Uncomment the call at the bottom to run examples
-export async function runExamples() {
-  console.log("🚀 Starting VoltAgent Translation Workflow Example\n");
+console.log("🚀 VoltAgent Workflow Examples Ready!");
+console.log("📚 This example demonstrates all workflow step types:");
+console.log("   🎯 COMPREHENSIVE EXAMPLE - Uses ALL 5 steps together!");
+console.log("   🤖 andAgent - Execute AI agents");
+console.log("   ⚙️  andThen - Execute functions");
+console.log("   ❓ andWhen - Conditional execution");
+console.log("   🔄 andAll - Parallel execution (wait for all)");
+console.log("   🏁 andRace - Parallel execution (first to finish)");
+console.log("\n📋 Available example functions:");
+console.log("   • runComprehensiveExample() - ALL steps in one workflow!");
+console.log("   • runAgentExample() - andAgent step");
+console.log("   • runFunctionExample() - andThen step");
+console.log("   • runConditionalExample() - andWhen step");
+console.log("   • runParallelExample() - andAll step");
+console.log("   • runAllExamples() - Run all examples");
+console.log("\n💡 Call runComprehensiveExample() to see all 5 steps working together!");
 
-  // Example 1: Spanish to English
-  await processTranslation(
-    "¡Hola! Me gustaría saber más sobre el producto VoltAgent. ¿Pueden ayudarme con información sobre precios?",
-    "en",
-  );
+(async () => {
+  // Initialize VoltAgent
+  new VoltAgent({
+    agents: {
+      simpleAgent,
+    },
+    workflows: {
+      comprehensiveWorkflow,
+      agentExampleWorkflow,
+      functionExampleWorkflow,
+      conditionalExampleWorkflow,
+      parallelExampleWorkflow,
+      raceExampleWorkflow,
+    },
+  });
 
-  console.log("\n");
-
-  // Example 2: French to English
-  await processTranslation(
-    "Bonjour! Je suis intéressé par votre service de support client. Pouvez-vous me donner plus de détails?",
-    "en",
-  );
-
-  console.log("\n");
-
-  // Example 3: German to Spanish
-  await processTranslation(
-    "Guten Tag! Ich habe eine Frage zu Ihrer API-Dokumentation. Können Sie mir helfen?",
-    "es",
-  );
-
-  console.log("\n");
-
-  // Example 4: Japanese to English
-  await processTranslation(
-    "こんにちは!VoltAgentについて詳しく教えてください。料金プランはありますか?",
-    "en",
-  );
-}
-
-// Initialize VoltAgent with VoltOps client and workflows
-new VoltAgent({
-  agents: {
-    languageDetectionAgent,
-    translationAgent,
-  },
-  workflows: {
-    translationWorkflow,
-  },
-  voltOpsClient: voltOpsClient,
-});
-
-// Uncomment to run examples
-// runExamples().catch(console.error);
+  setTimeout(async () => {
+    // Run the comprehensive example that uses all workflow steps
+    await runComprehensiveExample();
+  }, 1000);
+})();

@@ -35,8 +35,9 @@ import {
   validateCustomEndpoints,
 } from "./custom-endpoints";
 import { AgentRegistry } from "./registry";
-import { WorkflowRegistry } from "./workflow-registry";
+import { WorkflowRegistry } from "../workflow/registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
+import { zodSchemaToJsonUI } from "..";
 
 // Configuration interface
 export interface ServerConfig {
@@ -140,6 +141,8 @@ app.get("/", (c) => {
 app.use("/*", cors());
 // Store WebSocket connections for each agent
 const agentConnections = new Map<string, Set<WebSocket>>();
+// Store WebSocket connections for each workflow
+const workflowConnections = new Map<string, Set<WebSocket>>();
 
 // Enable CORS for all routes
 app.use(
@@ -275,9 +278,9 @@ app.openapi(getWorkflowsRoute, (c) => {
 app.get("/workflows/:id", (c: ApiContext) => {
   const id = c.req.param("id");
   const registry = WorkflowRegistry.getInstance();
-  const workflow = registry.getWorkflow(id);
+  const workflowData = registry.getWorkflowDetailForApi(id);
 
-  if (!workflow) {
+  if (!workflowData) {
     const response: ApiResponse<null> = {
       success: false,
       error: "Workflow not found",
@@ -285,28 +288,25 @@ app.get("/workflows/:id", (c: ApiContext) => {
     return c.json(response, 404);
   }
 
-  const workflowData = {
-    id: workflow.id,
-    name: workflow.name,
-    purpose: workflow.purpose,
-    stepsCount: workflow.steps.length,
-    status: "idle" as const,
-    steps: workflow.steps.map((step, index) => ({
-      id: step.id,
-      name: step.name || `Step ${index + 1}`,
-      purpose: step.purpose,
-      type: step.type,
-      ...(step.type === "agent" &&
-        "agent" in step && {
-          agentId: step.agent?.id,
-          agentName: step.agent?.name,
-        }),
-    })),
-  };
+  // Get the registered workflow to access input schema
+  const registeredWorkflow = registry.getWorkflow(id);
+  let inputSchema = null;
 
-  const response: ApiResponse<typeof workflowData> = {
+  if (registeredWorkflow?.inputSchema) {
+    try {
+      // Convert Zod schema to JSON schema using zodToJsonSchema
+      inputSchema = zodSchemaToJsonUI(registeredWorkflow.inputSchema);
+    } catch (error) {
+      console.warn("Failed to convert input schema to JSON schema:", error);
+    }
+  }
+
+  const response: ApiResponse<typeof workflowData & { inputSchema?: any }> = {
     success: true,
-    data: workflowData,
+    data: {
+      ...workflowData,
+      inputSchema,
+    },
   };
 
   return c.json(response);
@@ -316,9 +316,9 @@ app.get("/workflows/:id", (c: ApiContext) => {
 app.openapi(executeWorkflowRoute, async (c) => {
   const { id } = c.req.valid("param") as { id: string };
   const registry = WorkflowRegistry.getInstance();
-  const workflow = registry.getWorkflow(id);
+  const registeredWorkflow = registry.getWorkflow(id);
 
-  if (!workflow) {
+  if (!registeredWorkflow) {
     return c.json(
       { success: false, error: "Workflow not found" } satisfies z.infer<typeof ErrorSchema>,
       404,
@@ -331,7 +331,7 @@ app.openapi(executeWorkflowRoute, async (c) => {
       options?: { userId?: string; conversationId?: string; executionId?: string };
     };
 
-    const result = await workflow.run(input);
+    const result = await registeredWorkflow.workflow.run(input);
 
     const response = {
       success: true as const,
@@ -354,6 +354,98 @@ app.openapi(executeWorkflowRoute, async (c) => {
       } satisfies z.infer<typeof ErrorSchema>,
       500,
     );
+  }
+});
+
+// Get workflow history
+app.get("/workflows/:id/history", (c: ApiContext) => {
+  const id = c.req.param("id");
+  const page = Number.parseInt(c.req.query("page") || "0");
+  const limit = Number.parseInt(c.req.query("limit") || "10");
+
+  const registry = WorkflowRegistry.getInstance();
+  const registeredWorkflow = registry.getWorkflow(id);
+
+  if (!registeredWorkflow) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: "Workflow not found",
+    };
+    return c.json(response, 404);
+  }
+
+  try {
+    // Get workflow execution history
+    const allExecutions = registry.getWorkflowExecutions(id);
+
+    // Sort by startTime descending (most recent first)
+    const sortedExecutions = allExecutions.sort(
+      (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+    );
+
+    // Apply pagination
+    const startIndex = page * limit;
+    const endIndex = startIndex + limit;
+    const paginatedExecutions = sortedExecutions.slice(startIndex, endIndex);
+
+    // Format executions for API response
+    const formattedExecutions = paginatedExecutions.map((execution) => ({
+      id: execution.id,
+      workflowId: execution.workflowId,
+      workflowName: execution.workflowName,
+      status: execution.status,
+      startTime: execution.startTime.toISOString(),
+      endTime: execution.endTime?.toISOString(),
+      input: execution.input,
+      output: execution.output,
+      steps:
+        execution.steps?.map((step) => ({
+          stepId: step.stepId,
+          stepIndex: step.stepIndex,
+          stepType: step.stepType,
+          stepName: step.stepName,
+          status: step.status,
+          startTime: step.startTime?.toISOString(),
+          endTime: step.endTime?.toISOString(),
+          input: step.input,
+          output: step.output,
+          error: step.error,
+          agentExecutionId: step.agentExecutionId,
+        })) || [],
+      events: execution.events, // Always include events in local API
+      userId: execution.userId,
+      conversationId: execution.conversationId,
+    }));
+
+    const response: ApiResponse<{
+      executions: typeof formattedExecutions;
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }> = {
+      success: true,
+      data: {
+        executions: formattedExecutions,
+        pagination: {
+          page,
+          limit,
+          total: sortedExecutions.length,
+          totalPages: Math.ceil(sortedExecutions.length / limit),
+        },
+      },
+    };
+
+    return c.json(response);
+  } catch (error) {
+    console.error("Failed to get workflow history:", error);
+    const response: ApiResponse<null> = {
+      success: false,
+      error: "Failed to retrieve workflow history",
+    };
+    return c.json(response, 500);
   }
 });
 
@@ -1181,7 +1273,7 @@ export { app as default };
 export const createWebSocketServer = () => {
   const wss = new WebSocketServer({ noServer: true });
 
-  // Subscribe to history updates
+  // Subscribe to agent history updates
   AgentEventEmitter.getInstance().onHistoryUpdate((agentId, historyEntry) => {
     const connections = agentConnections.get(agentId);
     if (!connections) return;
@@ -1204,7 +1296,10 @@ export const createWebSocketServer = () => {
     });
   });
 
-  // Subscribe to new history entry created events
+  // ✅ CLEAN: Workflow events now use WORKFLOW_HISTORY_UPDATE via WorkflowRegistry
+  // No need for separate WORKFLOW_EVENT_UPDATE - WorkflowRegistry handles this via historyUpdate events
+
+  // Subscribe to new agent history entry created events
   AgentEventEmitter.getInstance().onHistoryEntryCreated((agentId, historyEntry) => {
     const connections = agentConnections.get(agentId);
     if (!connections) return;
@@ -1218,6 +1313,53 @@ export const createWebSocketServer = () => {
     connections.forEach((ws) => {
       if (ws.readyState === 1) {
         // WebSocket.OPEN
+        ws.send(message);
+      }
+    });
+  });
+
+  // Subscribe to workflow registry events
+  const workflowRegistry = WorkflowRegistry.getInstance();
+
+  // Subscribe to workflow history created events
+  workflowRegistry.on("historyCreated", (historyEntry) => {
+    const connections = workflowConnections.get(historyEntry.workflowId);
+    if (!connections) return;
+
+    const message = JSON.stringify({
+      type: "WORKFLOW_HISTORY_CREATED",
+      success: true,
+      data: {
+        ...historyEntry,
+        startTime: historyEntry.startTime.toISOString(),
+        endTime: historyEntry.endTime?.toISOString(),
+      },
+    });
+
+    connections.forEach((ws) => {
+      if (ws.readyState === 1) {
+        ws.send(message);
+      }
+    });
+  });
+
+  // Subscribe to workflow history update events
+  workflowRegistry.on("historyUpdate", (_executionId, historyEntry) => {
+    const connections = workflowConnections.get(historyEntry.workflowId);
+    if (!connections) return;
+
+    const message = JSON.stringify({
+      type: "WORKFLOW_HISTORY_UPDATE",
+      success: true,
+      data: {
+        ...historyEntry,
+        startTime: historyEntry.startTime.toISOString(),
+        endTime: historyEntry.endTime?.toISOString(),
+      },
+    });
+
+    connections.forEach((ws) => {
+      if (ws.readyState === 1) {
         ws.send(message);
       }
     });
@@ -1260,9 +1402,87 @@ export const createWebSocketServer = () => {
       return;
     }
 
+    // Handle different WebSocket paths
+    if (pathParts[2] === "workflows" && pathParts.length >= 4) {
+      // /ws/workflows/:id
+      const workflowId = decodeURIComponent(pathParts[3]);
+
+      // Add connection to the workflow's connection set
+      if (!workflowConnections.has(workflowId)) {
+        workflowConnections.set(workflowId, new Set());
+      }
+      workflowConnections.get(workflowId)?.add(ws);
+
+      // Get workflow and send initial state
+      const registeredWorkflow = WorkflowRegistry.getInstance().getWorkflow(workflowId);
+      if (registeredWorkflow) {
+        // Get workflow execution history
+        const history = WorkflowRegistry.getInstance().getWorkflowExecutions(workflowId);
+
+        if (history && history.length > 0) {
+          // Send all history entries
+          ws.send(
+            JSON.stringify({
+              type: "WORKFLOW_HISTORY_LIST",
+              success: true,
+              data: history.map((entry) => ({
+                ...entry,
+                startTime: entry.startTime.toISOString(),
+                endTime: entry.endTime?.toISOString(),
+              })),
+            }),
+          );
+
+          // Send active execution if exists
+          const activeExecution = history.find((entry) => entry.status === "running");
+          if (activeExecution) {
+            ws.send(
+              JSON.stringify({
+                type: "WORKFLOW_HISTORY_UPDATE",
+                success: true,
+                data: {
+                  ...activeExecution,
+                  startTime: activeExecution.startTime.toISOString(),
+                  endTime: activeExecution.endTime?.toISOString(),
+                },
+              }),
+            );
+          }
+        }
+
+        // Send initial workflow state
+        ws.send(
+          JSON.stringify({
+            type: "WORKFLOW_STATE",
+            success: true,
+            data: {
+              workflow: {
+                id: registeredWorkflow.workflow.id,
+                name: registeredWorkflow.workflow.name,
+                purpose: registeredWorkflow.workflow.purpose,
+                status: "idle",
+              },
+            },
+          }),
+        );
+      }
+
+      ws.on("close", () => {
+        // Remove connection from the workflow's connection set
+        workflowConnections.get(workflowId)?.delete(ws);
+        if (workflowConnections.get(workflowId)?.size === 0) {
+          workflowConnections.delete(workflowId);
+        }
+      });
+
+      return;
+    }
+
+    // Handle agent WebSocket connections
     // New URL structure: /ws/agents/:id
     // ["", "ws", "agents", ":id"]
-    const agentId = pathParts.length >= 4 ? decodeURIComponent(pathParts[3]) : null;
+    const agentId =
+      pathParts.length >= 4 && pathParts[2] === "agents" ? decodeURIComponent(pathParts[3]) : null;
 
     if (!agentId) {
       ws.close();

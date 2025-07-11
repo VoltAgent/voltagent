@@ -125,6 +125,10 @@ export type Workflow<
    */
   steps: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, DangerouslyAllowAny, DangerouslyAllowAny>[];
   /**
+   * Input schema for the workflow (for API access)
+   */
+  inputSchema?: INPUT_SCHEMA;
+  /**
    * Execute the workflow with the given input
    * @param input - The input to the workflow
    * @returns The result of the workflow

@@ -6,7 +6,7 @@ import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 import type { ServerConfig } from "./server/api";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 import { AgentRegistry } from "./server/registry";
-import { WorkflowRegistry } from "./server/workflow-registry";
+import { WorkflowRegistry } from "./workflow/registry";
 import type { ServerOptions, VoltAgentOptions } from "./types";
 import type { Workflow } from "./workflow/types";
 import type { WorkflowChain } from "./workflow/chain";
@@ -27,6 +27,12 @@ export {
   andRace,
 } from "./workflow";
 export type { Workflow, WorkflowConfig } from "./workflow";
+export type {
+  WorkflowExecutionContext,
+  WorkflowStepContext,
+  WorkflowHistoryEntry,
+  WorkflowStepHistoryEntry,
+} from "./workflow/context";
 
 export * from "./agent";
 export * from "./agent/hooks";
@@ -43,6 +49,7 @@ export * from "./tool/reasoning/index";
 export * from "./memory";
 export * from "./agent/providers";
 export * from "./events/types";
+export { AgentEventEmitter, WorkflowEventEmitter, type WorkflowEvent } from "./events";
 export type {
   AgentOptions,
   AgentResponse,
@@ -64,6 +71,7 @@ export * from "./utils";
 export * from "./retriever";
 export * from "./mcp";
 export { AgentRegistry } from "./server/registry";
+export { WorkflowRegistry } from "./workflow/registry";
 export { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 export * from "./utils/update";
 export { createAsyncIterableStream, type AsyncIterableStream } from "./utils/async-iterable-stream";
@@ -108,6 +116,7 @@ export class VoltAgent {
       // 🔥 CRITICAL FIX: Explicitly set global telemetry exporter for Agent access
       if (options.voltOpsClient.observability) {
         this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.observability);
+        this.workflowRegistry.setGlobalExporter(options.voltOpsClient.observability);
         this.initializeGlobalTelemetry(options.voltOpsClient.observability);
       }
     }
@@ -139,6 +148,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       );
       if (voltExporter) {
         this.registry.setGlobalVoltAgentExporter(voltExporter);
+        this.workflowRegistry.setGlobalExporter(voltExporter);
       }
       this.initializeGlobalTelemetry(options.telemetryExporter);
     }
@@ -276,14 +286,15 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    * Get all registered workflows
    */
   public getWorkflows(): Workflow<DangerouslyAllowAny, DangerouslyAllowAny>[] {
-    return this.workflowRegistry.getAllWorkflows();
+    return this.workflowRegistry.getAllWorkflows().map((registered) => registered.workflow);
   }
 
   /**
    * Get workflow by ID
    */
   public getWorkflow(id: string): Workflow<DangerouslyAllowAny, DangerouslyAllowAny> | undefined {
-    return this.workflowRegistry.getWorkflow(id);
+    const registered = this.workflowRegistry.getWorkflow(id);
+    return registered?.workflow;
   }
 
   /**
