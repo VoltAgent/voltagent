@@ -4,8 +4,8 @@ import fs from "fs-extra";
 import type { ProjectOptions } from "./types";
 import { createSpinner } from "./utils/animation";
 import fileManager from "./utils/file-manager";
-import { getAllTemplates } from "./utils/templates";
 import { configureMcpForIde, showMcpConfigurationMessage } from "./utils/mcp-config";
+import { getAllTemplates } from "./utils/templates";
 
 export const createProject = async (options: ProjectOptions, targetDir: string): Promise<void> => {
   // Check and create folder
