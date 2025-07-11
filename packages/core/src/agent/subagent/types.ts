@@ -1,8 +1,8 @@
 import type { Merge } from "type-fest";
 import type { z } from "zod";
+import type { Agent } from "../agent";
 import type { StreamPart } from "../providers";
 import type { ProviderOptions } from "../types";
-import { Agent } from "..";
 
 export type SubAgentStreamPart = Merge<
   StreamPart,

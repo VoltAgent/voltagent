@@ -1,5 +1,5 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { Agent } from "../../agent";
+import type { Agent } from "../../agent/agent";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowStep,

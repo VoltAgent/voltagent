@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
 import { type AgentTool, createTool } from "../../tool";
-import { Agent } from "../index";
+import { Agent } from "../agent";
 // Import only OperationContext and VoltAgentError
 import type { OperationContext, VoltAgentError } from "../types";
 

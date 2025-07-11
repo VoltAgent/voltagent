@@ -1,8 +1,8 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
-import { VoltOpsClient } from "./client";
-import { Agent } from "../agent";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Agent } from "../agent/agent";
 import { AgentRegistry } from "../server/registry";
-import type { VoltOpsClientOptions, PromptHelper, PromptContent } from "./types";
+import { VoltOpsClient } from "./client";
+import type { PromptContent, PromptHelper, VoltOpsClientOptions } from "./types";
 
 // Mock the VoltOps prompt manager
 const mockPromptManager = {

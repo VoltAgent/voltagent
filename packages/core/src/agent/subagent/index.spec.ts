@@ -1,5 +1,5 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
-import type { Agent } from "../index";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Agent } from "../agent";
 import type { BaseMessage } from "../providers";
 import type { AgentHandoffOptions } from "../types";
 import { SubAgentManager } from "./index";
