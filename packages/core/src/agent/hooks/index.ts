@@ -1,5 +1,5 @@
 import type { AgentTool } from "../../tool";
-import type { Agent } from "../index";
+import type { Agent } from "../agent";
 import type { AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
 
 // Argument Object Interfaces

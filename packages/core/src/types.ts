@@ -2,7 +2,7 @@
  * Basic type definitions for VoltAgent Core
  */
 
-import type { Agent } from "./agent";
+import type { Agent } from "./agent/agent";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 
 import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
