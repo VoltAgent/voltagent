@@ -21,6 +21,7 @@ import { andAll } from "./steps/and-all";
 import { andRace } from "./steps/and-race";
 import { andThen } from "./steps/and-then";
 import { andWhen } from "./steps/and-when";
+import { andTap } from "./steps/and-tap";
 import type { WorkflowConfig, WorkflowInput, WorkflowRunOptions } from "./types";
 
 /**
