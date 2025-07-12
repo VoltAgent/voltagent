@@ -132,7 +132,7 @@ function copyPackageChangelogs(sourcePkgPath: string, targetPkgPath: string) {
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["esm", "cjs"],
+  format: "esm",
   dts: true,
   sourcemap: true,
   clean: false,
