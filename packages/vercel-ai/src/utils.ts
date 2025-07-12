@@ -1,3 +1,4 @@
+import type { BaseTool } from "@voltagent/core";
 import { tool } from "ai";
 
 /**
@@ -5,7 +6,7 @@ import { tool } from "ai";
  * @param tools Array of agent tools
  * @returns Object mapping tool names to their SDK implementations or undefined if no tools
  */
-export const convertToolsForSDK = (tools: any[]): Record<string, any> | undefined => {
+export function convertToolsForSDK(tools: BaseTool[]): Record<string, any> | undefined {
   if (!tools || tools.length === 0) {
     return undefined;
   }
@@ -24,4 +25,4 @@ export const convertToolsForSDK = (tools: any[]): Record<string, any> | undefine
   }
 
   return toolsMap;
-};
+}

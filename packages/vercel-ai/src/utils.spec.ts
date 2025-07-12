@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { convertToolsForSDK } from ".";
+import { convertToolsForSDK } from "./utils";
 
 // Mock the ai tool
 vi.mock("ai", () => ({

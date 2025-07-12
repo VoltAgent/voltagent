@@ -1,10 +1,11 @@
 import type { BaseMessage } from "@voltagent/core";
+import { convertAsyncIterableToArray } from "@voltagent/internal";
 import { generateObject, streamObject } from "ai";
 // @ts-expect-error - ai/test is not typed
 import { MockLanguageModelV1, simulateReadableStream } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { VercelAIProvider } from "./index";
+import { VercelAIProvider } from "./provider";
 
 // Create a custom fail function since we can't use Jest's fail directly
 const fail = (message: string) => {
@@ -45,8 +46,10 @@ describe("VercelAIProvider", () => {
   });
 
   describe("streamText", () => {
-    it("should stream text", async () => {
-      const mockModel = new MockLanguageModelV1({
+    let mockModel: MockLanguageModelV1;
+
+    beforeEach(() => {
+      mockModel = new MockLanguageModelV1({
         doStream: async () => ({
           stream: simulateReadableStream({
             chunks: [
@@ -64,14 +67,43 @@ describe("VercelAIProvider", () => {
           rawCall: { rawPrompt: null, rawSettings: {} },
         }),
       });
+    });
 
+    it("should stream text", async () => {
       const result = await provider.streamText({
         messages: [{ role: "user", content: "Hello!" }],
         model: mockModel,
       });
 
       expect(result).toBeDefined();
-      //expect(result instanceof ReadableStream).toBe(true);
+      expect(result.textStream).toBeDefined();
+      expect(result.textStream).toBeInstanceOf(ReadableStream);
+      expect(await convertAsyncIterableToArray(result.textStream)).toEqual([
+        "Hello",
+        ", ",
+        "world!",
+      ]);
+    });
+
+    it("should include fullStream", async () => {
+      const result = await provider.streamText({
+        messages: [{ role: "user", content: "Hello!" }],
+        model: mockModel,
+      });
+
+      expect(result.fullStream).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: this is a test since other providers don't have this by default
+      expect(await convertAsyncIterableToArray(result.fullStream!)).toEqual([
+        { type: "text-delta", textDelta: "Hello" },
+        { type: "text-delta", textDelta: ", " },
+        { type: "text-delta", textDelta: "world!" },
+        {
+          type: "finish",
+          finishReason: "stop",
+          logprobs: undefined,
+          usage: { completionTokens: 10, promptTokens: 3, totalTokens: 13 },
+        },
+      ]);
     });
   });
 
@@ -258,8 +290,8 @@ describe("VercelAIProvider", () => {
       });
 
       expect(result).toBeDefined();
-
-      //expect(result instanceof ReadableStream).toBe(true);
+      expect(result.objectStream).toBeDefined();
+      expect(result.objectStream).toBeInstanceOf(ReadableStream);
     });
 
     it.todo("should format streamed object with JSON format in onStepFinish", async () => {
@@ -391,45 +423,43 @@ describe("VercelAIProvider", () => {
     });
   });
 
-  describe("message conversion", () => {
-    describe("toMessage", () => {
-      it("should map basic message correctly", () => {
-        const message: BaseMessage = {
-          role: "user",
-          content: "Hello",
-        };
+  describe("toMessage", () => {
+    it("should map basic message correctly", () => {
+      const message: BaseMessage = {
+        role: "user",
+        content: "Hello",
+      };
 
-        const result = provider.toMessage(message);
-        expect(result).toEqual({
-          role: "user",
-          content: "Hello",
-        });
+      const result = provider.toMessage(message);
+      expect(result).toEqual({
+        role: "user",
+        content: "Hello",
       });
+    });
 
-      it("should map message with name", () => {
-        const message: BaseMessage = {
-          role: "tool",
-          content: "Hello",
-        };
+    it("should map message with name", () => {
+      const message: BaseMessage = {
+        role: "tool",
+        content: "Hello",
+      };
 
-        const result = provider.toMessage(message);
-        expect(result).toEqual({
-          role: "tool",
-          content: "Hello",
-        });
+      const result = provider.toMessage(message);
+      expect(result).toEqual({
+        role: "tool",
+        content: "Hello",
       });
+    });
 
-      it("should map message with function call", () => {
-        const message: BaseMessage = {
-          role: "assistant",
-          content: "Hello",
-        };
+    it("should map message with function call", () => {
+      const message: BaseMessage = {
+        role: "assistant",
+        content: "Hello",
+      };
 
-        const result = provider.toMessage(message);
-        expect(result).toEqual({
-          role: "assistant",
-          content: "Hello",
-        });
+      const result = provider.toMessage(message);
+      expect(result).toEqual({
+        role: "assistant",
+        content: "Hello",
       });
     });
   });

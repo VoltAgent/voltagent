@@ -1781,6 +1781,9 @@ importers:
       ai:
         specifier: ^4.2.11
         version: 4.2.11(react@19.1.0)(zod@3.24.2)
+      ts-pattern:
+        specifier: ^5.7.1
+        version: 5.7.1
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -1794,6 +1797,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.2.3
         version: 3.2.3(vitest@3.2.3)
+      '@voltagent/internal':
+        specifier: workspace:^0.0.4
+        version: link:../internal
       eslint:
         specifier: ^8.0.0
         version: 8.57.1
@@ -10018,7 +10024,7 @@ packages:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/node@20.17.30)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -10084,7 +10090,7 @@ packages:
       '@vitest/spy': 3.2.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 5.4.19(@types/node@18.16.9)
+      vite: 5.4.19(@types/node@20.19.0)
     dev: true
 
   /@vitest/mocker@3.2.4(vite@6.3.3):
