@@ -15,13 +15,13 @@ import type {
   WorkflowStepParallelAllConfig,
   WorkflowStepParallelRaceConfig,
   WorkflowStepTapConfig,
+  andAgent,
+  andAll,
+  andRace,
+  andTap,
+  andThen,
+  andWhen,
 } from "./steps";
-import { andAgent } from "./steps/and-agent";
-import { andAll } from "./steps/and-all";
-import { andRace } from "./steps/and-race";
-import { andThen } from "./steps/and-then";
-import { andWhen } from "./steps/and-when";
-import { andTap } from "./steps/and-tap";
 import type { WorkflowConfig, WorkflowInput, WorkflowRunOptions } from "./types";
 
 /**
