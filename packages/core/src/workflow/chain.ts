@@ -22,7 +22,12 @@ import {
   andThen,
   andWhen,
 } from "./steps";
-import type { WorkflowConfig, WorkflowInput } from "./types";
+import { andAgent } from "./steps/and-agent";
+import { andAll } from "./steps/and-all";
+import { andRace } from "./steps/and-race";
+import { andThen } from "./steps/and-then";
+import { andWhen } from "./steps/and-when";
+import type { WorkflowConfig, WorkflowInput, WorkflowRunOptions } from "./types";
 
 /**
  * Agent configuration for the chain
@@ -374,10 +379,10 @@ export class WorkflowChain<
    * @param input - The input data for the workflow that matches the input schema
    * @returns The workflow execution result that matches the result schema
    */
-  async run(input: WorkflowInput<INPUT_SCHEMA>) {
+  async run(input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) {
     // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
     const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA>(this.config, ...this.steps);
-    return await workflow.run(input);
+    return await workflow.run(input, options);
   }
 }
 

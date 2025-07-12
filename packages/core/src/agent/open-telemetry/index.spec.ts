@@ -37,7 +37,6 @@ const getOtelMocks = async () => {
   // Provide dummy name to satisfy the mocked getTracer call
   const mockTracer = trace.getTracer("test-tracer");
   // Import the mockSpan creator from the mocked module
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { _createMockSpan } = (await import("@opentelemetry/api")) as any;
   return {
     mockTracer,

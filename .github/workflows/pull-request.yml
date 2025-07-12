@@ -22,9 +22,7 @@ jobs:
     name: Lint (Node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -32,6 +30,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pnpm install -w
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
       #- name: lint
       #  run: |
       #    pnpm lint:ci
@@ -46,17 +46,19 @@ jobs:
       group: ${{ github.ref }}-pr-build-${{ matrix.node-version }}
       cancel-in-progress: true
     name: Build & Test (Node ${{ matrix.node-version }})
+    env:
+      NODE_OPTIONS: --max_old_space_size=8192
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
       - name: Install
         run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
       - name: Build
         run: pnpm build:all
       - name: Publint
@@ -104,11 +106,8 @@ jobs:
         if: steps.check_postgres.outputs.postgres_changed == 'false'
         run: echo "No PostgreSQL changes detected, skipping integration tests"
       
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         if: steps.check_postgres.outputs.postgres_changed == 'true'
-        with:
-          version: 9
-      
       - uses: actions/setup-node@v4
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         with:
@@ -118,6 +117,8 @@ jobs:
       - name: Install Dependencies
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
       
       - name: Build Core Dependencies
         if: steps.check_postgres.outputs.postgres_changed == 'true'

@@ -14,7 +14,6 @@ const calculatorTool = createTool({
   execute: async (args) => {
     try {
       // Using Function is still not ideal for production but safer than direct eval
-      // eslint-disable-next-line no-new-func
       const result = new Function(`return ${args.expression}`)();
       return { result };
     } catch (e) {
