@@ -1,5 +1,87 @@
 # @voltagent/core
 
+## 0.1.59
+
+### Patch Changes
+
+- [#382](https://github.com/VoltAgent/voltagent/pull/382) [`86acef0`](https://github.com/VoltAgent/voltagent/commit/86acef01dd6ce2e213b13927136c32bcf1078484) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Allow workflow.run to accept userContext, conversationId, and userId and pass along to all steps & agents
+
+- [#375](https://github.com/VoltAgent/voltagent/pull/375) [`1f55501`](https://github.com/VoltAgent/voltagent/commit/1f55501ec7a221002c11a3a0e87779c8f1379bed) Thanks [@SashankMeka1](https://github.com/SashankMeka1)! - feat(core): MCPServerConfig timeouts - #363.
+
+  Add MCPServerConfig timeouts
+
+  ```ts
+  const mcpConfig = new MCPConfiguration({
+    servers: {
+      filesystem: {
+        type: "stdio",
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-filesystem", path.resolve("./data")],
+        timeout: 10000,
+      },
+    },
+  });
+  ```
+
+- [#385](https://github.com/VoltAgent/voltagent/pull/385) [`bfb13c3`](https://github.com/VoltAgent/voltagent/commit/bfb13c390a8ff59ad61a08144a5f6fa0439d25b7) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core): Add back the result for a workflow execution, as the result was removed due to change in state management process
+
+- [#384](https://github.com/VoltAgent/voltagent/pull/384) [`757219c`](https://github.com/VoltAgent/voltagent/commit/757219cc76e7f0320074230788012714f91e81bb) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat(core): Add ability to pass hooks into the generate functions (i.e. streamText) that do not update/mutate the agent hooks
+
+  ### Usage
+
+  ```ts
+  const agent = new Agent({
+    name: "My Agent with Hooks",
+    instructions: "An assistant demonstrating hooks",
+    llm: provider,
+    model: openai("gpt-4o"),
+    hooks: myAgentHooks,
+  });
+
+  // both the myAgentHooks and the hooks passed in the generateText method will be called
+  await agent.generateText("Hello, how are you?", {
+    hooks: {
+      onEnd: async ({ context }) => {
+        console.log("End of generation but only on this invocation!");
+      },
+    },
+  });
+  ```
+
+- [#381](https://github.com/VoltAgent/voltagent/pull/381) [`b52cdcd`](https://github.com/VoltAgent/voltagent/commit/b52cdcd2d8072fa93011e14c41841b6ff8a97b0b) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat: Add ability to tap into workflow without mutating the data by adding the `andTap` step
+
+  ### Usage
+
+  The andTap step is useful when you want to tap into the workflow without mutating the data, for example:
+
+  ```ts
+  const workflow = createWorkflowChain(config)
+    .andTap({
+      execute: async (data) => {
+        console.log("🔄 Translating text:", data);
+      },
+    })
+    .andTap({
+      id: "sleep",
+      execute: async (data) => {
+        console.log("🔄 Sleeping for 1 second");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return data;
+      },
+    })
+    .andThen({
+      execute: async (data) => {
+        return { ...data, translatedText: data.translatedText };
+      },
+    })
+    .run({
+      originalText: "Hello, world!",
+      targetLanguage: "en",
+    });
+  ```
+
+  You will notice that the `andTap` step is not included in the result, BUT it is `awaited` and `executed` before the next step, so you can block processing safely if needed.
+
 ## 0.1.58
 
 ### Patch Changes
