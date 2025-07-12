@@ -95,10 +95,10 @@ export function andWhen<INPUT, DATA, RESULT>({
         const stepSuccessEvent = createWorkflowStepSuccessEvent(
           stepContext,
           state.workflowContext,
-          { result, conditionMet }, // ✅ Include conditionMet in output for console visibility
+          { result, conditionMet },
           stepStartEvent.id,
           {
-            isSkipped: !conditionMet, // ✅ UNIFIED: Convert conditionMet to isSkipped
+            isSkipped: !conditionMet,
           },
         );
 

@@ -169,7 +169,6 @@ export interface WorkflowStepEventMetadata extends BaseEventMetadata {
   // Parallel step için
   parallelIndex?: number;
   parallelParentEventId?: string;
-  // ✅ UNIFIED: Indicates if step was skipped (replaces conditionMet and raceWinner)
   isSkipped?: boolean;
 }
 

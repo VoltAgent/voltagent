@@ -564,7 +564,7 @@ export function createWorkflow<
       let executionId = crypto.randomUUID(); // fallback ID
 
       try {
-        historyEntry = workflowRegistry.recordWorkflowExecutionStart(id, name, input, {
+        historyEntry = await workflowRegistry.recordWorkflowExecutionStart(id, name, input, {
           userId: (input as { userId?: string }).userId,
           conversationId: (input as { conversationId?: string }).conversationId,
         });

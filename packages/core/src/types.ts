@@ -10,6 +10,7 @@ import type { VoltOpsClient } from "./voltops";
 import type { Workflow } from "./workflow/types";
 import type { WorkflowChain } from "./workflow/chain";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { WorkflowMemory } from "./workflow/types";
 
 // Re-export VoltOps types for convenience
 export type {
@@ -67,6 +68,12 @@ export type VoltAgentOptions = {
     | Workflow<DangerouslyAllowAny, DangerouslyAllowAny>
     | WorkflowChain<DangerouslyAllowAny, DangerouslyAllowAny>
   >;
+  /**
+   * Global memory storage for workflow operations
+   * If not provided, defaults to LibSQLStorage (similar to Agent memory system)
+   * @since 1.0.0
+   */
+  workflowMemory?: WorkflowMemory;
   /**
    * Server configuration options
    */

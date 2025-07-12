@@ -141,3 +141,187 @@ export type Workflow<
     result: z.infer<RESULT_SCHEMA>;
   }>;
 };
+
+// ===================================
+// WORKFLOW PERSISTENCE TYPES
+// ===================================
+
+/**
+ * Base workflow history entry - common fields for all use cases
+ */
+export interface BaseWorkflowHistoryEntry {
+  id: string;
+  workflowId: string; // Workflow definition ID
+  status: "running" | "completed" | "error" | "cancelled";
+  startTime: Date;
+  endTime?: Date;
+  input: unknown;
+  output?: unknown;
+}
+
+/**
+ * Base workflow step history entry - common fields for all use cases
+ */
+export interface BaseWorkflowStepHistoryEntry {
+  stepIndex: number;
+  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
+  stepName: string;
+  status: "pending" | "running" | "completed" | "error" | "skipped"; // includes all possible statuses
+  startTime?: Date; // optional since pending steps might not have started
+  endTime?: Date;
+  input?: unknown;
+  output?: unknown;
+  agentExecutionId?: string; // Link to agent_history.id if step executes an agent
+  parallelIndex?: number; // For parallel steps
+}
+
+/**
+ * Workflow history entry for runtime execution context
+ */
+export interface WorkflowRuntimeHistoryEntry extends BaseWorkflowHistoryEntry {
+  workflowName: string;
+  steps: WorkflowRuntimeStepHistoryEntry[];
+  events: import("../events/types").NewTimelineEvent[];
+  userId?: string;
+  conversationId?: string;
+}
+
+/**
+ * Workflow step history entry for runtime execution context
+ */
+export interface WorkflowRuntimeStepHistoryEntry extends BaseWorkflowStepHistoryEntry {
+  stepId: string;
+  error?: unknown;
+  parallelParentStepId?: string;
+  isSkipped?: boolean;
+}
+
+/**
+ * Workflow history entry for database persistence
+ */
+export interface WorkflowHistoryEntry extends BaseWorkflowHistoryEntry {
+  name: string;
+  metadata?: {
+    userId?: string;
+    conversationId?: string;
+    [key: string]: unknown;
+  };
+  steps: WorkflowStepHistoryEntry[];
+  events: WorkflowTimelineEvent[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Workflow step history entry for database persistence
+ */
+export interface WorkflowStepHistoryEntry extends BaseWorkflowStepHistoryEntry {
+  id: string;
+  workflowHistoryId: string;
+  stepId?: string; // For parallel steps: unique identifier
+  startTime: Date; // required for persistence (override base optional)
+  errorMessage?: string;
+  parentStepId?: string; // For nested steps
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Workflow timeline event - represents events during workflow execution
+ */
+export interface WorkflowTimelineEvent {
+  id: string;
+  workflowHistoryId: string;
+  eventId: string;
+  name: string;
+  type: "workflow" | "workflow-step";
+  startTime: Date;
+  endTime?: Date;
+  status: string;
+  level?: string;
+  input?: unknown;
+  output?: unknown;
+  statusMessage?: unknown;
+  metadata?: Record<string, unknown>;
+  traceId?: string;
+  parentEventId?: string;
+  createdAt: Date;
+}
+
+/**
+ * Workflow statistics for reporting
+ */
+export interface WorkflowStats {
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  averageExecutionTime: number;
+  lastExecutionTime?: Date;
+}
+
+/**
+ * Options for creating workflow execution
+ */
+export interface CreateWorkflowExecutionOptions {
+  userId?: string;
+  conversationId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Options for recording workflow step
+ */
+export interface RecordWorkflowStepOptions {
+  stepId?: string;
+  parallelIndex?: number;
+  parentStepId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Options for updating workflow step
+ */
+export interface UpdateWorkflowStepOptions {
+  status?: "completed" | "error" | "skipped";
+  output?: unknown;
+  errorMessage?: string;
+  agentExecutionId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Workflow memory storage interface - provides abstraction for different storage backends
+ */
+export interface WorkflowMemory {
+  // Workflow History Operations
+  storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void>;
+  getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null>;
+  getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]>;
+  updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void>;
+  deleteWorkflowHistory(id: string): Promise<void>;
+
+  // Workflow Steps Operations
+  storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void>;
+  getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null>;
+  getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]>;
+  updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void>;
+  deleteWorkflowStep(id: string): Promise<void>;
+
+  // Workflow Timeline Events Operations
+  storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void>;
+  getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null>;
+  getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]>;
+  deleteWorkflowTimelineEvent(id: string): Promise<void>;
+
+  // Query Operations
+  getAllWorkflowIds(): Promise<string[]>;
+  getWorkflowStats(workflowId: string): Promise<WorkflowStats>;
+
+  // Bulk Operations
+  getWorkflowHistoryWithStepsAndEvents(id: string): Promise<WorkflowHistoryEntry | null>;
+  deleteWorkflowHistoryWithRelated(id: string): Promise<void>;
+
+  // Cleanup Operations
+  cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number>;
+}

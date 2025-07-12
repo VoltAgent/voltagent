@@ -26,23 +26,22 @@ export type WorkflowEvent =
 // WorkflowEvents interface removed - events now handled via WorkflowRegistry historyUpdate
 
 /**
- * Singleton class for managing workflow events
- * Separate from AgentEventEmitter to maintain clean separation of concerns
+ * Workflow event emitter for publishing workflow events to the timeline
  */
 export class WorkflowEventEmitter extends EventEmitter {
   private static instance: WorkflowEventEmitter | null = null;
 
-  // Background queue for workflow events
+  // Background queue for workflow events (similar to AgentEventEmitter)
   private workflowEventQueue: BackgroundQueue;
 
   private constructor() {
     super();
 
-    // Initialize specialized queue for workflow events
+    // Initialize background queue for workflow events
     this.workflowEventQueue = new BackgroundQueue({
-      maxConcurrency: 10, // Higher concurrency for workflow events
-      defaultTimeout: 60000, // 60 seconds timeout
-      defaultRetries: 5, // Reasonable retries for workflow events
+      maxConcurrency: 5, // Medium concurrency for workflow events
+      defaultTimeout: 30000, // 30 seconds timeout
+      defaultRetries: 3, // 3 retries for workflow events
     });
   }
 
@@ -106,19 +105,44 @@ export class WorkflowEventEmitter extends EventEmitter {
       const { WorkflowRegistry } = await import("../workflow/registry");
       const registry = WorkflowRegistry.getInstance();
 
-      // Persist event in workflow history
-      try {
-        const historyManager = registry.getHistoryManager();
-        historyManager.addEventToExecution(executionId, event);
-
-        // ✅ FIX: Manually emit historyUpdate since addEventToExecution doesn't do it
-        const updatedEntry = historyManager.getEntry(executionId);
-        if (updatedEntry) {
-          registry.emit("historyUpdate", executionId, updatedEntry);
+      // 🔥 PERSIST EVENT TO DATABASE
+      registry.ensureMemoryManager();
+      const memoryManager = registry.getMemoryManager();
+      if (memoryManager) {
+        try {
+          // Simplified event persistence - bypass type issues
+          await memoryManager.recordTimelineEvent(executionId, {
+            id: uuidv4(), // Required primary key for WorkflowTimelineEvent
+            eventId: event.id || uuidv4(),
+            name: event.name, // 🔥 FIXED: Use correct field name
+            type: event.type as "workflow" | "workflow-step", // 🔥 FIXED: Use correct field name
+            startTime: new Date(event.startTime),
+            endTime: event.endTime ? new Date(event.endTime) : undefined,
+            status: event.status,
+            level: event.level || "INFO",
+            input: event.input || null,
+            output: event.output || null,
+            statusMessage:
+              typeof event.statusMessage === "string"
+                ? event.statusMessage
+                : (event.statusMessage as any)?.message || null,
+            metadata: {},
+            traceId: event.traceId || executionId,
+            parentEventId: event.parentEventId || undefined,
+          });
+          devLogger.debug(
+            `WorkflowEventEmitter: Event persisted to DB: ${event.name} for execution ${executionId}`,
+          );
+        } catch (persistError) {
+          devLogger.error("WorkflowEventEmitter: Failed to persist event to DB:", persistError);
         }
-      } catch (historyError) {
-        devLogger.warn("Failed to persist workflow event in history:", historyError);
       }
+
+      // Note: WorkflowRegistry now handles real-time WebSocket emission with real DB data
+      // No need for additional emit here - WorkflowRegistry.emit("historyUpdate") handles it
+      devLogger.debug(
+        `WorkflowEventEmitter: Event processed (persist-only): ${event.name} for execution ${executionId}`,
+      );
     } catch (error) {
       devLogger.error("Error processing workflow event:", error);
     }

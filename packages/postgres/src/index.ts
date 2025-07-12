@@ -68,11 +68,122 @@ export interface PostgresStorageOptions extends MemoryOptions {
   storageLimit?: number;
 }
 
+// ===== Workflow Memory Types =====
+// Duplicated from @voltagent/core to avoid cross-package import issues
+
 /**
- * A PostgreSQL storage implementation of the Memory interface
- * Uses node-postgres to store and retrieve conversation history
+ * Workflow history entry - represents a single workflow execution
  */
-export class PostgresStorage implements Memory {
+export interface WorkflowHistoryEntry {
+  id: string;
+  name: string;
+  workflowId: string;
+  status: "running" | "completed" | "error" | "cancelled";
+  startTime: Date;
+  endTime?: Date;
+  input: unknown;
+  output?: unknown;
+  metadata?: {
+    userId?: string;
+    conversationId?: string;
+    [key: string]: unknown;
+  };
+  steps: WorkflowStepHistoryEntry[];
+  events: WorkflowTimelineEvent[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Workflow step history entry
+ */
+export interface WorkflowStepHistoryEntry {
+  id: string;
+  workflowHistoryId: string;
+  stepIndex: number;
+  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
+  stepName: string;
+  status: "running" | "completed" | "error" | "skipped";
+  startTime: Date;
+  endTime?: Date;
+  input?: unknown;
+  output?: unknown;
+  errorMessage?: string;
+  agentExecutionId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Workflow timeline event
+ */
+export interface WorkflowTimelineEvent {
+  eventId: string;
+  workflowHistoryId: string;
+  type: string;
+  name: string;
+  startTime: Date;
+  endTime?: Date;
+  status?: string;
+  level?: string;
+  input?: unknown;
+  output?: unknown;
+  metadata?: unknown;
+  createdAt: Date;
+}
+
+/**
+ * Workflow statistics
+ */
+export interface WorkflowStats {
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  averageExecutionTime: number;
+  lastExecutionTime?: Date;
+}
+
+/**
+ * Workflow memory storage interface
+ */
+export interface WorkflowMemory {
+  // Workflow History Operations
+  storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void>;
+  getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null>;
+  getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]>;
+  updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void>;
+  deleteWorkflowHistory(id: string): Promise<void>;
+
+  // Workflow Steps Operations
+  storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void>;
+  getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null>;
+  getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]>;
+  updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void>;
+  deleteWorkflowStep(id: string): Promise<void>;
+
+  // Workflow Timeline Events Operations
+  storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void>;
+  getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null>;
+  getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]>;
+  deleteWorkflowTimelineEvent(id: string): Promise<void>;
+
+  // Query Operations
+  getAllWorkflowIds(): Promise<string[]>;
+  getWorkflowStats(workflowId: string): Promise<WorkflowStats>;
+
+  // Bulk Operations
+  getWorkflowHistoryWithStepsAndEvents(id: string): Promise<WorkflowHistoryEntry | null>;
+  deleteWorkflowHistoryWithRelated(id: string): Promise<void>;
+
+  // Cleanup Operations
+  cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number>;
+}
+
+/**
+ * A PostgreSQL storage implementation of the Memory and WorkflowMemory interfaces
+ * Uses node-postgres to store and retrieve conversation history and workflow data
+ */
+export class PostgresStorage implements Memory, WorkflowMemory {
   private pool: Pool;
   private options: PostgresStorageOptions;
   private initialized: Promise<void>;
@@ -396,8 +507,106 @@ export class PostgresStorage implements Memory {
         // Continue without failing - indexes are not critical for basic functionality
       }
 
+      // ===== Create Workflow Tables =====
+
+      // Create workflow history table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_workflow_history (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          workflow_id TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'cancelled')),
+          start_time TIMESTAMPTZ NOT NULL,
+          end_time TIMESTAMPTZ,
+          input JSONB,
+          output JSONB,
+          metadata JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+        )
+      `);
+
+      // Create workflow steps table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_workflow_steps (
+          id TEXT PRIMARY KEY,
+          workflow_history_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_workflow_history(id) ON DELETE CASCADE,
+          step_index INTEGER NOT NULL,
+          step_type TEXT NOT NULL CHECK (step_type IN ('agent', 'func', 'conditional-when', 'parallel-all', 'parallel-race')),
+          step_name TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'skipped')),
+          start_time TIMESTAMPTZ NOT NULL,
+          end_time TIMESTAMPTZ,
+          input JSONB,
+          output JSONB,
+          error_message TEXT,
+          agent_execution_id TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+        )
+      `);
+
+      // Create workflow timeline events table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_workflow_timeline_events (
+          event_id TEXT PRIMARY KEY,
+          workflow_history_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_workflow_history(id) ON DELETE CASCADE,
+          type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          start_time TIMESTAMPTZ NOT NULL,
+          end_time TIMESTAMPTZ,
+          status TEXT,
+          level TEXT DEFAULT 'INFO',
+          input JSONB,
+          output JSONB,
+          metadata JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+        )
+      `);
+
+      // Create indexes for workflow tables
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_history_workflow_id
+        ON ${this.options.tablePrefix}_workflow_history(workflow_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_history_status
+        ON ${this.options.tablePrefix}_workflow_history(status)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_history_start_time
+        ON ${this.options.tablePrefix}_workflow_history(start_time)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_steps_workflow_history_id
+        ON ${this.options.tablePrefix}_workflow_steps(workflow_history_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_steps_step_index
+        ON ${this.options.tablePrefix}_workflow_steps(workflow_history_id, step_index)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_timeline_events_workflow_history_id
+        ON ${this.options.tablePrefix}_workflow_timeline_events(workflow_history_id)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_timeline_events_type
+        ON ${this.options.tablePrefix}_workflow_timeline_events(type)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_timeline_events_start_time
+        ON ${this.options.tablePrefix}_workflow_timeline_events(start_time)
+      `);
+
       await client.query("COMMIT");
-      this.debug("Database initialized successfully");
+      this.debug("Database initialized successfully with workflow tables");
 
       // Run conversation schema migration
       try {
@@ -2225,6 +2434,673 @@ export class PostgresStorage implements Memory {
       await client.query("ROLLBACK");
       this.debug("Error during agent history schema migration:", error);
       return { success: false, error: error as Error };
+    } finally {
+      client.release();
+    }
+  }
+
+  // ===== WorkflowMemory Interface Implementation =====
+
+  /**
+   * Store a workflow history entry
+   */
+  public async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      await client.query(
+        `INSERT INTO ${this.options.tablePrefix}_workflow_history 
+         (id, name, workflow_id, status, start_time, end_time, input, output, metadata, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (id) DO UPDATE SET
+         name = $2, workflow_id = $3, status = $4, start_time = $5, end_time = $6,
+         input = $7, output = $8, metadata = $9, updated_at = $11`,
+        [
+          entry.id,
+          entry.name,
+          entry.workflowId,
+          entry.status,
+          entry.startTime,
+          entry.endTime || null,
+          entry.input ? JSON.stringify(entry.input) : null,
+          entry.output ? JSON.stringify(entry.output) : null,
+          entry.metadata ? JSON.stringify(entry.metadata) : null,
+          entry.createdAt,
+          entry.updatedAt,
+        ],
+      );
+      this.debug(`Stored workflow history entry: ${entry.id}`);
+    } catch (error) {
+      this.debug("Error storing workflow history:", error);
+      throw new Error("Failed to store workflow history entry");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get a workflow history entry by ID
+   */
+  public async getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM ${this.options.tablePrefix}_workflow_history WHERE id = $1`,
+        [id],
+      );
+
+      if (result.rows.length === 0) return null;
+
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        name: row.name,
+        workflowId: row.workflow_id,
+        status: row.status,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        input: row.input ? safeJsonParse(row.input) : null,
+        output: row.output ? safeJsonParse(row.output) : null,
+        metadata: row.metadata ? safeJsonParse(row.metadata) : null,
+        steps: [], // Will be populated separately if needed
+        events: [], // Will be populated separately if needed
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
+    } catch (error) {
+      this.debug("Error getting workflow history:", error);
+      throw new Error("Failed to get workflow history entry");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get workflow history entries by workflow ID
+   */
+  public async getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM ${this.options.tablePrefix}_workflow_history 
+         WHERE workflow_id = $1 ORDER BY created_at DESC`,
+        [workflowId],
+      );
+
+      return result.rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        workflowId: row.workflow_id,
+        status: row.status,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        input: row.input ? safeJsonParse(row.input) : null,
+        output: row.output ? safeJsonParse(row.output) : null,
+        metadata: row.metadata ? safeJsonParse(row.metadata) : null,
+        steps: [], // Will be populated separately if needed
+        events: [], // Will be populated separately if needed
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    } catch (error) {
+      this.debug("Error getting workflow history by workflow ID:", error);
+      throw new Error("Failed to get workflow history entries");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Update a workflow history entry
+   */
+  public async updateWorkflowHistory(
+    id: string,
+    updates: Partial<WorkflowHistoryEntry>,
+  ): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const updateFields: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+
+      if (updates.name !== undefined) {
+        updateFields.push(`name = $${paramCount++}`);
+        values.push(updates.name);
+      }
+      if (updates.status !== undefined) {
+        updateFields.push(`status = $${paramCount++}`);
+        values.push(updates.status);
+      }
+      if (updates.endTime !== undefined) {
+        updateFields.push(`end_time = $${paramCount++}`);
+        values.push(updates.endTime);
+      }
+      if (updates.output !== undefined) {
+        updateFields.push(`output = $${paramCount++}`);
+        values.push(updates.output ? JSON.stringify(updates.output) : null);
+      }
+      if (updates.metadata !== undefined) {
+        updateFields.push(`metadata = $${paramCount++}`);
+        values.push(updates.metadata ? JSON.stringify(updates.metadata) : null);
+      }
+
+      updateFields.push(`updated_at = $${paramCount++}`);
+      values.push(new Date());
+
+      values.push(id); // Add ID as last parameter
+
+      await client.query(
+        `UPDATE ${this.options.tablePrefix}_workflow_history 
+         SET ${updateFields.join(", ")} 
+         WHERE id = $${paramCount}`,
+        values,
+      );
+
+      this.debug(`Updated workflow history entry: ${id}`);
+    } catch (error) {
+      this.debug("Error updating workflow history:", error);
+      throw new Error("Failed to update workflow history entry");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Delete a workflow history entry
+   */
+  public async deleteWorkflowHistory(id: string): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      await client.query(`DELETE FROM ${this.options.tablePrefix}_workflow_history WHERE id = $1`, [
+        id,
+      ]);
+      this.debug(`Deleted workflow history entry: ${id}`);
+    } catch (error) {
+      this.debug("Error deleting workflow history:", error);
+      throw new Error("Failed to delete workflow history entry");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Store a workflow step
+   */
+  public async storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      await client.query(
+        `INSERT INTO ${this.options.tablePrefix}_workflow_steps 
+         (id, workflow_history_id, step_index, step_type, step_name, status, start_time, end_time, 
+          input, output, error_message, agent_execution_id, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         ON CONFLICT (id) DO UPDATE SET
+         status = $6, end_time = $8, output = $10, error_message = $11, 
+         agent_execution_id = $12, updated_at = $14`,
+        [
+          step.id,
+          step.workflowHistoryId,
+          step.stepIndex,
+          step.stepType,
+          step.stepName,
+          step.status,
+          step.startTime,
+          step.endTime || null,
+          step.input ? JSON.stringify(step.input) : null,
+          step.output ? JSON.stringify(step.output) : null,
+          step.errorMessage || null,
+          step.agentExecutionId || null,
+          step.createdAt,
+          step.updatedAt,
+        ],
+      );
+      this.debug(`Stored workflow step: ${step.id}`);
+    } catch (error) {
+      this.debug("Error storing workflow step:", error);
+      throw new Error("Failed to store workflow step");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get a workflow step by ID
+   */
+  public async getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM ${this.options.tablePrefix}_workflow_steps WHERE id = $1`,
+        [id],
+      );
+
+      if (result.rows.length === 0) return null;
+
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        workflowHistoryId: row.workflow_history_id,
+        stepIndex: row.step_index,
+        stepType: row.step_type,
+        stepName: row.step_name,
+        status: row.status,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        input: row.input ? safeJsonParse(row.input) : null,
+        output: row.output ? safeJsonParse(row.output) : null,
+        errorMessage: row.error_message,
+        agentExecutionId: row.agent_execution_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
+    } catch (error) {
+      this.debug("Error getting workflow step:", error);
+      throw new Error("Failed to get workflow step");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get workflow steps by workflow history ID
+   */
+  public async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM ${this.options.tablePrefix}_workflow_steps 
+         WHERE workflow_history_id = $1 ORDER BY step_index ASC`,
+        [workflowHistoryId],
+      );
+
+      return result.rows.map((row) => ({
+        id: row.id,
+        workflowHistoryId: row.workflow_history_id,
+        stepIndex: row.step_index,
+        stepType: row.step_type,
+        stepName: row.step_name,
+        status: row.status,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        input: row.input ? safeJsonParse(row.input) : null,
+        output: row.output ? safeJsonParse(row.output) : null,
+        errorMessage: row.error_message,
+        agentExecutionId: row.agent_execution_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    } catch (error) {
+      this.debug("Error getting workflow steps:", error);
+      throw new Error("Failed to get workflow steps");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Update a workflow step
+   */
+  public async updateWorkflowStep(
+    id: string,
+    updates: Partial<WorkflowStepHistoryEntry>,
+  ): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const updateFields: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+
+      if (updates.status !== undefined) {
+        updateFields.push(`status = $${paramCount++}`);
+        values.push(updates.status);
+      }
+      if (updates.endTime !== undefined) {
+        updateFields.push(`end_time = $${paramCount++}`);
+        values.push(updates.endTime);
+      }
+      if (updates.output !== undefined) {
+        updateFields.push(`output = $${paramCount++}`);
+        values.push(updates.output ? JSON.stringify(updates.output) : null);
+      }
+      if (updates.errorMessage !== undefined) {
+        updateFields.push(`error_message = $${paramCount++}`);
+        values.push(updates.errorMessage);
+      }
+      if (updates.agentExecutionId !== undefined) {
+        updateFields.push(`agent_execution_id = $${paramCount++}`);
+        values.push(updates.agentExecutionId);
+      }
+
+      updateFields.push(`updated_at = $${paramCount++}`);
+      values.push(new Date());
+
+      values.push(id); // Add ID as last parameter
+
+      await client.query(
+        `UPDATE ${this.options.tablePrefix}_workflow_steps 
+         SET ${updateFields.join(", ")} 
+         WHERE id = $${paramCount}`,
+        values,
+      );
+
+      this.debug(`Updated workflow step: ${id}`);
+    } catch (error) {
+      this.debug("Error updating workflow step:", error);
+      throw new Error("Failed to update workflow step");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Delete a workflow step
+   */
+  public async deleteWorkflowStep(id: string): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      await client.query(`DELETE FROM ${this.options.tablePrefix}_workflow_steps WHERE id = $1`, [
+        id,
+      ]);
+      this.debug(`Deleted workflow step: ${id}`);
+    } catch (error) {
+      this.debug("Error deleting workflow step:", error);
+      throw new Error("Failed to delete workflow step");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Store a workflow timeline event
+   */
+  public async storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      await client.query(
+        `INSERT INTO ${this.options.tablePrefix}_workflow_timeline_events 
+         (event_id, workflow_history_id, type, name, start_time, end_time, 
+          status, level, input, output, metadata, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         ON CONFLICT (event_id) DO UPDATE SET
+         end_time = $6, status = $7, output = $10, metadata = $11`,
+        [
+          event.eventId,
+          event.workflowHistoryId,
+          event.type,
+          event.name,
+          event.startTime,
+          event.endTime || null,
+          event.status || null,
+          event.level || "INFO",
+          event.input ? JSON.stringify(event.input) : null,
+          event.output ? JSON.stringify(event.output) : null,
+          event.metadata ? JSON.stringify(event.metadata) : null,
+          event.createdAt,
+        ],
+      );
+      this.debug(`Stored workflow timeline event: ${event.eventId}`);
+    } catch (error) {
+      this.debug("Error storing workflow timeline event:", error);
+      throw new Error("Failed to store workflow timeline event");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get a workflow timeline event by ID
+   */
+  public async getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM ${this.options.tablePrefix}_workflow_timeline_events WHERE event_id = $1`,
+        [id],
+      );
+
+      if (result.rows.length === 0) return null;
+
+      const row = result.rows[0];
+      return {
+        eventId: row.event_id,
+        workflowHistoryId: row.workflow_history_id,
+        type: row.type,
+        name: row.name,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        status: row.status,
+        level: row.level,
+        input: row.input ? safeJsonParse(row.input) : null,
+        output: row.output ? safeJsonParse(row.output) : null,
+        metadata: row.metadata ? safeJsonParse(row.metadata) : null,
+        createdAt: row.created_at,
+      };
+    } catch (error) {
+      this.debug("Error getting workflow timeline event:", error);
+      throw new Error("Failed to get workflow timeline event");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get workflow timeline events by workflow history ID
+   */
+  public async getWorkflowTimelineEvents(
+    workflowHistoryId: string,
+  ): Promise<WorkflowTimelineEvent[]> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM ${this.options.tablePrefix}_workflow_timeline_events 
+         WHERE workflow_history_id = $1 ORDER BY start_time ASC`,
+        [workflowHistoryId],
+      );
+
+      return result.rows.map((row) => ({
+        eventId: row.event_id,
+        workflowHistoryId: row.workflow_history_id,
+        type: row.type,
+        name: row.name,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        status: row.status,
+        level: row.level,
+        input: row.input ? safeJsonParse(row.input) : null,
+        output: row.output ? safeJsonParse(row.output) : null,
+        metadata: row.metadata ? safeJsonParse(row.metadata) : null,
+        createdAt: row.created_at,
+      }));
+    } catch (error) {
+      this.debug("Error getting workflow timeline events:", error);
+      throw new Error("Failed to get workflow timeline events");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Delete a workflow timeline event
+   */
+  public async deleteWorkflowTimelineEvent(id: string): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      await client.query(
+        `DELETE FROM ${this.options.tablePrefix}_workflow_timeline_events WHERE event_id = $1`,
+        [id],
+      );
+      this.debug(`Deleted workflow timeline event: ${id}`);
+    } catch (error) {
+      this.debug("Error deleting workflow timeline event:", error);
+      throw new Error("Failed to delete workflow timeline event");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get all workflow IDs
+   */
+  public async getAllWorkflowIds(): Promise<string[]> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT DISTINCT workflow_id FROM ${this.options.tablePrefix}_workflow_history`,
+      );
+      return result.rows.map((row) => row.workflow_id);
+    } catch (error) {
+      this.debug("Error getting all workflow IDs:", error);
+      throw new Error("Failed to get workflow IDs");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get workflow statistics
+   */
+  public async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      const statsResult = await client.query(
+        `SELECT 
+           COUNT(*) as total_executions,
+           COUNT(CASE WHEN status = 'completed' THEN 1 END) as successful_executions,
+           COUNT(CASE WHEN status = 'error' THEN 1 END) as failed_executions,
+           AVG(CASE WHEN status = 'completed' AND end_time IS NOT NULL 
+               THEN EXTRACT(EPOCH FROM (end_time - start_time)) * 1000 END) as avg_execution_time_ms,
+           MAX(start_time) as last_execution_time
+         FROM ${this.options.tablePrefix}_workflow_history 
+         WHERE workflow_id = $1`,
+        [workflowId],
+      );
+
+      const row = statsResult.rows[0];
+      return {
+        totalExecutions: Number.parseInt(row.total_executions) || 0,
+        successfulExecutions: Number.parseInt(row.successful_executions) || 0,
+        failedExecutions: Number.parseInt(row.failed_executions) || 0,
+        averageExecutionTime: Number.parseFloat(row.avg_execution_time_ms) || 0,
+        lastExecutionTime: row.last_execution_time ? new Date(row.last_execution_time) : undefined,
+      };
+    } catch (error) {
+      this.debug("Error getting workflow stats:", error);
+      throw new Error("Failed to get workflow statistics");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get workflow history with steps and events
+   */
+  public async getWorkflowHistoryWithStepsAndEvents(
+    id: string,
+  ): Promise<WorkflowHistoryEntry | null> {
+    const history = await this.getWorkflowHistory(id);
+    if (!history) return null;
+
+    const [steps, events] = await Promise.all([
+      this.getWorkflowSteps(id),
+      this.getWorkflowTimelineEvents(id),
+    ]);
+
+    return {
+      ...history,
+      steps,
+      events,
+    };
+  }
+
+  /**
+   * Delete workflow history with all related data
+   */
+  public async deleteWorkflowHistoryWithRelated(id: string): Promise<void> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      // Delete timeline events first
+      await client.query(
+        `DELETE FROM ${this.options.tablePrefix}_workflow_timeline_events WHERE workflow_history_id = $1`,
+        [id],
+      );
+
+      // Delete steps
+      await client.query(
+        `DELETE FROM ${this.options.tablePrefix}_workflow_steps WHERE workflow_history_id = $1`,
+        [id],
+      );
+
+      // Delete history entry
+      await client.query(`DELETE FROM ${this.options.tablePrefix}_workflow_history WHERE id = $1`, [
+        id,
+      ]);
+
+      await client.query("COMMIT");
+      this.debug(`Deleted workflow history with related data: ${id}`);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      this.debug("Error deleting workflow history with related data:", error);
+      throw new Error("Failed to delete workflow history with related data");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Cleanup old workflow histories
+   */
+  public async cleanupOldWorkflowHistories(
+    workflowId: string,
+    maxEntries: number,
+  ): Promise<number> {
+    await this.initialized;
+    const client = await this.pool.connect();
+    try {
+      // Get workflow history IDs to delete
+      const historyResult = await client.query(
+        `SELECT id FROM ${this.options.tablePrefix}_workflow_history 
+         WHERE workflow_id = $1 
+         ORDER BY created_at DESC 
+         OFFSET $2`,
+        [workflowId, maxEntries],
+      );
+
+      const idsToDelete = historyResult.rows.map((row) => row.id);
+
+      if (idsToDelete.length === 0) {
+        return 0;
+      }
+
+      // Delete related data for these entries
+      for (const historyId of idsToDelete) {
+        await this.deleteWorkflowHistoryWithRelated(historyId);
+      }
+
+      this.debug(
+        `Cleaned up ${idsToDelete.length} old workflow histories for workflow: ${workflowId}`,
+      );
+      return idsToDelete.length;
+    } catch (error) {
+      this.debug("Error cleaning up old workflow histories:", error);
+      throw new Error("Failed to cleanup old workflow histories");
     } finally {
       client.release();
     }

@@ -57,6 +57,27 @@ const createTimelineEvent = (overrides: any = {}): any => ({
   ...overrides,
 });
 
+// Workflow test data helper
+const createWorkflowTimelineEvent = (overrides: any = {}): any => ({
+  id: "test-workflow-event-id",
+  name: "workflow:start",
+  type: "workflow",
+  startTime: new Date().toISOString(),
+  endTime: new Date().toISOString(),
+  status: "running",
+  level: "INFO",
+  input: { message: "test workflow event input" },
+  output: { result: "test workflow event output" },
+  metadata: { workflowId: "test-workflow-id", executionId: "test-workflow-execution-id" },
+  statusMessage: null,
+  version: null,
+  parentEventId: null,
+  tags: null,
+  error: null,
+  traceId: "test-trace-id",
+  ...overrides,
+});
+
 describe("PostgresStorage", () => {
   let storage: PostgresStorage;
 
@@ -1069,6 +1090,82 @@ describe("PostgresStorage", () => {
     it("should close the connection pool", async () => {
       await storage.close();
       expect(mockEnd).toHaveBeenCalled();
+    });
+  });
+
+  describe("Workflow Operations", () => {
+    it("should add a workflow timeline event", async () => {
+      const event = createWorkflowTimelineEvent();
+
+      await storage.addTimelineEvent(event.id, event, "execution-1", "workflow-1");
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO"),
+        expect.arrayContaining([
+          event.id,
+          "execution-1",
+          "workflow-1",
+          event.type,
+          event.name,
+          event.startTime,
+          event.endTime,
+          event.status,
+          null, // status_message
+          event.level,
+          null, // version
+          null, // parent_event_id
+          null, // tags
+          JSON.stringify(event.input),
+          JSON.stringify(event.output),
+          null, // error
+          JSON.stringify(event.metadata),
+        ]),
+      );
+    });
+
+    it("should get workflow timeline events", async () => {
+      const events = [createWorkflowTimelineEvent()];
+      mockQuery.mockResolvedValueOnce({
+        rows: events.map((event) => ({
+          id: event.id,
+          name: event.name,
+          type: event.type,
+          start_time: event.startTime,
+          end_time: event.endTime,
+          status: event.status,
+          level: event.level,
+          input: event.input,
+          output: event.output,
+          metadata: event.metadata,
+          status_message: event.statusMessage,
+          version: event.version,
+          parent_event_id: event.parentEventId,
+          tags: event.tags,
+          error: event.error,
+          trace_id: event.traceId,
+        })),
+      });
+
+      const result = await storage.getWorkflowTimelineEvents("execution-1");
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          name: events[0].name,
+          type: events[0].type,
+          status: events[0].status,
+        }),
+      );
+    });
+
+    it("should handle workflow timeline event errors", async () => {
+      const error = new Error("Database error");
+      mockQuery.mockRejectedValueOnce(error);
+
+      const event = createWorkflowTimelineEvent();
+      await expect(
+        storage.addTimelineEvent(event.id, event, "execution-1", "workflow-1"),
+      ).rejects.toThrow("Failed to add timeline event to PostgreSQL database");
     });
   });
 });

@@ -16,6 +16,9 @@ import type {
   MemoryOptions,
   MessageFilterOptions,
 } from "../types";
+import { createWorkflowTables } from "../migrations/workflow-tables";
+import type { WorkflowMemory } from "../../workflow/types";
+import { LibSQLWorkflowExtension } from "./workflow-extension";
 
 /**
  * LibSQL Storage for VoltAgent
@@ -75,17 +78,18 @@ export interface LibSQLStorageOptions extends MemoryOptions {
 }
 
 /**
- * A LibSQL storage implementation of the Memory interface
- * Uses libsql/Turso to store and retrieve conversation history
+ * A LibSQL storage implementation of the Memory and WorkflowMemory interfaces
+ * Uses libsql/Turso to store and retrieve conversation history and workflow data
  *
  * This implementation automatically handles both:
  * - Remote Turso databases (with libsql:// URLs)
  * - Local SQLite databases (with file: URLs)
  */
-export class LibSQLStorage implements Memory {
+export class LibSQLStorage implements Memory, WorkflowMemory {
   private client: Client;
   private options: LibSQLStorageOptions;
   private initialized: Promise<void>;
+  private workflowExtension: LibSQLWorkflowExtension;
 
   /**
    * Create a new LibSQL storage
@@ -107,6 +111,9 @@ export class LibSQLStorage implements Memory {
     });
 
     this.debug("LibSQL storage provider initialized with options", this.options);
+
+    // Initialize workflow extension
+    this.workflowExtension = new LibSQLWorkflowExtension(this.client, this.options.tablePrefix);
 
     // Initialize the database tables
     this.initialized = this.initializeDatabase();
@@ -155,6 +162,19 @@ export class LibSQLStorage implements Memory {
   private debug(message: string, data?: unknown): void {
     if (this.options?.debug) {
       devLogger.info(`[LibSQLStorage] ${message}`, data || "");
+    }
+  }
+
+  /**
+   * Initialize workflow tables
+   */
+  private async initializeWorkflowTables(): Promise<void> {
+    try {
+      await createWorkflowTables(this.client, this.options.tablePrefix);
+      this.debug("Workflow tables initialized successfully");
+    } catch (error) {
+      this.debug("Error initializing workflow tables:", error);
+      // Don't throw error to avoid breaking existing functionality
     }
   }
 
@@ -277,6 +297,9 @@ export class LibSQLStorage implements Memory {
         CREATE INDEX IF NOT EXISTS idx_${historyStepsTableName}_history_id 
         ON ${historyStepsTableName}(history_id)
       `);
+
+    // Initialize workflow tables
+    await this.initializeWorkflowTables();
 
     // Create indexes for agent_id for more efficient querying
     await this.client.execute(`
@@ -2685,5 +2708,110 @@ export class LibSQLStorage implements Memory {
         error: error as Error,
       };
     }
+  }
+
+  // ===== WorkflowMemory Interface Implementation =====
+  // Delegate all workflow operations to the workflow extension
+
+  async storeWorkflowHistory(entry: any): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.storeWorkflowHistory(entry);
+  }
+
+  async getWorkflowHistory(id: string): Promise<any> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowHistory(id);
+  }
+
+  async getWorkflowHistoryByWorkflowId(workflowId: string): Promise<any[]> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowHistoryByWorkflowId(workflowId);
+  }
+
+  async updateWorkflowHistory(id: string, updates: any): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.updateWorkflowHistory(id, updates);
+  }
+
+  async deleteWorkflowHistory(id: string): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.deleteWorkflowHistory(id);
+  }
+
+  async storeWorkflowStep(step: any): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.storeWorkflowStep(step);
+  }
+
+  async getWorkflowStep(id: string): Promise<any> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowStep(id);
+  }
+
+  async getWorkflowSteps(workflowHistoryId: string): Promise<any[]> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowSteps(workflowHistoryId);
+  }
+
+  async updateWorkflowStep(id: string, updates: any): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.updateWorkflowStep(id, updates);
+  }
+
+  async deleteWorkflowStep(id: string): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.deleteWorkflowStep(id);
+  }
+
+  async storeWorkflowTimelineEvent(event: any): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.storeWorkflowTimelineEvent(event);
+  }
+
+  async getWorkflowTimelineEvent(id: string): Promise<any> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowTimelineEvent(id);
+  }
+
+  async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<any[]> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowTimelineEvents(workflowHistoryId);
+  }
+
+  async deleteWorkflowTimelineEvent(id: string): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.deleteWorkflowTimelineEvent(id);
+  }
+
+  async getAllWorkflowIds(): Promise<string[]> {
+    await this.initialized;
+    return this.workflowExtension.getAllWorkflowIds();
+  }
+
+  async getWorkflowStats(workflowId: string): Promise<any> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowStats(workflowId);
+  }
+
+  async getWorkflowHistoryWithStepsAndEvents(id: string): Promise<any> {
+    await this.initialized;
+    return this.workflowExtension.getWorkflowHistoryWithStepsAndEvents(id);
+  }
+
+  async deleteWorkflowHistoryWithRelated(id: string): Promise<void> {
+    await this.initialized;
+    return this.workflowExtension.deleteWorkflowHistoryWithRelated(id);
+  }
+
+  async cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number> {
+    await this.initialized;
+    return this.workflowExtension.cleanupOldWorkflowHistories(workflowId, maxEntries);
+  }
+
+  /**
+   * Get the workflow extension for advanced workflow operations
+   */
+  public getWorkflowExtension(): LibSQLWorkflowExtension {
+    return this.workflowExtension;
   }
 }

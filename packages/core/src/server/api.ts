@@ -358,7 +358,7 @@ app.openapi(executeWorkflowRoute, async (c) => {
 });
 
 // Get workflow history
-app.get("/workflows/:id/history", (c: ApiContext) => {
+app.get("/workflows/:id/history", async (c: ApiContext) => {
   const id = c.req.param("id");
   const page = Number.parseInt(c.req.query("page") || "0");
   const limit = Number.parseInt(c.req.query("limit") || "10");
@@ -376,7 +376,7 @@ app.get("/workflows/:id/history", (c: ApiContext) => {
 
   try {
     // Get workflow execution history
-    const allExecutions = registry.getWorkflowExecutions(id);
+    const allExecutions = await registry.getWorkflowExecutionsAsync(id);
 
     // Sort by startTime descending (most recent first)
     const sortedExecutions = allExecutions.sort(
@@ -1417,7 +1417,7 @@ export const createWebSocketServer = () => {
       const registeredWorkflow = WorkflowRegistry.getInstance().getWorkflow(workflowId);
       if (registeredWorkflow) {
         // Get workflow execution history
-        const history = WorkflowRegistry.getInstance().getWorkflowExecutions(workflowId);
+        const history = await WorkflowRegistry.getInstance().getWorkflowExecutionsAsync(workflowId);
 
         if (history && history.length > 0) {
           // Send all history entries

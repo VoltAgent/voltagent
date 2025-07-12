@@ -143,7 +143,7 @@ export function createWorkflowStepStartEvent(
   );
 
   const metadata: WorkflowStepEventMetadata = {
-    id: nodeId, // ✅ UNIFIED: Use node ID for identification (consistent with agent events)
+    id: nodeId,
     workflowId: stepContext.workflowId,
     workflowName: workflowContext.workflowName,
     executionId: stepContext.executionId,
@@ -184,7 +184,6 @@ export function createWorkflowStepSuccessEvent(
     agentId?: string;
     agentName?: string;
     parallelIndex?: number;
-    // ✅ UNIFIED: Indicates if step was skipped (replaces conditionMet and raceWinner)
     isSkipped?: boolean;
   } = {},
 ): WorkflowStepSuccessEvent {
@@ -202,7 +201,7 @@ export function createWorkflowStepSuccessEvent(
   );
 
   const metadata: WorkflowStepEventMetadata = {
-    id: nodeId, // ✅ UNIFIED: Use node ID for identification (consistent with agent events)
+    id: nodeId,
     workflowId: stepContext.workflowId,
     workflowName: workflowContext.workflowName,
     executionId: stepContext.executionId,
@@ -213,7 +212,6 @@ export function createWorkflowStepSuccessEvent(
     agentId: options.agentId,
     agentName: options.agentName,
     parallelIndex: options.parallelIndex,
-    // ✅ UNIFIED: Single field for step skipping
     isSkipped: options.isSkipped,
   };
 
@@ -260,7 +258,7 @@ export function createWorkflowStepErrorEvent(
   );
 
   const metadata: WorkflowStepEventMetadata = {
-    id: nodeId, // ✅ UNIFIED: Use node ID for identification (consistent with agent events)
+    id: nodeId,
     workflowId: stepContext.workflowId,
     workflowName: workflowContext.workflowName,
     executionId: stepContext.executionId,
@@ -416,8 +414,8 @@ export async function publishWorkflowEvent(
             stepMetadata.stepIndex,
             stepMetadata.stepType,
             stepMetadata.stepName,
-            stepMetadata.id, // ✅ UNIFIED: Use metadata.id as step identifier
-            event.input?.input, // ✅ Pass input data from event
+            stepMetadata.id,
+            event.input?.input,
           );
         } catch (registryError) {
           console.warn("Failed to record workflow step start:", registryError);
