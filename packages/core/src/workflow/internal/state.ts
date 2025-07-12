@@ -153,7 +153,7 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
     assertCanMutate(this.#state);
     this.#state = {
       ...this.#state,
-      ...transformToMutableState(stateUpdate),
+      ...stateUpdate,
     };
   }
 }
