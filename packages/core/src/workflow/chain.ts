@@ -8,13 +8,13 @@ import type {
   InternalInferWorkflowStepsResult,
   InternalWorkflowFunc,
 } from "./internal/types";
-import type {
-  WorkflowStep,
-  WorkflowStepConditionalWhenConfig,
-  WorkflowStepFuncConfig,
-  WorkflowStepParallelAllConfig,
-  WorkflowStepParallelRaceConfig,
-  WorkflowStepTapConfig,
+import {
+  type WorkflowStep,
+  type WorkflowStepConditionalWhenConfig,
+  type WorkflowStepFuncConfig,
+  type WorkflowStepParallelAllConfig,
+  type WorkflowStepParallelRaceConfig,
+  type WorkflowStepTapConfig,
   andAgent,
   andAll,
   andRace,
