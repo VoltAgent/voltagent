@@ -350,7 +350,7 @@ export class WorkflowRegistry extends EventEmitter {
         this.emit("historyUpdate", executionId, updatedEntry);
 
         devLogger.debug(
-          `[WorkflowRegistry] Timeline event persisted and emitted: ${event.name} for execution ${executionId}`,
+          `[WorkflowRegistry] Event persisted and emitted: ${event.name} for execution ${executionId}`,
         );
       }
     } catch (error) {
@@ -590,41 +590,13 @@ export class WorkflowRegistry extends EventEmitter {
         output: output,
       };
 
-      // Update in DB and emit real data
+      // ✅ CLEAN: Only update DB, don't emit events (WorkflowEventEmitter handles emission)
       this.memoryManager
         .updateExecution(executionId, memoryUpdates)
-        .then(async () => {
-          // 🔥 GET REAL DATA FROM DB AND EMIT (no more fake temp entry!)
-          if (this.memoryManager) {
-            const realWorkflowHistory =
-              await this.memoryManager.getExecutionWithDetails(executionId);
-            if (realWorkflowHistory) {
-              // Convert memory format to context format for WebSocket
-              const realHistoryEntry = {
-                id: realWorkflowHistory.id,
-                workflowId: realWorkflowHistory.workflowId,
-                workflowName: realWorkflowHistory.name,
-                status: realWorkflowHistory.status,
-                startTime: realWorkflowHistory.startTime,
-                endTime: realWorkflowHistory.endTime,
-                input: realWorkflowHistory.input,
-                output: realWorkflowHistory.output,
-                steps: realWorkflowHistory.steps || [], // ✅ Real steps from DB
-                events: realWorkflowHistory.events || [], // ✅ Real events from DB
-                userId: realWorkflowHistory.metadata?.userId as string,
-                conversationId: realWorkflowHistory.metadata?.conversationId as string,
-              };
-
-              this.emit("historyUpdate", executionId, realHistoryEntry);
-              devLogger.debug(
-                `[WorkflowRegistry] Emitted real workflow history for execution end: ${executionId}`,
-              );
-            } else {
-              devLogger.warn(
-                `[WorkflowRegistry] Could not find workflow history for execution ${executionId}`,
-              );
-            }
-          }
+        .then(() => {
+          devLogger.debug(
+            `[WorkflowRegistry] Workflow execution end recorded in DB: ${executionId} (Status: ${status})`,
+          );
         })
         .catch((error: Error) => {
           devLogger.error("[WorkflowRegistry] Failed to persist workflow execution end:", error);
@@ -656,42 +628,14 @@ export class WorkflowRegistry extends EventEmitter {
       input,
     };
 
-    // Persist to storage and emit real data
+    // ✅ CLEAN: Only persist to storage, don't emit events (WorkflowEventEmitter handles emission)
     if (this.memoryManager) {
       this.memoryManager
         .recordStepStart(executionId, stepIndex, stepType as any, stepName, input, { stepId })
-        .then(async () => {
-          // 🔥 GET REAL DATA FROM DB AND EMIT (no more fake temp entry!)
-          if (this.memoryManager) {
-            const realWorkflowHistory =
-              await this.memoryManager.getExecutionWithDetails(executionId);
-            if (realWorkflowHistory) {
-              // Convert memory format to context format for WebSocket
-              const realHistoryEntry = {
-                id: realWorkflowHistory.id,
-                workflowId: realWorkflowHistory.workflowId,
-                workflowName: realWorkflowHistory.name,
-                status: realWorkflowHistory.status,
-                startTime: realWorkflowHistory.startTime,
-                endTime: realWorkflowHistory.endTime,
-                input: realWorkflowHistory.input,
-                output: realWorkflowHistory.output,
-                steps: realWorkflowHistory.steps || [], // ✅ Real steps from DB
-                events: realWorkflowHistory.events || [], // ✅ Real events from DB
-                userId: realWorkflowHistory.metadata?.userId as string,
-                conversationId: realWorkflowHistory.metadata?.conversationId as string,
-              };
-
-              this.emit("historyUpdate", executionId, realHistoryEntry);
-              devLogger.debug(
-                `[WorkflowRegistry] Emitted real workflow history for step start: ${executionId}`,
-              );
-            } else {
-              devLogger.warn(
-                `[WorkflowRegistry] Could not find workflow history for step start: ${executionId}`,
-              );
-            }
-          }
+        .then(() => {
+          devLogger.debug(
+            `[WorkflowRegistry] Step start recorded in DB: ${executionId} (Step: ${stepIndex})`,
+          );
         })
         .catch((error: Error) => {
           devLogger.error("[WorkflowRegistry] Failed to persist workflow step start:", error);
@@ -729,38 +673,11 @@ export class WorkflowRegistry extends EventEmitter {
                 errorMessage: typeof error === "string" ? error : undefined,
                 agentExecutionId,
               })
-              .then(async () => {
-                // 🔥 GET REAL DATA FROM DB AND EMIT (no more fake temp entry!)
-                if (this.memoryManager) {
-                  const realWorkflowHistory =
-                    await this.memoryManager.getExecutionWithDetails(executionId);
-                  if (realWorkflowHistory) {
-                    // Convert memory format to context format for WebSocket
-                    const realHistoryEntry = {
-                      id: realWorkflowHistory.id,
-                      workflowId: realWorkflowHistory.workflowId,
-                      workflowName: realWorkflowHistory.name,
-                      status: realWorkflowHistory.status,
-                      startTime: realWorkflowHistory.startTime,
-                      endTime: realWorkflowHistory.endTime,
-                      input: realWorkflowHistory.input,
-                      output: realWorkflowHistory.output,
-                      steps: realWorkflowHistory.steps || [], // ✅ Real steps from DB
-                      events: realWorkflowHistory.events || [], // ✅ Real events from DB
-                      userId: realWorkflowHistory.metadata?.userId as string,
-                      conversationId: realWorkflowHistory.metadata?.conversationId as string,
-                    };
-
-                    this.emit("historyUpdate", executionId, realHistoryEntry);
-                    devLogger.debug(
-                      `[WorkflowRegistry] Emitted real workflow history for step end: ${executionId}`,
-                    );
-                  } else {
-                    devLogger.warn(
-                      `[WorkflowRegistry] Could not find workflow history for step end: ${executionId}`,
-                    );
-                  }
-                }
+              .then(() => {
+                // ✅ CLEAN: Only persist to storage, don't emit events (WorkflowEventEmitter handles emission)
+                devLogger.debug(
+                  `[WorkflowRegistry] Step end recorded in DB: ${executionId} (Step: ${stepIndex})`,
+                );
               })
               .catch((stepError: Error) => {
                 devLogger.error(

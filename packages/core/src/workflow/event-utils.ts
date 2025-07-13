@@ -402,60 +402,6 @@ export async function publishWorkflowEvent(
   workflowContext: WorkflowExecutionContext,
 ): Promise<void> {
   try {
-    // Import WorkflowRegistry dynamically to avoid circular dependencies
-    const { WorkflowRegistry } = await import("./registry");
-    const registry = WorkflowRegistry.getInstance();
-
-    // Event persistence is now handled by WorkflowEventEmitter.publishWorkflowEventSync
-    // to avoid duplicates - no longer persisting here
-
-    // Track step events in workflow history
-    if (event.type === "workflow-step") {
-      const stepMetadata = event.metadata as any;
-
-      if (event.name === "workflow-step:start") {
-        try {
-          registry.recordWorkflowStepStart(
-            workflowContext.executionId,
-            stepMetadata.stepIndex,
-            stepMetadata.stepType,
-            stepMetadata.stepName,
-            stepMetadata.id,
-            event.input?.input,
-          );
-        } catch (registryError) {
-          console.warn("Failed to record workflow step start:", registryError);
-        }
-      } else if (event.name === "workflow-step:success") {
-        try {
-          registry.recordWorkflowStepEnd(
-            workflowContext.executionId,
-            stepMetadata.stepIndex,
-            "completed",
-            event.output,
-            undefined,
-            stepMetadata.agentExecutionId,
-          );
-        } catch (registryError) {
-          console.warn("Failed to record workflow step success:", registryError);
-        }
-      } else if (event.name === "workflow-step:error") {
-        try {
-          registry.recordWorkflowStepEnd(
-            workflowContext.executionId,
-            stepMetadata.stepIndex,
-            "error",
-            undefined,
-            event.statusMessage?.message || "Unknown error",
-            stepMetadata.agentExecutionId,
-          );
-        } catch (registryError) {
-          console.warn("Failed to record workflow step error:", registryError);
-        }
-      }
-    }
-
-    // Publish event to WorkflowEventEmitter (clean, no more workflow: prefix hack!)
     WorkflowEventEmitter.getInstance().publishWorkflowEventAsync({
       workflowId: workflowContext.workflowId,
       executionId: workflowContext.executionId,

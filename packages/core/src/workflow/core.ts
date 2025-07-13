@@ -642,7 +642,6 @@ export function createWorkflow<
           console.warn("Failed to publish workflow success event:", eventError);
         }
 
-        // Record workflow completion
         if (historyEntry) {
           try {
             workflowRegistry.recordWorkflowExecutionEnd(
@@ -678,7 +677,6 @@ export function createWorkflow<
           console.warn("Failed to publish workflow error event:", eventError);
         }
 
-        // Record workflow failure
         if (historyEntry) {
           try {
             workflowRegistry.recordWorkflowExecutionEnd(
