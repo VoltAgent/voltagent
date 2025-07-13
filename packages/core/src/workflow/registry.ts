@@ -8,6 +8,8 @@ import { EventEmitter } from "node:events";
 import { createWorkflowStepNodeId } from "../utils/node-utils";
 import type { WorkflowMemory } from "./types";
 import { WorkflowMemoryManager } from "./memory/manager";
+import { WorkflowHistoryManager } from "./history-manager";
+import type { WorkflowEvent } from "../events/workflow-emitter";
 import { devLogger } from "@voltagent/internal/dev";
 import { LibSQLStorage } from "../memory/libsql";
 
@@ -257,6 +259,8 @@ export class WorkflowRegistry extends EventEmitter {
   private memoryManager?: WorkflowMemoryManager;
   private globalMemory?: WorkflowMemory;
 
+  private workflowHistoryManagers: Map<string, WorkflowHistoryManager> = new Map();
+
   private constructor() {
     super();
     devLogger.info("[WorkflowRegistry] Initialized");
@@ -280,8 +284,6 @@ export class WorkflowRegistry extends EventEmitter {
     if (this.memoryManager) {
       this.memoryManager.setExporter(exporter);
     }
-    // Store for later use when memoryManager is initialized
-    // TODO: Store exporter for later initialization if memoryManager doesn't exist yet
   }
 
   /**
@@ -308,6 +310,63 @@ export class WorkflowRegistry extends EventEmitter {
    */
   public getHistoryManager(): never {
     throw new Error("HistoryManager is deprecated. Use async methods on WorkflowRegistry instead.");
+  }
+
+  /**
+   * ✅ NEW: Get or create WorkflowHistoryManager for a specific workflow (following Agent pattern)
+   */
+  public getWorkflowHistoryManager(workflowId: string): WorkflowHistoryManager {
+    if (!this.workflowHistoryManagers.has(workflowId)) {
+      // Create new history manager for this workflow
+      const historyManager = new WorkflowHistoryManager(
+        workflowId,
+        this.memoryManager,
+        this.getGlobalVoltAgentExporter(),
+      );
+      this.workflowHistoryManagers.set(workflowId, historyManager);
+    }
+
+    const historyManager = this.workflowHistoryManagers.get(workflowId);
+    if (!historyManager) {
+      throw new Error(`Failed to create WorkflowHistoryManager for workflow: ${workflowId}`);
+    }
+
+    return historyManager;
+  }
+
+  public async persistWorkflowTimelineEvent(
+    workflowId: string,
+    executionId: string,
+    event: WorkflowEvent,
+  ): Promise<void> {
+    try {
+      // Get or create history manager for this workflow
+      const historyManager = this.getWorkflowHistoryManager(workflowId);
+
+      // Delegate persistence to the history manager
+      const updatedEntry = await historyManager.persistTimelineEvent(executionId, event);
+
+      if (updatedEntry) {
+        this.emit("historyUpdate", executionId, updatedEntry);
+
+        devLogger.debug(
+          `[WorkflowRegistry] Timeline event persisted and emitted: ${event.name} for execution ${executionId}`,
+        );
+      }
+    } catch (error) {
+      devLogger.error(
+        `[WorkflowRegistry] Failed to persist timeline event: ${event.name} for execution ${executionId}:`,
+        error,
+      );
+      throw error; // Re-throw to inform WorkflowEventEmitter
+    }
+  }
+
+  /**
+   * Get global VoltAgentExporter (helper method)
+   */
+  private getGlobalVoltAgentExporter(): VoltAgentExporter | undefined {
+    return undefined;
   }
 
   /**

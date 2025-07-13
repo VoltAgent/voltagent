@@ -50,6 +50,8 @@ export function createWorkflowSuccessEvent(
   result: unknown,
   parentEventId?: string,
 ): WorkflowSuccessEvent {
+  const completionTime = new Date().toISOString();
+
   const metadata: WorkflowEventMetadata = {
     id: workflowContext.executionId,
     workflowId: workflowContext.workflowId,
@@ -64,11 +66,12 @@ export function createWorkflowSuccessEvent(
     id: crypto.randomUUID(),
     name: "workflow:success",
     type: "workflow",
-    startTime: workflowContext.startTime.toISOString(),
-    endTime: new Date().toISOString(),
+    startTime: completionTime, // ✅ FIXED: Success event occurs at completion time
+    endTime: completionTime, // ✅ Same time for instantaneous completion event
     status: "completed",
+    level: "INFO",
     input: null,
-    output: { result },
+    output: result as Record<string, unknown> | null,
     metadata,
     traceId: workflowContext.executionId,
     parentEventId,
@@ -83,6 +86,8 @@ export function createWorkflowErrorEvent(
   error: unknown,
   parentEventId?: string,
 ): WorkflowErrorEvent {
+  const errorTime = new Date().toISOString();
+
   const metadata: WorkflowEventMetadata = {
     id: workflowContext.executionId,
     workflowId: workflowContext.workflowId,
@@ -94,20 +99,21 @@ export function createWorkflowErrorEvent(
   };
 
   const errorMessage = error instanceof Error ? error.message : "Unknown workflow error";
+  const errorStack = error instanceof Error ? error.stack : undefined;
 
   return {
     id: crypto.randomUUID(),
     name: "workflow:error",
     type: "workflow",
-    startTime: workflowContext.startTime.toISOString(),
-    endTime: new Date().toISOString(),
+    startTime: errorTime,
+    endTime: errorTime,
     status: "error",
     level: "ERROR",
     input: null,
     output: null,
     statusMessage: {
       message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
+      stack: errorStack,
     },
     metadata,
     traceId: workflowContext.executionId,
