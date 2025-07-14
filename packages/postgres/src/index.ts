@@ -76,7 +76,7 @@ export interface PostgresStorageOptions extends MemoryOptions {
  */
 export interface WorkflowHistoryEntry {
   id: string;
-  name: string;
+  workflowName: string;
   workflowId: string;
   status: "running" | "completed" | "error" | "cancelled";
   startTime: Date;
@@ -90,6 +90,8 @@ export interface WorkflowHistoryEntry {
   };
   steps: WorkflowStepHistoryEntry[];
   events: WorkflowTimelineEvent[];
+  userId?: string;
+  conversationId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -118,17 +120,22 @@ export interface WorkflowStepHistoryEntry {
  * Workflow timeline event
  */
 export interface WorkflowTimelineEvent {
-  eventId: string;
+  id: string;
   workflowHistoryId: string;
-  type: string;
+  eventId: string;
   name: string;
+  type: "workflow" | "workflow-step";
   startTime: string;
   endTime?: string;
-  status?: string;
+  status: string;
   level?: string;
   input?: unknown;
   output?: unknown;
-  metadata?: unknown;
+  statusMessage?: unknown;
+  metadata?: Record<string, unknown>;
+  traceId?: string;
+  parentEventId?: string;
+  eventSequence?: number; // ✅ ADD: Sequence number for proper ordering
   createdAt: Date;
 }
 
@@ -238,6 +245,8 @@ export class PostgresStorage implements Memory, WorkflowMemory {
       const statusMessageJSON = value.statusMessage ? JSON.stringify(value.statusMessage) : null;
       const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
       const tagsJSON = value.tags ? JSON.stringify(value.tags) : null;
+
+      // startTime and endTime are already ISO strings from NewTimelineEvent interface
 
       // Insert with all the indexed fields
       await client.query(
@@ -560,6 +569,10 @@ export class PostgresStorage implements Memory, WorkflowMemory {
           input JSONB,
           output JSONB,
           metadata JSONB,
+          event_sequence INTEGER, -- ✅ ADD: Sequence number for proper ordering
+          trace_id TEXT,
+          parent_event_id TEXT,
+          status_message TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
         )
       `);
@@ -603,6 +616,11 @@ export class PostgresStorage implements Memory, WorkflowMemory {
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_timeline_events_start_time
         ON ${this.options.tablePrefix}_workflow_timeline_events(start_time)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_workflow_timeline_events_sequence
+        ON ${this.options.tablePrefix}_workflow_timeline_events(event_sequence)
       `);
 
       await client.query("COMMIT");
@@ -2457,7 +2475,7 @@ export class PostgresStorage implements Memory, WorkflowMemory {
          input = $7, output = $8, metadata = $9, updated_at = $11`,
         [
           entry.id,
-          entry.name,
+          entry.workflowName,
           entry.workflowId,
           entry.status,
           entry.startTime,
@@ -2493,18 +2511,22 @@ export class PostgresStorage implements Memory, WorkflowMemory {
       if (result.rows.length === 0) return null;
 
       const row = result.rows[0];
+      const metadata = row.metadata ? safeJsonParse(row.metadata) : {};
+
       return {
         id: row.id,
-        name: row.name,
+        workflowName: row.name,
         workflowId: row.workflow_id,
         status: row.status,
         startTime: row.start_time,
         endTime: row.end_time,
         input: row.input ? safeJsonParse(row.input) : null,
         output: row.output ? safeJsonParse(row.output) : null,
-        metadata: row.metadata ? safeJsonParse(row.metadata) : null,
+        metadata: metadata,
         steps: [], // Will be populated separately if needed
         events: [], // Will be populated separately if needed
+        userId: metadata?.userId || undefined,
+        conversationId: metadata?.conversationId || undefined,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       };
@@ -2529,21 +2551,26 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         [workflowId],
       );
 
-      return result.rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        workflowId: row.workflow_id,
-        status: row.status,
-        startTime: row.start_time,
-        endTime: row.end_time,
-        input: row.input ? safeJsonParse(row.input) : null,
-        output: row.output ? safeJsonParse(row.output) : null,
-        metadata: row.metadata ? safeJsonParse(row.metadata) : null,
-        steps: [], // Will be populated separately if needed
-        events: [], // Will be populated separately if needed
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
+      return result.rows.map((row) => {
+        const metadata = row.metadata ? safeJsonParse(row.metadata) : {};
+        return {
+          id: row.id,
+          workflowName: row.name,
+          workflowId: row.workflow_id,
+          status: row.status,
+          startTime: row.start_time,
+          endTime: row.end_time,
+          input: row.input ? safeJsonParse(row.input) : null,
+          output: row.output ? safeJsonParse(row.output) : null,
+          metadata: metadata,
+          steps: [], // Will be populated separately if needed
+          events: [], // Will be populated separately if needed
+          userId: metadata?.userId || undefined,
+          conversationId: metadata?.conversationId || undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      });
     } catch (error) {
       this.debug("Error getting workflow history by workflow ID:", error);
       throw new Error("Failed to get workflow history entries");
@@ -2566,9 +2593,9 @@ export class PostgresStorage implements Memory, WorkflowMemory {
       const values: any[] = [];
       let paramCount = 1;
 
-      if (updates.name !== undefined) {
+      if (updates.workflowName !== undefined) {
         updateFields.push(`name = $${paramCount++}`);
-        values.push(updates.name);
+        values.push(updates.workflowName);
       }
       if (updates.status !== undefined) {
         updateFields.push(`status = $${paramCount++}`);
@@ -2826,13 +2853,20 @@ export class PostgresStorage implements Memory, WorkflowMemory {
     await this.initialized;
     const client = await this.pool.connect();
     try {
+      // Convert Date to ISO string for PostgreSQL
+      const createdAt = event.createdAt.toISOString();
+
+      // Extract event sequence from metadata (required)
+      const eventSequence = event.metadata?.eventSequence;
+
       await client.query(
         `INSERT INTO ${this.options.tablePrefix}_workflow_timeline_events 
          (event_id, workflow_history_id, type, name, start_time, end_time, 
-          status, level, input, output, metadata, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          status, level, input, output, metadata, event_sequence, 
+          trace_id, parent_event_id, status_message, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          ON CONFLICT (event_id) DO UPDATE SET
-         end_time = $6, status = $7, output = $10, metadata = $11`,
+         end_time = $6, status = $7, output = $10, metadata = $11, event_sequence = $12`,
         [
           event.eventId,
           event.workflowHistoryId,
@@ -2845,7 +2879,11 @@ export class PostgresStorage implements Memory, WorkflowMemory {
           event.input ? JSON.stringify(event.input) : null,
           event.output ? JSON.stringify(event.output) : null,
           event.metadata ? JSON.stringify(event.metadata) : null,
-          event.createdAt,
+          eventSequence, // ✅ ADD: Event sequence for ordering
+          event.traceId || null,
+          event.parentEventId || null,
+          event.statusMessage ? JSON.stringify(event.statusMessage) : null,
+          createdAt,
         ],
       );
       this.debug(`Stored workflow timeline event: ${event.eventId}`);
@@ -2873,10 +2911,11 @@ export class PostgresStorage implements Memory, WorkflowMemory {
 
       const row = result.rows[0];
       return {
-        eventId: row.event_id,
+        id: row.event_id,
         workflowHistoryId: row.workflow_history_id,
-        type: row.type,
+        eventId: row.event_id,
         name: row.name,
+        type: row.type,
         startTime: row.start_time,
         endTime: row.end_time,
         status: row.status,
@@ -2884,6 +2923,9 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         input: row.input ? safeJsonParse(row.input) : null,
         output: row.output ? safeJsonParse(row.output) : null,
         metadata: row.metadata ? safeJsonParse(row.metadata) : null,
+        traceId: row.trace_id,
+        parentEventId: row.parent_event_id,
+        eventSequence: row.event_sequence,
         createdAt: row.created_at,
       };
     } catch (error) {
@@ -2905,15 +2947,17 @@ export class PostgresStorage implements Memory, WorkflowMemory {
     try {
       const result = await client.query(
         `SELECT * FROM ${this.options.tablePrefix}_workflow_timeline_events 
-         WHERE workflow_history_id = $1 ORDER BY start_time ASC`,
+         WHERE workflow_history_id = $1 
+         ORDER BY event_sequence ASC, start_time ASC`,
         [workflowHistoryId],
       );
 
       return result.rows.map((row) => ({
-        eventId: row.event_id,
+        id: row.event_id,
         workflowHistoryId: row.workflow_history_id,
-        type: row.type,
+        eventId: row.event_id,
         name: row.name,
+        type: row.type,
         startTime: row.start_time,
         endTime: row.end_time,
         status: row.status,
@@ -2921,6 +2965,9 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         input: row.input ? safeJsonParse(row.input) : null,
         output: row.output ? safeJsonParse(row.output) : null,
         metadata: row.metadata ? safeJsonParse(row.metadata) : null,
+        traceId: row.trace_id,
+        parentEventId: row.parent_event_id,
+        eventSequence: row.event_sequence,
         createdAt: row.created_at,
       }));
     } catch (error) {

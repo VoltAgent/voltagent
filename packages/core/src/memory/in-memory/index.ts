@@ -1064,10 +1064,18 @@ export class InMemoryStorage implements Memory, WorkflowMemory {
       (event) => event.workflowHistoryId === workflowHistoryId,
     );
 
-    // Sort by startTime (chronological order)
+    // Sort by event sequence first, then by start time for proper ordering
     return events
       .map((event) => JSON.parse(JSON.stringify(event)))
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+      .sort((a, b) => {
+        // Sort by event sequence first (required)
+        if (a.eventSequence !== b.eventSequence) {
+          return a.eventSequence - b.eventSequence;
+        }
+
+        // Fallback to time-based sorting
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      });
   }
 
   /**

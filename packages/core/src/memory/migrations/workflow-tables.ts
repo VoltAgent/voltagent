@@ -93,6 +93,7 @@ export async function createWorkflowTables(
       metadata TEXT,
       trace_id TEXT,
       parent_event_id TEXT,
+      event_sequence INTEGER,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -109,6 +110,9 @@ export async function createWorkflowTables(
   );
   await db.execute(
     `CREATE INDEX IF NOT EXISTS idx_${tablePrefix}_workflow_timeline_events_type ON ${tablePrefix}_workflow_timeline_events(type)`,
+  );
+  await db.execute(
+    `CREATE INDEX IF NOT EXISTS idx_${tablePrefix}_workflow_timeline_events_sequence ON ${tablePrefix}_workflow_timeline_events(event_sequence)`,
   );
 
   // Check if workflow_id column exists in agent_history table

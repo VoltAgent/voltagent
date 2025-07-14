@@ -12,6 +12,7 @@ import {
 } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
+import { PostgresStorage } from "@voltagent/postgres";
 
 // Simple agent for demonstrations
 const simpleAgent = new Agent({
@@ -513,7 +514,7 @@ const memoryStorage = new PostgresStorage({
   connection: {
     host: process.env.POSTGRES_HOST || "localhost",
     port: Number.parseInt(process.env.POSTGRES_PORT || "5432"),
-    database: process.env.POSTGRES_DB || "voltagent",
+    database: process.env.POSTGRES_DB || "voltagent-memory",
     user: process.env.POSTGRES_USER || "postgres",
     password: process.env.POSTGRES_PASSWORD || "password",
     ssl: process.env.POSTGRES_SSL === "true",
@@ -540,7 +541,7 @@ const memoryStorage = new PostgresStorage({
     agents: {
       simpleAgent,
     },
-    workflowMemory: new InMemoryStorage(),
+    workflowMemory: memoryStorage,
     workflows: {
       comprehensiveWorkflow,
       agentExampleWorkflow,
@@ -552,7 +553,6 @@ const memoryStorage = new PostgresStorage({
   });
 
   setTimeout(async () => {
-    // Run the comprehensive example that uses all workflow steps
     await runComprehensiveExample();
   }, 1000);
 })();

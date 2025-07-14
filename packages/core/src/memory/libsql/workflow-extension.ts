@@ -237,8 +237,8 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
         INSERT INTO ${this._tablePrefix}_workflow_timeline_events (
           id, workflow_history_id, event_id, name, type,
           start_time, end_time, status, level, input, output,
-          status_message, metadata, trace_id, parent_event_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status_message, metadata, trace_id, parent_event_id, event_sequence, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         event.id,
@@ -256,6 +256,7 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
         event.metadata ? JSON.stringify(event.metadata) : null,
         event.traceId || null,
         event.parentEventId || null,
+        event.eventSequence || null, // Event sequence for ordering
         event.createdAt.toISOString(),
       ],
     });
@@ -280,7 +281,7 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
    */
   async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]> {
     const result = await this.client.execute({
-      sql: `SELECT * FROM ${this._tablePrefix}_workflow_timeline_events WHERE workflow_history_id = ? ORDER BY start_time ASC`,
+      sql: `SELECT * FROM ${this._tablePrefix}_workflow_timeline_events WHERE workflow_history_id = ? ORDER BY event_sequence ASC, start_time ASC`,
       args: [workflowHistoryId],
     });
 
@@ -478,6 +479,7 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
       metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,
       traceId: (row.trace_id as string) || undefined,
       parentEventId: (row.parent_event_id as string) || undefined,
+      eventSequence: Number(row.event_sequence),
       createdAt: new Date(row.created_at as string),
     };
   }

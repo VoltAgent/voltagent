@@ -70,8 +70,6 @@ export type VoltAgentOptions = {
   >;
   /**
    * Global memory storage for workflow operations
-   * If not provided, defaults to LibSQLStorage (similar to Agent memory system)
-   * @since 1.0.0
    */
   workflowMemory?: WorkflowMemory;
   /**

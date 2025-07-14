@@ -82,6 +82,7 @@ export class WorkflowHistoryManager {
         metadata: eventMetadata,
         traceId: event.traceId || executionId,
         parentEventId: event.parentEventId || undefined,
+        eventSequence: eventMetadata.eventSequence as number, // Extract sequence from metadata (required)
       });
 
       devLogger.debug(

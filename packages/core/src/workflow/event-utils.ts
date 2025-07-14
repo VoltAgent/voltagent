@@ -13,6 +13,19 @@ import { createWorkflowStepNodeId, type WorkflowStepType } from "../utils/node-u
 import type { WorkflowExecutionContext, WorkflowStepContext } from "./context";
 
 /**
+ * Global sequence counter for workflow events to ensure proper ordering
+ * This counter is incremented for each event to guarantee sequential ordering
+ */
+let globalEventSequence = 0;
+
+/**
+ * Get next sequence number for event ordering
+ */
+function getNextEventSequence(): number {
+  return ++globalEventSequence;
+}
+
+/**
  * Create a workflow start event
  */
 export function createWorkflowStartEvent(
@@ -27,6 +40,7 @@ export function createWorkflowStartEvent(
     currentStep: 0,
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
+    eventSequence: getNextEventSequence(),
   };
 
   return {
@@ -60,6 +74,7 @@ export function createWorkflowSuccessEvent(
     currentStep: workflowContext.currentStepIndex,
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
+    eventSequence: getNextEventSequence(),
   };
 
   return {
@@ -96,6 +111,7 @@ export function createWorkflowErrorEvent(
     currentStep: workflowContext.currentStepIndex,
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
+    eventSequence: getNextEventSequence(),
   };
 
   const errorMessage = error instanceof Error ? error.message : "Unknown workflow error";
@@ -161,6 +177,7 @@ export function createWorkflowStepStartEvent(
     agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     parallelParentEventId: options.parallelParentEventId,
+    eventSequence: getNextEventSequence(),
   };
 
   return {
@@ -219,13 +236,14 @@ export function createWorkflowStepSuccessEvent(
     agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     isSkipped: options.isSkipped,
+    eventSequence: getNextEventSequence(),
   };
 
   return {
     id: crypto.randomUUID(),
     name: "workflow-step:success",
     type: "workflow-step",
-    startTime: stepContext.startTime.toISOString(),
+    startTime: new Date().toISOString(),
     endTime: new Date().toISOString(),
     status: "completed",
     input: null,
@@ -275,6 +293,7 @@ export function createWorkflowStepErrorEvent(
     agentId: options.agentId,
     agentName: options.agentName,
     parallelIndex: options.parallelIndex,
+    eventSequence: getNextEventSequence(),
   };
 
   const errorMessage = error instanceof Error ? error.message : "Unknown step error";
