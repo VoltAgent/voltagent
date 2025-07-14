@@ -1,4 +1,5 @@
-import type { WorkflowHistoryEntry, WorkflowMemory, WorkflowStepHistoryEntry } from "./types";
+import type { Memory } from "../memory";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
 
 /**
  * Context information for a workflow execution
@@ -49,7 +50,7 @@ export interface WorkflowExecutionContext {
    * Memory storage instance for this workflow execution
    * Can be workflow-specific or global
    */
-  memory?: WorkflowMemory;
+  memory?: Memory;
 }
 
 /**

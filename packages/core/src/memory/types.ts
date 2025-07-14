@@ -1,5 +1,7 @@
 import type { BaseMessage } from "../agent/providers/base/types";
 import type { NewTimelineEvent } from "../events/types";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../workflow/context";
+import type { WorkflowStats, WorkflowTimelineEvent } from "../workflow/types";
 
 /**
  * Memory options
@@ -220,6 +222,37 @@ export type Memory = {
     historyId: string,
     agentId: string,
   ): Promise<void>;
+
+  // Workflow History Operations
+  storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void>;
+  getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null>;
+  getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]>;
+  updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void>;
+  deleteWorkflowHistory(id: string): Promise<void>;
+
+  // Workflow Steps Operations
+  storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void>;
+  getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null>;
+  getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]>;
+  updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void>;
+  deleteWorkflowStep(id: string): Promise<void>;
+
+  // Workflow Timeline Events Operations
+  storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void>;
+  getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null>;
+  getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]>;
+  deleteWorkflowTimelineEvent(id: string): Promise<void>;
+
+  // Query Operations
+  getAllWorkflowIds(): Promise<string[]>;
+  getWorkflowStats(workflowId: string): Promise<WorkflowStats>;
+
+  // Bulk Operations
+  getWorkflowHistoryWithStepsAndEvents(id: string): Promise<WorkflowHistoryEntry | null>;
+  deleteWorkflowHistoryWithRelated(id: string): Promise<void>;
+
+  // Cleanup Operations
+  cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number>;
 };
 
 /**

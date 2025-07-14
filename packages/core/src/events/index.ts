@@ -202,7 +202,7 @@ export class AgentEventEmitter extends EventEmitter {
   private async propagateEventToParentAgents(
     agentId: string,
     _historyId: string,
-    event: AgentTimelineEvent, // ✅ Only agent events - no workflow events
+    event: AgentTimelineEvent,
     visited: Set<string> = new Set(),
     parentHistoryEntryId?: string,
   ): Promise<void> {
@@ -290,7 +290,7 @@ export class AgentEventEmitter extends EventEmitter {
         await this.propagateEventToParentAgents(
           parentId,
           _historyId, // Keep original history ID for context
-          event, // Already AgentTimelineEvent due to function signature
+          event,
           branchVisited,
           parentHistoryEntryId,
         );

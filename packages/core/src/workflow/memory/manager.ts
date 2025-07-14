@@ -8,8 +8,8 @@ import type {
   CreateWorkflowExecutionOptions,
   RecordWorkflowStepOptions,
   UpdateWorkflowStepOptions,
-  WorkflowMemory,
 } from "../types";
+import type { Memory } from "../../memory/types";
 
 /**
  * Manages workflow execution history and persistence
@@ -21,7 +21,7 @@ export class WorkflowMemoryManager {
   private _exporter?: VoltAgentExporter;
 
   constructor(
-    private storage: WorkflowMemory,
+    private storage: Memory,
     _exporter?: VoltAgentExporter,
   ) {
     this._exporter = _exporter;

@@ -1,17 +1,12 @@
 import type { Client } from "@libsql/client";
-import type {
-  WorkflowHistoryEntry,
-  WorkflowStepHistoryEntry,
-  WorkflowTimelineEvent,
-  WorkflowStats,
-  WorkflowMemory,
-} from "../../workflow/types";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
+import type { WorkflowTimelineEvent, WorkflowStats } from "../../workflow/types";
 
 /**
  * LibSQL extension for workflow memory operations
  * This class provides workflow-specific storage operations for LibSQL
  */
-export class LibSQLWorkflowExtension implements WorkflowMemory {
+export class LibSQLWorkflowExtension {
   constructor(
     private client: Client,
     private _tablePrefix = "voltagent_memory",

@@ -154,7 +154,7 @@ export interface WorkflowEventMetadata extends BaseEventMetadata {
   executionId: string;
   currentStep?: number;
   totalSteps: number;
-  eventSequence?: number; // ✅ ADD: Sequence number for proper ordering
+  eventSequence?: number;
 }
 
 export interface WorkflowStepEventMetadata extends BaseEventMetadata {
@@ -171,7 +171,7 @@ export interface WorkflowStepEventMetadata extends BaseEventMetadata {
   parallelIndex?: number;
   parallelParentEventId?: string;
   isSkipped?: boolean;
-  eventSequence?: number; // ✅ ADD: Sequence number for proper ordering
+  eventSequence?: number;
 }
 
 /**

@@ -17,7 +17,6 @@ import type {
   MessageFilterOptions,
 } from "../types";
 import { createWorkflowTables } from "../migrations/workflow-tables";
-import type { WorkflowMemory } from "../../workflow/types";
 import { LibSQLWorkflowExtension } from "./workflow-extension";
 
 /**
@@ -85,7 +84,7 @@ export interface LibSQLStorageOptions extends MemoryOptions {
  * - Remote Turso databases (with libsql:// URLs)
  * - Local SQLite databases (with file: URLs)
  */
-export class LibSQLStorage implements Memory, WorkflowMemory {
+export class LibSQLStorage implements Memory {
   private client: Client;
   private options: LibSQLStorageOptions;
   private initialized: Promise<void>;

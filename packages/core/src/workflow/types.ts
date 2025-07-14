@@ -6,6 +6,7 @@ import type { UserContext } from "../agent/types";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
+import type { Memory } from "../memory";
 
 export interface WorkflowRunOptions {
   /**
@@ -34,7 +35,7 @@ export interface WorkflowRunOptions {
    * Override workflow memory storage for this specific execution
    * Takes priority over workflow config memory and global memory
    */
-  memory?: WorkflowMemory;
+  memory?: Memory;
 }
 
 /**
@@ -112,7 +113,7 @@ export type WorkflowConfig<
    * Memory storage for this workflow
    * Overrides global workflow memory from VoltAgent
    */
-  memory?: WorkflowMemory;
+  memory?: Memory;
 };
 
 /**
@@ -297,35 +298,3 @@ export interface UpdateWorkflowStepOptions {
 /**
  * Workflow memory storage interface - provides abstraction for different storage backends
  */
-export interface WorkflowMemory {
-  // Workflow History Operations
-  storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void>;
-  getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null>;
-  getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]>;
-  updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void>;
-  deleteWorkflowHistory(id: string): Promise<void>;
-
-  // Workflow Steps Operations
-  storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void>;
-  getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null>;
-  getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]>;
-  updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void>;
-  deleteWorkflowStep(id: string): Promise<void>;
-
-  // Workflow Timeline Events Operations
-  storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void>;
-  getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null>;
-  getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]>;
-  deleteWorkflowTimelineEvent(id: string): Promise<void>;
-
-  // Query Operations
-  getAllWorkflowIds(): Promise<string[]>;
-  getWorkflowStats(workflowId: string): Promise<WorkflowStats>;
-
-  // Bulk Operations
-  getWorkflowHistoryWithStepsAndEvents(id: string): Promise<WorkflowHistoryEntry | null>;
-  deleteWorkflowHistoryWithRelated(id: string): Promise<void>;
-
-  // Cleanup Operations
-  cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number>;
-}

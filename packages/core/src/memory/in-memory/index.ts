@@ -10,7 +10,6 @@ import type {
   MessageFilterOptions,
 } from "../types";
 import type {
-  WorkflowMemory,
   WorkflowHistoryEntry,
   WorkflowStepHistoryEntry,
   WorkflowTimelineEvent,
@@ -36,7 +35,7 @@ type MessageWithMetadata = MemoryMessage;
  * Stores messages in memory, organized by user and conversation
  * Also provides workflow history, steps, and timeline events storage
  */
-export class InMemoryStorage implements Memory, WorkflowMemory {
+export class InMemoryStorage implements Memory {
   private storage: Record<string, Record<string, MessageWithMetadata[]>> = {};
   private conversations: Map<string, Conversation> = new Map();
   private historyEntries: Map<string, any> = new Map();

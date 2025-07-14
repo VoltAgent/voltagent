@@ -109,12 +109,9 @@ export class VoltAgent {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
 
-    // 🔥 FIX: Set up telemetry BEFORE registering agents
-    // NEW: Handle unified VoltOps client
     if (options.voltOpsClient) {
       this.registry.setGlobalVoltOpsClient(options.voltOpsClient);
 
-      // 🔥 CRITICAL FIX: Explicitly set global telemetry exporter for Agent access
       if (options.voltOpsClient.observability) {
         this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.observability);
         this.workflowRegistry.setGlobalExporter(options.voltOpsClient.observability);

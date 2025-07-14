@@ -135,7 +135,7 @@ export interface WorkflowTimelineEvent {
   metadata?: Record<string, unknown>;
   traceId?: string;
   parentEventId?: string;
-  eventSequence?: number; // ✅ ADD: Sequence number for proper ordering
+  eventSequence?: number;
   createdAt: Date;
 }
 
