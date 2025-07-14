@@ -327,7 +327,6 @@ export default function McpItemPage(props) {
   useEffect(() => {
     // Reset to default voltagent tab when provider changes
     setActiveServerConfigTab("voltagent");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Sadece ilk render'da çalıştır
 
   // Initially expand the first tool if available
@@ -335,7 +334,6 @@ export default function McpItemPage(props) {
     if (tools.length > 0) {
       setExpandedTools({ [tools[0].id]: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tools]); // tools değiştiğinde çalıştır
 
   return (

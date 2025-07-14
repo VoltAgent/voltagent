@@ -707,7 +707,6 @@ describe("GroqProvider", () => {
       // Try to consume the stream, which should trigger the error in onFinish logic
       const reader = result.objectStream.getReader();
       try {
-        // eslint-disable-next-line no-empty
         while (!(await reader.read()).done) {}
       } catch (_e) {
         // Error is expected due to parsing failure propagated to the stream controller

@@ -2,6 +2,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
+import type { UserContext } from "../agent/types";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
@@ -25,6 +26,10 @@ export interface WorkflowRunOptions {
    * The user ID, this can be used to track the current user in a workflow
    */
   userId?: string;
+  /**
+   * The user context, this can be used to track the current user context in a workflow
+   */
+  userContext?: UserContext;
 }
 
 /**
@@ -133,7 +138,10 @@ export type Workflow<
    * @param input - The input to the workflow
    * @returns The result of the workflow
    */
-  run: (input: WorkflowInput<INPUT_SCHEMA>) => Promise<{
+  run: (
+    input: WorkflowInput<INPUT_SCHEMA>,
+    options?: WorkflowRunOptions,
+  ) => Promise<{
     executionId: string;
     startAt: Date;
     endAt: Date;

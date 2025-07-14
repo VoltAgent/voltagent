@@ -59,7 +59,6 @@ describe("VoltAgentExporter", () => {
         ...mockOptions,
         baseUrl: "https://server.voltagent.dev/some/path",
       };
-      // eslint-disable-next-line no-new
       new VoltAgentExporter(optionsWithSpecificBaseUrl);
       const MockedTelemetryServiceApiClient = (await import("../client")).TelemetryServiceApiClient;
       expect(MockedTelemetryServiceApiClient).toHaveBeenCalledWith(

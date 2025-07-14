@@ -30,6 +30,15 @@ export interface WorkflowStepFunc<INPUT, DATA, RESULT>
   type: "func";
 }
 
+export type WorkflowStepTapConfig<INPUT, DATA, _RESULT> = InternalWorkflowStepConfig<{
+  execute: InternalWorkflowFunc<INPUT, DATA, DangerouslyAllowAny>;
+}>;
+
+export interface WorkflowStepTap<INPUT, DATA, _RESULT>
+  extends InternalBaseWorkflowStep<INPUT, DATA, DATA> {
+  type: "tap";
+}
+
 export type WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
   condition: InternalWorkflowFunc<INPUT, DATA, boolean>;
   step: InternalAnyWorkflowStep<INPUT, DATA, RESULT>;
@@ -68,4 +77,5 @@ export type WorkflowStep<INPUT, DATA, RESULT> =
   | WorkflowStepFunc<INPUT, DATA, RESULT>
   | WorkflowStepConditionalWhen<INPUT, DATA, RESULT>
   | WorkflowStepParallelAll<INPUT, DATA, RESULT>
+  | WorkflowStepTap<INPUT, DATA, RESULT>
   | WorkflowStepParallelRace<INPUT, DATA, RESULT>;

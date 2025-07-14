@@ -55,7 +55,7 @@ import TabItem from '@theme/TabItem';
 Simply run the following command:
 
 ```bash
-npx chromadb run
+npm run chroma run
 ```
 
 This will start the Chroma server at `http://localhost:8000`.
@@ -122,7 +122,7 @@ You'll see:
   1️⃣ Assistant with Retriever - Automatic semantic search on every interaction
   2️⃣ Assistant with Tools - LLM decides when to search autonomously
 
-💡 Chroma server started easily with npx chromadb run (no Docker/Python needed!)
+💡 Chroma server started easily with npm run chroma run  (no Docker/Python needed!)
 
 ══════════════════════════════════════════════════
   VOLTAGENT SERVER STARTED SUCCESSFULLY
@@ -529,8 +529,8 @@ const results = await collection.query({
 curl http://localhost:8000/api/v1/heartbeat
 
 # Restart Chroma if needed
-# If using npx chromadb run, simply stop (Ctrl+C) and restart:
-npx chromadb run
+# If using npm run chroma run, simply stop (Ctrl+C) and restart:
+npm run chroma run
 
 # If using Docker:
 docker restart <chroma-container-id>

@@ -459,7 +459,6 @@ export interface ZodFunction {
   // The name of the function.
   name: string;
   // The zod function schema. This any here is to support the zod function with no arguments.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   zodFunctionSchema: z.ZodFunction<z.ZodTuple<any, z.ZodTypeAny>, z.ZodTypeAny>;
 }
 

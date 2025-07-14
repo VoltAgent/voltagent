@@ -3,6 +3,7 @@ export { andThen } from "./and-then";
 export { andWhen } from "./and-when";
 export { andAll } from "./and-all";
 export { andRace } from "./and-race";
+export { andTap } from "./and-tap";
 export { matchStep } from "./helpers";
 export type {
   WorkflowStep,
@@ -14,4 +15,5 @@ export type {
   WorkflowStepParallelRace,
   WorkflowStepAgent,
   WorkflowStepFunc,
+  WorkflowStepTapConfig,
 } from "./types";

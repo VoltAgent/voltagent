@@ -131,6 +131,12 @@ export type HTTPServerConfig = {
    * Event source initialization options (used for SSE fallback)
    */
   eventSourceInit?: EventSourceInit;
+
+  /**
+   * Optional maximum request timeout in milliseconds.
+   * If provided, passed to MCPClient as the per-request timeout.
+   */
+  timeout?: number;
 };
 
 /**
@@ -156,6 +162,12 @@ export type SSEServerConfig = {
    * Event source initialization options
    */
   eventSourceInit?: EventSourceInit;
+
+  /**
+   * Optional maximum request timeout in milliseconds.
+   * If provided, passed to MCPClient as the per-request timeout.
+   */
+  timeout?: number;
 };
 
 /**
@@ -181,6 +193,12 @@ export type StreamableHTTPServerConfig = {
    * Session ID for the connection
    */
   sessionId?: string;
+
+  /**
+   * Optional maximum request timeout in milliseconds.
+   * If provided, passed to MCPClient as the per-request timeout.
+   */
+  timeout?: number;
 };
 
 /**
@@ -211,6 +229,12 @@ export type StdioServerConfig = {
    * Working directory for the MCP server process
    */
   cwd?: string;
+
+  /**
+   * Optional maximum request timeout in milliseconds.
+   * If provided, passed to MCPClient as the per-request timeout.
+   */
+  timeout?: number;
 };
 
 /**

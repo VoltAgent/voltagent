@@ -31,6 +31,8 @@ const mcpConfig = new MCPConfiguration({
     github: {
       type: "streamable-http",
       url: "https://api.githubcopilot.com/mcp",
+      // Optional: Request timeout in milliseconds (default: 30000)
+      timeout: 15000,
     },
 
     // Example 2: HTTP with automatic fallback (recommended for compatibility)
@@ -43,12 +45,16 @@ const mcpConfig = new MCPConfiguration({
       },
       // Optional: Custom options for the EventSource connection used for streaming
       eventSourceInit: { withCredentials: true },
+      // Optional: Request timeout in milliseconds (default: 30000)
+      timeout: 20000,
     },
 
     // Example 3: SSE transport (explicit Server-Sent Events)
     linear: {
       type: "sse",
       url: "https://mcp.linear.app/sse",
+      // Optional: Request timeout in milliseconds (default: 30000)
+      timeout: 25000,
     },
 
     // Example 4: stdio-based server (e.g., a local script or application)
@@ -66,6 +72,8 @@ const mcpConfig = new MCPConfiguration({
       cwd: process.env.HOME,
       // Optional: Provide environment variables to the spawned process
       env: { NODE_ENV: "production" },
+      // Optional: Request timeout in milliseconds (default: 30000)
+      timeout: 10000,
     },
   },
 });

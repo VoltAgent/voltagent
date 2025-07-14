@@ -137,6 +137,65 @@ const agentWithInlineHooks = new Agent({
 });
 ```
 
+## Passing hooks to generate methods
+
+You can pass hooks to the `generateText`, `streamText`, `generateObject`, and `streamObject` methods, directly to run the hooks only on that invocation.
+
+:::warning
+This will NOT override the hooks passed to the agent during initialization.
+:::
+
+```ts
+const agent = new Agent({
+  name: "My Agent with Hooks",
+  instructions: "An assistant demonstrating hooks",
+  llm: provider,
+  model: openai("gpt-4o"),
+  hooks: myAgentHooks,
+});
+
+await agent.generateText("Hello, how are you?", {
+  hooks: {
+    onEnd: async ({ context }) => {
+      console.log("End of generation but only on this invocation!");
+    },
+  },
+});
+```
+
+An example of this is you may want to only store the conversation history for a specific invocation, but not for all usages of the agent:
+
+```ts
+const agent = new Agent({
+  name: "Translation Agent",
+  instructions: "A translation agent that translates text from English to French",
+  llm: provider,
+  model: openai("gpt-4o"),
+});
+
+// for the translate endpoint, we don't want to store the conversation history
+app.post("/api/translate", async (req, res) => {
+  const result = await agent.generateText(req.body.text);
+  return result;
+});
+
+// for the chat endpoint, we want to store the conversation history
+app.post("/api/translate/chat", async (req, res) => {
+  const result = await agent.streamText(req.body.text, {
+    hooks: {
+      onEnd: async ({ context }) => {
+        await chatStore.save({
+          conversationId: context.conversationId,
+          messages: context.steps,
+        });
+      },
+    },
+  });
+
+  return result.textStream;
+});
+```
+
 ## Available Hooks
 
 All hooks receive a single argument object containing relevant information.

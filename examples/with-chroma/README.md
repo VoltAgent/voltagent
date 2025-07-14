@@ -46,7 +46,7 @@ This example demonstrates VoltAgent integration with Chroma vector database for 
 Start Chroma server:
 
 ```bash
-npx chromadb run
+npm run chroma run
 ```
 
 Run the example:

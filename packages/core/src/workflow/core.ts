@@ -4,13 +4,19 @@ import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import { convertWorkflowStateToParam } from "./internal/utils";
 import type { WorkflowStep } from "./steps";
-import type { Workflow, WorkflowConfig, WorkflowInput, WorkflowResult } from "./types";
+import type {
+  Workflow,
+  WorkflowConfig,
+  WorkflowInput,
+  WorkflowResult,
+  WorkflowRunOptions,
+} from "./types";
 import { WorkflowRegistry } from "./registry";
-import type { WorkflowExecutionContext } from "./context";
+import { WorkflowExecutionContext } from "./context";
 import {
+  createWorkflowErrorEvent,
   createWorkflowStartEvent,
   createWorkflowSuccessEvent,
-  createWorkflowErrorEvent,
   publishWorkflowEvent,
 } from "./event-utils";
 
@@ -557,7 +563,7 @@ export function createWorkflow<
     purpose: purpose ?? "No purpose provided",
     steps: steps as BaseStep[],
     inputSchema: input,
-    run: async (input: WorkflowInput<INPUT_SCHEMA>) => {
+    run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
       // Register execution with workflow registry first to get the correct execution ID
       const workflowRegistry = WorkflowRegistry.getInstance();
       let historyEntry: any;
@@ -606,7 +612,7 @@ export function createWorkflow<
       >();
 
       // Enhanced state with workflow context
-      stateManager.start(input);
+      stateManager.start(input, options);
 
       try {
         for (const [index, step] of (steps as BaseStep[]).entries()) {
