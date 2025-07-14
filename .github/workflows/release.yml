@@ -50,6 +50,8 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Install Dependencies
         run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
       - name: Build
         run: pnpm build:all
       ##- name: Lint

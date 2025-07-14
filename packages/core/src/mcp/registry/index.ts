@@ -300,6 +300,7 @@ export class MCPConfiguration<TServerKeys extends string = string> {
         version: "1.0.0",
       },
       server: config,
+      timeout: config.timeout,
     });
 
     try {

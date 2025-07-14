@@ -20,8 +20,6 @@ import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
-import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
-import type { VoltOpsClient } from "../voltops/client";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
@@ -32,6 +30,9 @@ import {
   transformStreamEventToStreamPart,
 } from "../utils/streams";
 import type { Voice } from "../voice";
+import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
+import type { VoltOpsClient } from "../voltops/client";
+import type { PromptContent } from "../voltops/types";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
@@ -52,25 +53,24 @@ import type {
   DynamicValueOptions,
   GenerateObjectResponse,
   GenerateTextResponse,
-  ModelDynamicValue,
-  StreamObjectResponse,
-  StreamTextResponse,
   InternalGenerateOptions,
+  ModelDynamicValue,
   ModelType,
   OperationContext,
   ProviderInstance,
   PublicGenerateOptions,
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
+  StreamObjectResponse,
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
+  StreamTextResponse,
   SupervisorConfig,
   SystemMessageResponse,
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
-import type { PromptContent } from "../voltops/types";
 
 /**
  * Agent class for interacting with AI models
@@ -975,6 +975,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     operationContext: OperationContext,
     finalConversationId: string | undefined,
     agentStartEvent: { id: string; startTime: string },
+    hooks?: AgentHooks,
   ): void {
     if (!signal) return;
 
@@ -1022,7 +1023,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.publishTimelineEvent(operationContext, agentCancelledEvent);
 
       // Call onEnd hook with cancellation error if conversationId is available
-      await this.hooks.onEnd?.({
+      await this.getMergedHooks({ hooks }).onEnd?.({
         agent: this,
         output: undefined,
         error: cancellationError,
@@ -1139,7 +1140,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     let messages: BaseMessage[] = [];
     try {
-      await this.hooks.onStart?.({ agent: this, context: operationContext });
+      await this.getMergedHooks(internalOptions).onStart?.({
+        agent: this,
+        context: operationContext,
+      });
 
       const systemMessageResponse = await this.getSystemMessage({
         input,
@@ -1279,7 +1283,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               });
 
               if (tool) {
-                await this.hooks.onToolStart?.({
+                await this.getMergedHooks(internalOptions).onToolStart?.({
                   agent: this,
                   tool,
                   context: operationContext,
@@ -1356,7 +1360,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               });
               const tool = this.toolManager.getToolByName(toolName);
               if (tool) {
-                await this.hooks.onToolEnd?.({
+                await this.getMergedHooks(internalOptions).onToolEnd?.({
                   agent: this,
                   tool,
                   output: step.result ?? step.content,
@@ -1430,7 +1434,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         userContext: new Map(operationContext.userContext),
       };
 
-      await this.hooks.onEnd?.({
+      await this.getMergedHooks(internalOptions).onEnd?.({
         conversationId: finalConversationId,
         agent: this,
         output: initialResponse,
@@ -1513,7 +1517,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       operationContext.isActive = false;
 
-      await this.hooks.onEnd?.({
+      await this.getMergedHooks(internalOptions).onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
@@ -1575,7 +1579,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
 
-    await this.hooks.onStart?.({ agent: this, context: operationContext });
+    await this.getMergedHooks(internalOptions).onStart?.({
+      agent: this,
+      context: operationContext,
+    });
 
     const systemMessageResponse = await this.getSystemMessage({
       input,
@@ -1763,7 +1770,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               input: chunk.arguments || {},
             });
             if (tool) {
-              await this.hooks.onToolStart?.({
+              await this.getMergedHooks(internalOptions).onToolStart?.({
                 agent: this,
                 tool,
                 context: operationContext,
@@ -1838,7 +1845,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             });
             const tool = this.toolManager.getToolByName(toolName);
             if (tool) {
-              await this.hooks.onToolEnd?.({
+              await this.getMergedHooks(internalOptions).onToolEnd?.({
                 agent: this,
                 tool,
                 output: chunk.result ?? chunk.content,
@@ -1933,7 +1940,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           userContext: new Map(operationContext.userContext),
         };
 
-        await this.hooks.onEnd?.({
+        await this.getMergedHooks(internalOptions).onEnd?.({
           agent: this,
           output: initialResult,
           error: undefined,
@@ -1997,7 +2004,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           }
           const tool = this.toolManager.getToolByName(toolName);
           if (tool) {
-            await this.hooks.onToolEnd?.({
+            await this.getMergedHooks(internalOptions).onToolEnd?.({
               agent: this,
               tool,
               output: undefined,
@@ -2071,7 +2078,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
 
-        await this.hooks.onEnd?.({
+        await this.getMergedHooks(internalOptions).onEnd?.({
           agent: this,
           output: undefined,
           error: error,
@@ -2142,7 +2149,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     let messages: BaseMessage[] = [];
     try {
-      await this.hooks.onStart?.({ agent: this, context: operationContext });
+      await this.getMergedHooks(internalOptions).onStart?.({
+        agent: this,
+        context: operationContext,
+      });
 
       const systemMessageResponse = await this.getSystemMessage({
         input,
@@ -2311,7 +2321,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         userContext: new Map(operationContext.userContext),
       };
 
-      await this.hooks.onEnd?.({
+      await this.getMergedHooks(internalOptions).onEnd?.({
         agent: this,
         output: initialResponse,
         error: undefined,
@@ -2390,7 +2400,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         endTime: new Date(),
       });
 
-      await this.hooks.onEnd?.({
+      await this.getMergedHooks(internalOptions).onEnd?.({
         agent: this,
         output: undefined,
         error: voltagentError,
@@ -2449,7 +2459,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         operationContext.otelSpan.setAttribute("session.id", finalConversationId);
     }
 
-    await this.hooks.onStart?.({ agent: this, context: operationContext });
+    await this.getMergedHooks(internalOptions).onStart?.({
+      agent: this,
+      context: operationContext,
+    });
 
     const systemMessageResponse = await this.getSystemMessage({
       input,
@@ -2625,7 +2638,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             userContext: new Map(operationContext.userContext),
           };
 
-          await this.hooks.onEnd?.({
+          await this.getMergedHooks(internalOptions).onEnd?.({
             agent: this,
             output: initialResult,
             error: undefined,
@@ -2650,7 +2663,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             const { toolName } = error.toolError;
             const tool = this.toolManager.getToolByName(toolName);
             if (tool) {
-              await this.hooks.onToolEnd?.({
+              await this.getMergedHooks(internalOptions).onToolEnd?.({
                 agent: this,
                 tool,
                 output: undefined,
@@ -2722,7 +2735,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             await (provider.onError as StreamOnErrorCallback)(error);
           }
 
-          await this.hooks.onEnd?.({
+          await this.getMergedHooks(internalOptions).onEnd?.({
             agent: this,
             output: undefined,
             error: error,
@@ -2741,7 +2754,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       return extendedResponse;
     } catch (error) {
       operationContext.isActive = false;
-      await this.hooks.onEnd?.({
+      await this.getMergedHooks(internalOptions).onEnd?.({
         agent: this,
         output: undefined,
         error: error as VoltAgentError,
@@ -2862,6 +2875,39 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (this.historyManager) {
       this.historyManager.setExporter(exporter);
     }
+  }
+
+  /**
+   * Helper method to merge the agent's hooks with the ones passed in the options
+   * @param options - The options passed to the generate method
+   * @returns The merged hooks
+   */
+  private getMergedHooks(options: Pick<InternalGenerateOptions, "hooks">): AgentHooks {
+    if (!options.hooks) {
+      return this.hooks;
+    }
+    return {
+      onStart: async (...args) => {
+        await options.hooks?.onStart?.(...args);
+        await this.hooks.onStart?.(...args);
+      },
+      onEnd: async (...args) => {
+        await options.hooks?.onEnd?.(...args);
+        await this.hooks.onEnd?.(...args);
+      },
+      onHandoff: async (...args) => {
+        await options.hooks?.onHandoff?.(...args);
+        await this.hooks.onHandoff?.(...args);
+      },
+      onToolStart: async (...args) => {
+        await options.hooks?.onToolStart?.(...args);
+        await this.hooks.onToolStart?.(...args);
+      },
+      onToolEnd: async (...args) => {
+        await options.hooks?.onToolEnd?.(...args);
+        await this.hooks.onToolEnd?.(...args);
+      },
+    };
   }
 
   /**

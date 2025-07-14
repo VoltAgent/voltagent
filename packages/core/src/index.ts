@@ -6,6 +6,7 @@ export {
   andWhen,
   andAll,
   andRace,
+  andTap,
 } from "./workflow";
 export type { Workflow, WorkflowConfig } from "./workflow";
 export * from "./agent/agent";

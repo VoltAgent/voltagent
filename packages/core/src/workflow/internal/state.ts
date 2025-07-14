@@ -25,7 +25,6 @@ export type WorkflowState<INPUT, RESULT> = {
   error: Error | null;
 };
 
-// TODO: Add in the core context from VoltAgent
 export interface WorkflowStateManager<DATA, RESULT> {
   /**
    * The current state of the workflow
@@ -40,7 +39,9 @@ export interface WorkflowStateManager<DATA, RESULT> {
    * @param stateUpdate - The partial state to update
    * @returns The updated state
    */
-  update: (stateUpdate: Partial<WorkflowState<DATA, RESULT>>) => WorkflowState<DATA, RESULT>;
+  update: (
+    stateUpdate: Partial<MutableWorkflowState<DATA, RESULT>>,
+  ) => MutableWorkflowState<DATA, RESULT>;
   /**
    * Fail the workflow
    * @param error - The error to fail the workflow with
@@ -94,6 +95,9 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
     this.#state = {
       executionId: config?.executionId ?? uuid(),
       active: config?.active ?? 0,
+      userId: config?.userId,
+      conversationId: config?.conversationId,
+      userContext: config?.userContext,
       startAt: new Date(),
       endAt: null,
       data: data,
@@ -105,11 +109,11 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
     return this.#state;
   }
 
-  update(stateUpdate: Partial<WorkflowState<DATA, RESULT>>) {
+  update(stateUpdate: Partial<MutableWorkflowState<DATA, RESULT>>) {
     assertCanMutate(this.#state);
     this.#state = {
       ...this.#state,
-      ...stateUpdate,
+      ...transformToMutableState(stateUpdate),
     };
     return {
       ...this.#state,
@@ -120,30 +124,52 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
   finish() {
     assertCanMutate(this.#state);
     this.#input = this.#state.data as DATA;
-    const state = this.update({
+    this.#internalUpdate({
       endAt: new Date(),
       status: "completed",
     });
     return {
-      executionId: state.executionId,
-      startAt: state.startAt,
+      executionId: this.#state.executionId,
+      startAt: this.#state.startAt,
       // biome-ignore lint/style/noNonNullAssertion: this is safe
-      endAt: state.endAt!,
-      status: state.status as "completed",
-      result: state.result as RESULT,
+      endAt: this.#state.endAt!,
+      status: this.#state.status as "completed",
+      result: this.#state.result as RESULT,
     };
   }
 
   fail(error?: unknown) {
     assertCanMutate(this.#state);
     const err = error instanceof Error ? error : new Error(String(error));
-    this.update({
+    this.#internalUpdate({
       error: err,
       endAt: new Date(),
       status: "failed",
     });
     return err;
   }
+
+  #internalUpdate(stateUpdate: Partial<WorkflowState<DATA, RESULT>>) {
+    assertCanMutate(this.#state);
+    this.#state = {
+      ...this.#state,
+      ...stateUpdate,
+    };
+  }
+}
+
+type MutableWorkflowState<DATA, RESULT> = Pick<
+  Partial<WorkflowState<DATA, RESULT>>,
+  "data" | "result"
+>;
+
+function transformToMutableState<DATA, RESULT>(
+  state: MutableWorkflowState<DATA, RESULT>,
+): MutableWorkflowState<DATA, RESULT> {
+  return {
+    data: state.data,
+    result: state.result,
+  };
 }
 
 function assertCanMutate(value: unknown): asserts value is RunningWorkflowState {

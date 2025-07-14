@@ -193,6 +193,8 @@ const mcpConfig = new MCPConfiguration({
       ],
       // Optional: Specify the working directory for the command
       cwd: process.env.HOME,
+      // Optional: Request timeout in milliseconds (default: 30000)
+      timeout: 10000,
     },
   },
 });
@@ -409,6 +411,8 @@ const mcpConfig = new MCPConfiguration({
         path.join(process.env.HOME || "", "Desktop"),
       ],
       cwd: process.env.HOME,
+      // Optional: Request timeout in milliseconds (default: 30000)
+      timeout: 10000,
     },
     // NEW: Remote Hugging Face AI models
     "hf-mcp-server": {
@@ -419,6 +423,8 @@ const mcpConfig = new MCPConfiguration({
         },
       },
       type: "http",
+      // Optional: Request timeout in milliseconds (default: 30000)
+      timeout: 30000,
     },
   },
 });

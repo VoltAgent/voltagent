@@ -4,7 +4,13 @@ import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import { convertWorkflowStateToParam } from "./internal/utils";
 import type { WorkflowStep } from "./steps";
-import type { Workflow, WorkflowConfig, WorkflowInput, WorkflowResult } from "./types";
+import type {
+  Workflow,
+  WorkflowConfig,
+  WorkflowInput,
+  WorkflowResult,
+  WorkflowRunOptions,
+} from "./types";
 
 /**
  * Creates a workflow from multiple and* functions
@@ -548,13 +554,13 @@ export function createWorkflow<
     name,
     purpose: purpose ?? "No purpose provided",
     steps: steps as BaseStep[],
-    run: async (input: WorkflowInput<INPUT_SCHEMA>) => {
+    run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
       const stateManager = createWorkflowStateManager<
         WorkflowInput<INPUT_SCHEMA>,
         WorkflowResult<RESULT_SCHEMA>
       >();
 
-      stateManager.start(input);
+      stateManager.start(input, options);
       for (const step of steps as BaseStep[]) {
         try {
           await hooks?.onStepStart?.(stateManager.state);

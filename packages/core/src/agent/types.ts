@@ -26,6 +26,7 @@ import type {
   PromptContent,
   PromptHelper,
 } from "../voltops/types";
+import type { AgentHooks } from "./hooks";
 
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
@@ -324,6 +325,9 @@ export interface CommonGenerateOptions {
 
   // Optional user-defined context to be passed from a parent operation
   userContext?: UserContext;
+
+  // Optional hooks to be included only during the operation call and not persisted in the agent
+  hooks?: AgentHooks;
 }
 
 /**

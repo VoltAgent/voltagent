@@ -6,7 +6,7 @@ import type { Memory, MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
 import { createTool } from "../tool";
 import { createAsyncIterableStream } from "../utils/async-iterable-stream";
-import { Agent } from "./agent";
+import { Agent } from "./index";
 import type {
   BaseMessage,
   BaseTool,
@@ -18,13 +18,13 @@ import type {
   StepWithContent,
 } from "./providers";
 
+// @ts-ignore - To simplify test types
+import type { AgentHistoryEntry } from "../agent/history";
 import type { NewTimelineEvent } from "../events/types";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { streamEventForwarder } from "../utils/streams/stream-event-forwarder";
-// @ts-ignore - To simplify test types
-import type { AgentHistoryEntry } from "./history";
 import { HistoryManager } from "./history";
 import { createHooks } from "./hooks";
 import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";
@@ -1752,6 +1752,88 @@ describe("Agent", () => {
       expect(references).toBeDefined();
       expect(Array.isArray(references)).toBe(true);
     });
+  });
+
+  describe("hooks options", () => {
+    for (const method of ["generateText", "streamText"]) {
+      it(`should call hooks when passed in the generate options for ${method}`, async () => {
+        const hookOrder: string[] = [];
+
+        const message = "Use the test tool";
+        const mockTool = createTool({
+          id: "test-tool",
+          name: "test-tool",
+          description: "A test tool",
+          parameters: z.object({}),
+          execute: async () => "tool result",
+        });
+
+        const onStartAgentOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("agent:onStart");
+        });
+        const onStartToolOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("agent:onToolStart");
+        });
+        const onEndToolOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("agent:onToolEnd");
+        });
+        const onEndAgentOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("agent:onEnd");
+        });
+
+        const agent = new TestAgent({
+          name: "Order Test Agent",
+          model: mockModel,
+          llm: mockProvider,
+          tools: [mockTool],
+          hooks: createHooks({
+            onStart: onStartAgentOptionMock,
+            onEnd: onEndAgentOptionMock,
+            onToolStart: onStartToolOptionMock,
+            onToolEnd: onEndToolOptionMock,
+          }),
+          instructions: "Use the test tool when asked",
+        });
+
+        const onStartOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("generate:onStart");
+        });
+        const onEndOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("generate:onEnd");
+        });
+        const onToolStartOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("generate:onToolStart");
+        });
+        const onToolEndOptionMock = vi.fn().mockImplementation(() => {
+          hookOrder.push("generate:onToolEnd");
+        });
+        const hooks = createHooks({
+          onStart: onStartOptionMock,
+          onEnd: onEndOptionMock,
+          onToolStart: onToolStartOptionMock,
+          onToolEnd: onToolEndOptionMock,
+        });
+
+        await agent.generateText(message, { hooks });
+
+        expect(onStartOptionMock).toHaveBeenCalled();
+        expect(onEndOptionMock).toHaveBeenCalled();
+        expect(onToolStartOptionMock).toHaveBeenCalled();
+        expect(onToolEndOptionMock).toHaveBeenCalled();
+
+        // Verify hooks were called in the correct order
+        expect(hookOrder).toEqual([
+          "generate:onStart",
+          "agent:onStart",
+          "generate:onToolStart",
+          "agent:onToolStart",
+          "generate:onToolEnd",
+          "agent:onToolEnd",
+          "generate:onEnd",
+          "agent:onEnd",
+        ]);
+      });
+    }
   });
 
   describe("onEnd hook", () => {
