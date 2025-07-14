@@ -4,6 +4,7 @@ import type { BaseMessage } from "../../agent/providers/base/types";
 import type { OperationContext } from "../../agent/types";
 import { AgentEventEmitter } from "../../events";
 import type {
+  AgentTimelineEvent,
   MemoryReadStartEvent,
   MemoryReadSuccessEvent,
   MemoryWriteErrorEvent,
@@ -118,11 +119,10 @@ export class MemoryManager {
    * @param context - Operation context with history entry info
    * @param event - Timeline event to publish
    */
-  private publishTimelineEvent(context: OperationContext, event: NewTimelineEvent): void {
+  private publishTimelineEvent(context: OperationContext, event: AgentTimelineEvent): void {
     const historyId = context.historyEntry.id;
     if (!historyId) return;
 
-    // 🔴 FIX: Direct call to avoid double queueing - AgentEventEmitter has its own queue
     AgentEventEmitter.getInstance().publishTimelineEventAsync({
       agentId: this.resourceId,
       historyId: historyId,

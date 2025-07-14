@@ -1,9 +1,6 @@
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { NewTimelineEvent } from "../events/types";
-import type {
-  WorkflowRuntimeHistoryEntry as WorkflowHistoryEntry,
-  WorkflowRuntimeStepHistoryEntry as WorkflowStepHistoryEntry,
-} from "./types";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
 
 /**
  * Manages workflow execution history and event tracking

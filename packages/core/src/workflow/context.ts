@@ -1,4 +1,4 @@
-import type { WorkflowRuntimeHistoryEntry, WorkflowRuntimeStepHistoryEntry } from "./types";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
 
 /**
  * Workflow execution context for state management
@@ -11,9 +11,9 @@ export interface WorkflowExecutionContext {
   isActive: boolean;
   startTime: Date;
   currentStepIndex: number;
-  steps: WorkflowRuntimeStepHistoryEntry[];
+  steps: WorkflowStepHistoryEntry[];
   signal?: AbortSignal;
-  historyEntry?: WorkflowRuntimeHistoryEntry;
+  historyEntry?: WorkflowHistoryEntry;
 }
 
 /**
@@ -31,6 +31,5 @@ export interface WorkflowStepContext {
   startTime: Date;
 }
 
-// Re-export the unified types for backward compatibility
-export type { WorkflowRuntimeHistoryEntry as WorkflowHistoryEntry };
-export type { WorkflowRuntimeStepHistoryEntry as WorkflowStepHistoryEntry };
+export type { WorkflowHistoryEntry };
+export type { WorkflowStepHistoryEntry };

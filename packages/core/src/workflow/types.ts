@@ -175,56 +175,41 @@ export interface BaseWorkflowStepHistoryEntry {
   parallelIndex?: number; // For parallel steps
 }
 
-/**
- * Workflow history entry for runtime execution context
- */
-export interface WorkflowRuntimeHistoryEntry extends BaseWorkflowHistoryEntry {
-  workflowName: string;
-  steps: WorkflowRuntimeStepHistoryEntry[];
-  events: import("../events/types").NewTimelineEvent[];
-  userId?: string;
-  conversationId?: string;
-}
-
-/**
- * Workflow step history entry for runtime execution context
- */
-export interface WorkflowRuntimeStepHistoryEntry extends BaseWorkflowStepHistoryEntry {
-  stepId: string;
-  error?: unknown;
-  parallelParentStepId?: string;
-  isSkipped?: boolean;
-}
-
-/**
- * Workflow history entry for database persistence
- */
 export interface WorkflowHistoryEntry extends BaseWorkflowHistoryEntry {
-  name: string;
-  metadata?: {
-    userId?: string;
-    conversationId?: string;
-    [key: string]: unknown;
-  };
+  workflowName: string;
   steps: WorkflowStepHistoryEntry[];
   events: WorkflowTimelineEvent[];
-  createdAt: Date;
-  updatedAt: Date;
+  userId?: string;
+  conversationId?: string;
+  metadata?: Record<string, unknown>;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /**
- * Workflow step history entry for database persistence
+ * Used consistently across memory storage and runtime
  */
 export interface WorkflowStepHistoryEntry extends BaseWorkflowStepHistoryEntry {
+  // Unique identifiers
   id: string;
+  stepId?: string;
+
   workflowHistoryId: string;
-  stepId?: string; // For parallel steps: unique identifier
-  startTime: Date; // required for persistence (override base optional)
-  errorMessage?: string;
-  parentStepId?: string; // For nested steps
+
+  startTime: Date;
+
+  error?: unknown;
+
+  parallelIndex?: number;
+  parallelParentStepId?: string;
+
+  agentExecutionId?: string;
+
   metadata?: Record<string, unknown>;
-  createdAt: Date;
-  updatedAt: Date;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /**
@@ -236,8 +221,8 @@ export interface WorkflowTimelineEvent {
   eventId: string;
   name: string;
   type: "workflow" | "workflow-step";
-  startTime: Date;
-  endTime?: Date;
+  startTime: string;
+  endTime?: string;
   status: string;
   level?: string;
   input?: unknown;

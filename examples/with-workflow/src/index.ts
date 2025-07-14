@@ -8,6 +8,7 @@ import {
   andWhen,
   andAll,
   andRace,
+  InMemoryStorage,
 } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
@@ -506,12 +507,40 @@ console.log("   • runParallelExample() - andAll step");
 console.log("   • runAllExamples() - Run all examples");
 console.log("\n💡 Call runComprehensiveExample() to see all 5 steps working together!");
 
+// Configure PostgreSQL Memory
+const memoryStorage = new PostgresStorage({
+  // Read connection details from environment variables
+  connection: {
+    host: process.env.POSTGRES_HOST || "localhost",
+    port: Number.parseInt(process.env.POSTGRES_PORT || "5432"),
+    database: process.env.POSTGRES_DB || "voltagent",
+    user: process.env.POSTGRES_USER || "postgres",
+    password: process.env.POSTGRES_PASSWORD || "password",
+    ssl: process.env.POSTGRES_SSL === "true",
+  },
+  // Alternative: Use connection string
+  // connection: process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/voltagent",
+
+  // Optional: Customize table names
+  tablePrefix: "voltagent_memory",
+
+  // Optional: Configure connection pool
+  maxConnections: 10,
+
+  // Optional: Set storage limit for messages
+  storageLimit: 100,
+
+  // Optional: Enable debug logging for storage
+  debug: process.env.NODE_ENV === "development",
+});
+
 (async () => {
   // Initialize VoltAgent
   new VoltAgent({
     agents: {
       simpleAgent,
     },
+    workflowMemory: new InMemoryStorage(),
     workflows: {
       comprehensiveWorkflow,
       agentExampleWorkflow,

@@ -1,7 +1,7 @@
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { WorkflowEvent } from "../events/workflow-emitter";
 import type { WorkflowMemoryManager } from "./memory/manager";
-import type { WorkflowRuntimeHistoryEntry as WorkflowHistoryEntry } from "./types";
+import type { WorkflowHistoryEntry } from "./types";
 import { devLogger } from "@voltagent/internal/dev";
 import { v4 as uuidv4 } from "uuid";
 
@@ -69,8 +69,8 @@ export class WorkflowHistoryManager {
         eventId: event.id || uuidv4(),
         name: event.name,
         type: event.type as "workflow" | "workflow-step",
-        startTime: new Date(event.startTime),
-        endTime: event.endTime ? new Date(event.endTime) : undefined,
+        startTime: event.startTime,
+        endTime: event.endTime || undefined,
         status: event.status,
         level: event.level || "INFO",
         input: event.input || null,
@@ -105,8 +105,7 @@ export class WorkflowHistoryManager {
       // Get updated execution with details
       const updatedExecution = await this.memoryManager.getExecutionWithDetails(executionId);
       if (updatedExecution) {
-        // Convert memory format to context format
-        return this.memoryToContextHistoryEntry(updatedExecution);
+        return updatedExecution;
       }
 
       return null;
@@ -132,7 +131,7 @@ export class WorkflowHistoryManager {
       for (const execution of basicExecutions) {
         const detailedExecution = await this.memoryManager.getExecutionWithDetails(execution.id);
         if (detailedExecution) {
-          detailedExecutions.push(this.memoryToContextHistoryEntry(detailedExecution));
+          detailedExecutions.push(detailedExecution);
         }
       }
 
@@ -153,72 +152,10 @@ export class WorkflowHistoryManager {
 
     try {
       const execution = await this.memoryManager.getExecutionWithDetails(executionId);
-      return execution ? this.memoryToContextHistoryEntry(execution) : null;
+      return execution || null;
     } catch (error) {
       devLogger.error("[WorkflowHistoryManager] Failed to get execution details:", error);
       return null;
     }
-  }
-
-  /**
-   * Convert memory WorkflowHistoryEntry to context WorkflowHistoryEntry
-   * (Same conversion logic as in WorkflowRegistry but centralized here)
-   */
-  private memoryToContextHistoryEntry(
-    memoryEntry: import("./types").WorkflowHistoryEntry,
-  ): WorkflowHistoryEntry {
-    // Convert memory steps to context steps format
-    const contextSteps = (memoryEntry.steps || []).map((step) => ({
-      stepId: step.stepId || step.id,
-      stepIndex: step.stepIndex,
-      stepType: step.stepType,
-      stepName: step.stepName,
-      status: step.status as any,
-      startTime: step.startTime,
-      endTime: step.endTime,
-      input: step.input,
-      output: step.output,
-      error: step.errorMessage,
-      agentExecutionId: step.agentExecutionId,
-      parallelIndex: step.parallelIndex,
-      parallelParentStepId: step.parentStepId,
-    }));
-
-    // Convert memory events to context events format
-    const contextEvents = (memoryEntry.events || []).map((event) => ({
-      id: event.id,
-      name: event.name,
-      type: event.type,
-      startTime: event.startTime.toISOString(),
-      endTime: event.endTime?.toISOString(),
-      status: event.status,
-      level: event.level,
-      input: event.input,
-      output: event.output,
-      statusMessage: event.statusMessage,
-      metadata: {
-        ...event.metadata,
-        workflowId: memoryEntry.workflowId,
-        workflowName: memoryEntry.name,
-        executionId: memoryEntry.id,
-      },
-      traceId: event.traceId || memoryEntry.id,
-      parentEventId: event.parentEventId,
-    })) as any;
-
-    return {
-      id: memoryEntry.id,
-      workflowId: memoryEntry.workflowId,
-      workflowName: memoryEntry.name,
-      status: memoryEntry.status,
-      startTime: memoryEntry.startTime,
-      endTime: memoryEntry.endTime,
-      input: memoryEntry.input,
-      output: memoryEntry.output,
-      steps: contextSteps,
-      events: contextEvents,
-      userId: memoryEntry.metadata?.userId as string,
-      conversationId: memoryEntry.metadata?.conversationId as string,
-    };
   }
 }

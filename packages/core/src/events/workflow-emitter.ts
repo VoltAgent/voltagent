@@ -56,7 +56,6 @@ export class WorkflowEventEmitter extends EventEmitter {
 
   /**
    * Queue workflow event for background processing (non-blocking)
-   * ✅ CLEAN: This is the main entry point for publishing workflow events
    */
   public publishWorkflowEventAsync(params: {
     workflowId: string;

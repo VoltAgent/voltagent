@@ -1,9 +1,6 @@
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Workflow } from "./types";
-import type {
-  WorkflowRuntimeHistoryEntry as WorkflowHistoryEntry,
-  WorkflowRuntimeStepHistoryEntry as WorkflowStepHistoryEntry,
-} from "./types";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
 import { EventEmitter } from "node:events";
 import { createWorkflowStepNodeId } from "../utils/node-utils";
 import type { WorkflowMemory } from "./types";
@@ -12,67 +9,6 @@ import { WorkflowHistoryManager } from "./history-manager";
 import type { WorkflowEvent } from "../events/workflow-emitter";
 import { devLogger } from "@voltagent/internal/dev";
 import { LibSQLStorage } from "../memory/libsql";
-
-/**
- * Convert memory WorkflowHistoryEntry to context WorkflowHistoryEntry
- */
-function memoryToContextHistoryEntry(
-  memoryEntry: import("./types").WorkflowHistoryEntry,
-): WorkflowHistoryEntry {
-  // Convert memory steps to context steps format (minor field mapping)
-  const contextSteps: WorkflowStepHistoryEntry[] = (memoryEntry.steps || []).map((step) => ({
-    stepId: step.stepId || step.id, // Ensure stepId is always present
-    stepIndex: step.stepIndex,
-    stepType: step.stepType,
-    stepName: step.stepName,
-    status: step.status as any,
-    startTime: step.startTime,
-    endTime: step.endTime,
-    input: step.input,
-    output: step.output,
-    error: step.errorMessage, // errorMessage -> error
-    agentExecutionId: step.agentExecutionId,
-    parallelIndex: step.parallelIndex,
-    parallelParentStepId: step.parentStepId, // parentStepId -> parallelParentStepId
-  }));
-
-  // Convert memory events to context events format (Date -> ISO string, etc.)
-  const contextEvents = (memoryEntry.events || []).map((event) => ({
-    id: event.id,
-    name: event.name,
-    type: event.type,
-    startTime: event.startTime.toISOString(), // Date -> ISO string
-    endTime: event.endTime?.toISOString(),
-    status: event.status,
-    level: event.level,
-    input: event.input,
-    output: event.output,
-    statusMessage: event.statusMessage,
-    metadata: {
-      ...event.metadata,
-      workflowId: memoryEntry.workflowId,
-      workflowName: memoryEntry.name,
-      executionId: memoryEntry.id,
-    },
-    traceId: event.traceId || memoryEntry.id,
-    parentEventId: event.parentEventId,
-  })) as any;
-
-  return {
-    id: memoryEntry.id,
-    workflowId: memoryEntry.workflowId,
-    workflowName: memoryEntry.name, // name -> workflowName
-    status: memoryEntry.status,
-    startTime: memoryEntry.startTime,
-    endTime: memoryEntry.endTime,
-    input: memoryEntry.input,
-    output: memoryEntry.output,
-    steps: contextSteps,
-    events: contextEvents,
-    userId: memoryEntry.metadata?.userId as string,
-    conversationId: memoryEntry.metadata?.conversationId as string,
-  };
-}
 
 /**
  * Serialize function content for API response
@@ -465,12 +401,11 @@ export class WorkflowRegistry extends EventEmitter {
       // Get basic executions first
       const basicExecutions = await this.memoryManager.getExecutions(workflowId);
 
-      // 🔥 FIX: Get detailed executions with steps and events
       const detailedExecutions: WorkflowHistoryEntry[] = [];
       for (const execution of basicExecutions) {
         const detailedExecution = await this.memoryManager.getExecutionWithDetails(execution.id);
         if (detailedExecution) {
-          detailedExecutions.push(memoryToContextHistoryEntry(detailedExecution));
+          detailedExecutions.push(detailedExecution);
         }
       }
 
@@ -499,7 +434,7 @@ export class WorkflowRegistry extends EventEmitter {
     this.ensureMemoryManager();
     if (this.memoryManager) {
       const execution = await this.memoryManager.getExecutionWithDetails(executionId);
-      return execution ? memoryToContextHistoryEntry(execution) : undefined;
+      return execution || undefined;
     }
     return undefined;
   }
@@ -619,7 +554,9 @@ export class WorkflowRegistry extends EventEmitter {
     this.ensureMemoryManager();
 
     const stepEntry: WorkflowStepHistoryEntry = {
+      id: stepId || `step-${stepIndex}`,
       stepId: stepId || `step-${stepIndex}`,
+      workflowHistoryId: executionId,
       stepIndex,
       stepType: stepType as any,
       stepName,

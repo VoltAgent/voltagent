@@ -9,7 +9,6 @@ import type {
   MemoryOptions,
   MessageFilterOptions,
 } from "../types";
-// ✅ ADD: Import WorkflowMemory interface and types
 import type {
   WorkflowMemory,
   WorkflowHistoryEntry,
@@ -45,7 +44,6 @@ export class InMemoryStorage implements Memory, WorkflowMemory {
   private timelineEvents: Map<string, NewTimelineEvent> = new Map();
   private agentHistory: Record<string, string[]> = {};
 
-  // ✅ ADD: Workflow-specific storage Maps
   private workflowHistories: Map<string, WorkflowHistoryEntry> = new Map();
   private workflowSteps: Map<string, WorkflowStepHistoryEntry> = new Map();
   private workflowTimelineEvents: Map<string, WorkflowTimelineEvent> = new Map();
@@ -884,24 +882,27 @@ export class InMemoryStorage implements Memory, WorkflowMemory {
     // Store the step
     this.workflowSteps.set(step.id, { ...step });
 
-    // Add to the workflow history entry's steps array
-    const historyEntry = this.workflowHistories.get(step.workflowHistoryId);
-    if (historyEntry) {
-      // Initialize steps array if it doesn't exist
-      if (!historyEntry.steps) {
-        historyEntry.steps = [];
-      }
+    // Add to the workflow history entry's steps array (if workflowHistoryId is provided)
+    if (step.workflowHistoryId) {
+      // ✅ UNIFIED: Handle optional workflowHistoryId
+      const historyEntry = this.workflowHistories.get(step.workflowHistoryId);
+      if (historyEntry) {
+        // Initialize steps array if it doesn't exist
+        if (!historyEntry.steps) {
+          historyEntry.steps = [];
+        }
 
-      // Add or update the step in the array
-      const stepIndex = historyEntry.steps?.findIndex((s) => s.id === step.id) ?? -1;
-      if (stepIndex >= 0) {
-        historyEntry.steps[stepIndex] = { ...step };
-      } else {
-        historyEntry.steps.push({ ...step });
-      }
+        // Add or update the step in the array
+        const stepIndex = historyEntry.steps?.findIndex((s) => s.id === step.id) ?? -1;
+        if (stepIndex >= 0) {
+          historyEntry.steps[stepIndex] = { ...step };
+        } else {
+          historyEntry.steps.push({ ...step });
+        }
 
-      // Update the history entry
-      this.workflowHistories.set(step.workflowHistoryId, historyEntry);
+        // Update the history entry
+        this.workflowHistories.set(step.workflowHistoryId, historyEntry);
+      }
     }
   }
 
@@ -953,13 +954,16 @@ export class InMemoryStorage implements Memory, WorkflowMemory {
 
     this.workflowSteps.set(id, updatedStep);
 
-    // Also update in the workflow history entry's steps array
-    const historyEntry = this.workflowHistories.get(existingStep.workflowHistoryId);
-    if (historyEntry?.steps) {
-      const stepIndex = historyEntry.steps?.findIndex((s) => s.id === id) ?? -1;
-      if (stepIndex >= 0) {
-        historyEntry.steps[stepIndex] = { ...updatedStep };
-        this.workflowHistories.set(existingStep.workflowHistoryId, historyEntry);
+    // Also update in the workflow history entry's steps array (if workflowHistoryId is provided)
+    if (existingStep.workflowHistoryId) {
+      // ✅ UNIFIED: Handle optional workflowHistoryId
+      const historyEntry = this.workflowHistories.get(existingStep.workflowHistoryId);
+      if (historyEntry?.steps) {
+        const stepIndex = historyEntry.steps?.findIndex((s) => s.id === id) ?? -1;
+        if (stepIndex >= 0) {
+          historyEntry.steps[stepIndex] = { ...updatedStep };
+          this.workflowHistories.set(existingStep.workflowHistoryId, historyEntry);
+        }
       }
     }
   }
@@ -978,11 +982,14 @@ export class InMemoryStorage implements Memory, WorkflowMemory {
     // Remove from main storage
     this.workflowSteps.delete(id);
 
-    // Remove from workflow history entry's steps array
-    const historyEntry = this.workflowHistories.get(step.workflowHistoryId);
-    if (historyEntry?.steps) {
-      historyEntry.steps = historyEntry.steps?.filter((s) => s.id !== id) || [];
-      this.workflowHistories.set(step.workflowHistoryId, historyEntry);
+    // Remove from workflow history entry's steps array (if workflowHistoryId is provided)
+    if (step.workflowHistoryId) {
+      // ✅ UNIFIED: Handle optional workflowHistoryId
+      const historyEntry = this.workflowHistories.get(step.workflowHistoryId);
+      if (historyEntry?.steps) {
+        historyEntry.steps = historyEntry.steps?.filter((s) => s.id !== id) || [];
+        this.workflowHistories.set(step.workflowHistoryId, historyEntry);
+      }
     }
   }
 
@@ -1011,13 +1018,8 @@ export class InMemoryStorage implements Memory, WorkflowMemory {
         id: event.id,
         name: event.name,
         type: event.type,
-        startTime:
-          typeof event.startTime === "string" ? event.startTime : event.startTime.toISOString(),
-        endTime: event.endTime
-          ? typeof event.endTime === "string"
-            ? event.endTime
-            : event.endTime.toISOString()
-          : undefined,
+        startTime: event.startTime, // Already ISO string in WorkflowTimelineEvent
+        endTime: event.endTime, // Already ISO string in WorkflowTimelineEvent
         status: event.status,
         level: event.level,
         input: event.input,

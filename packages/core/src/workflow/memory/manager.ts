@@ -47,7 +47,7 @@ export class WorkflowMemoryManager {
   ): Promise<WorkflowHistoryEntry> {
     const entry: WorkflowHistoryEntry = {
       id: crypto.randomUUID(),
-      name: workflowName,
+      workflowName: workflowName,
       workflowId,
       status: "running",
       startTime: new Date(),
@@ -163,7 +163,7 @@ export class WorkflowMemoryManager {
       startTime: new Date(),
       input,
       parallelIndex: options.parallelIndex,
-      parentStepId: options.parentStepId,
+      parallelParentStepId: options.parentStepId,
       metadata: options.metadata,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -186,7 +186,7 @@ export class WorkflowMemoryManager {
       status: options.status || "completed",
       endTime: new Date(),
       output: options.output,
-      errorMessage: options.errorMessage,
+      error: options.errorMessage,
       agentExecutionId: options.agentExecutionId,
       metadata: options.metadata,
       updatedAt: new Date(),

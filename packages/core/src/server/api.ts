@@ -337,8 +337,8 @@ app.openapi(executeWorkflowRoute, async (c) => {
       success: true as const,
       data: {
         executionId: result.executionId,
-        startAt: result.startAt.toISOString(),
-        endAt: result.endAt.toISOString(),
+        startAt: result.startAt,
+        endAt: result.endAt,
         status: "completed" as const,
         result: result.result,
       },
@@ -394,8 +394,8 @@ app.get("/workflows/:id/history", async (c: ApiContext) => {
       workflowId: execution.workflowId,
       workflowName: execution.workflowName,
       status: execution.status,
-      startTime: execution.startTime.toISOString(),
-      endTime: execution.endTime?.toISOString(),
+      startTime: execution.startTime,
+      endTime: execution.endTime,
       input: execution.input,
       output: execution.output,
       steps:
@@ -405,8 +405,8 @@ app.get("/workflows/:id/history", async (c: ApiContext) => {
           stepType: step.stepType,
           stepName: step.stepName,
           status: step.status,
-          startTime: step.startTime?.toISOString(),
-          endTime: step.endTime?.toISOString(),
+          startTime: step.startTime,
+          endTime: step.endTime,
           input: step.input,
           output: step.output,
           error: step.error,
@@ -1329,11 +1329,7 @@ export const createWebSocketServer = () => {
     const message = JSON.stringify({
       type: "WORKFLOW_HISTORY_CREATED",
       success: true,
-      data: {
-        ...historyEntry,
-        startTime: historyEntry.startTime.toISOString(),
-        endTime: historyEntry.endTime?.toISOString(),
-      },
+      data: historyEntry,
     });
 
     connections.forEach((ws) => {
@@ -1351,11 +1347,7 @@ export const createWebSocketServer = () => {
     const message = JSON.stringify({
       type: "WORKFLOW_HISTORY_UPDATE",
       success: true,
-      data: {
-        ...historyEntry,
-        startTime: historyEntry.startTime.toISOString(),
-        endTime: historyEntry.endTime?.toISOString(),
-      },
+      data: historyEntry,
     });
 
     connections.forEach((ws) => {
@@ -1427,8 +1419,11 @@ export const createWebSocketServer = () => {
               success: true,
               data: history.map((entry) => ({
                 ...entry,
-                startTime: entry.startTime.toISOString(),
-                endTime: entry.endTime?.toISOString(),
+                // ✅ UNIFIED: Handle both Date objects and ISO strings for history list
+                startTime:
+                  entry.startTime instanceof Date ? entry.startTime.toISOString() : entry.startTime,
+                endTime:
+                  entry.endTime instanceof Date ? entry.endTime.toISOString() : entry.endTime,
               })),
             }),
           );
@@ -1440,11 +1435,7 @@ export const createWebSocketServer = () => {
               JSON.stringify({
                 type: "WORKFLOW_HISTORY_UPDATE",
                 success: true,
-                data: {
-                  ...activeExecution,
-                  startTime: activeExecution.startTime.toISOString(),
-                  endTime: activeExecution.endTime?.toISOString(),
-                },
+                data: activeExecution,
               }),
             );
           }

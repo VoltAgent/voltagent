@@ -122,8 +122,8 @@ export interface WorkflowTimelineEvent {
   workflowHistoryId: string;
   type: string;
   name: string;
-  startTime: Date;
-  endTime?: Date;
+  startTime: string;
+  endTime?: string;
   status?: string;
   level?: string;
   input?: unknown;

@@ -30,7 +30,7 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
       `,
       args: [
         entry.id,
-        entry.name,
+        entry.workflowName,
         entry.workflowId,
         entry.status,
         entry.startTime.toISOString(),
@@ -38,8 +38,8 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
         JSON.stringify(entry.input),
         entry.output ? JSON.stringify(entry.output) : null,
         entry.metadata ? JSON.stringify(entry.metadata) : null,
-        entry.createdAt.toISOString(),
-        entry.updatedAt.toISOString(),
+        entry.createdAt?.toISOString() || new Date().toISOString(),
+        entry.updatedAt?.toISOString() || new Date().toISOString(),
       ],
     });
   }
@@ -139,13 +139,13 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
         step.endTime?.toISOString() || null,
         step.input ? JSON.stringify(step.input) : null,
         step.output ? JSON.stringify(step.output) : null,
-        step.errorMessage || null,
+        step.error ? JSON.stringify(step.error) : null,
         step.agentExecutionId || null,
         step.parallelIndex || null,
-        step.parentStepId || null,
+        step.parallelParentStepId || null,
         step.metadata ? JSON.stringify(step.metadata) : null,
-        step.createdAt.toISOString(),
-        step.updatedAt.toISOString(),
+        step.createdAt?.toISOString() || new Date().toISOString(),
+        step.updatedAt?.toISOString() || new Date().toISOString(),
       ],
     });
   }
@@ -195,9 +195,9 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
       setClauses.push("output = ?");
       args.push(JSON.stringify(updates.output));
     }
-    if (updates.errorMessage !== undefined) {
+    if (updates.error !== undefined) {
       setClauses.push("error_message = ?");
-      args.push(updates.errorMessage);
+      args.push(JSON.stringify(updates.error));
     }
     if (updates.agentExecutionId !== undefined) {
       setClauses.push("agent_execution_id = ?");
@@ -246,8 +246,8 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
         event.eventId,
         event.name,
         event.type,
-        event.startTime.toISOString(),
-        event.endTime?.toISOString() || null,
+        event.startTime,
+        event.endTime || null,
         event.status,
         event.level || "INFO",
         event.input ? JSON.stringify(event.input) : null,
@@ -416,7 +416,7 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
   private parseWorkflowHistoryRow(row: any): WorkflowHistoryEntry {
     return {
       id: row.id as string,
-      name: row.name as string,
+      workflowName: row.name as string,
       workflowId: row.workflow_id as string,
       status: row.status as any,
       startTime: new Date(row.start_time as string),
@@ -447,10 +447,10 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
       endTime: row.end_time ? new Date(row.end_time as string) : undefined,
       input: row.input ? JSON.parse(row.input as string) : undefined,
       output: row.output ? JSON.parse(row.output as string) : undefined,
-      errorMessage: (row.error_message as string) || undefined,
+      error: row.error_message ? JSON.parse(row.error_message as string) : undefined,
       agentExecutionId: (row.agent_execution_id as string) || undefined,
       parallelIndex: row.parallel_index ? Number(row.parallel_index) : undefined,
-      parentStepId: (row.parent_step_id as string) || undefined,
+      parallelParentStepId: (row.parent_step_id as string) || undefined,
       metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,
       createdAt: new Date(row.created_at as string),
       updatedAt: new Date(row.updated_at as string),
@@ -468,8 +468,8 @@ export class LibSQLWorkflowExtension implements WorkflowMemory {
       eventId: row.event_id as string,
       name: row.name as string,
       type: row.type as any,
-      startTime: new Date(row.start_time as string),
-      endTime: row.end_time ? new Date(row.end_time as string) : undefined,
+      startTime: row.start_time as string,
+      endTime: row.end_time ? (row.end_time as string) : undefined,
       status: row.status as string,
       level: (row.level as string) || undefined,
       input: row.input ? JSON.parse(row.input as string) : undefined,
