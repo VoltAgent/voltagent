@@ -154,11 +154,6 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       this.initializeGlobalTelemetry(options.telemetryExporter);
     }
 
-    // Set global workflow memory if provided
-    if (options.workflowMemory) {
-      this.workflowRegistry.setGlobalMemory(options.workflowMemory);
-    }
-
     // ✅ NOW register agents - they can access global telemetry exporter
     this.registerAgents(options.agents);
 

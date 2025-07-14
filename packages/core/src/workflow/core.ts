@@ -12,7 +12,8 @@ import type {
   WorkflowRunOptions,
 } from "./types";
 import { WorkflowRegistry } from "./registry";
-import { WorkflowExecutionContext } from "./context";
+import type { WorkflowExecutionContext } from "./context";
+import { WorkflowMemoryManager } from "./memory/manager";
 import {
   createWorkflowErrorEvent,
   createWorkflowStartEvent,
@@ -554,7 +555,14 @@ export function createWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
 >(
-  { id, name, purpose, hooks, input }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>,
+  {
+    id,
+    name,
+    purpose,
+    hooks,
+    input,
+    memory: workflowMemory,
+  }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
   return {
@@ -564,23 +572,46 @@ export function createWorkflow<
     steps: steps as BaseStep[],
     inputSchema: input,
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
-      // Register execution with workflow registry first to get the correct execution ID
+      // ✅ Memory priority: runtime options > workflow config > global memory
+      const effectiveMemory = options?.memory || workflowMemory;
+
+      // Get registry instance for potential use later
       const workflowRegistry = WorkflowRegistry.getInstance();
+
       let historyEntry: any;
       let executionId = crypto.randomUUID(); // fallback ID
+      let workflowMemoryManager: WorkflowMemoryManager | null = null;
 
-      try {
-        historyEntry = await workflowRegistry.recordWorkflowExecutionStart(id, name, input, {
-          userId: (input as { userId?: string }).userId,
-          conversationId: (input as { conversationId?: string }).conversationId,
-        });
-        // Use the execution ID from registry to ensure consistency
-        executionId = historyEntry.id;
-      } catch (registrationError) {
-        console.warn(
-          "Workflow not registered, proceeding without history tracking:",
-          registrationError,
-        );
+      // ✅ If we have effective memory, create dedicated memory manager
+      if (effectiveMemory) {
+        workflowMemoryManager = new WorkflowMemoryManager(effectiveMemory);
+
+        try {
+          // Create execution directly with specific memory
+          historyEntry = await workflowMemoryManager.createExecution(id, name, input, {
+            userId: (input as { userId?: string }).userId,
+            conversationId: (input as { conversationId?: string }).conversationId,
+          });
+          executionId = historyEntry.id;
+          console.log(`✅ [Workflow ${id}] Using workflow-specific memory storage`);
+        } catch (memoryError) {
+          console.warn("Failed to create execution with workflow memory:", memoryError);
+        }
+      } else {
+        // ✅ Fallback to global registry memory (existing behavior)
+        try {
+          historyEntry = await workflowRegistry.recordWorkflowExecutionStart(id, name, input, {
+            userId: (input as { userId?: string }).userId,
+            conversationId: (input as { conversationId?: string }).conversationId,
+          });
+          executionId = historyEntry.id;
+          console.log(`✅ [Workflow ${id}] Using global registry memory`);
+        } catch (registrationError) {
+          console.warn(
+            `⚠️  [Workflow ${id}] Workflow not registered, proceeding without history tracking:`,
+            registrationError,
+          );
+        }
       }
 
       // Initialize workflow execution context with the correct execution ID
@@ -595,6 +626,8 @@ export function createWorkflow<
         steps: [],
         signal: undefined, // TODO: Extract signal from input if available
         historyEntry: historyEntry,
+        // Store effective memory for use in steps if needed
+        memory: effectiveMemory,
       };
 
       // Workflow start event

@@ -41,7 +41,8 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  *   name: "User Processing Workflow",
  *   purpose: "Process user data and generate personalized content",
  *   input: z.object({ userId: z.string(), userType: z.enum(["admin", "user"]) }),
- *   result: z.object({ processed: z.boolean(), content: z.string() })
+ *   result: z.object({ processed: z.boolean(), content: z.string() }),
+ *   memory: new LibSQLStorage({ url: "file:memory.db" }) // Optional workflow-specific memory
  * })
  *   .andThen(async (data) => {
  *     const userInfo = await fetchUserInfo(data.userId);
@@ -61,7 +62,11 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  *     content: data.content
  *   }));
  *
- * const result = await workflow.run({ userId: "123", userType: "admin" });
+ * // Run with optional memory override
+ * const result = await workflow.run(
+ *   { userId: "123", userType: "admin" },
+ *   { memory: new LibSQLStorage({ url: "file:memory.db" }) }
+ * );
  * ```
  */
 export class WorkflowChain<

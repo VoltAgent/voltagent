@@ -30,6 +30,11 @@ export interface WorkflowRunOptions {
    * The user context, this can be used to track the current user context in a workflow
    */
   userContext?: UserContext;
+  /**
+   * Override workflow memory storage for this specific execution
+   * Takes priority over workflow config memory and global memory
+   */
+  memory?: WorkflowMemory;
 }
 
 /**
@@ -103,6 +108,11 @@ export type WorkflowConfig<
    * Hooks for the workflow
    */
   hooks?: WorkflowHooks<WorkflowInput<INPUT_SCHEMA>, WorkflowResult<RESULT_SCHEMA>>;
+  /**
+   * Memory storage for this workflow
+   * Overrides global workflow memory from VoltAgent
+   */
+  memory?: WorkflowMemory;
 };
 
 /**

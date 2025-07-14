@@ -3,7 +3,6 @@ import type { Workflow } from "./types";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
 import { EventEmitter } from "node:events";
 import { createWorkflowStepNodeId } from "../utils/node-utils";
-import type { WorkflowMemory } from "./types";
 import { WorkflowMemoryManager } from "./memory/manager";
 import { WorkflowHistoryManager } from "./history-manager";
 import type { WorkflowEvent } from "../events/workflow-emitter";
@@ -193,7 +192,6 @@ export class WorkflowRegistry extends EventEmitter {
   private static instance: WorkflowRegistry;
   private workflows: Map<string, RegisteredWorkflow> = new Map();
   private memoryManager?: WorkflowMemoryManager;
-  private globalMemory?: WorkflowMemory;
 
   private workflowHistoryManagers: Map<string, WorkflowHistoryManager> = new Map();
 
@@ -223,24 +221,6 @@ export class WorkflowRegistry extends EventEmitter {
   }
 
   /**
-   * Set global memory for all workflow operations (similar to Agent memory system)
-   * @param memory WorkflowMemory implementation (e.g., LibSQLStorage)
-   * @param exporter Optional VoltAgentExporter for telemetry
-   */
-  public setGlobalMemory(memory: WorkflowMemory, exporter?: VoltAgentExporter): void {
-    devLogger.info("[WorkflowRegistry] Setting global workflow memory");
-
-    try {
-      this.globalMemory = memory;
-      this.memoryManager = new WorkflowMemoryManager(memory, exporter);
-      devLogger.info("[WorkflowRegistry] Global workflow memory configured successfully");
-    } catch (error) {
-      devLogger.error("[WorkflowRegistry] Failed to configure global workflow memory:", error);
-      throw error;
-    }
-  }
-
-  /**
    * Get the history manager instance
    * @deprecated Use async methods directly on WorkflowRegistry instead
    */
@@ -253,6 +233,8 @@ export class WorkflowRegistry extends EventEmitter {
    */
   public getWorkflowHistoryManager(workflowId: string): WorkflowHistoryManager {
     if (!this.workflowHistoryManagers.has(workflowId)) {
+      this.ensureMemoryManager();
+
       // Create new history manager for this workflow
       const historyManager = new WorkflowHistoryManager(
         workflowId,
@@ -313,18 +295,12 @@ export class WorkflowRegistry extends EventEmitter {
     // If memoryManager already exists, nothing to do
     if (this.memoryManager) return;
 
-    // If global memory is set, use it
-    if (this.globalMemory) {
-      devLogger.debug("[WorkflowRegistry] Auto-initializing memory manager with global memory");
-      this.memoryManager = new WorkflowMemoryManager(this.globalMemory);
-    } else {
-      // Default to LibSQLStorage like Agent system does
-      devLogger.debug(
-        "[WorkflowRegistry] Auto-initializing memory manager with default LibSQLStorage",
-      );
-      const defaultMemory = new LibSQLStorage({ url: "file:memory.db" });
-      this.memoryManager = new WorkflowMemoryManager(defaultMemory);
-    }
+    // Always default to LibSQLStorage like Agent system does
+    devLogger.debug(
+      "[WorkflowRegistry] Auto-initializing memory manager with default LibSQLStorage",
+    );
+    const defaultMemory = new LibSQLStorage({ url: "file:memory.db" });
+    this.memoryManager = new WorkflowMemoryManager(defaultMemory);
   }
 
   /**
