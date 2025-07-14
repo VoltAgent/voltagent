@@ -3,6 +3,7 @@ import { devLogger } from "@voltagent/internal/dev";
 import { v4 as uuidv4 } from "uuid";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
+import { WorkflowRegistry } from "../workflow/registry";
 import type {
   WorkflowStartEvent,
   WorkflowSuccessEvent,
@@ -98,7 +99,6 @@ export class WorkflowEventEmitter extends EventEmitter {
     const { workflowId, executionId, event } = params;
 
     try {
-      const { WorkflowRegistry } = await import("../workflow/registry");
       const registry = WorkflowRegistry.getInstance();
 
       await registry.persistWorkflowTimelineEvent(workflowId, executionId, event);
