@@ -981,14 +981,10 @@ export class InMemoryStorage implements Memory {
     // Remove from main storage
     this.workflowSteps.delete(id);
 
-    // Remove from workflow history entry's steps array (if workflowHistoryId is provided)
-    if (step.workflowHistoryId) {
-      // ✅ UNIFIED: Handle optional workflowHistoryId
-      const historyEntry = this.workflowHistories.get(step.workflowHistoryId);
-      if (historyEntry?.steps) {
-        historyEntry.steps = historyEntry.steps?.filter((s) => s.id !== id) || [];
-        this.workflowHistories.set(step.workflowHistoryId, historyEntry);
-      }
+    const historyEntry = this.workflowHistories.get(step.workflowHistoryId);
+    if (historyEntry?.steps) {
+      historyEntry.steps = historyEntry.steps?.filter((s) => s.id !== id) || [];
+      this.workflowHistories.set(step.workflowHistoryId, historyEntry);
     }
   }
 

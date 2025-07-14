@@ -8,8 +8,22 @@ import {
   type MessageFilterOptions,
   type NewTimelineEvent,
   safeJsonParse,
+  type WorkflowHistoryEntry,
+  type WorkflowStepHistoryEntry,
+  type WorkflowTimelineEvent,
 } from "@voltagent/core";
 import { Pool } from "pg";
+
+/**
+ * Workflow statistics interface
+ */
+export interface WorkflowStats {
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  averageExecutionTime: number;
+  lastExecutionTime?: Date;
+}
 
 /**
  * PostgreSQL Storage for VoltAgent
@@ -68,129 +82,11 @@ export interface PostgresStorageOptions extends MemoryOptions {
   storageLimit?: number;
 }
 
-// ===== Workflow Memory Types =====
-// Duplicated from @voltagent/core to avoid cross-package import issues
-
-/**
- * Workflow history entry - represents a single workflow execution
- */
-export interface WorkflowHistoryEntry {
-  id: string;
-  workflowName: string;
-  workflowId: string;
-  status: "running" | "completed" | "error" | "cancelled";
-  startTime: Date;
-  endTime?: Date;
-  input: unknown;
-  output?: unknown;
-  metadata?: {
-    userId?: string;
-    conversationId?: string;
-    [key: string]: unknown;
-  };
-  steps: WorkflowStepHistoryEntry[];
-  events: WorkflowTimelineEvent[];
-  userId?: string;
-  conversationId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
- * Workflow step history entry
- */
-export interface WorkflowStepHistoryEntry {
-  id: string;
-  workflowHistoryId: string;
-  stepIndex: number;
-  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
-  stepName: string;
-  status: "running" | "completed" | "error" | "skipped";
-  startTime: Date;
-  endTime?: Date;
-  input?: unknown;
-  output?: unknown;
-  errorMessage?: string;
-  agentExecutionId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
- * Workflow timeline event
- */
-export interface WorkflowTimelineEvent {
-  id: string;
-  workflowHistoryId: string;
-  eventId: string;
-  name: string;
-  type: "workflow" | "workflow-step";
-  startTime: string;
-  endTime?: string;
-  status: string;
-  level?: string;
-  input?: unknown;
-  output?: unknown;
-  statusMessage?: unknown;
-  metadata?: Record<string, unknown>;
-  traceId?: string;
-  parentEventId?: string;
-  eventSequence?: number;
-  createdAt: Date;
-}
-
-/**
- * Workflow statistics
- */
-export interface WorkflowStats {
-  totalExecutions: number;
-  successfulExecutions: number;
-  failedExecutions: number;
-  averageExecutionTime: number;
-  lastExecutionTime?: Date;
-}
-
-/**
- * Workflow memory storage interface
- */
-export interface WorkflowMemory {
-  // Workflow History Operations
-  storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void>;
-  getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null>;
-  getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]>;
-  updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void>;
-  deleteWorkflowHistory(id: string): Promise<void>;
-
-  // Workflow Steps Operations
-  storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void>;
-  getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null>;
-  getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]>;
-  updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void>;
-  deleteWorkflowStep(id: string): Promise<void>;
-
-  // Workflow Timeline Events Operations
-  storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void>;
-  getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null>;
-  getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]>;
-  deleteWorkflowTimelineEvent(id: string): Promise<void>;
-
-  // Query Operations
-  getAllWorkflowIds(): Promise<string[]>;
-  getWorkflowStats(workflowId: string): Promise<WorkflowStats>;
-
-  // Bulk Operations
-  getWorkflowHistoryWithStepsAndEvents(id: string): Promise<WorkflowHistoryEntry | null>;
-  deleteWorkflowHistoryWithRelated(id: string): Promise<void>;
-
-  // Cleanup Operations
-  cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number>;
-}
-
 /**
  * A PostgreSQL storage implementation of the Memory and WorkflowMemory interfaces
  * Uses node-postgres to store and retrieve conversation history and workflow data
  */
-export class PostgresStorage implements Memory, WorkflowMemory {
+export class PostgresStorage implements Memory {
   private pool: Pool;
   private options: PostgresStorageOptions;
   private initialized: Promise<void>;
@@ -2680,7 +2576,7 @@ export class PostgresStorage implements Memory, WorkflowMemory {
           step.endTime || null,
           step.input ? JSON.stringify(step.input) : null,
           step.output ? JSON.stringify(step.output) : null,
-          step.errorMessage || null,
+          step.error ? JSON.stringify(step.error) : null,
           step.agentExecutionId || null,
           step.createdAt,
           step.updatedAt,
@@ -2721,7 +2617,7 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         endTime: row.end_time,
         input: row.input ? safeJsonParse(row.input) : null,
         output: row.output ? safeJsonParse(row.output) : null,
-        errorMessage: row.error_message,
+        error: row.error_message ? safeJsonParse(row.error_message) : null,
         agentExecutionId: row.agent_execution_id,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -2758,7 +2654,7 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         endTime: row.end_time,
         input: row.input ? safeJsonParse(row.input) : null,
         output: row.output ? safeJsonParse(row.output) : null,
-        errorMessage: row.error_message,
+        error: row.error_message ? safeJsonParse(row.error_message) : null,
         agentExecutionId: row.agent_execution_id,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -2797,9 +2693,9 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         updateFields.push(`output = $${paramCount++}`);
         values.push(updates.output ? JSON.stringify(updates.output) : null);
       }
-      if (updates.errorMessage !== undefined) {
+      if (updates.error !== undefined) {
         updateFields.push(`error_message = $${paramCount++}`);
-        values.push(updates.errorMessage);
+        values.push(updates.error ? JSON.stringify(updates.error) : null);
       }
       if (updates.agentExecutionId !== undefined) {
         updateFields.push(`agent_execution_id = $${paramCount++}`);
@@ -2849,12 +2745,12 @@ export class PostgresStorage implements Memory, WorkflowMemory {
   /**
    * Store a workflow timeline event
    */
-  public async storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void> {
+  public async storeWorkflowTimelineEvent(event: any): Promise<void> {
     await this.initialized;
     const client = await this.pool.connect();
     try {
       // Convert Date to ISO string for PostgreSQL
-      const createdAt = event.createdAt.toISOString();
+      const createdAt = new Date().toISOString();
 
       // Extract event sequence from metadata (required)
       const eventSequence = event.metadata?.eventSequence;
@@ -2868,8 +2764,8 @@ export class PostgresStorage implements Memory, WorkflowMemory {
          ON CONFLICT (event_id) DO UPDATE SET
          end_time = $6, status = $7, output = $10, metadata = $11, event_sequence = $12`,
         [
-          event.eventId,
-          event.workflowHistoryId,
+          event.id,
+          event.workflowHistoryId || event.traceId,
           event.type,
           event.name,
           event.startTime,
@@ -2886,7 +2782,7 @@ export class PostgresStorage implements Memory, WorkflowMemory {
           createdAt,
         ],
       );
-      this.debug(`Stored workflow timeline event: ${event.eventId}`);
+      this.debug(`Stored workflow timeline event: ${event.eventId || event.id}`);
     } catch (error) {
       this.debug("Error storing workflow timeline event:", error);
       throw new Error("Failed to store workflow timeline event");
@@ -2898,7 +2794,7 @@ export class PostgresStorage implements Memory, WorkflowMemory {
   /**
    * Get a workflow timeline event by ID
    */
-  public async getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null> {
+  public async getWorkflowTimelineEvent(id: string): Promise<any | null> {
     await this.initialized;
     const client = await this.pool.connect();
     try {
@@ -2926,8 +2822,8 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         traceId: row.trace_id,
         parentEventId: row.parent_event_id,
         eventSequence: row.event_sequence,
-        createdAt: row.created_at,
-      };
+        createdAt: new Date(row.created_at),
+      } as WorkflowTimelineEvent;
     } catch (error) {
       this.debug("Error getting workflow timeline event:", error);
       throw new Error("Failed to get workflow timeline event");
@@ -2939,9 +2835,7 @@ export class PostgresStorage implements Memory, WorkflowMemory {
   /**
    * Get workflow timeline events by workflow history ID
    */
-  public async getWorkflowTimelineEvents(
-    workflowHistoryId: string,
-  ): Promise<WorkflowTimelineEvent[]> {
+  public async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<any[]> {
     await this.initialized;
     const client = await this.pool.connect();
     try {
@@ -2968,8 +2862,8 @@ export class PostgresStorage implements Memory, WorkflowMemory {
         traceId: row.trace_id,
         parentEventId: row.parent_event_id,
         eventSequence: row.event_sequence,
-        createdAt: row.created_at,
-      }));
+        createdAt: new Date(row.created_at),
+      })) as WorkflowTimelineEvent[];
     } catch (error) {
       this.debug("Error getting workflow timeline events:", error);
       throw new Error("Failed to get workflow timeline events");

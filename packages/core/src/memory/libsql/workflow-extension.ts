@@ -455,7 +455,6 @@ export class LibSQLWorkflowExtension {
 
   /**
    * Parse workflow timeline event row from database
-   * 🔥 FIX: Convert database fields (eventName, eventType) to context format (name, type)
    */
   private parseWorkflowTimelineEventRow(row: any): WorkflowTimelineEvent {
     return {
