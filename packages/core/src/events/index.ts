@@ -8,7 +8,7 @@ import type { BaseMessage } from "../index";
 import { AgentRegistry } from "../server/registry";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
-import type { NewTimelineEvent, AgentTimelineEvent } from "./types";
+import type { AgentTimelineEvent } from "./types";
 
 // New type exports
 export type EventStatus = AgentStatus;
@@ -112,7 +112,7 @@ export class AgentEventEmitter extends EventEmitter {
   public publishTimelineEventAsync(params: {
     agentId: string;
     historyId: string;
-    event: NewTimelineEvent;
+    event: AgentTimelineEvent;
     skipPropagation?: boolean;
     parentHistoryEntryId?: string;
   }): void {
@@ -150,7 +150,7 @@ export class AgentEventEmitter extends EventEmitter {
   private async publishTimelineEventSync(params: {
     agentId: string;
     historyId: string;
-    event: NewTimelineEvent;
+    event: AgentTimelineEvent;
     skipPropagation?: boolean;
     parentHistoryEntryId?: string;
   }): Promise<AgentHistoryEntry | undefined> {
@@ -164,19 +164,16 @@ export class AgentEventEmitter extends EventEmitter {
     const historyManager = agent.getHistoryManager();
 
     try {
-      // Call the new method in HistoryManager to persist this new event type
       const updatedEntry = await historyManager.persistTimelineEvent(historyId, event);
 
       if (updatedEntry) {
         this.emitHistoryUpdate(agentId, updatedEntry);
 
-        // Propagate the event to parent agents if not explicitly skipped
-        // Only propagate agent events - workflow events use WorkflowEventEmitter
-        if (!skipPropagation && !this.isWorkflowEvent(event)) {
+        if (!skipPropagation) {
           await this.propagateEventToParentAgents(
             agentId,
             historyId,
-            event as AgentTimelineEvent, // Type assertion safe after guard check
+            event,
             new Set(),
             parentHistoryEntryId,
           );
@@ -193,17 +190,8 @@ export class AgentEventEmitter extends EventEmitter {
   }
 
   /**
-   * Check if an event is a workflow event (should use WorkflowEventEmitter)
-   */
-  private isWorkflowEvent(event: NewTimelineEvent): boolean {
-    return event.type === "workflow" || event.type === "workflow-step";
-  }
-
-  /**
    * Propagates a timeline event from a subagent to all its parent agents (optimized batch version)
    * This ensures all events from subagents appear in parent agent timelines
-   *
-   * Note: Only handles agent events - workflow events are handled by WorkflowEventEmitter
    *
    * @param agentId - The source agent ID (subagent)
    * @param historyId - The history entry ID of the source (not used directly but needed for context)
@@ -274,7 +262,7 @@ export class AgentEventEmitter extends EventEmitter {
           await this.publishTimelineEventSync({
             agentId: parentId,
             historyId: parentHistoryEntryId,
-            event: enrichedEvent as NewTimelineEvent, // Safe cast - enrichedEvent is AgentTimelineEvent subset
+            event: enrichedEvent as AgentTimelineEvent,
             skipPropagation: true, // Prevent recursive propagation cycles
           });
 
