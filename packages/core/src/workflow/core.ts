@@ -11,7 +11,6 @@ import type {
   WorkflowResult,
   WorkflowRunOptions,
 } from "./types";
-import { WorkflowRegistry } from "./registry";
 import type { WorkflowExecutionContext } from "./context";
 import { WorkflowMemoryManager } from "./memory/manager";
 import {
@@ -20,6 +19,7 @@ import {
   createWorkflowSuccessEvent,
   publishWorkflowEvent,
 } from "./event-utils";
+import { LibSQLStorage } from "../memory/libsql";
 
 /**
  * Creates a workflow from multiple and* functions
@@ -565,55 +565,34 @@ export function createWorkflow<
   }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
+  // ✅ Ensure every workflow has memory (like Agent system)
+  const effectiveMemory = workflowMemory || new LibSQLStorage({ url: "file:memory.db" });
+
   return {
     id,
     name,
     purpose: purpose ?? "No purpose provided",
     steps: steps as BaseStep[],
     inputSchema: input,
+    // ✅ Always expose memory for registry access
+    memory: effectiveMemory,
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
-      // ✅ Memory priority: runtime options > workflow config > global memory
-      const effectiveMemory = options?.memory || workflowMemory;
-
-      // Get registry instance for potential use later
-      const workflowRegistry = WorkflowRegistry.getInstance();
+      const workflowMemoryManager = new WorkflowMemoryManager(effectiveMemory);
 
       let historyEntry: any;
       let executionId = crypto.randomUUID(); // fallback ID
-      let workflowMemoryManager: WorkflowMemoryManager | null = null;
 
-      // ✅ If we have effective memory, create dedicated memory manager
-      if (effectiveMemory) {
-        workflowMemoryManager = new WorkflowMemoryManager(effectiveMemory);
-
-        try {
-          // Create execution directly with specific memory
-          historyEntry = await workflowMemoryManager.createExecution(id, name, input, {
-            userId: options?.userId,
-            conversationId: options?.conversationId,
-            userContext: options?.userContext,
-          });
-          executionId = historyEntry.id;
-          console.log(`✅ [Workflow ${id}] Using workflow-specific memory storage`);
-        } catch (memoryError) {
-          console.warn("Failed to create execution with workflow memory:", memoryError);
-        }
-      } else {
-        // ✅ Fallback to global registry memory (existing behavior)
-        try {
-          historyEntry = await workflowRegistry.recordWorkflowExecutionStart(id, name, input, {
-            userId: options?.userId,
-            conversationId: options?.conversationId,
-            userContext: options?.userContext,
-          });
-          executionId = historyEntry.id;
-          console.log(`✅ [Workflow ${id}] Using global registry memory`);
-        } catch (registrationError) {
-          console.warn(
-            `⚠️  [Workflow ${id}] Workflow not registered, proceeding without history tracking:`,
-            registrationError,
-          );
-        }
+      try {
+        // Create execution with workflow-specific memory
+        historyEntry = await workflowMemoryManager.createExecution(id, name, input, {
+          userId: options?.userId,
+          conversationId: options?.conversationId,
+          userContext: options?.userContext,
+        });
+        executionId = historyEntry.id;
+        console.log(`✅ [Workflow ${id}] Using workflow memory storage`);
+      } catch (memoryError) {
+        console.warn("Failed to create execution with workflow memory:", memoryError);
       }
 
       // Initialize workflow execution context with the correct execution ID
@@ -685,11 +664,11 @@ export function createWorkflow<
 
         if (historyEntry) {
           try {
-            workflowRegistry.recordWorkflowExecutionEnd(
-              executionContext.executionId,
-              "completed",
-              finalState.result,
-            );
+            await workflowMemoryManager.updateExecution(executionContext.executionId, {
+              status: "completed",
+              endTime: new Date(),
+              output: finalState.result,
+            });
           } catch (registrationError) {
             console.warn("Failed to record workflow completion:", registrationError);
           }
@@ -720,12 +699,11 @@ export function createWorkflow<
 
         if (historyEntry) {
           try {
-            workflowRegistry.recordWorkflowExecutionEnd(
-              executionContext.executionId,
-              "error",
-              undefined,
-              error,
-            );
+            await workflowMemoryManager.updateExecution(executionContext.executionId, {
+              status: "error",
+              endTime: new Date(),
+              output: error,
+            });
           } catch (registrationError) {
             console.warn("Failed to record workflow failure:", registrationError);
           }

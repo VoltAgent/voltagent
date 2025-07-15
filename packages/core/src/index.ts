@@ -114,7 +114,6 @@ export class VoltAgent {
 
       if (options.voltOpsClient.observability) {
         this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.observability);
-        this.workflowRegistry.setGlobalExporter(options.voltOpsClient.observability);
         this.initializeGlobalTelemetry(options.voltOpsClient.observability);
       }
     }
@@ -146,7 +145,6 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       );
       if (voltExporter) {
         this.registry.setGlobalVoltAgentExporter(voltExporter);
-        this.workflowRegistry.setGlobalExporter(voltExporter);
       }
       this.initializeGlobalTelemetry(options.telemetryExporter);
     }

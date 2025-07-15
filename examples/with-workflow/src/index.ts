@@ -14,6 +14,32 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 import { PostgresStorage } from "@voltagent/postgres";
 
+const memoryStorage = new PostgresStorage({
+  // Read connection details from environment variables
+  connection: {
+    host: process.env.POSTGRES_HOST || "localhost",
+    port: Number.parseInt(process.env.POSTGRES_PORT || "5432"),
+    database: process.env.POSTGRES_DB || "voltagent-memory",
+    user: process.env.POSTGRES_USER || "postgres",
+    password: process.env.POSTGRES_PASSWORD || "password",
+    ssl: process.env.POSTGRES_SSL === "true",
+  },
+  // Alternative: Use connection string
+  // connection: process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/voltagent",
+
+  // Optional: Customize table names
+  tablePrefix: "voltagent_memory",
+
+  // Optional: Configure connection pool
+  maxConnections: 10,
+
+  // Optional: Set storage limit for messages
+  storageLimit: 100,
+
+  // Optional: Enable debug logging for storage
+  debug: process.env.NODE_ENV === "development",
+});
+
 // Simple agent for demonstrations
 const simpleAgent = new Agent({
   name: "SimpleAgent",
@@ -41,6 +67,7 @@ const dynamicParallelWorkflow = createWorkflowChain({
   input: z.object({
     items: z.array(z.string()),
   }),
+  memory: new InMemoryStorage(),
   result: z.object({
     originalItems: z.array(z.string()),
     processedItems: z.array(
@@ -674,12 +701,6 @@ console.log("\n💡 Call runComprehensiveExample() to see all 5 steps working to
       simpleAgent,
     },
     workflows: {
-      comprehensiveWorkflow,
-      agentExampleWorkflow,
-      functionExampleWorkflow,
-      conditionalExampleWorkflow,
-      parallelExampleWorkflow,
-      raceExampleWorkflow,
       dynamicParallelWorkflow,
     },
   });

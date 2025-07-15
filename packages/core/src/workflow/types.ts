@@ -145,6 +145,10 @@ export type Workflow<
    */
   inputSchema?: INPUT_SCHEMA;
   /**
+   * Memory storage for this workflow (exposed for registry access)
+   */
+  memory?: Memory;
+  /**
    * Execute the workflow with the given input
    * @param input - The input to the workflow
    * @returns The result of the workflow

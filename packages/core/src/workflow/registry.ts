@@ -1,14 +1,13 @@
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Workflow } from "./types";
-import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
+import type { WorkflowHistoryEntry } from "./types";
 import { EventEmitter } from "node:events";
 import { createWorkflowStepNodeId } from "../utils/node-utils";
 import { WorkflowMemoryManager } from "./memory/manager";
 import { WorkflowHistoryManager } from "./history-manager";
 import type { WorkflowEvent } from "../events/workflow-emitter";
 import { devLogger } from "@voltagent/internal/dev";
-import { LibSQLStorage } from "../memory/libsql";
-import type { UserContext } from "../agent/types";
+import type { Memory } from "../memory/types";
 
 /**
  * Serialize a workflow step for API response
@@ -157,6 +156,8 @@ export interface RegisteredWorkflow {
   executionCount: number;
   lastExecutedAt?: Date;
   inputSchema?: any; // Store the input schema for API access
+  workflowMemory?: Memory;
+  workflowMemoryManager?: WorkflowMemoryManager;
 }
 
 /**
@@ -175,7 +176,6 @@ export interface WorkflowRegistryEvents {
 export class WorkflowRegistry extends EventEmitter {
   private static instance: WorkflowRegistry;
   private workflows: Map<string, RegisteredWorkflow> = new Map();
-  private memoryManager?: WorkflowMemoryManager;
 
   private workflowHistoryManagers: Map<string, WorkflowHistoryManager> = new Map();
 
@@ -194,35 +194,17 @@ export class WorkflowRegistry extends EventEmitter {
     return WorkflowRegistry.instance;
   }
 
-  /**
-   * Set global exporter for workflow events
-   */
-  public setGlobalExporter(exporter: VoltAgentExporter): void {
-    // Set exporter on memoryManager when it's available
-    if (this.memoryManager) {
-      this.memoryManager.setExporter(exporter);
-    }
-  }
-
-  /**
-   * Get the history manager instance
-   * @deprecated Use async methods directly on WorkflowRegistry instead
-   */
-  public getHistoryManager(): never {
-    throw new Error("HistoryManager is deprecated. Use async methods on WorkflowRegistry instead.");
-  }
-
-  /**
-   * ✅ NEW: Get or create WorkflowHistoryManager for a specific workflow (following Agent pattern)
-   */
   public getWorkflowHistoryManager(workflowId: string): WorkflowHistoryManager {
     if (!this.workflowHistoryManagers.has(workflowId)) {
-      this.ensureMemoryManager();
+      const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
+      if (!workflowMemoryManager) {
+        throw new Error(`No memory manager available for workflow: ${workflowId}`);
+      }
 
-      // Create new history manager for this workflow
+      // Create new history manager for this workflow with its specific memory
       const historyManager = new WorkflowHistoryManager(
         workflowId,
-        this.memoryManager,
+        workflowMemoryManager,
         this.getGlobalVoltAgentExporter(),
       );
       this.workflowHistoryManagers.set(workflowId, historyManager);
@@ -272,37 +254,42 @@ export class WorkflowRegistry extends EventEmitter {
   }
 
   /**
-   * Auto-initialize memory manager with default LibSQLStorage
-   * Similar to how Agent system auto-uses memory
+   * Each workflow must manage its own memory
    */
-  public ensureMemoryManager(): void {
-    // If memoryManager already exists, nothing to do
-    if (this.memoryManager) return;
+  public getWorkflowMemoryManager(workflowId: string): WorkflowMemoryManager | undefined {
+    const registeredWorkflow = this.workflows.get(workflowId);
 
-    // Always default to LibSQLStorage like Agent system does
-    devLogger.debug(
-      "[WorkflowRegistry] Auto-initializing memory manager with default LibSQLStorage",
+    // Only use workflow-specific memory manager - no fallback to global
+    if (registeredWorkflow?.workflowMemoryManager) {
+      devLogger.debug(`[WorkflowRegistry] Using workflow-specific memory for ${workflowId}`);
+      return registeredWorkflow.workflowMemoryManager;
+    }
+
+    devLogger.warn(
+      `[WorkflowRegistry] No memory manager available for workflow ${workflowId} - workflow must define its own memory`,
     );
-    const defaultMemory = new LibSQLStorage({ url: "file:memory.db" });
-    this.memoryManager = new WorkflowMemoryManager(defaultMemory);
-  }
-
-  /**
-   * Get the memory manager instance
-   */
-  public getMemoryManager(): WorkflowMemoryManager | undefined {
-    return this.memoryManager;
+    return undefined;
   }
 
   /**
    * Register a workflow with the registry
    */
   public registerWorkflow(workflow: Workflow<any, any>): void {
+    let workflowMemoryManager: WorkflowMemoryManager | undefined;
+    if (workflow.memory) {
+      workflowMemoryManager = new WorkflowMemoryManager(workflow.memory);
+      devLogger.debug(
+        `[WorkflowRegistry] Created workflow-specific memory manager for ${workflow.id}`,
+      );
+    }
+
     const registeredWorkflow: RegisteredWorkflow = {
       workflow,
       registeredAt: new Date(),
       executionCount: 0,
       inputSchema: workflow.inputSchema,
+      workflowMemory: workflow.memory,
+      workflowMemoryManager,
     };
 
     this.workflows.set(workflow.id, registeredWorkflow);
@@ -335,35 +322,17 @@ export class WorkflowRegistry extends EventEmitter {
   }
 
   /**
-   * Check if a workflow is registered
-   */
-  public isWorkflowRegistered(id: string): boolean {
-    return this.workflows.has(id);
-  }
-
-  /**
-   * Get workflow execution history
-   * @deprecated Use getWorkflowExecutionsAsync instead
-   */
-  public getWorkflowExecutions(_workflowId: string): WorkflowHistoryEntry[] {
-    devLogger.warn(
-      "[WorkflowRegistry] getWorkflowExecutions is deprecated. Use getWorkflowExecutionsAsync instead.",
-    );
-    return [];
-  }
-
-  /**
    * Get workflow execution history (async version for persistent storage)
    */
   public async getWorkflowExecutionsAsync(workflowId: string): Promise<WorkflowHistoryEntry[]> {
-    this.ensureMemoryManager();
-    if (this.memoryManager) {
+    const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
+    if (workflowMemoryManager) {
       // Get basic executions first
-      const basicExecutions = await this.memoryManager.getExecutions(workflowId);
+      const basicExecutions = await workflowMemoryManager.getExecutions(workflowId);
 
       const detailedExecutions: WorkflowHistoryEntry[] = [];
       for (const execution of basicExecutions) {
-        const detailedExecution = await this.memoryManager.getExecutionWithDetails(execution.id);
+        const detailedExecution = await workflowMemoryManager.getExecutionWithDetails(execution.id);
         if (detailedExecution) {
           detailedExecutions.push(detailedExecution);
         }
@@ -372,228 +341,6 @@ export class WorkflowRegistry extends EventEmitter {
       return detailedExecutions;
     }
     return [];
-  }
-
-  /**
-   * Get a specific workflow execution
-   * @deprecated Use getWorkflowExecutionAsync instead
-   */
-  public getWorkflowExecution(_executionId: string): WorkflowHistoryEntry | undefined {
-    devLogger.warn(
-      "[WorkflowRegistry] getWorkflowExecution is deprecated. Use getWorkflowExecutionAsync instead.",
-    );
-    return undefined;
-  }
-
-  /**
-   * Get a specific workflow execution (async version for persistent storage)
-   */
-  public async getWorkflowExecutionAsync(
-    executionId: string,
-  ): Promise<WorkflowHistoryEntry | undefined> {
-    this.ensureMemoryManager();
-    if (this.memoryManager) {
-      const execution = await this.memoryManager.getExecutionWithDetails(executionId);
-      return execution || undefined;
-    }
-    return undefined;
-  }
-
-  /**
-   * Record workflow execution start
-   */
-  public async recordWorkflowExecutionStart(
-    workflowId: string,
-    workflowName: string,
-    input: unknown,
-    options: {
-      userId?: string;
-      conversationId?: string;
-      userContext?: UserContext;
-    } = {},
-  ): Promise<WorkflowHistoryEntry> {
-    const registeredWorkflow = this.workflows.get(workflowId);
-    if (!registeredWorkflow) {
-      throw new Error(`Workflow not registered: ${workflowId}`);
-    }
-
-    // Auto-initialize memory manager and persist to storage
-    this.ensureMemoryManager();
-
-    let executionId: string = crypto.randomUUID();
-
-    // Persist to storage and wait for completion
-    if (this.memoryManager) {
-      try {
-        const execution = await this.memoryManager.createExecution(
-          workflowId,
-          workflowName,
-          input,
-          {
-            userId: options.userId,
-            conversationId: options.conversationId,
-            userContext: options.userContext,
-          },
-        );
-        // Use the actual execution ID from database
-        executionId = execution.id as string;
-        devLogger.debug(`[WorkflowRegistry] Workflow execution persisted with ID: ${executionId}`);
-      } catch (error) {
-        devLogger.error("[WorkflowRegistry] Failed to persist workflow execution start:", error);
-        // Continue with temporary ID for backward compatibility
-      }
-    }
-
-    // Create history entry with actual execution ID
-    const tempHistoryEntry: WorkflowHistoryEntry = {
-      id: executionId,
-      workflowId,
-      workflowName,
-      status: "running",
-      startTime: new Date(),
-      input,
-      steps: [],
-      events: [],
-      userId: options.userId,
-      conversationId: options.conversationId,
-      metadata: {
-        // Store userContext in metadata if provided
-        ...(options.userContext && { userContext: options.userContext }),
-      },
-    };
-
-    // Update execution count
-    registeredWorkflow.executionCount++;
-    registeredWorkflow.lastExecutedAt = new Date();
-    this.workflows.set(workflowId, registeredWorkflow);
-
-    // Emit history created event
-    this.emit("historyCreated", tempHistoryEntry);
-
-    return tempHistoryEntry;
-  }
-
-  /**
-   * Record workflow execution completion
-   */
-  public recordWorkflowExecutionEnd(
-    executionId: string,
-    status: "completed" | "error" | "cancelled",
-    output?: unknown,
-    _error?: unknown,
-  ): void {
-    // Auto-initialize memory manager and update in storage
-    this.ensureMemoryManager();
-    if (this.memoryManager) {
-      const memoryUpdates = {
-        status: status,
-        endTime: new Date(),
-        output: output,
-      };
-
-      // ✅ CLEAN: Only update DB, don't emit events (WorkflowEventEmitter handles emission)
-      this.memoryManager
-        .updateExecution(executionId, memoryUpdates)
-        .then(() => {
-          devLogger.debug(
-            `[WorkflowRegistry] Workflow execution end recorded in DB: ${executionId} (Status: ${status})`,
-          );
-        })
-        .catch((error: Error) => {
-          devLogger.error("[WorkflowRegistry] Failed to persist workflow execution end:", error);
-        });
-    }
-  }
-
-  /**
-   * Record workflow step start
-   */
-  public recordWorkflowStepStart(
-    executionId: string,
-    stepIndex: number,
-    stepType: string,
-    stepName: string,
-    stepId?: string,
-    input?: unknown,
-  ): WorkflowStepHistoryEntry {
-    // Auto-initialize memory manager
-    this.ensureMemoryManager();
-
-    const stepEntry: WorkflowStepHistoryEntry = {
-      id: stepId || `step-${stepIndex}`,
-      stepId: stepId || `step-${stepIndex}`,
-      workflowHistoryId: executionId,
-      stepIndex,
-      stepType: stepType as any,
-      stepName,
-      status: "running",
-      startTime: new Date(),
-      input,
-    };
-
-    // ✅ CLEAN: Only persist to storage, don't emit events (WorkflowEventEmitter handles emission)
-    if (this.memoryManager) {
-      this.memoryManager
-        .recordStepStart(executionId, stepIndex, stepType as any, stepName, input, { stepId })
-        .then(() => {
-          devLogger.debug(
-            `[WorkflowRegistry] Step start recorded in DB: ${executionId} (Step: ${stepIndex})`,
-          );
-        })
-        .catch((error: Error) => {
-          devLogger.error("[WorkflowRegistry] Failed to persist workflow step start:", error);
-        });
-    }
-
-    return stepEntry;
-  }
-
-  /**
-   * Record workflow step completion
-   */
-  public recordWorkflowStepEnd(
-    executionId: string,
-    stepIndex: number,
-    status: "completed" | "error" | "skipped",
-    output?: unknown,
-    error?: unknown,
-    agentExecutionId?: string,
-  ): void {
-    // Auto-initialize memory manager
-    this.ensureMemoryManager();
-
-    // Persist to storage and emit real data
-    if (this.memoryManager) {
-      this.memoryManager
-        .getWorkflowSteps(executionId)
-        .then((steps) => {
-          const matchingStep = steps.find((step) => step.stepIndex === stepIndex);
-          if (matchingStep && this.memoryManager) {
-            this.memoryManager
-              .recordStepEnd(matchingStep.id, {
-                status: status as any,
-                output,
-                errorMessage: typeof error === "string" ? error : undefined,
-                agentExecutionId,
-              })
-              .then(() => {
-                // ✅ CLEAN: Only persist to storage, don't emit events (WorkflowEventEmitter handles emission)
-                devLogger.debug(
-                  `[WorkflowRegistry] Step end recorded in DB: ${executionId} (Step: ${stepIndex})`,
-                );
-              })
-              .catch((stepError: Error) => {
-                devLogger.error(
-                  "[WorkflowRegistry] Failed to persist workflow step end:",
-                  stepError,
-                );
-              });
-          }
-        })
-        .catch((error: Error) => {
-          devLogger.error("[WorkflowRegistry] Failed to get workflow steps for step end:", error);
-        });
-    }
   }
 
   /**
@@ -616,28 +363,6 @@ export class WorkflowRegistry extends EventEmitter {
   }
 
   /**
-   * Get workflow statistics (async version)
-   */
-  public async getWorkflowStatsAsync(workflowId: string): Promise<{
-    totalExecutions: number;
-    successfulExecutions: number;
-    failedExecutions: number;
-    averageExecutionTime: number;
-    lastExecutionTime?: Date;
-  }> {
-    this.ensureMemoryManager();
-    if (this.memoryManager) {
-      return await this.memoryManager.getWorkflowStats(workflowId);
-    }
-    return {
-      totalExecutions: 0,
-      successfulExecutions: 0,
-      failedExecutions: 0,
-      averageExecutionTime: 0,
-    };
-  }
-
-  /**
    * Get all workflow IDs that have registrations
    */
   public getAllWorkflowIds(): string[] {
@@ -649,58 +374,6 @@ export class WorkflowRegistry extends EventEmitter {
    */
   public getWorkflowCount(): number {
     return this.workflows.size;
-  }
-
-  /**
-   * Get total execution count across all workflows
-   */
-  public getTotalExecutionCount(): number {
-    return Array.from(this.workflows.values()).reduce(
-      (total, workflow) => total + workflow.executionCount,
-      0,
-    );
-  }
-
-  /**
-   * Clear all workflow registrations and history
-   */
-  public clearAll(): void {
-    this.workflows.clear();
-    // Note: For persistent storage cleanup, use async clearAllAsync() instead
-  }
-
-  /**
-   * Clear all workflow registrations and history (async version)
-   */
-  public async clearAllAsync(): Promise<void> {
-    this.workflows.clear();
-
-    this.ensureMemoryManager();
-    if (this.memoryManager) {
-      // Clear all workflow histories
-      const workflowIds = await this.memoryManager.getAllWorkflowIds();
-      for (const workflowId of workflowIds) {
-        const executions = await this.memoryManager.getExecutions(workflowId);
-        for (const execution of executions) {
-          await this.memoryManager.deleteExecution(execution.id);
-        }
-      }
-    }
-  }
-
-  /**
-   * Get registry summary
-   */
-  public getSummary(): {
-    totalWorkflows: number;
-    totalExecutions: number;
-    registeredWorkflowIds: string[];
-  } {
-    return {
-      totalWorkflows: this.getWorkflowCount(),
-      totalExecutions: this.getTotalExecutionCount(),
-      registeredWorkflowIds: this.getAllWorkflowIds(),
-    };
   }
 
   /**

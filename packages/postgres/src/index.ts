@@ -426,6 +426,8 @@ export class PostgresStorage implements Memory {
           input JSONB,
           output JSONB,
           metadata JSONB,
+          user_id TEXT,
+          conversation_id TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
         )

@@ -7,8 +7,6 @@ export async function createWorkflowTables(
   db: Client,
   tablePrefix = "voltagent_memory",
 ): Promise<void> {
-  console.log("[Migration] Creating workflow tables...");
-
   // Create workflow_history table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS ${tablePrefix}_workflow_history (
