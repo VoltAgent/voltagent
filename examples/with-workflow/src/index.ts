@@ -67,7 +67,6 @@ const dynamicParallelWorkflow = createWorkflowChain({
   input: z.object({
     items: z.array(z.string()),
   }),
-  memory: new InMemoryStorage(),
   result: z.object({
     originalItems: z.array(z.string()),
     processedItems: z.array(
