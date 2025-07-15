@@ -181,6 +181,96 @@ ON voltagent_memory_agent_history_timeline_events(parent_event_id);
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_status
 ON voltagent_memory_agent_history_timeline_events(status);
 
+-- Workflow History Table
+CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_history (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    workflow_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'cancelled')),
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    input JSONB,
+    output JSONB,
+    metadata JSONB,
+    user_id TEXT,
+    conversation_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Workflow Steps Table
+CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_steps (
+    id TEXT PRIMARY KEY,
+    workflow_history_id TEXT NOT NULL REFERENCES voltagent_memory_workflow_history(id) ON DELETE CASCADE,
+    step_index INTEGER NOT NULL,
+    step_type TEXT NOT NULL CHECK (step_type IN ('agent', 'func', 'conditional-when', 'parallel-all', 'parallel-race')),
+    step_name TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'skipped')),
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    input JSONB,
+    output JSONB,
+    error_message TEXT,
+    agent_execution_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Workflow Timeline Events Table
+CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_timeline_events (
+    id TEXT PRIMARY KEY,
+    workflow_history_id TEXT NOT NULL REFERENCES voltagent_memory_workflow_history(id) ON DELETE CASCADE,
+    event_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    status TEXT,
+    level TEXT DEFAULT 'INFO',
+    input JSONB,
+    output JSONB,
+    metadata JSONB,
+    event_sequence INTEGER,
+    trace_id TEXT,
+    parent_event_id TEXT,
+    status_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Indexes for workflow tables
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_workflow_id
+ON voltagent_memory_workflow_history(workflow_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_status
+ON voltagent_memory_workflow_history(status);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_start_time
+ON voltagent_memory_workflow_history(start_time);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_user_id
+ON voltagent_memory_workflow_history(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_conversation_id
+ON voltagent_memory_workflow_history(conversation_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_steps_workflow_history_id
+ON voltagent_memory_workflow_steps(workflow_history_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_steps_step_index
+ON voltagent_memory_workflow_steps(workflow_history_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_workflow_history_id
+ON voltagent_memory_workflow_timeline_events(workflow_history_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_type
+ON voltagent_memory_workflow_timeline_events(type);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_start_time
+ON voltagent_memory_workflow_timeline_events(start_time);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_sequence
+ON voltagent_memory_workflow_timeline_events(event_sequence);
+
 -- Migration Flags Table (Prevents duplicate migrations)
 CREATE TABLE IF NOT EXISTS voltagent_memory_conversations_migration_flags (
     id SERIAL PRIMARY KEY,

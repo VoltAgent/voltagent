@@ -223,13 +223,26 @@ Refer to the `Memory` type definition in `@voltagent/core/memory` for the full i
 - `addHistoryStep(...)`, `updateHistoryStep(...)`, `getHistoryStep(...)`: Manage steps within a history entry.
 - `addTimelineEvent(...)`: Add immutable timeline events for detailed execution tracking.
 
+**Workflow History Management:**
+
+- `storeWorkflowHistory(...)`: Stores a record of a complete workflow execution.
+- `getWorkflowHistory(...)`, `getWorkflowHistoryByWorkflowId(...)`: Retrieves workflow history records.
+- `updateWorkflowHistory(...)`, `deleteWorkflowHistory(...)`: Updates and deletes workflow history records.
+- `storeWorkflowStep(...)`, `getWorkflowSteps(...)`: Stores and retrieves the individual steps of a workflow run.
+- `updateWorkflowStep(...)`, `deleteWorkflowStep(...)`: Updates and deletes individual steps.
+- `storeWorkflowTimelineEvent(...)`, `getWorkflowTimelineEvents(...)`: Stores and retrieves fine-grained timeline events for detailed workflow observability.
+
 ```ts
 import type {
   Memory,
   MemoryMessage,
   Conversation,
   CreateConversationInput,
-  MessageFilterOptions /*...other types*/,
+  MessageFilterOptions,
+  NewTimelineEvent,
+  WorkflowHistoryEntry,
+  WorkflowStepHistoryEntry,
+  ConversationQueryOptions /*...other types*/,
 } from "@voltagent/core";
 
 // Example Structure
@@ -324,6 +337,41 @@ export class MyCustomStorage implements Memory {
     conversationId: string,
     options?: { limit?: number; offset?: number }
   ): Promise<MemoryMessage[]> {
+    /* ... */ throw new Error("Not implemented");
+  }
+
+  // --- Workflow Methods ---
+  async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async deleteWorkflowHistory(id: string): Promise<void> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async deleteWorkflowStep(id: string): Promise<void> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async storeWorkflowTimelineEvent(event: any): Promise<void> {
+    /* ... */ throw new Error("Not implemented");
+  }
+  async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<any[]> {
     /* ... */ throw new Error("Not implemented");
   }
 }

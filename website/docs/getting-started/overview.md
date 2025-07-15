@@ -10,6 +10,7 @@ Think of VoltAgent as a powerful toolkit for developers who want to build applic
 Instead of building everything from scratch, VoltAgent provides ready-made building blocks. Here's what makes it special:
 
 - **Core Engine (`@voltagent/core`)**: This is the heart of VoltAgent, providing the fundamental brainpower and capabilities for any AI agent you build.
+- **Automate with Workflows**: Go beyond simple chatbots. VoltAgent includes a powerful workflow engine to create multi-step automations that can process data, call APIs, run tasks in parallel, and execute conditional logic.
 - **Add Special Features**: Need your AI to talk? Add the `@voltagent/voice` package. It's modular, like adding apps to your phone.
 - **Connect to Anything**: VoltAgent helps your AI connect to other websites, tools, or data sources, allowing it to perform real tasks.
 - **Memory**: It helps the AI remember past conversations and learn, making interactions more natural and helpful.
@@ -39,6 +40,59 @@ const agent = new Agent({
 ```
 
   </TabItem>
+  <TabItem value="workflow" label="Workflow Engine">
+
+```typescript
+import { createWorkflowChain, andThen, andAgent, Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+// First, define an agent to be used in the workflow
+const agent = new Agent({
+  name: "summarizer-agent",
+  instructions: "You are an expert at summarizing text.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+// Then, create the workflow that uses the agent
+const analysisWorkflow = createWorkflowChain({
+  id: "text-analysis-workflow",
+  name: "Text Analysis Workflow",
+  input: z.object({ text: z.string() }),
+  result: z.object({
+    summary: z.string(),
+    summaryWordCount: z.number(),
+  }),
+})
+  // Step 1: Prepare the data
+  .andThen({
+    name: "trim-text",
+    execute: async (data) => ({
+      trimmedText: data.text.trim(),
+    }),
+  })
+  // Step 2: Call the AI agent for analysis
+  .andAgent(
+    (data) => `Summarize this text in one sentence: "${data.trimmedText}"`,
+    agent, // Uses the agent defined above
+    {
+      name: "generate-summary",
+      schema: z.object({ summary: z.string() }),
+    }
+  )
+  // Step 3: Process the AI's output
+  .andThen({
+    name: "count-summary-words",
+    execute: async (data) => ({
+      summary: data.summary,
+      summaryWordCount: data.summary.split(" ").length,
+    }),
+  });
+```
+
+  </TabItem>
   <TabItem value="console" label="VoltOps Platform">
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
   </TabItem>
@@ -56,6 +110,7 @@ Creating smart AI applications can be tricky. Developers often face two choices:
 VoltAgent offers a better way, finding the sweet spot between these two extremes. It provides helpful structure and ready-made components without boxing developers in. Here's why it's a great choice:
 
 - **Build Faster:** Get your AI application up and running much quicker than starting from scratch.
+- **Build Sophisticated Automations:** It's not just for chat. The workflow engine lets you build complex, multi-step processes for tasks like data analysis pipelines, automated content generation, or intelligent decision-making systems.
 - **Keep Things Tidy:** VoltAgent encourages organized code, making applications easier to update and fix later.
 - **Grow Easily:** Start with a simple chatbot and scale up to handle more complex tasks or multiple AI agents working together.
 - **Stay Flexible:** You have full control to customize how your AI looks, behaves, and interacts.

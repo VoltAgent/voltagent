@@ -131,6 +131,42 @@ You should receive a response from your AI agent in the chat window. This confir
 
 The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
 
+### Explore and Run Your Workflow from the Console
+
+Your new project isn't just an agent; it's a powerful automation engine. We've included a comprehensive workflow example to get you started, and you can run it directly from the VoltOps console.
+
+This workflow demonstrates how to chain together all the core steps of VoltAgent:
+
+- **Data Transformation** (`andThen`)
+- **AI Agent Calls** (`andAgent`)
+- **Parallel Processing** (`andAll`)
+- **Racing Operations** (`andRace`)
+- **Conditional Logic** (`andWhen`)
+
+#### How to Run the Workflow
+
+![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
+
+1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
+2.  **Select Your Project:** Use the project selector on the page to choose your newly created project (e.g., "my-agent-app").
+3.  **Find and Run the Workflow:** You will see **"Comprehensive Workflow Example"** listed. Click on it to open the detail page, then click the **"Run"** button.
+4.  **Provide Input:** An input form will appear. The workflow expects a JSON object with a `text` key. Try one of the following inputs to see how it works:
+    - For a positive test:
+
+```json
+{ "text": "VoltAgent workflows are amazing and easy to use!" }
+```
+
+    -   For a negative test (to trigger the conditional step):
+
+```json
+{ "text": "I am very disappointed with this product, it is terrible." }
+```
+
+5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
+
+This interactive experience is a great way to understand how to build and test complex automations with VoltAgent without needing to modify your code for every run.
+
 ## Next Steps
 
 Ready to build real AI agents? Follow our step-by-step tutorial:
