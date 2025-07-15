@@ -20,6 +20,8 @@ export async function createWorkflowTables(
       end_time TEXT,
       input TEXT,
       output TEXT,
+      user_id TEXT,
+      conversation_id TEXT,
       metadata TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -35,6 +37,12 @@ export async function createWorkflowTables(
   );
   await db.execute(
     `CREATE INDEX IF NOT EXISTS idx_${tablePrefix}_workflow_history_start_time ON ${tablePrefix}_workflow_history(start_time)`,
+  );
+  await db.execute(
+    `CREATE INDEX IF NOT EXISTS idx_${tablePrefix}_workflow_history_user_id ON ${tablePrefix}_workflow_history(user_id)`,
+  );
+  await db.execute(
+    `CREATE INDEX IF NOT EXISTS idx_${tablePrefix}_workflow_history_conversation_id ON ${tablePrefix}_workflow_history(conversation_id)`,
   );
 
   // Create workflow_steps table

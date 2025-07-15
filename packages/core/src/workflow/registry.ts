@@ -8,22 +8,7 @@ import { WorkflowHistoryManager } from "./history-manager";
 import type { WorkflowEvent } from "../events/workflow-emitter";
 import { devLogger } from "@voltagent/internal/dev";
 import { LibSQLStorage } from "../memory/libsql";
-
-/**
- * Serialize function content for API response
- */
-function serializeFunctionContent(fn: (...args: any[]) => any): string | null {
-  try {
-    const fnString = fn.toString();
-    // Remove unnecessary whitespace and format for display
-    return fnString
-      .replace(/^\s+/gm, "") // Remove leading whitespace
-      .replace(/\n\s*\n/g, "\n") // Remove empty lines
-      .trim();
-  } catch {
-    return null;
-  }
-}
+import type { UserContext } from "../agent/types";
 
 /**
  * Serialize a workflow step for API response
@@ -48,7 +33,7 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
         }),
         // Serialize task function if it's a function
         ...(typeof step.task === "function" && {
-          taskFunction: serializeFunctionContent(step.task),
+          taskFunction: step.task.toString(),
         }),
         ...(typeof step.task === "string" && {
           taskString: step.task,
@@ -69,7 +54,7 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
         ...baseStep,
         // ✅ Use original execute function (clean user code)
         ...(step.originalExecute && {
-          executeFunction: serializeFunctionContent(step.originalExecute),
+          executeFunction: step.originalExecute.toString(),
         }),
       };
 
@@ -84,9 +69,8 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
     case "conditional-when": {
       const conditionalStep = {
         ...baseStep,
-        // ✅ Use original condition function (clean user code)
         ...(step.originalCondition && {
-          conditionFunction: serializeFunctionContent(step.originalCondition),
+          conditionFunction: step.originalCondition.toString(),
         }),
         // Serialize nested step if available
         ...(step.step && {
@@ -425,6 +409,7 @@ export class WorkflowRegistry extends EventEmitter {
     options: {
       userId?: string;
       conversationId?: string;
+      userContext?: UserContext;
     } = {},
   ): Promise<WorkflowHistoryEntry> {
     const registeredWorkflow = this.workflows.get(workflowId);
@@ -447,6 +432,7 @@ export class WorkflowRegistry extends EventEmitter {
           {
             userId: options.userId,
             conversationId: options.conversationId,
+            userContext: options.userContext,
           },
         );
         // Use the actual execution ID from database
@@ -470,6 +456,10 @@ export class WorkflowRegistry extends EventEmitter {
       events: [],
       userId: options.userId,
       conversationId: options.conversationId,
+      metadata: {
+        // Store userContext in metadata if provided
+        ...(options.userContext && { userContext: options.userContext }),
+      },
     };
 
     // Update execution count

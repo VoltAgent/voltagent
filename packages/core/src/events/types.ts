@@ -172,6 +172,9 @@ export interface WorkflowStepEventMetadata extends BaseEventMetadata {
   parallelParentEventId?: string;
   isSkipped?: boolean;
   eventSequence?: number;
+  // ✅ NEW: Function content for historical tracking (execute, task, condition functions)
+  stepFunction?: string;
+  taskString?: string; // Agent step'lerde task string için ayrı tutuyoruz
 }
 
 /**

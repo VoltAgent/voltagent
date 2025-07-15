@@ -56,6 +56,9 @@ export function andWhen<INPUT, DATA, RESULT>({
         return data;
       }
 
+      // ✅ Serialize condition function for event tracking
+      const stepFunction = condition.toString();
+
       // Create step context and publish start event
       const stepContext = createStepContext(
         state.workflowContext,
@@ -66,6 +69,10 @@ export function andWhen<INPUT, DATA, RESULT>({
         stepContext,
         state.workflowContext,
         data, // ✅ Pass input data
+        {
+          stepFunction,
+          userContext: state.workflowContext.userContext,
+        },
       );
 
       try {
@@ -99,6 +106,8 @@ export function andWhen<INPUT, DATA, RESULT>({
           stepStartEvent.id,
           {
             isSkipped: !conditionMet,
+            stepFunction,
+            userContext: state.workflowContext.userContext,
           },
         );
 
@@ -116,7 +125,10 @@ export function andWhen<INPUT, DATA, RESULT>({
           state.workflowContext,
           error,
           stepStartEvent.id,
-          {},
+          {
+            stepFunction,
+            userContext: state.workflowContext.userContext,
+          },
         );
 
         try {

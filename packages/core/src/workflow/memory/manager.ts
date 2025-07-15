@@ -52,9 +52,11 @@ export class WorkflowMemoryManager {
       status: "running",
       startTime: new Date(),
       input,
+      userId: options.userId,
+      conversationId: options.conversationId,
       metadata: {
-        userId: options.userId,
-        conversationId: options.conversationId,
+        // Store userContext in metadata if provided
+        ...(options.userContext && { userContext: options.userContext }),
         ...options.metadata,
       },
       steps: [],

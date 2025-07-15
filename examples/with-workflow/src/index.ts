@@ -22,32 +22,116 @@ const simpleAgent = new Agent({
   instructions: "You are a helpful assistant. Answer briefly and clearly.",
 });
 
-// Configure PostgreSQL Memory
-const memoryStorage = new PostgresStorage({
-  // Read connection details from environment variables
-  connection: {
-    host: process.env.POSTGRES_HOST || "localhost",
-    port: Number.parseInt(process.env.POSTGRES_PORT || "5432"),
-    database: process.env.POSTGRES_DB || "voltagent-memory",
-    user: process.env.POSTGRES_USER || "postgres",
-    password: process.env.POSTGRES_PASSWORD || "password",
-    ssl: process.env.POSTGRES_SSL === "true",
-  },
-  // Alternative: Use connection string
-  // connection: process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/voltagent",
-
-  // Optional: Customize table names
-  tablePrefix: "voltagent_memory",
-
-  // Optional: Configure connection pool
-  maxConnections: 10,
-
-  // Optional: Set storage limit for messages
-  storageLimit: 100,
-
-  // Optional: Enable debug logging for storage
-  debug: process.env.NODE_ENV === "development",
+// Analysis agent for dynamic processing
+const analysisAgent = new Agent({
+  name: "AnalysisAgent",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  instructions:
+    "You are an expert analyst. Analyze the given item and provide structured insights.",
 });
+
+// ==========================================
+// DYNAMIC PARALLEL PROCESSING EXAMPLE
+// ==========================================
+const dynamicParallelWorkflow = createWorkflowChain({
+  id: "dynamic-parallel-example",
+  name: "Dynamic Parallel Processing",
+  purpose: "Demonstrates dynamic parallel processing of array items",
+  input: z.object({
+    items: z.array(z.string()),
+  }),
+  result: z.object({
+    originalItems: z.array(z.string()),
+    processedItems: z.array(
+      z.object({
+        original: z.string(),
+        analysis: z.string(),
+        wordCount: z.number(),
+        sentiment: z.string(),
+        processed: z.boolean(),
+      }),
+    ),
+    summary: z.object({
+      totalItems: z.number(),
+      totalWords: z.number(),
+      completedAt: z.string(),
+    }),
+  }),
+})
+  // İlk adım: Array'i hazırla
+  .andThen({
+    name: "prepare-items",
+    execute: async (data) => {
+      console.log(`🔄 Preparing ${data.items.length} items for parallel processing...`);
+      return {
+        originalItems: data.items,
+        items: data.items.map((item, index) => ({
+          id: `item-${index}`,
+          content: item,
+          index,
+        })),
+      };
+    },
+  })
+  // Dinamik paralel işleme - Her item için aynı agent'i çalıştır
+  .andThen({
+    name: "analyze-items-parallel",
+    execute: async (data) => {
+      console.log(`🚀 Starting parallel analysis of ${data.items.length} items...`);
+
+      // Her item için paralel olarak agent çağrıları yap
+      const results = await Promise.all(
+        data.items.map(async (item) => {
+          console.log(
+            `  📊 Processing item ${item.index + 1}: "${item.content.substring(0, 30)}..."`,
+          );
+
+          // Agent'i çağır
+          const { object: analysis } = await analysisAgent.generateObject(
+            `Analyze this text and provide insights: "${item.content}"`,
+            z.object({
+              analysis: z.string(),
+              sentiment: z.enum(["positive", "negative", "neutral"]),
+              wordCount: z.number(),
+            }),
+          );
+
+          return {
+            original: item.content,
+            analysis: analysis.analysis,
+            wordCount: analysis.wordCount,
+            sentiment: analysis.sentiment,
+            processed: true,
+          };
+        }),
+      );
+
+      console.log(`✅ Completed parallel analysis of ${results.length} items`);
+
+      return {
+        ...data,
+        processedItems: results,
+      };
+    },
+  })
+  // Son adım: Özet oluştur
+  .andThen({
+    name: "create-summary",
+    execute: async (data) => {
+      const totalWords = data.processedItems.reduce((sum, item) => sum + item.wordCount, 0);
+
+      return {
+        originalItems: data.originalItems,
+        processedItems: data.processedItems,
+        summary: {
+          totalItems: data.processedItems.length,
+          totalWords,
+          completedAt: new Date().toISOString(),
+        },
+      };
+    },
+  });
 
 // ==========================================
 // COMPREHENSIVE EXAMPLE - ALL STEPS TOGETHER
@@ -498,6 +582,53 @@ export async function runParallelExample() {
   console.log();
 }
 
+export async function runDynamicParallelExample() {
+  console.log("🔄 DYNAMIC PARALLEL EXAMPLE (andAll with dynamic steps)");
+  console.log("=".repeat(50));
+  console.log("Uses: andThen → andAll with dynamic steps\n");
+
+  const { result } = await dynamicParallelWorkflow.run(
+    {
+      items: [
+        "This is a simple text to analyze.",
+        "This is another text that needs analysis.",
+        "Yet another text for processing.",
+      ],
+    },
+    {
+      conversationId: "conversation-123",
+      userId: "user-456",
+      userContext: new Map<string, string | number>([
+        ["name", "John Doe"],
+        ["age", 30],
+        ["email", "john.doe@example.com"],
+        ["sessionId", "session-789"],
+      ]),
+    },
+  );
+
+  console.log("📚 Original Items:");
+  result.originalItems.forEach((item, index) => {
+    console.log(`  Item ${index + 1}: "${item}"`);
+  });
+
+  console.log("\n📊 Processed Items:");
+  result.processedItems.forEach((item, index) => {
+    console.log(`  Item ${index + 1}:`);
+    console.log(`    Original: "${item.original}"`);
+    console.log(`    Analysis: "${item.analysis}"`);
+    console.log(`    Word Count: ${item.wordCount}`);
+    console.log(`    Sentiment: ${item.sentiment}`);
+    console.log(`    Processed: ${item.processed}`);
+  });
+
+  console.log("\n📈 Summary:");
+  console.log(`  Total Items: ${result.summary.totalItems}`);
+  console.log(`  Total Words: ${result.summary.totalWords}`);
+  console.log(`  Completed At: ${result.summary.completedAt}`);
+  console.log();
+}
+
 export async function runAllExamples() {
   console.log("🎯 VoltAgent Workflow Step Examples");
   console.log("=".repeat(50));
@@ -532,6 +663,7 @@ console.log("   • runAgentExample() - andAgent step");
 console.log("   • runFunctionExample() - andThen step");
 console.log("   • runConditionalExample() - andWhen step");
 console.log("   • runParallelExample() - andAll step");
+console.log("   • runDynamicParallelExample() - Dynamic parallel processing!");
 console.log("   • runAllExamples() - Run all examples");
 console.log("\n💡 Call runComprehensiveExample() to see all 5 steps working together!");
 
@@ -548,10 +680,11 @@ console.log("\n💡 Call runComprehensiveExample() to see all 5 steps working to
       conditionalExampleWorkflow,
       parallelExampleWorkflow,
       raceExampleWorkflow,
+      dynamicParallelWorkflow,
     },
   });
 
   setTimeout(async () => {
-    await runComprehensiveExample();
+    await runDynamicParallelExample();
   }, 1000);
 })();

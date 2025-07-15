@@ -20,8 +20,8 @@ export class LibSQLWorkflowExtension {
       sql: `
         INSERT INTO ${this._tablePrefix}_workflow_history (
           id, name, workflow_id, status, start_time, end_time, 
-          input, output, metadata, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          input, output, user_id, conversation_id, metadata, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         entry.id,
@@ -32,6 +32,8 @@ export class LibSQLWorkflowExtension {
         entry.endTime?.toISOString() || null,
         JSON.stringify(entry.input),
         entry.output ? JSON.stringify(entry.output) : null,
+        entry.userId || null,
+        entry.conversationId || null,
         entry.metadata ? JSON.stringify(entry.metadata) : null,
         entry.createdAt?.toISOString() || new Date().toISOString(),
         entry.updatedAt?.toISOString() || new Date().toISOString(),
@@ -83,6 +85,14 @@ export class LibSQLWorkflowExtension {
     if (updates.output !== undefined) {
       setClauses.push("output = ?");
       args.push(JSON.stringify(updates.output));
+    }
+    if (updates.userId !== undefined) {
+      setClauses.push("user_id = ?");
+      args.push(updates.userId);
+    }
+    if (updates.conversationId !== undefined) {
+      setClauses.push("conversation_id = ?");
+      args.push(updates.conversationId);
     }
     if (updates.metadata !== undefined) {
       setClauses.push("metadata = ?");
@@ -419,6 +429,8 @@ export class LibSQLWorkflowExtension {
       endTime: row.end_time ? new Date(row.end_time as string) : undefined,
       input: row.input ? JSON.parse(row.input as string) : null,
       output: row.output ? JSON.parse(row.output as string) : undefined,
+      userId: row.user_id as string | undefined,
+      conversationId: row.conversation_id as string | undefined,
       metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,
       steps: [], // Will be loaded separately if needed
       events: [], // Will be loaded separately if needed

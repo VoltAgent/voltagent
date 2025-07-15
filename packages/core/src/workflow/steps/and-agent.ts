@@ -64,6 +64,10 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         return result.object;
       }
 
+      // ✅ Serialize task function or task string for event tracking
+      const stepFunction = typeof task === "function" ? task.toString() : undefined;
+      const taskString = typeof task === "string" ? task : undefined;
+
       const stepContext = createStepContext(state.workflowContext, "agent", agent.name || "Agent");
       const stepStartEvent = createWorkflowStepStartEvent(
         stepContext,
@@ -72,6 +76,9 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         {
           agentId: agent.id,
           agentName: agent.name,
+          stepFunction,
+          taskString,
+          userContext: state.workflowContext.userContext,
         },
       );
 
@@ -100,6 +107,9 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           {
             agentId: agent.id,
             agentName: agent.name,
+            stepFunction,
+            taskString,
+            userContext: state.workflowContext.userContext,
           },
         );
 
@@ -120,6 +130,9 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           {
             agentId: agent.id,
             agentName: agent.name,
+            stepFunction,
+            taskString,
+            userContext: state.workflowContext.userContext,
           },
         );
 

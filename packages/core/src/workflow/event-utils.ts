@@ -32,6 +32,11 @@ export function createWorkflowStartEvent(
   workflowContext: WorkflowExecutionContext,
   input: unknown,
 ): WorkflowStartEvent {
+  // ✅ Convert userContext Map to object for serialization
+  const userContextObject = workflowContext.userContext
+    ? Object.fromEntries(workflowContext.userContext)
+    : undefined;
+
   const metadata: WorkflowEventMetadata = {
     id: workflowContext.executionId,
     workflowId: workflowContext.workflowId,
@@ -41,6 +46,7 @@ export function createWorkflowStartEvent(
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
     eventSequence: getNextEventSequence(),
+    userContext: userContextObject,
   };
 
   return {
@@ -66,6 +72,11 @@ export function createWorkflowSuccessEvent(
 ): WorkflowSuccessEvent {
   const completionTime = new Date().toISOString();
 
+  // ✅ Convert userContext Map to object for serialization
+  const userContextObject = workflowContext.userContext
+    ? Object.fromEntries(workflowContext.userContext)
+    : undefined;
+
   const metadata: WorkflowEventMetadata = {
     id: workflowContext.executionId,
     workflowId: workflowContext.workflowId,
@@ -75,6 +86,7 @@ export function createWorkflowSuccessEvent(
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
     eventSequence: getNextEventSequence(),
+    userContext: userContextObject,
   };
 
   return {
@@ -103,6 +115,11 @@ export function createWorkflowErrorEvent(
 ): WorkflowErrorEvent {
   const errorTime = new Date().toISOString();
 
+  // ✅ Convert userContext Map to object for serialization
+  const userContextObject = workflowContext.userContext
+    ? Object.fromEntries(workflowContext.userContext)
+    : undefined;
+
   const metadata: WorkflowEventMetadata = {
     id: workflowContext.executionId,
     workflowId: workflowContext.workflowId,
@@ -112,6 +129,7 @@ export function createWorkflowErrorEvent(
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
     eventSequence: getNextEventSequence(),
+    userContext: userContextObject,
   };
 
   const errorMessage = error instanceof Error ? error.message : "Unknown workflow error";
@@ -149,6 +167,9 @@ export function createWorkflowStepStartEvent(
     agentName?: string;
     parallelIndex?: number;
     parallelParentEventId?: string;
+    stepFunction?: string;
+    taskString?: string;
+    userContext?: Map<string | symbol, unknown>;
   } = {},
 ): WorkflowStepStartEvent {
   // ✅ Generate consistent node_id for React Flow mapping
@@ -164,6 +185,11 @@ export function createWorkflowStepStartEvent(
     },
   );
 
+  // ✅ Convert userContext Map to object for serialization
+  const userContextObject = options.userContext
+    ? Object.fromEntries(options.userContext)
+    : undefined;
+
   const metadata: WorkflowStepEventMetadata = {
     id: nodeId,
     workflowId: stepContext.workflowId,
@@ -178,6 +204,9 @@ export function createWorkflowStepStartEvent(
     parallelIndex: options.parallelIndex,
     parallelParentEventId: options.parallelParentEventId,
     eventSequence: getNextEventSequence(),
+    stepFunction: options.stepFunction,
+    taskString: options.taskString,
+    userContext: userContextObject,
   };
 
   return {
@@ -208,6 +237,9 @@ export function createWorkflowStepSuccessEvent(
     agentName?: string;
     parallelIndex?: number;
     isSkipped?: boolean;
+    stepFunction?: string;
+    taskString?: string;
+    userContext?: Map<string | symbol, unknown>;
   } = {},
 ): WorkflowStepSuccessEvent {
   // ✅ Generate consistent node_id for React Flow mapping
@@ -223,6 +255,11 @@ export function createWorkflowStepSuccessEvent(
     },
   );
 
+  // ✅ Convert userContext Map to object for serialization
+  const userContextObject = options.userContext
+    ? Object.fromEntries(options.userContext)
+    : undefined;
+
   const metadata: WorkflowStepEventMetadata = {
     id: nodeId,
     workflowId: stepContext.workflowId,
@@ -237,6 +274,9 @@ export function createWorkflowStepSuccessEvent(
     parallelIndex: options.parallelIndex,
     isSkipped: options.isSkipped,
     eventSequence: getNextEventSequence(),
+    stepFunction: options.stepFunction,
+    taskString: options.taskString,
+    userContext: userContextObject,
   };
 
   return {
@@ -266,6 +306,9 @@ export function createWorkflowStepErrorEvent(
     agentId?: string;
     agentName?: string;
     parallelIndex?: number;
+    stepFunction?: string;
+    taskString?: string;
+    userContext?: Map<string | symbol, unknown>;
   } = {},
 ): WorkflowStepErrorEvent {
   // ✅ Generate consistent node_id for React Flow mapping
@@ -281,6 +324,11 @@ export function createWorkflowStepErrorEvent(
     },
   );
 
+  // ✅ Convert userContext Map to object for serialization
+  const userContextObject = options.userContext
+    ? Object.fromEntries(options.userContext)
+    : undefined;
+
   const metadata: WorkflowStepEventMetadata = {
     id: nodeId,
     workflowId: stepContext.workflowId,
@@ -294,6 +342,9 @@ export function createWorkflowStepErrorEvent(
     agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     eventSequence: getNextEventSequence(),
+    stepFunction: options.stepFunction,
+    taskString: options.taskString,
+    userContext: userContextObject,
   };
 
   const errorMessage = error instanceof Error ? error.message : "Unknown step error";

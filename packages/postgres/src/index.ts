@@ -2359,34 +2359,51 @@ export class PostgresStorage implements Memory {
    * Store a workflow history entry
    */
   public async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
-    await this.initialized;
+    this.debug("Storing workflow history", {
+      id: entry.id,
+      workflowId: entry.workflowId,
+      userId: entry.userId,
+      conversationId: entry.conversationId,
+    });
+
     const client = await this.pool.connect();
     try {
+      await client.query("BEGIN");
+
+      // Insert workflow history entry
       await client.query(
-        `INSERT INTO ${this.options.tablePrefix}_workflow_history 
-         (id, name, workflow_id, status, start_time, end_time, input, output, metadata, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-         ON CONFLICT (id) DO UPDATE SET
-         name = $2, workflow_id = $3, status = $4, start_time = $5, end_time = $6,
-         input = $7, output = $8, metadata = $9, updated_at = $11`,
+        `INSERT INTO ${this.options.tablePrefix}_workflow_history (
+          id, workflow_id, name, status, start_time, end_time, 
+          input, output, user_id, conversation_id, metadata, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (id) DO UPDATE SET
+          status = EXCLUDED.status,
+          end_time = EXCLUDED.end_time,
+          output = EXCLUDED.output,
+          user_id = EXCLUDED.user_id,
+          conversation_id = EXCLUDED.conversation_id,
+          metadata = EXCLUDED.metadata,
+          updated_at = EXCLUDED.updated_at`,
         [
           entry.id,
-          entry.workflowName,
           entry.workflowId,
+          entry.workflowName,
           entry.status,
           entry.startTime,
-          entry.endTime || null,
-          entry.input ? JSON.stringify(entry.input) : null,
+          entry.endTime,
+          JSON.stringify(entry.input),
           entry.output ? JSON.stringify(entry.output) : null,
+          entry.userId || null,
+          entry.conversationId || null,
           entry.metadata ? JSON.stringify(entry.metadata) : null,
-          entry.createdAt,
-          entry.updatedAt,
+          entry.createdAt || new Date(),
+          entry.updatedAt || new Date(),
         ],
       );
-      this.debug(`Stored workflow history entry: ${entry.id}`);
+      await client.query("COMMIT");
     } catch (error) {
-      this.debug("Error storing workflow history:", error);
-      throw new Error("Failed to store workflow history entry");
+      await client.query("ROLLBACK");
+      throw error;
     } finally {
       client.release();
     }
@@ -2400,32 +2417,37 @@ export class PostgresStorage implements Memory {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
-        `SELECT * FROM ${this.options.tablePrefix}_workflow_history WHERE id = $1`,
+        `SELECT id, workflow_id, name, status, start_time, end_time, input, output, 
+         user_id, conversation_id, metadata, created_at, updated_at 
+         FROM ${this.options.tablePrefix}_workflow_history 
+         WHERE id = $1`,
         [id],
       );
 
-      if (result.rows.length === 0) return null;
+      if (result.rows.length === 0) {
+        return null;
+      }
 
       const row = result.rows[0];
-      const metadata = row.metadata ? safeJsonParse(row.metadata) : {};
-
-      return {
+      const entry: WorkflowHistoryEntry = {
         id: row.id,
-        workflowName: row.name,
         workflowId: row.workflow_id,
+        workflowName: row.name,
         status: row.status,
         startTime: row.start_time,
         endTime: row.end_time,
-        input: row.input ? safeJsonParse(row.input) : null,
-        output: row.output ? safeJsonParse(row.output) : null,
-        metadata: metadata,
-        steps: [], // Will be populated separately if needed
-        events: [], // Will be populated separately if needed
-        userId: metadata?.userId || undefined,
-        conversationId: metadata?.conversationId || undefined,
+        input: row.input ? JSON.parse(row.input) : null,
+        output: row.output ? JSON.parse(row.output) : null,
+        userId: row.user_id,
+        conversationId: row.conversation_id,
+        metadata: row.metadata ? JSON.parse(row.metadata) : null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        steps: [],
+        events: [],
       };
+
+      return entry;
     } catch (error) {
       this.debug("Error getting workflow history:", error);
       throw new Error("Failed to get workflow history entry");
@@ -2442,31 +2464,33 @@ export class PostgresStorage implements Memory {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
-        `SELECT * FROM ${this.options.tablePrefix}_workflow_history 
-         WHERE workflow_id = $1 ORDER BY created_at DESC`,
+        `SELECT id, workflow_id, name, status, start_time, end_time, input, output, 
+         user_id, conversation_id, metadata, created_at, updated_at 
+         FROM ${this.options.tablePrefix}_workflow_history 
+         WHERE workflow_id = $1 
+         ORDER BY created_at DESC`,
         [workflowId],
       );
 
-      return result.rows.map((row) => {
-        const metadata = row.metadata ? safeJsonParse(row.metadata) : {};
-        return {
-          id: row.id,
-          workflowName: row.name,
-          workflowId: row.workflow_id,
-          status: row.status,
-          startTime: row.start_time,
-          endTime: row.end_time,
-          input: row.input ? safeJsonParse(row.input) : null,
-          output: row.output ? safeJsonParse(row.output) : null,
-          metadata: metadata,
-          steps: [], // Will be populated separately if needed
-          events: [], // Will be populated separately if needed
-          userId: metadata?.userId || undefined,
-          conversationId: metadata?.conversationId || undefined,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at,
-        };
-      });
+      const entries: WorkflowHistoryEntry[] = result.rows.map((row) => ({
+        id: row.id,
+        workflowId: row.workflow_id,
+        workflowName: row.name,
+        status: row.status,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        input: row.input ? JSON.parse(row.input) : null,
+        output: row.output ? JSON.parse(row.output) : null,
+        userId: row.user_id,
+        conversationId: row.conversation_id,
+        metadata: row.metadata ? JSON.parse(row.metadata) : null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        steps: [],
+        events: [],
+      }));
+
+      return entries;
     } catch (error) {
       this.debug("Error getting workflow history by workflow ID:", error);
       throw new Error("Failed to get workflow history entries");
@@ -2485,44 +2509,51 @@ export class PostgresStorage implements Memory {
     await this.initialized;
     const client = await this.pool.connect();
     try {
-      const updateFields: string[] = [];
+      const setClauses: string[] = [];
       const values: any[] = [];
-      let paramCount = 1;
+      let paramIndex = 1;
 
-      if (updates.workflowName !== undefined) {
-        updateFields.push(`name = $${paramCount++}`);
-        values.push(updates.workflowName);
-      }
+      // Build dynamic SET clause based on provided updates
       if (updates.status !== undefined) {
-        updateFields.push(`status = $${paramCount++}`);
+        setClauses.push(`status = $${paramIndex++}`);
         values.push(updates.status);
       }
       if (updates.endTime !== undefined) {
-        updateFields.push(`end_time = $${paramCount++}`);
+        setClauses.push(`end_time = $${paramIndex++}`);
         values.push(updates.endTime);
       }
       if (updates.output !== undefined) {
-        updateFields.push(`output = $${paramCount++}`);
+        setClauses.push(`output = $${paramIndex++}`);
         values.push(updates.output ? JSON.stringify(updates.output) : null);
       }
+      if (updates.userId !== undefined) {
+        setClauses.push(`user_id = $${paramIndex++}`);
+        values.push(updates.userId);
+      }
+      if (updates.conversationId !== undefined) {
+        setClauses.push(`conversation_id = $${paramIndex++}`);
+        values.push(updates.conversationId);
+      }
       if (updates.metadata !== undefined) {
-        updateFields.push(`metadata = $${paramCount++}`);
+        setClauses.push(`metadata = $${paramIndex++}`);
         values.push(updates.metadata ? JSON.stringify(updates.metadata) : null);
       }
 
-      updateFields.push(`updated_at = $${paramCount++}`);
+      // Always update the updated_at timestamp
+      setClauses.push(`updated_at = $${paramIndex++}`);
       values.push(new Date());
 
-      values.push(id); // Add ID as last parameter
+      // Add ID as the final parameter for WHERE clause
+      values.push(id);
 
-      await client.query(
-        `UPDATE ${this.options.tablePrefix}_workflow_history 
-         SET ${updateFields.join(", ")} 
-         WHERE id = $${paramCount}`,
-        values,
-      );
+      if (setClauses.length > 1) {
+        // More than just updated_at
+        const query = `UPDATE ${this.options.tablePrefix}_workflow_history 
+                       SET ${setClauses.join(", ")} 
+                       WHERE id = $${paramIndex}`;
 
-      this.debug(`Updated workflow history entry: ${id}`);
+        await client.query(query, values);
+      }
     } catch (error) {
       this.debug("Error updating workflow history:", error);
       throw new Error("Failed to update workflow history entry");

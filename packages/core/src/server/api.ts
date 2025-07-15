@@ -326,12 +326,27 @@ app.openapi(executeWorkflowRoute, async (c) => {
   }
 
   try {
-    const { input } = c.req.valid("json") as {
+    const { input, options } = c.req.valid("json") as {
       input: any;
-      options?: { userId?: string; conversationId?: string; executionId?: string };
+      options?: {
+        userId?: string;
+        conversationId?: string;
+        userContext?: any;
+        executionId?: string;
+      };
     };
 
-    const result = await registeredWorkflow.workflow.run(input);
+    // Convert userContext from object to Map if provided
+    const processedOptions = options
+      ? {
+          ...options,
+          ...(options.userContext && {
+            userContext: new Map(Object.entries(options.userContext)),
+          }),
+        }
+      : undefined;
+
+    const result = await registeredWorkflow.workflow.run(input, processedOptions);
 
     const response = {
       success: true as const,

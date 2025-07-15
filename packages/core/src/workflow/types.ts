@@ -271,6 +271,7 @@ export interface WorkflowStats {
 export interface CreateWorkflowExecutionOptions {
   userId?: string;
   conversationId?: string;
+  userContext?: UserContext;
   metadata?: Record<string, unknown>;
 }
 

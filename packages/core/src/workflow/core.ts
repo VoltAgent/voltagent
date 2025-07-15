@@ -589,8 +589,9 @@ export function createWorkflow<
         try {
           // Create execution directly with specific memory
           historyEntry = await workflowMemoryManager.createExecution(id, name, input, {
-            userId: (input as { userId?: string }).userId,
-            conversationId: (input as { conversationId?: string }).conversationId,
+            userId: options?.userId,
+            conversationId: options?.conversationId,
+            userContext: options?.userContext,
           });
           executionId = historyEntry.id;
           console.log(`✅ [Workflow ${id}] Using workflow-specific memory storage`);
@@ -601,8 +602,9 @@ export function createWorkflow<
         // ✅ Fallback to global registry memory (existing behavior)
         try {
           historyEntry = await workflowRegistry.recordWorkflowExecutionStart(id, name, input, {
-            userId: (input as { userId?: string }).userId,
-            conversationId: (input as { conversationId?: string }).conversationId,
+            userId: options?.userId,
+            conversationId: options?.conversationId,
+            userContext: options?.userContext,
           });
           executionId = historyEntry.id;
           console.log(`✅ [Workflow ${id}] Using global registry memory`);
@@ -619,7 +621,7 @@ export function createWorkflow<
         workflowId: id,
         executionId: executionId,
         workflowName: name,
-        userContext: new Map(),
+        userContext: options?.userContext || new Map(),
         isActive: true,
         startTime: new Date(),
         currentStepIndex: 0,

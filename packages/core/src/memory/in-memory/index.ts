@@ -770,26 +770,30 @@ export class InMemoryStorage implements Memory {
   // ===== WorkflowMemory Interface Implementation =====
 
   /**
-   * Store a workflow history entry
+   * Store workflow history entry
    */
   public async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
-    this.debug(
-      `Storing workflow history entry ${entry.id} for workflow ${entry.workflowId}`,
-      entry,
-    );
-
-    // Store the entry directly with complete data
-    this.workflowHistories.set(entry.id, {
-      ...entry,
-      steps: entry.steps || [],
-      events: entry.events || [],
+    this.debug("Storing workflow history", {
+      id: entry.id,
+      workflowId: entry.workflowId,
+      userId: entry.userId,
+      conversationId: entry.conversationId,
     });
 
-    // Add to workflow index for faster lookups
+    // Store the entry
+    this.workflowHistories.set(entry.id, {
+      ...entry,
+      // Ensure userId and conversationId are properly stored
+      userId: entry.userId || undefined,
+      conversationId: entry.conversationId || undefined,
+      createdAt: entry.createdAt || new Date(),
+      updatedAt: entry.updatedAt || new Date(),
+    });
+
+    // Update workflow -> history mapping
     if (!this.workflowHistoryIndex[entry.workflowId]) {
       this.workflowHistoryIndex[entry.workflowId] = [];
     }
-
     if (!this.workflowHistoryIndex[entry.workflowId].includes(entry.id)) {
       this.workflowHistoryIndex[entry.workflowId].push(entry.id);
     }

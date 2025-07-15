@@ -41,6 +41,9 @@ export function andThen<INPUT, DATA, RESULT>({
         return await execute(data, state);
       }
 
+      // ✅ Serialize execute function for event tracking
+      const stepFunction = execute.toString();
+
       // Create step context and publish start event
       const stepContext = createStepContext(
         state.workflowContext,
@@ -51,7 +54,10 @@ export function andThen<INPUT, DATA, RESULT>({
         stepContext,
         state.workflowContext,
         data, // ✅ Pass input data
-        {},
+        {
+          stepFunction,
+          userContext: state.workflowContext.userContext,
+        },
       );
 
       try {
@@ -69,7 +75,10 @@ export function andThen<INPUT, DATA, RESULT>({
           state.workflowContext,
           result,
           stepStartEvent.id,
-          {},
+          {
+            stepFunction,
+            userContext: state.workflowContext.userContext,
+          },
         );
 
         try {
@@ -86,7 +95,10 @@ export function andThen<INPUT, DATA, RESULT>({
           state.workflowContext,
           error,
           stepStartEvent.id,
-          {},
+          {
+            stepFunction,
+            userContext: state.workflowContext.userContext,
+          },
         );
 
         try {
