@@ -3,7 +3,7 @@
  */
 
 import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
-import type { Agent } from "./agent";
+import type { Agent } from "./agent/agent";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 import type { VoltOpsClient } from "./voltops";

@@ -1,4 +1,4 @@
-import type { Agent } from "../agent";
+import type { Agent } from "../agent/agent";
 import { AgentEventEmitter } from "../events";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { VoltOpsClient } from "../voltops/types";

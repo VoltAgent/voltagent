@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { Agent } from "../agent";
+import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
   InternalAnyWorkflowStep,

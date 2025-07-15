@@ -12,7 +12,7 @@ import type {
   StreamEventToolResult,
 } from "../../utils/streams";
 import type { StreamEvent, StreamEventError } from "../../utils/streams/types";
-import type { Agent } from "../index";
+import type { Agent } from "../agent";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
 import type {

@@ -1,6 +1,6 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
-import type { Agent } from "../../agent/index";
+import type { Agent } from "../../agent/agent";
 import type { BaseMessage } from "../../agent/providers";
 import type { PublicGenerateOptions } from "../../agent/types";
 import {
