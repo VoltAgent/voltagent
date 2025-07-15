@@ -25,12 +25,12 @@ Escape the limitations of no-code builders and the complexity of starting from s
 </div>
 
 <div align="center">
-    
+
 [![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
 [![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
-    
+
 </div>
 
 <br/>
@@ -52,6 +52,7 @@ Instead of building everything from scratch, VoltAgent provides ready-made, modu
 
 - **Core Engine (`@voltagent/core`)**: The heart of VoltAgent, providing fundamental capabilities for your AI agents Define individual agents with specific roles, tools, and memory.
 - **Multi-Agent Systems**: Architect complex applications by coordinating multiple specialized agents using Supervisors.
+- **Workflow Engine**: Go beyond simple request-response. Orchestrate multi-step automations that can process data, call APIs, run tasks in parallel, and execute conditional logic.
 - **Extensible Packages**: Enhance functionality with packages like `@voltagent/voice` for voice interactions.
 - **Tooling & Integrations**: Equip agents with tools to connect to external APIs, databases, and services, enabling them to perform real-world tasks. **Supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for standardized tool interactions.**
 - **Data Retrieval & RAG**: Implement specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)**.
@@ -73,6 +74,7 @@ VoltAgent provides a middle ground, offering structure and components without sa
 - **Build Faster:** Accelerate development with pre-built components compared to starting from scratch.
 - **Maintainable Code:** Encourages organization for easier updates and debugging.
 - **Scalability:** Start simple and easily scale to complex, multi-agent systems handling intricate workflows.
+- **Build Sophisticated Automations:** It's not just for chat. The workflow engine lets you build complex, multi-step processes for tasks like data analysis pipelines, automated content generation, or intelligent decision-making systems.
 - **Flexibility:** Full control over agent behavior, LLM choice, tool integrations, and UI connections.
 - **Avoid Lock-in:** Freedom to switch AI providers and models as needed.
 - **Cost Efficiency:** Features designed to optimize AI service usage and reduce redundant calls.
@@ -90,26 +92,30 @@ npm create voltagent-app@latest
 
 This command guides you through setup.
 
-You'll see the starter code in `src/index.ts` to get you started with the VoltAgent framework.
+You'll see the starter code in `src/index.ts`, which now registers both an agent and a comprehensive workflow example found in `src/workflows/index.ts`.
 
 ```typescript
 import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai"; // Example provider
-import { openai } from "@ai-sdk/openai"; // Example model
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { comprehensiveWorkflow } from "./workflows";
 
-// Define a simple agent
+// A simple, general-purpose agent for the project.
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
-  // Note: You can swap VercelAIProvider and openai with other supported providers/models
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
+  tools: [],
 });
 
-// Initialize VoltAgent with your agent(s)
+// Initialize VoltAgent with your agent(s) and workflow(s)
 new VoltAgent({
   agents: {
     agent,
+  },
+  workflows: {
+    comprehensiveWorkflow,
   },
 });
 ```
@@ -140,16 +146,33 @@ Your agent is now running! To interact with it:
 4. Start Chatting: On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5. Send a Message: Type a message like "Hello" and press Enter.
 
-![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
+[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
+
+### Running Your First Workflow
+
+Your new project also includes a powerful workflow engine. You can test the pre-built `comprehensiveWorkflow` directly from the VoltOps console:
+
+![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
+
+1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
+2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
+3.  **Find and Run:** You will see **"Comprehensive Workflow Example"** listed. Click it, then click the **"Run"** button.
+4.  **Provide Input:** The workflow expects a JSON object with a `text` key. Try it with a negative sentiment to see the conditional logic in action:
+    ```json
+    { "text": "I am very disappointed with this product, it is terrible." }
+    ```
+5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
 
 ## Key Features
 
 - **Agent Core:** Define agents with descriptions, LLM providers, tools, and memory management.
+- **Workflow Engine:** Orchestrate complex, multi-step automations with a powerful and declarative API (`andThen`, `andAgent`, `andAll`, `andRace`, `andWhen`).
 - **Multi-Agent Systems:** Build complex workflows using Supervisor Agents coordinating multiple specialized Sub-Agents.
 - **Tool Usage & Lifecycle:** Equip agents with custom or pre-built tools (functions) with type-safety (Zod), lifecycle hooks, and cancellation support to interact with external systems.
 - **Flexible LLM Support:** Integrate seamlessly with various LLM providers (OpenAI, Anthropic, Google, etc.) and easily switch between models.
 - **Memory Management:** Enable agents to retain context across interactions using different configurable memory providers.
 - **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltOps LLM Observability Platform](https://console.voltagent.dev).
+- **Custom API Endpoints:** Extend the VoltAgent API server with your own custom endpoints to build specialized functionality on top of the core framework.
 - **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package.
 - **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources.
 - **Model Context Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities.
@@ -181,7 +204,13 @@ VoltAgent is versatile and can power a wide range of AI-driven applications:
 
 We welcome contributions! Please refer to the contribution guidelines (link needed if available). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
 
-## Community ♥️ Thanks
+## Contributor ♥️ Thanks
+
+Big thanks to everyone who's been part of the VoltAgent journey, whether you've built a plugin, opened an issue, dropped a pull request, or just helped someone out on Discord or GitHub Discussions.
+
+VoltAgent is a community effort, and it keeps getting better because of people like you.
+
+![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent)
 
 Your stars help us reach more developers! If you find VoltAgent useful, please consider giving us a star on GitHub to support the project and help others discover it.
 
