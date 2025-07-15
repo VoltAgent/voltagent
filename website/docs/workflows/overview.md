@@ -1,4 +1,7 @@
-# Workflows Overview
+# Overview
+
+> **Note: Workflows are in Preview**
+> The Workflows API is currently in a preview state. This means it is stable and usable, but there may be breaking changes in future releases as we gather feedback and refine the developer experience.
 
 > **Build powerful, type-safe AI workflows.** Go from a simple chain of functions to a complex, multi-step process that combines your code, AI models, and conditional logic with ease.
 
@@ -360,7 +363,7 @@ One of the most powerful features of VoltAgent is its built-in observability lay
 This execution history is stored using a **memory provider**. By default, VoltAgent uses a file-based `LibSQL` database (`memory.db` in your project's root).
 
 The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want to use a different storage solution.
-
+w
 You can use several providers to store workflow history:
 
 - **Built-in Providers** (from `@voltagent/core`):

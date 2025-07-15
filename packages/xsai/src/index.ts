@@ -21,7 +21,6 @@ import type {
   Message,
   StreamObjectResult,
   StreamTextResult,
-  StreamTextStep,
   TextPart,
   Tool,
 } from "xsai";
@@ -271,8 +270,16 @@ export class XSAIProvider implements LLMProvider<string> {
         ? {
             onFinish: async (result) =>
               await options.onFinish?.({
-                text: result?.map((r) => r.choices?.[0]?.message?.content || "").join("") || "",
-                ...result,
+                text: result?.text || "",
+                usage: result?.usage
+                  ? {
+                      promptTokens: result.usage.prompt_tokens,
+                      completionTokens: result.usage.completion_tokens,
+                      totalTokens: result.usage.total_tokens,
+                    }
+                  : undefined,
+                finishReason: result?.finishReason,
+                providerResponse: result,
               }),
           }
         : {}),
@@ -352,7 +359,7 @@ export class XSAIProvider implements LLMProvider<string> {
     const xsaiMessages = options.messages.map(this.toMessage);
 
     const onStepFinishWrapper = options.onStepFinish
-      ? async (result: StreamTextStep) => {
+      ? async (result: any) => {
           // For streamObject, we need to wrap text content in a special format
           const handler = this.createStepFinishHandler(async (step) => {
             if (step.type === "text") {
