@@ -13,6 +13,7 @@ import {
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 import { PostgresStorage } from "@voltagent/postgres";
+import { SupabaseMemory } from "@voltagent/supabase";
 
 const memoryStorage = new PostgresStorage({
   // Read connection details from environment variables
@@ -38,6 +39,22 @@ const memoryStorage = new PostgresStorage({
 
   // Optional: Enable debug logging for storage
   debug: process.env.NODE_ENV === "development",
+});
+
+// Get Supabase credentials from environment variables
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    "Supabase URL and Key must be provided in the .env file (SUPABASE_URL, SUPABASE_KEY)",
+  );
+}
+
+// Initialize SupabaseMemory
+const memory = new SupabaseMemory({
+  supabaseUrl,
+  supabaseKey,
 });
 
 // Simple agent for demonstrations
@@ -67,6 +84,7 @@ const dynamicParallelWorkflow = createWorkflowChain({
   input: z.object({
     items: z.array(z.string()),
   }),
+  memory: memory,
   result: z.object({
     originalItems: z.array(z.string()),
     processedItems: z.array(

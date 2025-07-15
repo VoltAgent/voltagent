@@ -7,9 +7,22 @@ import {
   type MemoryMessage,
   type MemoryOptions,
   type MessageFilterOptions,
+  type WorkflowHistoryEntry,
+  type WorkflowStepHistoryEntry,
   safeJsonParse,
 } from "@voltagent/core";
 import type { NewTimelineEvent } from "@voltagent/core";
+
+/**
+ * Workflow statistics interface
+ */
+export interface WorkflowStats {
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  averageExecutionTime: number;
+  lastExecutionTime?: Date;
+}
 
 export interface SupabaseMemoryOptions extends MemoryOptions {
   supabaseUrl?: string;
@@ -28,6 +41,7 @@ export interface SupabaseMemoryOptions extends MemoryOptions {
  * - PostgreSQL-optimized queries through Supabase
  * - Real-time capabilities through Supabase subscriptions
  * - Storage limits for managing message history
+ * - Workflow history, steps, and timeline events persistence
  *
  * @see {@link https://voltagent.ai/docs/agents/memory/supabase | Supabase Storage Documentation}
  */
@@ -48,7 +62,8 @@ export class SupabaseMemory implements Memory {
         "Cannot provide both 'client' and 'supabaseUrl/supabaseKey'. Choose one approach.",
       );
     }
-    this.client = options.client || createClient(options.supabaseUrl!, options.supabaseKey!);
+    this.client =
+      options.client || createClient(options.supabaseUrl as string, options.supabaseKey as string);
     this.baseTableName = options.tableName || "voltagent_memory";
     this.debug = options.debug || false;
     this.options = {
@@ -185,6 +200,55 @@ export class SupabaseMemory implements Memory {
     } catch {
       return true; // Table doesn"t exist
     }
+  }
+
+  /**
+   * Check if workflow tables need to be created
+   */
+  private async checkWorkflowTables(): Promise<{
+    needsWorkflowHistory: boolean;
+    needsWorkflowSteps: boolean;
+    needsWorkflowTimelineEvents: boolean;
+  }> {
+    let needsWorkflowHistory = false;
+    let needsWorkflowSteps = false;
+    let needsWorkflowTimelineEvents = false;
+
+    try {
+      const { error: workflowHistoryError } = await this.client
+        .from(this.workflowHistoryTable)
+        .select("id")
+        .limit(1);
+      needsWorkflowHistory = !!workflowHistoryError;
+    } catch {
+      needsWorkflowHistory = true;
+    }
+
+    try {
+      const { error: workflowStepsError } = await this.client
+        .from(this.workflowStepsTable)
+        .select("id")
+        .limit(1);
+      needsWorkflowSteps = !!workflowStepsError;
+    } catch {
+      needsWorkflowSteps = true;
+    }
+
+    try {
+      const { error: workflowTimelineEventsError } = await this.client
+        .from(this.workflowTimelineEventsTable)
+        .select("id")
+        .limit(1);
+      needsWorkflowTimelineEvents = !!workflowTimelineEventsError;
+    } catch {
+      needsWorkflowTimelineEvents = true;
+    }
+
+    return {
+      needsWorkflowHistory,
+      needsWorkflowSteps,
+      needsWorkflowTimelineEvents,
+    };
   }
 
   /**
@@ -359,6 +423,96 @@ ON ${this.timelineEventsTable}(parent_event_id);
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_timeline_events_status 
 ON ${this.timelineEventsTable}(status);
 
+-- Workflow History Table
+CREATE TABLE IF NOT EXISTS ${this.workflowHistoryTable} (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    workflow_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'cancelled')),
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    input JSONB,
+    output JSONB,
+    metadata JSONB,
+    user_id TEXT,
+    conversation_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Workflow Steps Table
+CREATE TABLE IF NOT EXISTS ${this.workflowStepsTable} (
+    id TEXT PRIMARY KEY,
+    workflow_history_id TEXT NOT NULL REFERENCES ${this.workflowHistoryTable}(id) ON DELETE CASCADE,
+    step_index INTEGER NOT NULL,
+    step_type TEXT NOT NULL CHECK (step_type IN ('agent', 'func', 'conditional-when', 'parallel-all', 'parallel-race')),
+    step_name TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'skipped')),
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    input JSONB,
+    output JSONB,
+    error_message TEXT,
+    agent_execution_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Workflow Timeline Events Table
+CREATE TABLE IF NOT EXISTS ${this.workflowTimelineEventsTable} (
+    id TEXT PRIMARY KEY,
+    workflow_history_id TEXT NOT NULL REFERENCES ${this.workflowHistoryTable}(id) ON DELETE CASCADE,
+    event_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    status TEXT,
+    level TEXT DEFAULT 'INFO',
+    input JSONB,
+    output JSONB,
+    metadata JSONB,
+    event_sequence INTEGER,
+    trace_id TEXT,
+    parent_event_id TEXT,
+    status_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Indexes for workflow tables
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_workflow_id
+ON ${this.workflowHistoryTable}(workflow_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_status
+ON ${this.workflowHistoryTable}(status);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_start_time
+ON ${this.workflowHistoryTable}(start_time);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_user_id
+ON ${this.workflowHistoryTable}(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_conversation_id
+ON ${this.workflowHistoryTable}(conversation_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_steps_workflow_history_id
+ON ${this.workflowStepsTable}(workflow_history_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_steps_step_index
+ON ${this.workflowStepsTable}(workflow_history_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_workflow_history_id
+ON ${this.workflowTimelineEventsTable}(workflow_history_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_type
+ON ${this.workflowTimelineEventsTable}(type);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_start_time
+ON ${this.workflowTimelineEventsTable}(start_time);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_sequence
+ON ${this.workflowTimelineEventsTable}(event_sequence);
+
 -- Migration Flags Table (Prevents duplicate migrations)
 CREATE TABLE IF NOT EXISTS ${this.conversationsTable}_migration_flags (
     id SERIAL PRIMARY KEY,
@@ -391,8 +545,15 @@ ON CONFLICT (migration_type) DO NOTHING;
       // Not a fresh installation - check for specific missing tables/columns
       const needsTimelineTable = await this.checkTimelineEventsTable();
       const needsHistoryUpdate = await this.checkAgentHistoryStructure();
+      const workflowTableStatus = await this.checkWorkflowTables();
 
-      if (needsTimelineTable || needsHistoryUpdate) {
+      if (
+        needsTimelineTable ||
+        needsHistoryUpdate ||
+        workflowTableStatus.needsWorkflowHistory ||
+        workflowTableStatus.needsWorkflowSteps ||
+        workflowTableStatus.needsWorkflowTimelineEvents
+      ) {
         console.log(`\n${"=".repeat(100)}`);
         console.log("🚀 VOLTAGENT SUPABASE MIGRATION");
         console.log("=".repeat(100));
@@ -436,12 +597,74 @@ ADD COLUMN IF NOT EXISTS status TEXT,
 ADD COLUMN IF NOT EXISTS input JSONB,
 ADD COLUMN IF NOT EXISTS output JSONB,
 ADD COLUMN IF NOT EXISTS usage JSONB,
-ADD COLUMN IF NOT EXISTS metadata JSONB;
-ADD COLUMN IF NOT EXISTS user_id TEXT;
+ADD COLUMN IF NOT EXISTS metadata JSONB,
+ADD COLUMN IF NOT EXISTS user_id TEXT,
 ADD COLUMN IF NOT EXISTS conversation_id TEXT;\n`);
         }
 
-        console.log("-- 3. Create performance indexes");
+        if (workflowTableStatus.needsWorkflowHistory) {
+          console.log("-- 3. Create workflow history table");
+          console.log(`CREATE TABLE IF NOT EXISTS ${this.workflowHistoryTable} (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  workflow_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'cancelled')),
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ,
+  input JSONB,
+  output JSONB,
+  metadata JSONB,
+  user_id TEXT,
+  conversation_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);\n`);
+        }
+
+        if (workflowTableStatus.needsWorkflowSteps) {
+          console.log("-- 4. Create workflow steps table");
+          console.log(`CREATE TABLE IF NOT EXISTS ${this.workflowStepsTable} (
+  id TEXT PRIMARY KEY,
+  workflow_history_id TEXT NOT NULL REFERENCES ${this.workflowHistoryTable}(id) ON DELETE CASCADE,
+  step_index INTEGER NOT NULL,
+  step_type TEXT NOT NULL CHECK (step_type IN ('agent', 'func', 'conditional-when', 'parallel-all', 'parallel-race')),
+  step_name TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'skipped')),
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ,
+  input JSONB,
+  output JSONB,
+  error_message TEXT,
+  agent_execution_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);\n`);
+        }
+
+        if (workflowTableStatus.needsWorkflowTimelineEvents) {
+          console.log("-- 5. Create workflow timeline events table");
+          console.log(`CREATE TABLE IF NOT EXISTS ${this.workflowTimelineEventsTable} (
+  id TEXT PRIMARY KEY,
+  workflow_history_id TEXT NOT NULL REFERENCES ${this.workflowHistoryTable}(id) ON DELETE CASCADE,
+  event_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ,
+  status TEXT,
+  level TEXT DEFAULT 'INFO',
+  input JSONB,
+  output JSONB,
+  metadata JSONB,
+  event_sequence INTEGER,
+  trace_id TEXT,
+  parent_event_id TEXT,
+  status_message TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);\n`);
+        }
+
+        console.log("-- 6. Create performance indexes");
         if (needsTimelineTable) {
           console.log(`CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_timeline_events_history_id 
 ON ${this.timelineEventsTable}(history_id);
@@ -475,6 +698,47 @@ ON ${this.historyTable}(user_id);
 
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_conversation_id
 ON ${this.historyTable}(conversation_id);`);
+        }
+
+        if (
+          workflowTableStatus.needsWorkflowHistory ||
+          workflowTableStatus.needsWorkflowSteps ||
+          workflowTableStatus.needsWorkflowTimelineEvents
+        ) {
+          console.log(`
+-- Workflow table indexes
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_workflow_id
+ON ${this.workflowHistoryTable}(workflow_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_status
+ON ${this.workflowHistoryTable}(status);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_start_time
+ON ${this.workflowHistoryTable}(start_time);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_user_id
+ON ${this.workflowHistoryTable}(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_conversation_id
+ON ${this.workflowHistoryTable}(conversation_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_steps_workflow_history_id
+ON ${this.workflowStepsTable}(workflow_history_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_steps_step_index
+ON ${this.workflowStepsTable}(workflow_history_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_workflow_history_id
+ON ${this.workflowTimelineEventsTable}(workflow_history_id);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_type
+ON ${this.workflowTimelineEventsTable}(type);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_start_time
+ON ${this.workflowTimelineEventsTable}(start_time);
+
+CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_sequence
+ON ${this.workflowTimelineEventsTable}(event_sequence);`);
         }
 
         console.log(`\n${"=".repeat(100)}`);
@@ -511,6 +775,15 @@ ON ${this.historyTable}(conversation_id);`);
   }
   private get timelineEventsTable(): string {
     return `${this.baseTableName}_agent_history_timeline_events`;
+  }
+  private get workflowHistoryTable(): string {
+    return `${this.baseTableName}_workflow_history`;
+  }
+  private get workflowStepsTable(): string {
+    return `${this.baseTableName}_workflow_steps`;
+  }
+  private get workflowTimelineEventsTable(): string {
+    return `${this.baseTableName}_workflow_timeline_events`;
   }
   // --- End Table Name Helpers ---
 
@@ -2808,5 +3081,685 @@ ON CONFLICT (migration_type) DO NOTHING;
       console.error("Error during agent history schema migration:", error);
       return { success: false, error: error as Error };
     }
+  }
+
+  // === WORKFLOW PERSISTENCE METHODS ===
+
+  /**
+   * Store a workflow history entry
+   */
+  public async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
+    await this.initialized;
+
+    this.debugLog("Storing workflow history", {
+      id: entry.id,
+      workflowId: entry.workflowId,
+      userId: entry.userId,
+      conversationId: entry.conversationId,
+    });
+
+    const record = {
+      id: entry.id,
+      workflow_id: entry.workflowId,
+      name: entry.workflowName,
+      status: entry.status,
+      start_time: entry.startTime.toISOString(),
+      end_time: entry.endTime?.toISOString() || null,
+      input: entry.input ? JSON.stringify(entry.input) : null,
+      output: entry.output ? JSON.stringify(entry.output) : null,
+      user_id: entry.userId || null,
+      conversation_id: entry.conversationId || null,
+      metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+      created_at: (entry.createdAt || new Date()).toISOString(),
+      updated_at: (entry.updatedAt || new Date()).toISOString(),
+    };
+
+    const { error } = await this.client
+      .from(this.workflowHistoryTable)
+      .upsert(record, { onConflict: "id" });
+
+    if (error) {
+      console.error(`Error storing workflow history ${entry.id}:`, error);
+      throw new Error(`Failed to store workflow history: ${error.message}`);
+    }
+
+    this.debugLog(`Stored workflow history ${entry.id}`);
+  }
+
+  /**
+   * Get a workflow history entry by ID
+   */
+  public async getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`Error getting workflow history ${id}:`, error);
+      throw new Error(`Failed to get workflow history: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return this.parseWorkflowHistoryRow(data);
+  }
+
+  /**
+   * Get all workflow history entries for a specific workflow ID
+   */
+  public async getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("*")
+      .eq("workflow_id", workflowId)
+      .order("start_time", { ascending: false });
+
+    if (error) {
+      console.error(`Error getting workflow history for workflow ${workflowId}:`, error);
+      throw new Error(`Failed to get workflow history: ${error.message}`);
+    }
+
+    return (data || []).map((row) => this.parseWorkflowHistoryRow(row));
+  }
+
+  /**
+   * Update a workflow history entry
+   */
+  public async updateWorkflowHistory(
+    id: string,
+    updates: Partial<WorkflowHistoryEntry>,
+  ): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Updating workflow history ${id}`, updates);
+
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.status !== undefined) {
+      updateData.status = updates.status;
+    }
+    if (updates.endTime !== undefined) {
+      updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
+    }
+    if (updates.output !== undefined) {
+      updateData.output = updates.output ? JSON.stringify(updates.output) : null;
+    }
+    if (updates.userId !== undefined) {
+      updateData.user_id = updates.userId;
+    }
+    if (updates.conversationId !== undefined) {
+      updateData.conversation_id = updates.conversationId;
+    }
+    if (updates.metadata !== undefined) {
+      updateData.metadata = updates.metadata ? JSON.stringify(updates.metadata) : null;
+    }
+
+    const { error } = await this.client
+      .from(this.workflowHistoryTable)
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) {
+      console.error(`Error updating workflow history ${id}:`, error);
+      throw new Error(`Failed to update workflow history: ${error.message}`);
+    }
+
+    this.debugLog(`Updated workflow history ${id}`);
+  }
+
+  /**
+   * Delete a workflow history entry
+   */
+  public async deleteWorkflowHistory(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow history ${id}`);
+
+    const { error } = await this.client.from(this.workflowHistoryTable).delete().eq("id", id);
+
+    if (error) {
+      console.error(`Error deleting workflow history ${id}:`, error);
+      throw new Error(`Failed to delete workflow history: ${error.message}`);
+    }
+
+    this.debugLog(`Deleted workflow history ${id}`);
+  }
+
+  /**
+   * Store a workflow step entry
+   */
+  public async storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(
+      `Storing workflow step ${step.id} for workflow history ${step.workflowHistoryId}`,
+      step,
+    );
+
+    const record = {
+      id: step.id,
+      workflow_history_id: step.workflowHistoryId,
+      step_index: step.stepIndex,
+      step_type: step.stepType,
+      step_name: step.stepName,
+      status: step.status,
+      start_time: step.startTime.toISOString(),
+      end_time: step.endTime?.toISOString() || null,
+      input: step.input ? JSON.stringify(step.input) : null,
+      output: step.output ? JSON.stringify(step.output) : null,
+      error_message: step.error ? String(step.error) : null,
+      agent_execution_id: step.agentExecutionId || null,
+      created_at: (step.createdAt || new Date()).toISOString(),
+      updated_at: (step.updatedAt || new Date()).toISOString(),
+    };
+
+    const { error } = await this.client
+      .from(this.workflowStepsTable)
+      .upsert(record, { onConflict: "id" });
+
+    if (error) {
+      console.error(`Error storing workflow step ${step.id}:`, error);
+      throw new Error(`Failed to store workflow step: ${error.message}`);
+    }
+
+    this.debugLog(`Stored workflow step ${step.id}`);
+  }
+
+  /**
+   * Get a workflow step by ID
+   */
+  public async getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowStepsTable)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`Error getting workflow step ${id}:`, error);
+      throw new Error(`Failed to get workflow step: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return this.parseWorkflowStepRow(data);
+  }
+
+  /**
+   * Get all workflow steps for a workflow history entry
+   */
+  public async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowStepsTable)
+      .select("*")
+      .eq("workflow_history_id", workflowHistoryId)
+      .order("step_index", { ascending: true });
+
+    if (error) {
+      console.error(`Error getting workflow steps for history ${workflowHistoryId}:`, error);
+      throw new Error(`Failed to get workflow steps: ${error.message}`);
+    }
+
+    return (data || []).map((row) => this.parseWorkflowStepRow(row));
+  }
+
+  /**
+   * Update a workflow step
+   */
+  public async updateWorkflowStep(
+    id: string,
+    updates: Partial<WorkflowStepHistoryEntry>,
+  ): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Updating workflow step ${id}`, updates);
+
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.status !== undefined) {
+      updateData.status = updates.status;
+    }
+    if (updates.endTime !== undefined) {
+      updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
+    }
+    if (updates.output !== undefined) {
+      updateData.output = updates.output ? JSON.stringify(updates.output) : null;
+    }
+    if (updates.error !== undefined) {
+      updateData.error_message = updates.error ? String(updates.error) : null;
+    }
+    if (updates.agentExecutionId !== undefined) {
+      updateData.agent_execution_id = updates.agentExecutionId;
+    }
+
+    const { error } = await this.client
+      .from(this.workflowStepsTable)
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) {
+      console.error(`Error updating workflow step ${id}:`, error);
+      throw new Error(`Failed to update workflow step: ${error.message}`);
+    }
+
+    this.debugLog(`Updated workflow step ${id}`);
+  }
+
+  /**
+   * Delete a workflow step
+   */
+  public async deleteWorkflowStep(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow step ${id}`);
+
+    const { error } = await this.client.from(this.workflowStepsTable).delete().eq("id", id);
+
+    if (error) {
+      console.error(`Error deleting workflow step ${id}:`, error);
+      throw new Error(`Failed to delete workflow step: ${error.message}`);
+    }
+
+    this.debugLog(`Deleted workflow step ${id}`);
+  }
+
+  /**
+   * Store a workflow timeline event
+   */
+  public async storeWorkflowTimelineEvent(event: any): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(
+      `Storing workflow timeline event ${event.id} for workflow history ${event.workflowHistoryId}`,
+      event,
+    );
+
+    const record = {
+      id: event.id,
+      workflow_history_id: event.workflowHistoryId,
+      event_id: event.eventId,
+      type: event.type,
+      name: event.name,
+      start_time: event.startTime,
+      end_time: event.endTime || null,
+      status: event.status || null,
+      level: event.level || "INFO",
+      input: event.input ? JSON.stringify(event.input) : null,
+      output: event.output ? JSON.stringify(event.output) : null,
+      metadata: event.metadata ? JSON.stringify(event.metadata) : null,
+      event_sequence: event.eventSequence || null,
+      trace_id: event.traceId || null,
+      parent_event_id: event.parentEventId || null,
+      status_message: event.statusMessage ? String(event.statusMessage) : null,
+      created_at: (event.createdAt || new Date()).toISOString(),
+    };
+
+    const { error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .upsert(record, { onConflict: "id" });
+
+    if (error) {
+      console.error(`Error storing workflow timeline event ${event.id}:`, error);
+      throw new Error(`Failed to store workflow timeline event: ${error.message}`);
+    }
+
+    this.debugLog(`Stored workflow timeline event ${event.id}`);
+  }
+
+  /**
+   * Get a workflow timeline event by ID
+   */
+  public async getWorkflowTimelineEvent(id: string): Promise<any | null> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`Error getting workflow timeline event ${id}:`, error);
+      throw new Error(`Failed to get workflow timeline event: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return this.parseWorkflowTimelineEventRow(data);
+  }
+
+  /**
+   * Get all workflow timeline events for a workflow history entry
+   */
+  public async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<any[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .select("*")
+      .eq("workflow_history_id", workflowHistoryId)
+      .order("start_time", { ascending: true });
+
+    if (error) {
+      console.error(
+        `Error getting workflow timeline events for history ${workflowHistoryId}:`,
+        error,
+      );
+      throw new Error(`Failed to get workflow timeline events: ${error.message}`);
+    }
+
+    return (data || []).map((row) => this.parseWorkflowTimelineEventRow(row));
+  }
+
+  /**
+   * Delete a workflow timeline event
+   */
+  public async deleteWorkflowTimelineEvent(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow timeline event ${id}`);
+
+    const { error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(`Error deleting workflow timeline event ${id}:`, error);
+      throw new Error(`Failed to delete workflow timeline event: ${error.message}`);
+    }
+
+    this.debugLog(`Deleted workflow timeline event ${id}`);
+  }
+
+  /**
+   * Get all workflow IDs that have history entries
+   */
+  public async getAllWorkflowIds(): Promise<string[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("workflow_id")
+      .order("workflow_id", { ascending: true });
+
+    if (error) {
+      console.error("Error getting all workflow IDs:", error);
+      throw new Error(`Failed to get workflow IDs: ${error.message}`);
+    }
+
+    // Extract unique workflow IDs
+    const workflowIds = [...new Set((data || []).map((row) => row.workflow_id))];
+    return workflowIds;
+  }
+
+  /**
+   * Get workflow statistics for a specific workflow
+   */
+  public async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
+    await this.initialized;
+
+    this.debugLog(`Getting workflow stats for workflow ${workflowId}`);
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("status, start_time, end_time")
+      .eq("workflow_id", workflowId);
+
+    if (error) {
+      console.error(`Error getting workflow stats for ${workflowId}:`, error);
+      throw new Error(`Failed to get workflow stats: ${error.message}`);
+    }
+
+    const entries = data || [];
+    const totalExecutions = entries.length;
+    const successfulExecutions = entries.filter((e) => e.status === "completed").length;
+    const failedExecutions = entries.filter((e) => e.status === "error").length;
+
+    // Calculate average execution time for completed executions
+    const completedExecutions = entries.filter((e) => e.status === "completed" && e.end_time);
+    const averageExecutionTime =
+      completedExecutions.length > 0
+        ? completedExecutions.reduce((sum, e) => {
+            const duration = new Date(e.end_time).getTime() - new Date(e.start_time).getTime();
+            return sum + duration;
+          }, 0) / completedExecutions.length
+        : 0;
+
+    // Get last execution time
+    const lastExecutionTime =
+      entries.length > 0
+        ? entries.sort(
+            (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
+          )[0].start_time
+        : undefined;
+
+    return {
+      totalExecutions,
+      successfulExecutions,
+      failedExecutions,
+      averageExecutionTime,
+      lastExecutionTime: lastExecutionTime ? new Date(lastExecutionTime) : undefined,
+    };
+  }
+
+  /**
+   * Get workflow history with steps and events in a single call
+   */
+  public async getWorkflowHistoryWithStepsAndEvents(
+    id: string,
+  ): Promise<WorkflowHistoryEntry | null> {
+    await this.initialized;
+
+    this.debugLog(`Getting workflow history with steps and events for ${id}`);
+
+    // Get the main workflow history entry
+    const history = await this.getWorkflowHistory(id);
+    if (!history) {
+      return null;
+    }
+
+    // Get workflow steps
+    const steps = await this.getWorkflowSteps(id);
+
+    // Get workflow timeline events
+    const timelineEvents = await this.getWorkflowTimelineEvents(id);
+
+    // Convert WorkflowTimelineEvent[] to WorkflowTimelineEvent[] (they should be compatible)
+    const events = timelineEvents;
+
+    return {
+      ...history,
+      steps,
+      events,
+    };
+  }
+
+  /**
+   * Delete workflow history with all related data (steps and events)
+   */
+  public async deleteWorkflowHistoryWithRelated(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow history with related data: ${id}`);
+
+    // Get all related timeline events
+    const { data: timelineEvents } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .select("id")
+      .eq("workflow_history_id", id);
+
+    // Get all related steps
+    const { data: steps } = await this.client
+      .from(this.workflowStepsTable)
+      .select("id")
+      .eq("workflow_history_id", id);
+
+    // Delete timeline events
+    if (timelineEvents && timelineEvents.length > 0) {
+      const { error: eventsError } = await this.client
+        .from(this.workflowTimelineEventsTable)
+        .delete()
+        .eq("workflow_history_id", id);
+
+      if (eventsError) {
+        console.error(`Error deleting workflow timeline events for ${id}:`, eventsError);
+        throw new Error(`Failed to delete workflow timeline events: ${eventsError.message}`);
+      }
+    }
+
+    // Delete steps
+    if (steps && steps.length > 0) {
+      const { error: stepsError } = await this.client
+        .from(this.workflowStepsTable)
+        .delete()
+        .eq("workflow_history_id", id);
+
+      if (stepsError) {
+        console.error(`Error deleting workflow steps for ${id}:`, stepsError);
+        throw new Error(`Failed to delete workflow steps: ${stepsError.message}`);
+      }
+    }
+
+    // Delete the main workflow history entry
+    await this.deleteWorkflowHistory(id);
+
+    this.debugLog(`Deleted workflow history with related data: ${id}`);
+  }
+
+  /**
+   * Cleanup old workflow histories for a specific workflow
+   */
+  public async cleanupOldWorkflowHistories(
+    workflowId: string,
+    maxEntries: number,
+  ): Promise<number> {
+    await this.initialized;
+
+    this.debugLog(
+      `Cleaning up old workflow histories for ${workflowId}, keeping ${maxEntries} entries`,
+    );
+
+    // Get all workflow histories for this workflow, ordered by start time (newest first)
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("id, start_time")
+      .eq("workflow_id", workflowId)
+      .order("start_time", { ascending: false });
+
+    if (error) {
+      console.error(`Error getting workflow histories for cleanup ${workflowId}:`, error);
+      throw new Error(`Failed to get workflow histories for cleanup: ${error.message}`);
+    }
+
+    const entries = data || [];
+
+    if (entries.length <= maxEntries) {
+      return 0; // No cleanup needed
+    }
+
+    // Get the entries to delete (oldest ones beyond maxEntries)
+    const entriesToDelete = entries.slice(maxEntries);
+    const deletedCount = entriesToDelete.length;
+
+    // Delete old entries with their related data
+    for (const entry of entriesToDelete) {
+      await this.deleteWorkflowHistoryWithRelated(entry.id);
+    }
+
+    this.debugLog(`Cleaned up ${deletedCount} old workflow histories for ${workflowId}`);
+    return deletedCount;
+  }
+
+  // === HELPER METHODS FOR PARSING DATABASE ROWS ===
+
+  /**
+   * Parse workflow history row from database
+   */
+  private parseWorkflowHistoryRow(row: any): WorkflowHistoryEntry {
+    return {
+      id: row.id,
+      workflowName: row.name,
+      workflowId: row.workflow_id,
+      status: row.status,
+      startTime: new Date(row.start_time),
+      endTime: row.end_time ? new Date(row.end_time) : undefined,
+      input: row.input ? JSON.parse(row.input) : null,
+      output: row.output ? JSON.parse(row.output) : undefined,
+      userId: row.user_id || undefined,
+      conversationId: row.conversation_id || undefined,
+      metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
+      steps: [], // Will be loaded separately if needed
+      events: [], // Will be loaded separately if needed
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    };
+  }
+
+  /**
+   * Parse workflow step row from database
+   */
+  private parseWorkflowStepRow(row: any): WorkflowStepHistoryEntry {
+    return {
+      id: row.id,
+      workflowHistoryId: row.workflow_history_id,
+      stepIndex: row.step_index,
+      stepType: row.step_type,
+      stepName: row.step_name,
+      status: row.status,
+      startTime: new Date(row.start_time),
+      endTime: row.end_time ? new Date(row.end_time) : undefined,
+      input: row.input ? JSON.parse(row.input) : undefined,
+      output: row.output ? JSON.parse(row.output) : undefined,
+      error: row.error_message || undefined,
+      agentExecutionId: row.agent_execution_id || undefined,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    };
+  }
+
+  /**
+   * Parse workflow timeline event row from database
+   */
+  private parseWorkflowTimelineEventRow(row: any): any {
+    return {
+      id: row.id,
+      workflowHistoryId: row.workflow_history_id,
+      eventId: row.event_id,
+      type: row.type,
+      name: row.name,
+      startTime: row.start_time,
+      endTime: row.end_time || undefined,
+      status: row.status || undefined,
+      level: row.level || "INFO",
+      input: row.input ? JSON.parse(row.input) : undefined,
+      output: row.output ? JSON.parse(row.output) : undefined,
+      metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
+      eventSequence: row.event_sequence || undefined,
+      traceId: row.trace_id || undefined,
+      parentEventId: row.parent_event_id || undefined,
+      statusMessage: row.status_message || undefined,
+      createdAt: new Date(row.created_at),
+    };
   }
 }

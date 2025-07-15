@@ -10,6 +10,7 @@ import type {
   WorkflowInput,
   WorkflowResult,
   WorkflowRunOptions,
+  WorkflowStepHistoryEntry,
 } from "./types";
 import type { WorkflowExecutionContext } from "./context";
 import { WorkflowMemoryManager } from "./memory/manager";
@@ -20,6 +21,7 @@ import {
   publishWorkflowEvent,
 } from "./event-utils";
 import { LibSQLStorage } from "../memory/libsql";
+import { WorkflowHistoryManager } from "./history-manager";
 
 /**
  * Creates a workflow from multiple and* functions
@@ -579,6 +581,9 @@ export function createWorkflow<
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
       const workflowMemoryManager = new WorkflowMemoryManager(effectiveMemory);
 
+      // ✅ Initialize WorkflowHistoryManager (like Agent system)
+      const historyManager = new WorkflowHistoryManager(id, workflowMemoryManager);
+
       let historyEntry: any;
       let executionId = crypto.randomUUID(); // fallback ID
 
@@ -632,19 +637,74 @@ export function createWorkflow<
         for (const [index, step] of (steps as BaseStep[]).entries()) {
           executionContext.currentStepIndex = index;
 
+          // ✅ NEW: Record step start (persistent step tracking)
+          let stepRecord: WorkflowStepHistoryEntry | null = null;
+          try {
+            stepRecord = await historyManager.recordStepStart(
+              executionId,
+              index,
+              step.type as "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race",
+              step.name || `Step ${index + 1}`,
+              stateManager.state.data,
+              {
+                stepId: step.id,
+                metadata: {
+                  stepConfig: step,
+                  stepIndex: index,
+                },
+              },
+            );
+          } catch (stepError) {
+            console.warn(`Failed to record step start for step ${index}:`, stepError);
+          }
+
           await hooks?.onStepStart?.(stateManager.state);
 
-          const result = await step.execute(
-            stateManager.state.data,
-            convertWorkflowStateToParam(stateManager.state, executionContext),
-          );
+          try {
+            const result = await step.execute(
+              stateManager.state.data,
+              convertWorkflowStateToParam(stateManager.state, executionContext),
+            );
 
-          stateManager.update({
-            data: result,
-            result: result,
-          });
+            stateManager.update({
+              data: result,
+              result: result,
+            });
 
-          await hooks?.onStepEnd?.(stateManager.state);
+            // ✅ NEW: Record step completion (persistent step tracking)
+            if (stepRecord) {
+              try {
+                await historyManager.recordStepEnd(stepRecord.id, {
+                  status: "completed",
+                  output: result,
+                  metadata: {
+                    completedAt: new Date().toISOString(),
+                  },
+                });
+              } catch (stepEndError) {
+                console.warn(`Failed to record step completion for step ${index}:`, stepEndError);
+              }
+            }
+
+            await hooks?.onStepEnd?.(stateManager.state);
+          } catch (stepError) {
+            // ✅ NEW: Record step error (persistent step tracking)
+            if (stepRecord) {
+              try {
+                await historyManager.recordStepEnd(stepRecord.id, {
+                  status: "error",
+                  errorMessage: stepError instanceof Error ? stepError.message : String(stepError),
+                  metadata: {
+                    errorOccurredAt: new Date().toISOString(),
+                    errorDetails: stepError,
+                  },
+                });
+              } catch (stepEndError) {
+                console.warn(`Failed to record step error for step ${index}:`, stepEndError);
+              }
+            }
+            throw stepError; // Re-throw the original error
+          }
         }
 
         const finalState = stateManager.finish();
