@@ -1,0 +1,445 @@
+# Workflows Overview
+
+> **Build powerful, type-safe AI workflows.** Go from a simple chain of functions to a complex, multi-step process that combines your code, AI models, and conditional logic with ease.
+
+## Get Started in 2 Minutes
+
+Let's build a workflow from scratch. We'll start with a simple function, add AI, and then introduce conditional logic. Each step will show the complete, runnable code.
+
+### 1. Create a Basic Workflow
+
+First, create a workflow that takes a name and returns a greeting. This is the simplest form of a workflow: a single step that processes some data.
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+// Define the workflow's shape: its inputs and final output
+const workflow = createWorkflowChain({
+  id: "greeter",
+  name: "Greeter Workflow",
+  // A detailed description for VoltOps or team clarity
+  purpose: "A simple workflow to generate a greeting for a given name.",
+  input: z.object({ name: z.string() }),
+  result: z.object({ greeting: z.string() }),
+})
+  // Add the first step: a function to create the greeting
+  .andThen({
+    name: "create-greeting",
+    execute: async ({ name }) => {
+      return { greeting: `Hello, ${name}!` };
+    },
+  });
+
+// Run it!
+const result = await workflow.run({ name: "World" });
+
+console.log(result.result);
+// Output: { greeting: 'Hello, World!' }
+```
+
+### 2. Add AI Intelligence
+
+Now, let's enhance our workflow. We'll add an AI agent to analyze the sentiment of the greeting message. Notice how we add new imports, define an agent, and chain the `.andAgent()` step.
+
+```typescript
+import { createWorkflowChain, Agent } from "@voltagent/core";
+import { z } from "zod";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+// Define an AI agent to use in our workflow
+const agent = new Agent({
+  name: "Analyzer",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  instructions: "You are a text analyzer.",
+});
+
+const workflow = createWorkflowChain({
+  id: "greeter",
+  name: "Greeter Workflow",
+  input: z.object({ name: z.string() }),
+  // The final result now includes the sentiment
+  result: z.object({
+    greeting: z.string(),
+    sentiment: z.string(),
+  }),
+})
+  .andThen({
+    name: "create-greeting",
+    execute: async ({ name }) => {
+      return { greeting: `Hello, ${name}!` };
+    },
+  })
+  // Add the new AI step to the chain
+  .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
+    schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
+  });
+
+// Run the enhanced workflow
+const result = await workflow.run({ name: "World" });
+
+console.log(result.result);
+// Output: { greeting: 'Hello, World!', sentiment: 'positive' }
+```
+
+### 3. Add Conditional Logic
+
+Finally, let's add a step that only runs if a condition is met. We'll check if the input name is long and add a flag. The `.andWhen()` step is perfect for this. We also update the final `result` schema to include the new optional field.
+
+```typescript
+import { createWorkflowChain, Agent, andThen } from "@voltagent/core";
+import { z } from "zod";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "Analyzer",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  instructions: "You are a text analyzer.",
+});
+
+const workflow = createWorkflowChain({
+  id: "greeter",
+  name: "Greeter Workflow",
+  input: z.object({ name: z.string() }),
+  // The final result now includes an optional 'isLongName' field
+  result: z.object({
+    greeting: z.string(),
+    sentiment: z.string(),
+    isLongName: z.boolean().optional(),
+  }),
+})
+  .andThen({
+    name: "create-greeting",
+    execute: async ({ name }) => {
+      return { greeting: `Hello, ${name}!` };
+    },
+  })
+  .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
+    schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
+  })
+  // Add a conditional step
+  .andWhen({
+    name: "check-name-length",
+    condition: (data) => data.name.length > 10,
+    step: andThen({
+      execute: async (data) => ({ ...data, isLongName: true }),
+    }),
+  });
+
+// Run with a long name to trigger the conditional step
+const longNameResult = await workflow.run({ name: "Alexanderson" });
+console.log(longNameResult.result);
+// Output: { greeting: 'Hello, Alexanderson!', sentiment: 'positive', isLongName: true }
+
+// Run with a short name to skip the conditional step
+const shortNameResult = await workflow.run({ name: "Alex" });
+console.log(shortNameResult.result);
+// Output: { greeting: 'Hello, Alex!', sentiment: 'positive' }
+```
+
+## How It Works
+
+Workflows are built on three core principles:
+
+### 1. A Chain of Steps
+
+You build a workflow by chaining steps together using methods like `.andThen()`, `.andAgent()`, and `.andWhen()`. Each step performs a specific action, like running code, calling an AI, or making a decision.
+
+```typescript
+createWorkflowChain(...)
+  .andThen(...) // Step 1: Run some code
+  .andAgent(...) // Step 2: Call an AI
+  .andWhen(...)  // Step 3: Maybe run another step
+```
+
+### 2. Data Flows Through the Chain
+
+The output of one step becomes the input for the next. The data object is automatically merged, so you can access results from all previous steps.
+
+```mermaid
+graph TD
+    A["Input: { name: 'World' }"] --> B["Step 1: andThen"];
+    B --> C["Data: { name: 'World',<br/>greeting: 'Hello, World!' }"];
+    C --> D["Step 2: andAgent"];
+    D --> E["Data: { name: 'World',<br/>greeting: 'Hello, World!',<br/>sentiment: 'positive' }"];
+    E --> F["Final Result"];
+```
+
+### 3. Automatic Type Safety
+
+As data flows through the workflow, TypeScript types are automatically inferred and updated at each step. This means you get full autocompletion and type-checking, preventing common errors.
+
+```typescript
+import { z } from "zod";
+import { Agent, createWorkflowChain } from "@voltagent/core";
+
+declare const agent: Agent<any>;
+
+createWorkflowChain({
+  input: z.object({ email: z.string() }),
+  result: z.object({ success: z.boolean() }),
+})
+  // `data` is typed as { email: string }
+  .andThen({
+    execute: async (data) => {
+      // data.email is available and type-safe
+      return { ...data, userId: "user-123" };
+    },
+  })
+  // `data` is now typed as { email: string, userId: string }
+  .andAgent(
+    (data) => `Welcome ${data.userId}`, // data.userId is available!
+    agent,
+    { schema: z.object({ welcomeMessage: z.string() }) }
+  )
+  // `data` is now typed as { ..., welcomeMessage: string }
+  .andThen({
+    execute: async (data) => {
+      // data.welcomeMessage is available!
+      return { success: true };
+    },
+  });
+```
+
+## Builder vs. Runnable: `toWorkflow()`
+
+When you use `createWorkflowChain`, you are creating a **builder** object (`WorkflowChain`). Each call to `.andThen()`, `.andAgent()`, etc., modifies this builder and returns it, allowing you to chain methods.
+
+This builder is not the final, runnable workflow itself. It's the blueprint.
+
+There are two ways to run your workflow:
+
+**1. The Shortcut: `.run()`**
+
+Calling `.run()` directly on the chain is a convenient shortcut. Behind the scenes, it first converts your chain into a runnable workflow and then immediately executes it. This is great for most use cases.
+
+```typescript
+// .run() builds and executes in one step
+const result = await workflow.run({ name: "World" });
+```
+
+**2. The Reusable Way: `.toWorkflow()`**
+
+The `WorkflowChain` builder has a `.toWorkflow()` method that converts your blueprint into a permanent, reusable `Workflow` object. You can store this object, pass it to other functions, or run it multiple times without rebuilding the chain.
+
+This is powerful for creating modular and testable code.
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+// 1. Define the chain (the builder)
+const greeterChain = createWorkflowChain({
+  id: "reusable-greeter",
+  name: "Reusable Greeter",
+  input: z.object({ name: z.string() }),
+  result: z.object({ greeting: z.string() }),
+}).andThen({
+  execute: async ({ name }) => ({ greeting: `Hello, ${name}!` }),
+});
+
+// 2. Convert the builder into a runnable, reusable workflow object
+const runnableGreeter = greeterChain.toWorkflow();
+
+// 3. Now you can run it as many times as you want
+const result1 = await runnableGreeter.run({ name: "Alice" });
+console.log(result1.result); // { greeting: 'Hello, Alice!' }
+
+const result2 = await runnableGreeter.run({ name: "Bob" });
+console.log(result2.result); // { greeting: 'Hello, Bob!' }
+```
+
+This distinction allows you to define your workflow logic once and execute it in different contexts or at different times.
+
+### Accessing Execution State
+
+You can pass run-specific data to your workflow, such as a user ID or other contextual information. This state is available in every step, allowing you to build dynamic, user-aware workflows.
+
+**1. Pass State During `.run()`**
+
+Provide the initial state in the second argument of the `.run()` method.
+
+```typescript
+const result = await workflow.run(
+  { name: "State" },
+  {
+    userId: "user-abc-123",
+    conversationId: "conv-xyz-456",
+    userContext: new Map([["plan", "premium"]]),
+  }
+);
+```
+
+**2. Access and Modify State in Steps**
+
+The `execute` function can accept a second argument containing the execution state. You can also modify the `userContext` map, and the changes will be available in subsequent steps.
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+const workflow = createWorkflowChain({
+  id: "state-demo",
+  name: "State Demo",
+  input: z.object({ name: z.string() }),
+  result: z.object({ greeting: z.string(), permissions: z.string() }),
+})
+  .andThen({
+    name: "check-initial-plan",
+    execute: async (data, state) => {
+      const userId = state.userId;
+      const plan = state.userContext.get("plan");
+
+      console.log(`Step 1: User ${userId} is on the ${plan} plan.`);
+
+      // Modify userContext for subsequent steps
+      if (plan === "premium") {
+        state.userContext.set("permissions", "unlimited");
+        console.log(`Step 1: Granted 'unlimited' permissions.`);
+      }
+
+      return data; // Pass the original data through
+    },
+  })
+  .andThen({
+    name: "use-modified-state",
+    execute: async (data, state) => {
+      const permissions = state.userContext.get("permissions");
+      console.log(`Step 2: User now has '${permissions}' permissions.`);
+
+      // Return the final result
+      return {
+        greeting: `Hello, ${data.name}!`,
+        permissions: permissions as string,
+      };
+    },
+  });
+
+// Run it with an initial state
+await workflow.run(
+  { name: "Alex" },
+  {
+    userId: "user-alex-789",
+    userContext: new Map([["plan", "premium"]]),
+  }
+);
+
+// Console Output:
+// Step 1: User user-alex-789 is on the premium plan.
+// Step 1: Granted 'unlimited' permissions.
+// Step 2: User now has 'unlimited' permissions.
+```
+
+### Using State with AI Agents
+
+The execution state is particularly powerful when used with `andAgent`. VoltAgent automatically uses the `userId` and `conversationId` from the state to scope the agent's memory.
+
+This allows the agent to maintain a persistent, contextual conversation with each user, remembering past interactions within the same conversation without any extra configuration.
+
+```typescript
+// ... inside a workflow chain
+.andAgent(
+  (data) => `Based on our previous discussion, what should we do next?`,
+  agent,
+  { schema: z.object({ nextStep: z.string() }) }
+)
+// The `userId` and `conversationId` from the run state are automatically
+// used by the agent's memory to provide context-aware responses.
+```
+
+### Workflow History & Observability
+
+![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
+
+One of the most powerful features of VoltAgent is its built-in observability layer. Every workflow automatically records its execution history, a detailed trace of every step, its inputs, outputs, status, and timing. This history is crucial for debugging and can be visualized in real-time using the [**VoltOps Console**](https://console.voltagent.dev/).
+
+This execution history is stored using a **memory provider**. By default, VoltAgent uses a file-based `LibSQL` database (`memory.db` in your project's root).
+
+The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want to use a different storage solution.
+
+You can use several providers to store workflow history:
+
+- **Built-in Providers** (from `@voltagent/core`):
+  - `LibSQLStorage`: The default provider, which uses a file-based SQLite database (`memory.db`).
+  - `InMemoryStorage`: A non-persistent store, ideal for tests where history does not need to be saved.
+- **External Packages**:
+  - `@voltagent/postgres`: Provides `PostgresStorage` for production environments.
+  - `@voltagent/supabase`: Provides `SupabaseStorage` for Supabase integration.
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+import { PostgresStorage } from "@voltagent/postgres";
+
+// Example of overriding the default history storage for production
+const workflow = createWorkflowChain({
+  id: "production-workflow",
+  name: "Production Workflow",
+  input: z.object({ id: z.string() }),
+  result: z.object({ success: z.boolean() }),
+  // Store workflow run history in a PostgreSQL database
+  memory: new PostgresStorage({ connectionString: process.env.DATABASE_URL }),
+}).andThen(/*... your steps ...*/);
+```
+
+> **Important Distinction:** The workflow's `memory` property is for storing **execution history** (the trace of the run). It is separate from an **Agent's conversational memory**, which is configured on the Agent instance itself and allows it to remember past conversations.
+
+### Registering Workflows for Observability
+
+Storing a workflow's history is the first step. To make that history visible in an observability tool like **VoltOps**, you need to register your workflow with a central `VoltAgent` instance.
+
+This is typically done in your application's main entry point. By passing your workflow objects to the `workflows` property of the `VoltAgent` constructor, you make them discoverable. Once registered, you can:
+
+1.  Run your local application.
+2.  Open the [**VoltOps Console**](https://console.voltagent.dev/).
+3.  Find your workflow listed by its name (e.g., "my-workflow").
+4.  Click on it to see a detailed, visual trace of every run.
+
+```typescript
+import { VoltAgent, createWorkflowChain } from "@voltagent/core";
+// ... other imports
+// ... (define myWorkflow and anotherWorkflow using createWorkflowChain)
+
+// 3. Register them with the VoltAgent instance
+new VoltAgent({
+  agents: { myAgent },
+  workflows: {
+    myWorkflow,
+    anotherWorkflow,
+  },
+});
+
+// After running the workflows, their execution traces will be visible in your VoltOps dashboard.
+```
+
+This registration step is what connects your locally executed workflows to the broader observability layer, allowing you to monitor, debug, and manage them from a central location.
+
+## Core Step Types
+
+| Step           | Purpose                            | Example Use Case                     |
+| -------------- | ---------------------------------- | ------------------------------------ |
+| **`andThen`**  | Execute any TypeScript function    | Data processing, API calls           |
+| **`andAgent`** | Run an AI agent                    | Text analysis, content generation    |
+| **`andWhen`**  | Execute a step conditionally       | Branching logic based on data        |
+| **`andAll`**   | Run steps in parallel (wait all)   | Batch processing, multiple API calls |
+| **`andRace`**  | Run steps in parallel (first wins) | Fallbacks, cache vs. API race        |
+
+## Advanced Features
+
+Workflows include powerful features for production-ready applications:
+
+- **[Memory & Persistence](./advanced/memory.md)**: Automatically save and resume workflow state.
+- **[Events & Monitoring](./advanced/events.md)**: Track workflow execution in real-time.
+- **[Error Handling](./advanced/error-handling.md)**: Implement custom logic for graceful failures.
+- **[Performance](./advanced/performance.md)**: Optimize complex workflows.
+- **Context & User Data**: Pass user-specific information throughout an execution.
+
+## Next Steps
+
+1.  **Explore the Step Types**: Dive deeper into each step, starting with [`andThen`](./steps/and-then.md).
+2.  **Check out Examples**: See [real-world examples](./examples/) of production-ready workflows.
+3.  **Learn Advanced Concepts**: Explore [Memory & Persistence](./advanced/memory.md) to build stateful workflows.

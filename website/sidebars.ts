@@ -49,6 +49,19 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Workflows",
+      items: [
+        "workflows/overview",
+        "workflows/steps/and-then",
+        "workflows/steps/and-agent",
+        "workflows/steps/and-when",
+        "workflows/steps/and-tap",
+        "workflows/steps/and-all",
+        "workflows/steps/and-race",
+      ],
+    },
+    {
+      type: "category",
       label: "Memory",
       items: [
         "agents/memory/overview",

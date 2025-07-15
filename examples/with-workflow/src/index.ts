@@ -118,6 +118,12 @@ const dynamicParallelWorkflow = createWorkflowChain({
       };
     },
   })
+  .andTap({
+    name: "log-data",
+    execute: async (data) => {
+      console.log("Current data:", data);
+    },
+  })
   // Dinamik paralel işleme - Her item için aynı agent'i çalıştır
   .andThen({
     name: "analyze-items-parallel",
