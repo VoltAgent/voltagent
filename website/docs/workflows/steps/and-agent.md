@@ -16,7 +16,6 @@ const workflow = createWorkflowChain({
   input: z.object({ topic: z.string() }),
   result: z.object({ title: z.string(), content: z.string() }),
 }).andAgent((data) => `Write a blog post about: ${data.topic}`, agent, {
-  id: "generate-content",
   schema: z.object({
     title: z.string(),
     content: z.string(),
@@ -94,7 +93,6 @@ const workflow = createWorkflowChain({
   },
   agent,
   {
-    id: "get-answer",
     schema: z.object({
       answer: z.string(),
       confidence: z.number().min(0).max(1),
@@ -127,7 +125,6 @@ const personalizedAgent = createWorkflowChain({
   },
   agent,
   {
-    id: "generate-personalized-response",
     schema: z.object({
       response: z.string(),
     }),
@@ -159,7 +156,6 @@ import { z } from "zod";
   (data) => `Analyze this sales data and provide insights: ${JSON.stringify(data.salesData)}`,
   agent,
   {
-    id: "analyze-sales-data",
     schema: z.object({
       insights: z.array(z.string()),
       recommendations: z.array(z.string()),
@@ -179,7 +175,6 @@ import { z } from "zod";
   (data) => `Create marketing copy for product: ${data.productName}`,
   agent,
   {
-    id: "create-marketing-copy",
     schema: z.object({
       headline: z.string(),
       description: z.string(),
@@ -199,7 +194,6 @@ import { z } from "zod";
   (data) => `Extract key information from this text: ${data.rawText}`,
   agent,
   {
-    id: "extract-key-info",
     schema: z.object({
       entities: z.array(z.object({
         name: z.string(),
@@ -226,7 +220,6 @@ import { z } from "zod";
              Debt: ${data.debt}`,
   agent,
   {
-    id: "make-loan-decision",
     schema: z.object({
       decision: z.enum(['approve', 'reject', 'review']),
       reasoning: z.string(),
@@ -259,7 +252,6 @@ const smartProcessor = createWorkflowChain({
     (data) => `Classify this email: ${data.email}`,
     agent,
     {
-      id: "classify-email",
       schema: z.object({
         category: z.enum(["support", "sales", "billing"]),
         priority: z.enum(["low", "medium", "high"]),
@@ -282,7 +274,6 @@ const smartProcessor = createWorkflowChain({
     (data) => `Generate a ${data.priority} priority response for a ${data.category} email.`,
     agent,
     {
-      id: "generate-response",
       schema: z.object({
         response: z.string(),
       }),
@@ -314,7 +305,6 @@ const workflow = createWorkflowChain({
   result: z.object({ result: z.string(), confidence: z.number().optional() }),
 })
   .andAgent((data) => `Analyze: ${data.input}`, agent, {
-    id: "analyze-input",
     schema: z.object({
       result: z.string(),
       confidence: z.number().optional(),

@@ -41,7 +41,6 @@ export const comprehensiveWorkflow = createWorkflowChain({
     (data) => `Analyze the sentiment of this text: "${data.processedText}"`,
     sentimentAgent,
     {
-      id: "analyze-sentiment",
       schema: z.object({
         sentiment: z.enum(["positive", "negative", "neutral"]),
       }),

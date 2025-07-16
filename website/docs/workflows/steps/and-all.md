@@ -41,7 +41,6 @@ const workflow = createWorkflowChain({
       (data) => `Generate analytics for user ${data.userId}`,
       agent,
       {
-        id: "generate-analytics",
         schema: z.object({
           userAnalytics: z.object({
             activityLevel: z.string(),
@@ -264,7 +263,6 @@ createWorkflowChain({
     }),
     // AI step
     andAgent((data) => `Analyze user trends for ${data.period}`, agent, {
-      id: "analyze-trends",
       schema: z.object({
         insights: z.array(z.string()),
       }),

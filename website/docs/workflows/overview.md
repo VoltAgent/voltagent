@@ -77,7 +77,6 @@ const workflow = createWorkflowChain({
   })
   // Add the new AI step to the chain
   .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
-    id: "analyze-sentiment",
     schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
   });
 
@@ -123,7 +122,6 @@ const workflow = createWorkflowChain({
     },
   })
   .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
-    id: "analyze-sentiment",
     schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
   })
   // Add a conditional step
@@ -204,7 +202,6 @@ createWorkflowChain({
     (data) => `Welcome ${data.userId}`, // data.userId is available!
     agent,
     {
-      id: "generate-welcome-message",
       schema: z.object({ welcomeMessage: z.string() }),
     }
   )
@@ -360,7 +357,6 @@ This allows the agent to maintain a persistent, contextual conversation with eac
   (data) => `Based on our previous discussion, what should we do next?`,
   agent,
   {
-    id: "get-next-step",
     schema: z.object({ nextStep: z.string() }),
   }
 )

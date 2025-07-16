@@ -49,7 +49,6 @@ const workflow = createWorkflowChain({
     }),
     // AI fallback (slowest)
     andAgent((data) => `Generate response for: ${data.query}`, agent, {
-      id: "ai-fallback",
       schema: z.object({
         source: z.literal("ai"),
         result: z.string(),
@@ -180,7 +179,6 @@ const multiProviderSearch = createWorkflowChain({
       },
       agent,
       {
-        id: "ai-search",
         schema: z.object({
           results: z.array(z.string()),
           provider: z.literal("ai"),
@@ -241,15 +239,12 @@ createWorkflowChain({
 }).andRace({
   steps: [
     andAgent((data) => data.prompt, openaiAgent, {
-      id: "openai-agent",
       schema: z.object({ response: z.string(), provider: z.literal("openai") }),
     }),
     andAgent((data) => data.prompt, claudeAgent, {
-      id: "claude-agent",
       schema: z.object({ response: z.string(), provider: z.literal("claude") }),
     }),
     andAgent((data) => data.prompt, geminiAgent, {
-      id: "gemini-agent",
       schema: z.object({ response: z.string(), provider: z.literal("gemini") }),
     }),
   ],

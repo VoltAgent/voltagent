@@ -132,7 +132,6 @@ const roleBasedWorkflow = createWorkflowChain({
     (data) => `Analyze if this request needs escalation: ${data.request}`,
     agent,
     {
-      id: "check-escalation",
       schema: z.object({
         escalated: z.boolean(),
         reasoning: z.string()
@@ -247,7 +246,6 @@ createWorkflowChain({
   result: z.object({ escalateToManager: z.boolean(), urgency: z.string() }),
 })
   .andAgent((data) => `Analyze sentiment of: "${data.feedback}"`, agent, {
-    id: "analyze-sentiment",
     schema: z.object({
       sentiment: z.enum(["positive", "negative", "neutral"]),
       confidence: z.number(),

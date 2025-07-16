@@ -78,7 +78,6 @@ const analysisWorkflow = createWorkflowChain({
     (data) => `Summarize this text in one sentence: "${data.trimmedText}"`,
     agent, // Uses the agent defined above
     {
-      name: "generate-summary",
       schema: z.object({ summary: z.string() }),
     }
   )

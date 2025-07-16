@@ -28,6 +28,7 @@ const workflow = createWorkflowChain({
   result: z.object({ greeting: z.string(), sentiment: z.string() }),
 })
   .andThen({
+    id: "create-greeting",
     execute: async ({ name }) => ({ greeting: `Hello, ${name}!` }),
   })
   .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, analyzerAgent, {
