@@ -441,18 +441,7 @@ This registration step is what connects your locally executed workflows to the b
 | **`andAll`**   | Run steps in parallel (wait all)   | Batch processing, multiple API calls |
 | **`andRace`**  | Run steps in parallel (first wins) | Fallbacks, cache vs. API race        |
 
-## Advanced Features
-
-Workflows include powerful features for production-ready applications:
-
-- **[Memory & Persistence](./advanced/memory.md)**: Automatically save and resume workflow state.
-- **[Events & Monitoring](./advanced/events.md)**: Track workflow execution in real-time.
-- **[Error Handling](./advanced/error-handling.md)**: Implement custom logic for graceful failures.
-- **[Performance](./advanced/performance.md)**: Optimize complex workflows.
-- **Context & User Data**: Pass user-specific information throughout an execution.
-
 ## Next Steps
 
 1.  **Explore the Step Types**: Dive deeper into each step, starting with [`andThen`](./steps/and-then.md).
-2.  **Check out Examples**: See [real-world examples](./examples/) of production-ready workflows.
-3.  **Learn Advanced Concepts**: Explore [Memory & Persistence](./advanced/memory.md) to build stateful workflows.
+2.  **Check out Example**: See [with-workflow](https://github.com/VoltAgent/voltagent/tree/main/examples/with-workflow) example.
