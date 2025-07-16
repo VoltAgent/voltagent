@@ -5,6 +5,8 @@ import { andTap } from "./and-tap";
 describe("andTap", () => {
   it("should always return the original data", async () => {
     const step = andTap<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>({
+      id: "test-tap-step",
+      name: "Test tap step",
       execute: async () => {
         return null;
       },
@@ -17,6 +19,8 @@ describe("andTap", () => {
 
   it("should NEVER throw an error", async () => {
     const step = andTap<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>({
+      id: "test-error-tap",
+      name: "Test error tap",
       execute: async () => {
         throw new Error("test");
       },
@@ -30,6 +34,8 @@ describe("andTap", () => {
   it("should call the execute function", async () => {
     const mockExecute = vi.fn();
     const step = andTap<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>({
+      id: "test-mock-tap",
+      name: "Test mock tap",
       execute: mockExecute,
     });
     await step.execute({} as DangerouslyAllowAny, {} as DangerouslyAllowAny);

@@ -1,10 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { z } from "zod";
 import { createWorkflow } from "./core";
 import { andThen } from "./steps";
+import { LibSQLStorage } from "../memory/libsql";
+import { WorkflowRegistry } from "./registry";
 
 describe("workflow.run", () => {
+  beforeEach(() => {
+    // Clear registry before each test
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
   it("should return the expected result", async () => {
+    // Create workflow with memory
+    const memory = new LibSQLStorage({ url: ":memory:" });
+
     const workflow = createWorkflow(
       {
         id: "test",
@@ -15,8 +26,11 @@ describe("workflow.run", () => {
         result: z.object({
           name: z.string(),
         }),
+        memory, // Add memory
       },
       andThen({
+        id: "step-1-join-name",
+        name: "Join with john",
         execute: async (input) => {
           return {
             name: [input.name, "john"].join(" "),
@@ -24,6 +38,8 @@ describe("workflow.run", () => {
         },
       }),
       andThen({
+        id: "step-2-add-surname",
+        name: "Add surname",
         execute: async (input) => {
           return {
             name: [input.name, "doe"].join(" "),
@@ -31,6 +47,10 @@ describe("workflow.run", () => {
         },
       }),
     );
+
+    // Register workflow to registry
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
 
     const result = await workflow.run({
       name: "Who is",

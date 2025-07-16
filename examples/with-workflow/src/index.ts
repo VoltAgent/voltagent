@@ -42,7 +42,7 @@ const simpleWorkflow = createWorkflowChain({
   // Step 1: `andThen` to prepare the name (trim whitespace).
   // This uses a standard function to prepare data for the next step.
   .andThen({
-    name: "prepare-name",
+    id: "prepare-name",
     execute: async (data) => ({
       name: data.name,
       preparedName: data.name.trim(),
@@ -76,6 +76,7 @@ const intermediateWorkflow = createWorkflowChain({
 })
   // Step 1: `andThen` to analyze the text and count the words.
   .andThen({
+    id: "analyze-text",
     name: "analyze-text",
     execute: async (data) => {
       const wordCount = data.text.trim().split(/\s+/).length;
@@ -89,6 +90,7 @@ const intermediateWorkflow = createWorkflowChain({
   // Step 2: `andWhen` to summarize with AI if the text is long.
   // This step only runs if `isLong` is true and preserves all previous data.
   .andWhen({
+    id: "summarize-if-long",
     name: "summarize-if-long",
     condition: async (data) => data.isLong,
     step: andAgent(
@@ -107,6 +109,7 @@ const intermediateWorkflow = createWorkflowChain({
   // Step 3: `andThen` to format the final output.
   // It creates a user-friendly message based on whether a summary was generated.
   .andThen({
+    id: "format-output",
     name: "format-output",
     execute: async (data) => {
       // data can be either the analyze-text result or the summarize-if-long result
@@ -150,10 +153,12 @@ const advancedWorkflow = createWorkflowChain({
   // Step 2: `andRace` to find the fastest agent to produce a summary.
   // Two AI steps start at the same time; the first to finish wins.
   .andRace({
+    id: "race-summarizers",
     name: "race-summarizers",
     steps: [
       // A fast but less detailed agent
       andThen({
+        id: "fast-summarizer",
         name: "fast-summarizer",
         execute: async (data: { topic: string; content: string }) => {
           const { object } = await writerAgent.generateObject(
@@ -169,6 +174,7 @@ const advancedWorkflow = createWorkflowChain({
       }) as any, // Type assertion to bypass complex type inference
       // A slower but higher-quality agent (simulated)
       andThen({
+        id: "quality-summarizer",
         name: "quality-summarizer",
         execute: async (data: { topic: string; content: string }) => {
           await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate slowness

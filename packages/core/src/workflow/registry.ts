@@ -15,7 +15,7 @@ import type { Memory } from "../memory/types";
 function serializeWorkflowStep(step: any, index: number, workflowId: string): any {
   const baseStep: any = {
     id: step.id,
-    name: step.name || `Step ${index + 1}`,
+    name: step.name || step.id,
     purpose: step.purpose,
     type: step.type,
     stepIndex: index,
@@ -42,7 +42,7 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
       // ✅ Generate unified node_id for agent steps
       agentStep.node_id = createWorkflowStepNodeId("agent", index, workflowId, {
         agentId: step.agent?.id,
-        stepName: step.name || `Step ${index + 1}`,
+        stepName: step.name || step.id,
       });
 
       return agentStep;
@@ -59,7 +59,7 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
 
       // ✅ Generate unified node_id for function steps
       funcStep.node_id = createWorkflowStepNodeId("func", index, workflowId, {
-        stepName: step.name || `Step ${index + 1}`,
+        stepName: step.name || step.id,
       });
 
       return funcStep;
@@ -79,7 +79,7 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
 
       // ✅ Generate unified node_id for conditional steps
       conditionalStep.node_id = createWorkflowStepNodeId("conditional-when", index, workflowId, {
-        stepName: step.name || `Step ${index + 1}`,
+        stepName: step.name || step.id,
       });
 
       return conditionalStep;
@@ -120,7 +120,7 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
         index,
         workflowId,
         {
-          stepName: step.name || `Step ${index + 1}`,
+          stepName: step.name || step.id,
         },
       );
 
@@ -138,7 +138,7 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
         index,
         workflowId,
         {
-          stepName: step.name || `Step ${index + 1}`,
+          stepName: step.name || step.id,
         },
       );
 

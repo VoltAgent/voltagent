@@ -37,8 +37,7 @@ export function convertWorkflowStateToParam<INPUT>(
 export function defaultStepConfig<CONFIG extends InternalWorkflowStepConfig>(config: CONFIG) {
   return {
     ...config,
-    id: config.id ?? uuidv4(),
-    name: config.name ?? "No name provided",
-    purpose: config.purpose ?? "No purpose provided",
+    name: config.name ?? null,
+    purpose: config.purpose ?? null,
   };
 }

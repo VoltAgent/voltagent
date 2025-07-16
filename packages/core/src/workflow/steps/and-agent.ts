@@ -45,7 +45,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
   return {
     type: "agent",
     id: agent.id,
-    name: agent.name ?? null,
+    name: agent.name || agent.id,
     purpose: agent.purpose ?? null,
     agent,
     execute: async (data, state) => {
@@ -68,7 +68,11 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
       const stepFunction = typeof task === "function" ? task.toString() : undefined;
       const taskString = typeof task === "string" ? task : undefined;
 
-      const stepContext = createStepContext(state.workflowContext, "agent", agent.name || "Agent");
+      const stepContext = createStepContext(
+        state.workflowContext,
+        "agent",
+        agent.name || agent.id || "Agent",
+      ); // ✅ FIX: Use agent.id as fallback
       const stepStartEvent = createWorkflowStepStartEvent(
         stepContext,
         state.workflowContext,

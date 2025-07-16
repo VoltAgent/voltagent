@@ -656,7 +656,7 @@ export function createWorkflow<
               executionId,
               index,
               step.type as "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race",
-              step.name || `Step ${index + 1}`,
+              step.name || step.id || `Step ${index + 1}`, // ✅ FIX: Include step.id fallback
               stateManager.state.data,
               {
                 stepId: step.id,

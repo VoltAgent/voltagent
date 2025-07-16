@@ -64,7 +64,7 @@ export function andAll<
       const stepContext = createStepContext(
         state.workflowContext,
         "parallel-all",
-        config.name || "Parallel All",
+        config.name || config.id,
       );
       const stepStartEvent = createWorkflowStepStartEvent(
         stepContext,

@@ -75,7 +75,7 @@ export function andRace<
       const stepContext = createStepContext(
         state.workflowContext,
         "parallel-race",
-        config.name || "Parallel Race",
+        config.name || config.id,
       );
       const stepStartEvent = createWorkflowStepStartEvent(
         stepContext,

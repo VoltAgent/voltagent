@@ -63,7 +63,7 @@ export function andWhen<INPUT, DATA, RESULT>({
       const stepContext = createStepContext(
         state.workflowContext,
         "conditional-when",
-        config.name || "Conditional",
+        config.name || config.id,
       );
       const stepStartEvent = createWorkflowStepStartEvent(
         stepContext,

@@ -48,7 +48,7 @@ export function andThen<INPUT, DATA, RESULT>({
       const stepContext = createStepContext(
         state.workflowContext,
         "func",
-        config.name || "Function",
+        config.name || config.id,
       );
       const stepStartEvent = createWorkflowStepStartEvent(
         stepContext,

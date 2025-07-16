@@ -35,9 +35,9 @@ export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
   /**
    * Unique identifier for the step
-   * @default uuidv4
+   * @required - Must be provided for proper step tracking
    */
-  id?: string;
+  id: string;
   /**
    * Human-readable name for the step
    */

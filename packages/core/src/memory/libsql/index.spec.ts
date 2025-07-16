@@ -1147,7 +1147,7 @@ describe("LibSQLStorage", () => {
           expect(history).toEqual(
             expect.objectContaining({
               id: "workflow-history-1",
-              name: "Test Workflow",
+              workflowName: "Test Workflow",
               workflowId: "workflow-1",
               status: "completed",
               input: { param: "value" },
@@ -1172,7 +1172,7 @@ describe("LibSQLStorage", () => {
             expect.objectContaining({
               id: "workflow-history-1",
               workflowId: "workflow-1",
-              name: "Test Workflow",
+              workflowName: "Test Workflow",
             }),
           );
         });
@@ -1403,7 +1403,7 @@ describe("LibSQLStorage", () => {
           expect(historyWithDetails).toEqual(
             expect.objectContaining({
               id: "workflow-history-1",
-              name: "Test Workflow",
+              workflowName: "Test Workflow",
               steps: expect.any(Array),
               events: expect.any(Array),
             }),
