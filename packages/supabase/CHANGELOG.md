@@ -1,5 +1,20 @@
 # @voltagent/supabase
 
+## 0.1.13
+
+### Patch Changes
+
+- [#371](https://github.com/VoltAgent/voltagent/pull/371) [`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow history support
+
+  This update introduces persistence for workflow history in Supabase, including execution details, steps, and timeline events.
+
+  ### Manual Migration Required
+
+  - **Database Migration Required**: This version introduces new tables (`voltagent_memory_workflow_history`, `voltagent_memory_workflow_steps`, and `voltagent_memory_workflow_timeline_events`) to your Supabase database. After updating, you must run the SQL migration script logged to the console in your Supabase SQL Editor to apply the changes.
+
+- Updated dependencies [[`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945)]:
+  - @voltagent/core@0.1.60
+
 ## 0.1.12
 
 ### Patch Changes

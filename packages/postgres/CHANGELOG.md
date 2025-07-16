@@ -1,5 +1,16 @@
 # @voltagent/postgres
 
+## 0.1.8
+
+### Patch Changes
+
+- [#371](https://github.com/VoltAgent/voltagent/pull/371) [`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow history support to postgres
+
+  This update introduces persistence for workflow history when using a PostgreSQL database. This includes storing workflow execution details, individual steps, and timeline events. Database tables are migrated automatically, so no manual action is required.
+
+- Updated dependencies [[`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945)]:
+  - @voltagent/core@0.1.60
+
 ## 0.1.7
 
 ### Patch Changes
