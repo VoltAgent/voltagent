@@ -7,11 +7,16 @@
 `andAgent` executes AI agents with structured output in your workflow. Give it a prompt and schema, get back typed AI responses.
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 const workflow = createWorkflowChain({
   id: "content-generator",
+  name: "Content Generator",
   input: z.object({ topic: z.string() }),
   result: z.object({ title: z.string(), content: z.string() }),
 }).andAgent((data) => `Write a blog post about: ${data.topic}`, agent, {
+  id: "generate-content",
   schema: z.object({
     title: z.string(),
     content: z.string(),
@@ -61,7 +66,12 @@ const result = await workflow.run({ topic: "AI workflows" });
 Create prompts based on workflow data:
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 const workflow = createWorkflowChain({
+  id: "dynamic-prompt-workflow",
+  name: "Dynamic Prompt Workflow",
   input: z.object({
     userName: z.string(),
     userLevel: z.string(),
@@ -84,6 +94,7 @@ const workflow = createWorkflowChain({
   },
   agent,
   {
+    id: "get-answer",
     schema: z.object({
       answer: z.string(),
       confidence: z.number().min(0).max(1),
@@ -95,7 +106,12 @@ const workflow = createWorkflowChain({
 ## Using State for Context
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 const personalizedAgent = createWorkflowChain({
+  id: "personalized-agent-workflow",
+  name: "Personalized Agent Workflow",
   input: z.object({ request: z.string() }),
   result: z.object({ response: z.string() }),
 }).andAgent(
@@ -111,6 +127,7 @@ const personalizedAgent = createWorkflowChain({
   },
   agent,
   {
+    id: "generate-personalized-response",
     schema: z.object({
       response: z.string(),
     }),
@@ -135,10 +152,14 @@ const result = await personalizedAgent.run(
 ### Data Analysis
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 .andAgent(
   (data) => `Analyze this sales data and provide insights: ${JSON.stringify(data.salesData)}`,
   agent,
   {
+    id: "analyze-sales-data",
     schema: z.object({
       insights: z.array(z.string()),
       recommendations: z.array(z.string()),
@@ -151,10 +172,14 @@ const result = await personalizedAgent.run(
 ### Content Generation
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 .andAgent(
   (data) => `Create marketing copy for product: ${data.productName}`,
   agent,
   {
+    id: "create-marketing-copy",
     schema: z.object({
       headline: z.string(),
       description: z.string(),
@@ -167,10 +192,14 @@ const result = await personalizedAgent.run(
 ### Data Extraction
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 .andAgent(
   (data) => `Extract key information from this text: ${data.rawText}`,
   agent,
   {
+    id: "extract-key-info",
     schema: z.object({
       entities: z.array(z.object({
         name: z.string(),
@@ -187,6 +216,9 @@ const result = await personalizedAgent.run(
 ### Decision Making
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 .andAgent(
   (data) => `Should we approve this loan application?
              Credit Score: ${data.creditScore}
@@ -194,6 +226,7 @@ const result = await personalizedAgent.run(
              Debt: ${data.debt}`,
   agent,
   {
+    id: "make-loan-decision",
     schema: z.object({
       decision: z.enum(['approve', 'reject', 'review']),
       reasoning: z.string(),
@@ -208,7 +241,12 @@ const result = await personalizedAgent.run(
 AI agents work great with other workflow steps:
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 const smartProcessor = createWorkflowChain({
+  id: "smart-processor",
+  name: "Smart Processor",
   input: z.object({ email: z.string() }),
   result: z.object({
     classification: z.string(),
@@ -221,6 +259,7 @@ const smartProcessor = createWorkflowChain({
     (data) => `Classify this email: ${data.email}`,
     agent,
     {
+      id: "classify-email",
       schema: z.object({
         category: z.enum(["support", "sales", "billing"]),
         priority: z.enum(["low", "medium", "high"]),
@@ -230,6 +269,7 @@ const smartProcessor = createWorkflowChain({
   )
   .andThen({
     // Step 2: Process classification
+    id: "process-classification",
     execute: async (data) => {
       return {
         classification: `${data.category} (${data.priority} priority)`,
@@ -242,6 +282,7 @@ const smartProcessor = createWorkflowChain({
     (data) => `Generate a ${data.priority} priority response for a ${data.category} email.`,
     agent,
     {
+      id: "generate-response",
       schema: z.object({
         response: z.string(),
       }),
@@ -249,6 +290,7 @@ const smartProcessor = createWorkflowChain({
   )
   .andThen({
     // Step 4: Final formatting
+    id: "final-formatting",
     execute: async (data) => {
       return {
         classification: data.classification,
@@ -262,26 +304,33 @@ const smartProcessor = createWorkflowChain({
 ## Error Handling
 
 ```typescript
-.andAgent(
-  (data) => `Analyze: ${data.input}`,
-  agent,
-  {
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+const workflow = createWorkflowChain({
+  id: "error-handling-workflow",
+  name: "Error Handling Workflow",
+  input: z.object({ input: z.string() }),
+  result: z.object({ result: z.string(), confidence: z.number().optional() }),
+})
+  .andAgent((data) => `Analyze: ${data.input}`, agent, {
+    id: "analyze-input",
     schema: z.object({
       result: z.string(),
-      confidence: z.number().optional()
-    })
-  }
-)
-.andThen({
-  execute: async (data) => {
-    // Handle low confidence results
-    if (data.confidence && data.confidence < 0.7) {
-      console.warn(`Low confidence result: ${data.confidence}`);
-      return { ...data, needsReview: true };
-    }
-    return data;
-  }
-})
+      confidence: z.number().optional(),
+    }),
+  })
+  .andThen({
+    id: "handle-low-confidence",
+    execute: async (data) => {
+      // Handle low confidence results
+      if (data.confidence && data.confidence < 0.7) {
+        console.warn(`Low confidence result: ${data.confidence}`);
+        return { ...data, needsReview: true };
+      }
+      return data;
+    },
+  });
 ```
 
 ## Next Steps

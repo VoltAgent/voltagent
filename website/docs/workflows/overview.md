@@ -28,7 +28,7 @@ const workflow = createWorkflowChain({
 })
   // Add the first step: a function to create the greeting
   .andThen({
-    name: "create-greeting",
+    id: "create-greeting",
     execute: async ({ name }) => {
       return { greeting: `Hello, ${name}!` };
     },
@@ -70,13 +70,14 @@ const workflow = createWorkflowChain({
   }),
 })
   .andThen({
-    name: "create-greeting",
+    id: "create-greeting",
     execute: async ({ name }) => {
       return { greeting: `Hello, ${name}!` };
     },
   })
   // Add the new AI step to the chain
   .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
+    id: "analyze-sentiment",
     schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
   });
 
@@ -116,19 +117,21 @@ const workflow = createWorkflowChain({
   }),
 })
   .andThen({
-    name: "create-greeting",
+    id: "create-greeting",
     execute: async ({ name }) => {
       return { greeting: `Hello, ${name}!` };
     },
   })
   .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
+    id: "analyze-sentiment",
     schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
   })
   // Add a conditional step
   .andWhen({
-    name: "check-name-length",
+    id: "check-name-length",
     condition: (data) => data.name.length > 10,
     step: andThen({
+      id: "set-long-name-flag",
       execute: async (data) => ({ ...data, isLongName: true }),
     }),
   });
@@ -183,11 +186,14 @@ import { Agent, createWorkflowChain } from "@voltagent/core";
 declare const agent: Agent<any>;
 
 createWorkflowChain({
+  id: "type-safe-workflow",
+  name: "Type-Safe Workflow",
   input: z.object({ email: z.string() }),
   result: z.object({ success: z.boolean() }),
 })
   // `data` is typed as { email: string }
   .andThen({
+    id: "add-user-id",
     execute: async (data) => {
       // data.email is available and type-safe
       return { ...data, userId: "user-123" };
@@ -197,10 +203,14 @@ createWorkflowChain({
   .andAgent(
     (data) => `Welcome ${data.userId}`, // data.userId is available!
     agent,
-    { schema: z.object({ welcomeMessage: z.string() }) }
+    {
+      id: "generate-welcome-message",
+      schema: z.object({ welcomeMessage: z.string() }),
+    }
   )
   // `data` is now typed as { ..., welcomeMessage: string }
   .andThen({
+    id: "finalize",
     execute: async (data) => {
       // data.welcomeMessage is available!
       return { success: true };
@@ -242,6 +252,7 @@ const greeterChain = createWorkflowChain({
   input: z.object({ name: z.string() }),
   result: z.object({ greeting: z.string() }),
 }).andThen({
+  id: "create-greeting",
   execute: async ({ name }) => ({ greeting: `Hello, ${name}!` }),
 });
 
@@ -292,7 +303,7 @@ const workflow = createWorkflowChain({
   result: z.object({ greeting: z.string(), permissions: z.string() }),
 })
   .andThen({
-    name: "check-initial-plan",
+    id: "check-initial-plan",
     execute: async (data, state) => {
       const userId = state.userId;
       const plan = state.userContext.get("plan");
@@ -309,7 +320,7 @@ const workflow = createWorkflowChain({
     },
   })
   .andThen({
-    name: "use-modified-state",
+    id: "use-modified-state",
     execute: async (data, state) => {
       const permissions = state.userContext.get("permissions");
       console.log(`Step 2: User now has '${permissions}' permissions.`);
@@ -348,7 +359,10 @@ This allows the agent to maintain a persistent, contextual conversation with eac
 .andAgent(
   (data) => `Based on our previous discussion, what should we do next?`,
   agent,
-  { schema: z.object({ nextStep: z.string() }) }
+  {
+    id: "get-next-step",
+    schema: z.object({ nextStep: z.string() }),
+  }
 )
 // The `userId` and `conversationId` from the run state are automatically
 // used by the agent's memory to provide context-aware responses.

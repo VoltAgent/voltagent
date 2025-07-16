@@ -21,7 +21,7 @@ const workflow = createWorkflowChain({
   result: z.object({ status: z.string() }),
 })
   .andThen({
-    name: "fetch-user",
+    id: "fetch-user",
     execute: async ({ userId }) => {
       // In a real app, you'd fetch user data
       return { userId, name: "Alex" };
@@ -29,13 +29,13 @@ const workflow = createWorkflowChain({
   })
   // Tap into the flow to log the user's name
   .andTap({
-    name: "log-user-name",
+    id: "log-user-name",
     execute: (data) => {
       console.log(`Processing user: ${data.name}`);
     },
   })
   .andThen({
-    name: "finalize-processing",
+    id: "finalize-processing",
     execute: (data) => {
       // The data is unchanged by andTap.
       // `data` here is { userId: string, name: string }
@@ -66,10 +66,17 @@ console.log(result.result);
 `andTap` is perfect for inspecting the state of your data at any point in a complex workflow without adding `console.log` statements inside your business logic.
 
 ```typescript
-createWorkflowChain(...)
-  .andThen({ /* ... some logic ... */ })
+import { createWorkflowChain, andTap } from "@voltagent/core";
+
+createWorkflowChain({
+  id: "debug-workflow",
+  name: "Debug Workflow",
+  input: z.object({}),
+  result: z.object({}),
+})
+  .andThen({ id: "step1", /* ... some logic ... */ })
   .andTap({
-    name: "debug-after-step1",
+    id: "debug-after-step1",
     execute: (data) => console.log("After step 1:", data)
   })
   .andAgent(...)
@@ -80,16 +87,23 @@ createWorkflowChain(...)
 Send events to your analytics platform without cluttering your core workflow steps. This separation of concerns makes your code cleaner.
 
 ```typescript
-.andTap({
-  name: "track-user-action",
+import { createWorkflowChain, andTap } from "@voltagent/core";
+
+createWorkflowChain({
+  id: "analytics-workflow",
+  name: "Analytics Workflow",
+  input: z.object({}),
+  result: z.object({}),
+}).andTap({
+  id: "track-user-action",
   execute: async (data, state) => {
     await analytics.track("Workflow Step Completed", {
       userId: state.userId,
       workflowId: state.workflowId,
-      ...data
+      ...data,
     });
-  }
-})
+  },
+});
 ```
 
 ### External Notifications
@@ -97,13 +111,20 @@ Send events to your analytics platform without cluttering your core workflow ste
 Send a non-critical notification, like a Slack message, that shouldn't stop the workflow if it fails.
 
 ```typescript
-.andTap({
-  name: "notify-slack-channel",
+import { createWorkflowChain, andTap } from "@voltagent/core";
+
+createWorkflowChain({
+  id: "notification-workflow",
+  name: "Notification Workflow",
+  input: z.object({ id: z.string() }),
+  result: z.object({}),
+}).andTap({
+  id: "notify-slack-channel",
   execute: async (data) => {
     // This might fail, but it won't stop the workflow.
     await notifySlack(`Processing item #${data.id}`);
-  }
-})
+  },
+});
 ```
 
 ## Key Characteristics vs. `andThen`

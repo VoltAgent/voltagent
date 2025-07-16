@@ -7,11 +7,16 @@
 `andThen` executes async functions and transforms data in your workflow. It's the basic building block for any custom logic.
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 const workflow = createWorkflowChain({
   id: "data-processor",
+  name: "Data Processor",
   input: z.object({ text: z.string() }),
   result: z.object({ processed: z.string(), wordCount: z.number() }),
 }).andThen({
+  id: "process-text",
   execute: async (data, state) => {
     return {
       processed: data.text.toUpperCase(),
@@ -41,11 +46,17 @@ const result = await workflow.run({ text: "hello world" });
 Each step receives output from the previous step:
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 const workflow = createWorkflowChain({
+  id: "data-flow-example",
+  name: "Data Flow Example",
   input: z.object({ userId: z.string() }),
   result: z.object({ user: any, posts: any[] })
 })
 .andThen({
+  id: "fetch-user",
   // Step 1: Fetch user
   execute: async (data) => {
     const user = await fetchUser(data.userId);
@@ -53,6 +64,7 @@ const workflow = createWorkflowChain({
   }
 })
 .andThen({
+  id: "fetch-posts",
   // Step 2: Fetch user's posts (receives { user } from step 1)
   execute: async (data) => {
     const posts = await fetchPosts(data.user.id);
@@ -64,10 +76,16 @@ const workflow = createWorkflowChain({
 ## Using State for User Context
 
 ```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
 const personalizedWorkflow = createWorkflowChain({
+  id: "personalized-workflow",
+  name: "Personalized Workflow",
   input: z.object({ message: z.string() }),
   result: z.object({ response: z.string() }),
 }).andThen({
+  id: "personalize-response",
   execute: async (data, state) => {
     // Access user information
     const userRole = state.userContext?.get("role") || "guest";
@@ -102,33 +120,60 @@ const result = await personalizedWorkflow.run(
 ### API Calls
 
 ```typescript
-.andThen({
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+createWorkflowChain({
+  id: "api-call-workflow",
+  name: "API Call Workflow",
+  input: z.object({ userId: z.string() }),
+  result: z.object({ user: any }),
+}).andThen({
+  id: "fetch-user-api",
   execute: async (data) => {
     const response = await fetch(`/api/users/${data.userId}`);
     const user = await response.json();
     return { ...data, user };
-  }
-})
+  },
+});
 ```
 
 ### Data Transformation
 
 ```typescript
-.andThen({
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+createWorkflowChain({
+  id: "data-transformation-workflow",
+  name: "Data Transformation Workflow",
+  input: z.object({ email: z.string() }),
+  result: z.object({ processedAt: z.string(), isValid: z.boolean() }),
+}).andThen({
+  id: "transform-data",
   execute: async (data) => {
     return {
       ...data,
       processedAt: new Date().toISOString(),
-      isValid: data.email.includes('@')
+      isValid: data.email.includes("@"),
     };
-  }
-})
+  },
+});
 ```
 
 ### Error Handling
 
 ```typescript
-.andThen({
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+createWorkflowChain({
+  id: "error-handling-workflow",
+  name: "Error Handling Workflow",
+  input: z.object({}),
+  result: z.object({ result: any }),
+}).andThen({
+  id: "risky-operation",
   execute: async (data) => {
     try {
       const result = await riskyOperation(data);
@@ -137,8 +182,8 @@ const result = await personalizedWorkflow.run(
       console.warn("Operation failed:", error);
       return { ...data, result: null };
     }
-  }
-})
+  },
+});
 ```
 
 ## Next Steps

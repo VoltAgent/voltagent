@@ -31,7 +31,7 @@ export const comprehensiveWorkflow = createWorkflowChain({
 })
   // Step 1: andThen - Basic data transformation
   .andThen({
-    name: "preprocess-text",
+    id: "preprocess-text",
     execute: async (data) => ({
       processedText: data.text.trim().toLowerCase(),
     }),
@@ -41,7 +41,7 @@ export const comprehensiveWorkflow = createWorkflowChain({
     (data) => `Analyze the sentiment of this text: "${data.processedText}"`,
     sentimentAgent,
     {
-      name: "analyze-sentiment",
+      id: "analyze-sentiment",
       schema: z.object({
         sentiment: z.enum(["positive", "negative", "neutral"]),
       }),
@@ -49,17 +49,17 @@ export const comprehensiveWorkflow = createWorkflowChain({
   )
   // Step 3: andAll - Run multiple operations in parallel
   .andAll({
-    name: "run-calculations",
+    id: "run-calculations",
     steps: [
       andThen({
-        name: "word-count",
+        id: "word-count",
         execute: async (data) => ({
           operation: "word_count",
           value: data.processedText.split(" ").length,
         }),
       }),
       andThen({
-        name: "char-count",
+        id: "char-count",
         execute: async (data) => ({
           operation: "char_count",
           value: data.processedText.length,
@@ -68,24 +68,24 @@ export const comprehensiveWorkflow = createWorkflowChain({
     ],
   })
   .andThen({
-    name: "format-calculations",
+    id: "format-calculations",
     execute: async (data: any) => ({
       calculations: data,
     }),
   })
   // Step 4: andRace - Get the result from the fastest source
   .andRace({
-    name: "compete-services",
+    id: "compete-services",
     steps: [
       andThen({
-        name: "fast-service",
+        id: "fast-service",
         execute: async () => {
           await new Promise((resolve) => setTimeout(resolve, 50));
           return { raceWinner: "fast-service" };
         },
       }),
       andThen({
-        name: "slow-service",
+        id: "slow-service",
         execute: async () => {
           await new Promise((resolve) => setTimeout(resolve, 100));
           return { raceWinner: "slow-service" };
@@ -95,9 +95,10 @@ export const comprehensiveWorkflow = createWorkflowChain({
   })
   // Step 5: andWhen - Conditional execution
   .andWhen({
-    name: "check-for-negative-sentiment",
+    id: "check-for-negative-sentiment",
     condition: async (data) => data.sentiment === "negative",
     step: andThen({
+      id: "add-warning",
       execute: async (data) => ({
         ...data,
         warning: "Negative sentiment detected!",
