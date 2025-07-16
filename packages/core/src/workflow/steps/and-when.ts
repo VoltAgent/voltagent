@@ -47,11 +47,12 @@ export function andWhen<INPUT, DATA, RESULT>({
     type: "conditional-when",
     condition,
     originalCondition: condition, // ✅ Store original condition for serialization
-    execute: async (data, state) => {
+    execute: async (context) => {
+      const { data, state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
-        if (await condition(data, state)) {
-          return await finalStep.execute(data, state);
+        if (await condition(context)) {
+          return await finalStep.execute(context);
         }
         return data;
       }
@@ -82,17 +83,20 @@ export function andWhen<INPUT, DATA, RESULT>({
       }
 
       try {
-        const conditionMet = await condition(data, state);
+        const conditionMet = await condition(context);
         let result: any;
 
         if (conditionMet) {
           // ✅ FIXED: Execute nested step WITHOUT workflow context to prevent duplicate events
           // Wrapper conditional step already publishes the appropriate events
-          const nestedState = {
-            ...state,
-            workflowContext: undefined, // ❌ Remove workflow context to prevent nested event publishing
+          const nestedContext = {
+            ...context,
+            state: {
+              ...state,
+              workflowContext: undefined, // ❌ Remove workflow context to prevent nested event publishing
+            },
           };
-          result = await finalStep.execute(data, nestedState);
+          result = await finalStep.execute(nestedContext);
         } else {
           // Condition not met, return original data
           result = data;

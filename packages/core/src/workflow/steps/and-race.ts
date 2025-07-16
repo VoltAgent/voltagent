@@ -64,10 +64,11 @@ export function andRace<
     ...defaultStepConfig(config),
     type: "parallel-race",
     steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
-    execute: async (data, state) => {
+    execute: async (context) => {
+      const { data, state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
-        const promises = steps.map((step) => matchStep(step).execute(data, state));
+        const promises = steps.map((step) => matchStep(step).execute(context));
         return (await Promise.race(promises)) as INFERRED_RESULT;
       }
 
@@ -127,7 +128,7 @@ export function andRace<
 
           // Return promise with index and timing to track winner and execution times
           return matchStep(step)
-            .execute(data, subState)
+            .execute({ ...context, state: subState })
             .then((result) => ({
               result,
               index,

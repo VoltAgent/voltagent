@@ -14,13 +14,13 @@ export function andTap<INPUT, DATA, RESULT>({
   return {
     ...defaultStepConfig(config),
     type: "tap",
-    execute: async (data, context) => {
+    execute: async (context) => {
       try {
-        await execute(data, context);
+        await execute(context);
       } catch (error) {
         devLogger.error("Error executing tap step", error);
       }
-      return data as DATA;
+      return context.data as DATA;
     },
   } satisfies WorkflowStepTap<INPUT, DATA, RESULT>;
 }

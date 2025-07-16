@@ -30,13 +30,13 @@ const workflow = createWorkflowChain({
   // Tap into the flow to log the user's name
   .andTap({
     id: "log-user-name",
-    execute: (data) => {
+    execute: ({ data }) => {
       console.log(`Processing user: ${data.name}`);
     },
   })
   .andThen({
     id: "finalize-processing",
-    execute: (data) => {
+    execute: ({ data }) => {
       // The data is unchanged by andTap.
       // `data` here is { userId: string, name: string }
       return { status: `Completed for ${data.name}` };
@@ -77,7 +77,7 @@ createWorkflowChain({
   .andThen({ id: "step1", /* ... some logic ... */ })
   .andTap({
     id: "debug-after-step1",
-    execute: (data) => console.log("After step 1:", data)
+    execute: ({ data }) => console.log("After step 1:", data)
   })
   .andAgent(...)
 ```
@@ -96,7 +96,7 @@ createWorkflowChain({
   result: z.object({}),
 }).andTap({
   id: "track-user-action",
-  execute: async (data, state) => {
+  execute: async ({ data, state }) => {
     await analytics.track("Workflow Step Completed", {
       userId: state.userId,
       workflowId: state.workflowId,
@@ -120,7 +120,7 @@ createWorkflowChain({
   result: z.object({}),
 }).andTap({
   id: "notify-slack-channel",
-  execute: async (data) => {
+  execute: async ({ data }) => {
     // This might fail, but it won't stop the workflow.
     await notifySlack(`Processing item #${data.id}`);
   },

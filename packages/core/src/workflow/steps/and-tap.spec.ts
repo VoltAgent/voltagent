@@ -13,7 +13,11 @@ describe("andTap", () => {
     });
 
     expect(
-      await step.execute({ foobar: "foobar" } as DangerouslyAllowAny, {} as DangerouslyAllowAny),
+      await step.execute({
+        data: { foobar: "foobar" } as DangerouslyAllowAny,
+        state: {} as DangerouslyAllowAny,
+        getStepData: () => undefined,
+      }),
     ).toEqual({ foobar: "foobar" });
   });
 
@@ -27,7 +31,11 @@ describe("andTap", () => {
     });
 
     expect(async () => {
-      await step.execute({} as DangerouslyAllowAny, {} as DangerouslyAllowAny);
+      await step.execute({
+        data: {} as DangerouslyAllowAny,
+        state: {} as DangerouslyAllowAny,
+        getStepData: () => undefined,
+      });
     }).not.toThrow();
   });
 
@@ -38,7 +46,11 @@ describe("andTap", () => {
       name: "Test mock tap",
       execute: mockExecute,
     });
-    await step.execute({} as DangerouslyAllowAny, {} as DangerouslyAllowAny);
+    await step.execute({
+      data: {} as DangerouslyAllowAny,
+      state: {} as DangerouslyAllowAny,
+      getStepData: () => undefined,
+    });
     expect(mockExecute).toHaveBeenCalledOnce();
   });
 });

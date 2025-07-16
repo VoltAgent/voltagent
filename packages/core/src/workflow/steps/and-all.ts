@@ -53,10 +53,11 @@ export function andAll<
     ...defaultStepConfig(config),
     type: "parallel-all",
     steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
-    execute: async (data, state) => {
+    execute: async (context) => {
+      const { data, state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
-        const promises = steps.map((step) => matchStep(step).execute(data, state));
+        const promises = steps.map((step) => matchStep(step).execute(context));
         return (await Promise.all(promises)) as INFERRED_RESULT;
       }
 
@@ -95,7 +96,7 @@ export function andAll<
                 }
               : undefined,
           };
-          return matchStep(step).execute(data, subState);
+          return matchStep(step).execute({ ...context, state: subState });
         });
 
         const results = (await Promise.all(promises)) as INFERRED_RESULT;

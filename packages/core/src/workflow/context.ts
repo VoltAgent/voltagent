@@ -51,6 +51,11 @@ export interface WorkflowExecutionContext {
    * Can be workflow-specific or global
    */
   memory?: Memory;
+  /**
+   * Map of executed step data (input and output) by step ID
+   * Used for accessing previous step results
+   */
+  stepData: Map<string, { input: any; output: any }>;
 }
 
 /**
