@@ -556,7 +556,7 @@ export const WorkflowExecutionRequestSchema = z
       .object({
         userId: z.string().optional(),
         conversationId: z.string().optional(),
-        executionId: z.string().optional(),
+        userContext: z.any().optional(),
       })
       .optional()
       .openapi({ description: "Optional execution options" }),

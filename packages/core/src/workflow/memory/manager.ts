@@ -25,7 +25,6 @@ export class WorkflowMemoryManager {
     _exporter?: VoltAgentExporter,
   ) {
     this._exporter = _exporter;
-    devLogger.info("[WorkflowMemoryManager] Initialized with storage backend");
   }
 
   /**
@@ -33,7 +32,6 @@ export class WorkflowMemoryManager {
    */
   setExporter(exporter: VoltAgentExporter): void {
     this._exporter = exporter;
-    devLogger.info("[WorkflowMemoryManager] VoltAgent exporter configured");
   }
 
   /**

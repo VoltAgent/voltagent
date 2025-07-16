@@ -272,6 +272,98 @@ export class WorkflowRegistry extends EventEmitter {
   }
 
   /**
+   * Create a new workflow execution and emit historyCreated event
+   */
+  public async createWorkflowExecution(
+    workflowId: string,
+    workflowName: string,
+    input: unknown,
+    options: {
+      userId?: string;
+      conversationId?: string;
+      userContext?: Map<string | symbol, unknown>;
+      metadata?: Record<string, unknown>;
+    } = {},
+  ): Promise<WorkflowHistoryEntry | null> {
+    try {
+      const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
+      if (!workflowMemoryManager) {
+        devLogger.error(
+          `[WorkflowRegistry] No memory manager available for workflow: ${workflowId}`,
+        );
+        return null;
+      }
+
+      // Create execution through memory manager
+      const historyEntry = await workflowMemoryManager.createExecution(
+        workflowId,
+        workflowName,
+        input,
+        {
+          userId: options.userId,
+          conversationId: options.conversationId,
+          userContext: options.userContext,
+          metadata: options.metadata,
+        },
+      );
+
+      // Emit historyCreated event for WebSocket notifications
+      this.emit("historyCreated", historyEntry);
+
+      devLogger.debug(
+        `[WorkflowRegistry] Workflow execution created and historyCreated event emitted: ${historyEntry.id}`,
+      );
+
+      return historyEntry;
+    } catch (error) {
+      devLogger.error(
+        `[WorkflowRegistry] Failed to create workflow execution for ${workflowId}:`,
+        error,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Update a workflow execution and emit historyUpdate event
+   */
+  public async updateWorkflowExecution(
+    workflowId: string,
+    executionId: string,
+    updates: Partial<WorkflowHistoryEntry>,
+  ): Promise<WorkflowHistoryEntry | null> {
+    try {
+      const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
+      if (!workflowMemoryManager) {
+        devLogger.error(
+          `[WorkflowRegistry] No memory manager available for workflow: ${workflowId}`,
+        );
+        return null;
+      }
+
+      // Update execution through memory manager
+      const updatedEntry = await workflowMemoryManager.updateExecution(executionId, updates);
+
+      if (updatedEntry) {
+        // Emit historyUpdate event for WebSocket notifications
+        this.emit("historyUpdate", executionId, updatedEntry);
+
+        devLogger.debug(
+          `[WorkflowRegistry] Workflow execution updated and historyUpdate event emitted: ${executionId}`,
+        );
+      }
+
+      return updatedEntry;
+    } catch (error) {
+      devLogger.error(
+        `[WorkflowRegistry] Failed to update workflow execution ${executionId}:`,
+        error,
+      );
+      return null;
+    }
+  }
+
+  /**
    * Register a workflow with the registry
    */
   public registerWorkflow(workflow: Workflow<any, any>): void {

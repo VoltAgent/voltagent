@@ -13,7 +13,6 @@ import type {
   WorkflowStepHistoryEntry,
 } from "./types";
 import type { WorkflowExecutionContext } from "./context";
-import { WorkflowMemoryManager } from "./memory/manager";
 import {
   createWorkflowErrorEvent,
   createWorkflowStartEvent,
@@ -22,6 +21,8 @@ import {
 } from "./event-utils";
 import { LibSQLStorage } from "../memory/libsql";
 import { WorkflowHistoryManager } from "./history-manager";
+import { devLogger } from "@voltagent/internal/dev";
+import { WorkflowRegistry } from "./registry";
 
 /**
  * Creates a workflow from multiple and* functions
@@ -579,26 +580,37 @@ export function createWorkflow<
     // ✅ Always expose memory for registry access
     memory: effectiveMemory,
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
-      const workflowMemoryManager = new WorkflowMemoryManager(effectiveMemory);
-
-      // ✅ Initialize WorkflowHistoryManager (like Agent system)
-      const historyManager = new WorkflowHistoryManager(id, workflowMemoryManager);
+      const workflowRegistry = WorkflowRegistry.getInstance();
 
       let historyEntry: any;
       let executionId = crypto.randomUUID(); // fallback ID
 
       try {
-        // Create execution with workflow-specific memory
-        historyEntry = await workflowMemoryManager.createExecution(id, name, input, {
+        historyEntry = await workflowRegistry.createWorkflowExecution(id, name, input, {
           userId: options?.userId,
           conversationId: options?.conversationId,
           userContext: options?.userContext,
         });
-        executionId = historyEntry.id;
-        console.log(`✅ [Workflow ${id}] Using workflow memory storage`);
+
+        if (historyEntry) {
+          executionId = historyEntry.id;
+        } else {
+          devLogger.warn(
+            "[Workflow] Failed to create execution via WorkflowRegistry, using fallback",
+          );
+        }
       } catch (memoryError) {
-        console.warn("Failed to create execution with workflow memory:", memoryError);
+        devLogger.error("Failed to create execution with WorkflowRegistry:", memoryError);
       }
+
+      // Get WorkflowMemoryManager for local operations
+      const workflowMemoryManager = workflowRegistry.getWorkflowMemoryManager(id);
+      if (!workflowMemoryManager) {
+        throw new Error(`No memory manager available for workflow: ${id}`);
+      }
+
+      // ✅ Initialize WorkflowHistoryManager (like Agent system)
+      const historyManager = new WorkflowHistoryManager(id, workflowMemoryManager);
 
       // Initialize workflow execution context with the correct execution ID
       const executionContext: WorkflowExecutionContext = {
@@ -724,7 +736,7 @@ export function createWorkflow<
 
         if (historyEntry) {
           try {
-            await workflowMemoryManager.updateExecution(executionContext.executionId, {
+            await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
               status: "completed",
               endTime: new Date(),
               output: finalState.result,
@@ -759,7 +771,7 @@ export function createWorkflow<
 
         if (historyEntry) {
           try {
-            await workflowMemoryManager.updateExecution(executionContext.executionId, {
+            await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
               status: "error",
               endTime: new Date(),
               output: error,
