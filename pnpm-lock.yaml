@@ -1708,25 +1708,6 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
-  packages/provider:
-    dependencies:
-      '@voltagent/core':
-        specifier: workspace:^0.1.36
-        version: link:../core
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.3
-        version: 24.0.3
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.8.3)
-      typescript:
-        specifier: ^5.0.4
-        version: 5.8.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.0.3)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-
   packages/sdk:
     dependencies:
       '@voltagent/core':
@@ -9788,7 +9769,7 @@ packages:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.3(@types/node@20.17.30)(@vitest/ui@1.6.1)(jsdom@22.1.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -9854,7 +9835,7 @@ packages:
       '@vitest/spy': 3.2.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 5.4.19(@types/node@20.19.0)
+      vite: 5.4.19(@types/node@18.16.9)
     dev: true
 
   /@vitest/mocker@3.2.4(vite@6.3.3):
