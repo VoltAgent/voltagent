@@ -31,18 +31,18 @@ describe("workflow.run", () => {
       andThen({
         id: "step-1-join-name",
         name: "Join with john",
-        execute: async (input) => {
+        execute: async ({ data }) => {
           return {
-            name: [input.name, "john"].join(" "),
+            name: [data.name, "john"].join(" "),
           };
         },
       }),
       andThen({
         id: "step-2-add-surname",
         name: "Add surname",
-        execute: async (input) => {
+        execute: async ({ data }) => {
           return {
-            name: [input.name, "doe"].join(" "),
+            name: [data.name, "doe"].join(" "),
           };
         },
       }),

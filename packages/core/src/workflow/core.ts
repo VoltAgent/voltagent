@@ -2,7 +2,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
 import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
-import { convertWorkflowStateToParam } from "./internal/utils";
+import { convertWorkflowStateToParam, createStepExecutionContext } from "./internal/utils";
 import type { WorkflowStep } from "./steps";
 import type {
   Workflow,
@@ -626,6 +626,8 @@ export function createWorkflow<
         historyEntry: historyEntry,
         // Store effective memory for use in steps if needed
         memory: effectiveMemory,
+        // Initialize step data map for tracking inputs/outputs
+        stepData: new Map(),
       };
 
       // Workflow start event
@@ -672,11 +674,26 @@ export function createWorkflow<
 
           await hooks?.onStepStart?.(stateManager.state);
 
+          // Store step input data before execution
+          executionContext.stepData.set(step.id, {
+            input: stateManager.state.data,
+            output: null,
+          });
+
           try {
-            const result = await step.execute(
+            // Create execution context for the step
+            const stepContext = createStepExecutionContext(
               stateManager.state.data,
               convertWorkflowStateToParam(stateManager.state, executionContext),
+              executionContext,
             );
+            const result = await step.execute(stepContext);
+
+            // Update step output data after successful execution
+            const stepData = executionContext.stepData.get(step.id);
+            if (stepData) {
+              stepData.output = result;
+            }
 
             stateManager.update({
               data: result,

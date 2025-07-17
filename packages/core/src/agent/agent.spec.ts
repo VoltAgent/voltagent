@@ -1,3 +1,4 @@
+import { createAsyncIterableStream } from "@voltagent/internal/utils";
 import type { Mock, Mocked } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -5,7 +6,6 @@ import { AgentEventEmitter } from "../events";
 import type { Memory, MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
 import { createTool } from "../tool";
-import { createAsyncIterableStream } from "../utils/async-iterable-stream";
 import { Agent } from "./index";
 import type {
   BaseMessage,
@@ -24,7 +24,6 @@ import type { NewTimelineEvent } from "../events/types";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
-import { streamEventForwarder } from "../utils/streams/stream-event-forwarder";
 import { HistoryManager } from "./history";
 import { createHooks } from "./hooks";
 import type { AgentStatus, OperationContext, ToolExecutionContext } from "./types";

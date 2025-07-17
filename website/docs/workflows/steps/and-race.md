@@ -24,7 +24,7 @@ const workflow = createWorkflowChain({
     // Check cache (fast)
     andThen({
       id: "check-cache",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         await new Promise((resolve) => setTimeout(resolve, 100)); // 100ms
         const cached = await getFromCache(data.query);
         return {
@@ -37,7 +37,7 @@ const workflow = createWorkflowChain({
     // Query database (slower)
     andThen({
       id: "query-db",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms
         const dbResult = await queryDatabase(data.query);
         return {
@@ -48,7 +48,7 @@ const workflow = createWorkflowChain({
       },
     }),
     // AI fallback (slowest)
-    andAgent((data) => `Generate response for: ${data.query}`, agent, {
+    andAgent(({ data }) => `Generate response for: ${data.query}`, agent, {
       schema: z.object({
         source: z.literal("ai"),
         result: z.string(),
@@ -95,7 +95,7 @@ const redundantAPIWorkflow = createWorkflowChain({
     // Primary API
     andThen({
       id: "call-primary-api",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const userData = await fetch(`https://api1.example.com/users/${data.userId}`);
         return {
           userData: await userData.json(),
@@ -106,7 +106,7 @@ const redundantAPIWorkflow = createWorkflowChain({
     // Backup API
     andThen({
       id: "call-backup-api",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const userData = await fetch(`https://api2.example.com/users/${data.userId}`);
         return {
           userData: await userData.json(),
@@ -117,7 +117,7 @@ const redundantAPIWorkflow = createWorkflowChain({
     // Fallback API
     andThen({
       id: "call-fallback-api",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const userData = await fetch(`https://api3.example.com/users/${data.userId}`);
         return {
           userData: await userData.json(),
@@ -153,7 +153,7 @@ const multiProviderSearch = createWorkflowChain({
   steps: [
     andThen({
       id: "premium-search",
-      execute: async (data, state) => {
+      execute: async ({ data, state }) => {
         // Premium search (faster for premium users)
         const userTier = state.userContext?.get('tier');
         if (userTier === 'premium') {
@@ -165,7 +165,7 @@ const multiProviderSearch = createWorkflowChain({
     }),
     andThen({
       id: "standard-search",
-      execute: async (data, state) => {
+      execute: async ({ data, state }) => {
         // Standard search (available for all)
         const results = await standardSearch(data.searchTerm);
         const userTier = state.userContext?.get('tier') || 'standard';
@@ -173,7 +173,7 @@ const multiProviderSearch = createWorkflowChain({
       }
     }),
     andAgent(
-      (data, state) => {
+      ({ data, state }) => {
         const userTier = state.userContext?.get('tier') || 'free';
         return `Search for "${data.searchTerm}" with ${userTier} tier limitations`;
       },
@@ -208,7 +208,7 @@ createWorkflowChain({
     // Main operation
     andThen({
       id: "slow-api-call",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const result = await slowAPICall(data);
         return { result, source: "api" };
       },
@@ -216,7 +216,7 @@ createWorkflowChain({
     // Timeout fallback
     andThen({
       id: "timeout-fallback",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         await new Promise((resolve) => setTimeout(resolve, 5000)); // 5s timeout
         return { result: "Request timed out", source: "timeout" };
       },
@@ -238,13 +238,13 @@ createWorkflowChain({
   result: z.object({ response: z.string(), provider: z.string() }),
 }).andRace({
   steps: [
-    andAgent((data) => data.prompt, openaiAgent, {
+    andAgent(({ data }) => data.prompt, openaiAgent, {
       schema: z.object({ response: z.string(), provider: z.literal("openai") }),
     }),
-    andAgent((data) => data.prompt, claudeAgent, {
+    andAgent(({ data }) => data.prompt, claudeAgent, {
       schema: z.object({ response: z.string(), provider: z.literal("claude") }),
     }),
-    andAgent((data) => data.prompt, geminiAgent, {
+    andAgent(({ data }) => data.prompt, geminiAgent, {
       schema: z.object({ response: z.string(), provider: z.literal("gemini") }),
     }),
   ],
@@ -267,7 +267,7 @@ createWorkflowChain({
     // Check cache first
     andThen({
       id: "check-cache",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const cached = await redis.get(`result:${data.key}`);
         if (cached) {
           return { result: JSON.parse(cached), fromCache: true };
@@ -278,7 +278,7 @@ createWorkflowChain({
     // Expensive computation
     andThen({
       id: "expensive-computation",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate work
         const computed = await expensiveComputation(data);
         await redis.set(`result:${data.key}`, JSON.stringify(computed), "EX", 3600);
@@ -305,7 +305,7 @@ createWorkflowChain({
     // Primary region
     andThen({
       id: "fetch-us-east",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const result = await fetch(`https://us-east.api.com/data/${data.id}`);
         return { data: await result.json(), region: "us-east" };
       },
@@ -313,7 +313,7 @@ createWorkflowChain({
     // Secondary region
     andThen({
       id: "fetch-eu-west",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const result = await fetch(`https://eu-west.api.com/data/${data.id}`);
         return { data: await result.json(), region: "eu-west" };
       },
@@ -321,7 +321,7 @@ createWorkflowChain({
     // Tertiary region
     andThen({
       id: "fetch-asia",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const result = await fetch(`https://asia.api.com/data/${data.id}`);
         return { data: await result.json(), region: "asia" };
       },
@@ -348,7 +348,7 @@ createWorkflowChain({
     steps: [
       andThen({
         id: "fast-operation",
-        execute: async (data) => {
+        execute: async ({ data }) => {
           // This might fail quickly
           if (Math.random() > 0.5) {
             throw new Error("Fast operation failed");
@@ -358,7 +358,7 @@ createWorkflowChain({
       }),
       andThen({
         id: "reliable-operation",
-        execute: async (data) => {
+        execute: async ({ data }) => {
           // This is slower but more reliable
           await new Promise((resolve) => setTimeout(resolve, 1000));
           return { result: "reliable", success: true };
@@ -368,7 +368,7 @@ createWorkflowChain({
   })
   .andThen({
     id: "log-winner",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       console.log(`Winner: ${data.result}`);
       return data;
     },
@@ -386,7 +386,7 @@ createWorkflowChain({
   name: "Slow API Workflow",
   input: z.object({}),
   result: z.object({}),
-}).andThen({ id: "slow-api", execute: async (data) => await slowButReliableAPI(data) }); // Always 2s
+}).andThen({ id: "slow-api", execute: async ({ data }) => await slowButReliableAPI(data) }); // Always 2s
 
 // Use race for speed optimization
 createWorkflowChain({
@@ -396,9 +396,12 @@ createWorkflowChain({
   result: z.object({}),
 }).andRace({
   steps: [
-    andThen({ id: "fast-cache", execute: async (data) => await fastCache(data) }), // 50ms
-    andThen({ id: "medium-api", execute: async (data) => await mediumAPI(data) }), // 500ms
-    andThen({ id: "slow-api-fallback", execute: async (data) => await slowButReliableAPI(data) }), // 2s
+    andThen({ id: "fast-cache", execute: async ({ data }) => await fastCache(data) }), // 50ms
+    andThen({ id: "medium-api", execute: async ({ data }) => await mediumAPI(data) }), // 500ms
+    andThen({
+      id: "slow-api-fallback",
+      execute: async ({ data }) => await slowButReliableAPI(data),
+    }), // 2s
   ],
 });
 // Usually completes in 50ms, falls back to 500ms or 2s if needed
@@ -417,9 +420,9 @@ createWorkflowChain({
   result: z.object({}),
 }).andRace({
   steps: [
-    andThen({ id: "cache-step", execute: async (data) => await cache(data) }), // 50ms
-    andThen({ id: "db-step", execute: async (data) => await database(data) }), // 200ms
-    andThen({ id: "api-step", execute: async (data) => await externalAPI(data) }), // 1000ms
+    andThen({ id: "cache-step", execute: async ({ data }) => await cache(data) }), // 50ms
+    andThen({ id: "db-step", execute: async ({ data }) => await database(data) }), // 200ms
+    andThen({ id: "api-step", execute: async ({ data }) => await externalAPI(data) }), // 1000ms
   ],
 });
 
@@ -431,9 +434,9 @@ createWorkflowChain({
   result: z.object({}),
 }).andRace({
   steps: [
-    andThen({ id: "api-step-random", execute: async (data) => await externalAPI(data) }), // 1000ms
-    andThen({ id: "cache-step-random", execute: async (data) => await cache(data) }), // 50ms
-    andThen({ id: "db-step-random", execute: async (data) => await database(data) }), // 200ms
+    andThen({ id: "api-step-random", execute: async ({ data }) => await externalAPI(data) }), // 1000ms
+    andThen({ id: "cache-step-random", execute: async ({ data }) => await cache(data) }), // 50ms
+    andThen({ id: "db-step-random", execute: async ({ data }) => await database(data) }), // 200ms
   ],
 });
 ```
@@ -455,7 +458,7 @@ createWorkflowChain({
   })
   .andThen({
     id: "handle-race-result",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       // Handle different result sources
       switch (data.source) {
         case "cache":

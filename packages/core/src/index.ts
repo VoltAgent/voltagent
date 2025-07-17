@@ -55,7 +55,6 @@ export { AgentRegistry } from "./server/registry";
 export { WorkflowRegistry } from "./workflow/registry";
 export { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 export * from "./utils/update";
-export { createAsyncIterableStream, type AsyncIterableStream } from "./utils/async-iterable-stream";
 export * from "./voice";
 export {
   CustomEndpointDefinition,
@@ -72,3 +71,6 @@ export type {
 export type { ServerOptions, VoltAgentOptions } from "./types";
 export { VoltAgent } from "./voltagent";
 export { VoltAgent as default } from "./voltagent";
+
+// for backwards compatibility
+export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/internal/utils";

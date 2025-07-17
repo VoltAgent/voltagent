@@ -25,20 +25,20 @@ const workflow = createWorkflowChain({
     // All three run in parallel
     andThen({
       id: "fetch-profile",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const profile = await fetchUserProfile(data.userId);
         return { userProfile: profile };
       }
     }),
     andThen({
       id: "fetch-posts",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const posts = await fetchUserPosts(data.userId);
         return { userPosts: posts };
       }
     }),
     andAgent(
-      (data) => `Generate analytics for user ${data.userId}`,
+      ({ data }) => `Generate analytics for user ${data.userId}`,
       agent,
       {
         schema: z.object({
@@ -53,7 +53,7 @@ const workflow = createWorkflowChain({
 })
 .andThen({
   id: "combine-results",
-  execute: async (data) => {
+  execute: async ({ data }) => {
     // data is array: [{ userProfile }, { userPosts }, { userAnalytics }]
     return {
       userProfile: data[0].userProfile,
@@ -100,28 +100,28 @@ const parallelProcessor = createWorkflowChain({
     steps: [
       andThen({
         id: "calculate-sum",
-        execute: async (data) => {
+        execute: async ({ data }) => {
           const sum = data.numbers.reduce((a, b) => a + b, 0);
           return { operation: "sum", value: sum };
         },
       }),
       andThen({
         id: "calculate-max",
-        execute: async (data) => {
+        execute: async ({ data }) => {
           const max = Math.max(...data.numbers);
           return { operation: "max", value: max };
         },
       }),
       andThen({
         id: "calculate-min",
-        execute: async (data) => {
+        execute: async ({ data }) => {
           const min = Math.min(...data.numbers);
           return { operation: "min", value: min };
         },
       }),
       andThen({
         id: "calculate-average",
-        execute: async (data) => {
+        execute: async ({ data }) => {
           const avg = data.numbers.reduce((a, b) => a + b, 0) / data.numbers.length;
           return { operation: "average", value: avg };
         },
@@ -130,7 +130,7 @@ const parallelProcessor = createWorkflowChain({
   })
   .andThen({
     id: "format-results",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       // Convert array to object
       return {
         sum: data[0].value,
@@ -164,7 +164,7 @@ const multiChannelNotifier = createWorkflowChain({
     steps: [
       andThen({
         id: "send-email",
-        execute: async (data, state) => {
+        execute: async ({ data, state }) => {
           // Send email notification
           const userEmail = state.userContext?.get("email");
           const sent = await sendEmail(userEmail, data.message);
@@ -173,7 +173,7 @@ const multiChannelNotifier = createWorkflowChain({
       }),
       andThen({
         id: "send-sms",
-        execute: async (data, state) => {
+        execute: async ({ data, state }) => {
           // Send SMS notification
           const userPhone = state.userContext?.get("phone");
           const sent = await sendSMS(userPhone, data.message);
@@ -182,7 +182,7 @@ const multiChannelNotifier = createWorkflowChain({
       }),
       andThen({
         id: "send-push",
-        execute: async (data, state) => {
+        execute: async ({ data, state }) => {
           // Send push notification
           const deviceId = state.userContext?.get("deviceId");
           const sent = await sendPush(deviceId, data.message);
@@ -193,7 +193,7 @@ const multiChannelNotifier = createWorkflowChain({
   })
   .andThen({
     id: "aggregate-notifications",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       return {
         emailSent: data[0].emailSent,
         smsSent: data[1].smsSent,
@@ -220,21 +220,21 @@ createWorkflowChain({
   steps: [
     andThen({
       id: "fetch-weather",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const weather = await fetch(`/api/weather/${data.city}`);
         return { weather: await weather.json() };
       },
     }),
     andThen({
       id: "fetch-news",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const news = await fetch(`/api/news/${data.city}`);
         return { news: await news.json() };
       },
     }),
     andThen({
       id: "fetch-events",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         const events = await fetch(`/api/events/${data.city}`);
         return { events: await events.json() };
       },
@@ -259,10 +259,10 @@ createWorkflowChain({
     // Function step
     andThen({
       id: "count-users",
-      execute: async (data) => ({ userCount: await countUsers() }),
+      execute: async ({ data }) => ({ userCount: await countUsers() }),
     }),
     // AI step
-    andAgent((data) => `Analyze user trends for ${data.period}`, agent, {
+    andAgent(({ data }) => `Analyze user trends for ${data.period}`, agent, {
       schema: z.object({
         insights: z.array(z.string()),
       }),
@@ -270,10 +270,10 @@ createWorkflowChain({
     // Conditional step
     andWhen({
       id: "check-metrics-flag",
-      condition: (data) => data.includeMetrics,
+      condition: ({ data }) => data.includeMetrics,
       step: andThen({
         id: "get-metrics",
-        execute: async (data) => ({ metrics: await getMetrics() }),
+        execute: async ({ data }) => ({ metrics: await getMetrics() }),
       }),
     }),
   ],
@@ -296,19 +296,19 @@ createWorkflowChain({
     steps: [
       andThen({
         id: "validate-email",
-        execute: async (data) => ({
+        execute: async ({ data }) => ({
           emailValid: validateEmail(data.email),
         }),
       }),
       andThen({
         id: "validate-phone",
-        execute: async (data) => ({
+        execute: async ({ data }) => ({
           phoneValid: validatePhone(data.phone),
         }),
       }),
       andThen({
         id: "validate-address",
-        execute: async (data) => ({
+        execute: async ({ data }) => ({
           addressValid: await validateAddress(data.address),
         }),
       }),
@@ -316,7 +316,7 @@ createWorkflowChain({
   })
   .andThen({
     id: "check-validation",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       const allValid = data.every((result) => Object.values(result)[0]);
       return { validationPassed: allValid, validations: data };
     },
@@ -329,16 +329,16 @@ createWorkflowChain({
 
 ```typescript
 // Sequential: ~3 seconds total
-.andThen({ id: "api-call-1", execute: async (data) => await apiCall1(data) }) // 1s
-.andThen({ id: "api-call-2", execute: async (data) => await apiCall2(data) }) // 1s
-.andThen({ id: "api-call-3", execute: async (data) => await apiCall3(data) }) // 1s
+.andThen({ id: "api-call-1", execute: async ({ data }) => await apiCall1(data) }) // 1s
+.andThen({ id: "api-call-2", execute: async ({ data }) => await apiCall2(data) }) // 1s
+.andThen({ id: "api-call-3", execute: async ({ data }) => await apiCall3(data) }) // 1s
 
 // Parallel: ~1 second total (slowest operation)
 .andAll({
   steps: [
-    andThen({ id: "api-call-1-parallel", execute: async (data) => await apiCall1(data) }), // 1s
-    andThen({ id: "api-call-2-parallel", execute: async (data) => await apiCall2(data) }), // 1s
-    andThen({ id: "api-call-3-parallel", execute: async (data) => await apiCall3(data) })  // 1s
+    andThen({ id: "api-call-1-parallel", execute: async ({ data }) => await apiCall1(data) }), // 1s
+    andThen({ id: "api-call-2-parallel", execute: async ({ data }) => await apiCall2(data) }), // 1s
+    andThen({ id: "api-call-3-parallel", execute: async ({ data }) => await apiCall3(data) })  // 1s
   ]
 })
 ```
@@ -352,7 +352,7 @@ If any step fails, the entire `andAll` fails:
   steps: [
     andThen({
       id: "risky-op-1",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         try {
           return { result1: await riskyOperation1(data) };
         } catch (error) {
@@ -363,7 +363,7 @@ If any step fails, the entire `andAll` fails:
     }),
     andThen({
       id: "reliable-op-2",
-      execute: async (data) => {
+      execute: async ({ data }) => {
         // This will still run even if operation 1 fails
         return { result2: await reliableOperation2(data) };
       }
@@ -372,7 +372,7 @@ If any step fails, the entire `andAll` fails:
 })
 .andThen({
   id: "handle-mixed-results",
-  execute: async (data) => {
+  execute: async ({ data }) => {
     // Handle mixed success/failure results
     if (data[0].error1) {
       console.log('Using fallback for operation 1');
@@ -393,17 +393,17 @@ If any step fails, the entire `andAll` fails:
 // Good: Independent operations
 .andAll({
   steps: [
-    andThen({ id: "fetch-user-profile", execute: async (data) => await fetchUserProfile(data.userId) }),
-    andThen({ id: "fetch-user-settings", execute: async (data) => await fetchUserSettings(data.userId) }),
-    andThen({ id: "fetch-user-stats", execute: async (data) => await fetchUserStats(data.userId) })
+    andThen({ id: "fetch-user-profile", execute: async ({ data }) => await fetchUserProfile(data.userId) }),
+    andThen({ id: "fetch-user-settings", execute: async ({ data }) => await fetchUserSettings(data.userId) }),
+    andThen({ id: "fetch-user-stats", execute: async ({ data }) => await fetchUserStats(data.userId) })
   ]
 })
 
 // Bad: Dependent operations
 .andAll({
   steps: [
-    andThen({ id: "create-user", execute: async (data) => await createUser(data) }),
-    andThen({ id: "assign-role", execute: async (data) => await assignRole(data.userId) }) // Needs user to exist first!
+    andThen({ id: "create-user", execute: async ({ data }) => await createUser(data) }),
+    andThen({ id: "assign-role", execute: async ({ data }) => await assignRole(data.userId) }) // Needs user to exist first!
   ]
 })
 ```

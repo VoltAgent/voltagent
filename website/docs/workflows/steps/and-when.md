@@ -25,10 +25,10 @@ const workflow = createWorkflowChain({
 })
 .andWhen({
   id: "check-vip-status",
-  condition: (data) => data.isVip,
+  condition: ({ data }) => data.isVip,
   step: andThen({
     id: "apply-vip-discount",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       vipDiscount: 0.2 // 20% discount for VIP users
     })
@@ -43,8 +43,8 @@ const result = await workflow.run({ email: "john@example.com", isVip: true });
 
 ```typescript
 .andWhen({
-  condition: (data, state) => boolean,  // condition function
-  step: workflowStep                    // step to execute if true
+  condition: ({ data, state }) => boolean,  // condition function
+  step: workflowStep                        // step to execute if true
 })
 ```
 
@@ -73,10 +73,10 @@ const conditionalWorkflow = createWorkflowChain({
 .andWhen({
   // Only execute for admin users
   id: "check-admin-user",
-  condition: (data) => data.userType === 'admin',
+  condition: ({ data }) => data.userType === 'admin',
   step: andThen({
     id: "add-admin-prefix",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       adminPrefix: '[ADMIN]'
     })
@@ -84,7 +84,7 @@ const conditionalWorkflow = createWorkflowChain({
 })
 .andThen({
   id: "format-message",
-  execute: async (data) => ({
+  execute: async ({ data }) => ({
     message: `${data.adminPrefix || ''}${data.message}`
   })
 });
@@ -112,13 +112,13 @@ const roleBasedWorkflow = createWorkflowChain({
 .andWhen({
   // Check user role from state
   id: "check-premium-role",
-  condition: (data, state) => {
+  condition: ({ data, state }) => {
     const userRole = state.userContext?.get('role');
     return userRole === 'premium' || userRole === 'enterprise';
   },
   step: andThen({
     id: "set-high-priority",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       priority: 'high'
     })
@@ -127,9 +127,9 @@ const roleBasedWorkflow = createWorkflowChain({
 .andWhen({
   // Chain conditions - escalate high priority requests
   id: "check-high-priority",
-  condition: (data) => data.priority === 'high',
+  condition: ({ data }) => data.priority === 'high',
   step: andAgent(
-    (data) => `Analyze if this request needs escalation: ${data.request}`,
+    ({ data }) => `Analyze if this request needs escalation: ${data.request}`,
     agent,
     {
       schema: z.object({
@@ -156,13 +156,13 @@ createWorkflowChain({
   result: z.object({ sensitiveData: any }),
 }).andWhen({
   id: "check-user-permissions",
-  condition: (data, state) => {
+  condition: ({ data, state }) => {
     const userRole = state.userContext?.get("role");
     return userRole === "admin" || userRole === "manager";
   },
   step: andThen({
     id: "fetch-sensitive-data",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       sensitiveData: await fetchSensitiveData(data.userId),
     }),
@@ -183,10 +183,10 @@ createWorkflowChain({
   result: z.object({ emailValid: z.boolean(), domain: z.string() }),
 }).andWhen({
   id: "validate-email-format",
-  condition: (data) => data.email && data.email.includes("@"),
+  condition: ({ data }) => data.email && data.email.includes("@"),
   step: andThen({
     id: "set-email-valid",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       emailValid: true,
       domain: data.email.split("@")[1],
@@ -209,10 +209,10 @@ createWorkflowChain({
 })
   .andWhen({
     id: "check-free-shipping",
-    condition: (data) => data.orderTotal > 100,
+    condition: ({ data }) => data.orderTotal > 100,
     step: andThen({
       id: "apply-free-shipping",
-      execute: async (data) => ({
+      execute: async ({ data }) => ({
         ...data,
         freeShipping: true,
         shippingCost: 0,
@@ -221,10 +221,10 @@ createWorkflowChain({
   })
   .andWhen({
     id: "check-standard-shipping",
-    condition: (data) => data.orderTotal <= 100,
+    condition: ({ data }) => data.orderTotal <= 100,
     step: andThen({
       id: "apply-standard-shipping",
-      execute: async (data) => ({
+      execute: async ({ data }) => ({
         ...data,
         freeShipping: false,
         shippingCost: 15,
@@ -245,7 +245,7 @@ createWorkflowChain({
   input: z.object({ feedback: z.string() }),
   result: z.object({ escalateToManager: z.boolean(), urgency: z.string() }),
 })
-  .andAgent((data) => `Analyze sentiment of: "${data.feedback}"`, agent, {
+  .andAgent(({ data }) => `Analyze sentiment of: "${data.feedback}"`, agent, {
     schema: z.object({
       sentiment: z.enum(["positive", "negative", "neutral"]),
       confidence: z.number(),
@@ -254,10 +254,10 @@ createWorkflowChain({
   .andWhen({
     // Only escalate negative feedback with high confidence
     id: "check-negative-feedback",
-    condition: (data) => data.sentiment === "negative" && data.confidence > 0.8,
+    condition: ({ data }) => data.sentiment === "negative" && data.confidence > 0.8,
     step: andThen({
       id: "escalate-feedback",
-      execute: async (data) => ({
+      execute: async ({ data }) => ({
         ...data,
         escalateToManager: true,
         urgency: "high",
@@ -294,10 +294,10 @@ const processingWorkflow = createWorkflowChain({
 .andWhen({
   // International transactions have fees
   id: "check-international-transaction",
-  condition: (data) => data.country !== 'US',
+  condition: ({ data }) => data.country !== 'US',
   step: andThen({
     id: "apply-international-fee",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       fee: data.amount * 0.03 // 3% international fee
     })
@@ -306,10 +306,10 @@ const processingWorkflow = createWorkflowChain({
 .andWhen({
   // Large transactions need approval
   id: "check-large-transaction",
-  condition: (data) => data.amount > 10000,
+  condition: ({ data }) => data.amount > 10000,
   step: andThen({
     id: "require-approval",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       requiresApproval: true
     })
@@ -318,10 +318,10 @@ const processingWorkflow = createWorkflowChain({
 .andWhen({
   // Apply tax for certain countries
   id: "check-country-tax",
-  condition: (data) => ['UK', 'DE', 'FR'].includes(data.country),
+  condition: ({ data }) => ['UK', 'DE', 'FR'].includes(data.country),
   step: andThen({
     id: "apply-vat",
-    execute: async (data) => ({
+    execute: async ({ data }) => ({
       ...data,
       taxRate: 0.20 // 20% VAT
     })
@@ -342,7 +342,7 @@ createWorkflowChain({
   result: z.object({ processed: z.boolean() }),
 }).andWhen({
   id: "validate-risky-field",
-  condition: (data) => {
+  condition: ({ data }) => {
     try {
       return data.riskyField && validateRiskyField(data.riskyField);
     } catch (error) {
@@ -352,7 +352,7 @@ createWorkflowChain({
   },
   step: andThen({
     id: "process-risky-field",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       // This only runs if condition succeeded
       return { ...data, processed: true };
     },
@@ -375,7 +375,7 @@ createWorkflowChain({
   result: z.object({}),
 }).andWhen({
   id: "check-premium-user",
-  condition: (data) => data.userType === 'premium',
+  condition: ({ data }) => data.userType === 'premium',
   step: // ...
 })
 
@@ -390,7 +390,7 @@ createWorkflowChain({
   result: z.object({}),
 }).andWhen({
   id: "check-complex-condition",
-  condition: (data) => {
+  condition: ({ data }) => {
     // Too much logic in condition
     const hasAccess = checkUserAccess(data.userId);
     const isValidTime = isBusinessHours();
@@ -414,7 +414,7 @@ createWorkflowChain({
   result: z.object({}),
 }).andWhen({
   id: "check-enterprise-plan",
-  condition: (data, state) => {
+  condition: ({ data, state }) => {
     const userPlan = state.userContext?.get('plan');
     return userPlan === 'enterprise';
   },

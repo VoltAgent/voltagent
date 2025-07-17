@@ -10,7 +10,6 @@ import {
   publishWorkflowEvent,
   createStepContext,
 } from "../event-utils";
-import type { InternalWorkflowFunc } from "../internal/types";
 import type { WorkflowStepAgent } from "./types";
 
 export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
@@ -38,7 +37,10 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
  * @returns A workflow step that executes the agent with the task
  */
 export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
-  task: BaseMessage[] | string | InternalWorkflowFunc<INPUT, DATA, BaseMessage[] | string>,
+  task:
+    | BaseMessage[]
+    | string
+    | import("../internal/types").InternalWorkflowFunc<INPUT, DATA, BaseMessage[] | string>,
   agent: Agent<{ llm: DangerouslyAllowAny }>,
   config: AgentConfig<SCHEMA>,
 ) {
@@ -48,9 +50,10 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
     name: agent.name || agent.id,
     purpose: agent.purpose ?? null,
     agent,
-    execute: async (data, state) => {
+    execute: async (context) => {
+      const { data, state } = context;
       const { schema, ...restConfig } = config;
-      const finalTask = typeof task === "function" ? await task(data, state) : task;
+      const finalTask = typeof task === "function" ? await task(context) : task;
 
       // Create step context and publish start event
       if (!state.workflowContext) {

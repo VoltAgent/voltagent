@@ -17,7 +17,7 @@ const workflow = createWorkflowChain({
   result: z.object({ processed: z.string(), wordCount: z.number() }),
 }).andThen({
   id: "process-text",
-  execute: async (data, state) => {
+  execute: async ({ data, state }) => {
     return {
       processed: data.text.toUpperCase(),
       wordCount: data.text.split(" ").length,
@@ -33,9 +33,10 @@ const result = await workflow.run({ text: "hello world" });
 
 ```typescript
 .andThen({
-  execute: async (data, state) => {
+  execute: async ({ data, state, getStepData }) => {
     // data: Current workflow data (type-safe)
-    // state: { userId?, conversationId?, userContext? }
+    // state: Workflow execution state
+    // getStepData: Access previous step outputs
     return newData;
   }
 })
@@ -58,7 +59,7 @@ const workflow = createWorkflowChain({
 .andThen({
   id: "fetch-user",
   // Step 1: Fetch user
-  execute: async (data) => {
+  execute: async ({ data }) => {
     const user = await fetchUser(data.userId);
     return { user };
   }
@@ -66,7 +67,7 @@ const workflow = createWorkflowChain({
 .andThen({
   id: "fetch-posts",
   // Step 2: Fetch user's posts (receives { user } from step 1)
-  execute: async (data) => {
+  execute: async ({ data }) => {
     const posts = await fetchPosts(data.user.id);
     return { ...data, posts };
   }
@@ -86,7 +87,7 @@ const personalizedWorkflow = createWorkflowChain({
   result: z.object({ response: z.string() }),
 }).andThen({
   id: "personalize-response",
-  execute: async (data, state) => {
+  execute: async ({ data, state }) => {
     // Access user information
     const userRole = state.userContext?.get("role") || "guest";
     const language = state.userContext?.get("language") || "en";

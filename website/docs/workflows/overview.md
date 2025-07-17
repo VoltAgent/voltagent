@@ -29,8 +29,8 @@ const workflow = createWorkflowChain({
   // Add the first step: a function to create the greeting
   .andThen({
     id: "create-greeting",
-    execute: async ({ name }) => {
-      return { greeting: `Hello, ${name}!` };
+    execute: async ({ data }) => {
+      return { greeting: `Hello, ${data.name}!` };
     },
   });
 
@@ -71,12 +71,12 @@ const workflow = createWorkflowChain({
 })
   .andThen({
     id: "create-greeting",
-    execute: async ({ name }) => {
-      return { greeting: `Hello, ${name}!` };
+    execute: async ({ data }) => {
+      return { greeting: `Hello, ${data.name}!` };
     },
   })
   // Add the new AI step to the chain
-  .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
+  .andAgent(({ data }) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
     schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
   });
 
@@ -117,20 +117,20 @@ const workflow = createWorkflowChain({
 })
   .andThen({
     id: "create-greeting",
-    execute: async ({ name }) => {
-      return { greeting: `Hello, ${name}!` };
+    execute: async ({ data }) => {
+      return { greeting: `Hello, ${data.name}!` };
     },
   })
-  .andAgent((data) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
+  .andAgent(({ data }) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
     schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
   })
   // Add a conditional step
   .andWhen({
     id: "check-name-length",
-    condition: (data) => data.name.length > 10,
+    condition: ({ data }) => data.name.length > 10,
     step: andThen({
       id: "set-long-name-flag",
-      execute: async (data) => ({ ...data, isLongName: true }),
+      execute: async ({ data }) => ({ ...data, isLongName: true }),
     }),
   });
 
@@ -192,14 +192,14 @@ createWorkflowChain({
   // `data` is typed as { email: string }
   .andThen({
     id: "add-user-id",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       // data.email is available and type-safe
       return { ...data, userId: "user-123" };
     },
   })
   // `data` is now typed as { email: string, userId: string }
   .andAgent(
-    (data) => `Welcome ${data.userId}`, // data.userId is available!
+    ({ data }) => `Welcome ${data.userId}`, // data.userId is available!
     agent,
     {
       schema: z.object({ welcomeMessage: z.string() }),
@@ -208,7 +208,7 @@ createWorkflowChain({
   // `data` is now typed as { ..., welcomeMessage: string }
   .andThen({
     id: "finalize",
-    execute: async (data) => {
+    execute: async ({ data }) => {
       // data.welcomeMessage is available!
       return { success: true };
     },

@@ -35,10 +35,11 @@ export function andThen<INPUT, DATA, RESULT>({
     ...defaultStepConfig(config),
     type: "func",
     originalExecute: execute, // ✅ Store original function for serialization
-    execute: async (data, state) => {
+    execute: async (context) => {
+      const { data, state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
-        return await execute(data, state);
+        return await execute(context);
       }
 
       // ✅ Serialize execute function for event tracking
@@ -67,7 +68,7 @@ export function andThen<INPUT, DATA, RESULT>({
       }
 
       try {
-        const result = await execute(data, state);
+        const result = await execute(context);
 
         // Publish step success event
         const stepSuccessEvent = createWorkflowStepSuccessEvent(

@@ -24,12 +24,22 @@ export type InternalWorkflowStateParam<INPUT> = Omit<
 };
 
 /**
+ * Context object for new execute API with helper functions
+ * @private - INTERNAL USE ONLY
+ */
+export interface WorkflowExecuteContext<INPUT, DATA> {
+  data: InternalExtractWorkflowInputData<DATA>;
+  state: InternalWorkflowStateParam<INPUT>;
+  getStepData: (stepId: string) => { input: any; output: any } | undefined;
+}
+
+/**
  * A function that can be executed by the workflow
+ * Uses context-based API with data, state, and helper functions
  * @private - INTERNAL USE ONLY
  */
 export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
-  data: InternalExtractWorkflowInputData<DATA>,
-  state: InternalWorkflowStateParam<INPUT>,
+  context: WorkflowExecuteContext<INPUT, DATA>,
 ) => Promise<RESULT>;
 
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
@@ -70,15 +80,11 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
    */
   type: string;
   /**
-   * Execute the step with the given data
-   * @param data - The data to execute the step with
-   * @param state - The state of the workflow
+   * Execute the step with the given context
+   * @param context - The execution context containing data, state, and helpers
    * @returns The result of the step
    */
-  execute: (
-    data: InternalExtractWorkflowInputData<DATA>,
-    state: InternalWorkflowStateParam<INPUT>,
-  ) => Promise<RESULT>;
+  execute: (context: WorkflowExecuteContext<INPUT, DATA>) => Promise<RESULT>;
 }
 
 /**
