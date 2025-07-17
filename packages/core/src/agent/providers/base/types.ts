@@ -1,6 +1,6 @@
+import type { AsyncIterableStream } from "@voltagent/internal/utils";
 import type { z } from "zod";
 import type { Tool } from "../../../tool";
-import type { AsyncIterableStream } from "../../../utils/async-iterable-stream";
 import type {
   OperationContext,
   ProviderOptions,

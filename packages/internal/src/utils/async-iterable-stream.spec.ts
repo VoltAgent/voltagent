@@ -1,9 +1,10 @@
+import { describe, expect, it } from "vitest";
 import {
   convertArrayToReadableStream,
   convertAsyncIterableToArray,
   convertReadableStreamToArray,
-} from "@voltagent/internal/test";
-import { createAsyncIterableStream } from "./index";
+} from "../test";
+import { createAsyncIterableStream } from "./async-iterable-stream";
 
 describe("createAsyncIterableStream()", () => {
   it("should read all chunks from a non-empty stream using async iteration", async () => {
