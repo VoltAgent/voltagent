@@ -1,24 +1,30 @@
-# VoltAgent Provider Generator
+---
+title: Contributing a new Provider
+slug: /providers/contributing
+---
 
-This directory contains the Nx generator for creating new VoltAgent provider packages. The generator creates a complete provider package structure with all necessary files, configurations, and testing setup.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-## 🚀 Quick Start
+# Contributing a new Provider
 
-To create a new provider package, run the following command from the workspace root:
+If you see your favorite provider missing from VoltAgent, you can contribute it and make it available to the community. This guide will walk you through the process of adding a new provider to VoltAgent.
+
+## Prerequisites
+
+- Node.js 24+
+- pnpm
+- [Voltagent/voltagent](https://github.com/Voltagent/voltagent) repository cloned locally
+
+## Generating a new provider
+
+To generate a new provider package, run the following command from the workspace root:
 
 ```bash
-npx nx generate @voltagent/core:provider <provider-name>
+pnpm nx generate @voltagent/core:provider my-ai-provider
 ```
 
-Replace `<provider-name>` with your provider name in kebab-case (e.g., `openai`, `anthropic-ai`, `google-ai`).
-
-### Example
-
-```bash
-npx nx generate @voltagent/core:provider my-ai-provider
-```
-
-This will create a new provider package at `packages/my-ai-provider/` with all the necessary files and configurations.
+Replace `my-ai-provider` with your provider name in kebab-case (e.g., `openai`, `anthropic-ai`, `google-ai`, `groq-ai`, `xsai`, `vercel-ai`).
 
 ## 📁 Generated Structure
 
@@ -77,6 +83,10 @@ packages/<provider-name>/
 - `tsconfig.json` - TypeScript compilation settings
 - `tsup.config.ts` - Build tool configuration
 - `vitest.config.mts` - Test runner configuration
+
+## Mapping the provider
+
+This will create a new provider package at `packages/my-ai-provider` with all the necessary files and configurations, including stubbed methods for all the required provider methods, pre-built tests and some helper functions.
 
 ## 🔧 Implementation Steps
 
@@ -272,6 +282,3 @@ const agent = new Agent({
 See existing provider implementations for reference:
 
 - `packages/vercel-ai/` - Vercel AI SDK integration
-- `packages/anthropic-ai/` - Anthropic Claude integration
-- `packages/google-ai/` - Google AI integration
-- `packages/groq-ai/` - Groq integration

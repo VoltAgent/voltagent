@@ -103,6 +103,7 @@ const sidebars: SidebarsConfig = {
         "providers/groq-ai",
         "providers/xsai",
         "providers/anthropic-ai",
+        "providers/contributing",
       ],
     },
     {
