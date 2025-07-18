@@ -4,6 +4,7 @@ export { andWhen } from "./and-when";
 export { andAll } from "./and-all";
 export { andRace } from "./and-race";
 export { andTap } from "./and-tap";
+export { andWorkflow } from "./and-workflow";
 export { matchStep } from "./helpers";
 export type {
   WorkflowStep,
