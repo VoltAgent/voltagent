@@ -3,282 +3,147 @@ title: Contributing a new Provider
 slug: /providers/contributing
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # Contributing a new Provider
 
-If you see your favorite provider missing from VoltAgent, you can contribute it and make it available to the community. This guide will walk you through the process of adding a new provider to VoltAgent.
+Thank your for your interest in contributing a new VoltAgent provider. This guide will walk you through the process of creating a new provider in under 15 minutes!
 
 ## Prerequisites
 
 - Node.js 24+
 - pnpm
-- [Voltagent/voltagent](https://github.com/Voltagent/voltagent) repository cloned locally
+- [VoltAgent repo](https://github.com/Voltagent/voltagent) cloned locally
 
-## Generating a new provider
+## TL;DR:
 
-To generate a new provider package, run the following command from the workspace root:
+1. Generate a new provider using the generator `pnpm nx generate @voltagent/core:provider acme-ai`
+2. Install dependencies `cd packages/acme-ai && pnpm install acme-ai-sdk`
+3. Implement all required methods in `src/provider.ts`
+4. Verify tests pass in `src/provider.spec.ts` and add any new tests to `src/provider-custom.spec.ts`
+5. Verify `pnpm build` passes (this will also run typescript checks)
+6. Update `README.md` with usage examples and any other relevant information
+7. Submit PR to contribute back
 
-```bash
-pnpm nx generate @voltagent/core:provider my-ai-provider
-```
+## Detailed Guide
 
-Replace `my-ai-provider` with your provider name in kebab-case (e.g., `openai`, `anthropic-ai`, `google-ai`, `groq-ai`, `xsai`, `vercel-ai`).
+### 1. Generate Provider
 
-## 📁 Generated Structure
-
-The generator creates the following file structure:
-
-```
-packages/<provider-name>/
-├── README.md                    # Provider documentation
-├── biome.json                   # Biome linting configuration
-├── package.json                 # Package configuration
-├── tsconfig.json               # TypeScript configuration
-├── tsup.config.ts              # Build configuration
-├── vitest.config.mts           # Test configuration
-└── src/
-    ├── index.ts                # Main export file
-    ├── provider.ts             # Provider implementation
-    ├── provider.spec.ts        # Comprehensive test suite
-    └── testing.ts              # Testing utilities
-```
-
-## 📋 Generated Files Overview
-
-### `package.json`
-
-- Pre-configured with VoltAgent naming convention (`@voltagent/<name>`)
-- Includes all necessary dependencies and dev dependencies
-- Configured build, test, and lint scripts
-- Proper exports for ESM and CommonJS
-
-### `src/provider.ts`
-
-- Template provider class implementing `LLMProvider` interface
-- Stubbed methods for all required provider operations:
-  - `generateText()` - Generate text responses
-  - `streamText()` - Stream text responses
-  - `generateObject()` - Generate structured objects
-  - `streamObject()` - Stream structured objects
-  - `getModelIdentifier()` - Get model identifier
-  - `toMessage()` - Convert VoltAgent messages to provider format
-
-### `src/provider.spec.ts`
-
-- Comprehensive test suite covering all provider methods
-- Tests for error handling, streaming, and object generation
-- Mock utilities for testing provider responses
-- Type safety tests for generated objects
-
-### `src/testing.ts`
-
-- Mock model creation utilities
-- Helper functions for testing provider implementations
-
-### Configuration Files
-
-- `biome.json` - Linting and formatting configuration
-- `tsconfig.json` - TypeScript compilation settings
-- `tsup.config.ts` - Build tool configuration
-- `vitest.config.mts` - Test runner configuration
-
-## Mapping the provider
-
-This will create a new provider package at `packages/my-ai-provider` with all the necessary files and configurations, including stubbed methods for all the required provider methods, pre-built tests and some helper functions.
-
-## 🔧 Implementation Steps
-
-After generating the provider package, follow these steps to implement your provider:
-
-### 1. Install Provider Dependencies
-
-Navigate to your new provider directory and install the required dependencies:
+You can use the generator to create a new provider. This will create a new directory in `packages/` with the provider name and all the necessary files.
 
 ```bash
-cd packages/<provider-name>
-npm install <provider-sdk-package>
+pnpm nx generate @voltagent/core:provider acme-ai
 ```
 
-### 2. Implement the Provider Class
+### 2. Install Dependencies
 
-Edit `src/provider.ts` and implement the required methods:
+You will need to `cd` into the provider directory and install the dependencies for the provider.
+
+```bash
+cd packages/acme-ai
+pnpm install acme-ai-sdk
+```
+
+### 3. Implement Provider
+
+Edit `src/provider.ts` and make sure to implement all required methods and update all the `any` types to the correct types from the provider.
+
+:::tip Pro Tip
+
+All methods **MUST** have the `public`, `private` or `protected` modifier. See the [vercel-ai provider](https://github.com/VoltAgent/voltagent/blob/main/packages/vercel-ai/src/provider.ts) for a well built example.
+
+:::
+
+#### Example
 
 ```typescript
-import { YourProviderSDK } from "your-provider-sdk";
+import { LLMProvider, GenerateTextOptions, ProviderTextResponse } from "@voltagent/core";
+import { AcmeAI, ModelV1 } from "acme-ai-sdk";
 
-export class YourProviderProvider implements LLMProvider<YourProviderModel> {
-  private client: YourProviderSDK;
+export class AcmeAIProvider implements LLMProvider<{ model: ModelV1 }> {
+  private client: AcmeAI;
 
-  constructor(config?: YourProviderConfig) {
-    this.client = new YourProviderSDK(config);
+  constructor(config?: { apiKey?: string }) {
+    this.client = new AcmeAI({
+      apiKey: config?.apiKey ?? process.env.ACME_AI_API_KEY,
+    });
   }
 
   public async generateText(
-    options: GenerateTextOptions<YourProviderModel>
-  ): Promise<ProviderTextResponse<YourProviderModel>> {
-    // Implement text generation logic
-    const response = await this.client.chat({
-      messages: options.messages.map((msg) => this.toMessage(msg)),
+    options: GenerateTextOptions<string>
+  ): Promise<ProviderTextResponse<string>> {
+    const response = await this.client.chat.completions.create({
       model: options.model,
-      // ... other options
+      messages: options.messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      temperature: options.temperature,
+      max_tokens: options.maxTokens,
     });
 
     return {
-      text: response.content,
+      text: response.choices[0].message.content,
       provider: response,
-      usage: response.usage,
-      finishReason: response.finishReason,
+      usage: {
+        promptTokens: response.usage.prompt_tokens,
+        completionTokens: response.usage.completion_tokens,
+        totalTokens: response.usage.total_tokens,
+      },
+      finishReason: response.choices[0].finish_reason,
     };
   }
 
-  // Implement other methods...
+  // Implement other required methods (streamText, generateObject, streamObject)
+  // See generated template for full implementation
 }
 ```
 
-### 3. Update Type Definitions
+### 4. Verify Tests Pass
 
-Replace the `any` types in the generated template with proper types from your provider SDK:
-
-```typescript
-// Replace this:
-export class YourProviderProvider implements LLMProvider<any> {
-
-// With this:
-export class YourProviderProvider implements LLMProvider<YourProviderModel> {
-```
-
-### 4. Implement Message Conversion
-
-Implement the `toMessage()` method to convert VoltAgent messages to your provider's format:
-
-```typescript
-public toMessage(message: BaseMessage): YourProviderMessage {
-  return {
-    role: message.role,
-    content: message.content,
-    // ... any additional fields your provider requires
-  };
-}
-```
-
-### 5. Update Testing Utilities
-
-Edit `src/testing.ts` to create proper mock models for your provider:
-
-```typescript
-export function createMockModel(
-  output: Error | BaseMessage[] | Record<string, any>
-): YourProviderModel {
-  if (output instanceof Error) {
-    throw output;
-  }
-
-  return {
-    // Return a mock model that matches your provider's model structure
-    id: "mock-model",
-    // ... other model properties
-  };
-}
-```
-
-### 6. Update Package Dependencies
-
-Edit `package.json` to include your provider's SDK and any other required dependencies:
-
-```json
-{
-  "dependencies": {
-    "@voltagent/core": "^0.1.31",
-    "your-provider-sdk": "^1.0.0"
-  }
-}
-```
-
-### 7. Update Documentation
-
-Edit `README.md` to include:
-
-- Provider-specific installation instructions
-- Configuration examples
-- Usage examples with your provider
-- Any provider-specific features or limitations
-
-## 🧪 Testing Your Provider
-
-The generated test suite provides comprehensive coverage. Run tests with:
+You will need to run the tests to make sure your provider is working correctly.
 
 ```bash
-npm test
+pnpm test
 ```
 
-The test suite includes:
+The tests in `provider.spec.ts` are standard for all providers and will help you get started. If you need to add new tests, its recommended to create a new file (e.g. `provider-custom.spec.ts`) in the same directory as the provider, as the `provider.spec.ts` file could be overwritten by the generator in the future.
 
-- Text generation tests
-- Streaming tests
-- Object generation tests
-- Error handling tests
-- Type safety tests
+### 5. Verify Build
 
-## 📦 Building and Publishing
-
-Build your provider package:
+You should also test running a build to make sure your provider is output correctly.
 
 ```bash
-npm run build
+pnpm build
 ```
 
-The build process creates:
+### 6. Update README
 
-- CommonJS bundle (`dist/index.js`)
-- ESM bundle (`dist/index.mjs`)
-- TypeScript declarations (`dist/index.d.ts`)
+Update the `README.md` file to include usage examples and any other relevant information, for example:
 
-## 🔗 Integration with VoltAgent
+```markdown
+# Acme AI Provider
 
-Once implemented, your provider can be used in VoltAgent applications:
+This is a provider for the Acme AI API.
 
-```typescript
+## Usage
+
+\`\`\`typescript
 import { Agent } from "@voltagent/core";
-import { YourProviderProvider } from "@voltagent/your-provider";
+import { AcmeAIProvider } from "@voltagent/acme-ai";
 
 const agent = new Agent({
-  id: "my-agent",
-  purpose: "Do agentic things",
-  instructions: "You are an AI agent...",
-  llm: new YourProviderProvider({
-    // Your provider configuration
-  }),
+id: "my-agent",
+purpose: "Help users",
+instructions: "You are helpful",
+llm: new AcmeAIProvider(),
 });
+
+const response = await agent.generateText({
+model: "acme-ai-4o",
+messages: [{ role: "user", content: "Hello!" }],
+});
+\`\`\`
 ```
 
-## 📝 Best Practices
+### 7. Ship it!
 
-1. **Follow the Interface**: Ensure your provider implements all required methods from the `LLMProvider` interface
-2. **Handle Errors Properly**: Wrap provider-specific errors in VoltAgent's error format
-3. **Type Safety**: Use proper TypeScript types instead of `any`
-4. **Testing**: Maintain high test coverage and add provider-specific tests
-5. **Documentation**: Keep README.md updated with usage examples and configuration options
-6. **Versioning**: Follow semantic versioning for your provider package
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Type Errors**: Make sure to replace all `any` types with proper provider types
-2. **Build Failures**: Check that all dependencies are properly installed
-3. **Test Failures**: Ensure your mock models match the expected provider model structure
-4. **Import Errors**: Verify that your provider exports are correctly configured in `src/index.ts`
-
-### Getting Help
-
-- Check existing provider implementations in the `packages/` directory for examples
-- Review the VoltAgent core documentation for interface requirements
-- Ensure your provider follows the same patterns as existing providers
-
-## 📚 Examples
-
-See existing provider implementations for reference:
-
-- `packages/vercel-ai/` - Vercel AI SDK integration
+If you've followed all the steps above, you can submit a PR to the VoltAgent repo!
