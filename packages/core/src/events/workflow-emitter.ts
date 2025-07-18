@@ -8,9 +8,11 @@ import type {
   WorkflowStartEvent,
   WorkflowSuccessEvent,
   WorkflowErrorEvent,
+  WorkflowSuspendEvent,
   WorkflowStepStartEvent,
   WorkflowStepSuccessEvent,
   WorkflowStepErrorEvent,
+  WorkflowStepSuspendEvent,
 } from "./types";
 
 /**
@@ -20,9 +22,18 @@ export type WorkflowEvent =
   | WorkflowStartEvent
   | WorkflowSuccessEvent
   | WorkflowErrorEvent
+  | WorkflowSuspendEvent
   | WorkflowStepStartEvent
   | WorkflowStepSuccessEvent
-  | WorkflowStepErrorEvent;
+  | WorkflowStepErrorEvent
+  | WorkflowStepSuspendEvent;
+
+/**
+ * Extended workflow event with persistence status
+ */
+export type WorkflowEventWithStatus = WorkflowEvent & {
+  isPersisted?: boolean;
+};
 
 /**
  * Workflow event emitter for publishing workflow events to the timeline
@@ -72,7 +83,14 @@ export class WorkflowEventEmitter extends EventEmitter {
       event.startTime = new Date().toISOString();
     }
 
-    // Add to the background queue
+    // DUAL-PATH: Emit immediately for real-time updates
+    this.emitImmediateEvent({
+      workflowId,
+      executionId,
+      event: { ...event, isPersisted: false } as WorkflowEventWithStatus,
+    });
+
+    // Add to the background queue for persistence
     this.workflowEventQueue.enqueue({
       id: `workflow-event-${event.id}`,
       operation: async () => {
@@ -110,6 +128,33 @@ export class WorkflowEventEmitter extends EventEmitter {
         "[WorkflowEventEmitter] Failed to delegate event to WorkflowRegistry:",
         error,
       );
+    }
+  }
+
+  /**
+   * Emit immediate event for real-time updates (bypasses queue)
+   */
+  private emitImmediateEvent(params: {
+    workflowId: string;
+    executionId: string;
+    event: WorkflowEventWithStatus;
+  }): void {
+    const { workflowId, executionId, event } = params;
+
+    try {
+      // Emit event immediately for WebSocket broadcast
+      this.emit("immediateWorkflowEvent", {
+        workflowId,
+        executionId,
+        event,
+      });
+
+      devLogger.debug(
+        `[WorkflowEventEmitter] Immediate event emitted: ${event.name} for execution ${executionId}`,
+      );
+    } catch (error) {
+      // Don't throw - immediate events are best-effort
+      devLogger.error("[WorkflowEventEmitter] Failed to emit immediate event:", error);
     }
   }
 }

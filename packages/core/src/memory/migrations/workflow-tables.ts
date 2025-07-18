@@ -13,7 +13,7 @@ export async function createWorkflowTables(
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       workflow_id TEXT NOT NULL,
-      status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'cancelled')),
+      status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'cancelled', 'suspended')),
       start_time TEXT NOT NULL,
       end_time TEXT,
       input TEXT,

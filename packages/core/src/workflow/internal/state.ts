@@ -2,10 +2,10 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import { v4 as uuid } from "uuid";
 import type { UserContext } from "../../agent/types";
-import type { WorkflowRunOptions } from "../types";
+import type { WorkflowRunOptions, WorkflowSuspensionMetadata } from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
 
-export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed";
+export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed" | "suspended";
 
 export type WorkflowState<INPUT, RESULT> = {
   executionId: string;
@@ -23,6 +23,8 @@ export type WorkflowState<INPUT, RESULT> = {
   /** the result of workflow execution, null until execution is complete */
   result: RESULT | null;
   error: Error | null;
+  /** suspension metadata when workflow is suspended */
+  suspension?: WorkflowSuspensionMetadata;
 };
 
 export interface WorkflowStateManager<DATA, RESULT> {
@@ -59,6 +61,19 @@ export interface WorkflowStateManager<DATA, RESULT> {
     status: "completed";
     result: RESULT;
   };
+  /**
+   * Suspend the workflow
+   * @param reason - The reason for suspension
+   * @param checkpoint - Optional checkpoint data for resumption
+   * @param suspendedStepIndex - Optional step index where suspension occurred
+   * @returns The suspension metadata
+   */
+  suspend: (
+    reason?: string,
+    checkpoint?: WorkflowSuspensionMetadata["checkpoint"],
+    suspendedStepIndex?: number,
+    lastEventSequence?: number,
+  ) => WorkflowSuspensionMetadata;
 }
 
 /**
@@ -147,6 +162,36 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       status: "failed",
     });
     return err;
+  }
+
+  suspend<SUSPEND_DATA = any>(
+    reason?: string,
+    checkpoint?: WorkflowSuspensionMetadata["checkpoint"],
+    suspendedStepIndex?: number,
+    lastEventSequence?: number,
+    suspendData?: SUSPEND_DATA,
+  ) {
+    assertCanMutate(this.#state);
+    console.log(
+      `[WorkflowStateManager] Suspending workflow with reason: ${reason}, stepIndex: ${suspendedStepIndex}`,
+    );
+    const suspensionMetadata: WorkflowSuspensionMetadata<SUSPEND_DATA> = {
+      suspendedAt: new Date(),
+      reason,
+      suspendedStepIndex: suspendedStepIndex ?? this.#state.active,
+      lastEventSequence,
+      checkpoint,
+      suspendData,
+    };
+    this.#internalUpdate({
+      status: "suspended",
+      suspension: suspensionMetadata,
+    });
+    console.log(
+      `[WorkflowStateManager] Workflow suspended with status: ${this.#state.status}`,
+      suspensionMetadata,
+    );
+    return suspensionMetadata;
   }
 
   #internalUpdate(stateUpdate: Partial<WorkflowState<DATA, RESULT>>) {

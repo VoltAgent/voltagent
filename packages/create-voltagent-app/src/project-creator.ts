@@ -25,6 +25,7 @@ export const createProject = async (options: ProjectOptions, targetDir: string):
     await fileManager.ensureDir(targetDir);
     spinner.text = "Creating directory structure...";
     await fileManager.ensureDir(path.join(targetDir, "src"));
+    await fileManager.ensureDir(path.join(targetDir, "src/workflows")); // Workflows folder
     await fileManager.ensureDir(path.join(targetDir, ".voltagent")); // VoltAgent folder
 
     // Try processing templates, use default content if error occurs

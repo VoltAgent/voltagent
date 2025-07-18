@@ -41,6 +41,13 @@ export const getBaseTemplates = (): TemplateFile[] => {
       sourcePath: path.join(TEMPLATES_DIR, "base/.env.template"),
       targetPath: ".env",
     },
+    {
+      sourcePath: path.join(TEMPLATES_DIR, "base/workflows/index.ts.template"),
+      targetPath: "src/workflows/index.ts",
+      transform: (content: string, options: ProjectOptions) => {
+        return content.replace(/{{projectName}}/g, options.projectName);
+      },
+    },
   ];
 };
 

@@ -1,3 +1,4 @@
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { defaultStepConfig } from "../internal/utils";
 import {
   createWorkflowStepStartEvent,
@@ -7,6 +8,7 @@ import {
   createStepContext,
 } from "../event-utils";
 import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
+import type { WorkflowExecuteContext } from "../internal/types";
 
 /**
  * Creates an async function step for the workflow
@@ -27,15 +29,18 @@ import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
  * @param fn - The async function to execute with the workflow data
  * @returns A workflow step that executes the function and returns the result
  */
-export function andThen<INPUT, DATA, RESULT>({
-  execute,
-  ...config
-}: WorkflowStepFuncConfig<INPUT, DATA, RESULT>) {
+export function andThen<
+  INPUT,
+  DATA,
+  RESULT,
+  SUSPEND_DATA = DangerouslyAllowAny,
+  RESUME_DATA = DangerouslyAllowAny,
+>({ execute, ...config }: WorkflowStepFuncConfig<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>) {
   return {
     ...defaultStepConfig(config),
     type: "func",
     originalExecute: execute, // ✅ Store original function for serialization
-    execute: async (context) => {
+    execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
       const { data, state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
@@ -90,7 +95,14 @@ export function andThen<INPUT, DATA, RESULT>({
 
         return result;
       } catch (error) {
-        // Publish step error event
+        // Check if this is a suspension, not an error
+        if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
+          // For suspension, we don't publish an error event
+          // The workflow core will handle publishing the suspend event
+          throw error;
+        }
+
+        // Publish step error event for actual errors
         const stepErrorEvent = createWorkflowStepErrorEvent(
           stepContext,
           state.workflowContext,
@@ -111,5 +123,5 @@ export function andThen<INPUT, DATA, RESULT>({
         throw error;
       }
     },
-  } as WorkflowStepFunc<INPUT, DATA, RESULT>;
+  } as WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>;
 }

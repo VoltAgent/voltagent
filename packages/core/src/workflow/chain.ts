@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
@@ -22,7 +22,13 @@ import {
   andThen,
   andWhen,
 } from "./steps";
-import type { WorkflowConfig, WorkflowInput, WorkflowRunOptions, Workflow } from "./types";
+import type {
+  WorkflowConfig,
+  WorkflowInput,
+  WorkflowRunOptions,
+  Workflow,
+  WorkflowExecutionResult,
+} from "./types";
 
 /**
  * Agent configuration for the chain
@@ -73,15 +79,18 @@ export class WorkflowChain<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   CURRENT_DATA = WorkflowInput<INPUT_SCHEMA>,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
 > {
   private steps: WorkflowStep<
     WorkflowInput<INPUT_SCHEMA>,
     DangerouslyAllowAny,
-    DangerouslyAllowAny
+    DangerouslyAllowAny,
+    z.infer<SUSPEND_SCHEMA>
   >[] = [];
-  private config: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>;
+  private config: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 
-  constructor(config: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>) {
+  constructor(config: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>) {
     this.config = config;
   }
 
@@ -105,17 +114,23 @@ export class WorkflowChain<
    * @returns A workflow step that executes the agent with the task
    */
   andAgent<SCHEMA extends z.ZodTypeAny>(
-    task: string | InternalWorkflowFunc<INPUT_SCHEMA, CURRENT_DATA, string>,
+    task: string | InternalWorkflowFunc<INPUT_SCHEMA, CURRENT_DATA, string, any, any>,
     agent: Agent<{ llm: DangerouslyAllowAny }>,
     config: AgentConfig<SCHEMA>,
-  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>> {
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     const step = andAgent(task, agent, config) as unknown as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
       z.infer<SCHEMA> | DangerouslyAllowAny
     >;
     this.steps.push(step);
-    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>>;
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      z.infer<SCHEMA>,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**
@@ -140,18 +155,27 @@ export class WorkflowChain<
   andThen<NEW_DATA>({
     execute,
     ...config
-  }: WorkflowStepFuncConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>): WorkflowChain<
-    INPUT_SCHEMA,
-    RESULT_SCHEMA,
-    NEW_DATA
-  > {
+  }: WorkflowStepFuncConfig<
+    WorkflowInput<INPUT_SCHEMA>,
+    CURRENT_DATA,
+    NEW_DATA,
+    z.infer<SUSPEND_SCHEMA>,
+    z.infer<RESUME_SCHEMA>
+  >): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     const step = andThen({ execute, ...config }) as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
-      NEW_DATA
+      NEW_DATA,
+      z.infer<SUSPEND_SCHEMA>
     >;
     this.steps.push(step);
-    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA>;
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**
@@ -190,14 +214,26 @@ export class WorkflowChain<
     WorkflowInput<INPUT_SCHEMA>,
     CURRENT_DATA,
     NEW_DATA
-  >): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA | CURRENT_DATA> {
+  >): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    NEW_DATA | CURRENT_DATA,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  > {
     const finalStep = andWhen({ condition, step, ...config }) as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
       NEW_DATA
     >;
     this.steps.push(finalStep);
-    return this as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA | CURRENT_DATA>;
+    return this as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA | CURRENT_DATA,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**
@@ -225,18 +261,26 @@ export class WorkflowChain<
   andTap<NEW_DATA>({
     execute,
     ...config
-  }: WorkflowStepTapConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>): WorkflowChain<
-    INPUT_SCHEMA,
-    RESULT_SCHEMA,
-    CURRENT_DATA
-  > {
+  }: WorkflowStepTapConfig<
+    WorkflowInput<INPUT_SCHEMA>,
+    CURRENT_DATA,
+    NEW_DATA,
+    z.infer<SUSPEND_SCHEMA>
+  >): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     const finalStep = andTap({ execute, ...config }) as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
-      NEW_DATA
+      NEW_DATA,
+      z.infer<SUSPEND_SCHEMA>
     >;
     this.steps.push(finalStep);
-    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA>;
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      CURRENT_DATA,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**
@@ -281,10 +325,18 @@ export class WorkflowChain<
   }: WorkflowStepParallelAllConfig<STEPS>): WorkflowChain<
     INPUT_SCHEMA,
     RESULT_SCHEMA,
-    INFERRED_RESULT
+    INFERRED_RESULT,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
   > {
     this.steps.push(andAll({ steps, ...config }));
-    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, INFERRED_RESULT>;
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      INFERRED_RESULT,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**
@@ -331,7 +383,9 @@ export class WorkflowChain<
   }: WorkflowStepParallelRaceConfig<STEPS, CURRENT_DATA, NEW_DATA>): WorkflowChain<
     INPUT_SCHEMA,
     RESULT_SCHEMA,
-    INFERRED_RESULT
+    INFERRED_RESULT,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
   > {
     this.steps.push(
       andRace({
@@ -343,24 +397,42 @@ export class WorkflowChain<
         ...config,
       }),
     );
-    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, INFERRED_RESULT>;
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      INFERRED_RESULT,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**
    * Convert the current chain to a runnable workflow
    */
-  public toWorkflow(): Workflow<INPUT_SCHEMA, RESULT_SCHEMA> {
+  public toWorkflow(): Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
-    return createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA>(this.config, ...this.steps);
+    return createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      ...this.steps,
+    );
   }
 
   /**
    * Execute the workflow with the given input
    */
-  async run(input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) {
+  async run(
+    input: WorkflowInput<INPUT_SCHEMA>,
+    options?: WorkflowRunOptions,
+  ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
     // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA>(this.config, ...this.steps);
-    return await workflow.run(input, options);
+    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      ...this.steps,
+    );
+    return (await workflow.run(input, options)) as unknown as WorkflowExecutionResult<
+      RESULT_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 }
 
@@ -370,6 +442,14 @@ export class WorkflowChain<
 export function createWorkflowChain<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
->(config: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>) {
-  return new WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA>(config);
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+>(config: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>) {
+  return new WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    WorkflowInput<INPUT_SCHEMA>,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  >(config);
 }

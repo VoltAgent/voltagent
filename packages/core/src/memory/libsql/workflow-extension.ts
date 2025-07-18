@@ -1,6 +1,7 @@
 import type { Client } from "@libsql/client";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
 import type { WorkflowTimelineEvent, WorkflowStats } from "../../workflow/types";
+import { devLogger } from "@voltagent/internal/dev";
 
 /**
  * LibSQL extension for workflow memory operations
@@ -71,6 +72,12 @@ export class LibSQLWorkflowExtension {
    * Update a workflow history entry
    */
   async updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void> {
+    devLogger.debug(`[LibSQL] Updating workflow history ${id}`, {
+      status: updates.status,
+      hasMetadata: !!updates.metadata,
+      hasSuspension: !!updates.metadata?.suspension,
+    });
+
     const setClauses: string[] = [];
     const args: any[] = [];
 
@@ -96,17 +103,27 @@ export class LibSQLWorkflowExtension {
     }
     if (updates.metadata !== undefined) {
       setClauses.push("metadata = ?");
-      args.push(JSON.stringify(updates.metadata));
+      const metadataJson = JSON.stringify(updates.metadata);
+      args.push(metadataJson);
+      devLogger.debug(`[LibSQL] Setting metadata for ${id}:`, metadataJson);
     }
 
     setClauses.push("updated_at = ?");
     args.push(new Date().toISOString());
     args.push(id);
 
-    await this.client.execute({
-      sql: `UPDATE ${this._tablePrefix}_workflow_history SET ${setClauses.join(", ")} WHERE id = ?`,
-      args,
-    });
+    const sql = `UPDATE ${this._tablePrefix}_workflow_history SET ${setClauses.join(", ")} WHERE id = ?`;
+    devLogger.debug(`[LibSQL] Executing SQL:`, { sql, args });
+
+    try {
+      const result = await this.client.execute({ sql, args });
+      devLogger.info(
+        `[LibSQL] Successfully updated workflow history ${id}, rows affected: ${result.rowsAffected}`,
+      );
+    } catch (error) {
+      devLogger.error(`[LibSQL] Failed to update workflow history ${id}:`, error);
+      throw error;
+    }
   }
 
   /**

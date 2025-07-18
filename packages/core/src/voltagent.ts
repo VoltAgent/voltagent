@@ -34,6 +34,9 @@ export class VoltAgent {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
 
+    // Setup graceful shutdown handlers
+    this.setupShutdownHandlers();
+
     // NEW: Handle unified VoltOps client
     if (options.voltOpsClient) {
       this.registry.setGlobalVoltOpsClient(options.voltOpsClient);
@@ -116,6 +119,29 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         process.exit(1);
       });
     }
+  }
+
+  /**
+   * Setup graceful shutdown handlers
+   */
+  private setupShutdownHandlers(): void {
+    const shutdown = async (signal: string) => {
+      devLogger.info(`[VoltAgent] Received ${signal}, starting graceful shutdown...`);
+
+      try {
+        // Suspend all active workflows
+        await this.workflowRegistry.suspendAllActiveWorkflows();
+
+        devLogger.info("[VoltAgent] All workflows suspended, exiting...");
+        process.exit(0);
+      } catch (error) {
+        devLogger.error("[VoltAgent] Error during shutdown:", error);
+        process.exit(1);
+      }
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
   }
 
   /**
@@ -281,8 +307,14 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   public registerWorkflows(
     workflows: Record<
       string,
-      | Workflow<DangerouslyAllowAny, DangerouslyAllowAny>
-      | WorkflowChain<DangerouslyAllowAny, DangerouslyAllowAny>
+      | Workflow<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>
+      | WorkflowChain<
+          DangerouslyAllowAny,
+          DangerouslyAllowAny,
+          DangerouslyAllowAny,
+          DangerouslyAllowAny,
+          DangerouslyAllowAny
+        >
     >,
   ): void {
     Object.values(workflows).forEach((workflow) => {
@@ -295,7 +327,14 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   /**
    * Register a single workflow
    */
-  public registerWorkflow(workflow: Workflow<DangerouslyAllowAny, DangerouslyAllowAny>): void {
+  public registerWorkflow(
+    workflow: Workflow<
+      DangerouslyAllowAny,
+      DangerouslyAllowAny,
+      DangerouslyAllowAny,
+      DangerouslyAllowAny
+    >,
+  ): void {
     this.workflowRegistry.registerWorkflow(workflow);
   }
 

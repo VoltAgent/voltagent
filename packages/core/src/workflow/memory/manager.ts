@@ -90,13 +90,23 @@ export class WorkflowMemoryManager {
     id: string,
     updates: Partial<WorkflowHistoryEntry>,
   ): Promise<WorkflowHistoryEntry | null> {
+    devLogger.debug(`[WorkflowMemoryManager] Updating workflow execution ${id}`, {
+      updates: {
+        status: updates.status,
+        hasSuspension: !!updates.metadata?.suspension,
+        metadata: updates.metadata,
+      },
+    });
+
     const updatedEntry = {
       ...updates,
       updatedAt: new Date(),
     };
 
     await this.storage.updateWorkflowHistory(id, updatedEntry);
-    devLogger.debug(`[WorkflowMemoryManager] Updated workflow execution: ${id}`);
+    devLogger.info(
+      `[WorkflowMemoryManager] Updated workflow execution: ${id} with status: ${updates.status}`,
+    );
 
     // Export update to telemetry
     // TODO: Add workflow-specific telemetry methods to VoltAgentExporter
@@ -295,6 +305,44 @@ export class WorkflowMemoryManager {
    */
   async getStep(stepId: string): Promise<WorkflowStepHistoryEntry | null> {
     return this.storage.getWorkflowStep(stepId);
+  }
+
+  /**
+   * Get all suspended workflow executions for a workflow
+   */
+  async getSuspendedExecutions(workflowId: string): Promise<WorkflowHistoryEntry[]> {
+    const allExecutions = await this.getExecutions(workflowId);
+    return allExecutions.filter((execution) => execution.status === ("suspended" as any));
+  }
+
+  /**
+   * Store suspension checkpoint data
+   */
+  async storeSuspensionCheckpoint(executionId: string, suspensionMetadata: any): Promise<void> {
+    devLogger.debug(
+      `[WorkflowMemoryManager] Attempting to store suspension checkpoint for execution ${executionId}`,
+    );
+    const execution = await this.getExecution(executionId);
+    if (execution) {
+      devLogger.debug(
+        `[WorkflowMemoryManager] Found execution ${executionId}, updating with suspension metadata`,
+      );
+      await this.updateExecution(executionId, {
+        status: "suspended" as any,
+        metadata: {
+          ...execution.metadata,
+          suspension: suspensionMetadata,
+        },
+      });
+      devLogger.info(
+        `[WorkflowMemoryManager] Successfully stored suspension checkpoint for execution ${executionId}`,
+      );
+    } else {
+      devLogger.error(
+        `[WorkflowMemoryManager] Execution ${executionId} not found when trying to store suspension checkpoint`,
+      );
+      throw new Error(`Execution ${executionId} not found`);
+    }
   }
 
   /**

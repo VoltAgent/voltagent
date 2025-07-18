@@ -56,6 +56,11 @@ export interface WorkflowExecutionContext {
    * Used for accessing previous step results
    */
   stepData: Map<string, { input: any; output: any }>;
+  /**
+   * Current event sequence number for this workflow execution
+   * Used to maintain event ordering even after server restarts
+   */
+  eventSequence: number;
 }
 
 /**

@@ -52,6 +52,7 @@ const sidebars: SidebarsConfig = {
       label: "Workflows",
       items: [
         "workflows/overview",
+        "workflows/suspend-resume",
         "workflows/execute-api",
         "workflows/hooks",
         "workflows/steps/and-then",

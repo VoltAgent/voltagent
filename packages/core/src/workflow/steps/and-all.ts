@@ -83,29 +83,150 @@ export function andAll<
       }
 
       try {
-        // Enhanced: Each parallel step gets its own sub-context
-        const promises = steps.map((step, index) => {
+        // Enhanced: Each parallel step gets its own sub-context with event tracking
+        const stepPromises = steps.map(async (step, index) => {
           const subStepContext = createParallelSubStepContext(stepContext, index);
+          const startTime = new Date();
+
+          // 🚀 Publish start event for each sub-step
+          const subStepStartEvent = createWorkflowStepStartEvent(
+            subStepContext,
+            state.workflowContext ??
+              (() => {
+                throw new Error("Workflow context is required");
+              })(),
+            data,
+            {
+              parallelIndex: index,
+            },
+          );
+
+          try {
+            const workflowContext = state.workflowContext;
+            if (workflowContext) {
+              await publishWorkflowEvent(subStepStartEvent, workflowContext);
+            }
+          } catch (eventError) {
+            console.warn(`Failed to publish sub-step ${index} start event:`, eventError);
+          }
+
           const subState = {
             ...state,
-            workflowContext: state.workflowContext
-              ? {
-                  ...state.workflowContext,
-                  currentStepContext: subStepContext,
-                  parallelParentEventId: stepStartEvent.id,
-                }
-              : undefined,
+            workflowContext: undefined, // ❌ Remove workflow context to prevent individual event publishing
           };
-          return matchStep(step).execute({ ...context, state: subState });
+
+          // Return promise with index and timing to track execution times
+          return matchStep(step)
+            .execute({ ...context, state: subState })
+            .then((result) => ({
+              result,
+              index,
+              success: true,
+              startTime: startTime.toISOString(),
+              endTime: new Date().toISOString(),
+            }))
+            .catch((error) => ({
+              error,
+              index,
+              success: false,
+              startTime: startTime.toISOString(),
+              endTime: new Date().toISOString(),
+            }));
         });
 
-        const results = (await Promise.all(promises)) as INFERRED_RESULT;
+        // Wait for all steps to complete
+        const allStepResults = await Promise.allSettled(stepPromises);
+
+        // Extract results and check for errors
+        const results: any[] = [];
+        let hasError = false;
+        let firstError: any = null;
+
+        for (const promiseResult of allStepResults) {
+          if (promiseResult.status === "fulfilled") {
+            const stepResult = promiseResult.value as {
+              result?: any;
+              error?: any;
+              index: number;
+              success: boolean;
+              startTime: string;
+              endTime: string;
+            };
+            if (stepResult.success) {
+              results.push(stepResult.result);
+            } else {
+              hasError = true;
+              if (!firstError) {
+                firstError = stepResult.error;
+              }
+              results.push(undefined); // Placeholder for failed step
+            }
+          } else {
+            hasError = true;
+            if (!firstError) {
+              firstError = promiseResult.reason;
+            }
+            results.push(undefined); // Placeholder for rejected promise
+          }
+        }
+
+        // 🏁 Publish success events for all sub-steps with timing
+        for (let i = 0; i < steps.length; i++) {
+          const subStepContext = createParallelSubStepContext(stepContext, i);
+          const stepResult = allStepResults[i];
+
+          if (stepResult.status === "fulfilled") {
+            const stepData = stepResult.value as {
+              result?: any;
+              error?: any;
+              index: number;
+              success: boolean;
+              startTime: string;
+              endTime: string;
+            };
+
+            // Override sub-step context timing with actual execution times
+            if (stepData.startTime) {
+              subStepContext.startTime = new Date(stepData.startTime);
+            }
+
+            const subStepSuccessEvent = createWorkflowStepSuccessEvent(
+              subStepContext,
+              state.workflowContext,
+              stepData.success ? stepData.result : undefined,
+              stepStartEvent.id,
+              {
+                parallelIndex: i,
+                isSkipped: false,
+              },
+            );
+
+            // ✅ Override timing in the event for accurate duration
+            if (stepData.startTime && stepData.endTime) {
+              subStepSuccessEvent.startTime = stepData.startTime;
+              subStepSuccessEvent.endTime = stepData.endTime;
+            }
+
+            try {
+              await publishWorkflowEvent(subStepSuccessEvent, state.workflowContext);
+            } catch (eventError) {
+              console.warn(`Failed to publish success event for sub-step ${i}:`, eventError);
+            }
+          }
+        }
+
+        // If any step failed, throw the first error
+        if (hasError) {
+          throw firstError;
+        }
+
+        const finalResults = results as INFERRED_RESULT;
 
         // Publish step success event
         const stepSuccessEvent = createWorkflowStepSuccessEvent(
           stepContext,
           state.workflowContext,
-          results,
+          finalResults,
           stepStartEvent.id,
           {
             completedSteps: Array.isArray(results) ? results.length : steps.length,
@@ -119,9 +240,16 @@ export function andAll<
           console.warn("Failed to publish workflow step success event:", eventError);
         }
 
-        return results;
+        return finalResults;
       } catch (error) {
-        // Publish step error event
+        // Check if this is a suspension, not an error
+        if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
+          // For suspension, we don't publish an error event
+          // The workflow core will handle publishing the suspend event
+          throw error;
+        }
+
+        // Publish step error event for actual errors
         const stepErrorEvent = createWorkflowStepErrorEvent(
           stepContext,
           state.workflowContext,

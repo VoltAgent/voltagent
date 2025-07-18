@@ -11,6 +11,7 @@ import {
   createStepContext,
 } from "../event-utils";
 import type { WorkflowStepAgent } from "./types";
+import { InternalWorkflowFunc } from "../internal/types";
 
 export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
   schema: SCHEMA;
@@ -40,7 +41,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
   task:
     | BaseMessage[]
     | string
-    | import("../internal/types").InternalWorkflowFunc<INPUT, DATA, BaseMessage[] | string>,
+    | InternalWorkflowFunc<INPUT, DATA, BaseMessage[] | string, any, any>,
   agent: Agent<{ llm: DangerouslyAllowAny }>,
   config: AgentConfig<SCHEMA>,
 ) {
@@ -128,7 +129,14 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
 
         return result.object;
       } catch (error) {
-        // Publish step error event
+        // Check if this is a suspension, not an error
+        if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
+          // For suspension, we don't publish an error event
+          // The workflow core will handle publishing the suspend event
+          throw error;
+        }
+
+        // Publish step error event for actual errors
         const stepErrorEvent = createWorkflowStepErrorEvent(
           stepContext,
           state.workflowContext,

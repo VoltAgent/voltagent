@@ -64,8 +64,14 @@ export type VoltAgentOptions = {
    */
   workflows?: Record<
     string,
-    | Workflow<DangerouslyAllowAny, DangerouslyAllowAny>
-    | WorkflowChain<DangerouslyAllowAny, DangerouslyAllowAny>
+    | Workflow<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>
+    | WorkflowChain<
+        DangerouslyAllowAny,
+        DangerouslyAllowAny,
+        DangerouslyAllowAny,
+        DangerouslyAllowAny,
+        DangerouslyAllowAny
+      >
   >;
   /**
    * Server configuration options

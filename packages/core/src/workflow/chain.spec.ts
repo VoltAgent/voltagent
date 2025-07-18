@@ -55,12 +55,16 @@ describe("workflow.run", () => {
 
     expect(result).toEqual({
       executionId: expect.any(String),
+      workflowId: "test",
       startAt: expect.any(Date),
       endAt: expect.any(Date),
       status: "completed",
       result: {
         name: "Who is john doe",
       },
+      suspension: undefined,
+      error: undefined,
+      resume: expect.any(Function),
     });
   });
 });

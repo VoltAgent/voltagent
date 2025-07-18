@@ -17,6 +17,7 @@ import type {
   MessageFilterOptions,
 } from "../types";
 import { createWorkflowTables } from "../migrations/workflow-tables";
+import { addSuspendedStatusMigration } from "../migrations/add-suspended-status";
 import { LibSQLWorkflowExtension } from "./workflow-extension";
 
 /**
@@ -171,6 +172,10 @@ export class LibSQLStorage implements Memory {
     try {
       await createWorkflowTables(this.client, this.options.tablePrefix);
       this.debug("Workflow tables initialized successfully");
+
+      // Run migrations
+      await addSuspendedStatusMigration(this.client, this.options.tablePrefix);
+      this.debug("Workflow migrations applied successfully");
     } catch (error) {
       this.debug("Error initializing workflow tables:", error);
       // Don't throw error to avoid breaking existing functionality
