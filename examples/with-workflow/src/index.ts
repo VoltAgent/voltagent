@@ -775,6 +775,7 @@ const orderWorkflow = createWorkflowChain({
     },
   });
 
+// Register all workflows with VoltAgent
 new VoltAgent({
   agents: {
     contentAgent,
@@ -791,98 +792,3 @@ new VoltAgent({
     orderWorkflow,
   },
 });
-
-// Test the suspend/resume API with proper typing
-async function testSuspendResumeAPI() {
-  // Run the workflow without approval - it should suspend
-  console.log("=== Starting workflow without approval ===");
-  const result = await testWorkflow.run({ initialValue: 10 });
-
-  // TypeScript knows these properties exist
-  console.log("Execution ID:", result.executionId);
-  console.log("Status:", result.status);
-
-  if (result.status === "suspended") {
-    console.log("✓ Workflow suspended as expected:", result.suspension?.reason);
-    console.log("Suspended at step index:", result.suspension?.suspendedStepIndex);
-    console.log("Suspension metadata:", result.suspension?.checkpoint);
-
-    // Wait a bit before resuming
-    console.log("\n=== Waiting 2 seconds before resuming with approval ===");
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Resume with approval
-    console.log("Resuming workflow with approval...");
-    const resumed = await result.resume({
-      initialValue: 10, // Keep the same value
-      approved: true, // Now with approval
-    });
-
-    console.log("Resumed status:", resumed.status);
-
-    if (resumed.status === "completed" && resumed.result) {
-      // TypeScript knows the shape of the result
-      console.log("✓ Workflow completed successfully!");
-      console.log("Final count:", resumed.result.count);
-      console.log("Final message:", resumed.result.message);
-    } else if (resumed.status === "suspended") {
-      console.log("✗ Workflow suspended again - this shouldn't happen");
-    }
-  } else if (result.status === "completed" && result.result) {
-    console.log("Workflow completed immediately - this shouldn't happen without approval");
-    console.log("Count:", result.result.count);
-    console.log("Message:", result.result.message);
-  }
-}
-
-// Uncomment to test
-testSuspendResumeAPI().catch(console.error);
-
-async function runApprovalExample() {
-  console.log("\n=== Test 1: Small amount (auto-approved) ===");
-  const result1 = await approvalWorkflow.run({ amount: 500 });
-  console.log("Result:", result1.result);
-
-  console.log("\n=== Test 2: Large amount (needs approval) ===");
-  const result2 = await approvalWorkflow.run({ amount: 5000 });
-
-  if (result2.status === "suspended") {
-    console.log("Workflow suspended:", result2.suspension?.reason);
-
-    console.log("\nSimulating manager approval...");
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    console.log("Resuming with approval...");
-    // TypeScript now enforces the resume schema
-    const resumed = await result2.resume({
-      amount: 5000,
-      approved: true,
-      approverName: "John Manager",
-      approvalComments: "Approved for Q4 budget",
-    });
-
-    console.log("Final result:", resumed.result);
-  }
-}
-
-// Uncomment to run the approval example
-// runApprovalExample().catch(console.error);
-
-(async () => {
-  const execution = await orderWorkflow.run({
-    orderId: "ORD-123",
-    amount: 5000,
-  });
-
-  // The workflow is now suspended
-  console.log(execution.status); // "suspended"
-  console.log(execution.suspension); // { reason: "Awaiting manager approval..." }
-
-  // Later, resume with approval data
-  const resumed = await execution.resume({
-    approved: true,
-    approvedBy: "manager@company.com",
-  });
-
-  console.log(resumed.result);
-})();

@@ -1,3 +1,5 @@
+import type { Merge } from "type-fest";
+
 /**
  * An async iterable stream that can be read from.
  * @example
@@ -8,7 +10,7 @@
  * }
  * ```
  */
-export type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
+export type AsyncIterableStream<T> = Merge<AsyncIterable<T>, ReadableStream<T>>;
 
 /**
  * Create an async iterable stream from a readable stream.

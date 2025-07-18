@@ -11,7 +11,7 @@ import {
   createStepContext,
 } from "../event-utils";
 import type { WorkflowStepAgent } from "./types";
-import { InternalWorkflowFunc } from "../internal/types";
+import type { InternalWorkflowFunc } from "../internal/types";
 
 export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
   schema: SCHEMA;
