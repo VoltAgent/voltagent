@@ -15,10 +15,19 @@ export function andTap<
   RESULT,
   SUSPEND_DATA = DangerouslyAllowAny,
   RESUME_DATA = DangerouslyAllowAny,
->({ execute, ...config }: WorkflowStepTapConfig<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>) {
+>({
+  execute,
+  inputSchema,
+  suspendSchema,
+  resumeSchema,
+  ...config
+}: WorkflowStepTapConfig<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>) {
   return {
     ...defaultStepConfig(config),
     type: "tap",
+    inputSchema,
+    suspendSchema,
+    resumeSchema,
     execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
       try {
         await execute(context);

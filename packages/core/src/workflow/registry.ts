@@ -516,6 +516,7 @@ export class WorkflowRegistry extends EventEmitter {
     workflowId: string,
     executionId: string,
     newInput?: any,
+    resumeStepId?: string,
   ): Promise<{
     executionId: string;
     startAt: Date;
@@ -597,8 +598,24 @@ export class WorkflowRegistry extends EventEmitter {
       },
     };
 
+    // If a specific stepId is provided, find its index and override the resumeStepIndex
+    if (resumeStepId) {
+      const stepIndex = registeredWorkflow.workflow.steps.findIndex(
+        (step) => step.id === resumeStepId,
+      );
+
+      if (stepIndex === -1) {
+        throw new Error(`Step '${resumeStepId}' not found in workflow '${workflowId}'`);
+      }
+
+      resumeOptions.resumeFrom.resumeStepIndex = stepIndex;
+      devLogger.info(
+        `[WorkflowRegistry] Overriding resume step index to ${stepIndex} for stepId '${resumeStepId}'`,
+      );
+    }
+
     devLogger.info(
-      `[WorkflowRegistry] Resuming workflow from step ${suspensionMetadata.suspendedStepIndex}`,
+      `[WorkflowRegistry] Resuming workflow from step ${resumeOptions.resumeFrom.resumeStepIndex}`,
     );
 
     try {

@@ -1,354 +1,391 @@
 # Suspend & Resume
 
-> **Pause workflows and continue them later.** Build human-in-the-loop workflows, wait for external events, or handle long-running processes with full type safety.
+> **Pause workflows and continue them later.** Perfect for human-in-the-loop scenarios, approval workflows, and waiting for external events with full type safety.
 
 ## Quick Start
 
-Let's build a workflow that pauses for human approval before proceeding. This example shows the core suspend & resume pattern in action.
+The simplest suspend & resume example:
 
 ```typescript
 import { createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
-// A workflow that processes an order but waits for approval
-const orderWorkflow = createWorkflowChain({
-  id: "order-processor",
-  name: "Order Processing Workflow",
+const simpleApproval = createWorkflowChain({
+  id: "simple-approval",
+  name: "Simple Approval",
+  input: z.object({ item: z.string() }),
+  result: z.object({ approved: z.boolean() }),
+}).andThen({
+  id: "wait-for-approval",
+  execute: async ({ data, suspend, resumeData }) => {
+    // If we're resuming, return the decision
+    if (resumeData) {
+      return { approved: resumeData.approved };
+    }
+
+    // Otherwise, suspend and wait
+    await suspend("Waiting for approval");
+  },
+});
+
+// Run the workflow - it will suspend
+const execution = await simpleApproval.run({ item: "New laptop" });
+console.log(execution.status); // "suspended"
+
+// Later, resume with a decision
+const result = await execution.resume({ approved: true });
+console.log(result.result); // { approved: true }
+```
+
+## Human-in-the-Loop Patterns
+
+The suspend & resume feature shines when you need human decisions in your workflows. Here's a realistic expense approval workflow:
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+// These are your own functions - implement based on your needs
+async function validateExpense(data: any) {
+  // Your validation logic here
+  return { valid: true };
+}
+
+async function getEmployee(employeeId: string) {
+  // Fetch from your database
+  return { name: "John Doe" };
+}
+
+async function createReimbursement(data: any) {
+  // Create in your system
+  return { id: "reimb-789" };
+}
+
+const expenseApproval = createWorkflowChain({
+  id: "expense-approval",
+  name: "Expense Approval",
   input: z.object({
-    orderId: z.string(),
+    employeeId: z.string(),
     amount: z.number(),
+    category: z.string(),
   }),
   result: z.object({
-    status: z.string(),
-    approvedBy: z.string().optional(),
+    approved: z.boolean(),
+    processedBy: z.string(),
+    reimbursementId: z.string().optional(),
   }),
 })
   .andThen({
-    id: "validate-order",
+    id: "validate-expense",
     execute: async ({ data }) => {
-      console.log(`Validating order ${data.orderId} for $${data.amount}`);
+      const validation = await validateExpense(data);
       return {
         ...data,
-        validated: true,
-        approved: data.amount <= 1000,
-        approvedBy: data.amount <= 1000 ? "auto" : undefined,
+        isValid: validation.valid,
+        requiresReceipt: data.amount > 50,
       };
     },
   })
   .andThen({
-    id: "await-approval",
+    id: "manager-review",
+    // Data available here includes everything from previous steps:
+    // - Original input: employeeId, amount, category
+    // - From validate-expense: isValid, requiresReceipt
+    suspendSchema: z.object({
+      employeeId: z.string(),
+      employeeName: z.string(),
+      amount: z.number(),
+      category: z.string(),
+      requiresReceipt: z.boolean(),
+      validationStatus: z.string(),
+    }),
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      managerId: z.string(),
+      notes: z.string().optional(),
+    }),
     execute: async ({ data, suspend, resumeData }) => {
-      // Check if we're resuming with approval
       if (resumeData) {
-        return { ...data, ...resumeData };
+        return {
+          ...data,
+          approved: resumeData.approved,
+          reviewedBy: resumeData.managerId,
+          reviewNotes: resumeData.notes,
+        };
       }
 
-      // Check if already approved
-      if (data.approved) {
-        return data;
+      // Auto-approve small valid expenses
+      if (data.isValid && data.amount <= 100) {
+        return { ...data, approved: true, reviewedBy: "auto" };
       }
 
-      // Suspend the workflow and wait for approval
-      await suspend("Awaiting manager approval for high-value order");
+      // Suspend with all data needed for UI
+      const employee = await getEmployee(data.employeeId);
+      await suspend("Manager approval required", {
+        employeeId: data.employeeId,
+        employeeName: employee.name,
+        amount: data.amount,
+        category: data.category,
+        requiresReceipt: data.requiresReceipt,
+        validationStatus: data.isValid ? "valid" : "invalid",
+      });
     },
   })
   .andThen({
-    id: "process-payment",
+    id: "process-reimbursement",
     execute: async ({ data }) => {
-      console.log(`Processing payment. Approved by: ${data.approvedBy}`);
+      if (!data.approved) {
+        return {
+          approved: false,
+          processedBy: data.reviewedBy,
+        };
+      }
+
+      const reimbursement = await createReimbursement(data);
       return {
-        status: "completed",
-        approvedBy: data.approvedBy,
+        approved: true,
+        processedBy: data.reviewedBy,
+        reimbursementId: reimbursement.id,
       };
     },
   });
 
-// Start the workflow
-const execution = await orderWorkflow.run({
-  orderId: "ORD-123",
-  amount: 5000,
+// Run the workflow
+const execution = await expenseApproval.run({
+  employeeId: "emp-123",
+  amount: 250,
+  category: "travel",
 });
 
-// The workflow is now suspended
-console.log(execution.status); // "suspended"
-console.log(execution.suspension); // { reason: "Awaiting manager approval..." }
+// Workflow suspended - access the data for UI display
+if (execution.status === "suspended") {
+  const reviewData = execution.suspension.suspendData;
+  console.log(reviewData);
+  // {
+  //   employeeId: "emp-123",
+  //   employeeName: "John Doe",
+  //   amount: 250,
+  //   category: "travel",
+  //   requiresReceipt: true,
+  //   validationStatus: "valid"
+  // }
 
-// Later, resume with approval data
-// This becomes resumeData in the suspended step
-const resumed = await execution.resume({
-  approved: true,
-  approvedBy: "manager@company.com",
-});
+  // Show this data in your approval UI (your own function)
+  displayApprovalForm(reviewData);
 
-console.log(resumed.result);
-// { status: "completed", approvedBy: "manager@company.com" }
+  // After manager reviews in UI, resume with decision
+  const result = await execution.resume({
+    approved: true,
+    managerId: "mgr-456",
+    notes: "Conference travel approved",
+  });
+}
 ```
 
-## How It Works
+### Key Concepts
 
-Suspension allows a workflow to pause execution at any point and resume later with additional data. This is perfect for:
+- **suspend()**: Immediately pauses the workflow at the current step
+- **resumeData**: Contains the data provided when resuming (separate from original step data)
+- **Re-execution**: The suspended step runs again from the beginning when resumed
 
-- **Human Approval**: Wait for a manager to approve an action
-- **External Events**: Wait for a webhook or payment confirmation
-- **Time Delays**: Pause for hours or days before continuing
-- **Resource Availability**: Wait for a resource to become available
+## Step-Level Schemas
 
-### The Suspend Function
+You can define schemas at the step level to override workflow-level schemas. This is perfect for steps that need specific resume data:
 
-Every step in a workflow has access to a `suspend` function. When called, it:
+```typescript
+import { Agent, createWorkflowChain } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
-1. Immediately stops execution at that point
-2. Saves the current workflow state as a checkpoint
-3. Stores metadata about why and where it suspended
-4. Returns a suspension result to the workflow caller
+// Create an AI agent to use in the workflow
+const agent = new Agent({
+  name: "DataExtractor",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  instructions: "You extract structured data from documents.",
+});
 
-**Important**: The `suspend` function NEVER returns to the calling code. When you call `suspend`, the step execution stops immediately.
+const documentReview = createWorkflowChain({
+  id: "document-review",
+  name: "Document Review",
+  input: z.object({ documentId: z.string() }),
+  result: z.object({ approved: z.boolean() }),
+})
+  .andAgent(({ data }) => `Extract data from document ${data.documentId}`, agent, {
+    schema: z.object({ extractedData: z.record(z.any()) }),
+  })
+  .andThen({
+    id: "human-review",
+    // Step-specific resume schema
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      corrections: z.record(z.any()).optional(),
+    }),
+    execute: async ({ data, suspend, resumeData }) => {
+      if (resumeData) {
+        const finalData = resumeData.corrections
+          ? { ...data.extractedData, ...resumeData.corrections }
+          : data.extractedData;
+        return { extractedData: finalData, approved: resumeData.approved };
+      }
 
-### How Resume Works
+      await suspend("Please review extracted data");
+    },
+  });
+```
 
-When you resume a workflow:
+## Resume From Specific Steps
 
-1. The suspended step is re-executed from the beginning
-2. The original step data is preserved in `data`
-3. Resume input is provided separately in `resumeData`
-4. The step can access both original and resume data
+You can resume from a specific step using the `stepId` option:
+
+```typescript
+// Your functions
+async function calculateRiskScore(documentId: string): Promise<number> {
+  // Your risk calculation logic
+  return Math.random() * 100;
+}
+
+const multiStageReview = createWorkflowChain({
+  id: "multi-stage-review",
+  name: "Multi-Stage Review",
+  input: z.object({ documentId: z.string(), riskLevel: z.string() }),
+  result: z.object({ approved: z.boolean(), reviewers: z.array(z.string()) }),
+})
+  .andThen({
+    id: "legal-review",
+    resumeSchema: z.object({ approved: z.boolean(), reviewer: z.string() }),
+    execute: async ({ data, suspend, resumeData }) => {
+      if (resumeData) {
+        return { ...data, legalApproved: resumeData.approved, reviewers: [resumeData.reviewer] };
+      }
+      if (data.riskLevel === "high") {
+        await suspend("Legal review required");
+      }
+      return { ...data, legalApproved: true, reviewers: [] };
+    },
+  })
+  .andThen({
+    id: "risk-assessment",
+    execute: async ({ data }) => {
+      // This step never suspends - just processes data
+      const riskScore = await calculateRiskScore(data.documentId);
+      return { ...data, riskScore };
+    },
+  })
+  .andThen({
+    id: "compliance-review",
+    resumeSchema: z.object({ approved: z.boolean(), reviewer: z.string() }),
+    execute: async ({ data, suspend, resumeData }) => {
+      if (resumeData) {
+        return {
+          approved: resumeData.approved,
+          reviewers: [...data.reviewers, resumeData.reviewer],
+        };
+      }
+      if (data.riskScore > 70) {
+        await suspend("Compliance review required");
+      }
+      return { approved: true, reviewers: data.reviewers };
+    },
+  });
+
+// Scenario 1: Normal flow - resumes from where it suspended
+const execution = await multiStageReview.run({ documentId: "doc-123", riskLevel: "high" });
+// Suspended at legal-review
+const result = await execution.resume({ approved: true, reviewer: "legal-team" });
+
+// Scenario 2: Resume from a different step
+const execution2 = await multiStageReview.run({ documentId: "doc-456", riskLevel: "high" });
+// Force resume from compliance-review step instead
+const result2 = await execution2.resume(
+  { approved: true, reviewer: "compliance-team" },
+  { stepId: "compliance-review" }
+);
+```
+
+## How Suspend & Resume Works
+
+When a workflow suspends:
+
+1. Execution stops immediately at the current step
+2. The workflow state is saved as a checkpoint
+3. Already completed steps won't re-run on resume
+
+When you resume:
+
+1. The suspended step re-executes from the beginning
+2. `data` contains the original step input
+3. `resumeData` contains the new data you provided
+4. The workflow continues from that point
+
+## Schema Hierarchy
+
+Understanding how schemas work is crucial for type safety:
+
+### Workflow-Level vs Step-Level Schemas
+
+1. **Workflow-level schemas** apply to all steps by default:
+
+```typescript
+createWorkflowChain({
+  suspendSchema: z.object({ reason: z.string() }), // All steps use this
+  resumeSchema: z.object({ approved: z.boolean() }), // All steps use this
+});
+```
+
+2. **Step-level schemas** override workflow-level ones:
 
 ```typescript
 .andThen({
-  id: "my-step",
-  execute: async ({ data, suspend, resumeData }) => {
-    console.log("Step starting with data:", data);
-
-    // Check if we're resuming (resumeData will be present)
-    if (resumeData) {
-      console.log("Resumed with:", resumeData);
-      // Merge original data with resume data
-      return {
-        ...data,
-        approved: resumeData.approved,
-        approvedBy: resumeData.approvedBy
-      };
-    }
-
-    // Initial execution - check if we should suspend
-    if (!data.approved) {
-      // This will immediately stop execution
-      await suspend("Waiting for approval");
-      // Execution stops here - the code below won't run
-    }
-
-    // This only runs if already approved
-    console.log("Already approved, continuing...");
-    return data;
-  },
+  id: "special-step",
+  resumeSchema: z.object({ specialData: z.string() }), // Overrides workflow schema
+  execute: async ({ resumeData }) => {
+    // resumeData has type { specialData: string }, not { approved: boolean }
+  }
 })
 ```
 
-**Key points:**
+### When to Use Each
 
-- `data` always contains the original step input
-- `resumeData` is only present when resuming (after suspension)
-- The step is fully re-executed, allowing you to handle both cases
-- Resume data does NOT replace the original data - they are separate
+- **Use workflow-level schemas** when all steps share the same suspend/resume structure
+- **Use step-level schemas** when specific steps need different data
+- **Use neither** for simple cases - data is still passed but not type-checked
 
-### Understanding Execution Flow
+## Type-Safe Schemas
 
-Let's trace through exactly what happens during suspend and resume:
-
-```typescript
-const workflow = createWorkflowChain({
-  id: "execution-flow-demo",
-  input: z.object({ value: z.number() }),
-  result: z.object({ final: z.number() }),
-})
-  .andThen({
-    id: "step-1",
-    execute: async ({ data }) => {
-      console.log("Step 1: value =", data.value);
-      return { ...data, step1Done: true };
-    },
-  })
-  .andThen({
-    id: "step-2",
-    execute: async ({ data, suspend, resumeData }) => {
-      console.log("Step 2 starting, data:", data);
-
-      // Check if we're resuming
-      if (resumeData) {
-        console.log("Resuming with:", resumeData);
-        return { ...data, ...resumeData, step2Done: true };
-      }
-
-      if (!data.approved) {
-        console.log("Suspending...");
-        await suspend("Need approval");
-        // Never reaches here during initial run
-      }
-
-      console.log("Step 2 continuing with approval");
-      return { ...data, step2Done: true };
-    },
-  })
-  .andThen({
-    id: "step-3",
-    execute: async ({ data }) => {
-      console.log("Step 3: All done!");
-      return { final: data.value * 2 };
-    },
-  });
-
-// First execution:
-const execution = await workflow.run({ value: 5 });
-// Output:
-// Step 1: value = 5
-// Step 2 starting, data: { value: 5, step1Done: true }
-// Suspending...
-// [Workflow suspends - no more output]
-
-// Resume with approval:
-const result = await execution.resume({
-  approved: true,
-});
-// Output:
-// Step 2 starting, data: { value: 5, step1Done: true }
-// Resuming with: { approved: true }
-// Step 3: All done!
-// Result: { final: 10 }
-```
-
-Key points:
-
-1. When suspended, execution stops immediately
-2. Already completed steps (step-1) are NOT re-executed on resume
-3. The suspended step (step-2) is re-executed entirely with new input
-4. Subsequent steps (step-3) execute normally after the resumed step completes
-
-### Type-Safe Suspension
-
-Add type safety to your suspend & resume operations using Zod schemas. This ensures data integrity when workflows are paused and resumed.
+Define schemas for type-safe suspend and resume operations:
 
 ```typescript
 const workflow = createWorkflowChain({
-  id: "type-safe-suspend",
-  name: "Type-Safe Suspension",
+  id: "type-safe-flow",
+  name: "Type-Safe Flow",
   input: z.object({ userId: z.string() }),
   result: z.object({ decision: z.string() }),
 
-  // Define what data can be provided during suspension
+  // Workflow-level schemas (used by all steps unless overridden)
   suspendSchema: z.object({
     reason: z.string(),
     priority: z.enum(["low", "medium", "high"]),
   }),
-
-  // Define what data must be provided during resume
   resumeSchema: z.object({
     decision: z.enum(["approve", "reject"]),
     comments: z.string().optional(),
   }),
 }).andThen({
-  id: "review-step",
-  execute: async ({ data, suspend, resumeData }) => {
-    // Check if we're resuming
+  id: "review",
+  execute: async ({ suspend, resumeData }) => {
     if (resumeData) {
-      // TypeScript knows resumeData matches resumeSchema
+      // TypeScript knows the shape of resumeData
       return { decision: resumeData.decision };
     }
 
-    // Suspend with metadata (TypeScript enforces the schema)
-    await suspend("Manager review required", {
-      reason: "Manager review required",
-      priority: "high", // Type-safe enum
+    await suspend("Review needed", {
+      reason: "Manual review required",
+      priority: "high",
     });
   },
 });
-```
-
-## Working with Suspended Workflows
-
-### Finding Suspended Workflows
-
-Use the workflow registry to query suspended workflows:
-
-```typescript
-import { WorkflowRegistry } from "@voltagent/core";
-
-const registry = WorkflowRegistry.getInstance();
-
-// Get all suspended workflows
-const suspended = await registry.getSuspendedWorkflows();
-
-// Get suspended workflows of a specific type
-const pendingApprovals = await registry.getSuspendedWorkflows({
-  workflowId: "order-processor",
-});
-
-// Check a specific execution
-const execution = await registry.getWorkflowExecution("order-processor", executionId);
-
-if (execution.status === "suspended") {
-  console.log(`Suspended at step: ${execution.suspension.stepIndex}`);
-  console.log(`Reason: ${execution.suspension.reason}`);
-}
-```
-
-### Resume Patterns
-
-There are several ways to resume a workflow:
-
-**1. Direct Resume**
-
-Resume immediately with data:
-
-```typescript
-const result = await execution.resume({
-  approved: true,
-  notes: "Looks good",
-});
-```
-
-**2. Conditional Resume**
-
-Resume based on external conditions:
-
-```typescript
-// Check if conditions are met before resuming
-const execution = await registry.getWorkflowExecution(workflowId, executionId);
-
-if (execution.suspension.reason === "payment_pending") {
-  const paymentConfirmed = await checkPaymentStatus(execution.input.orderId);
-
-  if (paymentConfirmed) {
-    // Get the full execution object to access the resume method
-    const fullExecution = await workflow.run(
-      { orderId: execution.input.orderId },
-      {
-        executionId: executionId,
-        resume: true,
-      }
-    );
-
-    await fullExecution.resume({
-      paymentStatus: "confirmed",
-    });
-  }
-}
-```
-
-**3. Batch Resume**
-
-Resume multiple workflows at once:
-
-```typescript
-const suspendedWorkflows = await registry.getSuspendedWorkflows({
-  workflowId: "daily-report",
-});
-
-// Resume all at midnight
-for (const execution of suspendedWorkflows) {
-  await workflow.resume(execution.id, {
-    resumeTime: new Date().toISOString(),
-  });
-}
 ```
 
 ## VoltOps Console Integration
@@ -380,374 +417,218 @@ When resuming, the console shows:
 
 ![VoltOps Resume Modal](https://cdn.voltagent.dev/docs/resume-modal-demo.gif)
 
-## Advanced Patterns
+## Common Patterns
 
-### Human-in-the-Loop Workflows
-
-Build workflows that require human decisions at key points:
+### Document Review with Corrections
 
 ```typescript
-const documentWorkflow = createWorkflowChain({
-  id: "document-processor",
-  name: "Document Processing",
-  input: z.object({
-    documentId: z.string(),
-    documentType: z.string(),
-  }),
-  result: z.object({
-    status: z.string(),
-    extractedData: z.record(z.any()),
-  }),
+const documentReview = createWorkflowChain({
+  id: "doc-review",
+  name: "Document Review",
+  input: z.object({ documentId: z.string() }),
+  result: z.object({ status: z.string() }),
 })
-  .andAgent(({ data }) => `Extract key information from document ${data.documentId}`, aiAgent, {
-    schema: z.object({ extractedData: z.record(z.any()) }),
-  })
+  .andAgent(({ data }) => `Extract data from ${data.documentId}`, agent)
   .andThen({
     id: "human-review",
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      corrections: z.record(z.any()).optional(),
+    }),
     execute: async ({ data, suspend, resumeData }) => {
-      // Check if we're resuming with review data
       if (resumeData) {
-        // Apply corrections if provided
-        if (resumeData.corrections) {
-          return {
-            ...data,
-            extractedData: { ...data.extractedData, ...resumeData.corrections },
-            reviewedBy: resumeData.userId,
-          };
-        }
-        return { ...data, reviewedBy: resumeData.userId };
+        const finalData = resumeData.corrections ? { ...data, ...resumeData.corrections } : data;
+        return { ...finalData, approved: resumeData.approved };
       }
 
-      // Suspend and wait for human verification
-      await suspend("Human verification required", {
-        extractedData: data.extractedData,
-      });
-    },
-  })
-  .andThen({
-    id: "save-to-database",
-    execute: async ({ data }) => {
-      // Save verified data
-      await saveDocument(data.documentId, data.extractedData);
-      return { status: "completed", extractedData: data.extractedData };
+      await suspend("Review extracted data");
     },
   });
 ```
 
-### Long-Running Workflows
-
-Handle workflows that span hours or days:
+### Scheduled Tasks
 
 ```typescript
-const campaignWorkflow = createWorkflowChain({
-  id: "email-campaign",
-  name: "Email Campaign",
-  input: z.object({
-    campaignId: z.string(),
-    recipients: z.array(z.string()),
-  }),
-  result: z.object({
-    sent: z.number(),
-    opened: z.number(),
-  }),
+const scheduledTask = createWorkflowChain({
+  id: "scheduled-task",
+  name: "Scheduled Task",
+  input: z.object({ taskId: z.string() }),
+  result: z.object({ completed: z.boolean() }),
 })
   .andThen({
-    id: "send-batch",
-    execute: async ({ data }) => {
-      // Send first batch
-      const sent = await sendEmails(data.recipients.slice(0, 100));
-      return { ...data, sent, remaining: data.recipients.slice(100) };
+    id: "wait-until",
+    execute: async ({ data, suspend, resumeData }) => {
+      if (resumeData) {
+        return { ...data, startedAt: resumeData.timestamp };
+      }
+
+      // Suspend until specific time
+      await suspend("Waiting until scheduled time");
     },
   })
   .andThen({
-    id: "wait-for-opens",
-    execute: async ({ data, suspend, resumeData }) => {
-      // Check if we're resuming with stats
-      if (resumeData) {
-        return { ...data, ...resumeData };
-      }
-
-      // Suspend for 24 hours to collect open rates
-      await suspend("Collecting email open statistics", {
-        waitUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      });
+    id: "run-task",
+    execute: async ({ data }) => {
+      await runScheduledTask(data.taskId);
+      return { completed: true };
     },
-  })
-  .andWhen({
-    id: "send-followup",
-    condition: ({ data }) => data.opened < 50,
-    step: andAgent(({ data }) => "Generate follow-up email for low engagement", aiAgent, {
-      schema: z.object({ followUpContent: z.string() }),
-    }),
   });
 
-// Resume after 24 hours with stats
-setTimeout(
-  async () => {
-    const execution = await registry.getWorkflowExecution("email-campaign", executionId);
-
-    // Only provide the new stats - the step already has access to previous data
-    await execution.resume({
-      opened: 42,
-      clicked: 15,
-    });
-  },
-  24 * 60 * 60 * 1000
-);
+// Resume at scheduled time
+setTimeout(() => {
+  execution.resume({ timestamp: Date.now() });
+}, delayMs);
 ```
 
-### Event-Driven Resume
+### Webhook-Driven Resume
 
-Resume workflows based on external events:
+In real applications, you need to maintain the execution reference:
 
 ```typescript
-// Webhook handler
+// Simple approach: Store execution in memory (for demos)
+const activeExecutions = new Map();
+
+// When starting workflow
+const execution = await orderWorkflow.run({ orderId: "123" });
+activeExecutions.set("123", execution);
+
+// In your webhook handler
 app.post("/webhooks/payment", async (req, res) => {
   const { orderId, status } = req.body;
 
-  // Find suspended workflow waiting for this payment
-  const suspended = await registry.getSuspendedWorkflows({
-    workflowId: "order-processor",
-  });
-
-  const waiting = suspended.find((exec) => exec.input.orderId === orderId);
-
-  if (waiting) {
-    await orderWorkflow.resume(waiting.id, {
-      paymentStatus: status,
-      paymentTime: new Date().toISOString(),
-    });
+  const execution = activeExecutions.get(orderId);
+  if (execution) {
+    await execution.resume({ paymentStatus: status });
+    activeExecutions.delete(orderId);
   }
 
-  res.status(200).send("OK");
+  res.send("OK");
 });
 ```
+
+**Note**: For production apps, you'll need persistent storage for execution references. Consider using a job queue or workflow orchestration service.
 
 ## Best Practices
 
-### 1. Design Steps for Re-execution
+### 1. Design for Re-execution
 
-Since suspended steps are re-executed from the beginning, design them to handle both initial and resumed execution:
+Remember that suspended steps re-run from the beginning:
 
 ```typescript
 .andThen({
-  id: "process-order",
+  id: "review",
   execute: async ({ data, suspend, resumeData }) => {
-    // Check if we're resuming after manual review
     if (resumeData) {
-      // Process with manual approval
-      const result = await processOrder(data.orderId);
-      return { ...data, processed: true, result, manuallyApproved: true };
+      // Handle resume case
+      return processWithApproval(data, resumeData);
     }
 
-    // Validate order
-    const isValid = await validateOrder(data.orderId);
-    if (!isValid) {
-      await suspend("Order validation failed - manual review needed");
+    // Check if suspension needed
+    if (needsReview(data)) {
+      await suspend("Review required");
     }
 
-    // Process the order (validation passed)
-    const result = await processOrder(data.orderId);
-    return { ...data, processed: true, result };
+    // Continue if no suspension needed
+    return processAutomatically(data);
   },
 })
 ```
 
-### 2. Keep Resume Data Minimal
+### 2. Keep Data Minimal
 
-Since the original step data is preserved, only pass the new information when resuming:
+- Original step data is preserved - don't repeat it
+- Only pass new information when resuming
+- Use clear, descriptive field names
 
 ```typescript
-// Get the suspended execution
-const execution = await registry.getWorkflowExecution(workflowId, executionId);
+// Good: Only new data
+await execution.resume({ approved: true, approver: "jane@co.com" });
 
-// Resume with only the new data needed
-await execution.resume({
-  approved: true,
-  approver: "manager@example.com",
-});
-// The step already has access to all original data
+// Bad: Repeating original data
+await execution.resume({ ...originalData, approved: true });
 ```
 
-### 3. Always Provide Clear Suspension Reasons
+### 3. Use Type-Safe Schemas
 
-Help users understand why a workflow is paused:
-
-```typescript
-await suspend("Manager approval required for orders over $5000", {
-  orderAmount: data.amount,
-  threshold: 5000,
-});
-```
-
-### 2. Use Schemas for Type Safety
-
-Define clear contracts for suspend and resume data:
+Define schemas for better developer experience:
 
 ```typescript
-suspendSchema: z.object({
-  reason: z.string(),
-  priority: z.enum(["low", "medium", "high"]),
-  metadata: z.record(z.any()).optional()
-}),
-
 resumeSchema: z.object({
   approved: z.boolean(),
   approvedBy: z.string().email(),
-  comments: z.string().optional()
-})
+  comments: z.string().optional(),
+});
 ```
 
-### 3. Handle Resume Errors
-
-Always handle potential resume failures:
+### 4. Handle Edge Cases
 
 ```typescript
 try {
-  const result = await workflow.resume(executionId, resumeData);
+  await execution.resume(data);
 } catch (error) {
   if (error.message.includes("not in suspended state")) {
-    // Workflow already resumed or completed
-  } else if (error.message.includes("validation")) {
-    // Resume data doesn't match schema
+    // Already resumed or completed
   }
 }
 ```
 
-### 4. Set Suspension Timeouts
+### 5. Clear Suspension Reasons
 
-Consider adding timeouts for suspended workflows:
-
-```typescript
-.andThen({
-  id: "timed-suspension",
-  execute: async ({ data, suspend, state }) => {
-    // Set a timeout in userContext
-    state.userContext.set("suspendTimeout", Date.now() + 3600000); // 1 hour
-
-    const result = await suspend("Awaiting response");
-
-    return result;
-  },
-})
-```
-
-### 5. Track Suspension Metrics
-
-Monitor how long workflows stay suspended:
+Always provide context:
 
 ```typescript
-const execution = await registry.getWorkflowExecution(workflowId, executionId);
-
-if (execution.suspension) {
-  const suspendedAt = new Date(execution.suspension.suspendedAt);
-  const duration = Date.now() - suspendedAt.getTime();
-
-  console.log(`Workflow suspended for ${duration / 1000} seconds`);
-}
+await suspend(`Approval needed for amount $${data.amount} (exceeds $1000 limit)`);
 ```
 
 ## API Reference
 
-### Workflow Configuration
+### Configuration
 
 ```typescript
 createWorkflowChain({
   // ... other config
-
-  // Optional: Define data structure for suspension
-  suspendSchema: z.object({
-    reason: z.string(),
-    // Add any fields you need during suspension
-  }),
-
-  // Optional: Define required data for resume
-  resumeSchema: z.object({
-    decision: z.string(),
-    // Add fields required to continue
-  }),
+  suspendSchema: z.object({...}),  // Optional: Type-safe suspend data
+  resumeSchema: z.object({...}),    // Optional: Type-safe resume data
 });
+
+// Step-level schemas override workflow-level
+.andThen({
+  id: "step",
+  resumeSchema: z.object({...}),   // Takes precedence
+  execute: async ({ data, suspend, resumeData }) => {...}
+})
 ```
 
 ### Suspend Function
-
-Available in every step's execute function:
 
 ```typescript
 suspend: (reason?: string, suspendData?: any) => Promise<never>;
 ```
 
-**Important characteristics:**
-
-- Returns `Promise<never>` because it never resolves
-- Immediately stops execution when called
-- The step will be re-executed from the beginning when resumed
-- Optional `suspendData` must match `suspendSchema` if defined
-
-```typescript
-execute: async ({ data, suspend, resumeData }) => {
-  // Check if we're resuming
-  if (resumeData) {
-    // Handle resume - merge data as needed
-    return { ...data, ...resumeData, completed: true };
-  }
-
-  // Simple suspend (no suspendSchema)
-  if (!data.isReady) {
-    await suspend("Waiting for external event");
-    // ❌ This line will NEVER execute during suspension
-  }
-
-  // With suspendSchema (reason first, then typed data):
-  if (!data.approved) {
-    await suspend("Approval required", {
-      currentState: data.state,
-      priority: "high",
-    });
-    // ❌ This line will NEVER execute during suspension
-  }
-
-  // ✅ This code only runs if conditions above were false
-  return { ...data, completed: true };
-};
-```
-
-**Execute Context Type:**
-
-```typescript
-interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
-  data: DATA; // Step input data (from checkpoint when resuming)
-  suspend: Function; // Suspend function
-  resumeData?: RESUME_DATA; // Present only when resuming
-  state: WorkflowState; // Workflow state
-  getStepData: Function; // Get data from other steps
-}
-```
+- Never returns - execution stops immediately
+- Step re-executes from beginning when resumed
+- `suspendData` must match schema if defined
 
 ### Resume Method
 
 ```typescript
-// Resume a suspended workflow execution
-const result = await execution.resume(data?: any);
+execution.resume(data?: any, options?: { stepId?: string })
 ```
 
-**Key points:**
+- **First parameter**: `data` becomes `resumeData` in the suspended step
+- **Second parameter**: Optional `options` object with:
+  - `stepId`: Resume from a specific step instead of the suspended one
+- Original step data preserved separately
+- Data must match `resumeSchema` if defined
 
-- `data` is optional - if not provided, the suspended step uses its original input
-- If provided, `data` becomes the complete input for the suspended step
-- The data should include both original workflow data and any new fields
-- Must match `resumeSchema` if defined in the workflow
+Examples:
 
 ```typescript
-// Example: Resume without data (uses original step input)
-const result = await execution.resume();
+// Normal resume
+await execution.resume({ approved: true });
 
-// Example: Resume with new data
-const result = await execution.resume({
-  ...originalData, // Include original workflow data
-  approved: true, // Add new fields
-  approvedBy: "admin",
-});
+// Resume from specific step
+await execution.resume({ approved: true }, { stepId: "compliance-review" });
 ```
 
 ### Execution Result
@@ -757,20 +638,13 @@ interface WorkflowExecutionResult {
   workflowId: string;
   executionId: string;
   status: "completed" | "suspended" | "error";
-
-  // Present when status is "suspended"
   suspension?: {
     reason: string;
     suspendedAt: string;
     suspendedStepIndex: number;
-    // ... your custom suspension data
   };
-
-  // Present when status is "completed"
   result?: any;
-
-  // Methods
-  resume: (data: any) => Promise<WorkflowExecutionResult>;
+  resume: (data?: any) => Promise<WorkflowExecutionResult>;
 }
 ```
 

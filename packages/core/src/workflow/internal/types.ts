@@ -84,6 +84,22 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RES
    */
   type: string;
   /**
+   * Optional input schema for runtime validation
+   */
+  inputSchema?: z.ZodTypeAny;
+  /**
+   * Optional output schema for runtime validation
+   */
+  outputSchema?: z.ZodTypeAny;
+  /**
+   * Optional suspend data schema for this step
+   */
+  suspendSchema?: z.ZodTypeAny;
+  /**
+   * Optional resume data schema for this step
+   */
+  resumeSchema?: z.ZodTypeAny;
+  /**
    * Execute the step with the given context
    * @param context - The execution context containing data, state, and helpers
    * @returns The result of the step

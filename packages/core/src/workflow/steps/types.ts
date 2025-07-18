@@ -1,4 +1,5 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import { z } from "zod";
 import type { Agent } from "../../agent/agent";
 import type {
   InternalAnyWorkflowStep,
@@ -29,6 +30,10 @@ export type WorkflowStepFuncConfig<
   RESUME_DATA = any,
 > = InternalWorkflowStepConfig<{
   execute: InternalWorkflowFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>;
+  inputSchema?: z.ZodTypeAny;
+  outputSchema?: z.ZodTypeAny;
+  suspendSchema?: z.ZodTypeAny;
+  resumeSchema?: z.ZodTypeAny;
 }>;
 
 export interface WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA = any>
@@ -44,6 +49,9 @@ export type WorkflowStepTapConfig<
   RESUME_DATA = any,
 > = InternalWorkflowStepConfig<{
   execute: InternalWorkflowFunc<INPUT, DATA, DangerouslyAllowAny, SUSPEND_DATA, RESUME_DATA>;
+  inputSchema?: z.ZodTypeAny;
+  suspendSchema?: z.ZodTypeAny;
+  resumeSchema?: z.ZodTypeAny;
 }>;
 
 export interface WorkflowStepTap<INPUT, DATA, _RESULT, SUSPEND_DATA, RESUME_DATA = any>
@@ -54,6 +62,10 @@ export interface WorkflowStepTap<INPUT, DATA, _RESULT, SUSPEND_DATA, RESUME_DATA
 export type WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
   condition: InternalWorkflowFunc<INPUT, DATA, boolean, any, any>;
   step: InternalAnyWorkflowStep<INPUT, DATA, RESULT>;
+  inputSchema?: z.ZodTypeAny;
+  outputSchema?: z.ZodTypeAny;
+  suspendSchema?: z.ZodTypeAny;
+  resumeSchema?: z.ZodTypeAny;
 }>;
 
 export interface WorkflowStepConditionalWhen<INPUT, DATA, RESULT>

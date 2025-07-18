@@ -35,10 +35,21 @@ export function andThen<
   RESULT,
   SUSPEND_DATA = DangerouslyAllowAny,
   RESUME_DATA = DangerouslyAllowAny,
->({ execute, ...config }: WorkflowStepFuncConfig<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>) {
+>({
+  execute,
+  inputSchema,
+  outputSchema,
+  suspendSchema,
+  resumeSchema,
+  ...config
+}: WorkflowStepFuncConfig<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>) {
   return {
     ...defaultStepConfig(config),
     type: "func",
+    inputSchema,
+    outputSchema,
+    suspendSchema,
+    resumeSchema,
     originalExecute: execute, // ✅ Store original function for serialization
     execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
       const { data, state } = context;

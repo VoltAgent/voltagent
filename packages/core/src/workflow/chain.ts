@@ -11,10 +11,8 @@ import type {
 import {
   type WorkflowStep,
   type WorkflowStepConditionalWhenConfig,
-  type WorkflowStepFuncConfig,
   type WorkflowStepParallelAllConfig,
   type WorkflowStepParallelRaceConfig,
-  type WorkflowStepTapConfig,
   andAgent,
   andAll,
   andRace,
@@ -79,8 +77,8 @@ export class WorkflowChain<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   CURRENT_DATA = WorkflowInput<INPUT_SCHEMA>,
-  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > {
   private steps: WorkflowStep<
     WorkflowInput<INPUT_SCHEMA>,
@@ -134,49 +132,211 @@ export class WorkflowChain<
   }
 
   /**
+   * Add a function step to the workflow with both input and output schemas
+   * @param config - Step configuration with schemas
+   * @returns A new chain with the function step added
+   */
+  andThen<
+    IS extends z.ZodTypeAny,
+    OS extends z.ZodTypeAny,
+    SS extends z.ZodTypeAny = z.ZodTypeAny,
+    RS extends z.ZodTypeAny = z.ZodTypeAny,
+  >(config: {
+    inputSchema: IS;
+    outputSchema: OS;
+    suspendSchema?: SS;
+    resumeSchema?: RS;
+    execute: (context: {
+      data: z.infer<IS>;
+      state: any;
+      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      suspend: (
+        reason?: string,
+        suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
+      ) => Promise<never>;
+      resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+    }) => Promise<z.infer<OS>>;
+    id: string;
+    name?: string;
+    purpose?: string;
+  }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<OS>, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  /**
+   * Add a function step to the workflow with only input schema
+   * @param config - Step configuration with input schema
+   * @returns A new chain with the function step added
+   */
+  andThen<
+    IS extends z.ZodTypeAny,
+    NEW_DATA,
+    SS extends z.ZodTypeAny = z.ZodTypeAny,
+    RS extends z.ZodTypeAny = z.ZodTypeAny,
+  >(config: {
+    inputSchema: IS;
+    outputSchema?: never;
+    suspendSchema?: SS;
+    resumeSchema?: RS;
+    execute: (context: {
+      data: z.infer<IS>;
+      state: any;
+      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      suspend: (
+        reason?: string,
+        suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
+      ) => Promise<never>;
+      resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+    }) => Promise<NEW_DATA>;
+    id: string;
+    name?: string;
+    purpose?: string;
+  }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  /**
+   * Add a function step to the workflow with only output schema
+   * @param config - Step configuration with output schema
+   * @returns A new chain with the function step added
+   */
+  andThen<
+    OS extends z.ZodTypeAny,
+    SS extends z.ZodTypeAny = z.ZodTypeAny,
+    RS extends z.ZodTypeAny = z.ZodTypeAny,
+  >(config: {
+    inputSchema?: never;
+    outputSchema: OS;
+    suspendSchema?: SS;
+    resumeSchema?: RS;
+    execute: (context: {
+      data: CURRENT_DATA;
+      state: any;
+      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      suspend: (
+        reason?: string,
+        suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
+      ) => Promise<never>;
+      resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+    }) => Promise<z.infer<OS>>;
+    id: string;
+    name?: string;
+    purpose?: string;
+  }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<OS>, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  /**
+   * Add a function step to the workflow with only resumeSchema
+   * @param config - Step configuration with resumeSchema
+   * @returns A new chain with the function step added
+   */
+  andThen<
+    NEW_DATA,
+    SS extends z.ZodTypeAny = z.ZodTypeAny,
+    RS extends z.ZodTypeAny = z.ZodTypeAny,
+  >(config: {
+    inputSchema?: never;
+    outputSchema?: never;
+    suspendSchema?: SS;
+    resumeSchema: RS;
+    execute: (context: {
+      data: CURRENT_DATA;
+      state: any;
+      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      suspend: (
+        reason?: string,
+        suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
+      ) => Promise<never>;
+      resumeData?: z.infer<RS>;
+    }) => Promise<NEW_DATA>;
+    id: string;
+    name?: string;
+    purpose?: string;
+  }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  /**
    * Add a function step to the workflow
    *
    * @example
    * ```ts
    * const workflow = createWorkflowChain(config)
-   *   .andThen(async (data) => {
-   *     const processed = await someAsyncOperation(data.value);
-   *     return { ...data, processed };
+   *   .andThen({
+   *     id: "process",
+   *     execute: async ({ data }) => {
+   *       const processed = await someAsyncOperation(data.value);
+   *       return { ...data, processed };
+   *     }
    *   })
-   *   .andThen(async (data) => {
-   *     const enriched = await enrichData(data.processed);
-   *     return { ...data, enriched };
+   *   .andThen({
+   *     id: "enrich",
+   *     execute: async ({ data }) => {
+   *       const enriched = await enrichData(data.processed);
+   *       return { ...data, enriched };
+   *     }
    *   });
    * ```
    *
-   * @param fn - The async function to execute with the current workflow data
+   * @param config - Step configuration
    * @returns A new chain with the function step added
    */
-  andThen<NEW_DATA>({
-    execute,
-    ...config
-  }: WorkflowStepFuncConfig<
-    WorkflowInput<INPUT_SCHEMA>,
-    CURRENT_DATA,
-    NEW_DATA,
-    z.infer<SUSPEND_SCHEMA>,
-    z.infer<RESUME_SCHEMA>
-  >): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
-    const step = andThen({ execute, ...config }) as WorkflowStep<
-      WorkflowInput<INPUT_SCHEMA>,
-      CURRENT_DATA,
-      NEW_DATA,
-      z.infer<SUSPEND_SCHEMA>
-    >;
+  andThen<NEW_DATA>(config: {
+    execute: (context: {
+      data: CURRENT_DATA;
+      state: any;
+      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
+      resumeData?: z.infer<RESUME_SCHEMA>;
+    }) => Promise<NEW_DATA>;
+    id: string;
+    name?: string;
+    purpose?: string;
+    inputSchema?: never;
+    outputSchema?: never;
+    suspendSchema?: z.ZodTypeAny;
+    resumeSchema?: z.ZodTypeAny;
+  }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  andThen(config: any): any {
+    const step = andThen(config) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, any, any, any>;
     this.steps.push(step);
-    return this as unknown as WorkflowChain<
-      INPUT_SCHEMA,
-      RESULT_SCHEMA,
-      NEW_DATA,
-      SUSPEND_SCHEMA,
-      RESUME_SCHEMA
-    >;
+
+    // Return type is handled by overloads
+    return this as any;
   }
+
+  /**
+   * Add a conditional step with explicit schemas
+   * @param config - Step configuration with schemas
+   * @returns A new chain with the conditional step added
+   */
+  andWhen<
+    IS extends z.ZodTypeAny,
+    OS extends z.ZodTypeAny,
+    SS extends z.ZodTypeAny = z.ZodTypeAny,
+    RS extends z.ZodTypeAny = z.ZodTypeAny,
+  >(
+    config: WorkflowStepConditionalWhenConfig<
+      WorkflowInput<INPUT_SCHEMA>,
+      z.infer<IS>,
+      z.infer<OS>
+    > & {
+      inputSchema: IS;
+      outputSchema: OS;
+      suspendSchema?: SS;
+      resumeSchema?: RS;
+      condition: (context: {
+        data: z.infer<IS>;
+        state: any;
+        getStepData: (stepId: string) => { input: any; output: any } | undefined;
+        suspend: (
+          reason?: string,
+          suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
+        ) => Promise<never>;
+        resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      }) => Promise<boolean>;
+    },
+  ): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    z.infer<OS> | z.infer<IS>,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  >;
 
   /**
    * Add a conditional step that executes when a condition is true
@@ -206,35 +366,59 @@ export class WorkflowChain<
    * @param stepInput - Either a workflow step or an agent to execute when the condition is true
    * @returns A new chain with the conditional step added
    */
-  andWhen<NEW_DATA>({
-    condition,
-    step,
-    ...config
-  }: WorkflowStepConditionalWhenConfig<
-    WorkflowInput<INPUT_SCHEMA>,
-    CURRENT_DATA,
-    NEW_DATA
-  >): WorkflowChain<
+  andWhen<NEW_DATA>(
+    config: WorkflowStepConditionalWhenConfig<
+      WorkflowInput<INPUT_SCHEMA>,
+      CURRENT_DATA,
+      NEW_DATA
+    > & {
+      inputSchema?: never;
+      outputSchema?: never;
+      suspendSchema?: z.ZodTypeAny;
+      resumeSchema?: z.ZodTypeAny;
+    },
+  ): WorkflowChain<
     INPUT_SCHEMA,
     RESULT_SCHEMA,
     NEW_DATA | CURRENT_DATA,
     SUSPEND_SCHEMA,
     RESUME_SCHEMA
-  > {
-    const finalStep = andWhen({ condition, step, ...config }) as WorkflowStep<
-      WorkflowInput<INPUT_SCHEMA>,
-      CURRENT_DATA,
-      NEW_DATA
-    >;
+  >;
+
+  andWhen(config: any): any {
+    const finalStep = andWhen(config) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, any, any>;
     this.steps.push(finalStep);
-    return this as WorkflowChain<
-      INPUT_SCHEMA,
-      RESULT_SCHEMA,
-      NEW_DATA | CURRENT_DATA,
-      SUSPEND_SCHEMA,
-      RESUME_SCHEMA
-    >;
+    // Return type is handled by overloads
+    return this as any;
   }
+
+  /**
+   * Add a tap step to the workflow with optional input schema
+   * @param config - Step configuration with optional inputSchema
+   * @returns A new chain with the tap step added (data unchanged)
+   */
+  andTap<
+    IS extends z.ZodTypeAny,
+    SS extends z.ZodTypeAny = z.ZodTypeAny,
+    RS extends z.ZodTypeAny = z.ZodTypeAny,
+  >(config: {
+    inputSchema: IS;
+    suspendSchema?: SS;
+    resumeSchema?: RS;
+    execute: (context: {
+      data: z.infer<IS>;
+      state: any;
+      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      suspend: (
+        reason?: string,
+        suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
+      ) => Promise<never>;
+      resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+    }) => Promise<void>;
+    id: string;
+    name?: string;
+    purpose?: string;
+  }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 
   /**
    * Add a tap step to the workflow
@@ -258,29 +442,26 @@ export class WorkflowChain<
    * @param fn - The async function to execute with the current workflow data
    * @returns A new chain with the tap step added
    */
-  andTap<NEW_DATA>({
-    execute,
-    ...config
-  }: WorkflowStepTapConfig<
-    WorkflowInput<INPUT_SCHEMA>,
-    CURRENT_DATA,
-    NEW_DATA,
-    z.infer<SUSPEND_SCHEMA>
-  >): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
-    const finalStep = andTap({ execute, ...config }) as WorkflowStep<
-      WorkflowInput<INPUT_SCHEMA>,
-      CURRENT_DATA,
-      NEW_DATA,
-      z.infer<SUSPEND_SCHEMA>
-    >;
+  andTap<NEW_DATA>(config: {
+    execute: (context: {
+      data: CURRENT_DATA;
+      state: any;
+      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
+      resumeData?: z.infer<RESUME_SCHEMA>;
+    }) => Promise<void>;
+    id: string;
+    name?: string;
+    purpose?: string;
+    inputSchema?: never;
+    suspendSchema?: z.ZodTypeAny;
+    resumeSchema?: z.ZodTypeAny;
+  }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  andTap(config: any): any {
+    const finalStep = andTap(config) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, any, any, any>;
     this.steps.push(finalStep);
-    return this as unknown as WorkflowChain<
-      INPUT_SCHEMA,
-      RESULT_SCHEMA,
-      CURRENT_DATA,
-      SUSPEND_SCHEMA,
-      RESUME_SCHEMA
-    >;
+    return this;
   }
 
   /**
@@ -443,8 +624,8 @@ export class WorkflowChain<
 export function createWorkflowChain<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
-  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 >(config: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>) {
   return new WorkflowChain<
     INPUT_SCHEMA,

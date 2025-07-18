@@ -34,7 +34,7 @@ import { WorkflowRegistry } from "./registry";
  */
 function createWorkflowExecutionResult<
   RESULT_SCHEMA extends z.ZodTypeAny,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 >(
   workflowId: string,
   executionId: string,
@@ -46,7 +46,7 @@ function createWorkflowExecutionResult<
   error?: unknown,
   resumeSchema?: RESUME_SCHEMA,
 ): WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA> {
-  const resumeFn = async (input?: any) => {
+  const resumeFn = async (input?: any, options?: { stepId?: string }) => {
     // Use the registry to resume the workflow
     const registry = WorkflowRegistry.getInstance();
 
@@ -55,7 +55,12 @@ function createWorkflowExecutionResult<
     }
 
     try {
-      const resumeResult = await registry.resumeSuspendedWorkflow(workflowId, executionId, input);
+      const resumeResult = await registry.resumeSuspendedWorkflow(
+        workflowId,
+        executionId,
+        input,
+        options?.stepId,
+      );
 
       if (!resumeResult) {
         throw new Error("Failed to resume workflow");
@@ -669,8 +674,8 @@ export function createWorkflow<
 export function createWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
-  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 >(
   {
     id,
@@ -688,8 +693,8 @@ export function createWorkflow<
   const effectiveMemory = workflowMemory || new LibSQLStorage({ url: "file:memory.db" });
 
   // Set default schemas if not provided
-  const effectiveSuspendSchema = suspendSchema || z.object({});
-  const effectiveResumeSchema = resumeSchema || z.object({});
+  const effectiveSuspendSchema = suspendSchema || z.any();
+  const effectiveResumeSchema = resumeSchema || z.any();
 
   return {
     id,
@@ -1007,6 +1012,10 @@ export function createWorkflow<
             output: null,
           });
 
+          // Use step-level schemas if available, otherwise fall back to workflow-level
+          const stepSuspendSchema = step.suspendSchema || effectiveSuspendSchema;
+          const stepResumeSchema = step.resumeSchema || effectiveResumeSchema;
+
           // Create suspend function for this step
           const suspendFn = async (reason?: string, suspendData?: any): Promise<never> => {
             devLogger.info(
@@ -1031,7 +1040,7 @@ export function createWorkflow<
             // Create execution context for the step with typed suspend function
             const typedSuspendFn = (
               reason?: string,
-              suspendData?: z.infer<typeof effectiveSuspendSchema>,
+              suspendData?: z.infer<typeof stepSuspendSchema>,
             ) => suspendFn(reason, suspendData);
 
             // Only pass resumeData if we're on the step that was suspended and we have resume input
@@ -1041,8 +1050,8 @@ export function createWorkflow<
             const stepContext = createStepExecutionContext<
               WorkflowInput<INPUT_SCHEMA>,
               typeof stateManager.state.data,
-              z.infer<typeof effectiveSuspendSchema>,
-              z.infer<typeof effectiveResumeSchema>
+              z.infer<typeof stepSuspendSchema>,
+              z.infer<typeof stepResumeSchema>
             >(
               stateManager.state.data,
               convertWorkflowStateToParam(stateManager.state, executionContext, options?.signal),

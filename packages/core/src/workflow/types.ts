@@ -55,7 +55,7 @@ export interface WorkflowSuspendController {
  */
 export interface WorkflowExecutionResult<
   RESULT_SCHEMA extends z.ZodTypeAny,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > {
   /**
    * Unique execution ID for this workflow run
@@ -92,10 +92,12 @@ export interface WorkflowExecutionResult<
   /**
    * Resume a suspended workflow execution
    * @param input - Optional new input data for resuming (validated against resumeSchema if provided)
+   * @param options - Optional options for resuming, including stepId to resume from a specific step
    * @returns A new execution result that can also be resumed if suspended again
    */
   resume: (
     input: z.infer<RESUME_SCHEMA>,
+    options?: { stepId?: string },
   ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
 }
 
@@ -216,8 +218,8 @@ export type WorkflowResult<RESULT_SCHEMA extends z.ZodTypeAny> = RESULT_SCHEMA e
 export type WorkflowConfig<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
-  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > = {
   /**
    * Unique identifier for the workflow
@@ -264,8 +266,8 @@ export type WorkflowConfig<
 export type Workflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
-  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodObject<{}>,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > = {
   /**
    * Unique identifier for the workflow
