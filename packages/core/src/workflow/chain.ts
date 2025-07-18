@@ -413,6 +413,7 @@ export class WorkflowChain<
     // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
     return createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
       ...this.steps,
     );
   }
@@ -424,9 +425,9 @@ export class WorkflowChain<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
-    // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
     const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
       ...this.steps,
     );
     return (await workflow.run(input, options)) as unknown as WorkflowExecutionResult<
