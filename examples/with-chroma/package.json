@@ -24,7 +24,7 @@
     "@chroma-core/ollama": "^0.1.7",
     "@chroma-core/openai": "^0.1.7",
     "@voltagent/cli": "^0.1.9",
-    "@voltagent/core": "^0.1.61",
+    "@voltagent/core": "^0.1.62",
     "@voltagent/vercel-ai": "^0.1.14",
     "chromadb": "^3.0.4",
     "zod": "3.24.2"
