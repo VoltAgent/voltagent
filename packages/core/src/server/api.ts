@@ -322,6 +322,48 @@ app.get("/workflows/:id", (c: ApiContext) => {
     }
   }
 
+  // Convert step-level schemas to JSON format
+  if (workflowData.steps) {
+    workflowData.steps = workflowData.steps.map((step: any) => {
+      const convertedStep = { ...step };
+
+      // Convert step schemas if they exist
+      if (step.inputSchema) {
+        try {
+          convertedStep.inputSchema = zodSchemaToJsonUI(step.inputSchema);
+        } catch (error) {
+          console.warn(`Failed to convert input schema for step ${step.id}:`, error);
+        }
+      }
+
+      if (step.outputSchema) {
+        try {
+          convertedStep.outputSchema = zodSchemaToJsonUI(step.outputSchema);
+        } catch (error) {
+          console.warn(`Failed to convert output schema for step ${step.id}:`, error);
+        }
+      }
+
+      if (step.suspendSchema) {
+        try {
+          convertedStep.suspendSchema = zodSchemaToJsonUI(step.suspendSchema);
+        } catch (error) {
+          console.warn(`Failed to convert suspend schema for step ${step.id}:`, error);
+        }
+      }
+
+      if (step.resumeSchema) {
+        try {
+          convertedStep.resumeSchema = zodSchemaToJsonUI(step.resumeSchema);
+        } catch (error) {
+          console.warn(`Failed to convert resume schema for step ${step.id}:`, error);
+        }
+      }
+
+      return convertedStep;
+    });
+  }
+
   const response: ApiResponse<
     typeof workflowData & { inputSchema?: any; suspendSchema?: any; resumeSchema?: any }
   > = {
@@ -636,11 +678,18 @@ app.openapi(suspendWorkflowRoute, async (c) => {
 // Resume suspended workflow
 app.openapi(resumeWorkflowRoute, async (c) => {
   const { id, executionId } = c.req.valid("param") as { id: string; executionId: string };
-  const body = c.req.valid("json") as { input?: any } | undefined;
+  const body = c.req.valid("json") as
+    | { resumeData?: any; options?: { stepId?: string } }
+    | undefined;
   const registry = WorkflowRegistry.getInstance();
 
   try {
-    const result = await registry.resumeSuspendedWorkflow(id, executionId, body?.input);
+    const result = await registry.resumeSuspendedWorkflow(
+      id,
+      executionId,
+      body?.resumeData,
+      body?.options?.stepId,
+    );
 
     if (!result) {
       return c.json(

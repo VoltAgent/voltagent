@@ -20,6 +20,11 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
     purpose: step.purpose,
     type: step.type,
     stepIndex: index,
+    // Include step-level schemas if present
+    ...(step.inputSchema && { inputSchema: step.inputSchema }),
+    ...(step.outputSchema && { outputSchema: step.outputSchema }),
+    ...(step.suspendSchema && { suspendSchema: step.suspendSchema }),
+    ...(step.resumeSchema && { resumeSchema: step.resumeSchema }),
   };
 
   // Add type-specific data
@@ -515,7 +520,7 @@ export class WorkflowRegistry extends EventEmitter {
   public async resumeSuspendedWorkflow(
     workflowId: string,
     executionId: string,
-    newInput?: any,
+    resumeData?: any,
     resumeStepId?: string,
   ): Promise<{
     executionId: string;
@@ -619,8 +624,17 @@ export class WorkflowRegistry extends EventEmitter {
     );
 
     try {
-      // Use new input if provided, otherwise use original input
-      const inputToUse = newInput !== undefined ? newInput : execution.input;
+      // Always use original workflow input - resumeData is passed through resumeOptions
+      const inputToUse = execution.input;
+
+      // Add resumeData to resumeOptions if provided
+      if (resumeData !== undefined) {
+        resumeOptions.resumeFrom = {
+          ...resumeOptions.resumeFrom,
+          resumeData,
+        };
+      }
+
       const result = await registeredWorkflow.workflow.run(inputToUse, resumeOptions);
 
       // Remove from active executions when complete

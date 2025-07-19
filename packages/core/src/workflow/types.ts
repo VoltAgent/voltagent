@@ -170,6 +170,10 @@ export interface WorkflowResumeOptions {
    * The last event sequence number before suspension
    */
   lastEventSequence?: number;
+  /**
+   * Data to pass to the resumed step (validated against resumeSchema)
+   */
+  resumeData?: DangerouslyAllowAny;
 }
 
 /**

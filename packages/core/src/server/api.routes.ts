@@ -752,12 +752,25 @@ export const resumeWorkflowRoute = createRoute({
         "application/json": {
           schema: z
             .object({
-              input: z
+              resumeData: z
                 .any()
                 .optional()
                 .openapi({
-                  description: "Optional new input to use when resuming the workflow",
-                  example: { message: "Hello, world!" },
+                  description:
+                    "Data to pass to the resumed step (validated against step's resumeSchema)",
+                  example: { approved: true, approvedBy: "manager@company.com" },
+                }),
+              options: z
+                .object({
+                  stepId: z.string().optional().openapi({
+                    description:
+                      "Optional step ID to resume from a specific step instead of the suspended one",
+                    example: "step-2",
+                  }),
+                })
+                .optional()
+                .openapi({
+                  description: "Optional resume options",
                 }),
             })
             .optional(),
