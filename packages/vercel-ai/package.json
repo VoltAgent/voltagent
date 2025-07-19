@@ -29,8 +29,7 @@
     "@voltagent/core": "^0.1.36",
     "ai": "^4.2.11",
     "ts-pattern": "^5.7.1",
-    "type-fest": "^4.41.0",
-    "zod": "3.24.2"
+    "type-fest": "^4.41.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",
@@ -38,9 +37,11 @@
     "@voltagent/internal": "workspace:^0.0.4",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "zod": "3.24.2"
   },
   "peerDependencies": {
-    "@voltagent/core": "^0.1.0"
+    "@voltagent/core": "^0.1.0",
+    "zod": "3.24.2"
   }
 }
