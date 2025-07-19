@@ -34,8 +34,6 @@ Unlike traditional text-based logging tools, VoltOps visualizes your agent workf
 
 <br/>
 
-
-
 ## What is VoltOps?
 
 > **LLM Observability** is the practice of monitoring, tracking, and understanding the behavior of AI agents and language models in production. Unlike traditional software monitoring that focuses on system metrics, LLM observability provides visibility into the decision-making process, tool usage patterns, conversation flows, and performance characteristics of intelligent systems.
@@ -57,6 +55,7 @@ VoltOps transforms the black-box nature of AI agents into transparent, understan
 <br/>
 
 [![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
+
 ## Why VoltOps?
 
 Building AI agents that work reliably in production is fundamentally different from traditional software development. Here's why standard monitoring approaches fall short and how VoltOps solves these challenges:
