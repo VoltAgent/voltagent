@@ -5,6 +5,16 @@
 
 > **Build powerful, type-safe AI workflows.** Go from a simple chain of functions to a complex, multi-step process that combines your code, AI models, and conditional logic with ease.
 
+## What are Workflows?
+
+A workflow is a chain of steps. Each step does something and passes its result to the next step.
+
+```typescript
+workflow = step1 → step2 → step3 → result
+```
+
+That's it. The power comes from what each step can do: run code, call AI, make decisions, run in parallel.
+
 ## Get Started in 2 Minutes
 
 Let's build a workflow from scratch. We'll start with a simple function, add AI, and then introduce conditional logic. Each step will show the complete, runnable code.
@@ -453,6 +463,27 @@ For more details, see the [Workflow Hooks](./hooks.md) documentation.
 | **`andWhen`**  | Execute a step conditionally       | Branching logic based on data        |
 | **`andAll`**   | Run steps in parallel (wait all)   | Batch processing, multiple API calls |
 | **`andRace`**  | Run steps in parallel (first wins) | Fallbacks, cache vs. API race        |
+
+## Workflow Schemas
+
+Workflows can validate data at key points using schemas:
+
+```typescript
+const workflow = createWorkflowChain({
+  id: "user-onboarding",
+  name: "User Onboarding",
+  // Validates initial input
+  input: z.object({ email: z.string().email() }),
+  // Validates final result
+  result: z.object({ userId: z.string(), welcome: z.string() }),
+  // Validates data when workflow suspends
+  suspendSchema: z.object({ waitingFor: z.string() }),
+  // Validates data when workflow resumes
+  resumeSchema: z.object({ approved: z.boolean() }),
+});
+```
+
+Each step can also have its own schemas that override the workflow defaults. This ensures type safety throughout your workflow.
 
 ## Next Steps
 

@@ -1,165 +1,70 @@
-# andAgent - AI Agent Execution
+# andAgent
 
-> **Run AI agents in your workflow.** Generate structured responses, analyze data, and add intelligence to your processes.
+> Add AI to your workflow. Get structured, typed responses from language models.
 
-## What is andAgent?
-
-`andAgent` executes AI agents with structured output in your workflow. Give it a prompt and schema, get back typed AI responses.
+## Quick Start
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
+import { createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
 
+// Create an agent
+const agent = new Agent({
+  name: "Assistant",
+  llm: provider,
+  model: "gpt-4",
+});
+
+// Use it in a workflow
 const workflow = createWorkflowChain({
-  id: "content-generator",
-  name: "Content Generator",
-  input: z.object({ topic: z.string() }),
-  result: z.object({ title: z.string(), content: z.string() }),
-}).andAgent(({ data }) => `Write a blog post about: ${data.topic}`, agent, {
+  id: "analyze-text",
+  input: z.object({ text: z.string() }),
+}).andAgent(({ data }) => `Analyze this text: ${data.text}`, agent, {
   schema: z.object({
-    title: z.string(),
-    content: z.string(),
+    sentiment: z.enum(["positive", "negative", "neutral"]),
+    summary: z.string(),
   }),
 });
 
-const result = await workflow.run({ topic: "AI workflows" });
-// { title: "Understanding AI Workflows", content: "AI workflows are..." }
+const result = await workflow.run({ text: "I love this!" });
+// Result: { sentiment: "positive", summary: "Expression of enthusiasm" }
+```
+
+## How It Works
+
+`andAgent` = AI prompt + structured output schema:
+
+```typescript
+.andAgent(
+  prompt,    // What to ask the AI
+  agent,     // Which AI to use
+  { schema } // What shape the answer should be
+)
 ```
 
 ## Function Signature
 
 ```typescript
-.andAgent(
-  prompt,           // string or function that returns string
-  agent,           // your AI agent instance
-  { schema }       // zod schema for structured output
-)
-```
+// Simple prompt
+.andAgent("Summarize this", agent, { schema })
 
-### Under the Hood
-
-`andAgent` calls `agent.generateObject()` with your prompt and schema:
-
-```typescript
-// This workflow step:
-.andAgent(
-  ({ data }) => `Analyze: ${data.text}`,
-  agent,
-  { schema: z.object({ result: z.string() }) }
-)
-
-// Is equivalent to:
-.andThen({
-  execute: async ({ data, state }) => {
-    const { object } = await agent.generateObject(
-      `Analyze: ${data.text}`,
-      z.object({ result: z.string() })
-    );
-    return object; // Returns { result: "..." }
-  }
-})
-```
-
-### Dynamic Prompts
-
-Create prompts based on workflow data:
-
-```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const workflow = createWorkflowChain({
-  id: "dynamic-prompt-workflow",
-  name: "Dynamic Prompt Workflow",
-  input: z.object({
-    userName: z.string(),
-    userLevel: z.string(),
-    question: z.string(),
-  }),
-  result: z.object({
-    answer: z.string(),
-    confidence: z.number(),
-  }),
-}).andAgent(
-  ({ data }) => {
-    // Build prompt from workflow data
-    const levelContext =
-      data.userLevel === "beginner"
-        ? "Explain in simple terms."
-        : "Provide detailed technical information.";
-
-    return `Hello ${data.userName}! ${levelContext} 
-            Question: ${data.question}`;
-  },
-  agent,
-  {
-    schema: z.object({
-      answer: z.string(),
-      confidence: z.number().min(0).max(1),
-    }),
-  }
-);
-```
-
-## Using State for Context
-
-```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const personalizedAgent = createWorkflowChain({
-  id: "personalized-agent-workflow",
-  name: "Personalized Agent Workflow",
-  input: z.object({ request: z.string() }),
-  result: z.object({ response: z.string() }),
-}).andAgent(
-  ({ data, state }) => {
-    // Use user context in prompts
-    const userRole = state.userContext?.get("role") || "user";
-    const department = state.userContext?.get("department") || "general";
-
-    return `You are helping a ${userRole} from ${department} department.
-            Request: ${data.request}
-            
-            Tailor your response to their role and department.`;
-  },
-  agent,
-  {
-    schema: z.object({
-      response: z.string(),
-    }),
-  }
-);
-
-// Run with user context
-const result = await personalizedAgent.run(
-  { request: "How do I optimize performance?" },
-  {
-    userId: "user-123",
-    userContext: new Map([
-      ["role", "developer"],
-      ["department", "engineering"],
-    ]),
-  }
-);
+// Dynamic prompt from data
+.andAgent(({ data }) => `Analyze: ${data.text}`, agent, { schema })
 ```
 
 ## Common Patterns
 
-### Data Analysis
+### Text Analysis
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
 .andAgent(
-  ({ data }) => `Analyze this sales data and provide insights: ${JSON.stringify(data.salesData)}`,
+  ({ data }) => `Analyze sentiment of: ${data.review}`,
   agent,
   {
     schema: z.object({
-      insights: z.array(z.string()),
-      recommendations: z.array(z.string()),
-      trend: z.enum(['up', 'down', 'stable'])
+      sentiment: z.enum(["positive", "negative", "neutral"]),
+      score: z.number().min(0).max(1),
+      keywords: z.array(z.string())
     })
   }
 )
@@ -168,17 +73,14 @@ import { z } from "zod";
 ### Content Generation
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
 .andAgent(
-  ({ data }) => `Create marketing copy for product: ${data.productName}`,
+  ({ data }) => `Write a ${data.tone} email about ${data.topic}`,
   agent,
   {
     schema: z.object({
-      headline: z.string(),
-      description: z.string(),
-      callToAction: z.string()
+      subject: z.string(),
+      body: z.string(),
+      suggestedSendTime: z.string()
     })
   }
 )
@@ -187,148 +89,75 @@ import { z } from "zod";
 ### Data Extraction
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
 .andAgent(
-  ({ data }) => `Extract key information from this text: ${data.rawText}`,
+  ({ data }) => `Extract key information from: ${data.document}`,
   agent,
   {
     schema: z.object({
-      entities: z.array(z.object({
-        name: z.string(),
-        type: z.enum(['person', 'organization', 'location']),
-        confidence: z.number()
-      })),
-      sentiment: z.enum(['positive', 'negative', 'neutral']),
-      summary: z.string()
+      people: z.array(z.string()),
+      dates: z.array(z.string()),
+      locations: z.array(z.string()),
+      mainTopic: z.string()
     })
   }
 )
 ```
 
-### Decision Making
+## Dynamic Prompts
+
+Build prompts from workflow data:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
 .andAgent(
-  ({ data }) => `Should we approve this loan application?
-             Credit Score: ${data.creditScore}
-             Income: ${data.income}
-             Debt: ${data.debt}`,
+  ({ data }) => {
+    // Adjust prompt based on data
+    if (data.userLevel === "beginner") {
+      return `Explain in simple terms: ${data.question}`;
+    }
+    return `Provide technical details about: ${data.question}`;
+  },
   agent,
-  {
-    schema: z.object({
-      decision: z.enum(['approve', 'reject', 'review']),
-      reasoning: z.string(),
-      confidence: z.number().min(0).max(1)
-    })
-  }
+  { schema: z.object({ answer: z.string() }) }
 )
 ```
 
 ## Chaining with Other Steps
 
-AI agents work great with other workflow steps:
+Combine AI with logic:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const smartProcessor = createWorkflowChain({
-  id: "smart-processor",
-  name: "Smart Processor",
-  input: z.object({ email: z.string() }),
-  result: z.object({
-    classification: z.string(),
-    response: z.string(),
-    priority: z.string(),
-  }),
-})
-  .andAgent(
-    // Step 1: Classify email
-    ({ data }) => `Classify this email: ${data.email}`,
-    agent,
-    {
-      schema: z.object({
-        category: z.enum(["support", "sales", "billing"]),
-        priority: z.enum(["low", "medium", "high"]),
-        sentiment: z.enum(["positive", "negative", "neutral"]),
-      }),
-    }
-  )
-  .andThen({
-    // Step 2: Process classification
-    id: "process-classification",
-    execute: async ({ data }) => {
-      return {
-        classification: `${data.category} (${data.priority} priority)`,
-        priority: data.priority,
-      };
-    },
-  })
-  .andAgent(
-    // Step 3: Generate response based on classification
-    ({ data }) => `Generate a ${data.priority} priority response for a ${data.category} email.`,
-    agent,
-    {
-      schema: z.object({
-        response: z.string(),
-      }),
-    }
-  )
-  .andThen({
-    // Step 4: Final formatting
-    id: "final-formatting",
-    execute: async ({ data }) => {
-      return {
-        classification: data.classification,
-        response: data.response,
-        priority: data.priority,
-      };
-    },
-  });
-```
-
-## Error Handling
-
-```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const workflow = createWorkflowChain({
-  id: "error-handling-workflow",
-  name: "Error Handling Workflow",
-  input: z.object({ input: z.string() }),
-  result: z.object({ result: z.string(), confidence: z.number().optional() }),
-})
-  .andAgent(({ data }) => `Analyze: ${data.input}`, agent, {
+createWorkflowChain({ id: "smart-email" })
+  // Step 1: Classify with AI
+  .andAgent(({ data }) => `What type of email is this: ${data.email}`, agent, {
     schema: z.object({
-      result: z.string(),
-      confidence: z.number().optional(),
+      type: z.enum(["support", "sales", "spam"]),
+      priority: z.enum(["low", "medium", "high"]),
     }),
   })
+  // Step 2: Route based on classification
   .andThen({
-    id: "handle-low-confidence",
+    id: "route-email",
     execute: async ({ data }) => {
-      // Handle low confidence results
-      if (data.confidence && data.confidence < 0.7) {
-        console.warn(`Low confidence result: ${data.confidence}`);
-        return { ...data, needsReview: true };
+      if (data.type === "spam") {
+        return { action: "delete" };
       }
-      return data;
+      return {
+        action: "forward",
+        to: data.type === "support" ? "support@" : "sales@",
+      };
     },
   });
 ```
+
+## Best Practices
+
+1. **Keep prompts clear** - AI performs better with specific instructions
+2. **Use enums for categories** - `z.enum()` ensures valid options
+3. **Add descriptions to schema fields** - Helps AI understand what you want
+4. **Handle edge cases** - Check for missing or low-confidence results
 
 ## Next Steps
 
-- **[andWhen](./and-when.md)** - Add conditional logic after AI responses
-- **[andAll](./and-all.md)** - Run multiple AI agents in parallel
-- **[andThen](./and-then.md)** - Process AI outputs with functions
-
----
-
-> **Quick Summary**: `andAgent` runs AI agents with structured output. Give it a prompt (string or function), an agent, and a zod schema. Get back typed AI responses that flow to the next step.
+- Learn about [andWhen](./and-when.md) for conditional logic
+- Explore [andAll](./and-all.md) to run multiple agents in parallel
+- See [andThen](./and-then.md) to process AI outputs

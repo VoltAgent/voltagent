@@ -1,147 +1,162 @@
-# andTap - Tap into the Data Flow
+# andTap
 
-> **Safely perform side-effects like logging or analytics without altering the workflow's data.**
+> Look at your data without touching it. Perfect for logging, debugging, and analytics.
 
-## What is andTap?
-
-`andTap` is a utility for observing data within a workflow. It allows you to execute a function for side-effects (like logging to the console, sending an analytics event, or calling an external monitoring service) without modifying the data that flows through your chain.
-
-It's designed to be safe: it won't change the result, and it won't crash your workflow if the tap function fails.
-
-Here's how you can use it to log data mid-workflow:
+## Quick Start
 
 ```typescript
-import { createWorkflowChain, andTap } from "@voltagent/core";
+import { createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 const workflow = createWorkflowChain({
-  id: "tap-example",
-  name: "Tap Example",
-  input: z.object({ userId: z.string() }),
-  result: z.object({ status: z.string() }),
+  id: "process-order",
+  input: z.object({ orderId: z.string() }),
 })
   .andThen({
-    id: "fetch-user",
-    execute: async ({ userId }) => {
-      // In a real app, you'd fetch user data
-      return { userId, name: "Alex" };
-    },
+    id: "calculate-total",
+    execute: async ({ data }) => ({
+      ...data,
+      total: 100,
+    }),
   })
-  // Tap into the flow to log the user's name
   .andTap({
-    id: "log-user-name",
+    id: "log-total",
     execute: ({ data }) => {
-      console.log(`Processing user: ${data.name}`);
+      console.log(`Order ${data.orderId} total: $${data.total}`);
     },
   })
   .andThen({
-    id: "finalize-processing",
-    execute: ({ data }) => {
-      // The data is unchanged by andTap.
-      // `data` here is { userId: string, name: string }
-      return { status: `Completed for ${data.name}` };
-    },
+    id: "charge-customer",
+    execute: async ({ data }) => ({
+      ...data,
+      charged: true,
+    }),
   });
 
-const result = await workflow.run({ userId: "user-123" });
-
-console.log(result.result);
-// Console Output:
-// Processing user: Alex
-// { status: 'Completed for Alex' }
+// Console: "Order 123 total: $100"
+// Result: { orderId: "123", total: 100, charged: true }
 ```
 
 ## How It Works
 
-1.  **It's a Chain Method**: `.andTap()` is a method on the workflow chain, just like `.andThen()` or `.andAgent()`.
-2.  **Executes Your Function**: When the workflow runs this step, it executes your function, passing in the current `data` and `state`.
-3.  **Ignores Return Value**: The result of your `execute` function is completely ignored.
-4.  **Passes Original Data**: The step returns the original, unmodified `data` object to the next step in the chain.
-5.  **Catches Errors**: If your `execute` function throws an error, `andTap` catches it, logs it, and allows the workflow to proceed without interruption.
-
-## Common Use Cases
-
-### Debugging Workflows
-
-`andTap` is perfect for inspecting the state of your data at any point in a complex workflow without adding `console.log` statements inside your business logic.
+`andTap` = See but don't touch:
 
 ```typescript
-import { createWorkflowChain, andTap } from "@voltagent/core";
-
-createWorkflowChain({
-  id: "debug-workflow",
-  name: "Debug Workflow",
-  input: z.object({}),
-  result: z.object({}),
+.andTap({
+  execute: ({ data }) => {
+    // Look at data
+    console.log(data);
+    // Return value is ignored
+    return "this is ignored";
+  }
 })
-  .andThen({ id: "step1", /* ... some logic ... */ })
-  .andTap({
-    id: "debug-after-step1",
-    execute: ({ data }) => console.log("After step 1:", data)
-  })
-  .andAgent(...)
+// Next step gets original data unchanged
 ```
 
-### Analytics and Monitoring
+Key points:
 
-Send events to your analytics platform without cluttering your core workflow steps. This separation of concerns makes your code cleaner.
+- **Never changes data** - Original data passes through untouched
+- **Can't break your workflow** - Errors are caught and logged
+- **Return value ignored** - Whatever you return doesn't matter
+
+## Common Patterns
+
+### Debug Your Workflow
 
 ```typescript
-import { createWorkflowChain, andTap } from "@voltagent/core";
-
-createWorkflowChain({
-  id: "analytics-workflow",
-  name: "Analytics Workflow",
-  input: z.object({}),
-  result: z.object({}),
-}).andTap({
-  id: "track-user-action",
-  execute: async ({ data, state }) => {
-    await analytics.track("Workflow Step Completed", {
-      userId: state.userId,
-      workflowId: state.workflowId,
-      ...data,
-    });
-  },
-});
+.andThen({ id: "step1", execute: async () => ({ value: 42 }) })
+.andTap({
+  id: "debug",
+  execute: ({ data }) => console.log("Current data:", data)
+})
+.andThen({ id: "step2", execute: async ({ data }) => data })
 ```
 
-### External Notifications
-
-Send a non-critical notification, like a Slack message, that shouldn't stop the workflow if it fails.
+### Send Analytics
 
 ```typescript
-import { createWorkflowChain, andTap } from "@voltagent/core";
-
-createWorkflowChain({
-  id: "notification-workflow",
-  name: "Notification Workflow",
-  input: z.object({ id: z.string() }),
-  result: z.object({}),
-}).andTap({
-  id: "notify-slack-channel",
+.andTap({
+  id: "track-event",
   execute: async ({ data }) => {
-    // This might fail, but it won't stop the workflow.
-    await notifySlack(`Processing item #${data.id}`);
-  },
-});
+    await analytics.track("OrderProcessed", {
+      orderId: data.orderId,
+      amount: data.total
+    });
+  }
+})
 ```
 
-## Key Characteristics vs. `andThen`
+### Log to External Services
 
-| Feature            | `andTap`                                        | `andThen` (with an object)                      |
-| ------------------ | ----------------------------------------------- | ----------------------------------------------- |
-| **Purpose**        | Observation & Side-Effects (Logging, Analytics) | Data Transformation & Core Logic                |
-| **Return Value**   | Ignored; original data is passed through        | Merged into the workflow data for the next step |
-| **Error Handling** | Catches and logs errors; workflow continues     | Throws errors by default; can stop the workflow |
-| **Data Flow**      | Guarantees data is unchanged                    | Intended to modify or add to the data           |
+```typescript
+.andTap({
+  id: "log-to-datadog",
+  execute: async ({ data, state }) => {
+    await logger.info("Workflow progress", {
+      workflowId: state.workflowId,
+      step: "payment",
+      data
+    });
+  }
+})
+```
+
+## andTap vs andThen
+
+| What    | andTap                      | andThen                 |
+| ------- | --------------------------- | ----------------------- |
+| Purpose | Look at data                | Change data             |
+| Returns | Ignored                     | Merged into data        |
+| Errors  | Caught (workflow continues) | Thrown (workflow stops) |
+| Use for | Logging, analytics          | Business logic          |
+
+## Error Handling
+
+Errors in `andTap` don't stop your workflow:
+
+```typescript
+.andTap({
+  id: "might-fail",
+  execute: async ({ data }) => {
+    throw new Error("This error is caught!");
+  }
+})
+.andThen({
+  id: "still-runs",
+  execute: async ({ data }) => {
+    // This runs even though andTap threw an error
+    return { ...data, success: true };
+  }
+})
+```
+
+## Best Practices
+
+1. **Use for side effects only** - Don't try to modify data
+2. **Keep it simple** - Complex logic belongs in `andThen`
+3. **Don't depend on execution** - Workflow should work even if tap fails
+4. **Perfect for debugging** - Add/remove without affecting logic
+
+## Schema Support
+
+```typescript
+.andTap({
+  id: "validate-logging",
+  inputSchema: z.object({
+    orderId: z.string(),
+    total: z.number()
+  }),
+  execute: ({ data }) => {
+    // TypeScript knows data shape
+    console.log(`Order ${data.orderId}: $${data.total}`);
+  }
+})
+```
 
 ## Next Steps
 
-- **[`andThen`](./and-then.md)**: See how to perform core logic and data transformations.
-- **[`andWhen`](./and-when.md)**: Learn how to add conditional logic to your workflows.
-- **[Execution State](../overview.md#accessing-execution-state)**: Understand how to use `state` for context-aware workflows.
+- Learn about [andThen](./and-then.md) for data transformation
+- Explore [andWhen](./and-when.md) for conditional logic
+- See [andAgent](./and-agent.md) for AI integration
 
----
-
-> **Quick Summary**: `andTap` lets you safely run side-effects like logging or analytics inside a workflow. It observes data without changing it and won't stop the execution if it fails, making it ideal for non-essential tasks.
+> **Remember**: `andTap` is read-only. Use it to observe, not to change.

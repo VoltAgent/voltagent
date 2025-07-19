@@ -1,119 +1,86 @@
-# andThen - Function Execution
+# andThen
 
-> **Execute async functions in your workflow.** Transform data, make API calls, and run custom logic.
+> Execute any TypeScript function in your workflow. The most basic and flexible step type.
 
-## What is andThen?
-
-`andThen` executes async functions and transforms data in your workflow. It's the basic building block for any custom logic.
+## Quick Start
 
 ```typescript
 import { createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 const workflow = createWorkflowChain({
-  id: "data-processor",
-  name: "Data Processor",
+  id: "process-data",
   input: z.object({ text: z.string() }),
-  result: z.object({ processed: z.string(), wordCount: z.number() }),
 }).andThen({
-  id: "process-text",
-  execute: async ({ data, state }) => {
+  id: "uppercase",
+  execute: async ({ data }) => {
     return {
-      processed: data.text.toUpperCase(),
-      wordCount: data.text.split(" ").length,
+      text: data.text.toUpperCase(),
+      length: data.text.length,
     };
   },
 });
 
-const result = await workflow.run({ text: "hello world" });
-// { processed: "HELLO WORLD", wordCount: 2 }
+const result = await workflow.run({ text: "hello" });
+// Result: { text: "HELLO", length: 5 }
 ```
 
-## Function Signature
+## How It Works
+
+`andThen` runs your async function and passes the result to the next step:
 
 ```typescript
 .andThen({
-  execute: async ({ data, state, getStepData }) => {
-    // data: Current workflow data (type-safe)
-    // state: Workflow execution state
-    // getStepData: Access previous step outputs
+  id: "step-name",
+  execute: async ({ data }) => {
+    // Your code here
     return newData;
   }
 })
 ```
 
-### Data Flow
-
-Each step receives output from the previous step:
+### Available Parameters
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const workflow = createWorkflowChain({
-  id: "data-flow-example",
-  name: "Data Flow Example",
-  input: z.object({ userId: z.string() }),
-  result: z.object({ user: any, posts: any[] })
-})
-.andThen({
-  id: "fetch-user",
-  // Step 1: Fetch user
-  execute: async ({ data }) => {
-    const user = await fetchUser(data.userId);
-    return { user };
-  }
-})
-.andThen({
-  id: "fetch-posts",
-  // Step 2: Fetch user's posts (receives { user } from step 1)
-  execute: async ({ data }) => {
-    const posts = await fetchPosts(data.user.id);
-    return { ...data, posts };
-  }
-});
+execute: async ({ data, suspend, resumeData }) => {
+  // data: All accumulated data from previous steps
+  // suspend: Function to pause workflow
+  // resumeData: Data provided when resuming
+};
 ```
 
-## Using State for User Context
+## Data Flow Example
+
+Each step builds on the previous:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const personalizedWorkflow = createWorkflowChain({
-  id: "personalized-workflow",
-  name: "Personalized Workflow",
-  input: z.object({ message: z.string() }),
-  result: z.object({ response: z.string() }),
-}).andThen({
-  id: "personalize-response",
-  execute: async ({ data, state }) => {
-    // Access user information
-    const userRole = state.userContext?.get("role") || "guest";
-    const language = state.userContext?.get("language") || "en";
-
-    // Customize based on user
-    let response = data.message;
-    if (userRole === "admin") {
-      response = `[ADMIN] ${response}`;
-    }
-
-    return { response };
-  },
-});
-
-// Run with user context
-const result = await personalizedWorkflow.run(
-  { message: "Hello" },
-  {
-    userId: "user-123",
-    conversationId: "conv-456",
-    userContext: new Map([
-      ["role", "admin"],
-      ["language", "en"],
-    ]),
-  }
-);
+createWorkflowChain({
+  id: "user-flow",
+  input: z.object({ userId: z.string() }),
+})
+  .andThen({
+    id: "get-user",
+    execute: async ({ data }) => {
+      const user = await getUser(data.userId);
+      return { user }; // Next step gets: { userId, user }
+    },
+  })
+  .andThen({
+    id: "get-posts",
+    execute: async ({ data }) => {
+      const posts = await getPosts(data.user.id);
+      return { posts }; // Next step gets: { userId, user, posts }
+    },
+  })
+  .andThen({
+    id: "format-result",
+    execute: async ({ data }) => {
+      return {
+        userName: data.user.name,
+        postCount: data.posts.length,
+      };
+    },
+  });
 ```
 
 ## Common Patterns
@@ -121,78 +88,104 @@ const result = await personalizedWorkflow.run(
 ### API Calls
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "api-call-workflow",
-  name: "API Call Workflow",
-  input: z.object({ userId: z.string() }),
-  result: z.object({ user: any }),
-}).andThen({
-  id: "fetch-user-api",
-  execute: async (data) => {
-    const response = await fetch(`/api/users/${data.userId}`);
+.andThen({
+  id: "fetch-user",
+  execute: async ({ data }) => {
+    const response = await fetch(`/api/users/${data.id}`);
     const user = await response.json();
-    return { ...data, user };
-  },
-});
+    return { user };
+  }
+})
 ```
 
-### Data Transformation
+### Data Validation
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "data-transformation-workflow",
-  name: "Data Transformation Workflow",
-  input: z.object({ email: z.string() }),
-  result: z.object({ processedAt: z.string(), isValid: z.boolean() }),
-}).andThen({
-  id: "transform-data",
-  execute: async (data) => {
-    return {
-      ...data,
-      processedAt: new Date().toISOString(),
-      isValid: data.email.includes("@"),
-    };
-  },
-});
+.andThen({
+  id: "validate-email",
+  execute: async ({ data }) => {
+    const isValid = data.email.includes("@");
+    if (!isValid) {
+      throw new Error("Invalid email");
+    }
+    return data;
+  }
+})
 ```
 
 ### Error Handling
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "error-handling-workflow",
-  name: "Error Handling Workflow",
-  input: z.object({}),
-  result: z.object({ result: any }),
-}).andThen({
-  id: "risky-operation",
-  execute: async (data) => {
+.andThen({
+  id: "safe-operation",
+  execute: async ({ data }) => {
     try {
       const result = await riskyOperation(data);
-      return { ...data, result };
+      return { result };
     } catch (error) {
-      console.warn("Operation failed:", error);
-      return { ...data, result: null };
+      return { result: null, error: error.message };
     }
-  },
-});
+  }
+})
 ```
+
+## Suspend & Resume Support
+
+```typescript
+.andThen({
+  id: "approval-step",
+  execute: async ({ data, suspend, resumeData }) => {
+    // Check if resuming
+    if (resumeData) {
+      return {
+        ...data,
+        approved: resumeData.approved
+      };
+    }
+
+    // Suspend for approval
+    if (data.amount > 1000) {
+      await suspend("Needs manager approval");
+    }
+
+    // Auto-approve small amounts
+    return { ...data, approved: true };
+  }
+})
+```
+
+## Schema Support
+
+Define schemas for type safety:
+
+```typescript
+.andThen({
+  id: "process-order",
+  inputSchema: z.object({
+    orderId: z.string(),
+    items: z.array(z.any())
+  }),
+  outputSchema: z.object({
+    total: z.number(),
+    tax: z.number()
+  }),
+  execute: async ({ data }) => {
+    const total = calculateTotal(data.items);
+    const tax = total * 0.1;
+    return { total, tax };
+  }
+})
+```
+
+## Best Practices
+
+1. **Keep functions focused** - Do one thing well
+2. **Return new data** - Don't mutate input
+3. **Handle errors gracefully** - Use try/catch
+4. **Use descriptive IDs** - Makes debugging easier
 
 ## Next Steps
 
-- **[andAgent](./and-agent.md)** - Add AI to your workflows
-- **[andWhen](./and-when.md)** - Add conditional logic
-- **[andAll](./and-all.md)** - Run steps in parallel
-
----
-
-> **Quick Summary**: `andThen` runs async functions, transforms data, and passes results to the next step. Use `state` for user context and personalization.
+- Learn about [andAgent](./and-agent.md) for AI integration
+- Explore [andWhen](./and-when.md) for conditional logic
+- See [andAll](./and-all.md) for parallel execution
