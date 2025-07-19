@@ -1,5 +1,125 @@
 # @voltagent/core
 
+## 0.1.61
+
+### Patch Changes
+
+- [#391](https://github.com/VoltAgent/voltagent/pull/391) [`57c4874`](https://github.com/VoltAgent/voltagent/commit/57c4874d4d4807c50242b2e34ab9574fc6129888) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improve workflow execute API with context-based pattern
+
+  Breaking change: The workflow execute functions now use a context-based API for better developer experience and extensibility.
+
+  **Before:**
+
+  ```typescript
+  .andThen({
+    execute: async (data, state) => {
+      // old API with separate parameters
+      return { ...data, processed: true };
+    }
+  })
+  ```
+
+  **After:**
+
+  ```typescript
+  .andThen({
+    execute: async ({ data, state, getStepData }) => {
+      // new API with context object
+      const previousStep = getStepData("step-id");
+      return { ...data, processed: true };
+    }
+  })
+  ```
+
+  This change applies to:
+
+  - `andThen` execute functions
+  - `andAgent` prompt functions
+  - `andWhen` condition functions
+  - `andTap` execute functions
+
+  The new API provides:
+
+  - Better TypeScript inference
+  - Access to previous step data via `getStepData`
+  - Cleaner, more extensible design
+
+- [#399](https://github.com/VoltAgent/voltagent/pull/399) [`da66f86`](https://github.com/VoltAgent/voltagent/commit/da66f86d92a278007c2d3386d22b482fa70d93ff) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add suspend/resume functionality for workflows
+
+  **Workflows can now be paused and resumed!** Perfect for human-in-the-loop processes, waiting for external events, or managing long-running operations.
+
+  ## Two Ways to Suspend
+
+  ### 1. Internal Suspension (Inside Steps)
+
+  ```typescript
+  const approvalWorkflow = createWorkflowChain({
+    id: "simple-approval",
+    name: "Simple Approval",
+    input: z.object({ item: z.string() }),
+    result: z.object({ approved: z.boolean() }),
+  }).andThen({
+    id: "wait-for-approval",
+    execute: async ({ data, suspend, resumeData }) => {
+      // If resuming, return the decision
+      if (resumeData) {
+        return { approved: resumeData.approved };
+      }
+
+      // Otherwise suspend and wait
+      await suspend("Waiting for approval");
+    },
+  });
+
+  // Run and resume
+  const execution = await approvalWorkflow.run({ item: "New laptop" });
+  const result = await execution.resume({ approved: true });
+  ```
+
+  ### 2. External Suspension (From Outside)
+
+  ```typescript
+  import { createSuspendController } from "@voltagent/core";
+
+  // Create controller
+  const controller = createSuspendController();
+
+  // Run workflow with controller
+  const execution = await workflow.run(input, {
+    suspendController: controller,
+  });
+
+  // Pause from outside (e.g., user clicks pause)
+  controller.suspend("User paused workflow");
+
+  // Resume later
+  if (execution.status === "suspended") {
+    const result = await execution.resume();
+  }
+  ```
+
+  ## Key Features
+
+  - ⏸️ **Internal suspension** with `await suspend()` inside steps
+  - 🎮 **External control** with `createSuspendController()`
+  - 📝 **Type-safe resume data** with schemas
+  - 💾 **State persists** across server restarts
+  - 🚀 **Simplified API** - just pass `suspendController`, no need for separate `signal`
+
+  📚 **For detailed documentation: [https://voltagent.dev/docs/workflows/suspend-resume](https://voltagent.dev/docs/workflows/suspend-resume)**
+
+- [#401](https://github.com/VoltAgent/voltagent/pull/401) [`4a7145d`](https://github.com/VoltAgent/voltagent/commit/4a7145debd66c7b1dfb953608e400b6c1ed02db7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve TypeScript performance issues by fixing Zod dependency configuration (#377)
+
+  Moved Zod from direct dependencies to peer dependencies in @voltagent/vercel-ai to prevent duplicate Zod installations that were causing TypeScript server slowdowns. Also standardized Zod versions across the workspace to ensure consistency.
+
+  Changes:
+
+  - @voltagent/vercel-ai: Moved `zod` from dependencies to peerDependencies
+  - @voltagent/docs-mcp: Updated `zod` from `^3.23.8` to `3.24.2`
+  - @voltagent/with-postgres: Updated `zod` from `^3.24.2` to `3.24.2` (removed caret)
+
+  This fix significantly improves TypeScript language server performance by ensuring only one Zod version is processed, eliminating the "Type instantiation is excessively deep and possibly infinite" errors that users were experiencing.
+
 ## 0.1.60
 
 ### Patch Changes

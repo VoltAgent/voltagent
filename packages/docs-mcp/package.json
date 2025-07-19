@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/docs-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "VoltAgent docs-mcp - MCP Docs ",
   "license": "MIT",
   "type": "module",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@voltagent/core": "^0.1.39",
+    "@voltagent/core": "^0.1.61",
     "zod": "3.24.2"
   },
   "devDependencies": {
