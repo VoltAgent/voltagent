@@ -866,7 +866,7 @@ export function createWorkflow<
           data: options.resumeFrom.checkpoint?.stepExecutionState,
         });
         // Store the resume input separately to pass to the step
-        resumeInputData = input;
+        resumeInputData = options.resumeFrom.resumeData;
         // Update execution context for resume
         executionContext.currentStepIndex = startStepIndex;
       }
