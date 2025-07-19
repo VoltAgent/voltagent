@@ -161,3 +161,4 @@ createWorkflowChain({ id: "smart-email" })
 - Learn about [andWhen](./and-when.md) for conditional logic
 - Explore [andAll](./and-all.md) to run multiple agents in parallel
 - See [andThen](./and-then.md) to process AI outputs
+- Execute workflows via [REST API](../../api/overview.md#workflow-endpoints)

@@ -219,6 +219,7 @@ While the Swagger UI (`/ui`) provides the most comprehensive details, here's a b
 - **`POST /agents/{id}/stream`**: Streams a text response chunk by chunk using Server-Sent Events (SSE).
 - **`POST /agents/{id}/object`**: Generates a structured JSON object response from the agent, guided by a provided schema.
 - **`POST /agents/{id}/stream-object`**: Streams parts of a structured JSON object response using SSE.
+- **`POST /workflows/{id}/execute`**: Executes a workflow with the provided input data and returns the result.
 - **(Other endpoints)**: Explore `/ui` for details on history, tool execution, update checks, etc.
 
 :::warning[Object Generation Schema Mismatch]
@@ -518,6 +519,375 @@ handler: async (c) => {
   return c.redirect("/new-url");
 };
 ```
+
+## Workflow Endpoints
+
+VoltAgent provides a comprehensive set of REST API endpoints for managing and executing workflows. These endpoints allow you to list workflows, execute them, and control their execution state (suspend/resume).
+
+### List All Workflows
+
+**`GET /workflows`**
+
+Returns a list of all registered workflows in the system.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "order-approval",
+      "name": "Order Approval Workflow",
+      "purpose": "Process and approve customer orders",
+      "stepsCount": 5,
+      "status": "idle"
+    },
+    {
+      "id": "user-verification",
+      "name": "User Verification",
+      "purpose": "Verify new user accounts",
+      "stepsCount": 3,
+      "status": "idle"
+    }
+  ]
+}
+```
+
+**cURL Example:**
+
+```bash
+curl http://localhost:3141/workflows
+```
+
+### Execute Workflow
+
+**`POST /workflows/{id}/execute`**
+
+Executes a workflow with the provided input data. The workflow runs to completion or until it suspends.
+
+**Request Body:**
+
+```json
+{
+  "input": any,  // Workflow-specific input data
+  "options": {
+    "userId": "string",         // Optional: User ID for tracking
+    "conversationId": "string", // Optional: Conversation ID
+    "userContext": {}          // Optional: Custom context data
+  }
+}
+```
+
+**Response (Completed):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_1234567890_abc123",
+    "startAt": "2024-01-15T10:00:00.000Z",
+    "endAt": "2024-01-15T10:00:05.123Z",
+    "status": "completed",
+    "result": {
+      // Workflow-specific output
+    }
+  }
+}
+```
+
+**Response (Suspended):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_1234567890_abc123",
+    "startAt": "2024-01-15T10:00:00.000Z",
+    "endAt": null,
+    "status": "suspended",
+    "result": null,
+    "suspension": {
+      "suspendedAt": "2024-01-15T10:00:02.500Z",
+      "reason": "Waiting for manager approval",
+      "suspendedStepIndex": 2
+    }
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3141/workflows/order-approval/execute \
+     -H "Content-Type: application/json" \
+     -d '{
+       "input": {
+         "orderId": "order-123",
+         "amount": 5000,
+         "customerEmail": "customer@example.com"
+       },
+       "options": {
+         "userId": "user-456"
+       }
+     }'
+```
+
+### Suspend Running Workflow
+
+**`POST /workflows/{id}/executions/{executionId}/suspend`**
+
+Suspends a currently running workflow execution. This is useful for pausing long-running workflows or when external intervention is needed.
+
+**Request Body:**
+
+```json
+{
+  "reason": "string" // Optional: Reason for suspension
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_1234567890_abc123",
+    "status": "suspended",
+    "suspension": {
+      "suspendedAt": "2024-01-15T10:30:45.123Z",
+      "reason": "User clicked pause button"
+    }
+  }
+}
+```
+
+**Error Responses:**
+
+- `404`: Workflow execution not found
+- `400`: Cannot suspend workflow in current state (e.g., already completed or suspended)
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3141/workflows/data-processing/executions/exec_1234567890_abc123/suspend \
+     -H "Content-Type: application/json" \
+     -d '{"reason": "System maintenance required"}'
+```
+
+### Resume Suspended Workflow
+
+**`POST /workflows/{id}/executions/{executionId}/resume`**
+
+Resumes a suspended workflow execution. You can provide data to the suspended step and optionally specify which step to resume from.
+
+**Request Body:**
+
+```json
+{
+  "resumeData": any,      // Optional: Data to pass to the resumed step
+  "options": {
+    "stepId": "string"    // Optional: Specific step ID to resume from
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_1234567890_abc123",
+    "startAt": "2024-01-15T10:00:00.000Z",
+    "endAt": "2024-01-15T10:35:20.456Z",
+    "status": "completed",
+    "result": {
+      // Final workflow output
+    }
+  }
+}
+```
+
+**Error Responses:**
+
+- `404`: Workflow execution not found or not in suspended state
+- `400`: Invalid resume data (fails schema validation)
+
+**Examples:**
+
+Simple resume:
+
+```bash
+curl -X POST http://localhost:3141/workflows/order-approval/executions/exec_1234567890_abc123/resume \
+     -H "Content-Type: application/json" \
+     -d '{
+       "resumeData": {
+         "approved": true,
+         "approvedBy": "manager@company.com"
+       }
+     }'
+```
+
+Resume from specific step:
+
+```bash
+curl -X POST http://localhost:3141/workflows/multi-step/executions/exec_9876543210_xyz789/resume \
+     -H "Content-Type: application/json" \
+     -d '{
+       "resumeData": {
+         "retryWithNewData": true
+       },
+       "options": {
+         "stepId": "step-3"
+       }
+     }'
+```
+
+### Complete Workflow Management Example
+
+Here's a complete example showing the full lifecycle of workflow execution via REST API:
+
+```javascript
+const API_BASE = "http://localhost:3141";
+
+class WorkflowClient {
+  // List available workflows
+  async listWorkflows() {
+    const response = await fetch(`${API_BASE}/workflows`);
+    const result = await response.json();
+    return result.data;
+  }
+
+  // Execute a workflow
+  async executeWorkflow(workflowId, input, options = {}) {
+    const response = await fetch(`${API_BASE}/workflows/${workflowId}/execute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input, options }),
+    });
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    return result.data;
+  }
+
+  // Suspend a running workflow
+  async suspendWorkflow(workflowId, executionId, reason) {
+    const response = await fetch(
+      `${API_BASE}/workflows/${workflowId}/executions/${executionId}/suspend`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      }
+    );
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    return result.data;
+  }
+
+  // Resume a suspended workflow
+  async resumeWorkflow(workflowId, executionId, resumeData, stepId) {
+    const body = { resumeData };
+    if (stepId) {
+      body.options = { stepId };
+    }
+
+    const response = await fetch(
+      `${API_BASE}/workflows/${workflowId}/executions/${executionId}/resume`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
+    );
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    return result.data;
+  }
+}
+
+// Usage example
+async function handleOrderApproval() {
+  const client = new WorkflowClient();
+
+  try {
+    // 1. Start the workflow
+    console.log("Starting order approval workflow...");
+    const execution = await client.executeWorkflow(
+      "order-approval",
+      {
+        orderId: "order-789",
+        amount: 15000,
+        customerType: "premium",
+      },
+      {
+        userId: "user-123",
+        userContext: { department: "sales" },
+      }
+    );
+
+    console.log("Execution ID:", execution.executionId);
+
+    // 2. Check if workflow is suspended
+    if (execution.status === "suspended") {
+      console.log("Workflow suspended:", execution.suspension.reason);
+
+      // 3. Simulate manager approval after 5 seconds
+      setTimeout(async () => {
+        console.log("Manager approved the order");
+
+        const result = await client.resumeWorkflow("order-approval", execution.executionId, {
+          approved: true,
+          managerId: "mgr-456",
+          comments: "Approved for VIP customer",
+        });
+
+        console.log("Final result:", result);
+      }, 5000);
+    } else {
+      console.log("Workflow completed immediately:", execution.result);
+    }
+  } catch (error) {
+    console.error("Workflow error:", error.message);
+  }
+}
+
+// Run the example
+handleOrderApproval();
+```
+
+### Workflow Status Values
+
+Workflows can have the following status values:
+
+- **`idle`**: Workflow is registered but not currently executing
+- **`running`**: Workflow is actively executing
+- **`suspended`**: Workflow is paused and waiting for resume
+- **`completed`**: Workflow finished successfully
+- **`error`**: Workflow terminated with an error
+
+### Best Practices
+
+1. **Always save the executionId**: You'll need it for suspend/resume operations
+2. **Handle suspended status**: Check if a workflow suspended after execution
+3. **Validate resume data**: Ensure resume data matches the workflow's schema
+4. **Use meaningful suspension reasons**: This helps with debugging and UI display
+5. **Implement proper error handling**: Handle 404s and 400s appropriately
+6. **Consider timeout scenarios**: Suspended workflows might expire based on your business logic
 
 ## Authentication
 
@@ -873,6 +1243,39 @@ curl -N -X POST http://localhost:3141/agents/your-agent-id/stream-object \
 curl -N -X POST http://localhost:3141/agents/your-agent-id/stream-object \
      -H "Content-Type: application/json" \
      -d '{ "input": "Generate user profile: Name: Alice, City: Wonderland", "schema": {"type":"object", "properties": {"name": {"type": "string"}, "city": {"type": "string"}}, "required": ["name", "city"]}, "options": { "userId": "user-123", "conversationId": "your-unique-conversation-id" } }'
+```
+
+**Execute workflow:**
+
+```bash
+curl -X POST http://localhost:3141/workflows/order-approval/execute \
+     -H "Content-Type: application/json" \
+     -d '{
+       "input": {
+         "orderId": "order-123",
+         "amount": 5000,
+         "items": ["laptop", "mouse", "keyboard"]
+       },
+       "options": {
+         "userId": "user-456",
+         "conversationId": "conv-789"
+       }
+     }'
+
+# Response:
+# {
+#   "success": true,
+#   "data": {
+#     "executionId": "exec_1234567890_abc123",
+#     "startAt": "2024-01-15T10:00:00.000Z",
+#     "endAt": "2024-01-15T10:00:05.123Z",
+#     "status": "completed",
+#     "result": {
+#       "approved": true,
+#       "processedBy": "system"
+#     }
+#   }
+# }
 ```
 
 ## Abort Signal Examples

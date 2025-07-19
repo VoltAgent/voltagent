@@ -260,5 +260,6 @@ const productionWorkflow = createWorkflowChain({
 - Learn about [Suspend & Resume](./suspend-resume.md) for human-in-the-loop workflows
 - Explore [Schemas](./schemas.md) for type-safe workflows
 - See [Error Handling](./overview.md) for robust workflows
+- Integrate with [REST API](../api/overview.md#workflow-endpoints) to trigger workflows externally
 
 > **Remember**: Hooks are for observing, not changing. Use them to watch your workflow, not control it.

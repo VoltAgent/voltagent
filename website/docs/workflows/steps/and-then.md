@@ -189,3 +189,4 @@ Define schemas for type safety:
 - Learn about [andAgent](./and-agent.md) for AI integration
 - Explore [andWhen](./and-when.md) for conditional logic
 - See [andAll](./and-all.md) for parallel execution
+- Execute workflows via [REST API](../../api/overview.md#workflow-endpoints)

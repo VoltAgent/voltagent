@@ -158,5 +158,6 @@ Errors in `andTap` don't stop your workflow:
 - Learn about [andThen](./and-then.md) for data transformation
 - Explore [andWhen](./and-when.md) for conditional logic
 - See [andAgent](./and-agent.md) for AI integration
+- Execute workflows via [REST API](../../api/overview.md#workflow-endpoints)
 
 > **Remember**: `andTap` is read-only. Use it to observe, not to change.

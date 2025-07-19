@@ -237,3 +237,4 @@ If the fastest step fails, the race continues:
 - Learn about [andAll](./and-all.md) for when you need all results
 - Explore [andThen](./and-then.md) for sequential processing
 - See [andWhen](./and-when.md) for conditional execution
+- Execute workflows via [REST API](../../api/overview.md#workflow-endpoints)

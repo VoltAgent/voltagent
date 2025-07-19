@@ -464,8 +464,299 @@ onPauseClick(() => {
 });
 ```
 
+## REST API Usage
+
+You can also control workflow suspension and resumption through the REST API. This is useful for web applications, mobile apps, or any external system that needs to manage workflows.
+
+### Suspend a Running Workflow
+
+**Endpoint:** `POST /workflows/{id}/executions/{executionId}/suspend`
+
+Suspend a running workflow execution from outside the workflow.
+
+**Request:**
+
+```json
+{
+  "reason": "User clicked pause button" // Optional
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_1234567890_abc123",
+    "status": "suspended",
+    "suspension": {
+      "suspendedAt": "2024-01-15T10:30:45.123Z",
+      "reason": "User clicked pause button"
+    }
+  }
+}
+```
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:3141/workflows/order-approval/executions/exec_1234567890_abc123/suspend \
+     -H "Content-Type: application/json" \
+     -d '{"reason": "Manager is on vacation"}'
+```
+
+**JavaScript Example:**
+
+```javascript
+async function suspendWorkflow(workflowId, executionId, reason) {
+  const response = await fetch(
+    `http://localhost:3141/workflows/${workflowId}/executions/${executionId}/suspend`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    }
+  );
+
+  const result = await response.json();
+  if (result.success) {
+    console.log("Workflow suspended:", result.data);
+  }
+}
+
+// Usage
+await suspendWorkflow(
+  "order-approval",
+  "exec_1234567890_abc123",
+  "Waiting for payment confirmation"
+);
+```
+
+### Resume a Suspended Workflow
+
+**Endpoint:** `POST /workflows/{id}/executions/{executionId}/resume`
+
+Resume a suspended workflow with optional data and step selection.
+
+**Request:**
+
+```json
+{
+  "resumeData": {
+    "approved": true,
+    "approvedBy": "manager@company.com"
+  },
+  "options": {
+    "stepId": "step-2" // Optional: resume from specific step
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_1234567890_abc123",
+    "startAt": "2024-01-15T10:00:00.000Z",
+    "endAt": "2024-01-15T10:31:15.456Z",
+    "status": "completed",
+    "result": {
+      "approved": true,
+      "processedBy": "manager@company.com"
+    }
+  }
+}
+```
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:3141/workflows/order-approval/executions/exec_1234567890_abc123/resume \
+     -H "Content-Type: application/json" \
+     -d '{
+       "resumeData": {
+         "approved": true,
+         "managerId": "mgr-789",
+         "comments": "Approved for urgent delivery"
+       }
+     }'
+```
+
+**JavaScript Example:**
+
+```javascript
+async function resumeWorkflow(workflowId, executionId, resumeData, stepId) {
+  const response = await fetch(
+    `http://localhost:3141/workflows/${workflowId}/executions/${executionId}/resume`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        resumeData,
+        ...(stepId && { options: { stepId } }),
+      }),
+    }
+  );
+
+  const result = await response.json();
+  if (result.success) {
+    console.log("Workflow resumed:", result.data);
+    return result.data;
+  }
+}
+
+// Resume with approval data
+const result = await resumeWorkflow("order-approval", "exec_1234567890_abc123", {
+  approved: true,
+  approvedBy: "manager@company.com",
+});
+
+// Resume from specific step
+const result2 = await resumeWorkflow(
+  "multi-step-workflow",
+  "exec_9876543210_xyz789",
+  { retryData: true },
+  "step-3" // Jump to step-3
+);
+```
+
+### Complete Workflow Example with REST API
+
+Here's a full example showing how to execute, suspend, and resume a workflow via REST API:
+
+```javascript
+// 1. Execute workflow
+async function executeWorkflow(workflowId, input) {
+  const response = await fetch(`http://localhost:3141/workflows/${workflowId}/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ input }),
+  });
+
+  const result = await response.json();
+  return result.data;
+}
+
+// 2. Monitor workflow and suspend if needed
+async function monitorAndSuspend(workflowId, executionId) {
+  // In a real app, you might poll the status or use webhooks
+  setTimeout(async () => {
+    // User clicked pause
+    await fetch(`http://localhost:3141/workflows/${workflowId}/executions/${executionId}/suspend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "User requested pause" }),
+    });
+    console.log("Workflow suspended");
+  }, 2000);
+}
+
+// 3. Resume after user input
+async function handleUserApproval(workflowId, executionId, approved) {
+  const response = await fetch(
+    `http://localhost:3141/workflows/${workflowId}/executions/${executionId}/resume`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        resumeData: {
+          approved,
+          timestamp: new Date().toISOString(),
+          userId: "current-user-id",
+        },
+      }),
+    }
+  );
+
+  const result = await response.json();
+  return result.data;
+}
+
+// Usage flow
+async function processOrder() {
+  // Start workflow
+  const execution = await executeWorkflow("order-approval", {
+    orderId: "order-123",
+    amount: 5000,
+    items: ["laptop", "mouse"],
+  });
+
+  console.log("Workflow started:", execution.executionId);
+
+  // Monitor and possibly suspend
+  await monitorAndSuspend("order-approval", execution.executionId);
+
+  // Later, after user makes decision
+  const finalResult = await handleUserApproval(
+    "order-approval",
+    execution.executionId,
+    true // approved
+  );
+
+  console.log("Order processed:", finalResult);
+}
+```
+
+### Error Handling
+
+Both endpoints return appropriate HTTP status codes:
+
+**Suspend Errors:**
+
+- `404`: Workflow execution not found
+- `400`: Cannot suspend workflow in current state (e.g., already completed)
+- `500`: Server error
+
+**Resume Errors:**
+
+- `404`: Workflow execution not found or not suspended
+- `400`: Invalid resume data (schema validation failed)
+- `500`: Server error
+
+**Error Response Format:**
+
+```json
+{
+  "success": false,
+  "error": "Cannot suspend workflow in completed state"
+}
+```
+
+**Example Error Handling:**
+
+```javascript
+try {
+  const response = await fetch(
+    `http://localhost:3141/workflows/${workflowId}/executions/${executionId}/resume`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumeData }),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!result.success) {
+    console.error("Resume failed:", result.error);
+    // Handle specific error cases
+    if (response.status === 404) {
+      alert("Workflow not found or not suspended");
+    } else if (response.status === 400) {
+      alert("Invalid resume data provided");
+    }
+  }
+} catch (error) {
+  console.error("Network error:", error);
+}
+```
+
 ## Next Steps
 
 - Learn about [Workflow Schemas](./schemas.md) for type safety
 - Explore [Step Types](./steps/and-then.md) that support suspension
 - Try the [VoltOps Console](https://console.voltagent.dev) to manage suspended workflows
+- See [REST API Documentation](../api/overview.md#workflow-endpoints) for complete API reference

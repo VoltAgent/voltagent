@@ -249,3 +249,4 @@ To handle failures gracefully, catch errors in individual steps:
 - Learn about [andRace](./and-race.md) for "first wins" scenarios
 - Explore [andThen](./and-then.md) for sequential processing
 - See [andWhen](./and-when.md) for conditional execution
+- Execute workflows via [REST API](../../api/overview.md#workflow-endpoints)

@@ -169,6 +169,7 @@ Define schemas for type-safe conditions:
 - **[andAll](./and-all.md)** - Run multiple steps in parallel
 - **[andRace](./and-race.md)** - First completed step wins
 - **[andThen](./and-then.md)** - Chain conditional results with functions
+- **[REST API](../../api/overview.md#workflow-endpoints)** - Execute workflows externally
 
 ---
 

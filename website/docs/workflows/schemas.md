@@ -269,3 +269,4 @@ result: z.object({
 - Learn about [Suspend & Resume](./suspend-resume.md) patterns with schemas
 - See schemas in action with [Step Types](./steps/and-then.md)
 - Explore [Workflow Hooks](./hooks.md) for schema validation events
+- Execute workflows via [REST API](../api/overview.md#workflow-endpoints) with type-safe schemas
