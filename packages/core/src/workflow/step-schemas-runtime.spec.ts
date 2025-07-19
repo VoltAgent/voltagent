@@ -82,10 +82,7 @@ describe("Step-level Schema Runtime Tests", () => {
 
       // Test suspension and resume
       const suspendController = workflow.createSuspendController?.();
-      const suspendPromise = workflow.run(
-        { amount: 5000 },
-        { signal: suspendController?.signal, suspendController },
-      );
+      const suspendPromise = workflow.run({ amount: 5000 }, { suspendController });
 
       // Let it run a bit then suspend
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -154,10 +151,7 @@ describe("Step-level Schema Runtime Tests", () => {
       registry.registerWorkflow(workflow.toWorkflow());
 
       const controller = workflow.createSuspendController?.();
-      const runPromise = workflow.run(
-        { value: 100 },
-        { signal: controller?.signal, suspendController: controller },
-      );
+      const runPromise = workflow.run({ value: 100 }, { suspendController: controller });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
       controller?.suspend("Test");
@@ -260,10 +254,7 @@ describe("Step-level Schema Runtime Tests", () => {
 
       // Run with suspensions
       const controller = workflow.createSuspendController?.();
-      let result = await workflow.run(
-        { orderId: "order-456" },
-        { signal: controller?.signal, suspendController: controller },
-      );
+      let result = await workflow.run({ orderId: "order-456" }, { suspendController: controller });
 
       // First suspension for approval
       await new Promise((resolve) => setTimeout(resolve, 50));

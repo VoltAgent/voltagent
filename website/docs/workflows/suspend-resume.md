@@ -389,6 +389,81 @@ await execution.resume({ approved: true });
 await execution.resume({ approved: true }, { stepId: "step-2" });
 ```
 
+## External Suspension
+
+You can also pause workflows from outside using `createSuspendController`:
+
+```typescript
+import { createWorkflowChain, createSuspendController } from "@voltagent/core";
+import { z } from "zod";
+
+const workflow = createWorkflowChain({
+  id: "long-process",
+  name: "Long Process",
+  input: z.object({ items: z.number() }),
+  result: z.object({ processed: z.number() }),
+}).andThen({
+  id: "process-items",
+  execute: async ({ data }) => {
+    // Simulate long processing
+    for (let i = 0; i < data.items; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log(`Processed ${i + 1}/${data.items}`);
+    }
+    return { processed: data.items };
+  },
+});
+
+// Create controller to control the workflow externally
+const controller = createSuspendController();
+
+// Run workflow with the controller
+const execution = await workflow.run({ items: 10 }, { suspendController: controller });
+
+// Pause from outside (e.g., when user clicks pause button)
+setTimeout(() => {
+  controller.suspend("User clicked pause");
+}, 3000);
+
+// Check the result
+if (execution.status === "suspended") {
+  console.log("Paused:", execution.suspension?.reason);
+  // Resume later
+  const result = await execution.resume();
+}
+```
+
+### UI Integration Example
+
+```typescript
+class WorkflowManager {
+  private controller = createSuspendController();
+
+  async start(workflow: any, input: any) {
+    return workflow.run(input, {
+      suspendController: this.controller,
+    });
+  }
+
+  pause(reason?: string) {
+    this.controller.suspend(reason || "User paused");
+  }
+
+  isPaused() {
+    return this.controller.isSuspended();
+  }
+}
+
+// In your UI
+const manager = new WorkflowManager();
+const execution = await manager.start(myWorkflow, input);
+
+// Pause button handler
+onPauseClick(() => {
+  manager.pause("User clicked pause button");
+});
+```
+
 ## Next Steps
 
 - Learn about [Workflow Schemas](./schemas.md) for type safety

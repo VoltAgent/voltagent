@@ -593,7 +593,6 @@ export class WorkflowRegistry extends EventEmitter {
       executionId,
       userId: execution.userId,
       conversationId: execution.conversationId,
-      signal: suspendController.signal,
       suspendController: suspendController,
       resumeFrom: {
         executionId,

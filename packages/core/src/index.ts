@@ -1,6 +1,7 @@
 export {
   createWorkflow,
   createWorkflowChain,
+  createSuspendController,
   andAgent,
   andThen,
   andWhen,

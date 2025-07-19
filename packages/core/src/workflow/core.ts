@@ -817,7 +817,7 @@ export function createWorkflow<
         startTime: new Date(),
         currentStepIndex: 0,
         steps: [],
-        signal: options?.signal, // Pass signal from options
+        signal: options?.suspendController?.signal, // Get signal from suspendController
         historyEntry: historyEntry,
         // Store effective memory for use in steps if needed
         memory: effectiveMemory,
@@ -882,13 +882,15 @@ export function createWorkflow<
           }
 
           // Check for suspension signal before each step
+          const checkSignal = options?.suspendController?.signal;
           devLogger.debug(`[Workflow] Checking suspension signal at step ${index}`, {
-            hasSignal: !!options?.signal,
-            isAborted: options?.signal?.aborted,
-            reason: (options?.signal as any)?.reason,
+            hasSignal: !!checkSignal,
+            isAborted: checkSignal?.aborted,
+            reason: (checkSignal as any)?.reason,
           });
 
-          if (options?.signal?.aborted) {
+          const signal = options?.suspendController?.signal;
+          if (signal?.aborted) {
             devLogger.info(
               `[Workflow] Suspension signal detected at step ${index} for execution ${executionId}`,
             );
@@ -897,7 +899,7 @@ export function createWorkflow<
             let reason = "User requested suspension";
 
             // Check if we have a suspension controller with a reason
-            if (options.suspendController?.getReason()) {
+            if (options?.suspendController?.getReason()) {
               reason = options.suspendController.getReason()!;
               devLogger.debug(`[Workflow] Using reason from suspension controller: ${reason}`);
             } else {
@@ -1054,7 +1056,11 @@ export function createWorkflow<
               z.infer<typeof stepResumeSchema>
             >(
               stateManager.state.data,
-              convertWorkflowStateToParam(stateManager.state, executionContext, options?.signal),
+              convertWorkflowStateToParam(
+                stateManager.state,
+                executionContext,
+                options?.suspendController?.signal,
+              ),
               executionContext,
               typedSuspendFn,
               isResumingThisStep ? resumeInputData : undefined,
@@ -1062,7 +1068,7 @@ export function createWorkflow<
             // Execute step with automatic signal checking for immediate suspension
             const result = await executeWithSignalCheck(
               () => step.execute(stepContext),
-              options?.signal,
+              options?.suspendController?.signal,
               options?.suspensionMode === "immediate" ? 50 : 500, // Check more frequently in immediate mode
             );
 

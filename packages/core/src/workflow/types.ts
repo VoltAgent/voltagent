@@ -130,10 +130,6 @@ export interface WorkflowRunOptions {
    */
   memory?: Memory;
   /**
-   * AbortSignal for cancelling or suspending the workflow
-   */
-  signal?: AbortSignal;
-  /**
    * Suspension controller for managing workflow suspension
    */
   suspendController?: WorkflowSuspendController;

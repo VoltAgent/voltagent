@@ -1,6 +1,7 @@
 import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
 import { z } from "zod";
 import { createWorkflow } from "./core";
+import { createSuspendController } from "./suspend-controller";
 import { andThen, andAll, andWhen } from "./steps";
 import { LibSQLStorage } from "../memory/libsql";
 import { WorkflowRegistry } from "./registry";
@@ -58,19 +59,17 @@ describe("workflow suspend/resume functionality", () => {
 
     registry.registerWorkflow(workflow);
 
-    // Create suspend controller
-    const controller = workflow.createSuspendController?.();
-    expect(controller).toBeDefined();
+    // Create suspend controller using new helper
+    const controller = createSuspendController();
 
-    // Start workflow
+    // Start workflow - only need to pass suspendController now
     const runPromise = workflow.run("test input", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
     // Suspend after 50ms (during step 1)
     setTimeout(() => {
-      controller!.suspend("Test suspension");
+      controller.suspend("Test suspension");
     }, 50);
 
     const result = await runPromise;
@@ -129,15 +128,14 @@ describe("workflow suspend/resume functionality", () => {
     registry.registerWorkflow(workflow);
 
     // First run with suspension
-    const controller = workflow.createSuspendController?.();
+    const controller = createSuspendController();
     const runPromise = workflow.run("initial input", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
     // Suspend after step 1
     setTimeout(() => {
-      controller!.suspend("Suspend after step 1");
+      controller.suspend("Suspend after step 1");
     }, 50);
 
     const suspendedResult = await runPromise;
@@ -206,9 +204,8 @@ describe("workflow suspend/resume functionality", () => {
     registry.registerWorkflow(workflow);
 
     // Run with suspension after step 1
-    const controller = workflow.createSuspendController?.();
+    const controller = createSuspendController();
     const runPromise = workflow.run("test", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
@@ -278,9 +275,8 @@ describe("workflow suspend/resume functionality", () => {
 
     registry.registerWorkflow(workflow);
 
-    const controller = workflow.createSuspendController?.();
+    const controller = createSuspendController();
     const runPromise = workflow.run("test", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
@@ -333,9 +329,8 @@ describe("workflow suspend/resume functionality", () => {
 
     registry.registerWorkflow(workflow);
 
-    const controller = workflow.createSuspendController?.();
+    const controller = createSuspendController();
     const runPromise = workflow.run("test", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
@@ -414,17 +409,15 @@ describe("workflow suspend/resume functionality", () => {
     const controller2 = workflow2.createSuspendController?.();
 
     const run1 = workflow1.run("test1", {
-      signal: controller1!.signal,
       suspendController: controller1,
     });
     const run2 = workflow2.run("test2", {
-      signal: controller2!.signal,
       suspendController: controller2,
     });
 
     setTimeout(() => {
-      controller1!.suspend("Suspend 1");
-      controller2!.suspend("Suspend 2");
+      controller1.suspend("Suspend 1");
+      controller2.suspend("Suspend 2");
     }, 50);
 
     const [result1, result2] = await Promise.all([run1, run2]);
@@ -543,9 +536,8 @@ describe("workflow suspend/resume functionality", () => {
 
     registry.registerWorkflow(workflow);
 
-    const controller = workflow.createSuspendController?.();
+    const controller = createSuspendController();
     const runPromise = workflow.run("test", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
@@ -601,7 +593,6 @@ describe("workflow suspend/resume functionality", () => {
 
     // Run workflow
     const result = await workflow.run("test input", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
@@ -640,9 +631,8 @@ describe("workflow suspend/resume functionality", () => {
 
     registry.registerWorkflow(workflow);
 
-    const controller = workflow.createSuspendController?.();
+    const controller = createSuspendController();
     const result = await workflow.run("test", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 
@@ -687,9 +677,8 @@ describe("workflow suspend/resume functionality", () => {
 
     registry.registerWorkflow(workflow);
 
-    const controller = workflow.createSuspendController?.();
+    const controller = createSuspendController();
     const result = await workflow.run("test", {
-      signal: controller!.signal,
       suspendController: controller,
     });
 

@@ -6,7 +6,9 @@ feat: add suspend/resume functionality for workflows
 
 **Workflows can now be paused and resumed!** Perfect for human-in-the-loop processes, waiting for external events, or managing long-running operations.
 
-## Quick Example
+## Two Ways to Suspend
+
+### 1. Internal Suspension (Inside Steps)
 
 ```typescript
 const approvalWorkflow = createWorkflowChain({
@@ -27,20 +29,39 @@ const approvalWorkflow = createWorkflowChain({
   },
 });
 
-// Run the workflow - it will suspend
+// Run and resume
 const execution = await approvalWorkflow.run({ item: "New laptop" });
-console.log(execution.status); // "suspended"
-
-// Later, resume with a decision
 const result = await execution.resume({ approved: true });
-console.log(result.result); // { approved: true }
+```
+
+### 2. External Suspension (From Outside)
+
+```typescript
+import { createSuspendController } from "@voltagent/core";
+
+// Create controller
+const controller = createSuspendController();
+
+// Run workflow with controller
+const execution = await workflow.run(input, {
+  suspendController: controller,
+});
+
+// Pause from outside (e.g., user clicks pause)
+controller.suspend("User paused workflow");
+
+// Resume later
+if (execution.status === "suspended") {
+  const result = await execution.resume();
+}
 ```
 
 ## Key Features
 
-- ⏸️ **Pause workflows** inside any step with `await suspend()`
-- ▶️ **Resume with data** using `execution.resume(data)`
-- 📝 **Type-safe resume data** with `resumeSchema`
+- ⏸️ **Internal suspension** with `await suspend()` inside steps
+- 🎮 **External control** with `createSuspendController()`
+- 📝 **Type-safe resume data** with schemas
 - 💾 **State persists** across server restarts
+- 🚀 **Simplified API** - just pass `suspendController`, no need for separate `signal`
 
-📚 **For detailed documentation and examples: [https://voltagent.dev/docs/workflows/suspend-resume](https://voltagent.dev/docs/workflows/suspend-resume)**
+📚 **For detailed documentation: [https://voltagent.dev/docs/workflows/suspend-resume](https://voltagent.dev/docs/workflows/suspend-resume)**
