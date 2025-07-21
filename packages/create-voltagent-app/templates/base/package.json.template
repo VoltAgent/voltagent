@@ -16,6 +16,7 @@
     "@voltagent/cli": "^0.1.1",
     "@voltagent/core": "^0.1.2",
     "@voltagent/vercel-ai": "^0.1.1",
+    "dotenv": "^16.4.5",
     "zod": "3.24.2"
   },
   "devDependencies": {

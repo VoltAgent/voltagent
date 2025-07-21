@@ -1,5 +1,13 @@
 # @voltagent/vercel-ui
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [[`6fadbb0`](https://github.com/VoltAgent/voltagent/commit/6fadbb098fe40d8b658aa3386e6126fea155f117)]:
+  - @voltagent/internal@0.0.5
+  - @voltagent/core@0.1.62
+
 ## 0.1.5
 
 ### Patch Changes

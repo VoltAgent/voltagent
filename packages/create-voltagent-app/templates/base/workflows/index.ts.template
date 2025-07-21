@@ -1,106 +1,133 @@
-import { Agent, createWorkflowChain, andThen, andAgent, andAll, andRace, andWhen } from "@voltagent/core";
+import { Agent, createWorkflowChain } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-// This agent is specific to the sentiment analysis task within the workflow.
-const sentimentAgent = new Agent({
-  name: "SentimentAnalysisAgent",
-  instructions: "You are an expert in sentiment analysis. Analyze the text and determine if the sentiment is positive, negative, or neutral. Respond only with the identified sentiment.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
+// ==============================================================================
+// Example: Human-in-the-Loop Expense Approval Workflow
+// Concepts: Suspend/resume and step-level schemas
+//
+// Test Scenarios for VoltOps Platform
+// 
+// Scenario 1: Small expense (auto-approved)
+// Input JSON:
+// {
+//   "employeeId": "EMP-123",
+//   "amount": 250,
+//   "category": "office-supplies",
+//   "description": "New laptop mouse and keyboard"
+// }
+// Result: Automatically approved by system, no manager approval needed
+//
+// Scenario 2: Large expense (requires manager approval)
+// Input JSON:
+// {
+//   "employeeId": "EMP-456",
+//   "amount": 750,
+//   "category": "travel",
+//   "description": "Flight tickets for client meeting"
+// }
+// Result: Workflow suspends, waiting for manager approval
+// Resume JSON:
+// {
+//   "approved": true,
+//   "managerId": "MGR-001",
+//   "comments": "Approved for important client",
+//   "adjustedAmount": 700
+// }
+//
+// Scenario 3: Large expense (rejected)
+// Input JSON:
+// {
+//   "employeeId": "EMP-789",
+//   "amount": 1500,
+//   "category": "equipment",
+//   "description": "Premium office chair"
+// }
+// Result: Workflow suspends, waiting for manager approval
+// Resume JSON:
+// {
+//   "approved": false,
+//   "managerId": "MGR-002",
+//   "comments": "Budget exceeded for this quarter"
+// }
+// ==============================================================================
+export const expenseApprovalWorkflow = createWorkflowChain({
+  id: "expense-approval",
+  name: "Expense Approval Workflow",
+  purpose: "Process expense reports with manager approval for high amounts",
 
-export const comprehensiveWorkflow = createWorkflowChain({
-  id: "comprehensive-workflow",
-  name: "Comprehensive Workflow Example",
-  purpose: "Demonstrates all major workflow steps in a single flow.",
   input: z.object({
-    text: z.string(),
+    employeeId: z.string(),
+    amount: z.number(),
+    category: z.string(),
+    description: z.string(),
   }),
   result: z.object({
-    processedText: z.string(),
-    sentiment: z.string(),
-    calculations: z.array(z.object({
-      operation: z.string(),
-      value: z.number()
-    })),
-    raceWinner: z.string(),
-    warning: z.string().optional(),
+    status: z.enum(["approved", "rejected"]),
+    approvedBy: z.string(),
+    finalAmount: z.number(),
   }),
 })
-  // Step 1: andThen - Basic data transformation
+  // Step 1: Validate expense and check if approval needed
   .andThen({
-    id: "preprocess-text",
-    execute: async (data) => ({
-      processedText: data.text.trim().toLowerCase(),
+    id: "check-approval-needed",
+    // Define what data we expect when resuming this step
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      managerId: z.string(),
+      comments: z.string().optional(),
+      adjustedAmount: z.number().optional(),
     }),
-  })
-  // Step 2: andAgent - AI-powered analysis
-  .andAgent(
-    (data) => `Analyze the sentiment of this text: "${data.processedText}"`,
-    sentimentAgent,
-    {
-      schema: z.object({
-        sentiment: z.enum(["positive", "negative", "neutral"]),
-      }),
-    }
-  )
-  // Step 3: andAll - Run multiple operations in parallel
-  .andAll({
-    id: "run-calculations",
-    steps: [
-      andThen({
-        id: "word-count",
-        execute: async (data) => ({
-          operation: "word_count",
-          value: data.processedText.split(" ").length,
-        }),
-      }),
-      andThen({
-        id: "char-count",
-        execute: async (data) => ({
-          operation: "char_count",
-          value: data.processedText.length,
-        }),
-      }),
-    ],
-  })
-  .andThen({
-    id: "format-calculations",
-    execute: async (data: any) => ({
-      calculations: data,
-    }),
-  })
-  // Step 4: andRace - Get the result from the fastest source
-  .andRace({
-    id: "compete-services",
-    steps: [
-      andThen({
-        id: "fast-service",
-        execute: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          return { raceWinner: "fast-service" };
-        },
-      }),
-      andThen({
-        id: "slow-service",
-        execute: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          return { raceWinner: "slow-service" };
-        },
-      }),
-    ],
-  })
-  // Step 5: andWhen - Conditional execution
-  .andWhen({
-    id: "check-for-negative-sentiment",
-    condition: async (data) => data.sentiment === "negative",
-    step: andThen({
-      id: "add-warning",
-      execute: async (data) => ({
+    execute: async ({ data, suspend, resumeData }) => {
+      // If we're resuming with manager's decision
+      if (resumeData) {
+        console.log(`Manager ${resumeData.managerId} made decision`);
+        return {
+          ...data,
+          approved: resumeData.approved,
+          approvedBy: resumeData.managerId,
+          finalAmount: resumeData.adjustedAmount || data.amount,
+          managerComments: resumeData.comments,
+        };
+      }
+
+      // Check if manager approval is needed (expenses over $500)
+      if (data.amount > 500) {
+        console.log(`Expense of $${data.amount} requires manager approval`);
+
+        // Suspend workflow and wait for manager input
+        await suspend("Manager approval required", {
+          employeeId: data.employeeId,
+          requestedAmount: data.amount,
+          category: data.category,
+        });
+      }
+
+      // Auto-approve small expenses
+      return {
         ...data,
-        warning: "Negative sentiment detected!",
-      }),
-    }),
-  }); 
+        approved: true,
+        approvedBy: "system",
+        finalAmount: data.amount,
+      };
+    },
+  })
+
+  // Step 2: Process the final decision
+  .andThen({
+    id: "process-decision",
+    execute: async ({ data }) => {
+      if (data.approved) {
+        console.log(`Expense approved for $${data.finalAmount}`);
+      } else {
+        console.log("Expense rejected");
+      }
+
+      return {
+        status: data.approved ? "approved" : "rejected",
+        approvedBy: data.approvedBy,
+        finalAmount: data.finalAmount,
+      };
+    },
+  });

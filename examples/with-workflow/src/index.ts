@@ -375,6 +375,3 @@ export async function runExamples() {
   });
   console.log("Analysis result:", contentResult);
 }
-
-// Uncomment to run examples
-// runExamples().catch(console.error);

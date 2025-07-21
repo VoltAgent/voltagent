@@ -1,5 +1,11 @@
 # @voltagent/internal
 
+## 0.0.5
+
+### Patch Changes
+
+- [`6fadbb0`](https://github.com/VoltAgent/voltagent/commit/6fadbb098fe40d8b658aa3386e6126fea155f117) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: createAsyncIterableStream import issue
+
 ## 0.0.4
 
 ### Patch Changes

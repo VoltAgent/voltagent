@@ -35,7 +35,7 @@ export interface WorkflowStats {
  * - Pagination support
  * - PostgreSQL-optimized queries with proper indexing
  *
- * @see {@link https://voltagent.ai/docs/agents/memory/postgres | PostgreSQL Storage Documentation}
+ * @see {@link https://voltagent.dev/docs/agents/memory/postgres | PostgreSQL Storage Documentation}
  */
 
 /**
@@ -1379,7 +1379,7 @@ export class PostgresStorage implements Memory {
    *
    * @param options Query options for filtering and pagination
    * @returns Promise that resolves to an array of conversations matching the criteria
-   * @see {@link https://voltagent.ai/docs/agents/memory/postgres#querying-conversations | Querying Conversations}
+   * @see {@link https://voltagent.dev/docs/agents/memory/postgres#querying-conversations | Querying Conversations}
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     await this.initialized;
@@ -1451,7 +1451,7 @@ export class PostgresStorage implements Memory {
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
    * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   * @see {@link https://voltagent.ai/docs/agents/memory/postgres#conversation-messages | Getting Conversation Messages}
+   * @see {@link https://voltagent.dev/docs/agents/memory/postgres#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,

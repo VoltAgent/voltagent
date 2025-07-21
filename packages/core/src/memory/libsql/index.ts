@@ -29,7 +29,7 @@ import { LibSQLWorkflowExtension } from "./workflow-extension";
  * - Query builder pattern for flexible data retrieval
  * - Pagination support
  *
- * @see {@link https://voltagent.ai/docs/agents/memory/libsql | LibSQL Storage Documentation}
+ * @see {@link https://voltagent.dev/docs/agents/memory/libsql | LibSQL Storage Documentation}
  * Function to add a delay between 0-0 seconds for debugging
  */
 async function debugDelay(): Promise<void> {
@@ -228,7 +228,9 @@ export class LibSQLStorage implements Memory {
           input TEXT,
           output TEXT,
           usage TEXT,
-          metadata TEXT
+          metadata TEXT,
+          userId TEXT,
+          conversationId TEXT
         )
       `);
 
@@ -1107,7 +1109,7 @@ export class LibSQLStorage implements Memory {
    *
    * @param options Query options for filtering and pagination
    * @returns Promise that resolves to an array of conversations matching the criteria
-   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#querying-conversations | Querying Conversations}
+   * @see {@link https://voltagent.dev/docs/agents/memory/libsql#querying-conversations | Querying Conversations}
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     await this.initialized;
@@ -1178,7 +1180,7 @@ export class LibSQLStorage implements Memory {
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
    * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#conversation-messages | Getting Conversation Messages}
+   * @see {@link https://voltagent.dev/docs/agents/memory/libsql#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,
@@ -2671,6 +2673,16 @@ export class LibSQLStorage implements Memory {
       // Check if columns already exist
       const hasUserIdColumn = tableInfo.rows.some((row) => row.name === "userId");
       const hasConversationIdColumn = tableInfo.rows.some((row) => row.name === "conversationId");
+
+      // If both columns already exist, skip migration
+      if (hasUserIdColumn && hasConversationIdColumn) {
+        this.debug("Both userId and conversationId columns already exist, skipping migration");
+
+        // Set migration flag
+        await this.setMigrationFlag("agent_history_schema_migration", 0);
+
+        return { success: true };
+      }
 
       // Add userId column if it doesn't exist
       if (!hasUserIdColumn) {

@@ -1375,10 +1375,28 @@ app.openapi(streamObjectRoute, async (c) => {
 // Check for updates
 app.get("/updates", async (c: ApiContext) => {
   try {
-    const updates = await checkForUpdates();
+    const forceRefresh = c.req.query("force") === "true";
 
-    // npm-check package directly provides the bump value (major, minor, patch)
-    // We can use the data as is
+    // Use cache by default, force refresh if requested
+    const updates = await checkForUpdates(undefined, {
+      useCache: true,
+      forceRefresh,
+    });
+
+    // If using cache and not forcing refresh, also trigger background update
+    if (!forceRefresh) {
+      setImmediate(async () => {
+        try {
+          await checkForUpdates(undefined, {
+            useCache: true,
+            forceRefresh: true,
+          });
+        } catch (error) {
+          devLogger.debug("Background update check failed:", error);
+        }
+      });
+    }
+
     const response: ApiResponse<{
       hasUpdates: boolean;
       updates: PackageUpdateInfo[];
@@ -1415,6 +1433,7 @@ app.post("/updates", async (c: ApiContext) => {
         message: result.message,
         updatedPackages: result.updatedPackages || [],
         updatedAt: new Date().toISOString(),
+        requiresRestart: result.requiresRestart,
       },
     });
   } catch (error) {
@@ -1442,6 +1461,7 @@ app.post("/updates/:packageName", async (c: ApiContext) => {
         message: result.message,
         packageName: result.packageName,
         updatedAt: new Date().toISOString(),
+        requiresRestart: result.requiresRestart,
       },
     });
   } catch (error) {

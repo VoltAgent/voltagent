@@ -1,14 +1,16 @@
+import "dotenv/config";
 import { VoltAgent, Agent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
-import { comprehensiveWorkflow } from "./workflows";
+import { expenseApprovalWorkflow } from "./workflows";
+import { weatherTool } from "./tools";
 
 const agent = new Agent({
   name: "{{projectName}}",
-  instructions: "A helpful assistant that answers questions without using tools",
+  instructions: "A helpful assistant that can check weather and help with various tasks",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  tools: [],
+  tools: [weatherTool],
 });
 
 new VoltAgent({
@@ -16,6 +18,6 @@ new VoltAgent({
     agent,
   },
   workflows: {
-    comprehensiveWorkflow,
+    expenseApprovalWorkflow,
   },
 });

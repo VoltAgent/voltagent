@@ -43,7 +43,7 @@ export interface SupabaseMemoryOptions extends MemoryOptions {
  * - Storage limits for managing message history
  * - Workflow history, steps, and timeline events persistence
  *
- * @see {@link https://voltagent.ai/docs/agents/memory/supabase | Supabase Storage Documentation}
+ * @see {@link https://voltagent.dev/docs/agents/memory/supabase | Supabase Storage Documentation}
  */
 export class SupabaseMemory implements Memory {
   private client: SupabaseClient;

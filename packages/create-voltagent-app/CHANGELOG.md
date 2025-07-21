@@ -1,5 +1,26 @@
 # create-voltagent-app
 
+## 0.2.0
+
+### Minor Changes
+
+- [`8b143cb`](https://github.com/VoltAgent/voltagent/commit/8b143cbd6f4349fe62158d7e78a5a239fec7a9e2) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: modernize create-voltagent-app CLI
+
+  - Add AI provider selection (OpenAI, Anthropic, Google, Groq, Mistral, Ollama)
+  - Add optional API key input with skip option
+  - Automatic .env file generation based on selected provider
+  - Package manager detection - only show installed ones
+  - Auto-install dependencies after project creation
+  - Full Windows support with cross-platform commands
+  - Ollama local LLM support with default configuration
+  - Dynamic template generation based on selected AI provider
+
+### Patch Changes
+
+- [`8b143cb`](https://github.com/VoltAgent/voltagent/commit/8b143cbd6f4349fe62158d7e78a5a239fec7a9e2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: include create-voltagent-app in build:all script
+
+  The create-voltagent-app package was not being built during GitHub Actions release workflow because it doesn't have the @voltagent/ scope prefix. Added explicit scope to build:all command to ensure the CLI tool is properly built before publishing.
+
 ## 0.1.33
 
 ### Patch Changes

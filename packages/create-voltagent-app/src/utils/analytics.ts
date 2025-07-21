@@ -63,6 +63,7 @@ export const captureProjectCreation = (options: {
   typescript: boolean;
   fromExample?: string;
   ide?: string;
+  aiProvider?: string;
 }) => {
   // Skip if telemetry is disabled
   if (isTelemetryDisabled()) return;
@@ -76,6 +77,7 @@ export const captureProjectCreation = (options: {
       typescript: options.typescript,
       from_example: options.fromExample || null,
       ide: options.ide || "none",
+      ai_provider: options.aiProvider || "openai",
       machine_id: getMachineId(),
       ...getOSInfo(),
     },

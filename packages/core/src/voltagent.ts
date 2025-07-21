@@ -117,9 +117,14 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       this.serverConfig.port = this.serverOptions.port;
     }
 
-    // Check dependencies if enabled
+    // Check dependencies if enabled (run in background)
     if (options.checkDependencies !== false) {
-      this.checkDependencies();
+      // Run dependency check in background to not block startup
+      Promise.resolve().then(() => {
+        this.checkDependencies().catch(() => {
+          // Silently ignore errors
+        });
+      });
     }
 
     // Auto-start server if enabled
@@ -159,19 +164,33 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    */
   private async checkDependencies(): Promise<void> {
     try {
-      const result = await checkForUpdates(undefined, {
+      // Quick cache check first
+      const cachedResult = await checkForUpdates(undefined, {
         filter: "@voltagent",
+        useCache: true,
       });
 
-      if (result.hasUpdates) {
+      // Show cached results if available
+      if (cachedResult?.hasUpdates) {
         this.logger.info("\n");
-        this.logger.info(result.message);
+        this.logger.info(cachedResult.message);
         this.logger.info("Run 'npm run volt update' to update VoltAgent packages");
-      } else {
-        this.logger.info(result.message);
       }
-    } catch (error) {
-      this.logger.error("Error checking dependencies:", error);
+
+      // Schedule background update after 100ms
+      setTimeout(async () => {
+        try {
+          await checkForUpdates(undefined, {
+            filter: "@voltagent",
+            useCache: true,
+            forceRefresh: true,
+          });
+        } catch (_error) {
+          // Silently ignore background update errors
+        }
+      }, 100);
+    } catch (_error) {
+      // Silently ignore all errors
     }
   }
 
