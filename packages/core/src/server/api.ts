@@ -436,7 +436,7 @@ app.openapi(executeWorkflowRoute, async (c) => {
       if (historyEntry.workflowId === id && !capturedExecutionId) {
         capturedExecutionId = historyEntry.id;
         registry.activeExecutions.set(historyEntry.id, suspendController);
-        logger.info(
+        logger.trace(
           `[API] Captured and stored suspension controller for execution ${historyEntry.id}`,
         );
       }
@@ -446,7 +446,7 @@ app.openapi(executeWorkflowRoute, async (c) => {
 
     try {
       // Run the workflow
-      logger.info("[API] Starting workflow execution with signal");
+      logger.trace("[API] Starting workflow execution with signal");
       const result = await registeredWorkflow.workflow.run(input, processedOptions);
 
       // Remove the listener
@@ -455,7 +455,7 @@ app.openapi(executeWorkflowRoute, async (c) => {
       // Remove from active executions when complete
       const actualExecutionId = result.executionId;
       registry.activeExecutions.delete(actualExecutionId);
-      logger.info(
+      logger.trace(
         `[API] Workflow execution ${actualExecutionId} completed with status: ${result.status}`,
       );
 
@@ -633,14 +633,14 @@ app.openapi(suspendWorkflowRoute, async (c) => {
     }
 
     // Trigger suspension via abort signal if available
-    logger.info(`[API] Checking for active execution ${executionId}`, {
+    logger.trace(`[API] Checking for active execution ${executionId}`, {
       hasExecution: registry.activeExecutions?.has(executionId),
       activeExecutions: Array.from(registry.activeExecutions?.keys() || []),
     });
 
     if (registry.activeExecutions?.has(executionId)) {
       const controller = registry.activeExecutions.get(executionId);
-      logger.info(`[API] Found suspension controller for execution ${executionId}`, {
+      logger.trace(`[API] Found suspension controller for execution ${executionId}`, {
         hasController: !!controller,
         isAborted: controller?.signal.aborted,
       });
@@ -648,7 +648,9 @@ app.openapi(suspendWorkflowRoute, async (c) => {
       if (controller) {
         // Suspend the workflow with reason
         controller.suspend(reason);
-        logger.info(`[API] Sent suspend signal to execution ${executionId} with reason: ${reason}`);
+        logger.trace(
+          `[API] Sent suspend signal to execution ${executionId} with reason: ${reason}`,
+        );
       }
     } else {
       logger.warn(`[API] No active execution found for ${executionId}`);
@@ -1392,7 +1394,7 @@ app.get("/updates", async (c: ApiContext) => {
             forceRefresh: true,
           });
         } catch (error) {
-          devLogger.debug("Background update check failed:", error);
+          logger.debug("Background update check failed:", error);
         }
       });
     }

@@ -7,7 +7,7 @@ import { WorkflowMemoryManager } from "./memory/manager";
 import { WorkflowHistoryManager } from "./history-manager";
 import type { WorkflowEvent, WorkflowEventWithStatus } from "../events/workflow-emitter";
 import { WorkflowEventEmitter } from "../events/workflow-emitter";
-import { devLogger } from "@voltagent/internal/dev";
+import { getGlobalLogger } from "../logger";
 import type { Memory } from "../memory/types";
 
 /**
@@ -184,6 +184,7 @@ export interface WorkflowRegistryEvents {
 export class WorkflowRegistry extends EventEmitter {
   private static instance: WorkflowRegistry;
   private workflows: Map<string, RegisteredWorkflow> = new Map();
+  private logger = getGlobalLogger().child({ component: "workflow-registry" });
 
   private workflowHistoryManagers: Map<string, WorkflowHistoryManager> = new Map();
 
@@ -192,7 +193,7 @@ export class WorkflowRegistry extends EventEmitter {
 
   private constructor() {
     super();
-    devLogger.info("[WorkflowRegistry] Initialized");
+    this.logger.trace("Initialized");
 
     // Listen for immediate workflow events from WorkflowEventEmitter
     const emitter = WorkflowEventEmitter.getInstance();
@@ -261,13 +262,13 @@ export class WorkflowRegistry extends EventEmitter {
           isPersisted: true,
         });
 
-        devLogger.debug(
-          `[WorkflowRegistry] Event persisted and emitted: ${event.name} for execution ${executionId}`,
+        this.logger.trace(
+          `Event persisted and emitted: ${event.name} for execution ${executionId}`,
         );
       }
     } catch (error) {
-      devLogger.error(
-        `[WorkflowRegistry] Failed to persist timeline event: ${event.name} for execution ${executionId}:`,
+      this.logger.error(
+        `Failed to persist timeline event: ${event.name} for execution ${executionId}:`,
         error,
       );
       throw error; // Re-throw to inform WorkflowEventEmitter
@@ -289,12 +290,12 @@ export class WorkflowRegistry extends EventEmitter {
 
     // Only use workflow-specific memory manager - no fallback to global
     if (registeredWorkflow?.workflowMemoryManager) {
-      devLogger.debug(`[WorkflowRegistry] Using workflow-specific memory for ${workflowId}`);
+      this.logger.trace(`Using workflow-specific memory for ${workflowId}`);
       return registeredWorkflow.workflowMemoryManager;
     }
 
-    devLogger.warn(
-      `[WorkflowRegistry] No memory manager available for workflow ${workflowId} - workflow must define its own memory`,
+    this.logger.warn(
+      `No memory manager available for workflow ${workflowId} - workflow must define its own memory`,
     );
     return undefined;
   }
@@ -313,21 +314,15 @@ export class WorkflowRegistry extends EventEmitter {
       metadata?: Record<string, unknown>;
     } = {},
   ): Promise<WorkflowHistoryEntry | null> {
-    devLogger.info(
-      `[WorkflowRegistry] Creating workflow execution for workflow ${workflowId} (${workflowName})`,
-    );
+    this.logger.trace(`Creating workflow execution for workflow ${workflowId} (${workflowName})`);
     try {
       const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
       if (!workflowMemoryManager) {
-        devLogger.error(
-          `[WorkflowRegistry] No memory manager available for workflow: ${workflowId}`,
-        );
+        this.logger.error(`No memory manager available for workflow: ${workflowId}`);
         return null;
       }
 
-      devLogger.debug(
-        `[WorkflowRegistry] Found memory manager for workflow ${workflowId}, creating execution`,
-      );
+      this.logger.trace(`Found memory manager for workflow ${workflowId}, creating execution`);
       // Create execution through memory manager
       const historyEntry = await workflowMemoryManager.createExecution(
         workflowId,
@@ -341,23 +336,18 @@ export class WorkflowRegistry extends EventEmitter {
         },
       );
 
-      devLogger.info(
-        `[WorkflowRegistry] Created workflow execution ${historyEntry.id} for workflow ${workflowId}`,
-      );
+      this.logger.trace(`Created workflow execution ${historyEntry.id} for workflow ${workflowId}`);
 
       // Emit historyCreated event for WebSocket notifications
       this.emit("historyCreated", historyEntry);
 
-      devLogger.debug(
-        `[WorkflowRegistry] Workflow execution created and historyCreated event emitted: ${historyEntry.id}`,
+      this.logger.trace(
+        `Workflow execution created and historyCreated event emitted: ${historyEntry.id}`,
       );
 
       return historyEntry;
     } catch (error) {
-      devLogger.error(
-        `[WorkflowRegistry] Failed to create workflow execution for ${workflowId}:`,
-        error,
-      );
+      this.logger.error(`Failed to create workflow execution for ${workflowId}:`, error);
       return null;
     }
   }
@@ -370,7 +360,7 @@ export class WorkflowRegistry extends EventEmitter {
     executionId: string,
     updates: Partial<WorkflowHistoryEntry>,
   ): Promise<WorkflowHistoryEntry | null> {
-    devLogger.debug(`[WorkflowRegistry] Updating workflow execution ${executionId}`, {
+    this.logger.trace(`Updating workflow execution ${executionId}`, {
       workflowId,
       status: updates.status,
       hasSuspension: !!updates.metadata?.suspension,
@@ -379,9 +369,7 @@ export class WorkflowRegistry extends EventEmitter {
     try {
       const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
       if (!workflowMemoryManager) {
-        devLogger.error(
-          `[WorkflowRegistry] No memory manager available for workflow: ${workflowId}`,
-        );
+        this.logger.error(`No memory manager available for workflow: ${workflowId}`);
         return null;
       }
 
@@ -392,17 +380,14 @@ export class WorkflowRegistry extends EventEmitter {
         // Emit historyUpdate event for WebSocket notifications
         this.emit("historyUpdate", executionId, updatedEntry);
 
-        devLogger.debug(
-          `[WorkflowRegistry] Workflow execution updated and historyUpdate event emitted: ${executionId}`,
+        this.logger.trace(
+          `Workflow execution updated and historyUpdate event emitted: ${executionId}`,
         );
       }
 
       return updatedEntry;
     } catch (error) {
-      devLogger.error(
-        `[WorkflowRegistry] Failed to update workflow execution ${executionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to update workflow execution ${executionId}:`, error);
       return null;
     }
   }
@@ -414,9 +399,7 @@ export class WorkflowRegistry extends EventEmitter {
     let workflowMemoryManager: WorkflowMemoryManager | undefined;
     if (workflow.memory) {
       workflowMemoryManager = new WorkflowMemoryManager(workflow.memory);
-      devLogger.debug(
-        `[WorkflowRegistry] Created workflow-specific memory manager for ${workflow.id}`,
-      );
+      this.logger.trace(`Created workflow-specific memory manager for ${workflow.id}`);
     }
 
     const registeredWorkflow: RegisteredWorkflow = {
@@ -531,34 +514,32 @@ export class WorkflowRegistry extends EventEmitter {
     suspension?: any;
     error?: unknown;
   } | null> {
-    devLogger.info(
-      `[WorkflowRegistry] Attempting to resume workflow ${workflowId} execution ${executionId}`,
-    );
+    this.logger.debug(`Attempting to resume workflow ${workflowId} execution ${executionId}`);
 
     const registeredWorkflow = this.getWorkflow(workflowId);
     if (!registeredWorkflow) {
-      devLogger.error(`[WorkflowRegistry] Workflow not found: ${workflowId}`);
+      this.logger.error(`Workflow not found: ${workflowId}`);
       throw new Error(`Workflow not found: ${workflowId}`);
     }
 
     // Get the suspended execution details
     const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
     if (!workflowMemoryManager) {
-      devLogger.error(`[WorkflowRegistry] No memory manager available for workflow: ${workflowId}`);
+      this.logger.error(`No memory manager available for workflow: ${workflowId}`);
       throw new Error(`No memory manager available for workflow: ${workflowId}`);
     }
 
-    devLogger.debug(`[WorkflowRegistry] Fetching execution details for ${executionId}`);
+    this.logger.trace(`Fetching execution details for ${executionId}`);
     const execution = await workflowMemoryManager.getExecutionWithDetails(executionId);
     if (!execution) {
-      devLogger.error(`[WorkflowRegistry] Execution not found: ${executionId}`);
+      this.logger.error(`Execution not found: ${executionId}`);
       throw new Error(`Execution not found: ${executionId}`);
     }
 
-    devLogger.debug(`[WorkflowRegistry] Execution found with status: ${execution.status}`);
+    this.logger.trace(`Execution found with status: ${execution.status}`);
     if (execution.status !== ("suspended" as any)) {
-      devLogger.error(
-        `[WorkflowRegistry] Execution ${executionId} is not in suspended state. Current status: ${execution.status}`,
+      this.logger.error(
+        `Execution ${executionId} is not in suspended state. Current status: ${execution.status}`,
       );
       throw new Error(
         `Execution ${executionId} is not in suspended state. Current status: ${execution.status}`,
@@ -568,13 +549,11 @@ export class WorkflowRegistry extends EventEmitter {
     // Extract suspension metadata
     const suspensionMetadata = (execution.metadata as any)?.suspension;
     if (!suspensionMetadata) {
-      devLogger.error(
-        `[WorkflowRegistry] No suspension metadata found for execution: ${executionId}`,
-      );
+      this.logger.error(`No suspension metadata found for execution: ${executionId}`);
       throw new Error(`No suspension metadata found for execution: ${executionId}`);
     }
 
-    devLogger.debug(`[WorkflowRegistry] Found suspension metadata:`, suspensionMetadata);
+    this.logger.trace(`Found suspension metadata:`, suspensionMetadata);
 
     // Create a new suspend controller for the resumed execution
     const suspendController = registeredWorkflow.workflow.createSuspendController?.();
@@ -584,9 +563,7 @@ export class WorkflowRegistry extends EventEmitter {
 
     // Add to active executions BEFORE running
     this.activeExecutions.set(executionId, suspendController);
-    devLogger.info(
-      `[WorkflowRegistry] Added suspension controller for resumed execution ${executionId}`,
-    );
+    this.logger.trace(`Added suspension controller for resumed execution ${executionId}`);
 
     // Run the workflow with resume options
     const resumeOptions: any = {
@@ -613,14 +590,12 @@ export class WorkflowRegistry extends EventEmitter {
       }
 
       resumeOptions.resumeFrom.resumeStepIndex = stepIndex;
-      devLogger.info(
-        `[WorkflowRegistry] Overriding resume step index to ${stepIndex} for stepId '${resumeStepId}'`,
+      this.logger.trace(
+        `Overriding resume step index to ${stepIndex} for stepId '${resumeStepId}'`,
       );
     }
 
-    devLogger.info(
-      `[WorkflowRegistry] Resuming workflow from step ${resumeOptions.resumeFrom.resumeStepIndex}`,
-    );
+    this.logger.debug(`Resuming workflow from step ${resumeOptions.resumeFrom.resumeStepIndex}`);
 
     try {
       // Always use original workflow input - resumeData is passed through resumeOptions
@@ -638,16 +613,13 @@ export class WorkflowRegistry extends EventEmitter {
 
       // Remove from active executions when complete
       this.activeExecutions.delete(executionId);
-      devLogger.info(`[WorkflowRegistry] Resumed workflow execution ${executionId} completed`);
+      this.logger.debug(`Resumed workflow execution ${executionId} completed`);
 
       return result;
     } catch (error) {
       // Remove from active executions on error
       this.activeExecutions.delete(executionId);
-      devLogger.error(
-        `[WorkflowRegistry] Resumed workflow execution ${executionId} failed:`,
-        error,
-      );
+      this.logger.error(`Resumed workflow execution ${executionId} failed:`, error);
       throw error;
     }
   }
@@ -665,23 +637,19 @@ export class WorkflowRegistry extends EventEmitter {
     }>
   > {
     const suspended = [];
-    devLogger.debug(
-      `[WorkflowRegistry] Getting suspended workflows for ${this.workflows.size} registered workflows`,
+    this.logger.trace(
+      `Getting suspended workflows for ${this.workflows.size} registered workflows`,
     );
 
     for (const [workflowId] of this.workflows) {
       const workflowMemoryManager = this.getWorkflowMemoryManager(workflowId);
       if (workflowMemoryManager) {
-        devLogger.debug(`[WorkflowRegistry] Fetching executions for workflow ${workflowId}`);
+        this.logger.trace(`Fetching executions for workflow ${workflowId}`);
         const executions = await workflowMemoryManager.getExecutions(workflowId);
-        devLogger.debug(
-          `[WorkflowRegistry] Found ${executions.length} executions for workflow ${workflowId}`,
-        );
+        this.logger.trace(`Found ${executions.length} executions for workflow ${workflowId}`);
 
         for (const execution of executions) {
-          devLogger.debug(
-            `[WorkflowRegistry] Checking execution ${execution.id} with status ${execution.status}`,
-          );
+          this.logger.trace(`Checking execution ${execution.id} with status ${execution.status}`);
           if (execution.status === ("suspended" as any)) {
             const detailedExecution = await workflowMemoryManager.getExecutionWithDetails(
               execution.id,
@@ -700,11 +668,11 @@ export class WorkflowRegistry extends EventEmitter {
           }
         }
       } else {
-        devLogger.warn(`[WorkflowRegistry] No memory manager for workflow ${workflowId}`);
+        this.logger.warn(`No memory manager for workflow ${workflowId}`);
       }
     }
 
-    devLogger.info(`[WorkflowRegistry] Found ${suspended.length} suspended workflows`);
+    this.logger.trace(`Found ${suspended.length} suspended workflows`);
     return suspended;
   }
 
@@ -727,24 +695,22 @@ export class WorkflowRegistry extends EventEmitter {
   public async suspendAllActiveWorkflows(reason: string = "Server shutting down"): Promise<void> {
     const activeEntries = Array.from(this.activeExecutions.entries());
 
-    devLogger.info(
-      `[WorkflowRegistry] Suspending ${activeEntries.length} active workflows for shutdown`,
-    );
+    this.logger.debug(`Suspending ${activeEntries.length} active workflows for shutdown`);
 
     for (const [executionId, controller] of activeEntries) {
       if (!controller.isSuspended()) {
-        devLogger.info(`[WorkflowRegistry] Suspending workflow execution: ${executionId}`);
+        this.logger.debug(`Suspending workflow execution: ${executionId}`);
         controller.suspend(reason);
       }
     }
 
     // Wait a bit for all workflows to process suspension
     if (activeEntries.length > 0) {
-      devLogger.info(`[WorkflowRegistry] Waiting for workflows to suspend...`);
+      this.logger.trace(`Waiting for workflows to suspend...`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
-    devLogger.info(`[WorkflowRegistry] All workflows suspended`);
+    this.logger.debug(`All workflows suspended`);
   }
 
   /**
@@ -779,18 +745,14 @@ export class WorkflowRegistry extends EventEmitter {
       // Get the execution details to build the update
       const historyManager = this.getWorkflowHistoryManager(params.workflowId);
       if (!historyManager) {
-        devLogger.warn(
-          `[WorkflowRegistry] No history manager for immediate event: ${params.event.name}`,
-        );
+        this.logger.warn(`No history manager for immediate event: ${params.event.name}`);
         return;
       }
 
       // Get current execution state
       const currentEntry = await historyManager.getExecutionWithDetails(params.executionId);
       if (!currentEntry) {
-        devLogger.warn(
-          `[WorkflowRegistry] No execution found for immediate event: ${params.executionId}`,
-        );
+        this.logger.warn(`No execution found for immediate event: ${params.executionId}`);
         return;
       }
 
@@ -804,12 +766,12 @@ export class WorkflowRegistry extends EventEmitter {
       // Emit immediate update for WebSocket
       this.emit("historyUpdate", params.executionId, immediateUpdate);
 
-      devLogger.debug(
-        `[WorkflowRegistry] Immediate event broadcast: ${params.event.name} for execution ${params.executionId}`,
+      this.logger.trace(
+        `Immediate event broadcast: ${params.event.name} for execution ${params.executionId}`,
       );
     } catch (error) {
       // Don't throw - immediate events are best-effort
-      devLogger.error("[WorkflowRegistry] Failed to handle immediate event:", error);
+      this.logger.error("[WorkflowRegistry] Failed to handle immediate event:", error);
     }
   }
 }

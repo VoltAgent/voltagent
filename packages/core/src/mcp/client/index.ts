@@ -219,7 +219,7 @@ export class MCPClient extends EventEmitter {
    * @param originalError The error from the initial connection attempt.
    */
   private async attemptSSEFallback(originalError: unknown): Promise<void> {
-    this.logger.info("Streamable HTTP connection failed, attempting SSE fallback");
+    this.logger.debug("Streamable HTTP connection failed, attempting SSE fallback");
 
     // Create new SSE transport
     if (!this.isHTTPServer(this.serverConfig)) {

@@ -352,11 +352,9 @@ export class MemoryManager {
         content: m.content,
       }));
 
-      // Log memory fetch like Mastra
       this.logger.debug(
         {
           conversationId: conversationId,
-          runId: this.resourceId,
           fetchedCount: messages.length,
         },
         "Fetched messages from memory",
@@ -485,7 +483,7 @@ export class MemoryManager {
           title: `New Chat ${new Date().toISOString()}`,
           metadata: {},
         });
-        this.logger.info(
+        this.logger.debug(
           { conversationId, userId, agentId: this.resourceId },
           "[Memory] Created new conversation",
         );
@@ -535,7 +533,7 @@ export class MemoryManager {
         for (const message of input) {
           await this.saveMessage(context, message, userId, conversationId, "text");
         }
-        this.logger.info(
+        this.logger.debug(
           { conversationId, userId, agentId: this.resourceId, messageCount: input.length },
           `[Memory] Saved ${input.length} messages to conversation`,
         );

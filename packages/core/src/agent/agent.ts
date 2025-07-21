@@ -262,7 +262,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     });
 
     // Log agent creation
-    this.logger.info(`Agent created: ${this.name}`, {
+    this.logger.debug(`Agent created: ${this.name}`, {
       event: LogEvents.AGENT_CREATED,
       agentId: this.id,
       agentName: this.name,
@@ -1218,7 +1218,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     // Log generation start with all context
-    this.logger.info(
+    this.logger.debug(
       {
         event: LogEvents.AGENT_GENERATION_STARTED,
         agentId: this.id,
@@ -1338,16 +1338,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
       const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
-      // Log LLM call details like Mastra
       this.logger.debug("Starting agent llm call", {
-        runId: this.id,
         conversationId: finalConversationId,
         userId: userId,
       });
 
       this.logger.debug(
         {
-          runId: this.id,
           conversationId: finalConversationId,
           userId: userId,
           messages: messages.map((msg) => ({
@@ -1375,14 +1372,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         onStepFinish: async (step) => {
           this.addStepToHistory(step, operationContext);
 
-          // Log Stream Step Change like Mastra
           const stepData: any = {
             text: "",
             toolCalls: [],
             toolResults: [],
             finishReason: step.type === "text" ? "stop" : "tool-calls",
             usage: step.usage,
-            runId: this.id,
             conversationId: finalConversationId,
             userId: userId,
           };
@@ -1417,7 +1412,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           // Keep existing step logging for INFO level
           if (step.type === "text") {
             const textPreview = step.content;
-            this.logger.info(`Step: Text generated`, {
+            this.logger.debug("Step: Text generated", {
               event: LogEvents.AGENT_STEP_TEXT,
               agentId: this.id,
               agentName: this.name,
@@ -1431,7 +1426,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
           if (step.type === "tool_call") {
             // Log tool call step
-            this.logger.info(`Step: Calling tool '${step.name}'`, {
+            this.logger.debug(`Step: Calling tool '${step.name}'`, {
               event: LogEvents.AGENT_STEP_TOOL_CALL,
               agentId: this.id,
               agentName: this.name,
@@ -1444,7 +1439,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             });
 
             // Tool execution started
-            this.logger.info(
+            this.logger.debug(
               {
                 event: LogEvents.TOOL_EXECUTION_STARTED,
                 toolName: step.name,
@@ -1505,7 +1500,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             // Log tool result step
             const resultPreview = step.result || step.content;
 
-            this.logger.info(`Step: Tool '${step.name}' completed`, {
+            this.logger.debug(`Step: Tool '${step.name}' completed`, {
               event: LogEvents.AGENT_STEP_TOOL_RESULT,
               agentId: this.id,
               agentName: this.name,
@@ -1682,7 +1677,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
       });
 
-      // Log LLM Stream Finished like Mastra
       this.logger.debug(
         {
           text: response.text,
@@ -1690,7 +1684,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           toolResults: [],
           finishReason: response.finishReason || "stop",
           usage: response.usage,
-          runId: this.id,
           conversationId: finalConversationId,
           userId: userId,
         },
@@ -1701,7 +1694,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const usage = response.usage;
       const tokenInfo = usage ? ` (${usage.totalTokens} tokens)` : "";
 
-      this.logger.info(`Generation completed${tokenInfo}`, {
+      this.logger.debug(`Generation completed${tokenInfo}`, {
         event: LogEvents.AGENT_GENERATION_COMPLETED,
         agentId: this.id,
         agentName: this.name,
@@ -1855,7 +1848,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const modelName = this.getModelName();
 
     // Log stream generation start with all context
-    this.logger.info(
+    this.logger.debug(
       {
         event: LogEvents.AGENT_STREAM_STARTED,
         agentId: this.id,
@@ -2045,16 +2038,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
     const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
-    // Log LLM streaming call details like Mastra
     this.logger.debug("Starting agent llm stream call", {
-      runId: this.id,
       conversationId: finalConversationId,
       userId: userId,
     });
 
     this.logger.debug(
       {
-        runId: this.id,
         conversationId: finalConversationId,
         userId: userId,
         messages: messages.map((msg) => ({
@@ -2205,14 +2195,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         }
       },
       onStepFinish: async (step: StepWithContent) => {
-        // Log Stream Step Change like Mastra for streaming
         const stepData: any = {
           text: "",
           toolCalls: [],
           toolResults: [],
           finishReason: step.type === "text" ? "stop" : "tool-calls",
           usage: step.usage,
-          runId: this.id,
           conversationId: finalConversationId,
           userId: userId,
         };
@@ -2232,7 +2220,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           stepData.finishReason = "tool-calls";
 
           // Tool execution started
-          this.logger.info(
+          this.logger.debug(
             {
               event: LogEvents.TOOL_EXECUTION_STARTED,
               toolName: step.name,
@@ -2287,7 +2275,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           status: "completed",
         });
 
-        // Log LLM Stream Finished like Mastra
         this.logger.debug(
           {
             text: result.text || "",
@@ -2295,7 +2282,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             toolResults: [],
             finishReason: result.finishReason || "stop",
             usage: result.usage,
-            runId: this.id,
             conversationId: finalConversationId,
             userId: userId,
           },
@@ -2565,7 +2551,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       );
 
     // Log object generation start with all context
-    this.logger.info("Object generation started", {
+    this.logger.debug("Object generation started", {
       event: LogEvents.AGENT_OBJECT_STARTED,
       agentId: this.id,
       agentName: this.name,
@@ -2891,7 +2877,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       );
 
     // Log stream object generation start with all context
-    this.logger.info("Stream object generation started", {
+    this.logger.debug("Stream object generation started", {
       event: LogEvents.AGENT_STREAM_OBJECT_STARTED,
       agentId: this.id,
       agentName: this.name,
