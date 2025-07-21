@@ -22,7 +22,7 @@
     "@playwright/browser-webkit": "1.51.1",
     "@playwright/test": "^1.51.1",
     "@voltagent/cli": "^0.1.9",
-    "@voltagent/core": "^0.1.63",
+    "@voltagent/core": "^0.1.64",
     "@voltagent/logger": "^0.1.0",
     "@voltagent/vercel-ai": "^0.1.14",
     "axios": "^1.5.0",
