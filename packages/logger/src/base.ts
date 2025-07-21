@@ -35,14 +35,12 @@ export function getGlobalLogBuffer() {
 export type LoggerWithBuffer = LoggerWithProvider;
 
 /**
- * Create a new logger instance with log buffer support
+ * Create a new Pino logger instance
  */
-export function createLogger(options?: LoggerOptions): LoggerWithBuffer {
-  const provider = getGlobalLoggerProvider();
+export function createPinoLogger(options?: LoggerOptions): LoggerWithBuffer {
+  const provider = new PinoLoggerProvider(options?.bufferSize);
+  if (!globalLoggerProvider) {
+    globalLoggerProvider = provider;
+  }
   return provider.createLogger(options);
 }
-
-/**
- * Default logger instance
- */
-export const logger = createLogger();

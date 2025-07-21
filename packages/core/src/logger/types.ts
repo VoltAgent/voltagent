@@ -1,4 +1,4 @@
-import type { Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 
 export interface AgentLoggerContext {
   agentId: string;

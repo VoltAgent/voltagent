@@ -1,4 +1,4 @@
-import { createMemoryContextLogger, type Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import type { MemoryLoggerContext } from "./types";
 import { LogEvents } from "./events";
 
@@ -6,7 +6,11 @@ import { LogEvents } from "./events";
  * Create a logger instance for memory operations
  */
 export function createMemoryLogger(parentLogger: Logger, context: MemoryLoggerContext): Logger {
-  return createMemoryContextLogger(parentLogger, context);
+  // Create child logger with memory context
+  return parentLogger.child({
+    component: `Memory:${context.memoryType}`,
+    ...context,
+  });
 }
 
 /**

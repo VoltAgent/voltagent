@@ -41,8 +41,8 @@ import { AgentRegistry } from "./registry";
 import { WorkflowRegistry } from "../workflow/registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 import { zodSchemaToJsonUI } from "..";
-import { getGlobalLogBuffer, type LogFilter } from "@voltagent/logger";
-import { getGlobalLogger } from "../logger";
+import type { LogFilter } from "@voltagent/internal";
+import { getGlobalLogger, getGlobalLogBuffer } from "../logger";
 import { LogStreamManager } from "./log-stream";
 
 // Configuration interface

@@ -1,4 +1,4 @@
-import type { Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import type { StepWithContent } from "../../agent/providers";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { OperationContext } from "../../agent/types";

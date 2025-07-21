@@ -1,6 +1,6 @@
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import type { Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import { getGlobalLogger } from "./logger";
 import type { Agent } from "./agent/agent";
 import type { SubAgentConfig } from "./agent/subagent/types";

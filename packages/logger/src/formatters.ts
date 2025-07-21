@@ -1,5 +1,4 @@
-import type { LoggerOptions } from "pino";
-import type { LoggerOptions as VoltLoggerOptions } from "./types";
+// Generic formatting utilities for logger providers
 
 /**
  * Get the default log level based on environment
@@ -38,74 +37,4 @@ export function getDefaultRedactionPaths(): string[] {
   }
 
   return defaultPaths;
-}
-
-/**
- * Create Pino logger options from VoltAgent logger options
- */
-export function createPinoOptions(options: VoltLoggerOptions = {}): LoggerOptions {
-  const format = options.format || getDefaultLogFormat();
-  const pretty = options.pretty ?? process.env.NODE_ENV !== "production";
-  const shouldUsePretty = format === "pretty" && pretty;
-
-  const pinoOptions: LoggerOptions = {
-    level: options.level || getDefaultLogLevel(),
-    name: options.name,
-    redact: {
-      paths: options.redact || getDefaultRedactionPaths(),
-      censor: "[REDACTED]",
-    },
-    formatters: {
-      level: (label) => {
-        return { level: label.toUpperCase() };
-      },
-      bindings: (bindings) => {
-        // Add VoltAgent-specific bindings
-        return {
-          ...bindings,
-          component: "VoltAgent",
-          pid: bindings.pid,
-          hostname: bindings.hostname,
-        };
-      },
-    },
-    timestamp: () => {
-      const now = new Date();
-      const offset = -now.getTimezoneOffset();
-      const offsetHours = Math.floor(Math.abs(offset) / 60);
-      const offsetMinutes = Math.abs(offset) % 60;
-      const offsetSign = offset >= 0 ? "+" : "-";
-      const offsetString = `${offsetSign}${offsetHours.toString().padStart(2, "0")}${offsetMinutes.toString().padStart(2, "0")}`;
-      return `,"timestamp":"${now.toISOString().replace("Z", "")} ${offsetString}"`;
-    },
-    base: {
-      env: process.env.NODE_ENV || "development",
-    },
-  };
-
-  // Add pretty transport only in development
-  if (shouldUsePretty) {
-    pinoOptions.transport = {
-      target: "pino-pretty",
-      options: {
-        colorize: true,
-        translateTime: "yyyy-MM-dd HH:mm:ss.l o",
-        ignore: "pid,hostname,env,component",
-        messageFormat:
-          "[{component}] {msg}{if userId} | user={userId}{end}{if conversationId} conv={conversationId}{end}{if agentId} agent={agentId}{end}{if toolName} tool={toolName}{end}",
-        errorLikeObjectKeys: ["err", "error", "exception"],
-        errorProps: "",
-        singleLine: !["debug", "trace"].includes(options.level || getDefaultLogLevel()),
-        messageKey: "msg",
-      },
-    };
-  }
-
-  // Copy over any other Pino options
-  const { format: _, pretty: __, redact: ___, bufferSize: ____, ...restOptions } = options;
-
-  return {
-    ...pinoOptions,
-    ...restOptions,
-  };
 }

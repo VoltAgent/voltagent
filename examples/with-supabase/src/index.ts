@@ -1,4 +1,5 @@
 import { VoltAgent, Agent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { SupabaseMemory } from "@voltagent/supabase"; // Import SupabaseMemory
 import { openai } from "@ai-sdk/openai";
@@ -27,8 +28,15 @@ const agent = new Agent({
   memory: memory, // Pass the SupabaseMemory instance
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-supabase",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

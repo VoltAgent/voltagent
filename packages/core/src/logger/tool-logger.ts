@@ -1,4 +1,4 @@
-import { createToolContextLogger, type Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import type { ToolLoggerContext } from "./types";
 import { LogEvents } from "./events";
 
@@ -34,7 +34,11 @@ function truncateOrSummarize(data: any, maxLength: number = 200): any {
  * Create a logger instance for tool operations
  */
 export function createToolLogger(parentLogger: Logger, context: ToolLoggerContext): Logger {
-  return createToolContextLogger(parentLogger, context);
+  // Create child logger with tool context
+  return parentLogger.child({
+    component: `Tool:${context.toolName}`,
+    ...context,
+  });
 }
 
 /**

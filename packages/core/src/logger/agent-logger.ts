@@ -1,4 +1,4 @@
-import { createAgentContextLogger, type Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import type { AgentLoggerContext, AgentLoggerOptions } from "./types";
 
 /**
@@ -11,7 +11,9 @@ export function createAgentLogger(
 ): Logger {
   const logger = options?.logger || parentLogger;
 
-  return createAgentContextLogger(logger, {
+  // Create child logger with agent context
+  return logger.child({
+    component: `Agent:${context.agentName || context.agentId}`,
     ...context,
     ...(options?.context || {}),
   });

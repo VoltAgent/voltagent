@@ -20,6 +20,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "@voltagent/cli": "^0.1.9",
     "@voltagent/core": "^0.1.63",
+    "@voltagent/logger": "^0.1.0",
     "@voltagent/supabase": "^0.1.13",
     "@voltagent/vercel-ai": "^0.1.14",
     "zod": "3.24.2"

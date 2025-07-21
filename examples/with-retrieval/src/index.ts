@@ -1,4 +1,5 @@
 import { VoltAgent, Agent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
@@ -26,9 +27,17 @@ const agentWithTools = new Agent({
 });
 
 // Initialize the VoltAgent
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-retrieval",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
     agentWithTools,
   },
+  logger,
 });

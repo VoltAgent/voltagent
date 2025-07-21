@@ -1,4 +1,4 @@
-import { createWorkflowContextLogger, type Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import type { WorkflowLoggerContext, WorkflowLoggerOptions } from "./types";
 
 /**
@@ -11,7 +11,9 @@ export function createWorkflowLogger(
 ): Logger {
   const logger = options?.logger || parentLogger;
 
-  return createWorkflowContextLogger(logger, {
+  // Create child logger with workflow context
+  return logger.child({
+    component: `Workflow:${context.workflowName || context.workflowId}`,
     ...context,
     ...(options?.context || {}),
   });

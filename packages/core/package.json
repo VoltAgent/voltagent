@@ -36,7 +36,6 @@
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/ws": "^8.18.1",
     "@voltagent/internal": "^0.0.5",
-    "@voltagent/logger": "^0.0.1",
     "hono": "^4.7.7",
     "ts-pattern": "^5.7.1",
     "uuid": "^9.0.1",
@@ -54,6 +53,12 @@
     "zod": "3.24.2"
   },
   "peerDependencies": {
+    "@voltagent/logger": "^0.1.0",
     "zod": "3.24.2"
+  },
+  "peerDependenciesMeta": {
+    "@voltagent/logger": {
+      "optional": true
+    }
   }
 }

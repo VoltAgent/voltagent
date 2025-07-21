@@ -17,6 +17,7 @@
     "@ai-sdk/amazon-bedrock": "^2.2.8",
     "@aws-sdk/credential-providers": "~3.799.0",
     "@voltagent/core": "~0.1.63",
+    "@voltagent/logger": "^0.1.0",
     "@voltagent/vercel-ai": "~0.1.14",
     "zod": "3.24.2"
   },

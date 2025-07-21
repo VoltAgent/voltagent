@@ -1,6 +1,16 @@
-import type { Logger as PinoLogger, LoggerOptions as PinoLoggerOptions } from "pino";
+// Re-export shared types from internal package
+export type { Logger, LogFn } from "@voltagent/internal";
 
-export interface LoggerOptions extends Omit<PinoLoggerOptions, "transport"> {
+/**
+ * Provider-agnostic logger options
+ */
+export interface LoggerOptions {
+  /**
+   * Log level
+   * @default "info" in production, "debug" in development
+   */
+  level?: string;
+
   /**
    * Log format type
    * @default "json" in production, "pretty" in development
@@ -29,9 +39,12 @@ export interface LoggerOptions extends Omit<PinoLoggerOptions, "transport"> {
    * Custom name for the logger instance
    */
   name?: string;
-}
 
-export type Logger = PinoLogger;
+  /**
+   * Additional provider-specific options
+   */
+  [key: string]: any;
+}
 
 export interface LogEntry {
   timestamp: string;

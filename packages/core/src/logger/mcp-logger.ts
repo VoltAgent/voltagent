@@ -1,11 +1,15 @@
-import { createMCPContextLogger, type Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import type { MCPLoggerContext } from "./types";
 
 /**
  * Create a logger instance for MCP operations
  */
 export function createMCPLogger(parentLogger: Logger, context: MCPLoggerContext): Logger {
-  return createMCPContextLogger(parentLogger, context);
+  // Create child logger with MCP context
+  return parentLogger.child({
+    component: `MCP:${context.serverName}`,
+    ...context,
+  });
 }
 
 /**

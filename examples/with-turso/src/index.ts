@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, LibSQLStorage } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Configure Turso/LibSQL Memory
@@ -21,8 +22,15 @@ const agent = new Agent({
   memory: memoryStorage, // Use the configured LibSQL storage
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-turso",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

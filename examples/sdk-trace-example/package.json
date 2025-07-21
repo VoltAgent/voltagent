@@ -18,6 +18,7 @@
     "trace": "tsx --env-file=.env ./src/index.ts"
   },
   "dependencies": {
+    "@voltagent/logger": "^0.1.0",
     "@voltagent/sdk": "^0.1.5"
   },
   "devDependencies": {

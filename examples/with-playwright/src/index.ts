@@ -1,4 +1,5 @@
 import VoltAgent, { Agent, type OperationContext, type AgentHooks } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { resetBrowserState as resetBrowserStateInternal } from "./tools/playwrightToolHandler";
 import {
@@ -84,8 +85,15 @@ export const browserAgent = new Agent({
   ],
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-playwright",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     agent: browserAgent,
   },
+  logger,
 });

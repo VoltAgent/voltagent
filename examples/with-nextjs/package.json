@@ -16,6 +16,7 @@
     "@tailwindcss/postcss": "^4.1.4",
     "@voltagent/cli": "^0.1.9",
     "@voltagent/core": "^0.1.63",
+    "@voltagent/logger": "^0.1.0",
     "@voltagent/vercel-ai": "^0.1.14",
     "@voltagent/vercel-ui": "^0.1.6",
     "ai": "^4.2.11",

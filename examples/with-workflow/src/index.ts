@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createWorkflowChain, andThen } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -324,11 +325,19 @@ const contentAnalysisWorkflow = createWorkflowChain({
   });
 
 // Register workflows with VoltAgent
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-workflow",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     analysisAgent,
     contentAgent,
   },
+  logger,
   workflows: {
     orderProcessingWorkflow,
     expenseApprovalWorkflow,

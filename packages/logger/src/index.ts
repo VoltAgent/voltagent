@@ -1,6 +1,5 @@
 export {
-  createLogger,
-  logger,
+  createPinoLogger,
   getGlobalLogBuffer,
   getGlobalLoggerProvider,
   setGlobalLoggerProvider,
@@ -23,7 +22,6 @@ export {
   getDefaultLogLevel,
   getDefaultLogFormat,
   getDefaultRedactionPaths,
-  createPinoOptions,
 } from "./formatters";
 
 export type {

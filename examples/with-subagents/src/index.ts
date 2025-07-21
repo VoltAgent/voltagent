@@ -1,4 +1,5 @@
 import { VoltAgent, Agent, createTool } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -42,10 +43,18 @@ const supervisorAgent = new Agent({
 });
 
 // Initialize the VoltAgent with the agent hierarchy
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-subagents",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     main: supervisorAgent,
     advanced: advancedSupervisorAgent,
     override: systemMessageOverrideAgent,
   },
+  logger,
 });

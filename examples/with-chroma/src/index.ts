@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { retriever } from "./retriever/index.js";
@@ -25,11 +26,19 @@ const agentWithTools = new Agent({
 });
 
 // Initialize VoltAgent with both agents
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-chroma",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     agentWithRetriever,
     agentWithTools,
   },
+  logger,
 });
 
 console.log("🚀 VoltAgent with Chroma is running!");

@@ -1,4 +1,5 @@
 import { VoltAgent, Agent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { GoogleGenAIProvider } from "@voltagent/google-ai";
 
 const agent = new Agent({
@@ -10,8 +11,15 @@ const agent = new Agent({
   model: "gemini-2.0-flash",
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-google-ai",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

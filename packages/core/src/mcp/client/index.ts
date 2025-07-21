@@ -12,7 +12,7 @@ import {
   CallToolResultSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import type * as z from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { type Tool, createTool } from "../../tool";

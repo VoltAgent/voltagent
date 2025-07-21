@@ -1,4 +1,5 @@
 import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { openai } from "@ai-sdk/openai";
@@ -25,9 +26,16 @@ const mcp = new MCPConfiguration({
     markdown: true,
   });
 
+  // Create logger
+  const logger = createPinoLogger({
+    name: "with-peaka-mcp",
+    level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  });
+
   new VoltAgent({
     agents: {
       agent,
     },
+    logger,
   });
 })();

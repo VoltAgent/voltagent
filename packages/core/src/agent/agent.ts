@@ -70,7 +70,7 @@ import type {
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
-import type { Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 import { createAgentLogger, getGlobalLogger, LogEvents } from "../logger";
 
 /**

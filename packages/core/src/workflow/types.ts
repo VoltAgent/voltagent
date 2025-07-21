@@ -7,7 +7,7 @@ import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
 import type { Memory } from "../memory";
-import type { Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 
 export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> {
   /** Timestamp when the workflow was suspended */

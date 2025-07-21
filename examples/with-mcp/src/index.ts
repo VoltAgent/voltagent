@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import path from "node:path";
 
@@ -21,8 +22,15 @@ const agent = new Agent({
   tools: await mcpConfig.getTools(),
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-mcp",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

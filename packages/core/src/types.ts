@@ -10,7 +10,7 @@ import type { VoltOpsClient } from "./voltops";
 import type { Workflow } from "./workflow/types";
 import type { WorkflowChain } from "./workflow/chain";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { Logger } from "@voltagent/logger";
+import type { Logger } from "@voltagent/internal";
 
 // Re-export VoltOps types for convenience
 export type {
