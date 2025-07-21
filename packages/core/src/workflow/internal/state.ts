@@ -4,6 +4,7 @@ import { v4 as uuid } from "uuid";
 import type { UserContext } from "../../agent/types";
 import type { WorkflowRunOptions, WorkflowSuspensionMetadata } from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
+import { getGlobalLogger } from "../../logger";
 
 export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed" | "suspended";
 
@@ -172,9 +173,9 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
     suspendData?: SUSPEND_DATA,
   ) {
     assertCanMutate(this.#state);
-    console.log(
-      `[WorkflowStateManager] Suspending workflow with reason: ${reason}, stepIndex: ${suspendedStepIndex}`,
-    );
+    getGlobalLogger()
+      .child({ component: "workflow", context: "WorkflowStateManager" })
+      .debug(`Suspending workflow with reason: ${reason}, stepIndex: ${suspendedStepIndex}`);
     const suspensionMetadata: WorkflowSuspensionMetadata<SUSPEND_DATA> = {
       suspendedAt: new Date(),
       reason,
@@ -187,10 +188,9 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       status: "suspended",
       suspension: suspensionMetadata,
     });
-    console.log(
-      `[WorkflowStateManager] Workflow suspended with status: ${this.#state.status}`,
-      suspensionMetadata,
-    );
+    getGlobalLogger()
+      .child({ component: "workflow", context: "WorkflowStateManager" })
+      .debug(`Workflow suspended with status: ${this.#state.status}`, suspensionMetadata);
     return suspensionMetadata;
   }
 

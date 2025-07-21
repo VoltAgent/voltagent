@@ -27,6 +27,7 @@ import type {
   PromptHelper,
 } from "../voltops/types";
 import type { AgentHooks } from "./hooks";
+import type { Logger } from "@voltagent/logger";
 
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
@@ -187,6 +188,12 @@ export type AgentOptions = {
    * Configuration for supervisor behavior when subAgents are present
    */
   supervisorConfig?: SupervisorConfig;
+
+  /**
+   * Logger instance to use for this agent
+   * If not provided, will use the global logger or create a default one
+   */
+  logger?: Logger;
 } & (
   | {
       /**

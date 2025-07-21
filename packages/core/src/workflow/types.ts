@@ -7,6 +7,7 @@ import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
 import type { Memory } from "../memory";
+import type { Logger } from "@voltagent/logger";
 
 export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> {
   /** Timestamp when the workflow was suspended */
@@ -144,6 +145,11 @@ export interface WorkflowRunOptions {
    * @default 'graceful'
    */
   suspensionMode?: "immediate" | "graceful";
+  /**
+   * Logger instance to use for this workflow execution
+   * If not provided, will use the workflow's logger or global logger
+   */
+  logger?: Logger;
 }
 
 export interface WorkflowResumeOptions {
@@ -258,6 +264,11 @@ export type WorkflowConfig<
    * Overrides global workflow memory from VoltAgent
    */
   memory?: Memory;
+  /**
+   * Logger instance to use for this workflow
+   * If not provided, will use the global logger or create a default one
+   */
+  logger?: Logger;
 };
 
 /**

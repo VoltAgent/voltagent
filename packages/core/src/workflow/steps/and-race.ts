@@ -14,6 +14,7 @@ import {
 } from "../event-utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepParallelRace } from "./types";
+import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a race execution step that runs multiple steps simultaneously and returns the first completed result
@@ -90,7 +91,9 @@ export function andRace<
       try {
         await publishWorkflowEvent(stepStartEvent, state.workflowContext);
       } catch (eventError) {
-        console.warn("Failed to publish workflow step start event:", eventError);
+        getGlobalLogger()
+          .child({ component: "workflow", stepType: "race" })
+          .warn("Failed to publish workflow step start event:", eventError);
       }
 
       try {
@@ -118,7 +121,9 @@ export function andRace<
               await publishWorkflowEvent(subStepStartEvent, workflowContext);
             }
           } catch (eventError) {
-            console.warn(`Failed to publish sub-step ${index} start event:`, eventError);
+            getGlobalLogger()
+              .child({ component: "workflow", stepType: "race" })
+              .warn(`Failed to publish sub-step ${index} start event:`, eventError);
           }
 
           const subState = {
@@ -223,10 +228,9 @@ export function andRace<
             await publishWorkflowEvent(subStepSuccessEvent, state.workflowContext);
           } catch (eventError) {
             const eventType = isWinner ? "winner" : "loser";
-            console.warn(
-              `Failed to publish ${eventType} success event for sub-step ${i}:`,
-              eventError,
-            );
+            getGlobalLogger()
+              .child({ component: "workflow", stepType: "race" })
+              .warn(`Failed to publish ${eventType} success event for sub-step ${i}:`, eventError);
           }
         }
 
@@ -244,7 +248,9 @@ export function andRace<
         try {
           await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step success event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "race" })
+            .warn("Failed to publish workflow step success event:", eventError);
         }
 
         return finalResult;
@@ -270,7 +276,9 @@ export function andRace<
         try {
           await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step error event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "race" })
+            .warn("Failed to publish workflow step error event:", eventError);
         }
 
         throw error;

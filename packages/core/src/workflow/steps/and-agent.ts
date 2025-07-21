@@ -12,6 +12,7 @@ import {
 } from "../event-utils";
 import type { WorkflowStepAgent } from "./types";
 import type { InternalWorkflowFunc } from "../internal/types";
+import { getGlobalLogger } from "../../logger";
 
 export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
   schema: SCHEMA;
@@ -93,7 +94,9 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
       try {
         await publishWorkflowEvent(stepStartEvent, state.workflowContext);
       } catch (eventError) {
-        console.warn("Failed to publish workflow step start event:", eventError);
+        getGlobalLogger()
+          .child({ component: "workflow", stepType: "agent" })
+          .warn("Failed to publish workflow step start event:", eventError);
       }
 
       try {
@@ -124,7 +127,9 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         try {
           await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step success event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "agent" })
+            .warn("Failed to publish workflow step success event:", eventError);
         }
 
         return result.object;
@@ -154,7 +159,9 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         try {
           await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step error event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "agent" })
+            .warn("Failed to publish workflow step error event:", eventError);
         }
 
         throw error;

@@ -9,6 +9,7 @@ import {
 } from "../event-utils";
 import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 import type { WorkflowExecuteContext } from "../internal/types";
+import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates an async function step for the workflow
@@ -80,7 +81,9 @@ export function andThen<
       try {
         await publishWorkflowEvent(stepStartEvent, state.workflowContext);
       } catch (eventError) {
-        console.warn("Failed to publish workflow step start event:", eventError);
+        getGlobalLogger()
+          .child({ component: "workflow", stepType: "then" })
+          .warn("Failed to publish workflow step start event:", eventError);
       }
 
       try {
@@ -101,7 +104,9 @@ export function andThen<
         try {
           await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step success event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "then" })
+            .warn("Failed to publish workflow step success event:", eventError);
         }
 
         return result;
@@ -128,7 +133,9 @@ export function andThen<
         try {
           await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step error event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "then" })
+            .warn("Failed to publish workflow step error event:", eventError);
         }
 
         throw error;

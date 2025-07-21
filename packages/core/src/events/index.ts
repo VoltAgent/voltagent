@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
-import { devLogger } from "@voltagent/internal/dev";
 import { v4 as uuidv4 } from "uuid";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
@@ -9,6 +8,7 @@ import { AgentRegistry } from "../server/registry";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
 import type { AgentTimelineEvent } from "./types";
+import { getGlobalLogger, LogEvents } from "../logger";
 
 // New type exports
 export type EventStatus = AgentStatus;
@@ -181,10 +181,12 @@ export class AgentEventEmitter extends EventEmitter {
 
         return updatedEntry;
       }
-      devLogger.warn("Failed to persist event for history: ", historyId);
+      getGlobalLogger()
+        .child({ component: "events" })
+        .warn("Failed to persist event for history: ", { historyId });
       return undefined;
     } catch (error) {
-      devLogger.error("Error persisting event:", error);
+      getGlobalLogger().child({ component: "events" }).error("Error persisting event:", error);
       return undefined;
     }
   }
@@ -208,7 +210,11 @@ export class AgentEventEmitter extends EventEmitter {
   ): Promise<void> {
     // Prevent infinite loops in cyclic agent relationships by tracking visited agents
     if (visited.has(agentId)) {
-      devLogger.debug(`[EventPropagation] Skipping already visited agent: ${agentId}`);
+      getGlobalLogger()
+        .child({ component: "events", context: "EventPropagation" })
+        .trace(`Skipping already visited agent: ${agentId}`, {
+          event: LogEvents.EVENT_PROPAGATION_SKIPPED,
+        });
       return;
     }
     visited.add(agentId);
@@ -216,13 +222,15 @@ export class AgentEventEmitter extends EventEmitter {
     // Get parent agent IDs for this agent
     const parentIds = AgentRegistry.getInstance().getParentAgentIds(agentId);
     if (parentIds.length === 0) {
-      devLogger.debug(`[EventPropagation] No parents found for agent: ${agentId}`);
+      getGlobalLogger()
+        .child({ component: "events", context: "EventPropagation" })
+        .trace(`No parents found for agent: ${agentId}`);
       return; // No parents, nothing to propagate to
     }
 
-    devLogger.debug(
-      `[EventPropagation] Propagating event from ${agentId} to parents: ${parentIds.join(", ")}`,
-    );
+    getGlobalLogger()
+      .child({ component: "events", context: "EventPropagation" })
+      .debug(`Propagating event from ${agentId} to parents: ${parentIds.join(", ")}`);
 
     const propagationTasks: Array<() => Promise<void>> = [];
 
@@ -230,7 +238,9 @@ export class AgentEventEmitter extends EventEmitter {
     for (const parentId of parentIds) {
       const parentAgent = AgentRegistry.getInstance().getAgent(parentId);
       if (!parentAgent) {
-        devLogger.warn(`[EventPropagation] Parent agent not found: ${parentId}`);
+        getGlobalLogger()
+          .child({ component: "events", context: "EventPropagation" })
+          .warn(`Parent agent not found: ${parentId}`);
         continue;
       }
 
@@ -239,15 +249,19 @@ export class AgentEventEmitter extends EventEmitter {
         try {
           if (!parentHistoryEntryId) {
             // No fallback - skip propagation if no specific parent context provided
-            devLogger.debug(
-              `[EventPropagation] No parentHistoryEntryId provided, skipping propagation to agent: ${parentId}`,
-            );
+            getGlobalLogger()
+              .child({ component: "events", context: "EventPropagation" })
+              .debug(
+                `No parentHistoryEntryId provided, skipping propagation to agent: ${parentId}`,
+              );
             return;
           }
 
-          devLogger.debug(
-            `[EventPropagation] Using specific parent operation context: ${parentHistoryEntryId} for agent: ${parentId}`,
-          );
+          getGlobalLogger()
+            .child({ component: "events", context: "EventPropagation" })
+            .debug(
+              `Using specific parent operation context: ${parentHistoryEntryId} for agent: ${parentId}`,
+            );
 
           const enrichedEvent: AgentTimelineEvent = {
             ...event,
@@ -266,14 +280,13 @@ export class AgentEventEmitter extends EventEmitter {
             skipPropagation: true, // Prevent recursive propagation cycles
           });
 
-          devLogger.debug(
-            `[EventPropagation] Successfully propagated event ${enrichedEvent.id} to parent ${parentId}`,
-          );
+          getGlobalLogger()
+            .child({ component: "events", context: "EventPropagation" })
+            .debug(`Successfully propagated event ${enrichedEvent.id} to parent ${parentId}`);
         } catch (error) {
-          devLogger.error(
-            `[EventPropagation] Failed to propagate event to parent agent ${parentId}:`,
-            error,
-          );
+          getGlobalLogger()
+            .child({ component: "events", context: "EventPropagation" })
+            .error(`Failed to propagate event to parent agent ${parentId}:`, error);
           // Continue with other parents instead of failing completely
         }
       });
@@ -295,10 +308,9 @@ export class AgentEventEmitter extends EventEmitter {
           parentHistoryEntryId,
         );
       } catch (error) {
-        devLogger.error(
-          `[EventPropagation] Failed to propagate to higher ancestors from ${parentId}:`,
-          error,
-        );
+        getGlobalLogger()
+          .child({ component: "events", context: "EventPropagation" })
+          .error(`Failed to propagate to higher ancestors from ${parentId}:`, error);
         // Continue with other ancestors
       }
     }

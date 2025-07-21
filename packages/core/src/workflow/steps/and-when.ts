@@ -8,6 +8,7 @@ import {
 } from "../event-utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } from "./types";
+import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a conditional step for the workflow that executes only when a condition is met
@@ -87,7 +88,9 @@ export function andWhen<INPUT, DATA, RESULT>({
       try {
         await publishWorkflowEvent(stepStartEvent, state.workflowContext);
       } catch (eventError) {
-        console.warn("Failed to publish workflow step start event:", eventError);
+        getGlobalLogger()
+          .child({ component: "workflow", stepType: "when" })
+          .warn("Failed to publish workflow step start event:", eventError);
       }
 
       try {
@@ -126,7 +129,9 @@ export function andWhen<INPUT, DATA, RESULT>({
         try {
           await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step success event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "when" })
+            .warn("Failed to publish workflow step success event:", eventError);
         }
 
         return result;
@@ -153,7 +158,9 @@ export function andWhen<INPUT, DATA, RESULT>({
         try {
           await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step error event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "when" })
+            .warn("Failed to publish workflow step error event:", eventError);
         }
 
         throw error;

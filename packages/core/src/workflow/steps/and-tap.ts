@@ -1,8 +1,8 @@
-import { devLogger } from "@voltagent/internal/dev";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { defaultStepConfig } from "../internal/utils";
 import type { WorkflowStepTap, WorkflowStepTapConfig } from "./types";
 import type { WorkflowExecuteContext } from "../internal/types";
+import { getGlobalLogger } from "../../logger";
 
 /**
  * A safe way to tap into the workflow state without affecting the result.
@@ -32,7 +32,9 @@ export function andTap<
       try {
         await execute(context);
       } catch (error) {
-        devLogger.error("Error executing tap step", error);
+        getGlobalLogger()
+          .child({ component: "workflow", stepType: "tap" })
+          .error("Error executing tap step", error);
       }
       return context.data as DATA;
     },
