@@ -441,6 +441,7 @@ export interface CreateWorkflowExecutionOptions {
   conversationId?: string;
   userContext?: UserContext;
   metadata?: Record<string, unknown>;
+  executionId?: string;
 }
 
 /**

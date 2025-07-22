@@ -10,26 +10,10 @@ export * from "./memory-logger";
 export * from "./mcp-logger";
 export * from "./types";
 export * from "./events";
+export * from "./logger-proxy";
 
 // Re-export logger types from internal
 export type { Logger, LogFn, LogEntry, LogFilter, LogBuffer } from "@voltagent/internal";
-
-// Try to load @voltagent/logger if available
-let createLoggerFn: ((options: any) => Logger) | null = null;
-let getGlobalLogBufferFn: (() => LogBuffer) | null = null;
-
-try {
-  // Dynamic import to make it optional
-  const loggerModule = require("@voltagent/logger");
-  if (loggerModule.createLogger) {
-    createLoggerFn = loggerModule.createLogger;
-  }
-  if (loggerModule.getGlobalLogBuffer) {
-    getGlobalLogBufferFn = loggerModule.getGlobalLogBuffer;
-  }
-} catch {
-  // @voltagent/logger not installed, will use console logger
-}
 
 /**
  * Get the global logger instance from registry or create a default one
@@ -42,11 +26,8 @@ export function getGlobalLogger(): Logger {
     return globalLogger;
   }
 
-  // Create and set default logger if none exists
-  const defaultLogger = createLoggerFn
-    ? createLoggerFn({ name: "voltagent" })
-    : createConsoleLogger({ name: "voltagent" });
-
+  // Create and set default console logger if none exists
+  const defaultLogger = createConsoleLogger({ name: "voltagent" });
   registry.setGlobalLogger(defaultLogger);
   return defaultLogger;
 }
@@ -55,14 +36,12 @@ export function getGlobalLogger(): Logger {
  * Create a logger with VoltAgent defaults
  */
 export function createVoltAgentLogger(name?: string): Logger {
-  return createLoggerFn
-    ? createLoggerFn({ name: name || "voltagent" })
-    : createConsoleLogger({ name: name || "voltagent" });
+  return createConsoleLogger({ name: name || "voltagent" });
 }
 
 /**
  * Get the global log buffer
  */
 export function getGlobalLogBuffer(): LogBuffer {
-  return getGlobalLogBufferFn ? getGlobalLogBufferFn() : getDefaultLogBuffer();
+  return getDefaultLogBuffer();
 }

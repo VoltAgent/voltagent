@@ -11,10 +11,12 @@ import type { LoggerProvider, LoggerWithProvider } from "./interface";
 export class PinoLoggerProvider implements LoggerProvider {
   name = "pino";
   private logBuffer: LogBuffer;
+  private externalLogBuffer?: LogBuffer;
 
-  constructor(bufferSize?: number) {
+  constructor(bufferSize?: number, externalLogBuffer?: LogBuffer) {
     const size = bufferSize || parseInt(process.env.VOLTAGENT_LOG_BUFFER_SIZE || "1000", 10);
     this.logBuffer = new InMemoryLogBuffer(size);
+    this.externalLogBuffer = externalLogBuffer;
   }
 
   createLogger(options?: LoggerOptions): LoggerWithProvider {
@@ -97,12 +99,7 @@ export class PinoLoggerProvider implements LoggerProvider {
       },
       timestamp: () => {
         const now = new Date();
-        const offset = -now.getTimezoneOffset();
-        const offsetHours = Math.floor(Math.abs(offset) / 60);
-        const offsetMinutes = Math.abs(offset) % 60;
-        const offsetSign = offset >= 0 ? "+" : "-";
-        const offsetString = `${offsetSign}${offsetHours.toString().padStart(2, "0")}${offsetMinutes.toString().padStart(2, "0")}`;
-        return `,"timestamp":"${now.toISOString().replace("Z", "")} ${offsetString}"`;
+        return `,"timestamp":"${now.toISOString()}"`;
       },
       base: {
         env: process.env.NODE_ENV || "development",
@@ -154,6 +151,14 @@ export class PinoLoggerProvider implements LoggerProvider {
           if (typeof chunk === "string") {
             const logEntry = JSON.parse(chunk.trim()) as LogEntry;
             this.logBuffer.add(logEntry);
+
+            // Also add to external buffer if provided
+            if (this.externalLogBuffer) {
+              console.log(`[PinoLogger] Adding to external buffer: "${logEntry.msg}"`);
+              this.externalLogBuffer.add(logEntry);
+            } else {
+              console.log(`[PinoLogger] No external buffer connected`);
+            }
           }
         } catch {
           // Ignore parse errors for non-JSON logs

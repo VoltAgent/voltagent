@@ -3,7 +3,8 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import { devLogger } from "@voltagent/internal/dev";
+import { getGlobalLogger } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
 import { safeJsonParse } from "../../utils";
@@ -90,12 +91,14 @@ export class LibSQLStorage implements Memory {
   private options: LibSQLStorageOptions;
   private initialized: Promise<void>;
   private workflowExtension: LibSQLWorkflowExtension;
+  private logger: Logger;
 
   /**
    * Create a new LibSQL storage
    * @param options Configuration options
    */
   constructor(options: LibSQLStorageOptions) {
+    this.logger = getGlobalLogger().child({ component: "libsql-storage" });
     this.options = {
       storageLimit: options.storageLimit || 100,
       tablePrefix: options.tablePrefix || "voltagent_memory",
@@ -161,7 +164,7 @@ export class LibSQLStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options?.debug) {
-      devLogger.info(`[LibSQLStorage] ${message}`, data || "");
+      this.logger.trace(`${message}`, data || "");
     }
   }
 
@@ -360,12 +363,12 @@ export class LibSQLStorage implements Memory {
 
       if (migrationResult.success) {
         if ((migrationResult.migratedCount || 0) > 0) {
-          devLogger.info(
+          this.logger.info(
             `${migrationResult.migratedCount} conversation records successfully migrated`,
           );
         }
       } else {
-        devLogger.error("Conversation migration error:", migrationResult.error);
+        this.logger.error("Conversation migration error:", migrationResult.error);
       }
     } catch (error) {
       this.debug("Error migrating conversation schema:", error);
@@ -376,7 +379,7 @@ export class LibSQLStorage implements Memory {
       const migrationResult = await this.migrateAgentHistorySchema();
 
       if (!migrationResult.success) {
-        devLogger.error("Agent history schema migration error:", migrationResult.error);
+        this.logger.error("Agent history schema migration error:", migrationResult.error);
       }
     } catch (error) {
       this.debug("Error migrating agent history schema:", error);
@@ -389,16 +392,16 @@ export class LibSQLStorage implements Memory {
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
-          devLogger.info(`${result.migratedCount} records successfully migrated`);
+          this.logger.info(`${result.migratedCount} records successfully migrated`);
         }
       } else {
-        devLogger.error("Migration error:", result.error);
+        this.logger.error("Migration error:", result.error);
 
         // Restore from backup in case of error
         const restoreResult = await this.migrateAgentHistoryData({});
 
         if (restoreResult.success) {
-          devLogger.info("Successfully restored from backup");
+          this.logger.info("Successfully restored from backup");
         }
       }
     } catch (error) {

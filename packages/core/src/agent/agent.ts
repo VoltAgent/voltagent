@@ -71,7 +71,7 @@ import type {
   VoltAgentError,
 } from "./types";
 import type { Logger } from "@voltagent/internal";
-import { createAgentLogger, getGlobalLogger, LogEvents } from "../logger";
+import { LogEvents, LoggerProxy } from "../logger";
 
 /**
  * Agent class for interacting with AI models
@@ -253,9 +253,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Store user context if provided
     this.defaultUserContext = options.userContext;
 
-    // Initialize logger
-    const parentLogger = options.logger || getGlobalLogger();
-    this.logger = createAgentLogger(parentLogger, {
+    // Initialize logger with LoggerProxy for lazy evaluation
+    this.logger = new LoggerProxy({
+      component: "agent",
       agentId: this.id,
       agentName: this.name,
       modelName: this.getModelName(),
@@ -1200,6 +1200,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
+    // Create method-scoped logger with all common context
+    const methodLogger = this.logger.child({
+      userId,
+      conversationId: finalConversationId,
+      executionId: operationContext.historyEntry.id,
+      operationName: "generateText",
+    });
+
     // Prepare input for logging
     const inputPreview = typeof input === "string" ? input : `${input.length} messages`;
 
@@ -1217,16 +1225,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       }));
     }
 
-    // Log generation start with all context
-    this.logger.debug(
+    // Log generation start with only event-specific context
+    methodLogger.debug(
       {
         event: LogEvents.AGENT_GENERATION_STARTED,
-        agentId: this.id,
-        agentName: this.name,
-        userId,
-        conversationId: finalConversationId,
         messageHistory,
-        executionId: operationContext.historyEntry.id,
         operationType: "text",
         inputType: typeof input === "string" ? "string" : "messages",
         contextLimit,
@@ -1338,15 +1341,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
       const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
-      this.logger.debug("Starting agent llm call", {
-        conversationId: finalConversationId,
-        userId: userId,
-      });
+      methodLogger.debug("Starting agent llm call");
 
-      this.logger.debug(
+      methodLogger.debug(
         {
-          conversationId: finalConversationId,
-          userId: userId,
           messages: messages.map((msg) => ({
             role: msg.role,
             content: msg.content,
@@ -1378,8 +1376,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             toolResults: [],
             finishReason: step.type === "text" ? "stop" : "tool-calls",
             usage: step.usage,
-            conversationId: finalConversationId,
-            userId: userId,
           };
 
           if (step.type === "text") {
@@ -1407,18 +1403,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ];
           }
 
-          this.logger.debug(stepData, "[LLM] - Stream Step Change:");
+          methodLogger.debug(stepData, "[LLM] - Stream Step Change:");
 
           // Keep existing step logging for INFO level
           if (step.type === "text") {
             const textPreview = step.content;
-            this.logger.debug("Step: Text generated", {
+            methodLogger.debug("Step: Text generated", {
               event: LogEvents.AGENT_STEP_TEXT,
-              agentId: this.id,
-              agentName: this.name,
-              userId,
-              conversationId: finalConversationId,
-              executionId: operationContext.historyEntry.id,
               textPreview,
               length: step.content.length,
             });
@@ -1426,27 +1417,19 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
           if (step.type === "tool_call") {
             // Log tool call step
-            this.logger.debug(`Step: Calling tool '${step.name}'`, {
+            methodLogger.debug(`Step: Calling tool '${step.name}'`, {
               event: LogEvents.AGENT_STEP_TOOL_CALL,
-              agentId: this.id,
-              agentName: this.name,
-              userId,
-              conversationId: finalConversationId,
-              executionId: operationContext.historyEntry.id,
               toolName: step.name,
               toolCallId: step.id,
-              args: step.arguments,
+              arguments: step.arguments,
             });
 
             // Tool execution started
-            this.logger.debug(
+            methodLogger.debug(
               {
                 event: LogEvents.TOOL_EXECUTION_STARTED,
                 toolName: step.name,
                 toolCallId: step.id,
-                agentId: this.id,
-                conversationId: finalConversationId,
-                userId: userId,
                 args: step.arguments,
               },
               `Executing tool: ${step.name}`,
@@ -1500,13 +1483,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             // Log tool result step
             const resultPreview = step.result || step.content;
 
-            this.logger.debug(`Step: Tool '${step.name}' completed`, {
+            methodLogger.debug(`Step: Tool '${step.name}' completed`, {
               event: LogEvents.AGENT_STEP_TOOL_RESULT,
-              agentId: this.id,
-              agentName: this.name,
-              userId,
-              conversationId: finalConversationId,
-              executionId: operationContext.historyEntry.id,
               toolName: step.name,
               toolCallId: step.id,
               result: resultPreview,
@@ -1677,15 +1655,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
       });
 
-      this.logger.debug(
+      methodLogger.debug(
         {
           text: response.text,
           toolCalls: [],
           toolResults: [],
           finishReason: response.finishReason || "stop",
           usage: response.usage,
-          conversationId: finalConversationId,
-          userId: userId,
         },
         "[LLM] - Stream Finished:",
       );
@@ -1694,13 +1670,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       const usage = response.usage;
       const tokenInfo = usage ? ` (${usage.totalTokens} tokens)` : "";
 
-      this.logger.debug(`Generation completed${tokenInfo}`, {
+      methodLogger.debug(`Generation completed${tokenInfo}`, {
         event: LogEvents.AGENT_GENERATION_COMPLETED,
-        agentId: this.id,
-        agentName: this.name,
-        userId,
-        conversationId: finalConversationId,
-        executionId: operationContext.historyEntry.id,
         duration: Date.now() - startTime,
         finishReason: response.finishReason,
         usage: response.usage,
@@ -1784,13 +1755,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
 
       // Log error
-      this.logger.error("Generation failed", {
+      methodLogger.error("Generation failed", {
         event: LogEvents.AGENT_GENERATION_FAILED,
-        agentId: this.id,
-        agentName: this.name,
-        userId,
-        conversationId: finalConversationId,
-        executionId: operationContext.historyEntry.id,
         duration: Date.now() - startTime,
         error: {
           message: voltagentError.message,
@@ -1842,24 +1808,27 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
+    // Create method-scoped logger with all common context
+    const methodLogger = this.logger.child({
+      userId,
+      conversationId: finalConversationId,
+      executionId: operationContext.historyEntry.id,
+      operationName: "streamText",
+    });
+
     // Prepare input for logging
     const inputPreview = typeof input === "string" ? input : `${input.length} messages`;
 
     const modelName = this.getModelName();
 
-    // Log stream generation start with all context
-    this.logger.debug(
+    // Log stream generation start with only event-specific context
+    methodLogger.debug(
       {
         event: LogEvents.AGENT_STREAM_STARTED,
-        agentId: this.id,
-        agentName: this.name,
-        userId,
-        conversationId: finalConversationId,
         operationType: "stream",
         inputType: typeof input === "string" ? "string" : "messages",
         contextLimit,
         memoryEnabled: !!this.memoryManager.getMemory(),
-        executionId: operationContext.historyEntry.id,
         model: modelName,
         input: inputPreview,
       },
@@ -1951,14 +1920,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
 
     const internalStreamEventForwarder = async (event: StreamEvent) => {
-      this.logger.debug(
+      methodLogger.debug(
         {
           eventType: event.type,
           subAgentId: event.subAgentId,
           subAgentName: event.subAgentName,
-          agentId: this.id,
-          userId,
-          conversationId: finalConversationId,
         },
         "[Real-time Stream] Received SubAgent event",
       );
@@ -1975,13 +1941,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         (event.type === "text-delta" && event.data?.textDelta?.includes("."))
       ) {
         // This might indicate SubAgent completion, but we'll handle it gracefully
-        this.logger.debug(
+        methodLogger.debug(
           {
             subAgentId: event.subAgentId,
             eventType: event.type,
-            agentId: this.id,
-            userId,
-            conversationId: finalConversationId,
           },
           `[Real-time Stream] Potential completion event from ${event.subAgentId}`,
         );
@@ -1992,23 +1955,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         try {
           const formattedStreamPart = transformStreamEventToStreamPart(event);
           streamController.current.enqueue(formattedStreamPart);
-          this.logger.debug(
+          methodLogger.debug(
             {
               eventType: event.type,
               subAgentId: event.subAgentId,
-              agentId: this.id,
-              userId,
-              conversationId: finalConversationId,
             },
             "[Real-time Stream] Event injected into stream",
           );
         } catch (error) {
-          this.logger.error(
+          methodLogger.error(
             {
               error,
-              agentId: this.id,
-              userId,
-              conversationId: finalConversationId,
             },
             "[Real-time Stream] Failed to inject event",
           );
@@ -2038,15 +1995,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
     const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
-    this.logger.debug("Starting agent llm stream call", {
-      conversationId: finalConversationId,
-      userId: userId,
-    });
+    methodLogger.debug("Starting agent llm stream call");
 
-    this.logger.debug(
+    methodLogger.debug(
       {
-        conversationId: finalConversationId,
-        userId: userId,
         messages: messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -2201,8 +2153,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           toolResults: [],
           finishReason: step.type === "text" ? "stop" : "tool-calls",
           usage: step.usage,
-          conversationId: finalConversationId,
-          userId: userId,
         };
 
         if (step.type === "text") {
@@ -2220,14 +2170,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           stepData.finishReason = "tool-calls";
 
           // Tool execution started
-          this.logger.debug(
+          methodLogger.debug(
             {
               event: LogEvents.TOOL_EXECUTION_STARTED,
               toolName: step.name,
               toolCallId: step.id,
-              agentId: this.id,
-              conversationId: finalConversationId,
-              userId: userId,
               args: step.arguments,
             },
             `Executing tool: ${step.name}`,
@@ -2244,7 +2191,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ];
         }
 
-        this.logger.debug(stepData, "[LLM] - Stream Step Change:");
+        methodLogger.debug(stepData, "[LLM] - Stream Step Change:");
 
         await onStepFinish(step);
         if (internalOptions.provider?.onStepFinish) {
@@ -2275,15 +2222,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           status: "completed",
         });
 
-        this.logger.debug(
+        methodLogger.debug(
           {
             text: result.text || "",
             toolCalls: [],
             toolResults: [],
             finishReason: result.finishReason || "stop",
             usage: result.usage,
-            conversationId: finalConversationId,
-            userId: userId,
           },
           "[LLM] - Stream Finished:",
         );
@@ -2399,14 +2344,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             // Publish the tool:error event (background)
             this.publishTimelineEvent(operationContext, toolErrorEvent);
           } catch (updateError) {
-            this.logger.error(
+            methodLogger.error(
               {
                 toolName,
                 toolCallId,
                 error: updateError,
-                agentId: this.id,
-                userId,
-                conversationId: finalConversationId,
               },
               `Failed to update tool event to error status for ${toolName} (${toolCallId})`,
             );
@@ -2550,18 +2492,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Log object generation start with all context
-    this.logger.debug("Object generation started", {
-      event: LogEvents.AGENT_OBJECT_STARTED,
-      agentId: this.id,
-      agentName: this.name,
+    // Create method-scoped logger with all common context
+    const methodLogger = this.logger.child({
       userId,
       conversationId: finalConversationId,
+      executionId: operationContext.historyEntry.id,
+      operationName: "generateObject",
+    });
+
+    // Log object generation start with only event-specific context
+    methodLogger.debug("Object generation started", {
+      event: LogEvents.AGENT_OBJECT_STARTED,
       operationType: "object",
       inputType: typeof input === "string" ? "string" : "messages",
       contextLimit,
       memoryEnabled: !!this.memoryManager.getMemory(),
-      executionId: operationContext.historyEntry.id,
     });
 
     if (operationContext.otelSpan) {
@@ -2876,18 +2821,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Log stream object generation start with all context
-    this.logger.debug("Stream object generation started", {
-      event: LogEvents.AGENT_STREAM_OBJECT_STARTED,
-      agentId: this.id,
-      agentName: this.name,
+    // Create method-scoped logger with all common context
+    const methodLogger = this.logger.child({
       userId,
       conversationId: finalConversationId,
+      executionId: operationContext.historyEntry.id,
+      operationName: "streamObject",
+    });
+
+    // Log stream object generation start with only event-specific context
+    methodLogger.debug("Stream object generation started", {
+      event: LogEvents.AGENT_STREAM_OBJECT_STARTED,
       operationType: "streamObject",
       inputType: typeof input === "string" ? "string" : "messages",
       contextLimit,
       memoryEnabled: !!this.memoryManager.getMemory(),
-      executionId: operationContext.historyEntry.id,
     });
 
     if (operationContext.otelSpan) {

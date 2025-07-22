@@ -27,7 +27,7 @@ import {
 import { LibSQLStorage } from "../memory/libsql";
 import { WorkflowHistoryManager } from "./history-manager";
 import { WorkflowRegistry } from "./registry";
-import { createWorkflowLogger, getGlobalLogger } from "../logger";
+import { LoggerProxy } from "../logger";
 
 /**
  * Helper function to create a WorkflowExecutionResult with resume capability
@@ -686,16 +686,15 @@ export function createWorkflow<
     suspendSchema,
     resumeSchema,
     memory: workflowMemory,
-    logger: providedLogger,
   }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
   // ✅ Ensure every workflow has memory (like Agent system)
   const effectiveMemory = workflowMemory || new LibSQLStorage({ url: "file:memory.db" });
 
-  // Create logger for this workflow
-  const parentLogger = providedLogger || getGlobalLogger();
-  const logger = createWorkflowLogger(parentLogger, {
+  // Create logger for this workflow with LoggerProxy for lazy evaluation
+  const logger = new LoggerProxy({
+    component: "workflow",
     workflowId: id,
     workflowName: name,
   });
@@ -736,10 +735,23 @@ export function createWorkflow<
       let historyEntry: any;
       let executionId: string;
 
-      // Check if resuming an existing execution
+      // Determine executionId early
       if (options?.resumeFrom?.executionId) {
         executionId = options.resumeFrom.executionId;
-        logger.info(`Resuming execution ${executionId} for workflow ${id}`);
+      } else {
+        executionId = options?.executionId || crypto.randomUUID();
+      }
+
+      // Create run logger with initial context
+      const runLogger = logger.child({
+        executionId,
+        userId: options?.userId,
+        conversationId: options?.conversationId,
+      });
+
+      // Check if resuming an existing execution
+      if (options?.resumeFrom?.executionId) {
+        runLogger.info(`Resuming execution ${executionId} for workflow ${id}`);
 
         // Get the existing history entry and update its status
         try {
@@ -747,7 +759,7 @@ export function createWorkflow<
           if (workflowMemoryManager) {
             historyEntry = await workflowMemoryManager.getExecutionWithDetails(executionId);
             if (historyEntry) {
-              logger.debug(`Found existing execution with status: ${historyEntry.status}`);
+              runLogger.debug(`Found existing execution with status: ${historyEntry.status}`);
               // Update status to running and clear suspension metadata
               await workflowRegistry.updateWorkflowExecution(id, executionId, {
                 status: "running" as any,
@@ -758,7 +770,7 @@ export function createWorkflow<
                   suspension: undefined, // Clear suspension metadata
                 },
               });
-              logger.info(`Updated execution ${executionId} status to running`);
+              runLogger.info(`Updated execution ${executionId} status to running`);
 
               // Re-fetch the updated entry
               historyEntry = await workflowMemoryManager.getExecutionWithDetails(executionId);
@@ -769,30 +781,28 @@ export function createWorkflow<
             throw new Error(`No memory manager available for workflow: ${id}`);
           }
         } catch (error) {
-          logger.error(`Failed to get/update resumed execution:`, error);
+          runLogger.error(`Failed to get/update resumed execution:`, error);
           throw error; // Re-throw to prevent creating a new execution
         }
       } else {
         // Create new execution
-        executionId = options?.executionId || crypto.randomUUID();
-
         try {
           historyEntry = await workflowRegistry.createWorkflowExecution(id, name, input, {
             userId: options?.userId,
             conversationId: options?.conversationId,
             userContext: options?.userContext,
+            executionId: executionId,
           });
 
           if (historyEntry) {
-            executionId = historyEntry.id;
-            logger.trace(
+            runLogger.trace(
               `Successfully created execution via registry with executionId ${executionId}`,
             );
           } else {
-            logger.warn("Failed to create execution via WorkflowRegistry, using fallback");
+            runLogger.warn("Failed to create execution via WorkflowRegistry, using fallback");
           }
         } catch (memoryError) {
-          logger.error("Failed to create execution with WorkflowRegistry:", memoryError);
+          runLogger.error("Failed to create execution with WorkflowRegistry:", memoryError);
         }
       }
 
@@ -831,18 +841,13 @@ export function createWorkflow<
       try {
         await publishWorkflowEvent(workflowStartEvent, executionContext);
       } catch (eventError) {
-        logger.warn("Failed to publish workflow start event:", eventError);
+        runLogger.warn("Failed to publish workflow start event:", eventError);
       }
 
-      // Log workflow start with context
-      logger.debug(
+      // Log workflow start with only event-specific context
+      runLogger.debug(
         `Workflow started | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"}`,
         {
-          workflowId: id,
-          workflowName: name,
-          executionId,
-          userId: options?.userId,
-          conversationId: options?.conversationId,
           input: input !== undefined ? input : null,
         },
       );
@@ -886,7 +891,7 @@ export function createWorkflow<
         for (const [index, step] of (steps as BaseStep[]).entries()) {
           // Skip already completed steps when resuming
           if (index < startStepIndex) {
-            logger.debug(
+            runLogger.debug(
               `Skipping already completed step ${index} (startStepIndex=${startStepIndex})`,
             );
             continue;
@@ -894,7 +899,7 @@ export function createWorkflow<
 
           // Check for suspension signal before each step
           const checkSignal = options?.suspendController?.signal;
-          logger.trace(`Checking suspension signal at step ${index}`, {
+          runLogger.trace(`Checking suspension signal at step ${index}`, {
             hasSignal: !!checkSignal,
             isAborted: checkSignal?.aborted,
             reason: (checkSignal as any)?.reason,
@@ -902,7 +907,7 @@ export function createWorkflow<
 
           const signal = options?.suspendController?.signal;
           if (signal?.aborted) {
-            logger.debug(
+            runLogger.debug(
               `Suspension signal detected at step ${index} for execution ${executionId}`,
             );
 
@@ -912,16 +917,16 @@ export function createWorkflow<
             // Check if we have a suspension controller with a reason
             if (options?.suspendController?.getReason()) {
               reason = options.suspendController.getReason()!;
-              logger.trace(`Using reason from suspension controller: ${reason}`);
+              runLogger.trace(`Using reason from suspension controller: ${reason}`);
             } else {
               // Fallback to registry's active executions
               const activeController = workflowRegistry.activeExecutions.get(executionId);
               if (activeController?.getReason()) {
                 reason = activeController.getReason()!;
-                logger.debug(`Using reason from registry: ${reason}`);
+                runLogger.debug(`Using reason from registry: ${reason}`);
               }
             }
-            logger.trace(`Final suspension reason: ${reason}`);
+            runLogger.trace(`Final suspension reason: ${reason}`);
             const checkpoint = {
               stepExecutionState: stateManager.state.data,
               completedStepsData: (steps as BaseStep[])
@@ -929,33 +934,35 @@ export function createWorkflow<
                 .map((s, i) => ({ stepIndex: i, stepName: s.name || `Step ${i + 1}` })),
             };
 
-            logger.debug(
+            runLogger.debug(
               `Creating suspension with reason: ${reason}, suspendedStepIndex: ${index}`,
             );
             stateManager.suspend(reason, checkpoint, index);
 
             // Save suspension state to memory
             try {
-              logger.trace(`Storing suspension checkpoint for execution ${executionId}`);
+              runLogger.trace(`Storing suspension checkpoint for execution ${executionId}`);
               await workflowMemoryManager.storeSuspensionCheckpoint(
                 executionId,
                 stateManager.state.suspension,
               );
-              logger.trace(
+              runLogger.trace(
                 `Successfully stored suspension checkpoint for execution ${executionId}`,
               );
             } catch (suspendError) {
-              logger.error(
+              runLogger.error(
                 `Failed to save suspension state for execution ${executionId}:`,
                 suspendError,
               );
-              logger.error("Failed to save suspension state:", suspendError);
+              runLogger.error("Failed to save suspension state:", suspendError);
             }
 
             // Update workflow execution status to suspended
             if (historyEntry) {
               try {
-                logger.trace(`Updating workflow execution status to suspended for ${executionId}`);
+                runLogger.trace(
+                  `Updating workflow execution status to suspended for ${executionId}`,
+                );
                 await workflowRegistry.updateWorkflowExecution(id, executionId, {
                   status: "suspended" as any,
                   endTime: new Date(),
@@ -964,30 +971,25 @@ export function createWorkflow<
                     suspension: stateManager.state.suspension,
                   },
                 });
-                logger.trace(`Updated workflow execution status to suspended`);
+                runLogger.trace(`Updated workflow execution status to suspended`);
               } catch (updateError) {
-                logger.error(`Failed to update workflow status to suspended:`, updateError);
+                runLogger.error(`Failed to update workflow status to suspended:`, updateError);
               }
             } else {
-              logger.warn(`No historyEntry found, skipping status update`);
+              runLogger.warn(`No historyEntry found, skipping status update`);
             }
 
             // Log workflow suspension with context
-            logger.debug(
+            runLogger.debug(
               `Workflow suspended | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} step=${index}`,
               {
-                workflowId: id,
-                workflowName: name,
-                executionId,
-                userId: options?.userId,
-                conversationId: options?.conversationId,
                 stepIndex: index,
                 reason,
               },
             );
 
             // Return suspended state
-            logger.trace(`Returning suspended state for execution ${executionId}`);
+            runLogger.trace(`Returning suspended state for execution ${executionId}`);
             return createWorkflowExecutionResult(
               id,
               executionId,
@@ -1021,7 +1023,7 @@ export function createWorkflow<
               },
             );
           } catch (stepError) {
-            logger.warn(`Failed to record step start for step ${index}:`, stepError);
+            runLogger.warn(`Failed to record step start for step ${index}:`, stepError);
           }
 
           await hooks?.onStepStart?.(stateManager.state);
@@ -1034,15 +1036,10 @@ export function createWorkflow<
 
           // Log step start with context
           const stepName = step.name || step.id || `Step ${index + 1}`;
-          logger.debug(`Step ${index + 1} starting: ${stepName} | type=${step.type}`, {
-            workflowId: id,
-            workflowName: name,
-            executionId,
+          runLogger.debug(`Step ${index + 1} starting: ${stepName} | type=${step.type}`, {
             stepIndex: index,
             stepType: step.type,
             stepName,
-            userId: options?.userId,
-            conversationId: options?.conversationId,
             input: stateManager.state.data !== undefined ? stateManager.state.data : null,
           });
 
@@ -1052,7 +1049,9 @@ export function createWorkflow<
 
           // Create suspend function for this step
           const suspendFn = async (reason?: string, suspendData?: any): Promise<never> => {
-            logger.debug(`Step ${index} requested suspension: ${reason || "No reason provided"}`);
+            runLogger.debug(
+              `Step ${index} requested suspension: ${reason || "No reason provided"}`,
+            );
 
             // Store suspend data to be validated later when actually suspending
             if (suspendData !== undefined) {
@@ -1114,15 +1113,10 @@ export function createWorkflow<
             });
 
             // Log step completion with context
-            logger.debug(`Step ${index + 1} completed: ${stepName} | type=${step.type}`, {
-              workflowId: id,
-              workflowName: name,
-              executionId,
+            runLogger.debug(`Step ${index + 1} completed: ${stepName} | type=${step.type}`, {
               stepIndex: index,
               stepType: step.type,
               stepName,
-              userId: options?.userId,
-              conversationId: options?.conversationId,
               output: result !== undefined ? result : null,
             });
 
@@ -1137,7 +1131,7 @@ export function createWorkflow<
                   },
                 });
               } catch (stepEndError) {
-                logger.warn(`Failed to record step completion for step ${index}:`, stepEndError);
+                runLogger.warn(`Failed to record step completion for step ${index}:`, stepEndError);
               }
             }
 
@@ -1145,7 +1139,7 @@ export function createWorkflow<
           } catch (stepError) {
             // Check if this is a suspension, not an error
             if (stepError instanceof Error && stepError.message === "WORKFLOW_SUSPENDED") {
-              logger.debug(`Step ${index} suspended during execution`);
+              runLogger.debug(`Step ${index} suspended during execution`);
 
               // Handle suspension
               const suspensionReason =
@@ -1169,7 +1163,7 @@ export function createWorkflow<
                 (suspensionMetadata as WorkflowSuspensionMetadata<any>).suspendData = suspendData;
               }
 
-              logger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
+              runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
 
               // First publish step suspend event
               const stepCtx = createStepContext(
@@ -1198,7 +1192,7 @@ export function createWorkflow<
               try {
                 await publishWorkflowEvent(stepSuspendEvent, executionContext);
               } catch (eventError) {
-                logger.warn("Failed to publish workflow step suspend event:", eventError);
+                runLogger.warn("Failed to publish workflow step suspend event:", eventError);
               }
 
               // Then publish workflow suspend event
@@ -1212,7 +1206,7 @@ export function createWorkflow<
               try {
                 await publishWorkflowEvent(workflowSuspendEvent, executionContext);
               } catch (eventError) {
-                logger.warn("Failed to publish workflow suspend event:", eventError);
+                runLogger.warn("Failed to publish workflow suspend event:", eventError);
               }
 
               // Update workflow status to suspended
@@ -1226,9 +1220,9 @@ export function createWorkflow<
                       lastActiveStep: index,
                     },
                   });
-                  logger.trace(`Updated workflow execution status to suspended`);
+                  runLogger.trace(`Updated workflow execution status to suspended`);
                 } catch (updateError) {
-                  logger.error(`Failed to update workflow status to suspended:`, updateError);
+                  runLogger.error(`Failed to update workflow status to suspended:`, updateError);
                 }
               }
 
@@ -1258,7 +1252,7 @@ export function createWorkflow<
                   },
                 });
               } catch (stepEndError) {
-                logger.warn(`Failed to record step error for step ${index}:`, stepEndError);
+                runLogger.warn(`Failed to record step error for step ${index}:`, stepEndError);
               }
             }
             throw stepError; // Re-throw the original error
@@ -1277,7 +1271,7 @@ export function createWorkflow<
         try {
           await publishWorkflowEvent(workflowSuccessEvent, executionContext);
         } catch (eventError) {
-          logger.warn("Failed to publish workflow success event:", eventError);
+          runLogger.warn("Failed to publish workflow success event:", eventError);
         }
 
         if (historyEntry) {
@@ -1288,7 +1282,7 @@ export function createWorkflow<
               output: finalState.result,
             });
           } catch (registrationError) {
-            logger.warn("Failed to record workflow completion:", registrationError);
+            runLogger.warn("Failed to record workflow completion:", registrationError);
           }
         }
 
@@ -1296,14 +1290,9 @@ export function createWorkflow<
 
         // Log workflow completion with context
         const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
-        logger.debug(
+        runLogger.debug(
           `Workflow completed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} duration=${duration}ms`,
           {
-            workflowId: id,
-            workflowName: name,
-            executionId,
-            userId: options?.userId,
-            conversationId: options?.conversationId,
             duration,
             output: finalState.result !== undefined ? finalState.result : null,
           },
@@ -1323,7 +1312,7 @@ export function createWorkflow<
       } catch (error) {
         // Check if this is a suspension, not an error
         if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
-          logger.debug(`Workflow suspended (caught at top level)`);
+          runLogger.debug(`Workflow suspended (caught at top level)`);
           // This case should be handled in the step catch block,
           // but just in case it bubbles up here
           return createWorkflowExecutionResult(
@@ -1338,14 +1327,9 @@ export function createWorkflow<
         }
 
         // Log workflow error with context
-        logger.debug(
+        runLogger.debug(
           `Workflow failed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} error=${error instanceof Error ? error.message : String(error)}`,
           {
-            workflowId: id,
-            workflowName: name,
-            executionId,
-            userId: options?.userId,
-            conversationId: options?.conversationId,
             error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
           },
         );
@@ -1360,7 +1344,7 @@ export function createWorkflow<
         try {
           await publishWorkflowEvent(workflowErrorEvent, executionContext);
         } catch (eventError) {
-          logger.warn("Failed to publish workflow error event:", eventError);
+          runLogger.warn("Failed to publish workflow error event:", eventError);
         }
 
         if (historyEntry) {
@@ -1371,7 +1355,7 @@ export function createWorkflow<
               output: error,
             });
           } catch (registrationError) {
-            logger.warn("Failed to record workflow failure:", registrationError);
+            runLogger.warn("Failed to record workflow failure:", registrationError);
           }
         }
 

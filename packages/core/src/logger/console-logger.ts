@@ -4,6 +4,7 @@
  */
 
 import type { Logger, LogFn, LogBuffer, LogEntry, LogFilter } from "@voltagent/internal";
+import { EventEmitter } from "events";
 
 /**
  * Simple console logger that implements the Logger interface
@@ -69,13 +70,14 @@ export function createConsoleLogger(options: { name?: string; level?: string } =
 }
 
 /**
- * Simple in-memory log buffer implementation
+ * Simple in-memory log buffer implementation with event emitter
  */
-export class InMemoryLogBuffer implements LogBuffer {
+export class InMemoryLogBuffer extends EventEmitter implements LogBuffer {
   private logs: LogEntry[] = [];
   private maxSize: number;
 
   constructor(maxSize = 1000) {
+    super();
     this.maxSize = maxSize;
   }
 
@@ -85,6 +87,8 @@ export class InMemoryLogBuffer implements LogBuffer {
     if (this.logs.length > this.maxSize) {
       this.logs = this.logs.slice(-this.maxSize);
     }
+    // Emit event for new log
+    this.emit("log-added", entry);
   }
 
   query(filter?: LogFilter): LogEntry[] {
@@ -92,9 +96,9 @@ export class InMemoryLogBuffer implements LogBuffer {
       return [...this.logs];
     }
 
-    return this.logs
+    const results = this.logs
       .filter((log) => {
-        if (filter.level && log.level !== filter.level) return false;
+        if (filter.level && log.level.toLowerCase() !== filter.level.toLowerCase()) return false;
         if (filter.agentId && log.agentId !== filter.agentId) return false;
         if (filter.conversationId && log.conversationId !== filter.conversationId) return false;
         if (filter.workflowId && log.workflowId !== filter.workflowId) return false;
@@ -104,6 +108,8 @@ export class InMemoryLogBuffer implements LogBuffer {
         return true;
       })
       .slice(0, filter.limit || 100);
+
+    return results;
   }
 
   clear(): void {

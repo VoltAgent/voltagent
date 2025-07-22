@@ -1,5 +1,5 @@
 import { PinoLoggerProvider } from "./providers";
-import type { LoggerOptions } from "./types";
+import type { LoggerOptions, LogBuffer } from "./types";
 import type { LoggerProvider, LoggerWithProvider } from "./providers";
 
 // Global logger provider instance
@@ -36,11 +36,31 @@ export type LoggerWithBuffer = LoggerWithProvider;
 
 /**
  * Create a new Pino logger instance
+ * @param options Logger options
+ * @param externalLogBuffer Optional external log buffer to sync logs to
  */
-export function createPinoLogger(options?: LoggerOptions): LoggerWithBuffer {
-  const provider = new PinoLoggerProvider(options?.bufferSize);
+export function createPinoLogger(
+  options?: LoggerOptions,
+  externalLogBuffer?: any,
+): LoggerWithBuffer {
+  const provider = new PinoLoggerProvider(options?.bufferSize, externalLogBuffer);
   if (!globalLoggerProvider) {
     globalLoggerProvider = provider;
   }
   return provider.createLogger(options);
+}
+
+/**
+ * Connect an external log buffer to the existing logger
+ * This allows the logger to sync logs to an external buffer (e.g., core package's global buffer)
+ */
+export function connectExternalLogBuffer(
+  logger: LoggerWithProvider,
+  externalBuffer: LogBuffer,
+): void {
+  const provider = logger.getProvider();
+  if (provider && provider.name === "pino" && provider instanceof PinoLoggerProvider) {
+    // Access the private property using type assertion
+    (provider as any).externalLogBuffer = externalBuffer;
+  }
 }

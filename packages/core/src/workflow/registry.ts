@@ -312,6 +312,7 @@ export class WorkflowRegistry extends EventEmitter {
       conversationId?: string;
       userContext?: Map<string | symbol, unknown>;
       metadata?: Record<string, unknown>;
+      executionId?: string;
     } = {},
   ): Promise<WorkflowHistoryEntry | null> {
     this.logger.trace(`Creating workflow execution for workflow ${workflowId} (${workflowName})`);
@@ -333,6 +334,7 @@ export class WorkflowRegistry extends EventEmitter {
           conversationId: options.conversationId,
           userContext: options.userContext,
           metadata: options.metadata,
+          executionId: options.executionId,
         },
       );
 

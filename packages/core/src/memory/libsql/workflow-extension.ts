@@ -1,17 +1,22 @@
 import type { Client } from "@libsql/client";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
 import type { WorkflowTimelineEvent, WorkflowStats } from "../../workflow/types";
-import { devLogger } from "@voltagent/internal/dev";
+import { getGlobalLogger } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 
 /**
  * LibSQL extension for workflow memory operations
  * This class provides workflow-specific storage operations for LibSQL
  */
 export class LibSQLWorkflowExtension {
+  private logger: Logger;
+
   constructor(
     private client: Client,
     private _tablePrefix = "voltagent_memory",
-  ) {}
+  ) {
+    this.logger = getGlobalLogger().child({ component: "libsql-workflow" });
+  }
 
   /**
    * Store a workflow history entry
@@ -72,7 +77,7 @@ export class LibSQLWorkflowExtension {
    * Update a workflow history entry
    */
   async updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void> {
-    devLogger.debug(`[LibSQL] Updating workflow history ${id}`, {
+    this.logger.trace(`Updating workflow history ${id}`, {
       status: updates.status,
       hasMetadata: !!updates.metadata,
       hasSuspension: !!updates.metadata?.suspension,
@@ -105,7 +110,7 @@ export class LibSQLWorkflowExtension {
       setClauses.push("metadata = ?");
       const metadataJson = JSON.stringify(updates.metadata);
       args.push(metadataJson);
-      devLogger.debug(`[LibSQL] Setting metadata for ${id}:`, metadataJson);
+      this.logger.trace(`Setting metadata for ${id}:`, metadataJson);
     }
 
     setClauses.push("updated_at = ?");
@@ -113,15 +118,15 @@ export class LibSQLWorkflowExtension {
     args.push(id);
 
     const sql = `UPDATE ${this._tablePrefix}_workflow_history SET ${setClauses.join(", ")} WHERE id = ?`;
-    devLogger.debug(`[LibSQL] Executing SQL:`, { sql, args });
+    this.logger.trace(`Executing SQL:`, { sql, args });
 
     try {
       const result = await this.client.execute({ sql, args });
-      devLogger.info(
-        `[LibSQL] Successfully updated workflow history ${id}, rows affected: ${result.rowsAffected}`,
+      this.logger.trace(
+        `Successfully updated workflow history ${id}, rows affected: ${result.rowsAffected}`,
       );
     } catch (error) {
-      devLogger.error(`[LibSQL] Failed to update workflow history ${id}:`, error);
+      this.logger.error(`Failed to update workflow history ${id}:`, error);
       throw error;
     }
   }

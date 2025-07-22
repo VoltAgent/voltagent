@@ -3,6 +3,7 @@ export {
   getGlobalLogBuffer,
   getGlobalLoggerProvider,
   setGlobalLoggerProvider,
+  connectExternalLogBuffer,
   type LoggerWithBuffer,
 } from "./base";
 

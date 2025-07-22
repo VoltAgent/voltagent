@@ -57,6 +57,7 @@ export class InMemoryLogBuffer implements LogBuffer {
     if (filter.since || filter.until) {
       results = results.filter((entry) => {
         const entryTime = new Date(entry.timestamp);
+        // Return logs that are after 'since' and before or equal to 'until'
         if (filter.since && entryTime < filter.since) return false;
         if (filter.until && entryTime > filter.until) return false;
         return true;

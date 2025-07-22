@@ -1,7 +1,7 @@
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import type { Logger } from "@voltagent/internal";
-import { getGlobalLogger } from "./logger";
+import { getGlobalLogger, getGlobalLogBuffer } from "./logger";
 import type { Agent } from "./agent/agent";
 import type { SubAgentConfig } from "./agent/subagent/types";
 import { startServer } from "./server";
@@ -56,6 +56,29 @@ export class VoltAgent {
     // Handle global logger
     if (options.logger) {
       this.registry.setGlobalLogger(options.logger);
+
+      // Try to connect the logger to core's log buffer if it's a LoggerWithProvider
+      try {
+        // Check if the logger has getProvider method (LoggerWithProvider)
+        if (
+          "getProvider" in options.logger &&
+          typeof (options.logger as any).getProvider === "function"
+        ) {
+          // Dynamically import connectExternalLogBuffer to avoid hard dependency
+          import("@voltagent/logger")
+            .then(({ connectExternalLogBuffer }) => {
+              if (connectExternalLogBuffer) {
+                connectExternalLogBuffer(options.logger as any, getGlobalLogBuffer());
+                this.logger.debug("Connected external logger to core log buffer");
+              }
+            })
+            .catch(() => {
+              // Ignore if @voltagent/logger is not available
+            });
+        }
+      } catch {
+        // Ignore errors in connecting external buffer
+      }
     }
     // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
     else if (options.telemetryExporter) {

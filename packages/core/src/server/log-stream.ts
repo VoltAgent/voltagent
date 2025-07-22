@@ -10,12 +10,12 @@ export interface LogStreamClient {
 
 export class LogStreamManager {
   private clients: Set<LogStreamClient> = new Set();
-  private intervalId?: NodeJS.Timeout;
-  private lastBroadcastTime: Date = new Date();
+  private logBuffer: any; // Will be set in constructor
 
   constructor() {
-    // Start broadcasting logs every 500ms
-    this.startBroadcasting();
+    // Get the global log buffer and listen for new logs
+    this.logBuffer = getGlobalLogBuffer();
+    this.setupEventListeners();
   }
 
   addClient(ws: WebSocket, filter?: LogFilter): void {
@@ -63,54 +63,56 @@ export class LogStreamManager {
     }
   }
 
-  private startBroadcasting(): void {
-    this.intervalId = setInterval(() => {
-      this.broadcastNewLogs();
-    }, 500);
+  private setupEventListeners(): void {
+    // Listen for new logs
+    this.logBuffer.on("log-added", (log: LogEntry) => {
+      this.broadcastLog(log);
+    });
   }
 
-  private broadcastNewLogs(): void {
+  private broadcastLog(log: LogEntry): void {
     if (this.clients.size === 0) return;
 
-    const logBuffer = getGlobalLogBuffer();
-    const now = new Date();
+    console.log(`[LogStream] Broadcasting log: "${log.msg}" to ${this.clients.size} clients`);
+    devLogger.debug(`[LogStream] Broadcasting log: "${log.msg}"`);
 
-    // Get logs since last broadcast
-    const allLogs = logBuffer.query({
-      since: this.lastBroadcastTime,
-      until: now,
-    });
-
-    if (allLogs.length === 0) return;
-
-    // Send filtered logs to each client
+    // Send log to each client based on their filter
     for (const client of this.clients) {
-      const filteredLogs = this.filterLogsForClient(allLogs, client.filter);
-      if (filteredLogs.length > 0) {
+      if (this.shouldSendToClient(log, client.filter)) {
         this.sendToClient(client, {
           type: "update",
-          logs: filteredLogs,
-          timestamp: now.toISOString(),
+          logs: [log],
+          timestamp: new Date().toISOString(),
         });
       }
     }
+  }
 
-    this.lastBroadcastTime = now;
+  private shouldSendToClient(log: LogEntry, filter?: LogFilter): boolean {
+    if (!filter) return true;
+
+    // Check level filter
+    if (filter.level && this.getLevelPriority(log.level) < this.getLevelPriority(filter.level)) {
+      return false;
+    }
+
+    // If executionId filter is provided, only show logs with matching executionId
+    if (filter.executionId) {
+      return log.executionId === filter.executionId;
+    }
+
+    // For other filters, only apply if the log has those properties
+    if (filter.agentId && log.agentId && log.agentId !== filter.agentId) return false;
+    if (filter.conversationId && log.conversationId && log.conversationId !== filter.conversationId)
+      return false;
+    if (filter.workflowId && log.workflowId && log.workflowId !== filter.workflowId) return false;
+
+    return true;
   }
 
   private filterLogsForClient(logs: LogEntry[], filter?: LogFilter): LogEntry[] {
     if (!filter) return logs;
-
-    return logs.filter((log) => {
-      if (filter.level && this.getLevelPriority(log.level) < this.getLevelPriority(filter.level)) {
-        return false;
-      }
-      if (filter.agentId && log.agentId !== filter.agentId) return false;
-      if (filter.conversationId && log.conversationId !== filter.conversationId) return false;
-      if (filter.workflowId && log.workflowId !== filter.workflowId) return false;
-      if (filter.executionId && log.executionId !== filter.executionId) return false;
-      return true;
-    });
+    return logs.filter((log) => this.shouldSendToClient(log, filter));
   }
 
   private getLevelPriority(level: string): number {
@@ -128,6 +130,9 @@ export class LogStreamManager {
   private sendToClient(client: LogStreamClient, data: any): void {
     try {
       if (client.ws.readyState === client.ws.OPEN) {
+        console.log(
+          `[LogStream] Sending ${data.logs?.length || 0} logs to client, type: ${data.type}`,
+        );
         client.ws.send(JSON.stringify(data));
       }
     } catch (error) {
@@ -137,10 +142,8 @@ export class LogStreamManager {
   }
 
   stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = undefined;
-    }
+    // Remove event listeners
+    this.logBuffer.removeAllListeners("log-added");
 
     // Close all client connections
     for (const client of this.clients) {
