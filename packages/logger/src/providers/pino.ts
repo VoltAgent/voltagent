@@ -21,13 +21,46 @@ export class PinoLoggerProvider implements LoggerProvider {
 
   createLogger(options?: LoggerOptions): LoggerWithProvider {
     const pinoOptions = this.createPinoOptions(options);
-    const pinoLogger = pino(pinoOptions) as Logger;
+    const pinoInstance = pino(pinoOptions);
 
     // Setup log capture
-    this.setupLogCapture(pinoLogger);
+    this.setupLogCapture(pinoInstance);
 
-    // Create a proxy object that includes both pino logger methods and our custom methods
-    const loggerWithProvider = Object.assign(pinoLogger, {
+    return this.wrapPinoInstance(pinoInstance);
+  }
+
+  private wrapPinoInstance(pinoInstance: any): LoggerWithProvider {
+    // Create our logger that follows OUR interface
+    const logger: Logger & { _pinoInstance?: any } = {
+      trace: (msg: string, context?: object) => {
+        pinoInstance.trace(context || {}, msg);
+      },
+      debug: (msg: string, context?: object) => {
+        pinoInstance.debug(context || {}, msg);
+      },
+      info: (msg: string, context?: object) => {
+        pinoInstance.info(context || {}, msg);
+      },
+      warn: (msg: string, context?: object) => {
+        pinoInstance.warn(context || {}, msg);
+      },
+      error: (msg: string, context?: object) => {
+        pinoInstance.error(context || {}, msg);
+      },
+      fatal: (msg: string, context?: object) => {
+        pinoInstance.fatal(context || {}, msg);
+      },
+      child: (bindings: Record<string, any>) => {
+        const childPino = pinoInstance.child(bindings);
+        return this.wrapPinoInstance(childPino);
+      },
+    };
+
+    // Store reference to pino instance for child logger creation
+    logger._pinoInstance = pinoInstance;
+
+    // Create a proxy object that includes our logger and custom methods
+    const loggerWithProvider = Object.assign(logger, {
       getProvider: () => this,
       getBuffer: () => this.logBuffer,
     }) as LoggerWithProvider;
@@ -36,21 +69,18 @@ export class PinoLoggerProvider implements LoggerProvider {
   }
 
   createChildLogger(
-    parent: Logger,
+    parent: Logger & { _pinoInstance?: any },
     bindings: Record<string, any>,
     _options?: LoggerOptions,
   ): Logger {
-    const childLogger = parent.child(bindings);
-
-    // If parent has provider methods, add them to child
-    if ("getProvider" in parent) {
-      return Object.assign(childLogger, {
-        getProvider: () => this,
-        getBuffer: () => this.logBuffer,
-      }) as LoggerWithProvider;
+    // Use the parent's pino instance if available
+    if (parent._pinoInstance) {
+      const childPino = parent._pinoInstance.child(bindings);
+      return this.wrapPinoInstance(childPino);
     }
 
-    return childLogger;
+    // Fallback to parent's child method
+    return parent.child(bindings);
   }
 
   getLogBuffer(): LogBuffer {

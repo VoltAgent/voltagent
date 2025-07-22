@@ -338,7 +338,9 @@ export class MCPClient extends EventEmitter {
                 });
                 return result.content;
               } catch (execError) {
-                this.logger.error(`Error executing remote tool '${toolDef.name}':`, execError);
+                this.logger.error(`Error executing remote tool '${toolDef.name}':`, {
+                  error: execError,
+                });
                 throw execError;
               }
             },
@@ -346,10 +348,9 @@ export class MCPClient extends EventEmitter {
 
           executableTools[namespacedToolName] = agentTool;
         } catch (toolCreationError) {
-          this.logger.error(
-            `Failed to create executable tool wrapper for '${toolDef.name}':`,
-            toolCreationError,
-          );
+          this.logger.error(`Failed to create executable tool wrapper for '${toolDef.name}':`, {
+            error: toolCreationError,
+          });
         }
       }
 

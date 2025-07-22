@@ -573,7 +573,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       return formattedMemory || "No previous agent interactions found.";
     } catch (error) {
-      this.logger.warn({ error }, "Error preparing agents memory");
+      this.logger.warn("Error preparing agents memory", { error });
       return "Error retrieving agent history.";
     }
   }
@@ -650,8 +650,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Ensure operationContext exists before proceeding
     if (!operationContext) {
       this.logger.warn(
-        { agentId: this.id },
         "Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.",
+        { agentId: this.id },
       );
       // Potentially handle this case more gracefully, e.g., throw an error or create a default context
     }
@@ -692,8 +692,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 reasoningOptions.historyEntryId === "unknown"
               ) {
                 this.logger.warn(
-                  { toolName: tool.name, agentId: this.id },
                   `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`,
+                  { toolName: tool.name, agentId: this.id },
                 );
               }
               // Pass the correctly typed options
@@ -711,14 +711,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
             return result;
           } catch (error) {
-            this.logger.error(
-              {
-                toolName: tool.name,
-                agentId: this.id,
-                error: error instanceof Error ? error.message : error,
-              },
-              `Tool ${tool.name} execution failed`,
-            );
+            this.logger.error(`Tool ${tool.name} execution failed`, {
+              toolName: tool.name,
+              agentId: this.id,
+              error: error instanceof Error ? error.message : error,
+            });
             throw error;
           }
         },
@@ -729,15 +726,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (this.subAgentManager.hasSubAgents()) {
       // Create a real-time event forwarder for SubAgent events
       const forwardEvent = async (event: StreamEvent) => {
-        this.logger.debug(
-          {
-            eventType: event.type,
-            subAgentId: event.subAgentId,
-            subAgentName: event.subAgentName,
-            agentId: this.id,
-          },
-          `Received SubAgent event: ${event.type} from ${event.subAgentName}`,
-        );
+        this.logger.debug(`Received SubAgent event: ${event.type} from ${event.subAgentName}`, {
+          eventType: event.type,
+          subAgentId: event.subAgentId,
+          subAgentName: event.subAgentName,
+          agentId: this.id,
+        });
 
         // Use the utility function to forward events
         if (internalStreamForwarder) {
@@ -946,10 +940,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     if (toolCallId && status === "working") {
       if (context.toolSpans.has(toolCallId)) {
-        this.logger.warn(
-          { toolCallId, toolName, agentId: this.id },
-          `OTEL tool span already exists for toolCallId: ${toolCallId}`,
-        );
+        this.logger.warn(`OTEL tool span already exists for toolCallId: ${toolCallId}`, {
+          toolCallId,
+          toolName,
+          agentId: this.id,
+        });
       } else {
         // Call the helper function
         const toolSpan = startToolSpan({
@@ -985,8 +980,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       });
     } else {
       this.logger.warn(
-        { eventName, operationId: context.operationId, agentId: this.id },
         `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
+        { eventName, operationId: context.operationId, agentId: this.id },
       );
     }
   }
@@ -1007,8 +1002,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       context.toolSpans?.delete(toolCallId); // Remove from map after ending
     } else {
       this.logger.warn(
-        { toolCallId, toolName, agentId: this.id },
         `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
+        { toolCallId, toolName, agentId: this.id },
       );
     }
   }
@@ -1126,10 +1121,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 for (const [subAgentId, status] of subAgentStatus.entries()) {
                   if (status.isActive && !status.isCompleted) {
                     status.isCompleted = true;
-                    logger.debug(
-                      { subAgentId },
-                      `[Enhanced Stream] SubAgent ${subAgentId} marked as completed`,
-                    );
+                    logger.debug(`[Enhanced Stream] SubAgent ${subAgentId} marked as completed`, {
+                      subAgentId,
+                    });
                   }
                 }
 
@@ -1226,21 +1220,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     // Log generation start with only event-specific context
-    methodLogger.debug(
-      {
-        event: LogEvents.AGENT_GENERATION_STARTED,
-        messageHistory,
-        operationType: "text",
-        inputType: typeof input === "string" ? "string" : "messages",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-        model: modelName,
-        inputLength: typeof input === "string" ? input.length : input.length,
-        messageCount: contextMessages?.length || 0,
-        input: inputPreview,
-      },
-      `Starting generation [${modelName}]`,
-    );
+    methodLogger.debug(`Starting generation [${modelName}]`, {
+      event: LogEvents.AGENT_GENERATION_STARTED,
+      messageHistory,
+      operationType: "text",
+      inputType: typeof input === "string" ? "string" : "messages",
+      contextLimit,
+      memoryEnabled: !!this.memoryManager.getMemory(),
+      model: modelName,
+      inputLength: typeof input === "string" ? input.length : input.length,
+      messageCount: contextMessages?.length || 0,
+      input: inputPreview,
+    });
 
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
@@ -1343,17 +1334,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       methodLogger.debug("Starting agent llm call");
 
-      methodLogger.debug(
-        {
-          messages: messages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          maxSteps,
-          tools: tools?.map((t) => t.name) || [],
-        },
-        "[LLM] - Generating text",
-      );
+      methodLogger.debug("[LLM] - Generating text", {
+        messages: messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        maxSteps,
+        tools: tools?.map((t) => t.name) || [],
+      });
 
       const response = await this.llm.generateText({
         messages,
@@ -1403,7 +1391,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ];
           }
 
-          methodLogger.debug(stepData, "[LLM] - Stream Step Change:");
+          methodLogger.debug("[LLM] - Stream Step Change:", stepData);
 
           // Keep existing step logging for INFO level
           if (step.type === "text") {
@@ -1425,15 +1413,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             });
 
             // Tool execution started
-            methodLogger.debug(
-              {
-                event: LogEvents.TOOL_EXECUTION_STARTED,
-                toolName: step.name,
-                toolCallId: step.id,
-                args: step.arguments,
-              },
-              `Executing tool: ${step.name}`,
-            );
+            methodLogger.debug(`Executing tool: ${step.name}`, {
+              event: LogEvents.TOOL_EXECUTION_STARTED,
+              toolName: step.name,
+              toolCallId: step.id,
+              args: step.arguments,
+            });
 
             if (step.name && step.id) {
               const tool = this.toolManager.getToolByName(step.name);
@@ -1655,16 +1640,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
       });
 
-      methodLogger.debug(
-        {
-          text: response.text,
-          toolCalls: [],
-          toolResults: [],
-          finishReason: response.finishReason || "stop",
-          usage: response.usage,
-        },
-        "[LLM] - Stream Finished:",
-      );
+      methodLogger.debug("[LLM] - Stream Finished:", {
+        text: response.text,
+        toolCalls: [],
+        toolResults: [],
+        finishReason: response.finishReason || "stop",
+        usage: response.usage,
+      });
 
       // Log successful completion with usage details
       const usage = response.usage;
@@ -1822,18 +1804,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const modelName = this.getModelName();
 
     // Log stream generation start with only event-specific context
-    methodLogger.debug(
-      {
-        event: LogEvents.AGENT_STREAM_STARTED,
-        operationType: "stream",
-        inputType: typeof input === "string" ? "string" : "messages",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-        model: modelName,
-        input: inputPreview,
-      },
-      `Stream generation started [${modelName}]`,
-    );
+    methodLogger.debug(`Stream generation started [${modelName}]`, {
+      event: LogEvents.AGENT_STREAM_STARTED,
+      operationType: "stream",
+      inputType: typeof input === "string" ? "string" : "messages",
+      contextLimit,
+      memoryEnabled: !!this.memoryManager.getMemory(),
+      model: modelName,
+      input: inputPreview,
+    });
 
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
@@ -1920,14 +1899,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
 
     const internalStreamEventForwarder = async (event: StreamEvent) => {
-      methodLogger.debug(
-        {
-          eventType: event.type,
-          subAgentId: event.subAgentId,
-          subAgentName: event.subAgentName,
-        },
-        "[Real-time Stream] Received SubAgent event",
-      );
+      methodLogger.debug("[Real-time Stream] Received SubAgent event", {
+        eventType: event.type,
+        subAgentId: event.subAgentId,
+        subAgentName: event.subAgentName,
+      });
 
       // Update SubAgent status
       if (!subAgentStatus.has(event.subAgentId)) {
@@ -1942,11 +1918,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       ) {
         // This might indicate SubAgent completion, but we'll handle it gracefully
         methodLogger.debug(
+          `[Real-time Stream] Potential completion event from ${event.subAgentId}`,
           {
             subAgentId: event.subAgentId,
             eventType: event.type,
           },
-          `[Real-time Stream] Potential completion event from ${event.subAgentId}`,
         );
       }
 
@@ -1955,20 +1931,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         try {
           const formattedStreamPart = transformStreamEventToStreamPart(event);
           streamController.current.enqueue(formattedStreamPart);
-          methodLogger.debug(
-            {
-              eventType: event.type,
-              subAgentId: event.subAgentId,
-            },
-            "[Real-time Stream] Event injected into stream",
-          );
+          methodLogger.debug("[Real-time Stream] Event injected into stream", {
+            eventType: event.type,
+            subAgentId: event.subAgentId,
+          });
         } catch (error) {
-          methodLogger.error(
-            {
-              error,
-            },
-            "[Real-time Stream] Failed to inject event",
-          );
+          methodLogger.error("[Real-time Stream] Failed to inject event", {
+            error,
+          });
         }
       }
     };
@@ -1997,17 +1967,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     methodLogger.debug("Starting agent llm stream call");
 
-    methodLogger.debug(
-      {
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        maxSteps,
-        tools: tools?.map((t) => t.name) || [],
-      },
-      "[LLM] - Streaming text",
-    );
+    methodLogger.debug("[LLM] - Streaming text", {
+      messages: messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      maxSteps,
+      tools: tools?.map((t) => t.name) || [],
+    });
 
     const response = await this.llm.streamText({
       messages,
@@ -2170,15 +2137,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           stepData.finishReason = "tool-calls";
 
           // Tool execution started
-          methodLogger.debug(
-            {
-              event: LogEvents.TOOL_EXECUTION_STARTED,
-              toolName: step.name,
-              toolCallId: step.id,
-              args: step.arguments,
-            },
-            `Executing tool: ${step.name}`,
-          );
+          methodLogger.debug(`Executing tool: ${step.name}`, {
+            event: LogEvents.TOOL_EXECUTION_STARTED,
+            toolName: step.name,
+            toolCallId: step.id,
+            args: step.arguments,
+          });
         } else if (step.type === "tool_result") {
           stepData.toolResults = [
             {
@@ -2191,7 +2155,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ];
         }
 
-        methodLogger.debug(stepData, "[LLM] - Stream Step Change:");
+        methodLogger.debug("[LLM] - Stream Step Change:", stepData);
 
         await onStepFinish(step);
         if (internalOptions.provider?.onStepFinish) {
@@ -2222,16 +2186,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           status: "completed",
         });
 
-        methodLogger.debug(
-          {
-            text: result.text || "",
-            toolCalls: [],
-            toolResults: [],
-            finishReason: result.finishReason || "stop",
-            usage: result.usage,
-          },
-          "[LLM] - Stream Finished:",
-        );
+        methodLogger.debug("[LLM] - Stream Finished:", {
+          text: result.text || "",
+          toolCalls: [],
+          toolResults: [],
+          finishReason: result.finishReason || "stop",
+          usage: result.usage,
+        });
 
         const agentSuccessEvent: AgentSuccessEvent = {
           id: crypto.randomUUID(),
@@ -2345,12 +2306,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             this.publishTimelineEvent(operationContext, toolErrorEvent);
           } catch (updateError) {
             methodLogger.error(
+              `Failed to update tool event to error status for ${toolName} (${toolCallId})`,
               {
                 toolName,
                 toolCallId,
                 error: updateError,
               },
-              `Failed to update tool event to error status for ${toolName} (${toolCallId})`,
             );
           }
           const tool = this.toolManager.getToolByName(toolName);
@@ -3407,7 +3368,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Publish the retriever:error event (background) with parent context
       this.publishTimelineEvent(operationContext, retrieverErrorEvent);
 
-      this.logger.warn({ error, agentId: this.id }, "Failed to retrieve context");
+      this.logger.warn("Failed to retrieve context", { error, agentId: this.id });
       return null;
     }
   }

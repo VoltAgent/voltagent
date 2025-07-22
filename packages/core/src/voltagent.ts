@@ -173,7 +173,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         this.logger.info("[VoltAgent] All workflows suspended, exiting...");
         process.exit(0);
       } catch (error) {
-        this.logger.error("[VoltAgent] Error during shutdown:", error);
+        this.logger.error("[VoltAgent] Error during shutdown:", { error });
         process.exit(1);
       }
     };
@@ -459,11 +459,11 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       // Add automatic shutdown on SIGTERM
       process.on("SIGTERM", () => {
         this.shutdownTelemetry().catch((err) =>
-          this.logger.error("Error during SIGTERM telemetry shutdown:", err),
+          this.logger.error("Error during SIGTERM telemetry shutdown:", { error: err }),
         );
       });
     } catch (error) {
-      this.logger.error("Failed to initialize OpenTelemetry:", error);
+      this.logger.error("Failed to initialize OpenTelemetry:", { error });
     }
   }
 
@@ -474,7 +474,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         isTelemetryInitializedByVoltAgent = false;
         registeredProvider = null;
       } catch (error) {
-        this.logger.error("Error shutting down OpenTelemetry provider:", error);
+        this.logger.error("Error shutting down OpenTelemetry provider:", { error });
       }
     } else {
       this.logger.info(

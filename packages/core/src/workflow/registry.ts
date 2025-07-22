@@ -269,7 +269,7 @@ export class WorkflowRegistry extends EventEmitter {
     } catch (error) {
       this.logger.error(
         `Failed to persist timeline event: ${event.name} for execution ${executionId}:`,
-        error,
+        { error },
       );
       throw error; // Re-throw to inform WorkflowEventEmitter
     }
@@ -349,7 +349,7 @@ export class WorkflowRegistry extends EventEmitter {
 
       return historyEntry;
     } catch (error) {
-      this.logger.error(`Failed to create workflow execution for ${workflowId}:`, error);
+      this.logger.error(`Failed to create workflow execution for ${workflowId}:`, { error });
       return null;
     }
   }
@@ -389,7 +389,7 @@ export class WorkflowRegistry extends EventEmitter {
 
       return updatedEntry;
     } catch (error) {
-      this.logger.error(`Failed to update workflow execution ${executionId}:`, error);
+      this.logger.error(`Failed to update workflow execution ${executionId}:`, { error });
       return null;
     }
   }
@@ -621,7 +621,7 @@ export class WorkflowRegistry extends EventEmitter {
     } catch (error) {
       // Remove from active executions on error
       this.activeExecutions.delete(executionId);
-      this.logger.error(`Resumed workflow execution ${executionId} failed:`, error);
+      this.logger.error(`Resumed workflow execution ${executionId} failed:`, { error });
       throw error;
     }
   }
@@ -773,7 +773,7 @@ export class WorkflowRegistry extends EventEmitter {
       );
     } catch (error) {
       // Don't throw - immediate events are best-effort
-      this.logger.error("[WorkflowRegistry] Failed to handle immediate event:", error);
+      this.logger.error("[WorkflowRegistry] Failed to handle immediate event:", { error });
     }
   }
 }

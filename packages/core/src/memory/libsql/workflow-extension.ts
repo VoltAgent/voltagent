@@ -110,7 +110,7 @@ export class LibSQLWorkflowExtension {
       setClauses.push("metadata = ?");
       const metadataJson = JSON.stringify(updates.metadata);
       args.push(metadataJson);
-      this.logger.trace(`Setting metadata for ${id}:`, metadataJson);
+      this.logger.trace(`Setting metadata for ${id}:`, { metadata: metadataJson });
     }
 
     setClauses.push("updated_at = ?");
@@ -118,7 +118,7 @@ export class LibSQLWorkflowExtension {
     args.push(id);
 
     const sql = `UPDATE ${this._tablePrefix}_workflow_history SET ${setClauses.join(", ")} WHERE id = ?`;
-    this.logger.trace(`Executing SQL:`, { sql, args });
+    this.logger.trace("Executing SQL:", { sql, args });
 
     try {
       const result = await this.client.execute({ sql, args });
@@ -126,7 +126,7 @@ export class LibSQLWorkflowExtension {
         `Successfully updated workflow history ${id}, rows affected: ${result.rowsAffected}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to update workflow history ${id}:`, error);
+      this.logger.error(`Failed to update workflow history ${id}:`, { error });
       throw error;
     }
   }

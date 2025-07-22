@@ -21,40 +21,34 @@ export class LoggerProxy implements Logger {
     return Object.keys(this.bindings).length > 0 ? globalLogger.child(this.bindings) : globalLogger;
   }
 
-  trace: LogFn = (...args: any[]): void => {
+  trace: LogFn = (msg: string, context?: object): void => {
     const logger = this.getActualLogger();
-    // @ts-ignore - LogFn overloads
-    logger.trace(...args);
+    logger.trace(msg, context);
   };
 
-  debug: LogFn = (...args: any[]): void => {
+  debug: LogFn = (msg: string, context?: object): void => {
     const logger = this.getActualLogger();
-    // @ts-ignore - LogFn overloads
-    logger.debug(...args);
+    logger.debug(msg, context);
   };
 
-  info: LogFn = (...args: any[]): void => {
+  info: LogFn = (msg: string, context?: object): void => {
     const logger = this.getActualLogger();
-    // @ts-ignore - LogFn overloads
-    logger.info(...args);
+    logger.info(msg, context);
   };
 
-  warn: LogFn = (...args: any[]): void => {
+  warn: LogFn = (msg: string, context?: object): void => {
     const logger = this.getActualLogger();
-    // @ts-ignore - LogFn overloads
-    logger.warn(...args);
+    logger.warn(msg, context);
   };
 
-  error: LogFn = (...args: any[]): void => {
+  error: LogFn = (msg: string, context?: object): void => {
     const logger = this.getActualLogger();
-    // @ts-ignore - LogFn overloads
-    logger.error(...args);
+    logger.error(msg, context);
   };
 
-  fatal: LogFn = (...args: any[]): void => {
+  fatal: LogFn = (msg: string, context?: object): void => {
     const logger = this.getActualLogger();
-    // @ts-ignore - LogFn overloads
-    logger.fatal(...args);
+    logger.fatal(msg, context);
   };
 
   /**

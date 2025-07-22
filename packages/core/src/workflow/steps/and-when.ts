@@ -90,7 +90,7 @@ export function andWhen<INPUT, DATA, RESULT>({
       } catch (eventError) {
         getGlobalLogger()
           .child({ component: "workflow", stepType: "when" })
-          .warn("Failed to publish workflow step start event:", eventError);
+          .warn("Failed to publish workflow step start event:", { error: eventError });
       }
 
       try {
@@ -131,7 +131,7 @@ export function andWhen<INPUT, DATA, RESULT>({
         } catch (eventError) {
           getGlobalLogger()
             .child({ component: "workflow", stepType: "when" })
-            .warn("Failed to publish workflow step success event:", eventError);
+            .warn("Failed to publish workflow step success event:", { error: eventError });
         }
 
         return result;
@@ -160,7 +160,7 @@ export function andWhen<INPUT, DATA, RESULT>({
         } catch (eventError) {
           getGlobalLogger()
             .child({ component: "workflow", stepType: "when" })
-            .warn("Failed to publish workflow step error event:", eventError);
+            .warn("Failed to publish workflow step error event:", { error: eventError });
         }
 
         throw error;

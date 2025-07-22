@@ -34,7 +34,7 @@ export function andTap<
       } catch (error) {
         getGlobalLogger()
           .child({ component: "workflow", stepType: "tap" })
-          .error("Error executing tap step", error);
+          .error("Error executing tap step", { error: error });
       }
       return context.data as DATA;
     },

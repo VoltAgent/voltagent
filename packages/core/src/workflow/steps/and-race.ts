@@ -93,7 +93,7 @@ export function andRace<
       } catch (eventError) {
         getGlobalLogger()
           .child({ component: "workflow", stepType: "race" })
-          .warn("Failed to publish workflow step start event:", eventError);
+          .warn("Failed to publish workflow step start event:", { error: eventError });
       }
 
       try {
@@ -123,7 +123,7 @@ export function andRace<
           } catch (eventError) {
             getGlobalLogger()
               .child({ component: "workflow", stepType: "race" })
-              .warn(`Failed to publish sub-step ${index} start event:`, eventError);
+              .warn(`Failed to publish sub-step ${index} start event:`, { error: eventError });
           }
 
           const subState = {
@@ -230,7 +230,9 @@ export function andRace<
             const eventType = isWinner ? "winner" : "loser";
             getGlobalLogger()
               .child({ component: "workflow", stepType: "race" })
-              .warn(`Failed to publish ${eventType} success event for sub-step ${i}:`, eventError);
+              .warn(`Failed to publish ${eventType} success event for sub-step ${i}:`, {
+                error: eventError,
+              });
           }
         }
 
@@ -250,7 +252,7 @@ export function andRace<
         } catch (eventError) {
           getGlobalLogger()
             .child({ component: "workflow", stepType: "race" })
-            .warn("Failed to publish workflow step success event:", eventError);
+            .warn("Failed to publish workflow step success event:", { error: eventError });
         }
 
         return finalResult;
@@ -278,7 +280,7 @@ export function andRace<
         } catch (eventError) {
           getGlobalLogger()
             .child({ component: "workflow", stepType: "race" })
-            .warn("Failed to publish workflow step error event:", eventError);
+            .warn("Failed to publish workflow step error event:", { error: eventError });
         }
 
         throw error;

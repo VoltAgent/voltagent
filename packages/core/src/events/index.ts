@@ -186,7 +186,7 @@ export class AgentEventEmitter extends EventEmitter {
         .warn("Failed to persist event for history: ", { historyId });
       return undefined;
     } catch (error) {
-      getGlobalLogger().child({ component: "events" }).error("Error persisting event:", error);
+      getGlobalLogger().child({ component: "events" }).error("Error persisting event:", { error });
       return undefined;
     }
   }
@@ -286,7 +286,7 @@ export class AgentEventEmitter extends EventEmitter {
         } catch (error) {
           getGlobalLogger()
             .child({ component: "events", context: "EventPropagation" })
-            .error(`Failed to propagate event to parent agent ${parentId}:`, error);
+            .error(`Failed to propagate event to parent agent ${parentId}:`, { error });
           // Continue with other parents instead of failing completely
         }
       });
@@ -310,7 +310,7 @@ export class AgentEventEmitter extends EventEmitter {
       } catch (error) {
         getGlobalLogger()
           .child({ component: "events", context: "EventPropagation" })
-          .error(`Failed to propagate to higher ancestors from ${parentId}:`, error);
+          .error(`Failed to propagate to higher ancestors from ${parentId}:`, { error });
         // Continue with other ancestors
       }
     }

@@ -781,7 +781,7 @@ export function createWorkflow<
             throw new Error(`No memory manager available for workflow: ${id}`);
           }
         } catch (error) {
-          runLogger.error(`Failed to get/update resumed execution:`, error);
+          runLogger.error(`Failed to get/update resumed execution:`, { error });
           throw error; // Re-throw to prevent creating a new execution
         }
       } else {
@@ -802,7 +802,9 @@ export function createWorkflow<
             runLogger.warn("Failed to create execution via WorkflowRegistry, using fallback");
           }
         } catch (memoryError) {
-          runLogger.error("Failed to create execution with WorkflowRegistry:", memoryError);
+          runLogger.error("Failed to create execution with WorkflowRegistry:", {
+            error: memoryError,
+          });
         }
       }
 
@@ -841,7 +843,7 @@ export function createWorkflow<
       try {
         await publishWorkflowEvent(workflowStartEvent, executionContext);
       } catch (eventError) {
-        runLogger.warn("Failed to publish workflow start event:", eventError);
+        runLogger.warn("Failed to publish workflow start event:", { error: eventError });
       }
 
       // Log workflow start with only event-specific context
@@ -950,11 +952,10 @@ export function createWorkflow<
                 `Successfully stored suspension checkpoint for execution ${executionId}`,
               );
             } catch (suspendError) {
-              runLogger.error(
-                `Failed to save suspension state for execution ${executionId}:`,
-                suspendError,
-              );
-              runLogger.error("Failed to save suspension state:", suspendError);
+              runLogger.error(`Failed to save suspension state for execution ${executionId}:`, {
+                error: suspendError,
+              });
+              runLogger.error("Failed to save suspension state:", { error: suspendError });
             }
 
             // Update workflow execution status to suspended
@@ -973,7 +974,9 @@ export function createWorkflow<
                 });
                 runLogger.trace(`Updated workflow execution status to suspended`);
               } catch (updateError) {
-                runLogger.error(`Failed to update workflow status to suspended:`, updateError);
+                runLogger.error(`Failed to update workflow status to suspended:`, {
+                  error: updateError,
+                });
               }
             } else {
               runLogger.warn(`No historyEntry found, skipping status update`);
@@ -1023,7 +1026,7 @@ export function createWorkflow<
               },
             );
           } catch (stepError) {
-            runLogger.warn(`Failed to record step start for step ${index}:`, stepError);
+            runLogger.warn(`Failed to record step start for step ${index}:`, { error: stepError });
           }
 
           await hooks?.onStepStart?.(stateManager.state);
@@ -1040,7 +1043,7 @@ export function createWorkflow<
             stepIndex: index,
             stepType: step.type,
             stepName,
-            input: stateManager.state.data !== undefined ? stateManager.state.data : null,
+            input: stateManager.state.data,
           });
 
           // Use step-level schemas if available, otherwise fall back to workflow-level
@@ -1131,7 +1134,9 @@ export function createWorkflow<
                   },
                 });
               } catch (stepEndError) {
-                runLogger.warn(`Failed to record step completion for step ${index}:`, stepEndError);
+                runLogger.warn(`Failed to record step completion for step ${index}:`, {
+                  error: stepEndError,
+                });
               }
             }
 
@@ -1192,7 +1197,9 @@ export function createWorkflow<
               try {
                 await publishWorkflowEvent(stepSuspendEvent, executionContext);
               } catch (eventError) {
-                runLogger.warn("Failed to publish workflow step suspend event:", eventError);
+                runLogger.warn("Failed to publish workflow step suspend event:", {
+                  error: eventError,
+                });
               }
 
               // Then publish workflow suspend event
@@ -1206,7 +1213,7 @@ export function createWorkflow<
               try {
                 await publishWorkflowEvent(workflowSuspendEvent, executionContext);
               } catch (eventError) {
-                runLogger.warn("Failed to publish workflow suspend event:", eventError);
+                runLogger.warn("Failed to publish workflow suspend event:", { error: eventError });
               }
 
               // Update workflow status to suspended
@@ -1222,7 +1229,9 @@ export function createWorkflow<
                   });
                   runLogger.trace(`Updated workflow execution status to suspended`);
                 } catch (updateError) {
-                  runLogger.error(`Failed to update workflow status to suspended:`, updateError);
+                  runLogger.error(`Failed to update workflow status to suspended:`, {
+                    error: updateError,
+                  });
                 }
               }
 
@@ -1252,7 +1261,9 @@ export function createWorkflow<
                   },
                 });
               } catch (stepEndError) {
-                runLogger.warn(`Failed to record step error for step ${index}:`, stepEndError);
+                runLogger.warn(`Failed to record step error for step ${index}:`, {
+                  error: stepEndError,
+                });
               }
             }
             throw stepError; // Re-throw the original error
@@ -1271,7 +1282,7 @@ export function createWorkflow<
         try {
           await publishWorkflowEvent(workflowSuccessEvent, executionContext);
         } catch (eventError) {
-          runLogger.warn("Failed to publish workflow success event:", eventError);
+          runLogger.warn("Failed to publish workflow success event:", { error: eventError });
         }
 
         if (historyEntry) {
@@ -1282,7 +1293,7 @@ export function createWorkflow<
               output: finalState.result,
             });
           } catch (registrationError) {
-            runLogger.warn("Failed to record workflow completion:", registrationError);
+            runLogger.warn("Failed to record workflow completion:", { error: registrationError });
           }
         }
 
@@ -1344,7 +1355,7 @@ export function createWorkflow<
         try {
           await publishWorkflowEvent(workflowErrorEvent, executionContext);
         } catch (eventError) {
-          runLogger.warn("Failed to publish workflow error event:", eventError);
+          runLogger.warn("Failed to publish workflow error event:", { error: eventError });
         }
 
         if (historyEntry) {
@@ -1355,7 +1366,7 @@ export function createWorkflow<
               output: error,
             });
           } catch (registrationError) {
-            runLogger.warn("Failed to record workflow failure:", registrationError);
+            runLogger.warn("Failed to record workflow failure:", { error: registrationError });
           }
         }
 

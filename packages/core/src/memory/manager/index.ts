@@ -352,13 +352,10 @@ export class MemoryManager {
         content: m.content,
       }));
 
-      this.logger.debug(
-        {
-          conversationId: conversationId,
-          fetchedCount: messages.length,
-        },
-        "Fetched messages from memory",
-      );
+      this.logger.debug("Fetched messages from memory", {
+        conversationId: conversationId,
+        fetchedCount: messages.length,
+      });
 
       // Create memory read success event for new timeline
       const memoryReadSuccessEvent: MemoryReadSuccessEvent = {
@@ -390,10 +387,12 @@ export class MemoryManager {
       // Publish the memory read success event (background)
       this.publishTimelineEvent(context, memoryReadSuccessEvent);
 
-      this.logger.trace(
-        { conversationId, userId, agentId: this.resourceId, messageCount: messages.length },
-        "[Memory] Context loaded",
-      );
+      this.logger.trace("[Memory] Context loaded", {
+        conversationId,
+        userId,
+        agentId: this.resourceId,
+        messageCount: messages.length,
+      });
     } catch (error) {
       // Create memory read error event for new timeline
       const memoryReadErrorEvent = {
@@ -422,10 +421,12 @@ export class MemoryManager {
       // Publish the memory read error event (background)
       this.publishTimelineEvent(context, memoryReadErrorEvent);
 
-      this.logger.error(
-        { error, conversationId, userId, agentId: this.resourceId },
-        "[Memory] Failed to load context",
-      );
+      this.logger.error("[Memory] Failed to load context", {
+        error,
+        conversationId,
+        userId,
+        agentId: this.resourceId,
+      });
       // Continue with empty messages, but don't fail the operation
     }
 
@@ -457,10 +458,12 @@ export class MemoryManager {
           // Then save current input
           await this.saveCurrentInput(context, input, userId, conversationId);
         } catch (error) {
-          this.logger.error(
-            { error, conversationId, userId, agentId: this.resourceId },
-            "Failed to setup conversation and save input",
-          );
+          this.logger.error("Failed to setup conversation and save input", {
+            error,
+            conversationId,
+            userId,
+            agentId: this.resourceId,
+          });
           throw error; // Re-throw to trigger retry mechanism
         }
       },
@@ -483,23 +486,27 @@ export class MemoryManager {
           title: `New Chat ${new Date().toISOString()}`,
           metadata: {},
         });
-        this.logger.debug(
-          { conversationId, userId, agentId: this.resourceId },
-          "[Memory] Created new conversation",
-        );
+        this.logger.debug("[Memory] Created new conversation", {
+          conversationId,
+          userId,
+          agentId: this.resourceId,
+        });
       } else {
         // Update conversation's updatedAt
         await this.conversationMemory.updateConversation(conversationId, {});
-        this.logger.trace(
-          { conversationId, userId, agentId: this.resourceId },
-          `[Memory] Updated conversation`,
-        );
+        this.logger.trace(`[Memory] Updated conversation`, {
+          conversationId,
+          userId,
+          agentId: this.resourceId,
+        });
       }
     } catch (error) {
-      this.logger.error(
-        { error, conversationId, userId, agentId: this.resourceId },
-        "[Memory] Failed to ensure conversation exists",
-      );
+      this.logger.error("[Memory] Failed to ensure conversation exists", {
+        error,
+        conversationId,
+        userId,
+        agentId: this.resourceId,
+      });
     }
   }
 
@@ -524,25 +531,30 @@ export class MemoryManager {
         };
 
         await this.saveMessage(context, userMessage, userId, conversationId, "text");
-        this.logger.trace(
-          { conversationId, userId, agentId: this.resourceId },
-          "[Memory] Saved user message to conversation",
-        );
+        this.logger.trace("[Memory] Saved user message to conversation", {
+          conversationId,
+          userId,
+          agentId: this.resourceId,
+        });
       } else if (Array.isArray(input)) {
         // If input is BaseMessage[], save all to memory
         for (const message of input) {
           await this.saveMessage(context, message, userId, conversationId, "text");
         }
-        this.logger.debug(
-          { conversationId, userId, agentId: this.resourceId, messageCount: input.length },
-          `[Memory] Saved ${input.length} messages to conversation`,
-        );
+        this.logger.debug(`[Memory] Saved ${input.length} messages to conversation`, {
+          conversationId,
+          userId,
+          agentId: this.resourceId,
+          messageCount: input.length,
+        });
       }
     } catch (error) {
-      this.logger.error(
-        { error, conversationId, userId, agentId: this.resourceId },
-        "[Memory] Failed to save current input",
-      );
+      this.logger.error("[Memory] Failed to save current input", {
+        error,
+        conversationId,
+        userId,
+        agentId: this.resourceId,
+      });
     }
   }
 
@@ -629,7 +641,7 @@ export class MemoryManager {
         await this.addStepsToHistoryEntry(agentId, entry.id, entry.steps);
       }
     } catch (error) {
-      this.logger.error({ error, agentId, entryId: entry.id }, "Failed to store history entry");
+      this.logger.error("Failed to store history entry", { error, agentId, entryId: entry.id });
     }
   }
 
@@ -651,7 +663,7 @@ export class MemoryManager {
       }
       return undefined;
     } catch (error) {
-      this.logger.error({ error, agentId, entryId }, "Failed to get history entry");
+      this.logger.error("Failed to get history entry", { error, agentId, entryId });
       return undefined;
     }
   }
@@ -668,7 +680,7 @@ export class MemoryManager {
       const agentEntries = await this.historyMemory.getAllHistoryEntriesByAgent(agentId);
       return agentEntries;
     } catch (error) {
-      this.logger.error({ error, agentId }, "Failed to get all history entries");
+      this.logger.error("Failed to get all history entries", { error, agentId });
       return [];
     }
   }
@@ -714,7 +726,7 @@ export class MemoryManager {
       // Return the updated record with all relationships
       return await this.getHistoryEntryById(agentId, entryId);
     } catch (error) {
-      this.logger.error({ error, agentId, entryId }, "Failed to update history entry");
+      this.logger.error("Failed to update history entry", { error, agentId, entryId });
       return undefined;
     }
   }
@@ -761,7 +773,7 @@ export class MemoryManager {
       // Return the updated record with all relationships
       return await this.getHistoryEntryById(agentId, entryId);
     } catch (error) {
-      this.logger.error({ error, agentId, entryId }, "Failed to add steps to history entry");
+      this.logger.error("Failed to add steps to history entry", { error, agentId, entryId });
       return undefined;
     }
   }
@@ -792,10 +804,12 @@ export class MemoryManager {
 
       return await this.getHistoryEntryById(agentId, historyId);
     } catch (error) {
-      this.logger.error(
-        { error, agentId, historyId, eventId },
-        "Failed to add timeline event to history entry",
-      );
+      this.logger.error("Failed to add timeline event to history entry", {
+        error,
+        agentId,
+        historyId,
+        eventId,
+      });
       return undefined;
     }
   }

@@ -47,7 +47,7 @@ const supervisorAgent = new Agent({
 // Create logger
 const logger = createPinoLogger({
   name: "with-subagents",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "debug",
 });
 
 new VoltAgent({

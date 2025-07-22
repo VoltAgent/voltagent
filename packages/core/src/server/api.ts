@@ -211,7 +211,7 @@ app.openapi(getAgentsRoute, (c) => {
 
     return c.json(response, 200);
   } catch (error) {
-    logger.error("Failed to get agents:", error);
+    logger.error("Failed to get agents:", { error });
     return c.json(
       { success: false, error: "Failed to retrieve agents" } satisfies z.infer<typeof ErrorSchema>,
       500,
@@ -278,7 +278,7 @@ app.openapi(getWorkflowsRoute, (c) => {
 
     return c.json(response, 200);
   } catch (error) {
-    logger.error("Failed to get workflows:", error);
+    logger.error("Failed to get workflows:", { error });
     return c.json({ success: false as const, error: "Failed to retrieve workflows" }, 500);
   }
 });
@@ -308,7 +308,7 @@ app.get("/workflows/:id", (c: ApiContext) => {
       // Convert Zod schema to JSON schema using zodToJsonSchema
       inputSchema = zodSchemaToJsonUI(registeredWorkflow.inputSchema);
     } catch (error) {
-      logger.warn("Failed to convert input schema to JSON schema:", error);
+      logger.warn("Failed to convert input schema to JSON schema:", { error });
     }
   }
 
@@ -316,7 +316,7 @@ app.get("/workflows/:id", (c: ApiContext) => {
     try {
       suspendSchema = zodSchemaToJsonUI(registeredWorkflow.suspendSchema);
     } catch (error) {
-      logger.warn("Failed to convert suspend schema to JSON schema:", error);
+      logger.warn("Failed to convert suspend schema to JSON schema:", { error });
     }
   }
 
@@ -324,7 +324,7 @@ app.get("/workflows/:id", (c: ApiContext) => {
     try {
       resumeSchema = zodSchemaToJsonUI(registeredWorkflow.resumeSchema);
     } catch (error) {
-      logger.warn("Failed to convert resume schema to JSON schema:", error);
+      logger.warn("Failed to convert resume schema to JSON schema:", { error });
     }
   }
 
@@ -338,7 +338,7 @@ app.get("/workflows/:id", (c: ApiContext) => {
         try {
           convertedStep.inputSchema = zodSchemaToJsonUI(step.inputSchema);
         } catch (error) {
-          logger.warn(`Failed to convert input schema for step ${step.id}:`, error);
+          logger.warn(`Failed to convert input schema for step ${step.id}:`, { error });
         }
       }
 
@@ -346,7 +346,7 @@ app.get("/workflows/:id", (c: ApiContext) => {
         try {
           convertedStep.outputSchema = zodSchemaToJsonUI(step.outputSchema);
         } catch (error) {
-          logger.warn(`Failed to convert output schema for step ${step.id}:`, error);
+          logger.warn(`Failed to convert output schema for step ${step.id}:`, { error });
         }
       }
 
@@ -354,7 +354,7 @@ app.get("/workflows/:id", (c: ApiContext) => {
         try {
           convertedStep.suspendSchema = zodSchemaToJsonUI(step.suspendSchema);
         } catch (error) {
-          logger.warn(`Failed to convert suspend schema for step ${step.id}:`, error);
+          logger.warn(`Failed to convert suspend schema for step ${step.id}:`, { error });
         }
       }
 
@@ -362,7 +362,7 @@ app.get("/workflows/:id", (c: ApiContext) => {
         try {
           convertedStep.resumeSchema = zodSchemaToJsonUI(step.resumeSchema);
         } catch (error) {
-          logger.warn(`Failed to convert resume schema for step ${step.id}:`, error);
+          logger.warn(`Failed to convert resume schema for step ${step.id}:`, { error });
         }
       }
 
@@ -480,11 +480,11 @@ app.openapi(executeWorkflowRoute, async (c) => {
         registry.activeExecutions.delete(capturedExecutionId);
       }
 
-      logger.error("[API] Workflow execution failed:", error);
+      logger.error("[API] Workflow execution failed:", { error });
       throw error;
     }
   } catch (error) {
-    logger.error("Failed to execute workflow:", error);
+    logger.error("Failed to execute workflow:", { error });
     return c.json(
       {
         success: false as const,
@@ -579,7 +579,7 @@ app.get("/workflows/:id/history", async (c: ApiContext) => {
 
     return c.json(response);
   } catch (error) {
-    logger.error("Failed to get workflow history:", error);
+    logger.error("Failed to get workflow history:", { error });
     const response: ApiResponse<null> = {
       success: false,
       error: "Failed to retrieve workflow history",
@@ -670,7 +670,7 @@ app.openapi(suspendWorkflowRoute, async (c) => {
 
     return c.json(response, 200);
   } catch (error) {
-    logger.error("Failed to suspend workflow:", error);
+    logger.error("Failed to suspend workflow:", { error });
     return c.json(
       {
         success: false as const,
@@ -720,7 +720,7 @@ app.openapi(resumeWorkflowRoute, async (c) => {
 
     return c.json(response, 200);
   } catch (error) {
-    logger.error("Failed to resume workflow:", error);
+    logger.error("Failed to resume workflow:", { error });
     return c.json(
       {
         success: false as const,
@@ -763,7 +763,7 @@ app.openapi(getLogsRoute, (c) => {
       200,
     );
   } catch (error) {
-    logger.error("Failed to get logs:", error);
+    logger.error("Failed to get logs:", { error });
     return c.json(
       {
         success: false as const,
@@ -885,7 +885,7 @@ app.openapi(streamRoute, async (c) => {
               try {
                 controller.enqueue(new TextEncoder().encode(data));
               } catch (e) {
-                logger.error("Failed to enqueue data:", e);
+                logger.error("Failed to enqueue data:", { error: e });
                 streamClosed = true;
               }
             }
@@ -898,7 +898,7 @@ app.openapi(streamRoute, async (c) => {
                 controller.close();
                 streamClosed = true;
               } catch (e) {
-                logger.error("Failed to close controller:", e);
+                logger.error("Failed to close controller:", { error: e });
               }
             }
           };
@@ -1082,7 +1082,7 @@ app.openapi(streamRoute, async (c) => {
             }
           } catch (iterationError) {
             // Handle errors during stream iteration
-            logger.error("Error during stream iteration:", iterationError);
+            logger.error("Error during stream iteration:", { error: iterationError });
             const errorData = {
               error: (iterationError as Error)?.message ?? "Stream iteration failed",
               timestamp: new Date().toISOString(),
@@ -1095,7 +1095,7 @@ app.openapi(streamRoute, async (c) => {
           }
         } catch (error) {
           // Handle errors during initial setup
-          logger.error("Error during stream setup:", error);
+          logger.error("Error during stream setup:", { error });
           const errorData = {
             error: error instanceof Error ? error.message : "Stream setup failed",
             timestamp: new Date().toISOString(),
@@ -1106,12 +1106,12 @@ app.openapi(streamRoute, async (c) => {
           try {
             controller.enqueue(new TextEncoder().encode(errorMessage));
           } catch (e) {
-            logger.error("Failed to enqueue setup error message:", e);
+            logger.error("Failed to enqueue setup error message:", { error: e });
           }
           try {
             controller.close();
           } catch (e) {
-            logger.error("Failed to close controller after setup error:", e);
+            logger.error("Failed to close controller after setup error:", { error: e });
           }
         }
       },
@@ -1233,7 +1233,7 @@ app.openapi(streamObjectRoute, async (c) => {
               try {
                 controller.enqueue(new TextEncoder().encode(data));
               } catch (e) {
-                logger.error("Failed to enqueue data:", e);
+                logger.error("Failed to enqueue data:", { error: e });
                 streamClosed = true;
               }
             }
@@ -1246,7 +1246,7 @@ app.openapi(streamObjectRoute, async (c) => {
                 controller.close();
                 streamClosed = true;
               } catch (e) {
-                logger.error("Failed to close controller:", e);
+                logger.error("Failed to close controller:", { error: e });
               }
             }
           };
@@ -1261,7 +1261,7 @@ app.openapi(streamObjectRoute, async (c) => {
               ...(options as any).provider,
               // Add onError callback to handle streaming errors
               onError: async (error: any) => {
-                logger.error("Object stream error occurred:", error);
+                logger.error("Object stream error occurred:", { error });
                 const errorData = {
                   error: error?.message ?? "Object streaming failed",
                   timestamp: new Date().toISOString(),
@@ -1316,7 +1316,7 @@ app.openapi(streamObjectRoute, async (c) => {
             }
           } catch (iterationError) {
             // Handle errors during stream iteration
-            logger.error("Error during object stream iteration:", iterationError);
+            logger.error("Error during object stream iteration:", { error: iterationError });
             const errorData = {
               error: (iterationError as Error)?.message ?? "Object stream iteration failed",
               timestamp: new Date().toISOString(),
@@ -1331,7 +1331,7 @@ app.openapi(streamObjectRoute, async (c) => {
           }
         } catch (error) {
           // Handle errors during initial setup
-          logger.error("Error during object stream setup:", error);
+          logger.error("Error during object stream setup:", { error });
           const errorData = {
             error: error instanceof Error ? error.message : "Object stream setup failed",
             timestamp: new Date().toISOString(),
@@ -1342,12 +1342,12 @@ app.openapi(streamObjectRoute, async (c) => {
           try {
             controller.enqueue(new TextEncoder().encode(errorMessage));
           } catch (e) {
-            logger.error("Failed to enqueue setup error message:", e);
+            logger.error("Failed to enqueue setup error message:", { error: e });
           }
           try {
             controller.close();
           } catch (e) {
-            logger.error("Failed to close controller after setup error:", e);
+            logger.error("Failed to close controller after setup error:", { error: e });
           }
         }
       },
@@ -1394,7 +1394,7 @@ app.get("/updates", async (c: ApiContext) => {
             forceRefresh: true,
           });
         } catch (error) {
-          logger.debug("Background update check failed:", error);
+          logger.debug("Background update check failed:", { error });
         }
       });
     }
@@ -1439,7 +1439,7 @@ app.post("/updates", async (c: ApiContext) => {
       },
     });
   } catch (error) {
-    logger.error("Failed to update all packages:", error);
+    logger.error("Failed to update all packages:", { error });
     return c.json(
       {
         success: false,
@@ -1467,7 +1467,7 @@ app.post("/updates/:packageName", async (c: ApiContext) => {
       },
     });
   } catch (error) {
-    logger.error("Failed to update package:", error);
+    logger.error("Failed to update package:", { error });
     return c.json(
       {
         success: false,
@@ -1719,7 +1719,7 @@ export const createWebSocketServer = () => {
             }),
           );
         } catch (error) {
-          logger.error("[WebSocket] Failed to parse message:", error);
+          logger.error("[WebSocket] Failed to parse message:", { error });
         }
       });
 
@@ -1883,7 +1883,7 @@ export const createWebSocketServer = () => {
     });
 
     ws.on("error", (error) => {
-      logger.error("[WebSocket] Error:", error);
+      logger.error("[WebSocket] Error:", { error });
     });
   });
 
