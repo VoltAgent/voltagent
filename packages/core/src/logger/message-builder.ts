@@ -17,9 +17,18 @@ export enum ActionType {
   ERROR = "error",
 
   // Agent actions
+  GENERATION_START = "generationStart",
+  GENERATION_COMPLETE = "generationComplete",
   STREAM_START = "streamStart",
+  STREAM_COMPLETE = "streamComplete",
+  STREAM_STEP = "streamStep",
   STREAMING = "streaming",
+  OBJECT_GENERATION_START = "objectGenerationStart",
+  OBJECT_GENERATION_COMPLETE = "objectGenerationComplete",
+  STREAM_OBJECT_START = "streamObjectStart",
+  STREAM_OBJECT_COMPLETE = "streamObjectComplete",
   TOOL_CALL = "toolCall",
+  TOOL_ERROR = "toolError",
   DELEGATE = "delegate",
 
   // Tool actions

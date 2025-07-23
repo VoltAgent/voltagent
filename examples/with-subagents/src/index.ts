@@ -3,8 +3,6 @@ import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
-import { advancedSupervisorAgent } from "./advanced-methods.js";
-import { systemMessageOverrideAgent } from "./override-system-message.js";
 
 const uppercaseTool = createTool({
   name: "uppercase",
@@ -48,14 +46,14 @@ const supervisorAgent = new Agent({
 // Create logger
 // Advanced: With custom Pino options
 const logger = createPinoLogger({
-  level: "info",
+  level: "debug",
 });
 
 new VoltAgent({
   agents: {
-    main: supervisorAgent,
-    advanced: advancedSupervisorAgent,
-    override: systemMessageOverrideAgent,
+    supervisorAgent,
   },
   logger,
 });
+
+logger.error("VoltAgent initialized with subagents");

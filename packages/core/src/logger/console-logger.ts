@@ -102,7 +102,12 @@ export class InMemoryLogBuffer extends EventEmitter implements LogBuffer {
 
     const results = this.logs
       .filter((log) => {
-        if (filter.level && log.level.toLowerCase() !== filter.level.toLowerCase()) return false;
+        // Filter by level - show logs at this level and higher severity
+        if (filter.level) {
+          const filterLevelPriority = this.getLevelPriority(filter.level);
+          const logLevelPriority = this.getLevelPriority(log.level);
+          if (logLevelPriority < filterLevelPriority) return false;
+        }
         if (filter.agentId && log.agentId !== filter.agentId) return false;
         if (filter.conversationId && log.conversationId !== filter.conversationId) return false;
         if (filter.workflowId && log.workflowId !== filter.workflowId) return false;
@@ -123,6 +128,19 @@ export class InMemoryLogBuffer extends EventEmitter implements LogBuffer {
 
   clear(): void {
     this.logs = [];
+  }
+
+  private getLevelPriority(level: string): number {
+    const priorities: Record<string, number> = {
+      trace: 10,
+      debug: 20,
+      info: 30,
+      warn: 40,
+      error: 50,
+      fatal: 60,
+    };
+
+    return priorities[level.toLowerCase()] || 0;
   }
 
   size(): number {
