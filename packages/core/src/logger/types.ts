@@ -2,7 +2,6 @@ import type { Logger } from "@voltagent/internal";
 
 export interface AgentLoggerContext {
   agentId: string;
-  agentName?: string;
   conversationId?: string;
   userId?: string;
   modelName?: string;
@@ -10,7 +9,6 @@ export interface AgentLoggerContext {
 
 export interface WorkflowLoggerContext {
   workflowId: string;
-  workflowName?: string;
   executionId?: string;
   stepId?: string;
   stepType?: string;

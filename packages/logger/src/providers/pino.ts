@@ -145,7 +145,7 @@ export class PinoLoggerProvider implements LoggerProvider {
           translateTime: "yyyy-MM-dd HH:mm:ss.l o",
           ignore: "pid,hostname,env,component",
           messageFormat:
-            "[{component}] {msg}{if userId} | user={userId}{end}{if conversationId} conv={conversationId}{end}{if agentId} agent={agentId}{end}{if toolName} tool={toolName}{end}",
+            "{msg}{if userId} | user={userId}{end}{if conversationId} | conv={conversationId}{end}{if executionId} | exec={executionId}{end}",
           errorLikeObjectKeys: ["err", "error", "exception"],
           errorProps: "",
           singleLine: !["debug", "trace"].includes(options.level || getDefaultLogLevel()),
@@ -169,7 +169,7 @@ export class PinoLoggerProvider implements LoggerProvider {
   private setupLogCapture(pinoLogger: Logger): void {
     // Intercept the write stream to capture logs
     const stream = (pinoLogger as any)[pino.symbols.streamSym];
-    if (stream && stream.write) {
+    if (stream?.write) {
       const originalWrite = stream.write.bind(stream);
 
       stream.write = (chunk: any) => {
@@ -184,10 +184,7 @@ export class PinoLoggerProvider implements LoggerProvider {
 
             // Also add to external buffer if provided
             if (this.externalLogBuffer) {
-              console.log(`[PinoLogger] Adding to external buffer: "${logEntry.msg}"`);
               this.externalLogBuffer.add(logEntry);
-            } else {
-              console.log(`[PinoLogger] No external buffer connected`);
             }
           }
         } catch {

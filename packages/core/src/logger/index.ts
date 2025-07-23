@@ -11,6 +11,7 @@ export * from "./mcp-logger";
 export * from "./types";
 export * from "./events";
 export * from "./logger-proxy";
+export * from "./forwarding-logger-proxy";
 
 // Re-export logger types from internal
 export type { Logger, LogFn, LogEntry, LogFilter, LogBuffer } from "@voltagent/internal";

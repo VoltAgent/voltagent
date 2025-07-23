@@ -84,7 +84,6 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         { data, task: finalTask }, // ✅ Pass input data with task
         {
           agentId: agent.id,
-          agentName: agent.name,
           stepFunction,
           taskString,
           userContext: state.workflowContext.userContext,
@@ -117,7 +116,6 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           stepStartEvent.id,
           {
             agentId: agent.id,
-            agentName: agent.name,
             stepFunction,
             taskString,
             userContext: state.workflowContext.userContext,
@@ -149,7 +147,6 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           stepStartEvent.id,
           {
             agentId: agent.id,
-            agentName: agent.name,
             stepFunction,
             taskString,
             userContext: state.workflowContext.userContext,

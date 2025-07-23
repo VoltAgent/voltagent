@@ -1,5 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { WorkflowLoggerContext, WorkflowLoggerOptions } from "./types";
+import { buildWorkflowLogMessage, ActionType } from "./message-builder";
 
 /**
  * Create a logger instance for workflow operations
@@ -13,7 +14,7 @@ export function createWorkflowLogger(
 
   // Create child logger with workflow context
   return logger.child({
-    component: `Workflow:${context.workflowName || context.workflowId}`,
+    component: `Workflow:${context.workflowId}`,
     ...context,
     ...(options?.context || {}),
   });
@@ -32,27 +33,62 @@ export function logWorkflowEvent(
     ...data,
   };
 
+  const workflowName = data?.workflowId || "unknown";
+
   switch (event) {
     case "error":
-      logger.error(logData, `Workflow error: ${data?.error?.message || "Unknown error"}`);
+      logger.error(
+        logData,
+        buildWorkflowLogMessage(
+          workflowName,
+          ActionType.ERROR,
+          data?.error?.message || "Unknown error",
+        ),
+      );
       break;
     case "start":
-      logger.info(logData, "Workflow started");
+      logger.info(
+        logData,
+        buildWorkflowLogMessage(workflowName, ActionType.START, "Beginning execution"),
+      );
       break;
     case "complete":
-      logger.info(logData, "Workflow completed");
+      logger.info(
+        logData,
+        buildWorkflowLogMessage(workflowName, ActionType.COMPLETE, "Finished execution"),
+      );
       break;
     case "suspend":
-      logger.info(logData, "Workflow suspended");
+      logger.info(
+        logData,
+        buildWorkflowLogMessage(workflowName, ActionType.SUSPEND, "Execution suspended"),
+      );
       break;
     case "resume":
-      logger.info(logData, "Workflow resumed");
+      logger.info(
+        logData,
+        buildWorkflowLogMessage(workflowName, ActionType.RESUME, "Execution resumed"),
+      );
       break;
     case "step_start":
-      logger.debug(logData, `Workflow step started: ${data?.stepType}`);
+      logger.debug(
+        logData,
+        buildWorkflowLogMessage(
+          workflowName,
+          ActionType.STEP_START,
+          `Executing ${data?.stepType} step`,
+        ),
+      );
       break;
     case "step_complete":
-      logger.debug(logData, `Workflow step completed: ${data?.stepType}`);
+      logger.debug(
+        logData,
+        buildWorkflowLogMessage(
+          workflowName,
+          ActionType.STEP_COMPLETE,
+          `Completed ${data?.stepType} step`,
+        ),
+      );
       break;
   }
 }

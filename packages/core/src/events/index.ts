@@ -230,7 +230,7 @@ export class AgentEventEmitter extends EventEmitter {
 
     getGlobalLogger()
       .child({ component: "events", context: "EventPropagation" })
-      .debug(`Propagating event from ${agentId} to parents: ${parentIds.join(", ")}`);
+      .trace(`Propagating event from ${agentId} to parents: ${parentIds.join(", ")}`);
 
     const propagationTasks: Array<() => Promise<void>> = [];
 
@@ -257,11 +257,7 @@ export class AgentEventEmitter extends EventEmitter {
             return;
           }
 
-          getGlobalLogger()
-            .child({ component: "events", context: "EventPropagation" })
-            .debug(
-              `Using specific parent operation context: ${parentHistoryEntryId} for agent: ${parentId}`,
-            );
+          getGlobalLogger().child({ component: "events", context: "EventPropagation" });
 
           const enrichedEvent: AgentTimelineEvent = {
             ...event,
@@ -279,10 +275,6 @@ export class AgentEventEmitter extends EventEmitter {
             event: enrichedEvent as AgentTimelineEvent,
             skipPropagation: true, // Prevent recursive propagation cycles
           });
-
-          getGlobalLogger()
-            .child({ component: "events", context: "EventPropagation" })
-            .debug(`Successfully propagated event ${enrichedEvent.id} to parent ${parentId}`);
         } catch (error) {
           getGlobalLogger()
             .child({ component: "events", context: "EventPropagation" })

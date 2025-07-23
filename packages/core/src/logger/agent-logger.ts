@@ -13,7 +13,7 @@ export function createAgentLogger(
 
   // Create child logger with agent context
   return logger.child({
-    component: `Agent:${context.agentName || context.agentId}`,
+    component: `Agent:${context.agentId}`,
     ...context,
     ...(options?.context || {}),
   });

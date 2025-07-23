@@ -15,6 +15,7 @@ import type {
   ToolStartEvent,
   ToolSuccessEvent,
 } from "../events/types";
+import { buildAgentLogMessage, ActionType } from "../logger/message-builder";
 import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
@@ -257,7 +258,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.logger = new LoggerProxy({
       component: "agent",
       agentId: this.id,
-      agentName: this.name,
       modelName: this.getModelName(),
     });
 
@@ -265,7 +265,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.logger.debug(`Agent created: ${this.name}`, {
       event: LogEvents.AGENT_CREATED,
       agentId: this.id,
-      agentName: this.name,
       model: this.getModelName(),
       hasTools: !!options.tools,
       hasMemory: options.memory !== false,
@@ -726,14 +725,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (this.subAgentManager.hasSubAgents()) {
       // Create a real-time event forwarder for SubAgent events
       const forwardEvent = async (event: StreamEvent) => {
-        this.logger.debug(`Received SubAgent event: ${event.type} from ${event.subAgentName}`, {
-          eventType: event.type,
-          subAgentId: event.subAgentId,
-          subAgentName: event.subAgentName,
-          agentId: this.id,
-        });
+        // Don't log sub-agent events here - they will be forwarded via ForwardingLoggerProxy
 
-        // Use the utility function to forward events
+        // Use the utility function to forward events for timeline
         if (internalStreamForwarder) {
           await streamEventForwarder(event, {
             forwarder: internalStreamForwarder,
@@ -748,7 +742,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         sourceAgent: this,
         currentHistoryEntryId: historyEntryId,
         operationContext: options.operationContext,
-        forwardEvent, // Pass the real-time event forwarder
+        forwardEvent, // Pass the real-time event forwarder for timeline events
         // Pass effective maxSteps (options override or agent default)
         maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
         ...options,
@@ -772,6 +766,59 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       tools: toolsToUse,
       maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
     };
+  }
+
+  /**
+   * Get logger with parent context if available
+   */
+  protected getContextualLogger(parentAgentId?: string, parentHistoryEntryId?: string): Logger {
+    if (parentAgentId) {
+      const parentAgent = AgentRegistry.getInstance().getAgent(parentAgentId);
+      if (parentAgent) {
+        // Create child logger with parent context and parentExecutionId
+        const childLogger = this.logger.child({
+          parentAgentId,
+          isSubAgent: true,
+          delegationDepth: this.calculateDelegationDepth(parentAgentId),
+          // Add parentExecutionId directly to sub-agent's logger
+          ...(parentHistoryEntryId && {
+            parentExecutionId: parentHistoryEntryId,
+            parentHistoryId: parentHistoryEntryId,
+          }),
+        });
+
+        // Return the child logger directly without forwarding
+        // This ensures all sub-agent logs have parentExecutionId
+        return childLogger;
+      }
+    }
+    return this.logger;
+  }
+
+  /**
+   * Calculate delegation depth by traversing parent chain
+   */
+  private calculateDelegationDepth(parentAgentId: string | undefined): number {
+    if (!parentAgentId) return 0;
+
+    let depth = 1;
+    let currentParentId = parentAgentId;
+    const visited = new Set<string>();
+
+    while (currentParentId) {
+      if (visited.has(currentParentId)) break; // Prevent infinite loops
+      visited.add(currentParentId);
+
+      const parentIds = AgentRegistry.getInstance().getParentAgentIds(currentParentId);
+      if (parentIds.length > 0) {
+        depth++;
+        currentParentId = parentIds[0]; // Follow first parent
+      } else {
+        break;
+      }
+    }
+
+    return depth;
   }
 
   /**
@@ -1194,16 +1241,19 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context
-    const methodLogger = this.logger.child({
+    // Create method-scoped logger with all common context and parent info if available
+    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
+    const methodLogger = contextualLogger.child({
       userId,
       conversationId: finalConversationId,
       executionId: operationContext.historyEntry.id,
       operationName: "generateText",
+      // Preserve parent execution ID if present in contextual logger
+      ...(parentHistoryEntryId && {
+        parentExecutionId: parentHistoryEntryId,
+        parentHistoryId: parentHistoryEntryId,
+      }),
     });
-
-    // Prepare input for logging
-    const inputPreview = typeof input === "string" ? input : `${input.length} messages`;
 
     const modelName = this.getModelName();
 
@@ -1230,7 +1280,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       model: modelName,
       inputLength: typeof input === "string" ? input.length : input.length,
       messageCount: contextMessages?.length || 0,
-      input: inputPreview,
+      input,
     });
 
     if (operationContext.otelSpan) {
@@ -1391,7 +1441,23 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             ];
           }
 
-          methodLogger.debug("[LLM] - Stream Step Change:", stepData);
+          const description =
+            step.type === "text"
+              ? `Text generation completed (${stepData.text.length} chars)`
+              : step.type === "tool_call"
+                ? `Tool call initiated: ${step.name}`
+                : step.type === "tool_result"
+                  ? `Tool result received: ${step.name}`
+                  : "Processing stream step";
+
+          methodLogger.debug(
+            buildAgentLogMessage(
+              this.name,
+              "streamStep",
+              `${description} [${stepData.finishReason || "in-progress"}]`,
+            ),
+            stepData,
+          );
 
           // Keep existing step logging for INFO level
           if (step.type === "text") {
@@ -1413,12 +1479,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             });
 
             // Tool execution started
-            methodLogger.debug(`Executing tool: ${step.name}`, {
-              event: LogEvents.TOOL_EXECUTION_STARTED,
-              toolName: step.name,
-              toolCallId: step.id,
-              args: step.arguments,
-            });
+            methodLogger.debug(
+              buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${step.name}`),
+              {
+                event: LogEvents.TOOL_EXECUTION_STARTED,
+                toolName: step.name,
+                toolCallId: step.id,
+                args: step.arguments,
+              },
+            );
 
             if (step.name && step.id) {
               const tool = this.toolManager.getToolByName(step.name);
@@ -1640,13 +1709,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "completed",
       });
 
-      methodLogger.debug("[LLM] - Stream Finished:", {
-        text: response.text,
-        toolCalls: [],
-        toolResults: [],
-        finishReason: response.finishReason || "stop",
-        usage: response.usage,
-      });
+      methodLogger.debug(
+        buildAgentLogMessage(this.name, "streamComplete", "Stream generation completed"),
+        {
+          text: response.text,
+          toolCalls: [],
+          toolResults: [],
+          finishReason: response.finishReason || "stop",
+          usage: response.usage,
+        },
+      );
 
       // Log successful completion with usage details
       const usage = response.usage;
@@ -1790,29 +1862,34 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context
-    const methodLogger = this.logger.child({
+    // Create method-scoped logger with all common context and parent info if available
+    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
+    const methodLogger = contextualLogger.child({
       userId,
       conversationId: finalConversationId,
       executionId: operationContext.historyEntry.id,
       operationName: "streamText",
     });
 
-    // Prepare input for logging
-    const inputPreview = typeof input === "string" ? input : `${input.length} messages`;
-
     const modelName = this.getModelName();
 
     // Log stream generation start with only event-specific context
-    methodLogger.debug(`Stream generation started [${modelName}]`, {
-      event: LogEvents.AGENT_STREAM_STARTED,
-      operationType: "stream",
-      inputType: typeof input === "string" ? "string" : "messages",
-      contextLimit,
-      memoryEnabled: !!this.memoryManager.getMemory(),
-      model: modelName,
-      input: inputPreview,
-    });
+    methodLogger.debug(
+      buildAgentLogMessage(
+        this.name,
+        ActionType.STREAM_START,
+        `Starting text generation with ${modelName}`,
+      ),
+      {
+        event: LogEvents.AGENT_STREAM_STARTED,
+        operationType: "stream",
+        inputType: typeof input === "string" ? "string" : "messages",
+        contextLimit,
+        memoryEnabled: !!this.memoryManager.getMemory(),
+        model: modelName,
+        input,
+      },
+    );
 
     if (operationContext.otelSpan) {
       if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
@@ -1899,31 +1976,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
 
     const internalStreamEventForwarder = async (event: StreamEvent) => {
-      methodLogger.debug("[Real-time Stream] Received SubAgent event", {
-        eventType: event.type,
-        subAgentId: event.subAgentId,
-        subAgentName: event.subAgentName,
-      });
-
       // Update SubAgent status
       if (!subAgentStatus.has(event.subAgentId)) {
         subAgentStatus.set(event.subAgentId, { isActive: true, isCompleted: false });
-      }
-
-      // Check if this is a completion event (last meaningful event from SubAgent)
-      if (
-        event.type === "finish" ||
-        event.type === "error" ||
-        (event.type === "text-delta" && event.data?.textDelta?.includes("."))
-      ) {
-        // This might indicate SubAgent completion, but we'll handle it gracefully
-        methodLogger.debug(
-          `[Real-time Stream] Potential completion event from ${event.subAgentId}`,
-          {
-            subAgentId: event.subAgentId,
-            eventType: event.type,
-          },
-        );
       }
 
       // Immediately inject into stream if controller is available
@@ -1931,10 +1986,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         try {
           const formattedStreamPart = transformStreamEventToStreamPart(event);
           streamController.current.enqueue(formattedStreamPart);
-          methodLogger.debug("[Real-time Stream] Event injected into stream", {
-            eventType: event.type,
-            subAgentId: event.subAgentId,
-          });
         } catch (error) {
           methodLogger.error("[Real-time Stream] Failed to inject event", {
             error,
@@ -1965,16 +2016,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
     const resolvedModel = await this.resolveModel(dynamicValueOptions);
 
-    methodLogger.debug("Starting agent llm stream call");
-
-    methodLogger.debug("[LLM] - Streaming text", {
-      messages: messages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-      maxSteps,
-      tools: tools?.map((t) => t.name) || [],
-    });
+    methodLogger.debug(
+      buildAgentLogMessage(this.name, ActionType.STREAMING, "Processing LLM response"),
+      {
+        messages: messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        maxSteps,
+        tools: tools?.map((t) => t.name) || [],
+      },
+    );
 
     const response = await this.llm.streamText({
       messages,
@@ -2137,12 +2189,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           stepData.finishReason = "tool-calls";
 
           // Tool execution started
-          methodLogger.debug(`Executing tool: ${step.name}`, {
-            event: LogEvents.TOOL_EXECUTION_STARTED,
-            toolName: step.name,
-            toolCallId: step.id,
-            args: step.arguments,
-          });
+          methodLogger.debug(
+            buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${step.name}`),
+            {
+              event: LogEvents.TOOL_EXECUTION_STARTED,
+              toolName: step.name,
+              toolCallId: step.id,
+              args: step.arguments,
+            },
+          );
         } else if (step.type === "tool_result") {
           stepData.toolResults = [
             {
@@ -2155,7 +2210,23 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           ];
         }
 
-        methodLogger.debug("[LLM] - Stream Step Change:", stepData);
+        const description =
+          step.type === "text"
+            ? `Text generation completed (${stepData.text.length} chars)`
+            : step.type === "tool_call"
+              ? `Tool call initiated: ${step.name}`
+              : step.type === "tool_result"
+                ? `Tool result received: ${step.name}`
+                : "Processing stream step";
+
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            "streamStep",
+            `${description} [${stepData.finishReason || "in-progress"}]`,
+          ),
+          stepData,
+        );
 
         await onStepFinish(step);
         if (internalOptions.provider?.onStepFinish) {
@@ -2186,13 +2257,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           status: "completed",
         });
 
-        methodLogger.debug("[LLM] - Stream Finished:", {
-          text: result.text || "",
-          toolCalls: [],
-          toolResults: [],
-          finishReason: result.finishReason || "stop",
-          usage: result.usage,
-        });
+        methodLogger.debug(
+          buildAgentLogMessage(this.name, "streamComplete", "Stream generation completed"),
+          {
+            text: result.text || "",
+            toolCalls: [],
+            toolResults: [],
+            finishReason: result.finishReason || "stop",
+            usage: result.usage,
+          },
+        );
 
         const agentSuccessEvent: AgentSuccessEvent = {
           id: crypto.randomUUID(),
@@ -2453,8 +2527,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context
-    const methodLogger = this.logger.child({
+    // Create method-scoped logger with all common context and parent info if available
+    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
+    const methodLogger = contextualLogger.child({
       userId,
       conversationId: finalConversationId,
       executionId: operationContext.historyEntry.id,
@@ -2782,8 +2857,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context
-    const methodLogger = this.logger.child({
+    // Create method-scoped logger with all common context and parent info if available
+    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
+    const methodLogger = contextualLogger.child({
       userId,
       conversationId: finalConversationId,
       executionId: operationContext.historyEntry.id,

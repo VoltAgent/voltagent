@@ -34,7 +34,6 @@ function serializeWorkflowStep(step: any, index: number, workflowId: string): an
         ...baseStep,
         ...(step.agent && {
           agentId: step.agent.id,
-          agentName: step.agent.name,
         }),
         // Serialize task function if it's a function
         ...(typeof step.task === "function" && {

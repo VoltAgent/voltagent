@@ -1,6 +1,7 @@
 import type { Logger } from "@voltagent/internal";
 import type { ToolLoggerContext } from "./types";
 import { LogEvents } from "./events";
+import { buildToolLogMessage, ActionType } from "./message-builder";
 
 /**
  * Truncate or summarize large payloads for logging
@@ -52,6 +53,7 @@ export function logToolExecution(
   switch (phase) {
     case "start":
       // Log essential info at INFO level with args visible
+      const toolDescription = data?.toolDescription || "Processing request";
       logger.info(
         {
           event: LogEvents.TOOL_EXECUTION_STARTED,
@@ -62,7 +64,7 @@ export function logToolExecution(
           agentId: data?.agentId,
           args: data?.input ? truncateOrSummarize(data.input, 200) : undefined,
         },
-        `Executing tool`,
+        buildToolLogMessage(data?.toolName || "unknown", ActionType.EXECUTE, toolDescription),
       );
 
       // Log full input at DEBUG level
@@ -130,7 +132,11 @@ export function logToolExecution(
               }
             : "Unknown error",
         },
-        `Tool execution failed: ${data?.toolName} - ${data?.error?.message || "Unknown error"}`,
+        buildToolLogMessage(
+          data?.toolName || "unknown",
+          ActionType.ERROR,
+          data?.error?.message || "Unknown error",
+        ),
       );
       break;
   }

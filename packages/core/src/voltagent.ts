@@ -69,7 +69,7 @@ export class VoltAgent {
             .then(({ connectExternalLogBuffer }) => {
               if (connectExternalLogBuffer) {
                 connectExternalLogBuffer(options.logger as any, getGlobalLogBuffer());
-                this.logger.debug("Connected external logger to core log buffer");
+                this.logger.trace("Connected external logger to core log buffer");
               }
             })
             .catch(() => {

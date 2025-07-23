@@ -102,7 +102,12 @@ export class InMemoryLogBuffer extends EventEmitter implements LogBuffer {
         if (filter.agentId && log.agentId !== filter.agentId) return false;
         if (filter.conversationId && log.conversationId !== filter.conversationId) return false;
         if (filter.workflowId && log.workflowId !== filter.workflowId) return false;
-        if (filter.executionId && log.executionId !== filter.executionId) return false;
+        if (
+          filter.executionId &&
+          log.executionId !== filter.executionId &&
+          log.parentExecutionId !== filter.executionId
+        )
+          return false;
         if (filter.since && new Date(log.timestamp) < filter.since) return false;
         if (filter.until && new Date(log.timestamp) > filter.until) return false;
         return true;

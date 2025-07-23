@@ -73,7 +73,6 @@ export class LogStreamManager {
   private broadcastLog(log: LogEntry): void {
     if (this.clients.size === 0) return;
 
-    console.log(`[LogStream] Broadcasting log: "${log.msg}" to ${this.clients.size} clients`);
     devLogger.debug(`[LogStream] Broadcasting log: "${log.msg}"`);
 
     // Send log to each client based on their filter
@@ -96,9 +95,9 @@ export class LogStreamManager {
       return false;
     }
 
-    // If executionId filter is provided, only show logs with matching executionId
+    // If executionId filter is provided, check both executionId and parentExecutionId
     if (filter.executionId) {
-      return log.executionId === filter.executionId;
+      return log.executionId === filter.executionId || log.parentExecutionId === filter.executionId;
     }
 
     // For other filters, only apply if the log has those properties
@@ -130,9 +129,6 @@ export class LogStreamManager {
   private sendToClient(client: LogStreamClient, data: any): void {
     try {
       if (client.ws.readyState === client.ws.OPEN) {
-        console.log(
-          `[LogStream] Sending ${data.logs?.length || 0} logs to client, type: ${data.type}`,
-        );
         client.ws.send(JSON.stringify(data));
       }
     } catch (error) {

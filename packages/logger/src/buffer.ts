@@ -48,9 +48,13 @@ export class InMemoryLogBuffer implements LogBuffer {
       results = results.filter((entry) => entry.workflowId === filter.workflowId);
     }
 
-    // Filter by executionId
+    // Filter by executionId (also check parentExecutionId for sub-agent logs)
     if (filter.executionId) {
-      results = results.filter((entry) => entry.executionId === filter.executionId);
+      results = results.filter(
+        (entry) =>
+          entry.executionId === filter.executionId ||
+          entry.parentExecutionId === filter.executionId,
+      );
     }
 
     // Filter by time range
