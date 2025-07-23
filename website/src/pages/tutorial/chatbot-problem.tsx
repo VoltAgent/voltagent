@@ -56,7 +56,7 @@ export default function ChatbotProblemTutorial() {
               <div className="max-w-4xl mx-auto">
                 <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden border border-white/10">
                   <iframe
-                    src="https://www.youtube.com/embed/MAg9qFd96f0"
+                    src="https://www.youtube.com/embed/QVLUGG2ZhTI"
                     title="VoltAgent Chatbot Problem Tutorial - Why Basic Agents Are Useless"
                     className="absolute top-0 left-0 w-full h-full"
                     frameBorder="0"
