@@ -7,16 +7,6 @@ export {
   type LoggerWithBuffer,
 } from "./base";
 
-export {
-  createComponentLogger,
-  createRequestLogger,
-  createAgentContextLogger,
-  createWorkflowContextLogger,
-  createToolContextLogger,
-  createMemoryContextLogger,
-  createMCPContextLogger,
-} from "./child-logger";
-
 export { InMemoryLogBuffer } from "./buffer";
 
 export {
@@ -39,3 +29,6 @@ export type {
 } from "./providers";
 
 export { PinoLoggerProvider } from "./providers";
+
+// Re-export Pino types for convenience
+export type { LoggerOptions as PinoLoggerOptions } from "pino";

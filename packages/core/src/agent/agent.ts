@@ -725,7 +725,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (this.subAgentManager.hasSubAgents()) {
       // Create a real-time event forwarder for SubAgent events
       const forwardEvent = async (event: StreamEvent) => {
-        // Don't log sub-agent events here - they will be forwarded via ForwardingLoggerProxy
+        // Don't log sub-agent events here - they are handled separately
 
         // Use the utility function to forward events for timeline
         if (internalStreamForwarder) {
@@ -1257,28 +1257,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     const modelName = this.getModelName();
 
-    // Prepare message history preview (last 2-3 messages)
-    let messageHistory = undefined;
-    if (Array.isArray(input) && input.length > 0) {
-      messageHistory = input.slice(-3).map((msg) => ({
-        role: msg.role,
-        content:
-          typeof msg.content === "string" && msg.content.length > 50
-            ? msg.content.substring(0, 50) + "..."
-            : msg.content,
-      }));
-    }
-
     // Log generation start with only event-specific context
     methodLogger.debug(`Starting generation [${modelName}]`, {
       event: LogEvents.AGENT_GENERATION_STARTED,
-      messageHistory,
       operationType: "text",
-      inputType: typeof input === "string" ? "string" : "messages",
       contextLimit,
       memoryEnabled: !!this.memoryManager.getMemory(),
       model: modelName,
-      inputLength: typeof input === "string" ? input.length : input.length,
       messageCount: contextMessages?.length || 0,
       input,
     });

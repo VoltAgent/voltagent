@@ -16,7 +16,7 @@ import type { Logger } from "@voltagent/internal";
 import type * as z from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { type Tool, createTool } from "../../tool";
-import { createMCPLogger, logMCPConnection, getGlobalLogger } from "../../logger";
+import { getGlobalLogger } from "../../logger";
 import type {
   ClientInfo,
   HTTPServerConfig,
@@ -176,7 +176,8 @@ export class MCPClient extends EventEmitter {
 
     // Create MCP-specific logger
     const serverInfo = this.getServerInfo(this.serverConfig);
-    const mcpLogger = createMCPLogger(this.logger, {
+    const mcpLogger = this.logger.child({
+      component: `MCP:${serverInfo.type}-server`,
       serverName: `${serverInfo.type}-server`,
       transport: serverInfo.type,
       method: "connect",
@@ -187,7 +188,8 @@ export class MCPClient extends EventEmitter {
       this.connected = true;
 
       // Log successful connection
-      logMCPConnection(mcpLogger, "connect", {
+      mcpLogger.info(`MCP server connected: ${serverInfo.type}-server`, {
+        event: `mcp_connect`,
         serverName: `${serverInfo.type}-server`,
         serverType: serverInfo.type,
         serverUrl: serverInfo.url,
@@ -196,10 +198,14 @@ export class MCPClient extends EventEmitter {
       this.emit("connect");
     } catch (error) {
       // Log connection error
-      logMCPConnection(mcpLogger, "error", {
-        serverName: `${serverInfo.type}-server`,
-        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-      });
+      mcpLogger.error(
+        `MCP connection error: ${serverInfo.type}-server - ${error instanceof Error ? error.message : "Unknown error"}`,
+        {
+          event: `mcp_error`,
+          serverName: `${serverInfo.type}-server`,
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        },
+      );
 
       // If this is an HTTP config with fallback enabled, try SSE
       if (this.shouldAttemptFallback && this.isHTTPServer(this.serverConfig)) {

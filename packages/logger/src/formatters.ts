@@ -9,7 +9,7 @@ export function getDefaultLogLevel(): string {
     return envLevel.toLowerCase();
   }
 
-  return process.env.NODE_ENV === "production" ? "info" : "debug";
+  return process.env.NODE_ENV === "production" ? "error" : "info";
 }
 
 /**

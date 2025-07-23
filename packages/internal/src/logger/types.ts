@@ -4,6 +4,11 @@
  */
 
 /**
+ * Valid log levels
+ */
+export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent";
+
+/**
  * Log function signatures
  */
 export interface LogFn {
@@ -77,7 +82,7 @@ export interface LoggerOptions {
  */
 export interface LogEntry {
   timestamp: string;
-  level: string;
+  level: LogLevel;
   msg: string;
   component?: string;
   agentId?: string;
@@ -92,7 +97,7 @@ export interface LogEntry {
  * Log filter for querying logs
  */
 export interface LogFilter {
-  level?: string;
+  level?: LogLevel;
   agentId?: string;
   conversationId?: string;
   workflowId?: string;

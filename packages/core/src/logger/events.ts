@@ -33,8 +33,6 @@ export const LogEvents = {
   TOOL_EXECUTION_STARTED: "tool.execution.started",
   TOOL_EXECUTION_COMPLETED: "tool.execution.completed",
   TOOL_EXECUTION_FAILED: "tool.execution.failed",
-  TOOL_VALIDATION_PASSED: "tool.validation.passed",
-  TOOL_VALIDATION_FAILED: "tool.validation.failed",
   TOOL_REGISTERED: "tool.lifecycle.registered",
   TOOL_REMOVED: "tool.lifecycle.removed",
 
@@ -44,9 +42,6 @@ export const LogEvents = {
   MEMORY_OPERATION_FAILED: "memory.operation.failed",
   MEMORY_CONVERSATION_LOADED: "memory.conversation.loaded",
   MEMORY_CONVERSATION_SAVED: "memory.conversation.saved",
-  MEMORY_CACHE_HIT: "memory.cache.hit",
-  MEMORY_CACHE_MISS: "memory.cache.miss",
-  MEMORY_CACHE_EVICTED: "memory.cache.evicted",
 
   // Workflow events
   WORKFLOW_STARTED: "workflow.execution.started",

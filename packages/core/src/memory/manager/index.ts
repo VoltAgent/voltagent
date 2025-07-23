@@ -3,7 +3,7 @@ import type { StepWithContent } from "../../agent/providers";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { OperationContext } from "../../agent/types";
 import { AgentEventEmitter } from "../../events";
-import { createMemoryLogger, logMemoryOperation, getGlobalLogger } from "../../logger";
+import { getGlobalLogger, LogEvents } from "../../logger";
 import type {
   AgentTimelineEvent,
   MemoryReadStartEvent,
@@ -151,7 +151,8 @@ export class MemoryManager {
     if (!this.conversationMemory || !userId) return;
 
     // Create memory-specific logger
-    const memoryLogger = createMemoryLogger(this.logger, {
+    const memoryLogger = this.logger.child({
+      component: `Memory:conversation`,
       memoryType: "conversation",
       operation: "write",
       agentId: this.resourceId,
@@ -189,7 +190,10 @@ export class MemoryManager {
       await this.conversationMemory.addMessage(memoryMessage, conversationId);
 
       // Log successful memory operation
-      logMemoryOperation(memoryLogger, "write", true, {
+      memoryLogger.trace(`Memory write successful (1 records)`, {
+        event: LogEvents.MEMORY_OPERATION_COMPLETED,
+        operation: "write",
+        success: true,
         recordCount: 1,
       });
 
@@ -247,9 +251,15 @@ export class MemoryManager {
       this.publishTimelineEvent(context, memoryWriteErrorEvent);
 
       // Log memory operation failure
-      logMemoryOperation(memoryLogger, "write", false, {
-        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-      });
+      memoryLogger.error(
+        `Memory write failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        {
+          event: LogEvents.MEMORY_OPERATION_FAILED,
+          operation: "write",
+          success: false,
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        },
+      );
     }
   }
 

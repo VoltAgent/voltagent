@@ -9,17 +9,23 @@ import type { LoggerProvider, LoggerWithProvider } from "./interface";
  * Pino-based logger provider
  */
 export class PinoLoggerProvider implements LoggerProvider {
-  name = "pino";
+  public name = "pino";
   private logBuffer: LogBuffer;
   private externalLogBuffer?: LogBuffer;
+  private customPinoOptions?: PinoLoggerOptions;
 
-  constructor(bufferSize?: number, externalLogBuffer?: LogBuffer) {
-    const size = bufferSize || parseInt(process.env.VOLTAGENT_LOG_BUFFER_SIZE || "1000", 10);
+  public constructor(
+    bufferSize?: number,
+    externalLogBuffer?: LogBuffer,
+    pinoOptions?: PinoLoggerOptions,
+  ) {
+    const size = bufferSize || Number.parseInt(process.env.VOLTAGENT_LOG_BUFFER_SIZE || "1000", 10);
     this.logBuffer = new InMemoryLogBuffer(size);
     this.externalLogBuffer = externalLogBuffer;
+    this.customPinoOptions = pinoOptions;
   }
 
-  createLogger(options?: LoggerOptions): LoggerWithProvider {
+  public createLogger(options?: LoggerOptions): LoggerWithProvider {
     const pinoOptions = this.createPinoOptions(options);
     const pinoInstance = pino(pinoOptions);
 
@@ -68,7 +74,7 @@ export class PinoLoggerProvider implements LoggerProvider {
     return loggerWithProvider;
   }
 
-  createChildLogger(
+  public createChildLogger(
     parent: Logger & { _pinoInstance?: any },
     bindings: Record<string, any>,
     _options?: LoggerOptions,
@@ -83,16 +89,18 @@ export class PinoLoggerProvider implements LoggerProvider {
     return parent.child(bindings);
   }
 
-  getLogBuffer(): LogBuffer {
+  public getLogBuffer(): LogBuffer {
     return this.logBuffer;
   }
 
-  async flush(): Promise<void> {
-    // Pino doesn't have built-in flush, but we can ensure stream is flushed
+  public async flush(): Promise<void> {
+    // Pino logs synchronously by default, so no flush needed.
+    // This method exists for LoggerProvider interface compatibility
+    // and future async transport support.
     return Promise.resolve();
   }
 
-  async close(): Promise<void> {
+  public async close(): Promise<void> {
     // Clear the buffer on close
     this.logBuffer.clear();
     return Promise.resolve();
@@ -155,11 +163,20 @@ export class PinoLoggerProvider implements LoggerProvider {
     }
 
     // Remove VoltAgent-specific options before passing to Pino
-    const { format: _, pretty: __, redact: ___, bufferSize: ____, ...restOptions } = options;
+    const {
+      format: _,
+      pretty: __,
+      redact: ___,
+      bufferSize: ____,
+      pinoOptions: _____,
+      ...restOptions
+    } = options;
 
+    // Simple merge - user options override everything
     return {
       ...pinoOptions,
       ...restOptions,
+      ...this.customPinoOptions,
     };
   }
 

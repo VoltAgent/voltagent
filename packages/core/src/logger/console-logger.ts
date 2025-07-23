@@ -66,7 +66,11 @@ export function createConsoleLogger(options: { name?: string; level?: string } =
   if (options.name) {
     context.component = options.name;
   }
-  return new ConsoleLogger(context, options.level || process.env.LOG_LEVEL || "info");
+  const defaultLevel =
+    process.env.VOLTAGENT_LOG_LEVEL ||
+    process.env.LOG_LEVEL ||
+    (process.env.NODE_ENV === "production" ? "error" : "info");
+  return new ConsoleLogger(context, options.level || defaultLevel);
 }
 
 /**

@@ -3,7 +3,7 @@ title: Logging
 slug: /observability/logging
 ---
 
-VoltAgent automatically logs important events from your agents and workflows. You can customize logging at multiple levels to help debug issues and monitor your AI applications.
+VoltAgent provides automatic logging for all agent and workflow events. By default, it uses a simple console logger for quick prototyping, but for production use, you should use the powerful Pino-based logger from `@voltagent/logger` package which offers pretty formatting, file transports, and advanced features.
 
 ## Global Logger Configuration
 
@@ -11,25 +11,94 @@ When creating a VoltAgent instance, you can configure logging globally for all a
 
 ```javascript
 import { VoltAgent } from "@voltagent/core";
-import { createLogger } from "@voltagent/logger";
+import { createPinoLogger } from "@voltagent/logger";
 
-// Option 1: Use default logger (recommended for getting started)
+// Option 1: Use built-in console logger (basic, for development only)
 const voltAgent = new VoltAgent({
   agents: [myAgent],
   workflows: [myWorkflow],
 });
+// ⚠️ This uses a simple console logger with basic formatting
+// Output: [2024-01-20T10:30:45.123Z] INFO {component: "voltagent"}: Agent started
 
-// Option 2: Provide custom logger with specific configuration
-const customLogger = createLogger({
-  level: "debug", // More verbose logging
-  format: "pretty", // Human-readable format
+// Option 2: Use Pino logger (recommended for production)
+const logger = createPinoLogger({
+  level: "debug", // More verbose logging (allowed: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent")
+  format: "pretty", // Human-readable format in development
   name: "my-app", // Add app name to all logs
 });
 
 const voltAgent = new VoltAgent({
-  logger: customLogger,
+  logger: logger,
+  agents: { myAgent },
+  workflows: { myWorkflow },
+});
+// ✅ This uses Pino with pretty formatting, transports, and all advanced features
+```
+
+## Default Logger Behavior
+
+When you don't provide a logger to VoltAgent, it uses a built-in `ConsoleLogger` from `@voltagent/core`:
+
+### ConsoleLogger Features:
+
+- ✅ Basic console output with timestamps
+- ✅ Standard log levels (trace, debug, info, warn, error, fatal)
+- ✅ Respects `VOLTAGENT_LOG_LEVEL` or `LOG_LEVEL` environment variables
+- ✅ Simple JSON context display
+
+### ConsoleLogger Limitations:
+
+- ❌ No pretty formatting or colors
+- ❌ No file transports or custom outputs
+- ❌ No log buffering or streaming
+- ❌ No advanced Pino features
+- ❌ Basic output format: `[timestamp] LEVEL {context}: message`
+
+### When to Use Each Logger:
+
+| Use Case                     | Logger Choice                 | Example                                                   |
+| ---------------------------- | ----------------------------- | --------------------------------------------------------- |
+| Quick prototyping            | Default ConsoleLogger         | `new VoltAgent({ agents })`                               |
+| Development with nice output | Pino with pretty format       | `createPinoLogger({ format: "pretty" })`                  |
+| Production with file logging | Pino with transports          | `createPinoLogger({ pinoOptions: { transport: {...} } })` |
+| VoltOps Platform integration | Any logger (logs always sent) | Both work with VoltOps                                    |
+
+💡 **Tip**: Always use `createPinoLogger` for production applications to get proper formatting, performance, and transport options.
+
+## Using Pino Logger with Advanced Features
+
+For advanced use cases, you can use `createPinoLogger` which provides access to all Pino features including custom transports:
+
+```javascript
+import { createPinoLogger } from "@voltagent/logger";
+
+// Basic Pino logger with our defaults
+const logger = createPinoLogger({
+  level: "debug", // allowed: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent"
+  name: "my-app",
+});
+
+// Advanced: With custom Pino options
+const logger = createPinoLogger({
+  level: "info",
+  pinoOptions: {
+    // Any Pino-specific option can go here
+    serializers: {
+      req: (req) => ({ method: req.method, url: req.url }),
+    },
+    hooks: {
+      logMethod(args, method) {
+        // Custom hook logic
+        method.apply(this, args);
+      },
+    },
+  },
+});
+
+const voltAgent = new VoltAgent({
+  logger,
   agents: [myAgent],
-  workflows: [myWorkflow],
 });
 ```
 
@@ -39,7 +108,7 @@ Each agent can have its own logger configuration that overrides the global setti
 
 ```javascript
 import { Agent } from "@voltagent/core";
-import { createLogger } from "@voltagent/logger";
+import { createPinoLogger } from "@voltagent/logger";
 
 const agent = new Agent({
   name: "CustomerSupport",
@@ -48,7 +117,7 @@ const agent = new Agent({
   instructions: "You are a helpful customer support agent",
 
   // This agent needs more detailed logs
-  logger: createLogger({
+  logger: createPinoLogger({
     level: "debug",
     name: "customer-support",
   }),
@@ -74,7 +143,7 @@ Workflows can also have custom logger configuration:
 
 ```javascript
 import { createWorkflow } from "@voltagent/core";
-import { createLogger } from "@voltagent/logger";
+import { createPinoLogger } from "@voltagent/logger";
 
 const processOrderWorkflow = createWorkflow(
   {
@@ -83,7 +152,7 @@ const processOrderWorkflow = createWorkflow(
     resultSchema: z.object({ status: z.string() }),
 
     // More verbose logging for this critical workflow
-    logger: createLogger({
+    logger: createPinoLogger({
       level: "info",
       name: "order-processing",
     }),
@@ -107,23 +176,148 @@ Workflow logs include:
 - `stepId` - Current step being executed
 - `stepType` - Type of step (andThen, andAgent, etc.)
 
+## Custom Transports and File Logging
+
+⚠️ **IMPORTANT**: When you specify a custom transport, it **COMPLETELY OVERRIDES** the default console output. This means your logs will **NOT** appear in the console unless you explicitly include pino-pretty.
+
+### File-Only Logging (No Console Output)
+
+```javascript
+import { createPinoLogger } from "@voltagent/logger";
+
+const fileOnlyLogger = createPinoLogger({
+  level: "info",
+  pinoOptions: {
+    transport: {
+      target: "pino/file",
+      options: { destination: "./app.log" },
+    },
+  },
+});
+
+// ⚠️ This will ONLY write to file, NOT to console!
+fileOnlyLogger.info("This goes to file only");
+```
+
+### Console + File Logging (Recommended)
+
+To keep console output AND add file logging, you must specify BOTH transports:
+
+```javascript
+const logger = createPinoLogger({
+  level: "info",
+  pinoOptions: {
+    transport: {
+      targets: [
+        // Console output with our default configuration
+        {
+          target: "pino-pretty",
+          options: {
+            colorize: true,
+            translateTime: "yyyy-MM-dd HH:mm:ss.l o",
+            ignore: "pid,hostname,env,component",
+            messageFormat:
+              "{msg}{if userId} | user={userId}{end}{if conversationId} | conv={conversationId}{end}{if executionId} | exec={executionId}{end}",
+            errorLikeObjectKeys: ["err", "error", "exception"],
+            errorProps: "",
+            singleLine: true, // Set to false for debug/trace levels
+            messageKey: "msg",
+          },
+        },
+        // File output
+        {
+          target: "pino/file",
+          options: {
+            destination: "./app.log",
+            mkdir: true, // Create directory if it doesn't exist
+          },
+        },
+      ],
+    },
+  },
+});
+
+// ✅ This will write to BOTH console and file
+logger.info("This appears in console AND file");
+```
+
+### Our Default Console Configuration
+
+When you don't specify any transport, we use this pino-pretty configuration in development:
+
+```javascript
+{
+  target: "pino-pretty",
+  options: {
+    colorize: true,
+    translateTime: "yyyy-MM-dd HH:mm:ss.l o", // Example: 2024-01-20 14:30:45.123 +0300
+    ignore: "pid,hostname,env,component",      // Hide these fields from output
+    messageFormat: "{msg}{if userId} | user={userId}{end}{if conversationId} | conv={conversationId}{end}{if executionId} | exec={executionId}{end}",
+    errorLikeObjectKeys: ["err", "error", "exception"],
+    errorProps: "",
+    singleLine: true,  // Single line for info/warn/error
+    messageKey: "msg",
+  },
+}
+```
+
+### Multiple Log Files Example
+
+```javascript
+const logger = createPinoLogger({
+  level: "debug",
+  pinoOptions: {
+    transport: {
+      targets: [
+        // Console for all logs
+        {
+          target: "pino-pretty",
+          options: { colorize: true },
+        },
+        // Error logs to separate file
+        {
+          target: "pino/file",
+          options: { destination: "./error.log" },
+          level: "error",
+        },
+        // All logs to general file
+        {
+          target: "pino/file",
+          options: { destination: "./app.log" },
+        },
+      ],
+    },
+  },
+});
+```
+
 ## Environment Variables
 
 Configure logging without changing code using environment variables:
 
-| Variable                    | Description                      | Default                       | Options                                            |
-| --------------------------- | -------------------------------- | ----------------------------- | -------------------------------------------------- |
-| `VOLTAGENT_LOG_LEVEL`       | Minimum log level to display     | `info`                        | `trace`, `debug`, `info`, `warn`, `error`, `fatal` |
-| `VOLTAGENT_LOG_FORMAT`      | Output format                    | `json` (prod), `pretty` (dev) | `json`, `pretty`                                   |
-| `VOLTAGENT_LOG_BUFFER_SIZE` | Number of logs to keep in memory | `1000`                        | Any positive number                                |
+| Variable                    | Description                                         | Default                       | Options                                                      |
+| --------------------------- | --------------------------------------------------- | ----------------------------- | ------------------------------------------------------------ |
+| `VOLTAGENT_LOG_LEVEL`       | Minimum log level to display                        | `error` (prod), `info` (dev)  | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent` |
+| `LOG_LEVEL`                 | Alternative to VOLTAGENT_LOG_LEVEL (lower priority) | `error` (prod), `info` (dev)  | Same as above                                                |
+| `VOLTAGENT_LOG_FORMAT`      | Output format (Pino only)                           | `json` (prod), `pretty` (dev) | `json`, `pretty`                                             |
+| `VOLTAGENT_LOG_BUFFER_SIZE` | Number of logs to keep in memory                    | `1000`                        | Any positive number                                          |
+
+**Note**: Both ConsoleLogger and PinoLogger check environment variables in this order:
+
+1. `VOLTAGENT_LOG_LEVEL` (recommended, takes precedence)
+2. `LOG_LEVEL` (fallback for compatibility)
+3. Default based on NODE_ENV
 
 Example:
 
 ```bash
-# Development
-VOLTAGENT_LOG_LEVEL=debug VOLTAGENT_LOG_FORMAT=pretty npm run dev
+# Using VoltAgent-specific variable (recommended)
+VOLTAGENT_LOG_LEVEL=debug npm run dev
 
-# Production
+# Using generic variable (also works)
+LOG_LEVEL=debug npm run dev
+
+# Production with specific level
 VOLTAGENT_LOG_LEVEL=warn VOLTAGENT_LOG_FORMAT=json npm start
 ```
 
@@ -131,14 +325,91 @@ VOLTAGENT_LOG_LEVEL=warn VOLTAGENT_LOG_FORMAT=json npm start
 
 Use appropriate log levels for different scenarios:
 
-| Level   | When to Use                  | Example                              |
-| ------- | ---------------------------- | ------------------------------------ |
-| `trace` | Very detailed debugging info | Function entry/exit points           |
-| `debug` | Debugging information        | Variable values, decision logic      |
-| `info`  | Important events             | Agent started, workflow completed    |
-| `warn`  | Warning conditions           | Retry attempts, fallback behavior    |
-| `error` | Error conditions             | API failures, invalid inputs         |
-| `fatal` | Critical failures            | System crashes, unrecoverable errors |
+| Level    | When to Use                  | Example                              |
+| -------- | ---------------------------- | ------------------------------------ |
+| `trace`  | Very detailed debugging info | Function entry/exit points           |
+| `debug`  | Debugging information        | Variable values, decision logic      |
+| `info`   | Important events             | Agent started, workflow completed    |
+| `warn`   | Warning conditions           | Retry attempts, fallback behavior    |
+| `error`  | Error conditions             | API failures, invalid inputs         |
+| `fatal`  | Critical failures            | System crashes, unrecoverable errors |
+| `silent` | Disable all logging          | Testing or special scenarios         |
+
+## What Events Are Logged at Each Level
+
+This table shows which events and information are visible at each log level across VoltAgent components:
+
+### Trace Level (Most Detailed)
+
+| Component    | Events Logged                                                                                                                                      | Information Included                                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **Workflow** | • Workflow execution creation/updates<br/>• Step recording (start/end)<br/>• Timeline events<br/>• Suspension checkpoints<br/>• Cleanup operations | `workflowId`, `executionId`, `stepId`, `status`, `metadata`, `suspensionMetadata` |
+| **Memory**   | • Context loading<br/>• Conversation updates<br/>• Message saves<br/>• SQL query execution<br/>• History operations                                | `conversationId`, `userId`, `agentId`, `messageId`, SQL queries with parameters   |
+| **API**      | • Suspension operations<br/>• Execution state tracking                                                                                             | `[API]` prefix, `executionId`, operation details                                  |
+| **Core**     | • External logger connections<br/>• Registry initialization                                                                                        | Connection status, buffer information                                             |
+
+### Debug Level
+
+| Component    | Events Logged                                                                              | Information Included                                                  |
+| ------------ | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| **Agent**    | • Agent creation<br/>• VoltOps client initialization<br/>• Subagent completion (streaming) | `agentId`, `agentName`, `modelName`, `event: LogEvents.AGENT_CREATED` |
+| **Workflow** | • Resume attempts<br/>• Shutdown suspension                                                | `workflowId`, `executionId`, suspension context                       |
+| **Memory**   | • Message fetching<br/>• Conversation creation<br/>• Batch saves                           | `conversationId`, message count, operation type                       |
+| **Tools**    | • Tool/toolkit registration<br/>• Tool removal                                             | `toolName`, `toolkitName`, tool count                                 |
+| **MCP**      | • Connection fallbacks (HTTP→SSE)                                                          | Connection type, fallback reason                                      |
+| **API**      | • Update checks                                                                            | Check results, version information                                    |
+
+### Info Level
+
+| Component  | Events Logged                                                                        | Information Included                               |
+| ---------- | ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| **Core**   | • Server startup/shutdown<br/>• Graceful shutdown signals<br/>• Update notifications | `[VoltAgent]` prefix, signal type, shutdown status |
+| **Memory** | • Migration success                                                                  | Migration details, affected records                |
+| **API**    | • Server already running                                                             | Server status                                      |
+
+### Warn Level
+
+| Component    | Events Logged                                                                                                                                     | Information Included                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **Agent**    | • Memory preparation errors<br/>• Missing operation context<br/>• OTEL span conflicts<br/>• Context retrieval failures<br/>• Deprecation warnings | Error details, `agentId`, conflict information |
+| **Workflow** | • Missing memory managers<br/>• Missing executions                                                                                                | `executionId`, manager type                    |
+| **Tools**    | • Duplicate tools<br/>• Invalid items                                                                                                             | Tool names, conflict resolution                |
+| **API**      | • Schema conversion failures<br/>• Missing executions                                                                                             | `stepId`, conversion errors                    |
+| **Core**     | • Telemetry re-initialization                                                                                                                     | Warning messages                               |
+
+### Error Level
+
+| Component    | Events Logged                                                                                            | Information Included                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Agent**    | • Tool execution failures                                                                                | `toolName`, `agentId`, error object, `event: LogEvents.TOOL_EXECUTION_FAILED` |
+| **Workflow** | • Execution failures<br/>• Missing workflows<br/>• Suspension failures<br/>• Checkpoint storage failures | `workflowId`, `executionId`, full error details                               |
+| **Memory**   | • Context load failures<br/>• Conversation setup failures<br/>• History operation failures               | Operation context, error details, affected IDs                                |
+| **MCP**      | • Remote tool execution failures<br/>• Tool wrapper creation failures                                    | Tool names, error objects                                                     |
+| **API**      | • Request handling failures<br/>• Stream errors                                                          | Error timestamps, request details                                             |
+| **Core**     | • Server start failures<br/>• Endpoint registration failures<br/>• Telemetry initialization failures     | Error messages, failure context                                               |
+
+### Key Patterns
+
+1. **Structured Events**: Many logs include a semantic `event` field using `LogEvents` constants (e.g., `LogEvents.AGENT_CREATED`, `LogEvents.TOOL_EXECUTION_FAILED`)
+2. **Contextual IDs**: All logs include relevant IDs (`agentId`, `workflowId`, `executionId`, `conversationId`, etc.)
+3. **Error Objects**: Error logs always include the full error object for debugging
+4. **Component Prefixes**: Some components use prefixes like `[API]` or `[VoltAgent]` for easy filtering
+5. **Operation Context**: Logs include operation type and status for tracking state transitions
+
+## Understanding Log Event Names
+
+VoltAgent uses semantic event names following the pattern `component.action.status`:
+
+- **Component**: `agent`, `workflow`, `memory`, `tool`, `mcp`, `api`, `event`
+- **Action**: `generation`, `stream`, `execution`, `operation`, etc.
+- **Status**: `started`, `completed`, `failed`, `suspended`, etc.
+
+Examples:
+
+- `agent.generation.started` - Agent begins generating a response
+- `tool.execution.failed` - Tool execution encountered an error
+- `workflow.step.completed` - Workflow step finished successfully
+- `memory.conversation.saved` - Conversation saved to memory
 
 ## Accessing Logs
 
@@ -168,7 +439,7 @@ GET http://localhost:3141/api/logs?agentId=agent_abc123
 GET http://localhost:3141/api/logs?level=error&since=2024-01-20T10:00:00Z
 
 // Available query parameters:
-// - level: Filter by log level
+// - level: Filter by log level ("trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent")
 // - agentId: Filter by specific agent
 // - workflowId: Filter by workflow
 // - executionId: Filter by workflow execution
@@ -179,4 +450,185 @@ GET http://localhost:3141/api/logs?level=error&since=2024-01-20T10:00:00Z
 
 ### VoltOps Console
 
-When using VoltOps Platform, logs are automatically streamed and searchable in the web interface with advanced filtering and real-time updates.
+When using VoltOps Platform, logs are automatically streamed to the web interface with advanced filtering and real-time updates.
+
+🎯 **Important**: VoltOps Console receives **ALL logs** regardless of your local transport configuration. Even if you configure file-only transport, your logs will still appear in VoltOps Console UI!
+
+```javascript
+// Example: File-only transport locally
+const logger = createPinoLogger({
+  pinoOptions: {
+    transport: {
+      target: "pino/file",
+      options: { destination: "./app.log" },
+    },
+  },
+});
+
+// ✅ This will appear in VoltOps Console even though it's not in your local console!
+logger.info("This goes to file locally, but still visible in VoltOps Console");
+```
+
+📝 **Current Limitations**:
+
+- Logs are currently stored **in memory only**
+- Logs are **lost on page refresh**
+- Maximum of 5000 logs are kept in memory
+
+🚀 **Coming Soon**:
+
+- Persistent log storage in VoltOps Platform
+- Historical log search and analysis
+- Log export capabilities
+
+## Common Pitfalls for Beginners
+
+### 1. My Console Logs Disappeared!
+
+**Problem**: After adding file transport, logs no longer appear in console.
+
+```javascript
+// ❌ This removes console output!
+const logger = createPinoLogger({
+  pinoOptions: {
+    transport: {
+      target: "pino/file",
+      options: { destination: "./app.log" },
+    },
+  },
+});
+```
+
+**Solution**: Include pino-pretty for console output:
+
+```javascript
+// ✅ This keeps console output
+const logger = createPinoLogger({
+  pinoOptions: {
+    transport: {
+      targets: [
+        { target: "pino-pretty", options: { colorize: true } },
+        { target: "pino/file", options: { destination: "./app.log" } },
+      ],
+    },
+  },
+});
+```
+
+### 2. Logs Not Showing in Production
+
+**Problem**: Pretty logs don't appear in production.
+
+**Solution**: By default, pino-pretty is disabled in production. Either:
+
+- Set `format: "pretty"` explicitly
+- Use `NODE_ENV=development`
+- Configure transport manually
+
+### 3. Log Level Not Working
+
+**Problem**: Debug logs not showing even with `level: "debug"`.
+
+**Solution**: Check these in order:
+
+1. Environment variable `VOLTAGENT_LOG_LEVEL` might override your setting
+2. Individual transports can have their own levels
+3. Parent logger level affects child loggers
+
+### 4. VoltOps Console vs Local Console
+
+**Remember**:
+
+- VoltOps Console shows ALL logs regardless of local transport
+- Local console only shows logs if pino-pretty is configured
+- They are independent systems!
+
+## Complete Examples
+
+### Production-Ready Setup with File Logging
+
+```javascript
+import { VoltAgent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
+
+// Create logger with both console and file output
+const logger = createPinoLogger({
+  level: process.env.LOG_LEVEL || "info",
+  name: "my-app",
+  pinoOptions: {
+    transport: {
+      targets: [
+        // Console output (only in development)
+        ...(process.env.NODE_ENV !== "production"
+          ? [
+              {
+                target: "pino-pretty",
+                options: {
+                  colorize: true,
+                  translateTime: "yyyy-MM-dd HH:mm:ss.l o",
+                  ignore: "pid,hostname,env,component",
+                },
+              },
+            ]
+          : []),
+        // Always log to file
+        {
+          target: "pino/file",
+          options: {
+            destination: "./logs/app.log",
+            mkdir: true,
+          },
+        },
+        // Separate error log file
+        {
+          target: "pino/file",
+          options: {
+            destination: "./logs/error.log",
+            mkdir: true,
+          },
+          level: "error",
+        },
+      ],
+    },
+  },
+});
+
+// Use with VoltAgent
+const voltAgent = new VoltAgent({
+  logger,
+  agents: [myAgent],
+  workflows: [myWorkflow],
+});
+
+// Your logs will:
+// - Appear in console during development
+// - Always write to ./logs/app.log
+// - Write errors to ./logs/error.log
+// - Always appear in VoltOps Console (if configured)
+```
+
+### Development Setup with Enhanced Debugging
+
+```javascript
+import { createPinoLogger } from "@voltagent/logger";
+
+const devLogger = createPinoLogger({
+  level: "trace", // Show everything
+  name: "dev",
+  pinoOptions: {
+    transport: {
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+        translateTime: "HH:MM:ss.l",
+        ignore: "pid,hostname",
+        singleLine: false, // Multi-line for better readability
+        messageFormat: "{msg} | {agentId} | {executionId}",
+      },
+    },
+  },
+});
+
+// Perfect for debugging agent interactions
+devLogger.debug({ agentId: "agent_123", action: "thinking" }, "Agent processing request");
+```

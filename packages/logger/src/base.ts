@@ -36,14 +36,18 @@ export type LoggerWithBuffer = LoggerWithProvider;
 
 /**
  * Create a new Pino logger instance
- * @param options Logger options
+ * @param options Logger options including pinoOptions
  * @param externalLogBuffer Optional external log buffer to sync logs to
  */
 export function createPinoLogger(
   options?: LoggerOptions,
   externalLogBuffer?: any,
 ): LoggerWithBuffer {
-  const provider = new PinoLoggerProvider(options?.bufferSize, externalLogBuffer);
+  const provider = new PinoLoggerProvider(
+    options?.bufferSize,
+    externalLogBuffer,
+    options?.pinoOptions,
+  );
   if (!globalLoggerProvider) {
     globalLoggerProvider = provider;
   }

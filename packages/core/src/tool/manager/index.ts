@@ -3,7 +3,7 @@ import type { BaseTool, ToolExecuteOptions } from "../../agent/providers/base/ty
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import { type AgentTool, createTool } from "../index";
 import type { Toolkit } from "../toolkit";
-import { createToolLogger, logToolExecution, getGlobalLogger } from "../../logger";
+import { getGlobalLogger, LogEvents, buildToolLogMessage, ActionType } from "../../logger";
 
 /**
  * Status of a tool at any given time
@@ -341,9 +341,10 @@ export class ToolManager {
 
     // Create tool-specific logger
     const executionId = options?.toolCallId || crypto.randomUUID();
-    const toolLogger = createToolLogger(this.logger, {
-      toolName: toolName,
-      executionId: executionId,
+    const toolLogger = this.logger.child({
+      component: `Tool:${toolName}`,
+      toolName,
+      executionId,
       agentId: options?.agentId,
       conversationId: options?.conversationId,
       userId: options?.userId,
@@ -352,7 +353,8 @@ export class ToolManager {
     const startTime = Date.now();
 
     // Log tool execution start
-    logToolExecution(toolLogger, "start", {
+    toolLogger.trace(buildToolLogMessage(toolName, ActionType.START, "Starting execution"), {
+      event: LogEvents.TOOL_EXECUTION_STARTED,
       toolName,
       executionId,
       agentId: options?.agentId,
@@ -368,30 +370,52 @@ export class ToolManager {
       const duration = Date.now() - startTime;
 
       // Log successful execution
-      logToolExecution(toolLogger, "complete", {
-        toolName,
-        executionId,
-        agentId: options?.agentId,
-        conversationId: options?.conversationId,
-        userId: options?.userId,
-        duration,
-        output: result,
-      });
+      toolLogger.trace(
+        buildToolLogMessage(toolName, ActionType.COMPLETE, `Completed in ${duration}ms`),
+        {
+          event: LogEvents.TOOL_EXECUTION_COMPLETED,
+          toolName,
+          executionId,
+          agentId: options?.agentId,
+          conversationId: options?.conversationId,
+          userId: options?.userId,
+          duration,
+          success: true,
+          output: result,
+        },
+      );
 
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
 
       // Log the specific error for better debugging
-      logToolExecution(toolLogger, "error", {
-        toolName,
-        executionId,
-        agentId: options?.agentId,
-        conversationId: options?.conversationId,
-        userId: options?.userId,
-        duration,
-        error: error instanceof Error ? error : new Error(String(error)),
-      });
+      toolLogger.error(
+        buildToolLogMessage(
+          toolName,
+          ActionType.ERROR,
+          error instanceof Error ? error.message : "Unknown error",
+        ),
+        {
+          event: LogEvents.TOOL_EXECUTION_FAILED,
+          toolName,
+          executionId,
+          userId: options?.userId,
+          conversationId: options?.conversationId,
+          agentId: options?.agentId,
+          duration,
+          success: false,
+          error:
+            error instanceof Error
+              ? {
+                  message: error.message,
+                  type: error.constructor?.name || "Error",
+                  // Include stack trace only in development
+                  ...(process.env.NODE_ENV !== "production" && { stack: error.stack }),
+                }
+              : "Unknown error",
+        },
+      );
 
       // Re-throw a more informative error
       const errorMessage = error instanceof Error ? error.message : String(error);

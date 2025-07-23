@@ -1,5 +1,11 @@
 // Re-export shared types from internal package
-export type { Logger, LogFn } from "@voltagent/internal";
+export type { Logger, LogFn, LogLevel } from "@voltagent/internal";
+import type { LogLevel } from "@voltagent/internal";
+
+import type { LoggerOptions as PinoLoggerOptions } from "pino";
+
+// Re-export for convenience
+export type { PinoLoggerOptions };
 
 /**
  * Provider-agnostic logger options
@@ -7,9 +13,9 @@ export type { Logger, LogFn } from "@voltagent/internal";
 export interface LoggerOptions {
   /**
    * Log level
-   * @default "info" in production, "debug" in development
+   * @default "error" in production, "info" in development
    */
-  level?: string;
+  level?: LogLevel;
 
   /**
    * Log format type
@@ -41,6 +47,11 @@ export interface LoggerOptions {
   name?: string;
 
   /**
+   * Pino-specific options to override defaults
+   */
+  pinoOptions?: PinoLoggerOptions;
+
+  /**
    * Additional provider-specific options
    */
   [key: string]: any;
@@ -48,7 +59,7 @@ export interface LoggerOptions {
 
 export interface LogEntry {
   timestamp: string;
-  level: string;
+  level: LogLevel;
   msg: string;
   component?: string;
   agentId?: string;
@@ -60,7 +71,7 @@ export interface LogEntry {
 }
 
 export interface LogFilter {
-  level?: string;
+  level?: LogLevel;
   agentId?: string;
   conversationId?: string;
   workflowId?: string;

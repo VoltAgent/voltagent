@@ -13,6 +13,7 @@ const uppercaseTool = createTool({
     text: z.string().describe("The text to convert to uppercase"),
   }),
   execute: async ({ text }: { text: string }) => {
+    throw new Error("This tool is not implemented yet");
     return { result: text.toUpperCase() };
   },
 });
@@ -45,9 +46,9 @@ const supervisorAgent = new Agent({
 // Initialize the VoltAgent with the agent hierarchy
 
 // Create logger
+// Advanced: With custom Pino options
 const logger = createPinoLogger({
-  name: "with-subagents",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "debug",
+  level: "info",
 });
 
 new VoltAgent({

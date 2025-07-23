@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { createLogger, logger, getGlobalLogBuffer } from "./index";
+import { createPinoLogger, getGlobalLogBuffer } from "./index";
 
 describe("Logger", () => {
   it("should create a logger instance", () => {
-    const log = createLogger();
+    const log = createPinoLogger();
     expect(log).toBeDefined();
     expect(log.info).toBeDefined();
     expect(log.error).toBeDefined();
@@ -12,14 +12,9 @@ describe("Logger", () => {
   });
 
   it("should have buffer access methods", () => {
-    const log = createLogger();
+    const log = createPinoLogger();
     expect(log.getBuffer).toBeDefined();
     expect(log.getProvider).toBeDefined();
-  });
-
-  it("should use the default logger", () => {
-    expect(logger).toBeDefined();
-    expect(logger.info).toBeDefined();
   });
 
   it("should access global log buffer", () => {
@@ -31,7 +26,7 @@ describe("Logger", () => {
   });
 
   it("should create child loggers", () => {
-    const parent = createLogger();
+    const parent = createPinoLogger();
     const child = parent.child({ component: "test" });
     expect(child).toBeDefined();
     expect(child.info).toBeDefined();

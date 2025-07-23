@@ -2,16 +2,10 @@ import type { Logger, LogBuffer } from "@voltagent/internal";
 import { AgentRegistry } from "../server/registry";
 import { createConsoleLogger, getDefaultLogBuffer } from "./console-logger";
 
-// Export domain-specific loggers
-export * from "./agent-logger";
-export * from "./workflow-logger";
-export * from "./tool-logger";
-export * from "./memory-logger";
-export * from "./mcp-logger";
-export * from "./types";
+// Export utilities
 export * from "./events";
 export * from "./logger-proxy";
-export * from "./forwarding-logger-proxy";
+export * from "./message-builder";
 
 // Re-export logger types from internal
 export type { Logger, LogFn, LogEntry, LogFilter, LogBuffer } from "@voltagent/internal";
@@ -31,13 +25,6 @@ export function getGlobalLogger(): Logger {
   const defaultLogger = createConsoleLogger({ name: "voltagent" });
   registry.setGlobalLogger(defaultLogger);
   return defaultLogger;
-}
-
-/**
- * Create a logger with VoltAgent defaults
- */
-export function createVoltAgentLogger(name?: string): Logger {
-  return createConsoleLogger({ name: name || "voltagent" });
 }
 
 /**
