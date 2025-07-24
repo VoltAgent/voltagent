@@ -2,28 +2,45 @@ import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
 import { expectTypeOf } from "vitest";
 import { VoltOpsClient, createVoltOpsClient } from "./client";
 import type { VoltOpsClientOptions, VoltOpsClient as IVoltOpsClient } from "./types";
-import { getGlobalLogger } from "../logger";
 
-// Mock the logger
-const mockLoggerInstance = {
-  trace: vi.fn(),
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  fatal: vi.fn(),
-  child: vi.fn(),
-};
+// Hoist mock logger instance creation
+const { mockLoggerInstance } = vi.hoisted(() => {
+  const mockLoggerInstance = {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(),
+  };
 
-// Set up child to return itself
-mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
+  // Set up child to return itself
+  mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
 
-vi.mock("../logger", () => ({
-  getGlobalLogger: vi.fn(() => mockLoggerInstance),
-  LogEvents: {
-    VOLTOPS_CLIENT_INITIALIZED: "voltops.client.initialized",
-  },
-}));
+  return { mockLoggerInstance };
+});
+
+// Mock the logger module
+vi.mock("../logger", () => {
+  class MockLoggerProxy {
+    trace = mockLoggerInstance.trace;
+    debug = mockLoggerInstance.debug;
+    info = mockLoggerInstance.info;
+    warn = mockLoggerInstance.warn;
+    error = mockLoggerInstance.error;
+    fatal = mockLoggerInstance.fatal;
+    child = mockLoggerInstance.child;
+
+    constructor() {
+      // Constructor accepts bindings but we don't need them for the mock
+    }
+  }
+
+  return {
+    LoggerProxy: MockLoggerProxy,
+  };
+});
 
 // Mock message builder module
 vi.mock("../logger/message-builder", () => ({
@@ -68,8 +85,6 @@ describe("VoltOpsClient", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Ensure logger mock is properly set up before creating client
-    mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
     client = new VoltOpsClient(mockOptions);
   });
 
@@ -340,8 +355,6 @@ describe("VoltOpsClient", () => {
 describe("createVoltOpsClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Ensure logger mock is properly set up before creating client
-    mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
   });
 
   afterEach(() => {
