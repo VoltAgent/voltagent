@@ -35,8 +35,8 @@ import {
   TelemetryServiceApiClient,
 } from "../client";
 import { BackgroundQueue } from "../../utils/queue/queue";
-import { getGlobalLogger } from "../../logger";
 import type { Logger } from "@voltagent/internal";
+import { LoggerProxy } from "../../logger";
 
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;
@@ -56,7 +56,7 @@ export class VoltAgentExporter {
     }
     this.apiClient = new TelemetryServiceApiClient({ ...options, baseUrl });
     this.publicKey = options.publicKey;
-    this.logger = getGlobalLogger().child({ component: "volt-agent-exporter" });
+    this.logger = new LoggerProxy({ component: "volt-agent-exporter" });
 
     // Initialize dedicated telemetry export queue
     this.telemetryQueue = new BackgroundQueue({
@@ -93,7 +93,10 @@ export class VoltAgentExporter {
           await this.exportHistoryEntry(historyEntryData);
           this.logger.trace(`History entry exported: ${historyEntryData.history_id}`);
         } catch (error) {
-          this.logger.error("Failed to export history entry", { error });
+          this.logger.error(
+            "Failed to sending history entry to VoltOps. Check your publicKey & secretKey",
+            { error },
+          );
           throw error;
         }
       },

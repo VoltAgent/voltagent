@@ -1,5 +1,5 @@
 import type { Logger } from "@voltagent/internal";
-import { getGlobalLogger } from "../../logger";
+import { LoggerProxy } from "../../logger";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type {
   WorkflowHistoryEntry,
@@ -27,7 +27,7 @@ export class WorkflowMemoryManager {
     _exporter?: VoltAgentExporter,
   ) {
     this._exporter = _exporter;
-    this.logger = getGlobalLogger().child({ component: "workflow-memory-manager" });
+    this.logger = new LoggerProxy({ component: "workflow-memory-manager" });
   }
 
   /**

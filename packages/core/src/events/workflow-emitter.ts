@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { v4 as uuidv4 } from "uuid";
-import { getGlobalLogger } from "../logger";
+import { LoggerProxy } from "../logger";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
 import { WorkflowRegistry } from "../workflow/registry";
@@ -43,7 +43,7 @@ export class WorkflowEventEmitter extends EventEmitter {
 
   // Background queue for workflow events (similar to AgentEventEmitter)
   private workflowEventQueue: BackgroundQueue;
-  private logger = getGlobalLogger().child({ component: "workflow-event-emitter" });
+  private logger = new LoggerProxy({ component: "workflow-event-emitter" });
 
   private constructor() {
     super();

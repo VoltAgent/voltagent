@@ -17,14 +17,67 @@ export class BufferedLogger implements Logger {
   }
 
   private addToBuffer(level: string, msg: string, obj?: object): void {
+    // Serialize error objects properly
+    const serializedObj = obj ? this.serializeErrors(obj) : {};
+
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: level as LogLevel,
       msg,
       ...this.context,
-      ...obj,
+      ...serializedObj,
     };
     this.buffer.add(entry);
+  }
+
+  private serializeErrors(obj: any): any {
+    if (obj instanceof Error) {
+      // Get all properties including non-enumerable ones
+      const errorObj: any = {
+        type: obj.constructor.name,
+        message: obj.message,
+        stack: obj.stack,
+      };
+
+      // Copy any additional enumerable properties
+      Object.keys(obj).forEach((key) => {
+        if (key !== "message" && key !== "stack") {
+          errorObj[key] = (obj as any)[key];
+        }
+      });
+
+      return errorObj;
+    }
+
+    if (typeof obj === "object" && obj !== null) {
+      const result: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value instanceof Error) {
+          // Get all properties including non-enumerable ones
+          const errorObj: any = {
+            type: value.constructor.name,
+            message: value.message,
+            stack: value.stack,
+          };
+
+          // Copy any additional enumerable properties
+          Object.keys(value).forEach((k) => {
+            if (k !== "message" && k !== "stack") {
+              errorObj[k] = (value as any)[k];
+            }
+          });
+
+          result[key] = errorObj;
+        } else if (typeof value === "object" && value !== null) {
+          result[key] = this.serializeErrors(value);
+        } else {
+          result[key] = value;
+        }
+      }
+      return result;
+    }
+
+    return obj;
   }
 
   private createLogFn(level: string): LogFn {

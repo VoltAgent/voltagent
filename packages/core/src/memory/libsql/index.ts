@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import { getGlobalLogger } from "../../logger";
+import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
@@ -98,7 +98,7 @@ export class LibSQLStorage implements Memory {
    * @param options Configuration options
    */
   constructor(options: LibSQLStorageOptions) {
-    this.logger = getGlobalLogger().child({ component: "libsql-storage" });
+    this.logger = new LoggerProxy({ component: "libsql-storage" });
     this.options = {
       storageLimit: options.storageLimit || 100,
       tablePrefix: options.tablePrefix || "voltagent_memory",

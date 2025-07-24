@@ -1,4 +1,4 @@
-import { getGlobalLogger } from "../../logger";
+import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
 
 export interface QueueTask<T = any> {
@@ -30,7 +30,7 @@ export class BackgroundQueue {
       defaultTimeout: options.defaultTimeout ?? 10000, // 10 seconds
       defaultRetries: options.defaultRetries ?? 2,
     };
-    this.logger = getGlobalLogger().child({ component: "background-queue" });
+    this.logger = new LoggerProxy({ component: "background-queue" });
   }
 
   /**

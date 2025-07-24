@@ -1,4 +1,4 @@
-import { getGlobalLogger } from "../../logger";
+import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
 import type { NewTimelineEvent } from "../../events/types";
 import type {
@@ -61,7 +61,7 @@ export class InMemoryStorage implements Memory {
       storageLimit: options.storageLimit || 100,
       debug: options.debug || false,
     };
-    this.logger = getGlobalLogger().child({ component: "in-memory-storage" });
+    this.logger = new LoggerProxy({ component: "in-memory-storage" });
   }
 
   /**

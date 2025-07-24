@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { getGlobalLogger } from "../../logger";
+import { LoggerProxy } from "../../logger";
 import type { PackageUpdateInfo } from "./index";
 
 /**
@@ -43,7 +43,7 @@ export const getPackageJsonHash = (packageJsonPath: string): string => {
     const content = fs.readFileSync(packageJsonPath, "utf8");
     return crypto.createHash("md5").update(content).digest("hex");
   } catch (error) {
-    const logger = getGlobalLogger().child({ component: "update-cache" });
+    const logger = new LoggerProxy({ component: "update-cache" });
     logger.error("Error reading package.json for hash", { error });
     return "";
   }
@@ -65,7 +65,7 @@ export const readUpdateCache = async (projectPath: string): Promise<UpdateCache 
 
     return cache;
   } catch (error) {
-    const logger = getGlobalLogger().child({ component: "update-cache" });
+    const logger = new LoggerProxy({ component: "update-cache" });
     logger.error("Error reading update cache", { error });
     return null;
   }
@@ -81,7 +81,7 @@ export const writeUpdateCache = async (projectPath: string, cache: UpdateCache):
 
     fs.writeFileSync(cacheFilePath, JSON.stringify(cache, null, 2), "utf8");
   } catch (error) {
-    const logger = getGlobalLogger().child({ component: "update-cache" });
+    const logger = new LoggerProxy({ component: "update-cache" });
     logger.error("Error writing update cache", { error });
   }
 };
@@ -123,7 +123,7 @@ export const clearUpdateCache = async (projectPath: string): Promise<void> => {
       fs.unlinkSync(cacheFilePath);
     }
   } catch (error) {
-    const logger = getGlobalLogger().child({ component: "update-cache" });
+    const logger = new LoggerProxy({ component: "update-cache" });
     logger.error("Error clearing update cache", { error });
   }
 };

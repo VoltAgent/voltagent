@@ -8,7 +8,7 @@ import { AgentRegistry } from "../server/registry";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
 import type { AgentTimelineEvent } from "./types";
-import { getGlobalLogger, LogEvents } from "../logger";
+import { getGlobalLogger, LogEvents, LoggerProxy } from "../logger";
 
 // New type exports
 export type EventStatus = AgentStatus;
@@ -130,7 +130,7 @@ export class AgentEventEmitter extends EventEmitter {
     this.timelineEventQueue.enqueue({
       id: `timeline-event-${event.id}`,
       operation: async () => {
-        const logger = getGlobalLogger().child({ component: "agent-event-emitter" });
+        const logger = new LoggerProxy({ component: "agent-event-emitter" });
         const clonedEvent = deepClone(event, logger);
 
         await this.publishTimelineEventSync({

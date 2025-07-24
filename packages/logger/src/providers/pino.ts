@@ -114,6 +114,11 @@ export class PinoLoggerProvider implements LoggerProvider {
         paths: options.redact || getDefaultRedactionPaths(),
         censor: "[REDACTED]",
       },
+      serializers: {
+        err: pino.stdSerializers.err,
+        error: pino.stdSerializers.err,
+        exception: pino.stdSerializers.err,
+      },
       formatters: {
         level: (label) => {
           return { level: label.toUpperCase() };

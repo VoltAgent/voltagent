@@ -1,5 +1,5 @@
 import type { ToolSchema } from "../agent/providers/base/types";
-import { getGlobalLogger } from "../logger";
+import { LoggerProxy } from "../logger";
 import type { Tool } from "./index";
 
 /**
@@ -50,7 +50,7 @@ export const createToolkit = (options: Toolkit): Toolkit => {
     throw new Error("Toolkit name is required");
   }
   if (!options.tools || options.tools.length === 0) {
-    const logger = getGlobalLogger().child({ component: "toolkit" });
+    const logger = new LoggerProxy({ component: "toolkit" });
     logger.warn(`Toolkit '${options.name}' created without any tools`);
   }
 

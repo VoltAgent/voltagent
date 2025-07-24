@@ -1,7 +1,7 @@
 import type { Client } from "@libsql/client";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
 import type { WorkflowTimelineEvent, WorkflowStats } from "../../workflow/types";
-import { getGlobalLogger } from "../../logger";
+import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
 
 /**
@@ -15,7 +15,7 @@ export class LibSQLWorkflowExtension {
     private client: Client,
     private _tablePrefix = "voltagent_memory",
   ) {
-    this.logger = getGlobalLogger().child({ component: "libsql-workflow" });
+    this.logger = new LoggerProxy({ component: "libsql-workflow" });
   }
 
   /**

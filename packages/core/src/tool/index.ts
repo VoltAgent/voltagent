@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getGlobalLogger } from "../logger";
+import { LoggerProxy } from "../logger";
 import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 
@@ -80,7 +80,7 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
       throw new Error("Tool name is required");
     }
     if (!options.description) {
-      const logger = getGlobalLogger().child({ component: "tool" });
+      const logger = new LoggerProxy({ component: "tool" });
       logger.warn(`Tool '${options.name}' created without a description`);
     }
     if (!options.parameters) {

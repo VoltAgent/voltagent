@@ -2527,6 +2527,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
 
         operationContext.isActive = false;
+
+        // Log error
+        methodLogger.error(
+          buildAgentLogMessage(this.name, ActionType.ERROR, "Stream generation failed"),
+          {
+            event: LogEvents.AGENT_STREAM_FAILED,
+            error: {
+              message: error.message,
+              code: error.code,
+              stage: error.stage,
+            },
+          },
+        );
+
         if (internalOptions.provider?.onError) {
           await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
         }
@@ -2891,6 +2905,19 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         status: "error",
         endTime: new Date(),
       });
+
+      // Log error
+      methodLogger.error(
+        buildAgentLogMessage(this.name, ActionType.ERROR, "Object generation failed"),
+        {
+          event: LogEvents.AGENT_OBJECT_FAILED,
+          error: {
+            message: voltagentError.message,
+            code: voltagentError.code,
+            stage: voltagentError.stage,
+          },
+        },
+      );
 
       await this.getMergedHooks(internalOptions).onEnd?.({
         agent: this,
@@ -3262,6 +3289,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         });
 
         operationContext.isActive = false;
+
+        // Log error
+        methodLogger.error(
+          buildAgentLogMessage(this.name, ActionType.ERROR, "Stream object generation failed"),
+          {
+            event: LogEvents.AGENT_STREAM_OBJECT_FAILED,
+            error: {
+              message: error.message,
+              code: error.code,
+              stage: error.stage,
+            },
+          },
+        );
+
         if (provider?.onError) {
           await (provider.onError as StreamOnErrorCallback)(error);
         }

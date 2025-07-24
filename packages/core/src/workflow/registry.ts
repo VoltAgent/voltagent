@@ -7,7 +7,7 @@ import { WorkflowMemoryManager } from "./memory/manager";
 import { WorkflowHistoryManager } from "./history-manager";
 import type { WorkflowEvent, WorkflowEventWithStatus } from "../events/workflow-emitter";
 import { WorkflowEventEmitter } from "../events/workflow-emitter";
-import { getGlobalLogger } from "../logger";
+import { LoggerProxy } from "../logger";
 import type { Memory } from "../memory/types";
 
 /**
@@ -183,7 +183,7 @@ export interface WorkflowRegistryEvents {
 export class WorkflowRegistry extends EventEmitter {
   private static instance: WorkflowRegistry;
   private workflows: Map<string, RegisteredWorkflow> = new Map();
-  private logger = getGlobalLogger().child({ component: "workflow-registry" });
+  private logger = new LoggerProxy({ component: "workflow-registry" });
 
   private workflowHistoryManagers: Map<string, WorkflowHistoryManager> = new Map();
 
@@ -192,7 +192,6 @@ export class WorkflowRegistry extends EventEmitter {
 
   private constructor() {
     super();
-    this.logger.trace("Initialized");
 
     // Listen for immediate workflow events from WorkflowEventEmitter
     const emitter = WorkflowEventEmitter.getInstance();

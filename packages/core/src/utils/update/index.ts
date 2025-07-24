@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { getGlobalLogger } from "../../logger";
+import { LoggerProxy } from "../../logger";
 import {
   readUpdateCache,
   writeUpdateCache,
@@ -293,7 +293,7 @@ export const checkForUpdates = async (
 
     return result;
   } catch (error) {
-    const logger = getGlobalLogger().child({ component: "update-checker" });
+    const logger = new LoggerProxy({ component: "update-checker" });
     logger.error("Error checking for updates", { error });
     return {
       hasUpdates: false,
@@ -337,7 +337,7 @@ export const updateAllPackages = async (
       .filter((pkg) => pkg.type !== "latest")
       .map((pkg) => `${pkg.name}@latest`);
 
-    const logger = getGlobalLogger().child({ component: "update-checker" });
+    const logger = new LoggerProxy({ component: "update-checker" });
     logger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
 
     // 4. Run the update command based on package manager
@@ -376,7 +376,7 @@ export const updateAllPackages = async (
       requiresRestart: true,
     };
   } catch (error) {
-    const logger = getGlobalLogger().child({ component: "update-checker" });
+    const logger = new LoggerProxy({ component: "update-checker" });
     logger.error("Error updating packages", { error });
     return {
       success: false,
@@ -426,7 +426,7 @@ export const updateSinglePackage = async (
     const rootDir = packagePath ? path.dirname(packagePath) : process.cwd();
     const packageManager = detectPackageManager(rootDir);
 
-    const logger = getGlobalLogger().child({ component: "update-checker" });
+    const logger = new LoggerProxy({ component: "update-checker" });
     logger.info(`Updating package ${packageName} in ${rootDir} using ${packageManager}`);
 
     // Run the update command based on package manager
@@ -466,7 +466,7 @@ export const updateSinglePackage = async (
       requiresRestart: true,
     };
   } catch (error) {
-    const logger = getGlobalLogger().child({ component: "update-checker" });
+    const logger = new LoggerProxy({ component: "update-checker" });
     logger.error(`Error updating package ${packageName}`, { error });
     return {
       success: false,

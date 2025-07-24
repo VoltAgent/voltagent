@@ -6,18 +6,27 @@ const ErrorSchema = z.object({
   error: z.string().openapi({ description: "Error message" }),
 });
 
-// Log Entry Schema
-export const LogEntrySchema = z.object({
-  timestamp: z.string(),
-  level: z.string(),
-  msg: z.string(),
-  component: z.string().optional(),
-  agentId: z.string().optional(),
-  conversationId: z.string().optional(),
-  workflowId: z.string().optional(),
-  executionId: z.string().optional(),
-  userId: z.string().optional(),
-});
+// Log Entry Schema - matches LogEntry interface from @voltagent/internal
+export const LogEntrySchema = z
+  .object({
+    timestamp: z.string(),
+    level: z.enum(["trace", "debug", "info", "warn", "error", "fatal", "silent"]),
+    msg: z.string(),
+    component: z.string().optional(),
+    agentId: z.string().optional(),
+    conversationId: z.string().optional(),
+    workflowId: z.string().optional(),
+    executionId: z.string().optional(),
+    userId: z.string().optional(),
+    error: z
+      .object({
+        type: z.string(),
+        message: z.string(),
+        stack: z.string().optional(),
+      })
+      .optional(),
+  })
+  .catchall(z.any()); // Allow additional properties with any type
 
 // Log Query Schema
 export const LogQuerySchema = z.object({
