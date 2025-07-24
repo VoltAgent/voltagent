@@ -750,7 +750,7 @@ export function createWorkflow<
 
       // Check if resuming an existing execution
       if (options?.resumeFrom?.executionId) {
-        runLogger.info(`Resuming execution ${executionId} for workflow ${id}`);
+        runLogger.debug(`Resuming execution ${executionId} for workflow ${id}`);
 
         // Get the existing history entry and update its status
         try {
@@ -769,7 +769,7 @@ export function createWorkflow<
                   suspension: undefined, // Clear suspension metadata
                 },
               });
-              runLogger.info(`Updated execution ${executionId} status to running`);
+              runLogger.debug(`Updated execution ${executionId} status to running`);
 
               // Re-fetch the updated entry
               historyEntry = await workflowMemoryManager.getExecutionWithDetails(executionId);
@@ -780,7 +780,7 @@ export function createWorkflow<
             throw new Error(`No memory manager available for workflow: ${id}`);
           }
         } catch (error) {
-          runLogger.error(`Failed to get/update resumed execution:`, { error });
+          runLogger.error("Failed to get/update resumed execution:", { error });
           throw error; // Re-throw to prevent creating a new execution
         }
       } else {
