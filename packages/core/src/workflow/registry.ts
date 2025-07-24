@@ -696,6 +696,10 @@ export class WorkflowRegistry extends EventEmitter {
   public async suspendAllActiveWorkflows(reason: string = "Server shutting down"): Promise<void> {
     const activeEntries = Array.from(this.activeExecutions.entries());
 
+    if (activeEntries.length === 0) {
+      return;
+    }
+
     this.logger.debug(`Suspending ${activeEntries.length} active workflows for shutdown`);
 
     for (const [executionId, controller] of activeEntries) {
@@ -710,8 +714,6 @@ export class WorkflowRegistry extends EventEmitter {
       this.logger.trace(`Waiting for workflows to suspend...`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-
-    this.logger.debug(`All workflows suspended`);
   }
 
   /**
