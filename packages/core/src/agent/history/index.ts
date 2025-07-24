@@ -309,7 +309,7 @@ export class HistoryManager {
     if (agentId) {
       this.queueHistoryOperation(`store-entry-${entry.id}`, async () => {
         await this.memoryManager.storeHistoryEntry(agentId, entry);
-        this.logger.debug(`History entry stored: ${entry.id}`);
+        this.logger.trace(`History entry stored: ${entry.id}`);
       });
     }
 
@@ -384,7 +384,7 @@ export class HistoryManager {
         entryId,
         historySteps,
       );
-      this.logger.debug(`Steps added to entry: ${entryId}`);
+      this.logger.trace(`Steps added to entry: ${entryId}`);
 
       if (voltAgentExporter && updatedEntry) {
         voltAgentExporter.exportHistoryStepsAsync(entryId, historySteps);
@@ -454,7 +454,7 @@ export class HistoryManager {
         id,
         updates as Partial<AgentHistoryEntry>,
       );
-      this.logger.debug(`History entry updated in memory: ${id}`);
+      this.logger.trace(`History entry updated in memory: ${id}`);
 
       agentEventEmitter.emitHistoryUpdate(agentId, updatedEntry);
       try {
@@ -514,7 +514,7 @@ export class HistoryManager {
     return new Promise<AgentHistoryEntry | undefined>((resolve) => {
       this.queueHistoryOperation(`persist-timeline-event-${eventId}`, async () => {
         try {
-          this.logger.debug(`Processing timeline event: ${eventId} for agent: ${agentId}`);
+          this.logger.trace(`Processing timeline event: ${eventId} for agent: ${agentId}`);
 
           // Persist to memory within the queue (maintains order)
           const updatedEntry = await memoryManager.addTimelineEvent(
@@ -530,7 +530,7 @@ export class HistoryManager {
             return;
           }
 
-          this.logger.debug(`Timeline event persisted successfully: ${eventId}`);
+          this.logger.trace(`Timeline event persisted successfully: ${eventId}`);
 
           // Queue telemetry export separately (non-blocking, preserves event order)
           if (voltAgentExporter && event.id) {

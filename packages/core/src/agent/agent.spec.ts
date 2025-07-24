@@ -1,6 +1,6 @@
 import { createAsyncIterableStream } from "@voltagent/internal/utils";
 import type { Mock, Mocked } from "vitest";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { Memory, MemoryMessage } from "../memory/types";
@@ -660,6 +660,10 @@ describe("Agent", () => {
       tools: [],
       instructions: "A helpful AI assistant",
     });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   describe("constructor", () => {
@@ -2255,6 +2259,10 @@ describe("Agent", () => {
 
       // // Add the sub-agent
       agentWithSubAgents.addSubAgent(mockSubAgent);
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
     });
 
     it.todo("should test forwardEvent filtering logic directly", async () => {

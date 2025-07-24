@@ -80,8 +80,6 @@ export const writeUpdateCache = async (projectPath: string, cache: UpdateCache):
     const cacheFilePath = getCacheFilePath(projectPath);
 
     fs.writeFileSync(cacheFilePath, JSON.stringify(cache, null, 2), "utf8");
-    const logger = getGlobalLogger().child({ component: "update-cache" });
-    logger.debug("Update cache written successfully");
   } catch (error) {
     const logger = getGlobalLogger().child({ component: "update-cache" });
     logger.error("Error writing update cache", { error });
@@ -102,16 +100,12 @@ export const isValidCache = (
 
   // Check if package.json has changed
   if (cache.packageJsonHash !== packageJsonHash) {
-    const logger = getGlobalLogger().child({ component: "update-cache" });
-    logger.debug("Cache invalidated: package.json has changed");
     return false;
   }
 
   // Check if cache is too old
   const age = Date.now() - cache.timestamp;
   if (age > maxAge) {
-    const logger = getGlobalLogger().child({ component: "update-cache" });
-    logger.debug(`Cache invalidated: too old (${Math.round(age / 1000 / 60)} minutes)`);
     return false;
   }
 
@@ -127,8 +121,6 @@ export const clearUpdateCache = async (projectPath: string): Promise<void> => {
 
     if (fs.existsSync(cacheFilePath)) {
       fs.unlinkSync(cacheFilePath);
-      const logger = getGlobalLogger().child({ component: "update-cache" });
-      logger.debug("Update cache cleared");
     }
   } catch (error) {
     const logger = getGlobalLogger().child({ component: "update-cache" });

@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { z } from "zod";
 import { createWorkflowChain } from "./chain";
-import { LibSQLStorage } from "../memory/libsql";
+import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { WorkflowRegistry } from "./registry";
 
 describe("workflow.run", () => {
@@ -12,8 +12,7 @@ describe("workflow.run", () => {
   });
 
   it("should return the expected result", async () => {
-    // Create workflow with memory
-    const memory = new LibSQLStorage({ url: ":memory:" });
+    const memory = createTestLibSQLStorage("workflow_chain");
 
     const workflow = createWorkflowChain({
       id: "test",
@@ -24,7 +23,7 @@ describe("workflow.run", () => {
       result: z.object({
         name: z.string(),
       }),
-      memory, // Add memory
+      memory,
     })
       .andThen({
         id: "step-1-join-name",
