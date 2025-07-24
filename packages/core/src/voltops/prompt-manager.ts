@@ -12,7 +12,7 @@ import type {
 } from "./types";
 import { VoltOpsPromptApiClient } from "./prompt-api-client";
 import { createSimpleTemplateEngine, type TemplateEngine } from "./template-engine";
-import { getGlobalLogger, type Logger } from "../logger";
+import { LoggerProxy, type Logger } from "../logger";
 import { LogEvents } from "../logger/events";
 import {
   buildVoltOpsLogMessage,
@@ -53,7 +53,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
   constructor(options: VoltOpsClientOptions) {
     this.apiClient = new VoltOpsPromptApiClient(options);
     this.templateEngine = createSimpleTemplateEngine();
-    this.logger = getGlobalLogger().child({ component: "voltops-prompt-manager" });
+    this.logger = new LoggerProxy({ component: "voltops-prompt-manager" });
 
     // Initialize cache configuration from client options
     this.cacheConfig = {
@@ -80,7 +80,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     if (effectiveCacheConfig.enabled) {
       const cached = this.getCachedPrompt(cacheKey, effectiveCacheConfig.ttl);
       if (cached) {
-        this.logger.debug(
+        this.logger.trace(
           buildVoltOpsLogMessage("prompt-manager", "cache-hit", "prompt found in cache"),
           buildLogContext(ResourceType.VOLTOPS, "prompt-manager", "cache-hit", {
             event: LogEvents.VOLTOPS_PROMPT_CACHE_HIT,
@@ -91,7 +91,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
         );
         return this.processPromptContent(cached.content, reference.variables);
       } else {
-        this.logger.debug(
+        this.logger.trace(
           buildVoltOpsLogMessage("prompt-manager", "cache-miss", "prompt not found in cache"),
           buildLogContext(ResourceType.VOLTOPS, "prompt-manager", "cache-miss", {
             event: LogEvents.VOLTOPS_PROMPT_CACHE_MISS,
@@ -104,7 +104,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     }
 
     // Fetch from API
-    this.logger.debug(
+    this.logger.trace(
       buildVoltOpsLogMessage("prompt-manager", ActionType.START, "fetching prompt from API"),
       buildLogContext(ResourceType.VOLTOPS, "prompt-manager", ActionType.START, {
         event: LogEvents.VOLTOPS_PROMPT_FETCH_STARTED,
@@ -116,7 +116,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     const startTime = Date.now();
     const promptResponse = await this.apiClient.fetchPrompt(reference);
 
-    this.logger.debug(
+    this.logger.trace(
       buildVoltOpsLogMessage("prompt-manager", ActionType.COMPLETE, "prompt fetched successfully"),
       buildLogContext(ResourceType.VOLTOPS, "prompt-manager", ActionType.COMPLETE, {
         event: LogEvents.VOLTOPS_PROMPT_FETCH_COMPLETED,
@@ -251,7 +251,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     const oldestKey = this.cache.keys().next().value;
     if (oldestKey) {
       this.cache.delete(oldestKey);
-      this.logger.debug(
+      this.logger.trace(
         buildVoltOpsLogMessage("prompt-manager", "cache-evicted", "evicted oldest cache entry"),
         buildLogContext(ResourceType.VOLTOPS, "prompt-manager", "cache-evicted", {
           event: LogEvents.VOLTOPS_PROMPT_CACHE_EVICTED,
@@ -269,18 +269,19 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     if (!variables) return content;
 
     try {
-      this.logger.debug(
+      this.logger.trace(
         buildVoltOpsLogMessage("prompt-manager", ActionType.START, "processing template"),
         buildLogContext(ResourceType.VOLTOPS, "prompt-manager", ActionType.START, {
           event: LogEvents.VOLTOPS_TEMPLATE_PROCESS_STARTED,
           engine: this.templateEngine.name,
           variableKeys: Object.keys(variables),
+          content: content,
         }),
       );
 
       const result = this.templateEngine.process(content, variables);
 
-      this.logger.debug(
+      this.logger.trace(
         buildVoltOpsLogMessage(
           "prompt-manager",
           ActionType.COMPLETE,
@@ -289,12 +290,15 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
         buildLogContext(ResourceType.VOLTOPS, "prompt-manager", ActionType.COMPLETE, {
           event: LogEvents.VOLTOPS_TEMPLATE_PROCESS_COMPLETED,
           engine: this.templateEngine.name,
+          result: result,
+          content,
+          variableKeys: Object.keys(variables),
         }),
       );
 
       return result;
     } catch (error) {
-      this.logger.debug(
+      this.logger.error(
         buildVoltOpsLogMessage("prompt-manager", ActionType.ERROR, "template processing failed"),
         buildLogContext(ResourceType.VOLTOPS, "prompt-manager", ActionType.ERROR, {
           event: LogEvents.VOLTOPS_TEMPLATE_PROCESS_FAILED,

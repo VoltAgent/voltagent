@@ -42,7 +42,7 @@ import { WorkflowRegistry } from "../workflow/registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 import { zodSchemaToJsonUI } from "..";
 import type { LogFilter } from "@voltagent/internal";
-import { getGlobalLogger, getGlobalLogBuffer } from "../logger";
+import { LoggerProxy, getGlobalLogBuffer } from "../logger";
 import { LogStreamManager } from "./log-stream";
 
 // Configuration interface
@@ -52,7 +52,7 @@ export interface ServerConfig {
 }
 
 const app = new OpenAPIHono();
-const logger = getGlobalLogger().child({ component: "api-server" });
+const logger = new LoggerProxy({ component: "api-server" });
 
 // Function to setup Swagger UI based on config
 export const setupSwaggerUI = (config?: ServerConfig) => {
@@ -1394,7 +1394,7 @@ app.get("/updates", async (c: ApiContext) => {
             forceRefresh: true,
           });
         } catch (error) {
-          logger.debug("Background update check failed:", { error });
+          logger.error("Background update check failed:", { error });
         }
       });
     }
@@ -1742,10 +1742,6 @@ export const createWebSocketServer = () => {
       };
 
       logStreamManager.addClient(ws, filter);
-
-      ws.on("close", () => {
-        logger.debug("[WebSocket] Log stream client disconnected");
-      });
 
       return;
     }

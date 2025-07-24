@@ -161,9 +161,6 @@ export const checkForUpdates = async (
       const cache = await readUpdateCache(rootDir);
 
       if (cache && isValidCache(cache, packageJsonHash, 60 * 60 * 1000)) {
-        // 1 hour cache
-        const logger = getGlobalLogger().child({ component: "update-checker" });
-        logger.debug("Using cached update check results");
         return cache.data;
       }
     }

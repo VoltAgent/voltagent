@@ -44,7 +44,7 @@ export class BackgroundQueue {
     // Simple FIFO: add to end of queue
     this.tasks.push(task);
 
-    this.logger.debug(`Enqueued task ${task.id}`);
+    this.logger.trace(`Enqueued task ${task.id}`);
 
     setTimeout(() => this.processNext(), 0);
   }
@@ -95,7 +95,7 @@ export class BackgroundQueue {
           clearTimeout(timeoutId);
         }
 
-        this.logger.debug(`Task ${task.id} completed (attempt ${attempt}/${maxAttempts}`);
+        this.logger.trace(`Task ${task.id} completed (attempt ${attempt}/${maxAttempts}`);
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));

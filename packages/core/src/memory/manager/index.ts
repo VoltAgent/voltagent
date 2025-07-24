@@ -363,8 +363,9 @@ export class MemoryManager {
       }));
 
       this.logger.debug("Fetched messages from memory", {
-        conversationId: conversationId,
-        fetchedCount: messages.length,
+        conversationId,
+        userId,
+        messages,
       });
 
       // Create memory read success event for new timeline

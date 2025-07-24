@@ -8,7 +8,7 @@ import type {
   VoltOpsClientOptions,
   PromptApiResponse,
 } from "./types";
-import { getGlobalLogger, type Logger } from "../logger";
+import { LoggerProxy, type Logger } from "../logger";
 import { LogEvents } from "../logger/events";
 import {
   buildVoltOpsLogMessage,
@@ -32,7 +32,7 @@ export class VoltOpsPromptApiClient implements PromptApiClient {
     this.publicKey = options.publicKey || "";
     this.secretKey = options.secretKey || "";
     this.fetchFn = options.fetch || fetch;
-    this.logger = getGlobalLogger().child({ component: "voltops-api-client" });
+    this.logger = new LoggerProxy({ component: "voltops-api-client" });
   }
 
   /**
@@ -42,7 +42,7 @@ export class VoltOpsPromptApiClient implements PromptApiClient {
     const url = this.buildPromptUrl(reference);
     const headers = this.buildHeaders();
 
-    this.logger.debug(
+    this.logger.trace(
       buildVoltOpsLogMessage("api-client", ActionType.START, "sending API request"),
       buildLogContext(ResourceType.VOLTOPS, "api-client", ActionType.START, {
         event: LogEvents.VOLTOPS_PROMPT_FETCH_STARTED,
@@ -65,7 +65,7 @@ export class VoltOpsPromptApiClient implements PromptApiClient {
 
       if (!response.ok) {
         const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
-        this.logger.debug(
+        this.logger.error(
           buildVoltOpsLogMessage("api-client", ActionType.ERROR, "API request failed"),
           buildLogContext(ResourceType.VOLTOPS, "api-client", ActionType.ERROR, {
             event: LogEvents.VOLTOPS_PROMPT_FETCH_FAILED,
@@ -80,16 +80,14 @@ export class VoltOpsPromptApiClient implements PromptApiClient {
 
       const data = await response.json();
 
-      this.logger.debug(
+      this.logger.trace(
         buildVoltOpsLogMessage("api-client", ActionType.COMPLETE, "API request successful"),
         buildLogContext(ResourceType.VOLTOPS, "api-client", ActionType.COMPLETE, {
           event: LogEvents.VOLTOPS_PROMPT_FETCH_COMPLETED,
           promptName: reference.promptName,
           status: response.status,
           duration: Date.now() - startTime,
-          promptType: data.type,
-          promptId: data.prompt_id,
-          promptVersionId: data.prompt_version_id,
+          prompt: data,
         }),
       );
 
@@ -97,7 +95,7 @@ export class VoltOpsPromptApiClient implements PromptApiClient {
       return data as PromptApiResponse;
     } catch (error) {
       if (!(error instanceof Error && error.message.startsWith("HTTP"))) {
-        this.logger.debug(
+        this.logger.error(
           buildVoltOpsLogMessage("api-client", ActionType.ERROR, "API request error"),
           buildLogContext(ResourceType.VOLTOPS, "api-client", ActionType.ERROR, {
             event: LogEvents.VOLTOPS_PROMPT_FETCH_FAILED,

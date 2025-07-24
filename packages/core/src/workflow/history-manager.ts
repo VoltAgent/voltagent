@@ -87,7 +87,7 @@ export class WorkflowHistoryManager {
         },
       );
 
-      this.logger.debug(
+      this.logger.trace(
         `Step start recorded: ${stepName} (${step.id}) for execution ${executionId}`,
       );
 
@@ -125,7 +125,7 @@ export class WorkflowHistoryManager {
         metadata: options?.metadata,
       });
 
-      this.logger.debug(
+      this.logger.trace(
         `Step end recorded: ${stepId} with status ${options?.status || "completed"}`,
       );
 
@@ -176,7 +176,7 @@ export class WorkflowHistoryManager {
         eventSequence: eventMetadata.eventSequence as number, // Extract sequence from metadata (required)
       });
 
-      this.logger.debug(`Event persisted: ${event.name} for execution ${executionId}`);
+      this.logger.trace(`Event persisted: ${event.name} for execution ${executionId}`);
 
       // Export to telemetry if configured
       if (this.exporter) {

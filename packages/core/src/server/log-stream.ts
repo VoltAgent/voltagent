@@ -29,7 +29,6 @@ export class LogStreamManager {
     // Handle client disconnect
     ws.on("close", () => {
       this.clients.delete(client);
-      this.logger.debug(`Log stream client disconnected. Active clients: ${this.clients.size}`);
     });
 
     // Handle client messages (filter updates)
@@ -38,14 +37,14 @@ export class LogStreamManager {
         const message = JSON.parse(data.toString());
         if (message.type === "updateFilter") {
           client.filter = message.filter;
-          this.logger.debug("Updated log filter for client", { filter: client.filter });
+          this.logger.trace("Updated log filter for client", { filter: client.filter });
         }
       } catch (error) {
         this.logger.error("Failed to parse WebSocket message", { error });
       }
     });
 
-    this.logger.debug(`Log stream client connected. Active clients: ${this.clients.size}`);
+    this.logger.trace(`Log stream client connected. Active clients: ${this.clients.size}`);
   }
 
   private sendInitialLogs(client: LogStreamClient): void {
@@ -74,7 +73,7 @@ export class LogStreamManager {
   private broadcastLog(log: LogEntry): void {
     if (this.clients.size === 0) return;
 
-    this.logger.debug(`Broadcasting log: "${log.msg}"`);
+    this.logger.trace(`Broadcasting log: "${log.msg}"`);
 
     // Send log to each client based on their filter
     for (const client of this.clients) {

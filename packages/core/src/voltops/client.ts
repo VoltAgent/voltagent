@@ -16,7 +16,7 @@ import type {
   PromptReference,
 } from "./types";
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";
-import { getGlobalLogger, type Logger } from "../logger";
+import { LoggerProxy, type Logger } from "../logger";
 import { LogEvents } from "../logger/events";
 import { buildVoltOpsLogMessage, buildLogContext, ResourceType } from "../logger/message-builder";
 
@@ -49,7 +49,7 @@ export class VoltOpsClient implements IVoltOpsClient {
       },
     };
 
-    this.logger = getGlobalLogger().child({ component: "voltops-client" });
+    this.logger = new LoggerProxy({ component: "voltops-client" });
 
     // Validate API keys after logger is initialized
     this.validateApiKeys(options);
@@ -294,7 +294,7 @@ export class VoltOpsClient implements IVoltOpsClient {
       if (this.prompts) {
         this.prompts.clearCache();
       }
-      this.logger.debug(
+      this.logger.trace(
         buildVoltOpsLogMessage("client", "disposed", "resources cleaned up"),
         buildLogContext(ResourceType.VOLTOPS, "client", "disposed", {}),
       );

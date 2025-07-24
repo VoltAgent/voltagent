@@ -164,7 +164,7 @@ export class LibSQLStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options?.debug) {
-      this.logger.trace(`${message}`, data || "");
+      this.logger.debug(`${message}`, data || "");
     }
   }
 

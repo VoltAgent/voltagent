@@ -121,7 +121,7 @@ export class WorkflowEventEmitter extends EventEmitter {
 
       await registry.persistWorkflowTimelineEvent(workflowId, executionId, event);
 
-      this.logger.debug(
+      this.logger.trace(
         `Event delegated to WorkflowRegistry: ${event.name} for execution ${executionId}`,
       );
     } catch (error) {
@@ -147,7 +147,7 @@ export class WorkflowEventEmitter extends EventEmitter {
         event,
       });
 
-      this.logger.debug(`Immediate event emitted: ${event.name} for execution ${executionId}`);
+      this.logger.trace(`Immediate event emitted: ${event.name} for execution ${executionId}`);
     } catch (error) {
       // Don't throw - immediate events are best-effort
       this.logger.error("Failed to emit immediate event", { error });
