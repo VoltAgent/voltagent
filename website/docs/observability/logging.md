@@ -3,6 +3,9 @@ title: Logging
 slug: /observability/logging
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 VoltAgent provides automatic logging for all agent and workflow events. By default, it uses a simple console logger for quick prototyping, but for production use, you should use the powerful Pino-based logger from `@voltagent/logger` package which offers pretty formatting, file transports, and advanced features.
 
 ## Global Logger Configuration
@@ -35,6 +38,38 @@ const voltAgent = new VoltAgent({
 });
 // ✅ This uses Pino with pretty formatting, transports, and all advanced features
 ```
+
+:::info Installing @voltagent/logger
+
+For existing projects using the default ConsoleLogger, install `@voltagent/logger` to access advanced features like pretty formatting, file transports, and Pino integration:
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+    ```bash
+    npm install @voltagent/logger
+    ```
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+    ```bash
+    pnpm add @voltagent/logger
+    ```
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+    ```bash
+    yarn add @voltagent/logger
+    ```
+  </TabItem>
+</Tabs>
+
+Then import and use:
+
+```javascript
+import { createPinoLogger } from "@voltagent/logger";
+
+const logger = createPinoLogger({ level: "info", name: "my-app" });
+```
+
+:::
 
 ## Default Logger Behavior
 
