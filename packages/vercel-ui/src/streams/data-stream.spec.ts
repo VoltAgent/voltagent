@@ -5,16 +5,13 @@ import { formatDataStreamPart, mergeIntoDataStream, toDataStream } from "./data-
 import type { DataStreamOptions, FullStream, SubAgentStreamPart } from "./data-stream";
 
 // Mock dependencies
-vi.mock("@voltagent/internal/dev", () => ({
-  devLogger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-  },
-}));
-
 vi.mock("ai", () => ({
   formatDataStreamPart: vi.fn((type, value) => `formatted:${type}:${JSON.stringify(value)}`),
 }));
+
+// Spy on console methods
+const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
 describe("data-stream", () => {
   beforeEach(() => {
@@ -22,6 +19,7 @@ describe("data-stream", () => {
   });
 
   afterEach(() => {
+    vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 

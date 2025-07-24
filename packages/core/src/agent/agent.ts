@@ -15,7 +15,14 @@ import type {
   ToolStartEvent,
   ToolSuccessEvent,
 } from "../events/types";
-import { buildAgentLogMessage, buildToolLogMessage, ActionType } from "../logger/message-builder";
+import {
+  buildAgentLogMessage,
+  buildToolLogMessage,
+  buildRetrieverLogMessage,
+  ActionType,
+  buildLogContext,
+  ResourceType,
+} from "../logger/message-builder";
 import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
@@ -72,7 +79,7 @@ import type {
   VoltAgentError,
 } from "./types";
 import type { Logger } from "@voltagent/internal";
-import { LogEvents, LoggerProxy } from "../logger";
+import { LogEvents, LoggerProxy, ensureBufferedLogger } from "../logger";
 
 /**
  * Agent class for interacting with AI models
@@ -254,12 +261,22 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Store user context if provided
     this.defaultUserContext = options.userContext;
 
-    // Initialize logger with LoggerProxy for lazy evaluation
-    this.logger = new LoggerProxy({
-      component: "agent",
-      agentId: this.id,
-      modelName: this.getModelName(),
-    });
+    // Initialize logger - use provided logger or fall back to LoggerProxy
+    if (options.logger) {
+      // Wrap the provided logger to ensure it syncs to global buffer
+      this.logger = ensureBufferedLogger(options.logger, {
+        component: "agent",
+        agentId: this.id,
+        modelName: this.getModelName(),
+      });
+    } else {
+      // Fall back to LoggerProxy for lazy evaluation
+      this.logger = new LoggerProxy({
+        component: "agent",
+        agentId: this.id,
+        modelName: this.getModelName(),
+      });
+    }
 
     // Log agent creation
     this.logger.debug(`Agent created: ${this.name}`, {
@@ -333,15 +350,21 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.memoryManager,
       options.maxHistoryEntries || 0,
       chosenExporter,
+      this.logger,
     );
   }
 
   /**
    * Resolve dynamic instructions based on user context
    */
-  private async resolveInstructions(options: DynamicValueOptions): Promise<string | PromptContent> {
+  private async resolveInstructions(
+    options: DynamicValueOptions,
+    operationContext?: OperationContext,
+  ): Promise<string | PromptContent> {
     if (!this.dynamicInstructions) return this.instructions;
     if (typeof this.dynamicInstructions === "function") {
+      const logger = operationContext?.logger || this.logger;
+
       // Always provide prompts helper - user can choose to use it or not
       const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
         this.id,
@@ -354,9 +377,31 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       // If result is a PromptContent object from VoltOps, return it as-is
       if (typeof result === "object" && result !== null && "type" in result) {
-        return result as PromptContent;
+        const promptContent = result as PromptContent;
+        logger.debug(
+          buildAgentLogMessage(
+            this.name,
+            "dynamic-instructions-complete",
+            "resolved VoltOps prompt",
+          ),
+          {
+            agentId: this.id,
+            prompt: promptContent,
+          },
+        );
+        return promptContent;
       }
 
+      logger.debug(
+        buildAgentLogMessage(
+          this.name,
+          "dynamic-instructions-complete",
+          "resolved dynamic instructions",
+        ),
+        {
+          prompt: result,
+        },
+      );
       return result;
     }
     return this.dynamicInstructions;
@@ -429,7 +474,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userContext: operationContext?.userContext || new Map(),
       prompts: promptHelper,
     };
-    const resolvedInstructions = await this.resolveInstructions(dynamicValueOptions);
+    const resolvedInstructions = await this.resolveInstructions(
+      dynamicValueOptions,
+      operationContext,
+    );
 
     // Get retriever context if available (needed for both chat and text types)
     let retrieverContext: string | null = null;
@@ -811,7 +859,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           // Add parentExecutionId directly to sub-agent's logger
           ...(parentHistoryEntryId && {
             parentExecutionId: parentHistoryEntryId,
-            parentHistoryId: parentHistoryEntryId,
           }),
         });
 
@@ -896,6 +943,22 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       model: this.getModelName(),
     });
 
+    // Create contextual logger for this operation
+    const contextualLogger = this.getContextualLogger(
+      options.parentAgentId,
+      options.parentHistoryEntryId,
+    );
+    const methodLogger = contextualLogger.child({
+      userId: options.userId,
+      conversationId: options.conversationId,
+      executionId: historyEntry.id,
+      operationName: options.operationName,
+      // Preserve parent execution ID if present in contextual logger
+      ...(options.parentHistoryEntryId && {
+        parentExecutionId: options.parentHistoryEntryId,
+      }),
+    });
+
     const opContext: OperationContext = {
       operationId: historyEntry.id,
       userContext:
@@ -908,6 +971,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentAgentId: options.parentAgentId,
       parentHistoryEntryId: options.parentHistoryEntryId,
       otelSpan: otelSpan,
+      logger: methodLogger,
       // Use parent's conversationSteps if available (for SubAgents), otherwise create new array
       conversationSteps: options.parentOperationContext?.conversationSteps || [],
       // Inherit signal from parent context or use provided signal
@@ -1048,11 +1112,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const otelSpan = context.otelSpan;
 
     if (otelSpan) {
-      endOperationSpan({
-        span: otelSpan,
-        status: status as "completed" | "error",
-        data,
-      });
+      endOperationSpan(
+        {
+          span: otelSpan,
+          status: status as "completed" | "error",
+          data,
+        },
+        this.logger,
+      );
     } else {
       this.logger.warn(
         `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
@@ -1073,7 +1140,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const toolSpan = context.toolSpans?.get(toolCallId);
 
     if (toolSpan) {
-      endToolSpan({ span: toolSpan, resultData });
+      endToolSpan({ span: toolSpan, resultData }, this.logger);
       context.toolSpans?.delete(toolCallId); // Remove from map after ending
     } else {
       this.logger.warn(
@@ -1269,19 +1336,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context and parent info if available
-    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
-    const methodLogger = contextualLogger.child({
-      userId,
-      conversationId: finalConversationId,
-      executionId: operationContext.historyEntry.id,
-      operationName: "generateText",
-      // Preserve parent execution ID if present in contextual logger
-      ...(parentHistoryEntryId && {
-        parentExecutionId: parentHistoryEntryId,
-        parentHistoryId: parentHistoryEntryId,
-      }),
-    });
+    // Use logger from operationContext
+    const methodLogger = operationContext.logger;
 
     const modelName = this.getModelName();
 
@@ -1387,7 +1443,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         historyEntryId: operationContext.historyEntry.id,
         operationContext: operationContext,
-        logger: methodLogger,
       });
 
       // Resolve dynamic model based on user context
@@ -1883,14 +1938,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context and parent info if available
-    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
-    const methodLogger = contextualLogger.child({
-      userId,
-      conversationId: finalConversationId,
-      executionId: operationContext.historyEntry.id,
-      operationName: "streamText",
-    });
+    // Use logger from operationContext
+    const methodLogger = operationContext.logger;
 
     const modelName = this.getModelName();
 
@@ -2022,7 +2071,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationContext: operationContext,
       // Pass the internal forwarder to tools
       internalStreamForwarder: internalStreamEventForwarder,
-      logger: methodLogger,
     });
 
     // Resolve dynamic model based on user context
@@ -2546,14 +2594,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context and parent info if available
-    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
-    const methodLogger = contextualLogger.child({
-      userId,
-      conversationId: finalConversationId,
-      executionId: operationContext.historyEntry.id,
-      operationName: "generateObject",
-    });
+    // Use logger from operationContext
+    const methodLogger = operationContext.logger;
 
     const modelName = this.getModelName();
 
@@ -2903,14 +2945,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         contextLimit,
       );
 
-    // Create method-scoped logger with all common context and parent info if available
-    const contextualLogger = this.getContextualLogger(parentAgentId, parentHistoryEntryId);
-    const methodLogger = contextualLogger.child({
-      userId,
-      conversationId: finalConversationId,
-      executionId: operationContext.historyEntry.id,
-      operationName: "streamObject",
-    });
+    // Use logger from operationContext
+    const methodLogger = operationContext.logger;
 
     const modelName = this.getModelName();
 
@@ -3424,12 +3460,34 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Publish the retriever:start event (background) with parent context
     this.publishTimelineEvent(operationContext, retrieverStartEvent);
 
+    const retrieverLogger = operationContext?.logger || this.logger;
+
+    // Log retriever search started
+    const retrieverName = this.retriever.tool.name || "search_knowledge";
+    retrieverLogger.debug(
+      buildRetrieverLogMessage(retrieverName, ActionType.START, "search started"),
+      buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.START, {
+        event: LogEvents.RETRIEVER_SEARCH_STARTED,
+        query: typeof input === "string" ? input : "BaseMessage[]",
+      }),
+    );
+
     try {
       const context = await this.retriever.retrieve(input, {
         userContext: operationContext?.userContext,
+        logger: retrieverLogger,
       });
 
       if (context?.trim()) {
+        // Log retriever search completed
+        retrieverLogger.debug(
+          buildRetrieverLogMessage(retrieverName, ActionType.COMPLETE, "search completed"),
+          buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.COMPLETE, {
+            event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
+            result: context,
+          }),
+        );
+
         // [NEW EVENT SYSTEM] Create a retriever:success event
         const retrieverSuccessEvent: RetrieverSuccessEvent = {
           id: crypto.randomUUID(),
@@ -3454,8 +3512,20 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         return context;
       }
 
-      // If there was no context returned, still create a success event
+      // If there was no context returned, log it and still create a success event
       // but with a note that no context was found
+      retrieverLogger.debug(
+        buildRetrieverLogMessage(
+          retrieverName,
+          ActionType.COMPLETE,
+          "search completed - no relevant context found",
+        ),
+        buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.COMPLETE, {
+          event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
+          result: "No relevant context found",
+        }),
+      );
+
       const retrieverSuccessEvent: RetrieverSuccessEvent = {
         id: crypto.randomUUID(),
         name: "retriever:success",
@@ -3478,6 +3548,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
       return null;
     } catch (error) {
+      // Log retriever search failed
+      retrieverLogger.error(
+        buildRetrieverLogMessage(retrieverName, ActionType.ERROR, "search failed"),
+        buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.ERROR, {
+          event: LogEvents.RETRIEVER_SEARCH_FAILED,
+          query: typeof input === "string" ? input : "BaseMessage[]",
+          error,
+        }),
+      );
+
       // [NEW EVENT SYSTEM] Create a retriever:error event
       const retrieverErrorEvent: RetrieverErrorEvent = {
         id: crypto.randomUUID(),

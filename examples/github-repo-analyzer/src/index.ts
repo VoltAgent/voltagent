@@ -51,7 +51,7 @@ Example input: https://github.com/vercel/ai-sdk or vercel/ai-sdk
 // Create logger
 const logger = createPinoLogger({
   name: "github-repo-analyzer",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: "info",
 });
 
 new VoltAgent({

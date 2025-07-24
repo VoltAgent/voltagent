@@ -73,6 +73,24 @@ export const LogEvents = {
   API_REQUEST_FAILED: "api.request.failed",
   API_WEBSOCKET_CONNECTED: "api.websocket.connected",
   API_WEBSOCKET_DISCONNECTED: "api.websocket.disconnected",
+
+  // Retriever events
+  RETRIEVER_SEARCH_STARTED: "retriever.search.started",
+  RETRIEVER_SEARCH_COMPLETED: "retriever.search.completed",
+  RETRIEVER_SEARCH_FAILED: "retriever.search.failed",
+  RETRIEVER_INITIALIZED: "retriever.lifecycle.initialized",
+
+  // VoltOps events
+  VOLTOPS_CLIENT_INITIALIZED: "voltops.client.initialized",
+  VOLTOPS_PROMPT_FETCH_STARTED: "voltops.prompt.fetch.started",
+  VOLTOPS_PROMPT_FETCH_COMPLETED: "voltops.prompt.fetch.completed",
+  VOLTOPS_PROMPT_FETCH_FAILED: "voltops.prompt.fetch.failed",
+  VOLTOPS_PROMPT_CACHE_HIT: "voltops.prompt.cache.hit",
+  VOLTOPS_PROMPT_CACHE_MISS: "voltops.prompt.cache.miss",
+  VOLTOPS_PROMPT_CACHE_EVICTED: "voltops.prompt.cache.evicted",
+  VOLTOPS_TEMPLATE_PROCESS_STARTED: "voltops.template.process.started",
+  VOLTOPS_TEMPLATE_PROCESS_COMPLETED: "voltops.template.process.completed",
+  VOLTOPS_TEMPLATE_PROCESS_FAILED: "voltops.template.process.failed",
 } as const;
 
 export type LogEventName = (typeof LogEvents)[keyof typeof LogEvents];

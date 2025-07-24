@@ -560,6 +560,9 @@ export type OperationContext = {
   /** The root OpenTelemetry span for this operation */
   otelSpan?: Span;
 
+  /** Execution-scoped logger with full context (userId, conversationId, executionId) */
+  logger: Logger;
+
   /** Map to store active OpenTelemetry spans for tool calls within this operation */
   toolSpans?: Map<string, Span>; // Key: toolCallId
 

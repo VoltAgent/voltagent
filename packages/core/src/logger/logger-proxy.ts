@@ -1,5 +1,6 @@
 import type { Logger, LogFn } from "@voltagent/internal";
 import { getGlobalLogger } from "./index";
+import { BufferedLogger } from "./buffered-logger";
 
 /**
  * LoggerProxy implements the Logger interface but delegates all calls to the current global logger.
@@ -18,7 +19,12 @@ export class LoggerProxy implements Logger {
    */
   private getActualLogger(): Logger {
     const globalLogger = getGlobalLogger();
-    return Object.keys(this.bindings).length > 0 ? globalLogger.child(this.bindings) : globalLogger;
+    const childLogger =
+      Object.keys(this.bindings).length > 0 ? globalLogger.child(this.bindings) : globalLogger;
+
+    // Always wrap with BufferedLogger to ensure all logs go to buffer
+    // This is the single point where buffer management happens
+    return new BufferedLogger(childLogger, this.bindings);
   }
 
   trace: LogFn = (msg: string, context?: object): void => {

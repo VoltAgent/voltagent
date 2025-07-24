@@ -1,5 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
 import type { ToolSchema } from "../agent/providers/base/types";
+import { getGlobalLogger } from "../logger";
 import type { Tool } from "./index";
 
 /**
@@ -50,7 +50,8 @@ export const createToolkit = (options: Toolkit): Toolkit => {
     throw new Error("Toolkit name is required");
   }
   if (!options.tools || options.tools.length === 0) {
-    devLogger.warn(`Toolkit '${options.name}' created without any tools.`);
+    const logger = getGlobalLogger().child({ component: "toolkit" });
+    logger.warn(`Toolkit '${options.name}' created without any tools`);
   }
 
   return {

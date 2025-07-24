@@ -25,6 +25,8 @@ vi.mock("../../server/registry", () => {
     AgentRegistry: {
       getInstance: vi.fn().mockReturnValue({
         getAgent: vi.fn().mockReturnValue(mockAgent),
+        getGlobalLogger: vi.fn().mockReturnValue(undefined),
+        setGlobalLogger: vi.fn(),
       }),
     },
   };
@@ -40,6 +42,30 @@ vi.mock("../../events", () => {
         emitHistoryUpdate: vi.fn(),
       }),
     },
+  };
+});
+
+// Mock the console logger
+vi.mock("../../logger/console-logger", () => {
+  const createMockLogger = () => ({
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => createMockLogger()),
+  });
+
+  const mockLogger = createMockLogger();
+
+  return {
+    createConsoleLogger: vi.fn().mockReturnValue(mockLogger),
+    getDefaultLogBuffer: vi.fn().mockReturnValue({
+      push: vi.fn(),
+      clear: vi.fn(),
+      getEntries: vi.fn().mockReturnValue([]),
+    }),
   };
 });
 
@@ -59,6 +85,23 @@ const createMockContext = (): OperationContext => {
     isActive: true,
     operationId: "test-operation",
     userContext: new Map(),
+    logger: {
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      fatal: vi.fn(),
+      child: vi.fn(() => ({
+        trace: vi.fn(),
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        fatal: vi.fn(),
+        child: vi.fn(),
+      })),
+    },
   };
 };
 
@@ -314,6 +357,88 @@ class MockMemory implements Memory {
   // Helper method for tests to set current user
   setCurrentUserId(userId: string): void {
     this.currentUserId = userId;
+  }
+
+  // Workflow History Operations (stub implementations for testing)
+  async storeWorkflowHistory(_entry: any): Promise<void> {
+    // Stub implementation
+  }
+
+  async getWorkflowHistory(_id: string): Promise<any | null> {
+    return null;
+  }
+
+  async getWorkflowHistoryByWorkflowId(_workflowId: string): Promise<any[]> {
+    return [];
+  }
+
+  async updateWorkflowHistory(_id: string, _updates: any): Promise<void> {
+    // Stub implementation
+  }
+
+  async deleteWorkflowHistory(_id: string): Promise<void> {
+    // Stub implementation
+  }
+
+  // Workflow Steps Operations (stub implementations for testing)
+  async storeWorkflowStep(_step: any): Promise<void> {
+    // Stub implementation
+  }
+
+  async getWorkflowStep(_id: string): Promise<any | null> {
+    return null;
+  }
+
+  async getWorkflowSteps(_workflowHistoryId: string): Promise<any[]> {
+    return [];
+  }
+
+  async updateWorkflowStep(_id: string, _updates: any): Promise<void> {
+    // Stub implementation
+  }
+
+  async deleteWorkflowStep(_id: string): Promise<void> {
+    // Stub implementation
+  }
+
+  // Workflow Timeline Events Operations (stub implementations for testing)
+  async storeWorkflowTimelineEvent(_event: any): Promise<void> {
+    // Stub implementation
+  }
+
+  async getWorkflowTimelineEvent(_id: string): Promise<any | null> {
+    return null;
+  }
+
+  async getWorkflowTimelineEvents(_workflowHistoryId: string): Promise<any[]> {
+    return [];
+  }
+
+  async deleteWorkflowTimelineEvent(_id: string): Promise<void> {
+    // Stub implementation
+  }
+
+  // Query Operations (stub implementations for testing)
+  async getAllWorkflowIds(): Promise<string[]> {
+    return [];
+  }
+
+  async getWorkflowStats(_workflowId: string): Promise<any> {
+    return { totalRuns: 0, successCount: 0, errorCount: 0 };
+  }
+
+  // Bulk Operations (stub implementations for testing)
+  async getWorkflowHistoryWithStepsAndEvents(_id: string): Promise<any | null> {
+    return null;
+  }
+
+  async deleteWorkflowHistoryWithRelated(_id: string): Promise<void> {
+    // Stub implementation
+  }
+
+  // Cleanup Operations (stub implementations for testing)
+  async cleanupOldWorkflowHistories(_workflowId: string, _maxEntries: number): Promise<number> {
+    return 0;
   }
 }
 
@@ -1058,11 +1183,9 @@ describe("MemoryManager - ConversationMemory Tests", () => {
 describe("MemoryManager - HistoryMemory Tests", () => {
   let memoryManager: MemoryManager;
   let mockMemory: MockMemory;
-  let mockContext: OperationContext;
 
   beforeEach(() => {
     mockMemory = new MockMemory();
-    mockContext = createMockContext();
   });
 
   describe("historyMemory is always available", () => {

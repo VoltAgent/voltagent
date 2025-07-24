@@ -2,8 +2,9 @@ import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { WorkflowEvent } from "../events/workflow-emitter";
 import type { WorkflowMemoryManager } from "./memory/manager";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
-import { devLogger } from "@voltagent/internal/dev";
 import { v4 as uuidv4 } from "uuid";
+import type { Logger } from "@voltagent/internal";
+import { getGlobalLogger } from "../logger";
 
 /**
  * Manages workflow execution history and event tracking
@@ -13,15 +14,19 @@ export class WorkflowHistoryManager {
   private readonly workflowId: string;
   private memoryManager?: WorkflowMemoryManager;
   private exporter?: VoltAgentExporter;
+  private logger: Logger;
 
   constructor(
     workflowId: string,
     memoryManager?: WorkflowMemoryManager,
     exporter?: VoltAgentExporter,
+    logger?: Logger,
   ) {
     this.workflowId = workflowId;
     this.memoryManager = memoryManager;
     this.exporter = exporter;
+    this.logger =
+      logger || getGlobalLogger().child({ component: "workflow-history-manager", workflowId });
   }
 
   /**
@@ -63,9 +68,7 @@ export class WorkflowHistoryManager {
     },
   ): Promise<WorkflowStepHistoryEntry | null> {
     if (!this.memoryManager) {
-      devLogger.warn(
-        "[WorkflowHistoryManager] No memory manager configured, skipping step start recording",
-      );
+      this.logger.warn("No memory manager configured, skipping step start recording");
       return null;
     }
 
@@ -84,13 +87,13 @@ export class WorkflowHistoryManager {
         },
       );
 
-      devLogger.debug(
-        `[WorkflowHistoryManager] Step start recorded: ${stepName} (${step.id}) for execution ${executionId}`,
+      this.logger.debug(
+        `Step start recorded: ${stepName} (${step.id}) for execution ${executionId}`,
       );
 
       return step;
     } catch (error) {
-      devLogger.error("[WorkflowHistoryManager] Failed to record step start:", error);
+      this.logger.error("Failed to record step start", { error });
       return null;
     }
   }
@@ -109,9 +112,7 @@ export class WorkflowHistoryManager {
     },
   ): Promise<WorkflowStepHistoryEntry | null> {
     if (!this.memoryManager) {
-      devLogger.warn(
-        "[WorkflowHistoryManager] No memory manager configured, skipping step end recording",
-      );
+      this.logger.warn("No memory manager configured, skipping step end recording");
       return null;
     }
 
@@ -124,13 +125,13 @@ export class WorkflowHistoryManager {
         metadata: options?.metadata,
       });
 
-      devLogger.debug(
-        `[WorkflowHistoryManager] Step end recorded: ${stepId} with status ${options?.status || "completed"}`,
+      this.logger.debug(
+        `Step end recorded: ${stepId} with status ${options?.status || "completed"}`,
       );
 
       return step;
     } catch (error) {
-      devLogger.error("[WorkflowHistoryManager] Failed to record step end:", error);
+      this.logger.error("Failed to record step end", { error });
       return null;
     }
   }
@@ -144,7 +145,7 @@ export class WorkflowHistoryManager {
     event: WorkflowEvent,
   ): Promise<WorkflowHistoryEntry | null> {
     if (!this.memoryManager) {
-      devLogger.warn("[WorkflowHistoryManager] No memory manager configured, skipping persistence");
+      this.logger.warn("No memory manager configured, skipping persistence");
       return null;
     }
 
@@ -175,9 +176,7 @@ export class WorkflowHistoryManager {
         eventSequence: eventMetadata.eventSequence as number, // Extract sequence from metadata (required)
       });
 
-      devLogger.debug(
-        `[WorkflowHistoryManager] Event persisted: ${event.name} for execution ${executionId}`,
-      );
+      this.logger.debug(`Event persisted: ${event.name} for execution ${executionId}`);
 
       // Export to telemetry if configured
       if (this.exporter) {
@@ -189,7 +188,7 @@ export class WorkflowHistoryManager {
             event: event,
           });
         } catch (exportError) {
-          devLogger.error("[WorkflowHistoryManager] Failed to export timeline event:", exportError);
+          this.logger.error("Failed to export timeline event", { error: exportError });
         }
       }
 
@@ -201,7 +200,7 @@ export class WorkflowHistoryManager {
 
       return null;
     } catch (error) {
-      devLogger.error("[WorkflowHistoryManager] Failed to persist timeline event:", error);
+      this.logger.error("Failed to persist timeline event", { error });
       return null;
     }
   }
@@ -228,7 +227,7 @@ export class WorkflowHistoryManager {
 
       return detailedExecutions;
     } catch (error) {
-      devLogger.error("[WorkflowHistoryManager] Failed to get executions:", error);
+      this.logger.error("Failed to get executions", { error });
       return [];
     }
   }
@@ -245,7 +244,7 @@ export class WorkflowHistoryManager {
       const execution = await this.memoryManager.getExecutionWithDetails(executionId);
       return execution || null;
     } catch (error) {
-      devLogger.error("[WorkflowHistoryManager] Failed to get execution details:", error);
+      this.logger.error("Failed to get execution details", { error });
       return null;
     }
   }
@@ -261,7 +260,7 @@ export class WorkflowHistoryManager {
     try {
       return await this.memoryManager.getWorkflowSteps(executionId);
     } catch (error) {
-      devLogger.error("[WorkflowHistoryManager] Failed to get workflow steps:", error);
+      this.logger.error("Failed to get workflow steps", { error });
       return [];
     }
   }
@@ -280,7 +279,7 @@ export class WorkflowHistoryManager {
     try {
       return await this.memoryManager.updateStep(stepId, updates);
     } catch (error) {
-      devLogger.error("[WorkflowHistoryManager] Failed to update step:", error);
+      this.logger.error("Failed to update step", { error });
       return null;
     }
   }

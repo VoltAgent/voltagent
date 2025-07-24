@@ -41,12 +41,9 @@ const supervisorAgent = new Agent({
   subAgents: [contentCreatorAgent, formatterAgent],
 });
 
-// Initialize the VoltAgent with the agent hierarchy
-
-// Create logger
-// Advanced: With custom Pino options
 const logger = createPinoLogger({
-  level: "debug",
+  name: "with-voltagent-exporter",
+  level: "info",
 });
 
 new VoltAgent({

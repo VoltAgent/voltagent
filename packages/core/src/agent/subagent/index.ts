@@ -1,4 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
+import { getGlobalLogger } from "../../logger";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { MergeDeep } from "type-fest";
 import { z } from "zod";
@@ -512,7 +513,10 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         status: "success",
       };
     } catch (error) {
-      devLogger.error(`Error in handoffTask to ${targetAgent.name}:`, error);
+      const logger =
+        options.parentOperationContext?.logger ||
+        getGlobalLogger().child({ component: "subagent-manager" });
+      logger.error(`Error in handoffTask to ${targetAgent.name}`, { error });
 
       // Get error message safely whether error is Error object or string
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -569,7 +573,10 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
           });
         } catch (error) {
           const agentName = this.extractAgentName(agentConfig);
-          devLogger.error(`Error in handoffToMultiple for agent ${agentName}:`, error);
+          const logger =
+            options.parentOperationContext?.logger ||
+            getGlobalLogger().child({ component: "subagent-manager" });
+          logger.error(`Error in handoffToMultiple for agent ${agentName}`, { error });
 
           // Get error message safely whether error is Error object or string
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -628,6 +635,8 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         context: z.record(z.unknown()).optional().describe("Additional context for the task"),
       }),
       execute: async ({ task, targetAgents, context = {} }) => {
+        const logger =
+          operationContext?.logger || getGlobalLogger().child({ component: "subagent-manager" });
         try {
           // Validate input parameters
           if (!task || task.trim() === "") {
@@ -645,7 +654,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
                 (a: SubAgentConfig) => this.extractAgentName(a) === name,
               );
               if (!agentConfig) {
-                devLogger.warn(
+                logger.warn(
                   `Agent "${name}" not found. Available agents: ${this.subAgentConfigs.map((a) => this.extractAgentName(a)).join(", ")}`,
                 );
               }
@@ -703,7 +712,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
 
           return structuredResults;
         } catch (error) {
-          devLogger.error("Error in delegate_task tool execution:", error);
+          logger.error("Error in delegate_task tool execution", { error });
 
           // Return structured error to the LLM
           return {

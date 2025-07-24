@@ -2,17 +2,37 @@ import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
 import { expectTypeOf } from "vitest";
 import { VoltOpsClient, createVoltOpsClient } from "./client";
 import type { VoltOpsClientOptions, VoltOpsClient as IVoltOpsClient } from "./types";
+import { getGlobalLogger } from "../logger";
 
-// Mock devLogger
-vi.mock("@voltagent/internal/dev", () => ({
-  devLogger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
+// Mock the logger
+const mockLoggerInstance = {
+  trace: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+  child: vi.fn(),
+};
+
+// Set up child to return itself
+mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
+
+vi.mock("../logger", () => ({
+  getGlobalLogger: vi.fn(() => mockLoggerInstance),
+  LogEvents: {
+    VOLTOPS_CLIENT_INITIALIZED: "voltops.client.initialized",
   },
 }));
 
-import { devLogger } from "@voltagent/internal/dev";
+// Mock message builder module
+vi.mock("../logger/message-builder", () => ({
+  buildVoltOpsLogMessage: vi.fn((resource, action, message) => message),
+  buildLogContext: vi.fn((resourceType, resource, action, data) => data),
+  ResourceType: {
+    VOLTOPS: "voltops",
+  },
+}));
 
 // Simple mock for VoltOpsPromptManagerImpl
 const mockPromptManager = {
@@ -27,6 +47,16 @@ vi.mock("./prompt-manager", () => ({
   VoltOpsPromptManagerImpl: vi.fn(() => mockPromptManager),
 }));
 
+// Mock observability exporter
+vi.mock("../telemetry/exporter", () => ({
+  VoltAgentExporter: vi.fn(() => ({
+    exportHistoryEntry: vi.fn(),
+    exportHistoryEntryAsync: vi.fn(),
+    exportTimelineEvent: vi.fn(),
+    exportTimelineEventAsync: vi.fn(),
+  })),
+}));
+
 describe("VoltOpsClient", () => {
   let client: VoltOpsClient;
 
@@ -38,6 +68,8 @@ describe("VoltOpsClient", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Ensure logger mock is properly set up before creating client
+    mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
     client = new VoltOpsClient(mockOptions);
   });
 
@@ -113,7 +145,7 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(validOptions);
 
-      expect(devLogger.warn).not.toHaveBeenCalled();
+      expect(mockLoggerInstance.warn).not.toHaveBeenCalled();
     });
 
     it("should warn when publicKey is missing", () => {
@@ -125,7 +157,7 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(invalidOptions);
 
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         expect.stringContaining("⚠️  VoltOps Warning: Missing publicKey"),
       );
     });
@@ -139,7 +171,7 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(invalidOptions);
 
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         expect.stringContaining("⚠️  VoltOps Warning: Missing secretKey"),
       );
     });
@@ -153,7 +185,7 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(invalidOptions);
 
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         "⚠️  VoltOps Warning: publicKey should start with 'pk_'",
       );
     });
@@ -167,7 +199,7 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(invalidOptions);
 
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         "⚠️  VoltOps Warning: secretKey should start with 'sk_'",
       );
     });
@@ -181,11 +213,11 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(invalidOptions);
 
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         expect.stringContaining("⚠️  VoltOps Warning: Missing publicKey"),
       );
       // Should return early after first missing key, so secretKey warning won't be called
-      expect(devLogger.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggerInstance.warn).toHaveBeenCalledTimes(1);
     });
 
     it("should handle whitespace-only keys as missing", () => {
@@ -197,7 +229,7 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(invalidOptions);
 
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         expect.stringContaining("⚠️  VoltOps Warning: Missing publicKey"),
       );
     });
@@ -211,13 +243,13 @@ describe("VoltOpsClient", () => {
 
       new VoltOpsClient(invalidOptions);
 
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         "⚠️  VoltOps Warning: publicKey should start with 'pk_'",
       );
-      expect(devLogger.warn).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         "⚠️  VoltOps Warning: secretKey should start with 'sk_'",
       );
-      expect(devLogger.warn).toHaveBeenCalledTimes(2);
+      expect(mockLoggerInstance.warn).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -308,6 +340,8 @@ describe("VoltOpsClient", () => {
 describe("createVoltOpsClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Ensure logger mock is properly set up before creating client
+    mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
   });
 
   afterEach(() => {

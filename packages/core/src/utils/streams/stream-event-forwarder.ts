@@ -1,6 +1,7 @@
-import { devLogger } from "@voltagent/internal/dev";
 import type { LiteralUnion } from "type-fest";
 import type { StreamEvent, StreamEventType } from "./types";
+import type { Logger } from "@voltagent/internal";
+import { getGlobalLogger } from "../../logger";
 
 export interface StreamEventForwarderOptions {
   forwarder: (event: StreamEvent) => Promise<void>;
@@ -8,6 +9,7 @@ export interface StreamEventForwarderOptions {
     | Array<LiteralUnion<StreamEventType, string>>
     | ReadonlyArray<LiteralUnion<StreamEventType, string>>;
   addSubAgentPrefix?: boolean;
+  logger?: Logger;
 }
 
 /**
@@ -20,16 +22,17 @@ export async function streamEventForwarder(
   options: StreamEventForwarderOptions,
 ): Promise<void> {
   const { forwarder, types } = options;
+  const logger = options.logger || getGlobalLogger().child({ component: "stream-event-forwarder" });
 
   try {
     // Validate event structure
     if (!event || typeof event !== "object") {
-      devLogger.warn("[StreamEventForwarder] Invalid event structure:", event);
+      logger.warn("Invalid event structure", { event });
       return;
     }
 
     if (!event.type || !event.subAgentId || !event.subAgentName) {
-      devLogger.warn("[StreamEventForwarder] Missing required event fields:", {
+      logger.warn("Missing required event fields", {
         type: event.type,
         subAgentId: event.subAgentId,
         subAgentName: event.subAgentName,
@@ -39,25 +42,15 @@ export async function streamEventForwarder(
 
     // Only forward events that are in the types array
     if (!types.includes(event.type)) {
-      devLogger.debug(
-        "[StreamEventForwarder] Filtered out",
-        event.type,
-        "event from",
-        event.subAgentName,
-      );
+      logger.debug(`Filtered out ${event.type} event from ${event.subAgentName}`);
       return;
     }
 
     await forwarder(formatEvent(event, options));
 
-    devLogger.debug(
-      "[StreamEventForwarder] Forwarded",
-      event.type,
-      "event from",
-      event.subAgentName,
-    );
+    logger.debug(`Forwarded ${event.type} event from ${event.subAgentName}`);
   } catch (error) {
-    devLogger.error("[StreamEventForwarder] Error forwarding event:", error);
+    logger.error("Error forwarding event", { error });
   }
 }
 

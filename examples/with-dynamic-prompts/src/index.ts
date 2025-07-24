@@ -29,7 +29,7 @@ const supportAgent = new Agent({
 // Create logger
 const logger = createPinoLogger({
   name: "with-dynamic-prompts",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: "debug",
 });
 
 new VoltAgent({
@@ -39,6 +39,3 @@ new VoltAgent({
   logger,
   voltOpsClient: voltOpsClient,
 });
-
-console.log(process.env.VOLTOPS_PUBLIC_KEY);
-console.log(process.env.NODE_ENV);

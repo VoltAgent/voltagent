@@ -1,4 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
+import { getGlobalLogger } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 import type { NewTimelineEvent } from "../../events/types";
 import type {
   Conversation,
@@ -49,6 +50,7 @@ export class InMemoryStorage implements Memory {
   private workflowHistoryIndex: Record<string, string[]> = {}; // workflowId -> historyIds[]
 
   private options: InMemoryStorageOptions;
+  private logger: Logger;
 
   /**
    * Create a new in-memory storage
@@ -59,6 +61,7 @@ export class InMemoryStorage implements Memory {
       storageLimit: options.storageLimit || 100,
       debug: options.debug || false,
     };
+    this.logger = getGlobalLogger().child({ component: "in-memory-storage" });
   }
 
   /**
@@ -295,7 +298,7 @@ export class InMemoryStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options.debug) {
-      devLogger.info(`[InMemoryStorage] ${message}`, data || "");
+      this.logger.debug(message, data ? { data } : undefined);
     }
   }
 

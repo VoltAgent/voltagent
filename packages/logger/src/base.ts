@@ -37,15 +37,15 @@ export type LoggerWithBuffer = LoggerWithProvider;
 /**
  * Create a new Pino logger instance
  * @param options Logger options including pinoOptions
- * @param externalLogBuffer Optional external log buffer to sync logs to
+ * @param externalLogBuffer Optional external log buffer to sync logs to (deprecated)
  */
 export function createPinoLogger(
   options?: LoggerOptions,
-  externalLogBuffer?: any,
+  _externalLogBuffer?: any, // Deprecated - kept for backward compatibility
 ): LoggerWithBuffer {
   const provider = new PinoLoggerProvider(
     options?.bufferSize,
-    externalLogBuffer,
+    undefined, // No longer using external buffer
     options?.pinoOptions,
   );
   if (!globalLoggerProvider) {
@@ -56,15 +56,12 @@ export function createPinoLogger(
 
 /**
  * Connect an external log buffer to the existing logger
- * This allows the logger to sync logs to an external buffer (e.g., core package's global buffer)
+ * @deprecated Buffer management is now handled by @voltagent/core. This function does nothing.
  */
 export function connectExternalLogBuffer(
-  logger: LoggerWithProvider,
-  externalBuffer: LogBuffer,
+  _logger: LoggerWithProvider,
+  _externalBuffer: LogBuffer,
 ): void {
-  const provider = logger.getProvider();
-  if (provider && provider.name === "pino" && provider instanceof PinoLoggerProvider) {
-    // Access the private property using type assertion
-    (provider as any).externalLogBuffer = externalBuffer;
-  }
+  // Deprecated - buffer management is now handled by core package
+  // This function is kept for backward compatibility but does nothing
 }

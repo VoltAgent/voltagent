@@ -1,5 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
 import { v4 as uuidv4 } from "uuid";
+import { getGlobalLogger } from "../logger";
 import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 
@@ -80,7 +80,8 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
       throw new Error("Tool name is required");
     }
     if (!options.description) {
-      devLogger.warn(`Tool '${options.name}' created without a description.`);
+      const logger = getGlobalLogger().child({ component: "tool" });
+      logger.warn(`Tool '${options.name}' created without a description`);
     }
     if (!options.parameters) {
       throw new Error(`Tool '${options.name}' parameters schema is required`);

@@ -5,7 +5,6 @@
  * Replaces the old telemetryExporter approach with a comprehensive solution.
  */
 
-import { devLogger } from "@voltagent/internal/dev";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import { VoltAgentExporter as VoltAgentExporterClass } from "../telemetry/exporter";
 import { AgentRegistry } from "../server/registry";
@@ -17,6 +16,9 @@ import type {
   PromptReference,
 } from "./types";
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";
+import { getGlobalLogger, type Logger } from "../logger";
+import { LogEvents } from "../logger/events";
+import { buildVoltOpsLogMessage, buildLogContext, ResourceType } from "../logger/message-builder";
 
 /**
  * Main VoltOps client class that provides unified access to both
@@ -26,11 +28,9 @@ export class VoltOpsClient implements IVoltOpsClient {
   public readonly options: VoltOpsClientOptions & { baseUrl: string };
   public readonly observability?: VoltAgentExporter;
   public readonly prompts?: VoltOpsPromptManager;
+  private readonly logger: Logger;
 
   constructor(options: VoltOpsClientOptions) {
-    // Validate API keys
-    this.validateApiKeys(options);
-
     // Merge promptCache options properly to preserve defaults
     const defaultPromptCache = {
       enabled: true,
@@ -49,6 +49,11 @@ export class VoltOpsClient implements IVoltOpsClient {
       },
     };
 
+    this.logger = getGlobalLogger().child({ component: "voltops-client" });
+
+    // Validate API keys after logger is initialized
+    this.validateApiKeys(options);
+
     // Initialize observability exporter if enabled
     if (this.options.observability !== false) {
       try {
@@ -59,7 +64,7 @@ export class VoltOpsClient implements IVoltOpsClient {
           fetch: this.options.fetch,
         });
       } catch (error) {
-        devLogger.error("[VoltOpsClient] Failed to initialize observability exporter:", error);
+        this.logger.error("Failed to initialize observability exporter", { error });
       }
     }
 
@@ -68,9 +73,23 @@ export class VoltOpsClient implements IVoltOpsClient {
       try {
         this.prompts = new VoltOpsPromptManagerImpl(this.options);
       } catch (error) {
-        devLogger.error("[VoltOpsClient] Failed to initialize prompt manager:", error);
+        this.logger.error("Failed to initialize prompt manager", { error });
       }
     }
+
+    // Log initialization
+    this.logger.debug(
+      buildVoltOpsLogMessage("client", "initialized", "VoltOps client initialized"),
+      buildLogContext(ResourceType.VOLTOPS, "client", "initialized", {
+        event: LogEvents.VOLTOPS_CLIENT_INITIALIZED,
+        observabilityEnabled: this.options.observability !== false,
+        promptsEnabled: this.options.prompts !== false,
+        baseUrl: this.options.baseUrl,
+        cacheEnabled: this.options.promptCache?.enabled ?? true,
+        cacheTTL: this.options.promptCache?.ttl ?? defaultPromptCache.ttl,
+        cacheMaxSize: this.options.promptCache?.maxSize ?? defaultPromptCache.maxSize,
+      }),
+    );
   }
 
   /**
@@ -90,7 +109,7 @@ export class VoltOpsClient implements IVoltOpsClient {
 
           return result;
         } catch (error) {
-          devLogger.error("[VoltOpsClient] Failed to get prompt:", error);
+          this.logger.error("Failed to get prompt", { error });
           throw error;
         }
       },
@@ -157,21 +176,21 @@ export class VoltOpsClient implements IVoltOpsClient {
   ): PromptHelper {
     // Priority 1: Agent-specific VoltOpsClient (highest priority)
     if (agentVoltOpsClient?.prompts) {
-      devLogger.debug(`[Agent ${agentId}] Using agent-specific VoltOpsClient for prompts`);
       return agentVoltOpsClient.createPromptHelper(agentId);
     }
 
     // Priority 2: Global VoltOpsClient
     const globalVoltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
     if (globalVoltOpsClient?.prompts) {
-      devLogger.debug(`[Agent ${agentId}] Using global VoltOpsClient for prompts`);
       return globalVoltOpsClient.createPromptHelper(agentId);
     }
 
     // Priority 3: Fallback to default instructions
+    const logger = getGlobalLogger().child({ component: "voltops-prompt-fallback", agentName });
+
     return {
       getPrompt: async () => {
-        console.log(`
+        logger.info(`
 💡 VoltOps Prompts
    
    Agent: ${agentName}
@@ -205,7 +224,7 @@ export class VoltOpsClient implements IVoltOpsClient {
    📖 Full documentation: https://voltagent.dev/docs/agents/prompts/#3-voltops-prompt-management
         `);
 
-        console.warn(
+        logger.warn(
           `⚠️  Using fallback instructions for agent '${agentName}'. Configure VoltOpsClient to use dynamic prompts.`,
         );
 
@@ -226,7 +245,7 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     // Check if keys are provided
     if (!publicKey || publicKey.trim() === "") {
-      devLogger.warn(`
+      this.logger.warn(`
 ⚠️  VoltOps Warning: Missing publicKey
    
    VoltOps features will be disabled. To enable:
@@ -245,7 +264,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     }
 
     if (!secretKey || secretKey.trim() === "") {
-      devLogger.warn(`
+      this.logger.warn(`
 ⚠️  VoltOps Warning: Missing secretKey
    
    VoltOps features will be disabled. To enable:
@@ -259,11 +278,11 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     // Validate key formats (optional - helps catch common mistakes)
     if (!publicKey.startsWith("pk_")) {
-      devLogger.warn("⚠️  VoltOps Warning: publicKey should start with 'pk_'");
+      this.logger.warn("⚠️  VoltOps Warning: publicKey should start with 'pk_'");
     }
 
     if (!secretKey.startsWith("sk_")) {
-      devLogger.warn("⚠️  VoltOps Warning: secretKey should start with 'sk_'");
+      this.logger.warn("⚠️  VoltOps Warning: secretKey should start with 'sk_'");
     }
   }
 
@@ -275,9 +294,12 @@ export class VoltOpsClient implements IVoltOpsClient {
       if (this.prompts) {
         this.prompts.clearCache();
       }
-      devLogger.info("[VoltOpsClient] Resources disposed successfully");
+      this.logger.debug(
+        buildVoltOpsLogMessage("client", "disposed", "resources cleaned up"),
+        buildLogContext(ResourceType.VOLTOPS, "client", "disposed", {}),
+      );
     } catch (error) {
-      devLogger.error("[VoltOpsClient] Error during disposal:", error);
+      this.logger.error("Error during disposal", { error });
     }
   }
 }

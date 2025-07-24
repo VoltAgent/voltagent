@@ -283,6 +283,7 @@ export type ToolExecuteOptions = {
   /**
    * The operation context associated with the agent invocation triggering this tool execution.
    * Provides access to operation-specific state like userContext.
+   * The context includes a logger with full execution context (userId, conversationId, executionId).
    */
   operationContext?: OperationContext;
 

@@ -20,19 +20,19 @@ describe("formatters", () => {
   });
 
   describe("getDefaultLogLevel", () => {
-    it("should return debug in development by default", () => {
+    it("should return info in development by default", () => {
       process.env.NODE_ENV = "development";
-      expect(getDefaultLogLevel()).toBe("debug");
-    });
-
-    it("should return info in production by default", () => {
-      process.env.NODE_ENV = "production";
       expect(getDefaultLogLevel()).toBe("info");
     });
 
-    it("should return debug when NODE_ENV is not set", () => {
+    it("should return error in production by default", () => {
+      process.env.NODE_ENV = "production";
+      expect(getDefaultLogLevel()).toBe("error");
+    });
+
+    it("should return info when NODE_ENV is not set", () => {
       // NODE_ENV is undefined
-      expect(getDefaultLogLevel()).toBe("debug");
+      expect(getDefaultLogLevel()).toBe("info");
     });
 
     it("should prioritize VOLTAGENT_LOG_LEVEL over default", () => {

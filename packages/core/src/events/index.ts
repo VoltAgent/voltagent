@@ -130,7 +130,8 @@ export class AgentEventEmitter extends EventEmitter {
     this.timelineEventQueue.enqueue({
       id: `timeline-event-${event.id}`,
       operation: async () => {
-        const clonedEvent = deepClone(event);
+        const logger = getGlobalLogger().child({ component: "agent-event-emitter" });
+        const clonedEvent = deepClone(event, logger);
 
         await this.publishTimelineEventSync({
           agentId,

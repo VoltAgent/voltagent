@@ -88,7 +88,7 @@ export const browserAgent = new Agent({
 // Create logger
 const logger = createPinoLogger({
   name: "with-playwright",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: "info",
 });
 
 new VoltAgent({

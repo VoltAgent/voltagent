@@ -1,3 +1,5 @@
+import type { Logger } from "../logger";
+
 /**
  * Options for configuring the Retriever
  */
@@ -17,6 +19,12 @@ export type RetrieverOptions = {
   toolDescription?: string;
 
   /**
+   * Optional logger instance for the retriever
+   * If not provided, a default logger will be created
+   */
+  logger?: Logger;
+
+  /**
    * Additional configuration specific to concrete retriever implementations
    */
   [key: string]: any;
@@ -31,6 +39,13 @@ export interface RetrieveOptions {
    * Can be used to store metadata, results, or any custom data
    */
   userContext?: Map<string | symbol, unknown>;
+
+  /**
+   * Optional logger instance for this retrieval operation.
+   * Provides execution-scoped logging with full context.
+   * Available when retriever is called from an agent or workflow context.
+   */
+  logger?: Logger;
 }
 
 /**

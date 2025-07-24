@@ -6,6 +6,7 @@ import { createConsoleLogger, getDefaultLogBuffer } from "./console-logger";
 export * from "./events";
 export * from "./logger-proxy";
 export * from "./message-builder";
+export * from "./buffered-logger";
 
 // Re-export logger types from internal
 export type { Logger, LogFn, LogEntry, LogFilter, LogBuffer } from "@voltagent/internal";

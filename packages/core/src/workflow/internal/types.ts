@@ -4,6 +4,7 @@ import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowState } from "./state";
 import type { WorkflowExecutionContext } from "../context";
+import type { Logger } from "@voltagent/internal";
 
 /**
  * The base input type for the workflow
@@ -35,6 +36,11 @@ export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> 
   getStepData: (stepId: string) => { input: any; output: any } | undefined;
   suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;
   resumeData?: RESUME_DATA;
+  /**
+   * Logger instance for this workflow execution.
+   * Provides execution-scoped logging with full context (userId, conversationId, executionId).
+   */
+  logger: Logger;
 }
 
 /**

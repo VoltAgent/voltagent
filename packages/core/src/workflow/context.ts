@@ -1,5 +1,6 @@
 import type { Memory } from "../memory";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
+import type { Logger } from "@voltagent/internal";
 
 /**
  * Context information for a workflow execution
@@ -61,6 +62,11 @@ export interface WorkflowExecutionContext {
    * Used to maintain event ordering even after server restarts
    */
   eventSequence: number;
+  /**
+   * Logger instance for this workflow execution
+   * Provides execution-scoped logging with full context (userId, conversationId, executionId)
+   */
+  logger: Logger;
 }
 
 /**

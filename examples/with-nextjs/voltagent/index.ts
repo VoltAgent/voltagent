@@ -44,7 +44,7 @@ export const agent = new Agent({
 // Create logger
 const logger = createPinoLogger({
   name: "nextjs-example",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: "info",
 });
 
 new VoltAgent({

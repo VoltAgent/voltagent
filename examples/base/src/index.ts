@@ -13,7 +13,7 @@ const agent = new Agent({
 // Create logger
 const logger = createPinoLogger({
   name: "base",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: "info",
 });
 
 new VoltAgent({

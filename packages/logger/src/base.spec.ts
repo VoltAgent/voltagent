@@ -150,20 +150,12 @@ describe("base", () => {
           },
         },
       };
-      const externalBuffer = { add: vi.fn() } as any;
 
-      const logger = createPinoLogger(options, externalBuffer);
+      const logger = createPinoLogger(options);
 
       expect(PinoLoggerProvider).toHaveBeenCalledWith(
         options.bufferSize,
-        externalBuffer,
-        options.pinoOptions,
-      );
-
-      // Verify the provider was created with correct arguments
-      expect(PinoLoggerProvider).toHaveBeenCalledWith(
-        options.bufferSize,
-        externalBuffer,
+        undefined, // No longer using external buffer
         options.pinoOptions,
       );
     });

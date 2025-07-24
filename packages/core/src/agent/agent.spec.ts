@@ -763,6 +763,7 @@ describe("Agent", () => {
         expect.anything(),
         expect.any(Number),
         mockTelemetryExporter,
+        expect.anything(), // logger parameter
       );
     });
 

@@ -3,6 +3,7 @@ import { Agent } from "../agent/agent";
 import { AgentRegistry } from "../server/registry";
 import { VoltOpsClient } from "./client";
 import type { PromptContent, PromptHelper, VoltOpsClientOptions } from "./types";
+import { getGlobalLogger, LoggerProxy } from "../logger";
 
 // Mock the VoltOps prompt manager
 const mockPromptManager = {
@@ -25,6 +26,37 @@ vi.mock("../telemetry/exporter", () => ({
     exportTimelineEvent: vi.fn(),
     exportTimelineEventAsync: vi.fn(),
   })),
+}));
+
+// Create a factory function for logger instances
+const createMockLogger = () => {
+  const logger = {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(),
+  };
+  // Set up child to return itself
+  logger.child.mockReturnValue(logger);
+  return logger;
+};
+
+// Create initial mock logger instance
+let mockLoggerInstance = createMockLogger();
+
+vi.mock("../logger", () => ({
+  getGlobalLogger: vi.fn(() => mockLoggerInstance),
+  LoggerProxy: vi.fn().mockImplementation(() => mockLoggerInstance),
+  LogEvents: {
+    AGENT_CREATED: "agent.created",
+    AGENT_RUN_START: "agent.run.start",
+    AGENT_RUN_COMPLETE: "agent.run.complete",
+    AGENT_RUN_ERROR: "agent.run.error",
+    VOLTOPS_CLIENT_INITIALIZED: "voltops.client.initialized",
+  },
 }));
 
 // Mock agent provider
@@ -57,9 +89,26 @@ const createMockVoltOpsClient = (options: Partial<VoltOpsClientOptions> = {}): V
 
 describe("VoltOpsClient Priority Hierarchy", () => {
   beforeEach(() => {
+    // Create fresh logger instance for each test
+    mockLoggerInstance = createMockLogger();
+
+    // Update the mock to return the fresh instance
+    vi.mocked(getGlobalLogger).mockReturnValue(mockLoggerInstance);
+    vi.mocked(LoggerProxy).mockImplementation(() => mockLoggerInstance);
+
+    // Clear other mocks
     vi.clearAllMocks();
+
     // Reset registry state
     AgentRegistry.getInstance().setGlobalVoltOpsClient(undefined as any);
+
+    // Reset prompt manager mock
+    mockPromptManager.getPrompt.mockClear();
+  });
+
+  afterEach(() => {
+    // Only restore non-module mocks to preserve logger setup
+    vi.restoreAllMocks({ stubGlobals: false } as any);
   });
 
   describe("createPromptHelperWithFallback priority system", () => {
@@ -173,8 +222,9 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
     it("should use fallback instructions when no VoltOpsClient is available", async () => {
       // Setup: No VoltOps clients at all
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      // Clear previous calls
+      mockLoggerInstance.info.mockClear();
+      mockLoggerInstance.warn.mockClear();
 
       const promptHelper = VoltOpsClient.createPromptHelperWithFallback(
         "test-agent",
@@ -191,14 +241,13 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         text: "fallback instructions",
       });
 
-      // Should show helpful console messages
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("VoltOps Prompts"));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      // Should show helpful logger messages
+      expect(mockLoggerInstance.info).toHaveBeenCalledWith(
+        expect.stringContaining("VoltOps Prompts"),
+      );
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
         expect.stringContaining("Using fallback instructions for agent 'TestAgent'"),
       );
-
-      consoleSpy.mockRestore();
-      consoleWarnSpy.mockRestore();
     });
   });
 
@@ -349,10 +398,12 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       } as any;
 
       const globalVoltOpsClient = createMockVoltOpsClient();
-      globalVoltOpsClient.prompts!.getPrompt = vi.fn().mockResolvedValue({
-        type: "text",
-        text: "Global fallback",
-      });
+      if (globalVoltOpsClient.prompts) {
+        globalVoltOpsClient.prompts.getPrompt = vi.fn().mockResolvedValue({
+          type: "text",
+          text: "Global fallback",
+        });
+      }
 
       AgentRegistry.getInstance().setGlobalVoltOpsClient(globalVoltOpsClient);
 
@@ -375,8 +426,9 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       AgentRegistry.getInstance().setGlobalVoltOpsClient(globalClient);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      // Clear previous calls
+      mockLoggerInstance.info.mockClear();
+      mockLoggerInstance.warn.mockClear();
 
       const promptHelper = VoltOpsClient.createPromptHelperWithFallback(
         "test-agent",
@@ -393,12 +445,9 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         text: "ultimate fallback",
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLoggerInstance.info).toHaveBeenCalledWith(
         expect.stringContaining("Found but prompts disabled"),
       );
-
-      consoleSpy.mockRestore();
-      consoleWarnSpy.mockRestore();
     });
   });
 });

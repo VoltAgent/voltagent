@@ -67,7 +67,7 @@ const ragAgent = new Agent({
 // Create logger
 const logger = createPinoLogger({
   name: "with-rag-chatbot",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: "info",
 });
 
 new VoltAgent({

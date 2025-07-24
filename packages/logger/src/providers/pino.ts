@@ -1,8 +1,7 @@
 import pino from "pino";
 import type { LoggerOptions as PinoLoggerOptions } from "pino";
-import { InMemoryLogBuffer } from "../buffer";
 import { getDefaultLogLevel, getDefaultLogFormat, getDefaultRedactionPaths } from "../formatters";
-import type { Logger, LoggerOptions, LogBuffer, LogEntry } from "../types";
+import type { Logger, LoggerOptions, LogBuffer } from "../types";
 import type { LoggerProvider, LoggerWithProvider } from "./interface";
 
 /**
@@ -10,27 +9,19 @@ import type { LoggerProvider, LoggerWithProvider } from "./interface";
  */
 export class PinoLoggerProvider implements LoggerProvider {
   public name = "pino";
-  private logBuffer: LogBuffer;
-  private externalLogBuffer?: LogBuffer;
   private customPinoOptions?: PinoLoggerOptions;
 
   public constructor(
-    bufferSize?: number,
-    externalLogBuffer?: LogBuffer,
+    _bufferSize?: number, // Kept for backward compatibility but not used anymore
+    _externalLogBuffer?: LogBuffer, // Kept for backward compatibility but not used anymore
     pinoOptions?: PinoLoggerOptions,
   ) {
-    const size = bufferSize || Number.parseInt(process.env.VOLTAGENT_LOG_BUFFER_SIZE || "1000", 10);
-    this.logBuffer = new InMemoryLogBuffer(size);
-    this.externalLogBuffer = externalLogBuffer;
     this.customPinoOptions = pinoOptions;
   }
 
   public createLogger(options?: LoggerOptions): LoggerWithProvider {
     const pinoOptions = this.createPinoOptions(options);
     const pinoInstance = pino(pinoOptions);
-
-    // Setup log capture
-    this.setupLogCapture(pinoInstance);
 
     return this.wrapPinoInstance(pinoInstance);
   }
@@ -68,7 +59,7 @@ export class PinoLoggerProvider implements LoggerProvider {
     // Create a proxy object that includes our logger and custom methods
     const loggerWithProvider = Object.assign(logger, {
       getProvider: () => this,
-      getBuffer: () => this.logBuffer,
+      getBuffer: () => this.getLogBuffer(),
     }) as LoggerWithProvider;
 
     return loggerWithProvider;
@@ -90,7 +81,10 @@ export class PinoLoggerProvider implements LoggerProvider {
   }
 
   public getLogBuffer(): LogBuffer {
-    return this.logBuffer;
+    // Buffer management is now handled by core package
+    throw new Error(
+      "Buffer management has been moved to @voltagent/core. Loggers no longer manage their own buffers.",
+    );
   }
 
   public async flush(): Promise<void> {
@@ -101,8 +95,7 @@ export class PinoLoggerProvider implements LoggerProvider {
   }
 
   public async close(): Promise<void> {
-    // Clear the buffer on close
-    this.logBuffer.clear();
+    // Nothing to close - buffer management is handled by core
     return Promise.resolve();
   }
 
@@ -178,36 +171,5 @@ export class PinoLoggerProvider implements LoggerProvider {
       ...restOptions,
       ...this.customPinoOptions,
     };
-  }
-
-  /**
-   * Setup log capture for buffer
-   */
-  private setupLogCapture(pinoLogger: Logger): void {
-    // Intercept the write stream to capture logs
-    const stream = (pinoLogger as any)[pino.symbols.streamSym];
-    if (stream?.write) {
-      const originalWrite = stream.write.bind(stream);
-
-      stream.write = (chunk: any) => {
-        // Call original write
-        originalWrite(chunk);
-
-        // Try to parse and capture the log
-        try {
-          if (typeof chunk === "string") {
-            const logEntry = JSON.parse(chunk.trim()) as LogEntry;
-            this.logBuffer.add(logEntry);
-
-            // Also add to external buffer if provided
-            if (this.externalLogBuffer) {
-              this.externalLogBuffer.add(logEntry);
-            }
-          }
-        } catch {
-          // Ignore parse errors for non-JSON logs
-        }
-      };
-    }
   }
 }

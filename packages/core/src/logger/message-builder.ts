@@ -7,6 +7,8 @@ export enum ResourceType {
   TOOL = "tool",
   WORKFLOW = "workflow",
   MEMORY = "memory",
+  RETRIEVER = "retriever",
+  VOLTOPS = "voltops",
   SYSTEM = "system",
 }
 
@@ -108,4 +110,26 @@ export function buildWorkflowLogMessage(
   description: string,
 ): string {
   return buildLogMessage(ResourceType.WORKFLOW, workflowName, action, description);
+}
+
+/**
+ * Helper to format retriever log messages
+ */
+export function buildRetrieverLogMessage(
+  retrieverName: string,
+  action: ActionType | string,
+  description: string,
+): string {
+  return buildLogMessage(ResourceType.RETRIEVER, retrieverName, action, description);
+}
+
+/**
+ * Helper to format VoltOps log messages
+ */
+export function buildVoltOpsLogMessage(
+  componentName: string,
+  action: ActionType | string,
+  description: string,
+): string {
+  return buildLogMessage(ResourceType.VOLTOPS, componentName, action, description);
 }

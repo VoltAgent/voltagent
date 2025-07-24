@@ -25,7 +25,7 @@ import { openai } from "@ai-sdk/openai";
     // Create logger
     const logger = createPinoLogger({
       name: "with-composio-mcp",
-      level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+      level: "info",
     });
 
     new VoltAgent({

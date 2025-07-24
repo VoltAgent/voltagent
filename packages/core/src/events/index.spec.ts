@@ -7,6 +7,20 @@ import { AgentEventEmitter } from "./index";
 // Mock AgentRegistry
 vi.mock("../server/registry");
 
+// Mock logger
+vi.mock("../logger", () => ({
+  getGlobalLogger: vi.fn(() => ({
+    child: vi.fn(() => ({
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      fatal: vi.fn(),
+    })),
+  })),
+}));
+
 describe("AgentEventEmitter", () => {
   let eventEmitter: AgentEventEmitter;
 

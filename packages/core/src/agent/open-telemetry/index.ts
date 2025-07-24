@@ -6,7 +6,8 @@ import {
   context as apiContext,
   trace,
 } from "@opentelemetry/api";
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
+import { getGlobalLogger } from "../../logger";
 import type { EventStatus, StandardEventData } from "../../events/types";
 import type { UsageInfo } from "../providers/base/types";
 
@@ -66,8 +67,9 @@ interface EndOperationSpanOptions {
   data: Partial<StandardEventData> & Record<string, unknown>;
 }
 
-export function endOperationSpan(options: EndOperationSpanOptions): void {
+export function endOperationSpan(options: EndOperationSpanOptions, logger?: Logger): void {
   const { span, status, data } = options;
+  const log = logger || getGlobalLogger().child({ component: "open-telemetry" });
 
   if (!span || !span.isRecording()) {
     return;
@@ -121,12 +123,12 @@ export function endOperationSpan(options: EndOperationSpanOptions): void {
       }
     }
   } catch (e) {
-    devLogger.error("[OTEL] Error enriching operation span:", e);
+    log.error("Error enriching operation span", { error: e });
     try {
       span.setAttribute("otel.enrichment.error", true);
       span.setStatus({ code: SpanStatusCode.ERROR, message: "Span enrichment failed" });
     } catch (safeSetError) {
-      devLogger.error("[OTEL] Error setting enrichment error status:", safeSetError);
+      log.error("Error setting enrichment error status", { error: safeSetError });
     }
   } finally {
     span.end();
@@ -170,8 +172,9 @@ interface EndToolSpanOptions {
   resultData: { result?: any; content?: any; error?: any };
 }
 
-export function endToolSpan(options: EndToolSpanOptions): void {
+export function endToolSpan(options: EndToolSpanOptions, logger?: Logger): void {
   const { span, resultData } = options;
+  const log = logger || getGlobalLogger().child({ component: "open-telemetry" });
 
   if (!span || !span.isRecording()) {
     return;
@@ -193,12 +196,12 @@ export function endToolSpan(options: EndToolSpanOptions): void {
       span.setStatus({ code: SpanStatusCode.OK });
     }
   } catch (e) {
-    devLogger.error("[OTEL] Error enriching tool span:", e);
+    log.error("Error enriching tool span", { error: e });
     try {
       span.setAttribute("otel.enrichment.error", true);
       span.setStatus({ code: SpanStatusCode.ERROR, message: "Tool span enrichment failed" });
     } catch (safeSetError) {
-      devLogger.error("[OTEL] Error setting tool enrichment error status:", safeSetError);
+      log.error("Error setting tool enrichment error status", { error: safeSetError });
     }
   } finally {
     span.end();

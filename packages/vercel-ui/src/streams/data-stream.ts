@@ -1,6 +1,5 @@
 import type * as UIUtils from "@ai-sdk/ui-utils";
 import type { StreamPart } from "@voltagent/core";
-import { devLogger } from "@voltagent/internal/dev";
 import { formatDataStreamPart as formatDataStreamPartBase } from "ai";
 import type * as AI from "ai";
 import { P, match } from "ts-pattern";
@@ -116,7 +115,7 @@ export function toDataStream(
             try {
               controller.enqueue(data);
             } catch (e) {
-              devLogger.error("Failed to enqueue data:", e);
+              console.error("[vercel-ui-data-stream] Failed to enqueue data", e);
               streamClosed = true;
             }
           }
@@ -130,7 +129,7 @@ export function toDataStream(
               streamClosed = true;
               /* c8 ignore next 3 */
             } catch (e) {
-              devLogger.error("Failed to close controller:", e);
+              console.error("[vercel-ui-data-stream] Failed to close controller", e);
             }
           }
         };
@@ -240,32 +239,32 @@ export function toDataStream(
           }
         } catch (iterationError) {
           // Handle errors during stream iteration
-          devLogger.error("Error during stream iteration:", iterationError);
+          console.error("[vercel-ui-data-stream] Error during stream iteration", iterationError);
           const errorMessage = getErrorMessage(iterationError);
           safeEnqueue(formatDataStreamPart("error", errorMessage));
           safeClose();
         }
       } catch (error) {
         // Handle errors during initial setup
-        devLogger.error("Error during stream setup:", error);
+        console.error("[vercel-ui-data-stream] Error during stream setup", error);
         const errorMessage = getErrorMessage(error);
         try {
           controller.enqueue(formatDataStreamPart("error", errorMessage));
           /* c8 ignore next 3 */
         } catch (e) {
-          devLogger.error("Failed to enqueue setup error message:", e);
+          console.error("[vercel-ui-data-stream] Failed to enqueue setup error message", e);
         }
         try {
           controller.close();
 
           /* c8 ignore next 3 */
         } catch (e) {
-          devLogger.error("Failed to close controller after setup error:", e);
+          console.error("[vercel-ui-data-stream] Failed to close controller after setup error", e);
         }
       }
     },
     cancel(reason) {
-      devLogger.warn("Stream cancelled:", reason);
+      console.warn("[vercel-ui-data-stream] Stream cancelled", reason);
     },
   });
 }

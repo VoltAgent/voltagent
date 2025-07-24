@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { devLogger } from "@voltagent/internal/dev";
+import { getGlobalLogger } from "../../logger";
 import {
   readUpdateCache,
   writeUpdateCache,
@@ -162,7 +162,8 @@ export const checkForUpdates = async (
 
       if (cache && isValidCache(cache, packageJsonHash, 60 * 60 * 1000)) {
         // 1 hour cache
-        devLogger.debug("Using cached update check results");
+        const logger = getGlobalLogger().child({ component: "update-checker" });
+        logger.debug("Using cached update check results");
         return cache.data;
       }
     }
@@ -295,7 +296,8 @@ export const checkForUpdates = async (
 
     return result;
   } catch (error) {
-    devLogger.error("Error checking for updates:", error);
+    const logger = getGlobalLogger().child({ component: "update-checker" });
+    logger.error("Error checking for updates", { error });
     return {
       hasUpdates: false,
       updates: [],
@@ -338,7 +340,8 @@ export const updateAllPackages = async (
       .filter((pkg) => pkg.type !== "latest")
       .map((pkg) => `${pkg.name}@latest`);
 
-    devLogger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
+    const logger = getGlobalLogger().child({ component: "update-checker" });
+    logger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
 
     // 4. Run the update command based on package manager
     // Note: We use install/add commands instead of update to handle major version changes
@@ -376,7 +379,8 @@ export const updateAllPackages = async (
       requiresRestart: true,
     };
   } catch (error) {
-    devLogger.error("Error updating packages:", error);
+    const logger = getGlobalLogger().child({ component: "update-checker" });
+    logger.error("Error updating packages", { error });
     return {
       success: false,
       message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`,
@@ -425,7 +429,8 @@ export const updateSinglePackage = async (
     const rootDir = packagePath ? path.dirname(packagePath) : process.cwd();
     const packageManager = detectPackageManager(rootDir);
 
-    devLogger.info(`Updating package ${packageName} in ${rootDir} using ${packageManager}`);
+    const logger = getGlobalLogger().child({ component: "update-checker" });
+    logger.info(`Updating package ${packageName} in ${rootDir} using ${packageManager}`);
 
     // Run the update command based on package manager
     // Note: We use install/add commands instead of update to handle major version changes
@@ -464,7 +469,8 @@ export const updateSinglePackage = async (
       requiresRestart: true,
     };
   } catch (error) {
-    devLogger.error(`Error updating package ${packageName}:`, error);
+    const logger = getGlobalLogger().child({ component: "update-checker" });
+    logger.error(`Error updating package ${packageName}`, { error });
     return {
       success: false,
       message: `Failed to update ${packageName}: ${error instanceof Error ? error.message : String(error)}`,

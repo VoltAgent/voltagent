@@ -632,3 +632,104 @@ const devLogger = createPinoLogger({
 // Perfect for debugging agent interactions
 devLogger.debug({ agentId: "agent_123", action: "thinking" }, "Agent processing request");
 ```
+
+## Execution-Scoped Logging in Tools and Workflows
+
+When your tools, workflows, and retrievers are executed from an agent or workflow context, they automatically receive an execution-scoped logger. This logger includes all the relevant context (userId, conversationId, executionId) for proper log correlation.
+
+### Using Logger in Custom Tools
+
+Tools receive a logger instance through the operation context in their execution options:
+
+```javascript
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get weather for a location",
+  parameters: z.object({
+    location: z.string(),
+  }),
+  execute: async ({ location }, options) => {
+    const logger = options?.operationContext?.logger;
+
+    // Log with full execution context
+    logger?.info("Fetching weather data", { location });
+
+    try {
+      const weather = await fetchWeatherAPI(location);
+      logger?.debug("Weather data retrieved", { location, temperature: weather.temp });
+      return weather;
+    } catch (error) {
+      logger?.error("Failed to fetch weather", { location, error });
+      throw error;
+    }
+  },
+});
+```
+
+### Using Logger in Workflow Steps
+
+Workflow steps have access to the logger through the execution context:
+
+```javascript
+import { createWorkflow, andThen } from "@voltagent/core";
+
+const workflow = createWorkflow(
+  {
+    name: "DataProcessing",
+    inputSchema: z.object({ data: z.array(z.string()) }),
+    resultSchema: z.object({ processed: z.number() }),
+  },
+  andThen(async (context) => {
+    const { data, logger } = context;
+
+    logger.info("Starting data processing", { itemCount: data.data.length });
+
+    for (const item of data.data) {
+      logger.debug("Processing item", { item });
+      // Process item...
+    }
+
+    logger.info("Data processing completed");
+    return { processed: data.data.length };
+  })
+);
+```
+
+### Using Logger in Custom Retrievers
+
+Retrievers receive a logger in their retrieve options:
+
+```javascript
+class CustomRetriever {
+  async retrieve(query, options) {
+    const logger = options?.logger;
+
+    logger?.info("Starting retrieval", { query });
+
+    try {
+      const results = await this.searchDatabase(query);
+      logger?.debug("Retrieved documents", { count: results.length });
+      return results.join("\n");
+    } catch (error) {
+      logger?.error("Retrieval failed", { query, error });
+      throw error;
+    }
+  }
+}
+```
+
+### Logger Context Inheritance
+
+The execution-scoped logger automatically includes all relevant context from the parent operation:
+
+- `userId` - User making the request
+- `conversationId` - Active conversation
+- `executionId` - Current execution ID
+- `agentId` - When executed from an agent
+- `workflowId` - When executed from a workflow
+- `stepId` - Current workflow step
+
+This ensures all logs are properly correlated and can be traced through the entire execution flow.

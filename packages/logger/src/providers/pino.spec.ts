@@ -77,20 +77,23 @@ describe("PinoLoggerProvider", () => {
   });
 
   describe("constructor", () => {
-    it("should create provider with default buffer size", () => {
+    it.skip("should create provider with default buffer size", () => {
+      // Buffer management moved to core
       provider = new PinoLoggerProvider();
 
       expect(InMemoryLogBuffer).toHaveBeenCalledWith(1000);
       expect(provider.name).toBe("pino");
     });
 
-    it("should use custom buffer size", () => {
+    it.skip("should use custom buffer size", () => {
+      // Buffer management moved to core
       provider = new PinoLoggerProvider(500);
 
       expect(InMemoryLogBuffer).toHaveBeenCalledWith(500);
     });
 
-    it("should use VOLTAGENT_LOG_BUFFER_SIZE env var", () => {
+    it.skip("should use VOLTAGENT_LOG_BUFFER_SIZE env var", () => {
+      // Buffer management moved to core
       process.env.VOLTAGENT_LOG_BUFFER_SIZE = "2000";
       provider = new PinoLoggerProvider();
 
@@ -135,7 +138,7 @@ describe("PinoLoggerProvider", () => {
       );
 
       expect(logger.getProvider()).toBe(provider);
-      expect(logger.getBuffer()).toBe(provider.getLogBuffer());
+      // Buffer check removed - buffer management moved to core
     });
 
     it("should create logger with custom options", () => {
@@ -301,7 +304,7 @@ describe("PinoLoggerProvider", () => {
     });
   });
 
-  describe("setupLogCapture", () => {
+  describe.skip("setupLogCapture", () => {
     it("should intercept pino stream writes", () => {
       const externalBuffer: LogBuffer = {
         add: vi.fn(),
@@ -364,7 +367,7 @@ describe("PinoLoggerProvider", () => {
     });
   });
 
-  describe("getLogBuffer", () => {
+  describe.skip("getLogBuffer", () => {
     it("should return the internal log buffer", () => {
       provider = new PinoLoggerProvider();
       const buffer = provider.getLogBuffer();
@@ -383,7 +386,8 @@ describe("PinoLoggerProvider", () => {
   });
 
   describe("close", () => {
-    it("should clear the log buffer", async () => {
+    it.skip("should clear the log buffer", async () => {
+      // Buffer management moved to core
       provider = new PinoLoggerProvider();
       const buffer = provider.getLogBuffer();
 

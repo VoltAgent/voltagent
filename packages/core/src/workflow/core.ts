@@ -696,7 +696,6 @@ export function createWorkflow<
   const logger = new LoggerProxy({
     component: "workflow",
     workflowId: id,
-    workflowName: name,
   });
 
   // Set default schemas if not provided
@@ -815,7 +814,12 @@ export function createWorkflow<
       }
 
       // ✅ Initialize WorkflowHistoryManager (like Agent system)
-      const historyManager = new WorkflowHistoryManager(id, workflowMemoryManager);
+      const historyManager = new WorkflowHistoryManager(
+        id,
+        workflowMemoryManager,
+        undefined,
+        runLogger,
+      );
 
       // Initialize workflow execution context with the correct execution ID
       const executionContext: WorkflowExecutionContext = {
@@ -835,6 +839,8 @@ export function createWorkflow<
         stepData: new Map(),
         // Initialize event sequence - restore from resume or start at 0
         eventSequence: options?.resumeFrom?.lastEventSequence || 0,
+        // Include the execution-scoped logger
+        logger: runLogger,
       };
 
       // Workflow start event
