@@ -24,12 +24,9 @@ const supportAgent = new Agent({
   },
 });
 
-// Initialize VoltAgent with VoltOps client
-
-// Create logger
 const logger = createPinoLogger({
   name: "with-dynamic-prompts",
-  level: "debug",
+  level: "info",
 });
 
 new VoltAgent({
