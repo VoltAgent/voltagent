@@ -1,4 +1,3 @@
-import type { Logger } from "@voltagent/internal";
 import { getGlobalLogger } from "../../logger";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { MergeDeep } from "type-fest";
