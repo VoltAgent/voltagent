@@ -45,6 +45,27 @@ vi.mock("../../events", () => {
   };
 });
 
+// Mock the main logger module
+vi.mock("../../logger", () => {
+  const createMockLogger = () => ({
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => createMockLogger()),
+  });
+
+  return {
+    getGlobalLogger: vi.fn(() => createMockLogger()),
+    LogEvents: {
+      MEMORY_OPERATION_FAILED: "memory.operation.failed",
+    },
+    LoggerProxy: vi.fn().mockImplementation(() => createMockLogger()),
+  };
+});
+
 // Mock the console logger
 vi.mock("../../logger/console-logger", () => {
   const createMockLogger = () => ({
@@ -62,10 +83,21 @@ vi.mock("../../logger/console-logger", () => {
   return {
     createConsoleLogger: vi.fn().mockReturnValue(mockLogger),
     getDefaultLogBuffer: vi.fn().mockReturnValue({
+      add: vi.fn(),
       push: vi.fn(),
       clear: vi.fn(),
+      query: vi.fn().mockReturnValue([]),
       getEntries: vi.fn().mockReturnValue([]),
+      on: vi.fn(),
+      off: vi.fn(),
     }),
+    InMemoryLogBuffer: vi.fn().mockImplementation(() => ({
+      add: vi.fn(),
+      query: vi.fn(() => []),
+      clear: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+    })),
   };
 });
 

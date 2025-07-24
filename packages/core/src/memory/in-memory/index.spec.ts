@@ -2,7 +2,6 @@ import { vi } from "vitest";
 import { InMemoryStorage } from ".";
 import type { NewTimelineEvent } from "../../events/types";
 import type { Conversation, MemoryMessage } from "../types";
-import { getGlobalLogger } from "../../logger";
 // ✅ ADD: Import workflow types for testing
 import type {
   WorkflowHistoryEntry,
@@ -12,7 +11,13 @@ import type {
 
 // Mock logger
 vi.mock("../../logger", () => ({
-  getGlobalLogger: vi.fn(() => ({
+  LoggerProxy: vi.fn().mockImplementation(() => ({
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
     child: vi.fn(() => ({
       trace: vi.fn(),
       debug: vi.fn(),

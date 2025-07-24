@@ -9,7 +9,13 @@ vi.mock("../server/registry");
 
 // Mock logger
 vi.mock("../logger", () => ({
-  getGlobalLogger: vi.fn(() => ({
+  LoggerProxy: vi.fn().mockImplementation(() => ({
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
     child: vi.fn(() => ({
       trace: vi.fn(),
       debug: vi.fn(),
