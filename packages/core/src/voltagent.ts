@@ -173,9 +173,9 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
 
       // Show cached results if available
       if (cachedResult?.hasUpdates) {
-        this.logger.info("\n");
-        this.logger.info(cachedResult.message);
-        this.logger.info("Run 'npm run volt update' to update VoltAgent packages");
+        this.logger.trace("\n");
+        this.logger.trace(cachedResult.message);
+        this.logger.trace("Run 'npm run volt update' to update VoltAgent packages");
       }
 
       // Schedule background update after 100ms
