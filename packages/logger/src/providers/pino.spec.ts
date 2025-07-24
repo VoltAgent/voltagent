@@ -11,6 +11,13 @@ vi.mock("pino", () => {
   mockPino.symbols = {
     streamSym: streamSymbol,
   };
+  mockPino.stdSerializers = {
+    err: vi.fn().mockImplementation((err) => ({
+      type: err.constructor.name,
+      message: err.message,
+      stack: err.stack,
+    })),
+  };
   return {
     default: mockPino,
     __streamSymbol: streamSymbol, // Export for tests
