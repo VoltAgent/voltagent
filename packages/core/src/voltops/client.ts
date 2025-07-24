@@ -186,7 +186,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     }
 
     // Priority 3: Fallback to default instructions
-    const logger = getGlobalLogger().child({ component: "voltops-prompt-fallback", agentName });
+    const logger = new LoggerProxy({ component: "voltops-prompt-fallback", agentName });
 
     return {
       getPrompt: async () => {

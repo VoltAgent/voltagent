@@ -24,7 +24,7 @@ const voltAgent = new VoltAgent({
 // Option 2: Use Pino logger (recommended for production)
 const logger = createPinoLogger({
   level: "debug", // More verbose logging (allowed: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent")
-  format: "pretty", // Human-readable format in development
+  format: "pretty", // Human-readable format in development. defaults to "json" in production
   name: "my-app", // Add app name to all logs
 });
 
@@ -542,96 +542,6 @@ const logger = createPinoLogger({
 - VoltOps Console shows ALL logs regardless of local transport
 - Local console only shows logs if pino-pretty is configured
 - They are independent systems!
-
-## Complete Examples
-
-### Production-Ready Setup with File Logging
-
-```javascript
-import { VoltAgent } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
-
-// Create logger with both console and file output
-const logger = createPinoLogger({
-  level: process.env.LOG_LEVEL || "info",
-  name: "my-app",
-  pinoOptions: {
-    transport: {
-      targets: [
-        // Console output (only in development)
-        ...(process.env.NODE_ENV !== "production"
-          ? [
-              {
-                target: "pino-pretty",
-                options: {
-                  colorize: true,
-                  translateTime: "yyyy-MM-dd HH:mm:ss.l o",
-                  ignore: "pid,hostname,env,component",
-                },
-              },
-            ]
-          : []),
-        // Always log to file
-        {
-          target: "pino/file",
-          options: {
-            destination: "./logs/app.log",
-            mkdir: true,
-          },
-        },
-        // Separate error log file
-        {
-          target: "pino/file",
-          options: {
-            destination: "./logs/error.log",
-            mkdir: true,
-          },
-          level: "error",
-        },
-      ],
-    },
-  },
-});
-
-// Use with VoltAgent
-const voltAgent = new VoltAgent({
-  logger,
-  agents: [myAgent],
-  workflows: [myWorkflow],
-});
-
-// Your logs will:
-// - Appear in console during development
-// - Always write to ./logs/app.log
-// - Write errors to ./logs/error.log
-// - Always appear in VoltOps Console (if configured)
-```
-
-### Development Setup with Enhanced Debugging
-
-```javascript
-import { createPinoLogger } from "@voltagent/logger";
-
-const devLogger = createPinoLogger({
-  level: "trace", // Show everything
-  name: "dev",
-  pinoOptions: {
-    transport: {
-      target: "pino-pretty",
-      options: {
-        colorize: true,
-        translateTime: "HH:MM:ss.l",
-        ignore: "pid,hostname",
-        singleLine: false, // Multi-line for better readability
-        messageFormat: "{msg} | {agentId} | {executionId}",
-      },
-    },
-  },
-});
-
-// Perfect for debugging agent interactions
-devLogger.debug({ agentId: "agent_123", action: "thinking" }, "Agent processing request");
-```
 
 ## Execution-Scoped Logging in Tools and Workflows
 
