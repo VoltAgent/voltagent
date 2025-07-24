@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/internal",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
   "license": "MIT",
   "exports": {
