@@ -1,5 +1,79 @@
 # @voltagent/core
 
+## 0.1.67
+
+### Patch Changes
+
+- [#417](https://github.com/VoltAgent/voltagent/pull/417) [`67450c3`](https://github.com/VoltAgent/voltagent/commit/67450c3bc4306ab6021ca8feed2afeef6dcc320e) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: dynamic toolkit resolution and VoltOps UI visibility
+
+  Fixed an issue where dynamic tools and toolkits weren't being displayed in VoltOps UI when resolved during agent execution. The fix includes:
+
+  **Key Changes:**
+
+  - **Dynamic Tool Resolution**: Modified `prepareToolsForGeneration` to properly accept and process both `BaseTool` and `Toolkit` types
+  - **VoltOps UI Integration**: Dynamic tools now appear in the Console UI by updating history metadata when tools are resolved
+  - **Data Persistence**: Tools persist across page refreshes by storing them in history entry metadata
+
+  **Technical Details:**
+
+  - `prepareToolsForGeneration` now accepts `(BaseTool | Toolkit)[]` instead of just `BaseTool[]`
+  - Uses temporary ToolManager with `addItems()` to handle both tools and toolkits consistently
+  - Updates history entry metadata with complete agent snapshot when dynamic tools are resolved
+  - Removed WebSocket-based TOOLS_UPDATE events in favor of metadata-based approach
+
+  This ensures that dynamic tools like `createReasoningTools()` and other toolkits work seamlessly when provided through the `dynamicTools` parameter.
+
+- [#418](https://github.com/VoltAgent/voltagent/pull/418) [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: memory storage implementations now correctly return the most recent messages when using context limit
+
+  Fixed an issue where memory storage implementations (LibSQL, PostgreSQL, Supabase) were returning the oldest messages instead of the most recent ones when a context limit was specified. This was causing AI agents to lose important recent context in favor of old conversation history.
+
+  **Before:**
+
+  - `contextLimit: 10` returned the first 10 messages (oldest)
+  - Agents were working with outdated context
+
+  **After:**
+
+  - `contextLimit: 10` returns the last 10 messages (most recent) in chronological order
+  - Agents now have access to the most relevant recent context
+  - InMemoryStorage was already working correctly and remains unchanged
+
+  Changes:
+
+  - LibSQLStorage: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - PostgreSQL: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - Supabase: Modified query to use `ascending: false` with `limit`, then reverse results
+
+  This ensures consistent behavior across all storage implementations where context limits provide the most recent messages, improving AI agent response quality and relevance.
+
+- [#418](https://github.com/VoltAgent/voltagent/pull/418) [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: tool errors now properly recorded in conversation history and allow agent retry - #349
+
+  Fixed critical issues where tool execution errors were halting agent runs and not being recorded in conversation/event history. This prevented agents from retrying failed tool calls and lost important error context.
+
+  **Before:**
+
+  - Tool errors would throw and halt agent execution immediately
+  - No error events or steps were recorded in conversation history
+  - Agents couldn't learn from or retry after tool failures
+  - Error context was lost, making debugging difficult
+
+  **After:**
+
+  - Tool errors are caught and handled gracefully
+  - Error events (`tool:error`) are created and persisted
+  - Error steps are added to conversation history with full error details
+  - Agents can continue execution and retry within `maxSteps` limit
+  - Tool lifecycle hooks (onEnd) are properly called even on errors
+
+  Changes:
+
+  - Added `handleToolError` helper method to centralize error handling logic
+  - Modified `generateText` to catch and handle tool errors without halting execution
+  - Updated `streamText` onError callback to use the same error handling
+  - Ensured tool errors are saved to memory storage for context retention
+
+  This improves agent resilience and debugging capabilities when working with potentially unreliable tools.
+
 ## 0.1.66
 
 ### Patch Changes

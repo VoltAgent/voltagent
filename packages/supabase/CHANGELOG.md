@@ -1,5 +1,35 @@
 # @voltagent/supabase
 
+## 0.1.14
+
+### Patch Changes
+
+- [#418](https://github.com/VoltAgent/voltagent/pull/418) [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: memory storage implementations now correctly return the most recent messages when using context limit
+
+  Fixed an issue where memory storage implementations (LibSQL, PostgreSQL, Supabase) were returning the oldest messages instead of the most recent ones when a context limit was specified. This was causing AI agents to lose important recent context in favor of old conversation history.
+
+  **Before:**
+
+  - `contextLimit: 10` returned the first 10 messages (oldest)
+  - Agents were working with outdated context
+
+  **After:**
+
+  - `contextLimit: 10` returns the last 10 messages (most recent) in chronological order
+  - Agents now have access to the most relevant recent context
+  - InMemoryStorage was already working correctly and remains unchanged
+
+  Changes:
+
+  - LibSQLStorage: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - PostgreSQL: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - Supabase: Modified query to use `ascending: false` with `limit`, then reverse results
+
+  This ensures consistent behavior across all storage implementations where context limits provide the most recent messages, improving AI agent response quality and relevance.
+
+- Updated dependencies [[`67450c3`](https://github.com/VoltAgent/voltagent/commit/67450c3bc4306ab6021ca8feed2afeef6dcc320e), [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858), [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858)]:
+  - @voltagent/core@0.1.67
+
 ## 0.1.13
 
 ### Patch Changes
