@@ -219,13 +219,15 @@ describe("PostgresStorage", () => {
         createMessage({ id: "msg2", role: "assistant" }),
       ];
       mockQuery.mockResolvedValueOnce({
-        rows: mockMessages.map((msg) => ({
-          message_id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          type: msg.type,
-          created_at: msg.createdAt,
-        })),
+        rows: mockMessages
+          .map((msg) => ({
+            message_id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            type: msg.type,
+            created_at: msg.createdAt,
+          }))
+          .reverse(),
       });
 
       const messages = await storage.getMessages({
