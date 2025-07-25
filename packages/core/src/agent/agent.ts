@@ -29,6 +29,7 @@ import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
+import { zodSchemaToJsonUI } from "../utils/toolParser";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import {
@@ -709,8 +710,31 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Merge resolved tools with any provided dynamic tools
     const allTools = [...resolvedTools, ...(dynamicTools || [])];
     const baseTools = this.toolManager.prepareToolsForGeneration(
-      allTools.length > 0 ? (allTools as BaseTool[]) : undefined,
+      allTools.length > 0 ? allTools : undefined,
     );
+
+    // Emit tools update event if we have dynamic tools
+    if (this.dynamicTools && resolvedTools.length > 0) {
+      // Convert baseTools to API format
+      const allToolsForUpdate = baseTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters ? zodSchemaToJsonUI(tool.parameters) : undefined,
+      }));
+
+      // Update history entry metadata with the new agent state that includes resolved tools
+      if (historyEntryId && this.historyManager) {
+        const updatedAgentSnapshot = this.getFullState();
+        this.historyManager.updateEntry(historyEntryId, {
+          metadata: {
+            agentSnapshot: {
+              ...updatedAgentSnapshot,
+              tools: allToolsForUpdate, // Include resolved tools in the snapshot
+            },
+          },
+        });
+      }
+    }
 
     // Ensure operationContext exists before proceeding
     if (!operationContext) {

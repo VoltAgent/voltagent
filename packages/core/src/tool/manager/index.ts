@@ -248,20 +248,22 @@ export class ToolManager {
   /**
    * Prepare tools for text generation (includes tools from toolkits).
    */
-  prepareToolsForGeneration(dynamicTools?: BaseTool[]): BaseTool[] {
-    let toolsToUse = this.getTools(); // Get the flattened list
+  prepareToolsForGeneration(dynamicTools?: (BaseTool | Toolkit)[]): BaseTool[] {
+    // Start with existing tools
+    let toolsToUse = this.getTools();
+
     if (dynamicTools?.length) {
-      // Filter valid dynamic tools before adding
-      const validDynamicTools = dynamicTools.filter(
-        (dt) => dt?.name && dt?.parameters && typeof dt?.execute === "function", // Apply optional chaining
-      );
-      if (validDynamicTools.length !== dynamicTools.length) {
-        this.logger.warn(
-          "[ToolManager] Some dynamic tools provided to prepareToolsForGeneration were invalid and ignored.",
-        );
-      }
-      toolsToUse = [...toolsToUse, ...validDynamicTools];
+      // Create a temporary manager to process dynamic items using the same logic as static items
+      const tempManager = new ToolManager([], this.logger);
+      tempManager.addItems(dynamicTools);
+
+      // Get all tools from the temp manager (handles both tools and toolkits)
+      const dynamicToolsList = tempManager.getTools();
+
+      // Combine with existing tools
+      toolsToUse = [...toolsToUse, ...dynamicToolsList];
     }
+
     return toolsToUse;
   }
 
