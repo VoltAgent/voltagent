@@ -481,10 +481,12 @@ export class LibSQLStorage implements Memory {
       }
 
       // Add ordering and limit
-      sql += " ORDER BY m.created_at ASC";
+      // When limit is specified, we need to get the most recent messages
       if (limit && limit > 0) {
-        sql += " LIMIT ?";
+        sql += " ORDER BY m.created_at DESC LIMIT ?";
         args.push(limit);
+      } else {
+        sql += " ORDER BY m.created_at ASC";
       }
 
       const result = await this.client.execute({
@@ -492,13 +494,21 @@ export class LibSQLStorage implements Memory {
         args,
       });
 
-      return result.rows.map((row) => ({
+      // Map the results
+      const messages = result.rows.map((row) => ({
         id: row.message_id as string,
         role: row.role as BaseMessage["role"],
         content: row.content as string,
         type: row.type as "text" | "tool-call" | "tool-result",
         createdAt: row.created_at as string,
       }));
+
+      // If we used DESC order with limit, reverse to get chronological order
+      if (limit && limit > 0) {
+        return messages.reverse();
+      }
+
+      return messages;
     } catch (error) {
       this.debug("Error getting messages:", error);
       throw new Error("Failed to get messages from LibSQL database");

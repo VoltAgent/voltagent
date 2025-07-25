@@ -1079,6 +1079,135 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Handle tool execution errors by creating appropriate events and steps
+   */
+  private async handleToolError(
+    error: VoltAgentError,
+    operationContext: OperationContext,
+    options: {
+      userId?: string;
+      conversationId?: string;
+      internalOptions?: InternalGenerateOptions;
+    },
+  ): Promise<void> {
+    if (!error.toolError) {
+      // Handle non-tool errors
+      return;
+    }
+    const { userId, conversationId, internalOptions } = options;
+    const { toolCallId, toolName } = error.toolError;
+
+    try {
+      // [NEW EVENT SYSTEM] Create a tool:error event for tool error
+      const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+        eventId: string;
+        startTime: string;
+      }) || { eventId: undefined, startTime: new Date().toISOString() };
+
+      const toolErrorEvent: ToolErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "tool:error",
+        type: "tool",
+        startTime: toolStartInfo.startTime,
+        endTime: new Date().toISOString(),
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        statusMessage: {
+          message: error.message,
+          code: error.code,
+          ...(error.toolError && { toolError: error.toolError }),
+        },
+        metadata: {
+          displayName: toolName,
+          id: toolName,
+          agentId: this.id,
+        },
+        traceId: operationContext.historyEntry.id,
+        parentEventId: toolStartInfo.eventId,
+      };
+
+      // Publish the tool:error event (background)
+      this.publishTimelineEvent(operationContext, toolErrorEvent);
+
+      // Add tool error step to history
+      const toolErrorStep: StepWithContent = {
+        id: toolCallId,
+        type: "tool_result",
+        name: toolName,
+        result: {
+          error: error,
+        },
+        content: JSON.stringify([
+          {
+            type: "tool-result",
+            toolCallId: toolCallId,
+            toolName: toolName,
+            result: {
+              error: {
+                message: error.message,
+                code: error.code,
+              },
+            },
+          },
+        ]),
+        role: "assistant",
+      };
+
+      // Add the error step to history
+      this.addStepToHistory(toolErrorStep, operationContext);
+
+      // Save to conversation memory
+      if (userId) {
+        const onStepFinish = this.memoryManager.createStepFinishHandler(
+          operationContext,
+          userId,
+          conversationId,
+        );
+        await onStepFinish(toolErrorStep);
+      }
+
+      // Call tool end hook with error
+      const tool = this.toolManager.getToolByName(toolName);
+      if (tool && internalOptions) {
+        await this.getMergedHooks(internalOptions).onToolEnd?.({
+          agent: this,
+          tool,
+          output: undefined,
+          error: error,
+          context: operationContext,
+        });
+      }
+
+      // Log tool error
+      const methodLogger = operationContext.logger || this.logger;
+      methodLogger.error(
+        buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Tool ${toolName} failed`),
+        {
+          event: LogEvents.TOOL_EXECUTION_FAILED,
+          toolName,
+          toolCallId,
+          error: {
+            message: error.message,
+            code: error.code,
+          },
+        },
+      );
+    } catch (updateError) {
+      const methodLogger = operationContext.logger || this.logger;
+      methodLogger.error(
+        `Failed to update tool event to error status for ${toolName} (${toolCallId})`,
+        {
+          toolName,
+          toolCallId,
+          error: updateError,
+        },
+      );
+    }
+  }
+
+  /**
    * Update history entry
    */
   private updateHistoryEntry(context: OperationContext, updates: Partial<AgentHistoryEntry>): void {
@@ -1837,6 +1966,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
+      // Check if this is a tool error
+      if (voltagentError.toolError) {
+        // Handle tool error
+        await this.handleToolError(voltagentError, operationContext, {
+          userId,
+          conversationId: finalConversationId,
+          internalOptions,
+        });
+      }
+
       // [NEW EVENT SYSTEM] Create an agent:error event
       const agentErrorStartInfo = {
         startTime:
@@ -2435,60 +2574,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       },
       onError: async (error: VoltAgentError) => {
         if (error.toolError) {
-          const { toolCallId, toolName } = error.toolError;
-          try {
-            // [NEW EVENT SYSTEM] Create a tool:error event for tool error during streaming
-            const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
-              eventId: string;
-              startTime: string;
-            }) || { eventId: undefined, startTime: new Date().toISOString() };
-
-            const toolErrorEvent: ToolErrorEvent = {
-              id: crypto.randomUUID(),
-              name: "tool:error",
-              type: "tool",
-              startTime: toolStartInfo.startTime,
-              endTime: new Date().toISOString(),
-              status: "error",
-              level: "ERROR",
-              input: null,
-              output: null,
-              statusMessage: {
-                message: error.message,
-                code: error.code,
-                ...(error.toolError && { toolError: error.toolError }),
-              },
-              metadata: {
-                displayName: toolName,
-                id: toolName,
-                agentId: this.id,
-              },
-              traceId: operationContext.historyEntry.id,
-              parentEventId: toolStartInfo.eventId,
-            };
-
-            // Publish the tool:error event (background)
-            this.publishTimelineEvent(operationContext, toolErrorEvent);
-          } catch (updateError) {
-            methodLogger.error(
-              `Failed to update tool event to error status for ${toolName} (${toolCallId})`,
-              {
-                toolName,
-                toolCallId,
-                error: updateError,
-              },
-            );
-          }
-          const tool = this.toolManager.getToolByName(toolName);
-          if (tool) {
-            await this.getMergedHooks(internalOptions).onToolEnd?.({
-              agent: this,
-              tool,
-              output: undefined,
-              error: error,
-              context: operationContext,
-            });
-          }
+          // Handle tool error using the shared helper method
+          await this.handleToolError(error, operationContext, {
+            userId,
+            conversationId: finalConversationId,
+            internalOptions,
+          });
         }
 
         // [NEW EVENT SYSTEM] Create an agent:error event
@@ -3241,20 +3332,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         }
       },
       onError: async (error: VoltAgentError) => {
-        if (error.toolError) {
-          const { toolName } = error.toolError;
-          const tool = this.toolManager.getToolByName(toolName);
-          if (tool) {
-            await this.getMergedHooks(internalOptions).onToolEnd?.({
-              agent: this,
-              tool,
-              output: undefined,
-              error: error,
-              context: operationContext,
-            });
-          }
-        }
-
         // [NEW EVENT SYSTEM] Create an agent:error event
         const agentErrorStartInfo = {
           startTime:

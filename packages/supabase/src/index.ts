@@ -900,11 +900,14 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
       query = query.gt("created_at", after);
     }
 
-    // Order by creation time, typically ascending for chat history
-    query = query.order("created_at", { ascending: true });
-
+    // Order by creation time
+    // When limit is specified, we need to get the most recent messages
     if (actualLimit && actualLimit > 0) {
-      query = query.limit(actualLimit);
+      // Get the most recent messages first
+      query = query.order("created_at", { ascending: false }).limit(actualLimit);
+    } else {
+      // No limit, order ascending
+      query = query.order("created_at", { ascending: true });
     }
 
     const { data, error } = await query;
@@ -915,15 +918,21 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
     }
 
     // Map Supabase rows back to MemoryMessage objects
-    return (
+    const messages =
       data?.map((row) => ({
         id: row.message_id,
         role: row.role as MemoryMessage["role"],
         content: row.content, // Assuming content is stored as text/json string
         type: row.type as MemoryMessage["type"],
         createdAt: row.created_at,
-      })) || []
-    );
+      })) || [];
+
+    // If we used descending order with limit, reverse to get chronological order
+    if (actualLimit && actualLimit > 0 && messages.length > 0) {
+      return messages.reverse();
+    }
+
+    return messages;
   }
 
   public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {

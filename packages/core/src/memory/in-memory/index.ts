@@ -351,7 +351,7 @@ export class InMemoryStorage implements Memory {
 
     // Sort by created timestamp (ascending)
     filteredMessages.sort((a, b) => {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
     // Apply limit if specified
