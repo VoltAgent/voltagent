@@ -2,7 +2,7 @@
 "@voltagent/core": patch
 ---
 
-fix: tool errors now properly recorded in conversation history and allow agent retry
+fix: tool errors now properly recorded in conversation history and allow agent retry - #349
 
 Fixed critical issues where tool execution errors were halting agent runs and not being recorded in conversation/event history. This prevented agents from retrying failed tool calls and lost important error context.
 
