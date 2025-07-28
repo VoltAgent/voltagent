@@ -388,6 +388,66 @@ describe("AnthropicProvider", () => {
       expect(parsedContent).toEqual(testObject);
       expect(result.object).toEqual(testObject);
     });
+
+    it("should handle JSON parsing when response contains markdown formatting", async () => {
+      const testObject = {
+        name: "John Doe",
+        age: 30,
+        hobbies: ["reading", "gaming"],
+      };
+
+      // Mock response that simulates the previous problematic behavior where AI returns JSON wrapped in markdown
+      const markdownWrappedJSON = "```json\n" + JSON.stringify(testObject) + "\n```";
+
+      const mockAnthropicClient = {
+        messages: {
+          create: vi.fn().mockResolvedValue({
+            id: "msg_123456789",
+            type: "message",
+            role: "assistant",
+            content: [{ type: "text", text: markdownWrappedJSON }],
+            model: "claude-3-7-sonnet-20250219",
+            stop_reason: "end_turn",
+            usage: {
+              input_tokens: 10,
+              output_tokens: 20,
+            },
+          }),
+        },
+      };
+
+      (Anthropic as MockedClass<typeof Anthropic>).mockImplementation(() => {
+        return mockAnthropicClient as unknown as Anthropic;
+      });
+
+      const provider = new AnthropicProvider({
+        apiKey: "sk-ant-api03-test-key",
+      });
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+        hobbies: z.array(z.string()),
+      });
+
+      // This should throw an error because the response contains markdown formatting
+      await expect(
+        provider.generateObject({
+          messages: [
+            { role: "system" as const, content: "You are a helpful assistant." },
+            { role: "user" as const, content: "Get user info" },
+          ],
+          model: "claude-3-7-sonnet-20250219",
+          schema,
+        }),
+      ).rejects.toThrow("Error while generating object in Anthropic AI");
+
+      // Verify the system message contains our explicit JSON formatting instructions
+      const createParams = mockAnthropicClient.messages.create.mock.calls[0][0];
+      expect(createParams.system).toContain(
+        "CRITICAL: You MUST return ONLY raw JSON without any markdown formatting",
+      );
+      expect(createParams.system).toContain("Do NOT wrap the JSON in ```json");
+    });
   });
 
   describe("streamObjects", () => {
