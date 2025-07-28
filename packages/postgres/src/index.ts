@@ -1074,6 +1074,7 @@ export class PostgresStorage implements Memory {
       before,
       after,
       role,
+      types,
     } = options;
 
     const client = await this.pool.connect();
@@ -1119,6 +1120,14 @@ export class PostgresStorage implements Memory {
         conditions.push(`m.role = $${paramCount}`);
         params.push(role);
         paramCount++;
+      }
+
+      // Add types filter
+      if (types) {
+        const placeholders = types.map((_, index) => `$${paramCount + index}`).join(", ");
+        conditions.push(`m.type IN (${placeholders})`);
+        params.push(...types);
+        paramCount += types.length;
       }
 
       // Add WHERE clause if we have conditions

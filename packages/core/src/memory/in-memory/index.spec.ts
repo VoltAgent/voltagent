@@ -436,6 +436,197 @@ describe("InMemoryStorage", () => {
         // Assert
         expect(messages).toEqual([]);
       });
+    });
+
+    describe("Message Type Filtering", () => {
+      beforeEach(async () => {
+        // Create a conversation
+        await storage.createConversation({
+          id: "type-test-conv",
+          resourceId: "test-resource",
+          userId: "test-user",
+          title: "Type Test Conversation",
+          metadata: {},
+        });
+
+        // Add messages with different types
+        await storage.addMessage(
+          createMessage({
+            id: "msg-text-1",
+            content: "User question",
+            role: "user",
+            type: "text",
+          }),
+          "type-test-conv",
+        );
+
+        await storage.addMessage(
+          createMessage({
+            id: "msg-tool-call-1",
+            content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
+            role: "assistant",
+            type: "tool-call",
+          }),
+          "type-test-conv",
+        );
+
+        await storage.addMessage(
+          createMessage({
+            id: "msg-tool-result-1",
+            content: JSON.stringify({ result: 3 }),
+            role: "tool",
+            type: "tool-result",
+          }),
+          "type-test-conv",
+        );
+
+        await storage.addMessage(
+          createMessage({
+            id: "msg-text-2",
+            content: "The result is 3",
+            role: "assistant",
+            type: "text",
+          }),
+          "type-test-conv",
+        );
+
+        await storage.addMessage(
+          createMessage({
+            id: "msg-tool-call-2",
+            content: JSON.stringify({ tool: "weather", args: { city: "NYC" } }),
+            role: "assistant",
+            type: "tool-call",
+          }),
+          "type-test-conv",
+        );
+
+        await storage.addMessage(
+          createMessage({
+            id: "msg-tool-result-2",
+            content: JSON.stringify({ temp: 72, condition: "sunny" }),
+            role: "tool",
+            type: "tool-result",
+          }),
+          "type-test-conv",
+        );
+
+        await storage.addMessage(
+          createMessage({
+            id: "msg-text-3",
+            content: "It's 72°F and sunny in NYC",
+            role: "assistant",
+            type: "text",
+          }),
+          "type-test-conv",
+        );
+      });
+
+      it("should filter messages by single type - text only", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+          types: ["text"],
+        });
+
+        expect(messages).toHaveLength(3);
+        expect(messages.map((m) => m.id)).toEqual(["msg-text-1", "msg-text-2", "msg-text-3"]);
+        expect(messages.every((m) => m.type === "text")).toBe(true);
+      });
+
+      it("should filter messages by single type - tool-call only", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+          types: ["tool-call"],
+        });
+
+        expect(messages).toHaveLength(2);
+        expect(messages.map((m) => m.id)).toEqual(["msg-tool-call-1", "msg-tool-call-2"]);
+        expect(messages.every((m) => m.type === "tool-call")).toBe(true);
+      });
+
+      it("should filter messages by single type - tool-result only", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+          types: ["tool-result"],
+        });
+
+        expect(messages).toHaveLength(2);
+        expect(messages.map((m) => m.id)).toEqual(["msg-tool-result-1", "msg-tool-result-2"]);
+        expect(messages.every((m) => m.type === "tool-result")).toBe(true);
+      });
+
+      it("should filter messages by multiple types", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+          types: ["text", "tool-call"],
+        });
+
+        expect(messages).toHaveLength(5);
+        const ids = messages.map((m) => m.id);
+        expect(ids).toContain("msg-text-1");
+        expect(ids).toContain("msg-text-2");
+        expect(ids).toContain("msg-text-3");
+        expect(ids).toContain("msg-tool-call-1");
+        expect(ids).toContain("msg-tool-call-2");
+        expect(messages.every((m) => m.type === "text" || m.type === "tool-call")).toBe(true);
+      });
+
+      it("should return no messages when types array is empty", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+          types: [],
+        });
+
+        expect(messages).toHaveLength(0);
+      });
+
+      it("should return all messages when types is undefined", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+        });
+
+        expect(messages).toHaveLength(7);
+        expect(messages.map((m) => m.id)).toEqual([
+          "msg-text-1",
+          "msg-tool-call-1",
+          "msg-tool-result-1",
+          "msg-text-2",
+          "msg-tool-call-2",
+          "msg-tool-result-2",
+          "msg-text-3",
+        ]);
+      });
+
+      it("should combine type filtering with limit", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+          types: ["text"],
+          limit: 2,
+        });
+
+        expect(messages).toHaveLength(2);
+        // Should get the 2 most recent text messages
+        expect(messages.map((m) => m.id)).toEqual(["msg-text-2", "msg-text-3"]);
+      });
+
+      it("should combine type filtering with role filtering", async () => {
+        const messages = await storage.getMessages({
+          userId: "test-user",
+          conversationId: "type-test-conv",
+          types: ["text"],
+          role: "assistant",
+        });
+
+        expect(messages).toHaveLength(2);
+        expect(messages.map((m) => m.id)).toEqual(["msg-text-2", "msg-text-3"]);
+        expect(messages.every((m) => m.type === "text" && m.role === "assistant")).toBe(true);
+      });
 
       it("should return empty array for non-existent conversation", async () => {
         // Act

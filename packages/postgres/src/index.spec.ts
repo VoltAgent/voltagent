@@ -298,6 +298,219 @@ describe("PostgresStorage", () => {
     });
   });
 
+  describe("Message Type Filtering", () => {
+    it("should filter messages by single type - text only", async () => {
+      mockConnect.mockResolvedValueOnce({
+        query: mockQuery.mockResolvedValueOnce({
+          rows: [
+            {
+              message_id: "msg1",
+              role: "user",
+              content: "User question",
+              type: "text",
+              created_at: "2023-01-01T12:00:00.000Z",
+            },
+            {
+              message_id: "msg2",
+              role: "assistant",
+              content: "Response",
+              type: "text",
+              created_at: "2023-01-01T12:00:01.000Z",
+            },
+          ],
+        }),
+        release: vi.fn(),
+      });
+
+      const messages = await storage.getMessages({
+        conversationId: "test-conv",
+        types: ["text"],
+      });
+
+      expect(messages).toHaveLength(2);
+      expect(messages.every((m) => m.type === "text")).toBe(true);
+    });
+
+    it("should filter messages by single type - tool-call only", async () => {
+      mockConnect.mockResolvedValueOnce({
+        query: mockQuery.mockResolvedValueOnce({
+          rows: [
+            {
+              message_id: "msg1",
+              role: "assistant",
+              content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
+              type: "tool-call",
+              created_at: "2023-01-01T12:00:00.000Z",
+            },
+          ],
+        }),
+        release: vi.fn(),
+      });
+
+      const messages = await storage.getMessages({
+        conversationId: "test-conv",
+        types: ["tool-call"],
+      });
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].type).toBe("tool-call");
+    });
+
+    it("should filter messages by single type - tool-result only", async () => {
+      mockConnect.mockResolvedValueOnce({
+        query: mockQuery.mockResolvedValueOnce({
+          rows: [
+            {
+              message_id: "msg1",
+              role: "tool",
+              content: JSON.stringify({ result: 3 }),
+              type: "tool-result",
+              created_at: "2023-01-01T12:00:00.000Z",
+            },
+          ],
+        }),
+        release: vi.fn(),
+      });
+
+      const messages = await storage.getMessages({
+        conversationId: "test-conv",
+        types: ["tool-result"],
+      });
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].type).toBe("tool-result");
+    });
+
+    it("should filter messages by multiple types", async () => {
+      mockConnect.mockResolvedValueOnce({
+        query: mockQuery.mockResolvedValueOnce({
+          rows: [
+            {
+              message_id: "msg1",
+              role: "user",
+              content: "Question",
+              type: "text",
+              created_at: "2023-01-01T12:00:00.000Z",
+            },
+            {
+              message_id: "msg2",
+              role: "assistant",
+              content: JSON.stringify({ tool: "calculator" }),
+              type: "tool-call",
+              created_at: "2023-01-01T12:00:01.000Z",
+            },
+            {
+              message_id: "msg3",
+              role: "assistant",
+              content: "Answer",
+              type: "text",
+              created_at: "2023-01-01T12:00:02.000Z",
+            },
+          ],
+        }),
+        release: vi.fn(),
+      });
+
+      const messages = await storage.getMessages({
+        conversationId: "test-conv",
+        types: ["text", "tool-call"],
+      });
+
+      expect(messages).toHaveLength(3);
+      expect(messages.filter((m) => m.type === "text")).toHaveLength(2);
+      expect(messages.filter((m) => m.type === "tool-call")).toHaveLength(1);
+    });
+
+    it("should return no messages when types array is empty", async () => {
+      mockConnect.mockResolvedValueOnce({
+        query: mockQuery.mockResolvedValueOnce({
+          rows: [],
+        }),
+        release: vi.fn(),
+      });
+
+      const messages = await storage.getMessages({
+        conversationId: "test-conv",
+        types: [],
+      });
+
+      expect(messages).toHaveLength(0);
+    });
+
+    it("should return all messages when types is undefined", async () => {
+      mockConnect.mockResolvedValueOnce({
+        query: mockQuery.mockResolvedValueOnce({
+          rows: [
+            {
+              message_id: "msg1",
+              role: "user",
+              content: "Question",
+              type: "text",
+              created_at: "2023-01-01T12:00:00.000Z",
+            },
+            {
+              message_id: "msg2",
+              role: "assistant",
+              content: JSON.stringify({ tool: "calculator" }),
+              type: "tool-call",
+              created_at: "2023-01-01T12:00:01.000Z",
+            },
+            {
+              message_id: "msg3",
+              role: "tool",
+              content: JSON.stringify({ result: 3 }),
+              type: "tool-result",
+              created_at: "2023-01-01T12:00:02.000Z",
+            },
+          ],
+        }),
+        release: vi.fn(),
+      });
+
+      const messages = await storage.getMessages({
+        conversationId: "test-conv",
+      });
+
+      expect(messages).toHaveLength(3);
+    });
+
+    it("should combine type filtering with limit", async () => {
+      mockConnect.mockResolvedValueOnce({
+        query: mockQuery.mockResolvedValueOnce({
+          rows: [
+            {
+              message_id: "msg3",
+              role: "assistant",
+              content: "Latest text",
+              type: "text",
+              created_at: "2023-01-01T12:00:02.000Z",
+            },
+            {
+              message_id: "msg2",
+              role: "user",
+              content: "Second text",
+              type: "text",
+              created_at: "2023-01-01T12:00:01.000Z",
+            },
+          ], // Query returns DESC order (latest first)
+        }),
+        release: vi.fn(),
+      });
+
+      const messages = await storage.getMessages({
+        conversationId: "test-conv",
+        types: ["text"],
+        limit: 2,
+      });
+
+      expect(messages).toHaveLength(2);
+      expect(messages.every((m) => m.type === "text")).toBe(true);
+      // Should be in chronological order after reversal
+      expect(messages[0].content).toBe("Second text");
+      expect(messages[1].content).toBe("Latest text");
+    });
+  });
+
   describe("Conversation Operations", () => {
     it("should create a conversation", async () => {
       const conversation = createConversation();

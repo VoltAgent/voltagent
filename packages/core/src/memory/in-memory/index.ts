@@ -315,6 +315,7 @@ export class InMemoryStorage implements Memory {
       before,
       after,
       role,
+      types,
     } = options;
 
     this.debug(
@@ -334,6 +335,11 @@ export class InMemoryStorage implements Memory {
     // Filter by role if specified
     if (role) {
       filteredMessages = filteredMessages.filter((m) => m.role === role);
+    }
+
+    // Filter by types if specified
+    if (types) {
+      filteredMessages = filteredMessages.filter((m) => types.includes(m.type));
     }
 
     // Filter by created timestamp if specified

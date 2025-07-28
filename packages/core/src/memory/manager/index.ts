@@ -355,6 +355,7 @@ export class MemoryManager {
         userId,
         conversationId,
         limit: contextLimit,
+        types: ["text"], // Only retrieve text messages for conversation context
       });
 
       messages = memoryMessages.map((m) => ({

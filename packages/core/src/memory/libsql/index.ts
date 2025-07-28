@@ -432,7 +432,15 @@ export class LibSQLStorage implements Memory {
     // Add delay for debugging
     await debugDelay();
 
-    const { userId = "default", conversationId = "default", limit, before, after, role } = options;
+    const {
+      userId = "default",
+      conversationId = "default",
+      limit,
+      before,
+      after,
+      role,
+      types,
+    } = options;
 
     const messagesTableName = `${this.options.tablePrefix}_messages`;
     const conversationsTableName = `${this.options.tablePrefix}_conversations`;
@@ -473,6 +481,13 @@ export class LibSQLStorage implements Memory {
       if (role) {
         conditions.push("m.role = ?");
         args.push(role);
+      }
+
+      // Add types filter
+      if (types) {
+        const placeholders = types.map(() => "?").join(", ");
+        conditions.push(`m.type IN (${placeholders})`);
+        args.push(...types);
       }
 
       // Add WHERE clause if we have conditions

@@ -176,12 +176,20 @@ class MockMemory implements Memory {
   }
 
   async getMessages(options: any): Promise<MemoryMessage[]> {
-    const { userId, conversationId = "default", limit = 10 } = options;
+    const { userId, conversationId = "default", limit = 10, types } = options;
     const key = `${userId}:${conversationId}`;
     if (!this.messages[key]) {
       return [];
     }
-    return this.messages[key].slice(-limit);
+
+    let filteredMessages = this.messages[key];
+
+    // Apply types filter if specified
+    if (types) {
+      filteredMessages = filteredMessages.filter((msg) => types.includes(msg.type));
+    }
+
+    return filteredMessages.slice(-limit);
   }
 
   async clearMessages(options: any): Promise<void> {
@@ -546,6 +554,58 @@ describe("MemoryManager", () => {
       expect(messages[1].content).toBe("Response 1");
       expect(messages[2].role).toBe("user");
       expect(messages[2].content).toBe("Message 2");
+    });
+
+    it("should filter out tool-call and tool-result messages from context", async () => {
+      // Add messages with different types as MemoryMessages
+      await mockMemory.addMessage(
+        {
+          id: "msg-4",
+          role: "assistant",
+          content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
+          type: "tool-call",
+          createdAt: new Date().toISOString(),
+        },
+        "conversation1",
+      );
+
+      await mockMemory.addMessage(
+        {
+          id: "msg-5",
+          role: "tool",
+          content: JSON.stringify({ result: 3 }),
+          type: "tool-result",
+          createdAt: new Date().toISOString(),
+        },
+        "conversation1",
+      );
+
+      await mockMemory.addMessage(
+        {
+          id: "msg-6",
+          role: "assistant",
+          content: "The result is 3",
+          type: "text",
+          createdAt: new Date().toISOString(),
+        },
+        "conversation1",
+      );
+
+      const { messages } = await memoryManager.prepareConversationContext(
+        mockContext,
+        "New message",
+        "user1",
+        "conversation1",
+      );
+
+      // Should only get text messages
+      expect(messages.length).toBe(4); // 3 from beforeEach + 1 new text message
+      expect(messages[3].content).toBe("The result is 3");
+
+      // Verify that tool-related messages were not included
+      const contents = messages.map((m) => m.content);
+      expect(contents).not.toContain(JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }));
+      expect(contents).not.toContain(JSON.stringify({ result: 3 }));
     });
 
     it("should respect the limit parameter", async () => {

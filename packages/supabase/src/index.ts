@@ -879,7 +879,7 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
   }
 
   public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
-    const { conversationId, before, after, role } = options;
+    const { conversationId, before, after, role, types } = options;
     // Handle the case where limit is explicitly set to 0 (unlimited)
     const actualLimit = options.limit !== undefined ? options.limit : this.options.storageLimit;
 
@@ -891,6 +891,10 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
 
     if (role) {
       query = query.eq("role", role);
+    }
+
+    if (types) {
+      query = query.in("type", types);
     }
     if (before) {
       // Assuming "before" is a timestamp or message ID that can be compared with created_at
