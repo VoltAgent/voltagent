@@ -15,7 +15,7 @@
     "@libsql/client": "0.15.0",
     "@tailwindcss/postcss": "^4.1.4",
     "@voltagent/cli": "^0.1.9",
-    "@voltagent/core": "^0.1.67",
+    "@voltagent/core": "^0.1.68",
     "@voltagent/logger": "^0.1.1",
     "@voltagent/vercel-ai": "^0.1.15",
     "@voltagent/vercel-ui": "^0.1.7",

@@ -1,5 +1,16 @@
 # @voltagent/anthropic-ai
 
+## 0.1.12
+
+### Patch Changes
+
+- [#421](https://github.com/VoltAgent/voltagent/pull/421) [`21d499a`](https://github.com/VoltAgent/voltagent/commit/21d499ac44f4a821df36b53c04e6dfa231333dda) Thanks [@tawanorg](https://github.com/tawanorg)! - fix(anthropic-ai): improve generateObject JSON formatting with explicit system prompt
+
+  Enhanced system prompt to prevent AI from wrapping JSON responses in markdown code blocks, fixing JSON parsing errors in generateObject method.
+
+- Updated dependencies [[`089c039`](https://github.com/VoltAgent/voltagent/commit/089c03993e3b9e05655a1108355e7bee940d33a7)]:
+  - @voltagent/core@0.1.68
+
 ## 0.1.11
 
 ### Patch Changes
