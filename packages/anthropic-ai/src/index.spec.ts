@@ -286,7 +286,9 @@ describe("AnthropicProvider", () => {
       expect(createParams.messages.length).toBe(1);
       expect(createParams.messages[0].role).toBe("user");
       expect(createParams.system).toContain("You are a helpful assistant.");
-      expect(createParams.system).toContain("You must return the response in valid JSON Format");
+      expect(createParams.system).toContain(
+        "CRITICAL: You MUST return ONLY raw JSON without any markdown formatting",
+      );
     });
 
     it("should format object response with JSON format in onStepFinish for AnthropicProvider", async () => {
@@ -556,7 +558,9 @@ describe("AnthropicProvider", () => {
       expect(createParams.messages.length).toBe(1);
       expect(createParams.messages[0].role).toBe("user");
       expect(createParams.system).toContain("You are a helpful assistant.");
-      expect(createParams.system).toContain("You must return the response in valid JSON Format");
+      expect(createParams.system).toContain(
+        "CRITICAL: You MUST return ONLY raw JSON without any markdown formatting",
+      );
 
       // Process the stream
       const reader = result.objectStream.getReader();
@@ -715,7 +719,7 @@ describe("AnthropicProvider", () => {
       // Verify the mock client was called correctly
       const createCall = mockAnthropicClient.messages.create.mock.calls[0][0];
       expect(createCall.stream).toBe(true);
-      expect(createCall.system).toMatch(/.*JSON Format.*/);
+      expect(createCall.system).toMatch(/.*CRITICAL: You MUST return ONLY raw JSON.*/);
     });
   });
 

@@ -251,7 +251,7 @@ export class AnthropicProvider implements LLMProvider<string> {
   ): Promise<ProviderObjectResponse<any, z.infer<TSchema>>> {
     const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
     const JsonSchema = zodToJsonSchema(options.schema);
-    const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. You must return the response in valid JSON Format with proper schema, nothing else `;
+    const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. CRITICAL: You MUST return ONLY raw JSON without any markdown formatting, backticks, or code blocks. Do NOT wrap the JSON in \`\`\`json or any other markdown syntax. Do NOT include any explanatory text before or after the JSON. Return ONLY the raw JSON object that conforms to the provided schema.`;
 
     const anthropicMessages = this.getAnthropicMessages(options.messages);
     const model = (options.model || this.model) as string;
@@ -329,7 +329,7 @@ export class AnthropicProvider implements LLMProvider<string> {
     try {
       const anthropicMessages = this.getAnthropicMessages(options.messages);
       const JsonSchema = zodToJsonSchema(options.schema);
-      const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. You must return the response in valid JSON Format with proper schema, nothing else `;
+      const systemPrompt = `${getSystemMessage(options.messages)}. Response Schema: ${JSON.stringify(JsonSchema)}. CRITICAL: You MUST return ONLY raw JSON without any markdown formatting, backticks, or code blocks. Do NOT wrap the JSON in \`\`\`json or any other markdown syntax. Do NOT include any explanatory text before or after the JSON. Return ONLY the raw JSON object that conforms to the provided schema.`;
       const { temperature = 0.2, maxTokens = 1024, topP, stopSequences } = options.provider || {};
 
       const response = await this.anthropic.messages.create({
