@@ -62,6 +62,16 @@ export type ProviderTextResponse<TOriginalResponse> = {
    * Finish reason (if applicable)
    */
   finishReason?: string;
+
+  /**
+   * Reasoning text from the model (if applicable)
+   */
+  reasoning?: string;
+
+  /**
+   * Warnings from the model provider (if applicable)
+   */
+  warnings?: any[];
 };
 
 // Standard stream part types for fullStream
@@ -156,6 +166,34 @@ export type ProviderTextStreamResponse<TOriginalResponse> = {
    * Optional - only available in providers that support it
    */
   fullStream?: AsyncIterable<StreamPart>;
+
+  /**
+   * The full generated text.
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  text?: Promise<string>;
+
+  /**
+   * The reason why generation stopped.
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  finishReason?: Promise<string>;
+
+  /**
+   * Token usage information.
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  usage?: Promise<UsageInfo>;
+
+  /**
+   * Model's reasoning text (if available).
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  reasoning?: Promise<string | undefined>;
 };
 
 /**
@@ -181,6 +219,11 @@ export type ProviderObjectResponse<TOriginalResponse, TObject> = {
    * Finish reason (if applicable)
    */
   finishReason?: string;
+
+  /**
+   * Warnings from the model provider (if applicable)
+   */
+  warnings?: any[];
 };
 
 /**
@@ -196,6 +239,27 @@ export type ProviderObjectStreamResponse<TOriginalResponse, TObject> = {
    * Object stream for consuming partial objects
    */
   objectStream: AsyncIterableStream<Partial<TObject>>;
+
+  /**
+   * The generated object (typed according to the schema).
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  object?: Promise<TObject>;
+
+  /**
+   * Token usage information.
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  usage?: Promise<UsageInfo>;
+
+  /**
+   * Warnings from the model provider.
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  warnings?: Promise<any[] | undefined>;
 };
 
 /**

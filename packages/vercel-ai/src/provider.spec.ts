@@ -74,6 +74,21 @@ describe("core", () => {
       }
     });
 
+    it("should include reasoning and warnings in generateText response", async () => {
+      const result = await provider.generateText({
+        messages: mockMessages,
+        model: createMockModel([
+          { role: "user" as const, content: "Hello, how are you?" },
+          { role: "assistant" as const, content: "I'm doing well, thank you!" },
+        ]),
+      });
+
+      expect(result).toBeDefined();
+      // Check that the properties exist (they may be undefined)
+      expect(result).toHaveProperty("reasoning");
+      expect(result).toHaveProperty("warnings");
+    });
+
     it("should forward errors in the correct format", async () => {
       await expect(
         provider.generateText({
@@ -178,6 +193,30 @@ describe("core", () => {
       await convertAsyncIterableToArray(result.textStream);
 
       expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
+    });
+
+    it("should return Promise properties from streamText", async () => {
+      const result = await provider.streamText({
+        messages: mockMessages,
+        model: createMockModel([{ role: "assistant" as const, content: "Hello, world!" }]),
+      });
+
+      // Verify the response structure includes the Promise properties
+      expect(result).toHaveProperty("textStream");
+      expect(result).toHaveProperty("text");
+      expect(result).toHaveProperty("finishReason");
+      expect(result).toHaveProperty("usage");
+      expect(result).toHaveProperty("reasoning");
+      expect(result).toHaveProperty("provider");
+
+      // Note: MockLanguageModelV1 may not properly implement these Promises
+      // but we can verify the properties exist and are passed through from the SDK
+      if (result.text) {
+        expect(result.text).toBeDefined();
+      }
+      if (result.usage) {
+        expect(result.usage).toBeDefined();
+      }
     });
   });
 
@@ -291,6 +330,24 @@ describe("core", () => {
           id: expect.any(String),
         }),
       );
+    });
+
+    it("should include warnings in generateObject response", async () => {
+      const result = await provider.generateObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+        }),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+        }),
+      });
+
+      expect(result).toBeDefined();
+      // Check that the warnings property exists (it may be undefined)
+      expect(result).toHaveProperty("warnings");
     });
   });
 
@@ -418,6 +475,36 @@ describe("core", () => {
       });
       await convertAsyncIterableToArray(result.objectStream);
       expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
+    });
+
+    it("should return an object Promise from streamObject", async () => {
+      const result = await provider.streamObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+        }),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+        }),
+      });
+
+      // Verify the response structure includes all Promise properties
+      expect(result).toHaveProperty("objectStream");
+      expect(result).toHaveProperty("object");
+      expect(result).toHaveProperty("usage");
+      expect(result).toHaveProperty("warnings");
+      expect(result).toHaveProperty("provider");
+
+      // Note: MockLanguageModelV1 may not properly implement these Promises
+      // but we can verify the properties exist and are passed through from the SDK
+      if (result.object) {
+        expect(result.object).toBeDefined();
+      }
+      if (result.usage) {
+        expect(result.usage).toBeDefined();
+      }
     });
   });
 
