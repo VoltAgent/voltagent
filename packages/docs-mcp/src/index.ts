@@ -66,7 +66,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
 
   try {
     // Execute the tool with proper args
-    const result = await tool.execute(args || ({} as any));
+    const result = await tool.execute?.(args || ({} as any));
 
     console.error(`Tool ${name} executed successfully`);
     return {

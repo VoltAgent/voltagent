@@ -78,14 +78,17 @@ describe("Tool", () => {
       expect(() => new Tool(options)).toThrow("Tool 'testTool' parameters schema is required");
     });
 
-    it("should throw error if execute is missing", () => {
+    it("should create tool without execute function (client-side tool)", () => {
       const options = {
         name: "testTool",
         parameters: z.object({}),
         description: "A test tool",
-      } as any;
+      };
 
-      expect(() => new Tool(options)).toThrow("Tool 'testTool' execute function is required");
+      const tool = new Tool(options);
+      expect(tool.name).toBe("testTool");
+      expect(tool.execute).toBeUndefined();
+      expect(tool.isClientSide()).toBe(true);
     });
   });
 });
