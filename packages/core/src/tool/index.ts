@@ -38,9 +38,10 @@ export type ToolOptions<T extends ToolSchema = ToolSchema> = {
   parameters: T;
 
   /**
-   * Function to execute when the tool is called
+   * Function to execute when the tool is called.
+   * If not provided, the tool is considered client-side and must be executed on the client.
    */
-  execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
+  execute?: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
 };
 
 /**
@@ -68,9 +69,17 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
   readonly parameters: T;
 
   /**
-   * Function to execute when the tool is called
+   * Function to execute when the tool is called.
+   * If not provided, the tool is considered client-side and must be executed on the client.
    */
-  readonly execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
+  readonly execute?: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
+
+  /**
+   * Check if the tool is client-side (no execute function)
+   */
+  isClientSide(): boolean {
+    return !this.execute;
+  }
 
   /**
    * Create a new tool
@@ -86,8 +95,10 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
     if (!options.parameters) {
       throw new Error(`Tool '${options.name}' parameters schema is required`);
     }
+    // Allow tools without execute function for client-side execution
     if (!options.execute) {
-      throw new Error(`Tool '${options.name}' execute function is required`);
+      const logger = new LoggerProxy({ component: "tool" });
+      logger.trace(`Tool '${options.name}' created as client-side tool (no execute function)`);
     }
 
     this.id = options.id || uuidv4();

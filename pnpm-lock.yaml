@@ -263,6 +263,40 @@ importers:
         specifier: ^5.8.2
         version: 5.8.3
 
+  examples/with-client-side-tools:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^1.3.10
+        version: 1.3.10(zod@3.24.2)
+      '@voltagent/cli':
+        specifier: ^0.1.9
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^0.1.68
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.15
+        version: link:../../packages/vercel-ai
+      readline:
+        specifier: ^1.3.0
+        version: 1.3.0
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.15.21
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.3
+
   examples/with-composio-mcp:
     dependencies:
       '@ai-sdk/openai':
@@ -18782,6 +18816,10 @@ packages:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
     dev: true
+
+  /readline@1.3.0:
+    resolution: {integrity: sha512-k2d6ACCkiNYz222Fs/iNze30rRJ1iIicW7JuX/7/cozvih6YCkFZH+J6mAFDVgv0dRBaAyr4jDqC95R2y4IADg==}
+    dev: false
 
   /real-require@0.2.0:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}

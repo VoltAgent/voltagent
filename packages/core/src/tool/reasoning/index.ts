@@ -1,4 +1,5 @@
 import type { Tool } from "..";
+import { createTool } from "..";
 import type { Toolkit } from "../toolkit";
 import { createToolkit } from "../toolkit";
 import { analyzeTool as baseAnalyzeTool, thinkTool as baseThinkTool } from "./tools";
@@ -165,10 +166,10 @@ export const createReasoningTools = (options: CreateReasoningToolsOptions = {}):
   }
 
   if (think) {
-    enabledTools.push({ ...baseThinkTool });
+    enabledTools.push(createTool(baseThinkTool));
   }
   if (analyze) {
-    enabledTools.push({ ...baseAnalyzeTool });
+    enabledTools.push(createTool(baseAnalyzeTool));
   }
 
   const reasoningToolkit = createToolkit({

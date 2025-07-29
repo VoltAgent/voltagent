@@ -755,6 +755,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Wrap ALL tools to inject ToolExecutionContext
     const toolsToUse = baseTools.map((tool) => {
       const originalExecute = tool.execute;
+
+      // For client-side tools (no execute function), return tool as-is
+      if (!originalExecute) {
+        return tool;
+      }
+
       return {
         ...tool,
         execute: async (args: unknown, execOptions?: ToolExecuteOptions): Promise<unknown> => {
@@ -863,7 +869,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     return {
-      tools: toolsToUse,
+      tools: toolsToUse as BaseTool[],
       maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
     };
   }

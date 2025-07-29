@@ -857,13 +857,14 @@ app.openapi(streamRoute, async (c) => {
   }
 
   try {
-    const {
-      input,
-      options = {
-        maxTokens: 4000,
-        temperature: 0.7,
-      },
-    } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    const { input, options } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+
+    // Apply defaults while preserving all properties from the request
+    const streamOptions = {
+      maxTokens: 4000,
+      temperature: 0.7,
+      ...options, // This preserves conversationId and other properties
+    };
 
     // Create AbortController and connect to request signal
     const abortController = new AbortController();
@@ -905,13 +906,13 @@ app.openapi(streamRoute, async (c) => {
 
           // Convert userContext from object to Map if provided
           const processedStreamOptions = {
-            ...options,
-            ...((options as any).userContext && {
-              userContext: new Map(Object.entries((options as any).userContext)),
+            ...streamOptions,
+            ...((streamOptions as any).userContext && {
+              userContext: new Map(Object.entries((streamOptions as any).userContext)),
             }),
             provider: {
-              maxTokens: options.maxTokens,
-              temperature: options.temperature,
+              maxTokens: streamOptions.maxTokens,
+              temperature: streamOptions.temperature,
               // Note: No onError callback needed - tool errors are handled via fullStream
               // Stream errors are handled by try/catch blocks around fullStream iteration
             },
@@ -978,14 +979,34 @@ app.openapi(streamRoute, async (c) => {
                     break;
                   }
                   case "tool-call": {
+                    // Check if tool is client-side
+                    let isClientSide = false;
+                    try {
+                      const tools = agent.getTools();
+                      const tool = tools.find((t) => t.name === part.toolName);
+                      isClientSide = !tool?.execute;
+                    } catch (e) {
+                      // If we can't determine, assume server-side
+                      logger.debug("Could not determine if tool is client-side", {
+                        toolName: part.toolName,
+                        error: e,
+                      });
+                    }
+
                     const data = {
                       toolCall: {
                         toolCallId: part.toolCallId,
                         toolName: part.toolName,
                         args: part.args,
+                        // Add client-side flag if tool has no execute function
+                        ...(isClientSide && { clientSide: true }),
                       },
                       timestamp: new Date().toISOString(),
                       type: "tool-call",
+                      // Include conversationId if available
+                      ...(streamOptions.conversationId && {
+                        conversationId: streamOptions.conversationId,
+                      }),
                       // Forward SubAgent metadata if present
                       ...(part.subAgentId &&
                         part.subAgentName && {

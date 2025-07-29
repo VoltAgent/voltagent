@@ -98,9 +98,7 @@ export class ToolManager {
     if (!tool || !tool.name) {
       throw new Error("Cannot add an invalid or unnamed tool.");
     }
-    if (!tool.execute || typeof tool.execute !== "function") {
-      throw new Error(`Tool ${tool.name} must have an execute function`);
-    }
+    // Allow tools without execute function (client-side tools)
 
     // Check for conflict with tools *inside* toolkits and issue a warning
     const conflictsWithToolkitTool = this.toolkits.some((toolkit) =>
@@ -151,11 +149,7 @@ export class ToolManager {
       if (!tool || !tool.name) {
         throw new Error(`Toolkit '${toolkit.name}' contains an invalid or unnamed tool.`);
       }
-      if (!tool.execute || typeof tool.execute !== "function") {
-        throw new Error(
-          `Tool '${tool.name}' in toolkit '${toolkit.name}' must have an execute function`,
-        );
-      }
+      // Allow tools without execute function (client-side tools)
       // Check conflict only against standalone tools and tools in OTHER toolkits
       if (
         this.tools.some((t) => t.name === tool.name) ||
@@ -205,14 +199,8 @@ export class ToolManager {
           );
         }
       } else {
-        // Ensure tool structure is valid (has execute)
-        if (typeof item.execute === "function") {
-          this.addTool(item);
-        } else {
-          this.logger.warn(
-            `[ToolManager] Skipping tool '${item.name}' due to missing or invalid 'execute' function.`,
-          );
-        }
+        // Allow tools without execute (client-side tools)
+        this.addTool(item);
       }
     }
   }
