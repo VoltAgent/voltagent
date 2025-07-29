@@ -48,6 +48,16 @@ export type ModelDynamicValue<T> = T | DynamicValue<T>;
 export type ToolsDynamicValue = (Tool<any> | Toolkit)[] | DynamicValue<(Tool<any> | Toolkit)[]>;
 
 /**
+ * Handler type for client-side tool calls
+ */
+export type OnToolCallHandler = (toolCall: {
+  toolCallId: string;
+  toolName: string;
+  args: any;
+  clientSide?: boolean;
+}) => Promise<any> | any;
+
+/**
  * Provider options type for LLM configurations
  */
 export type ProviderOptions = {
@@ -760,11 +770,13 @@ type InferOriginalResponseFromProvider<
 export type GenerateTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferGenerateTextResponseFromProvider<TProvider> & {
     userContext: Map<string | symbol, unknown>;
+    onToolCall?: (handler: OnToolCallHandler) => void;
   };
 
 export type StreamTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferStreamTextResponseFromProvider<TProvider> & {
     userContext?: UserContext;
+    onToolCall: (handler: OnToolCallHandler) => void;
   };
 
 export type GenerateObjectResponse<

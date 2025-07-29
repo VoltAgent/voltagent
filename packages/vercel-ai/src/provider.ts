@@ -117,6 +117,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         finishReason: result.finishReason,
         reasoning: result.reasoning,
         warnings: result.warnings,
+        messages: result.response?.messages as BaseMessage[] | undefined,
       };
     } catch (sdkError) {
       const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "llm_generate");
@@ -235,6 +236,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         finishReason: result.finishReason,
         usage: result.usage,
         reasoning: result.reasoning,
+        messages: result.response.then((resp) => resp?.messages as BaseMessage[] | undefined),
       };
     } catch (error) {
       throw createVoltagentErrorFromSdkError(error, "llm_stream");

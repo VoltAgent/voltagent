@@ -425,6 +425,163 @@ const response = await agent.generateText("Calculate 123 * 456", {
 });
 ```
 
+## Client-Side Tools
+
+Client-side tools are tools that run in your browser or client application instead of on the server. They're perfect for things that need user permission or access to browser features.
+
+### What makes a tool client-side?
+
+Simple: Don't give it an `execute` function. That's it!
+
+```ts
+// This is a client-side tool (no execute function)
+const showNotificationTool = createTool({
+  name: "show_notification",
+  description: "Shows a browser notification to the user",
+  parameters: z.object({
+    title: z.string().describe("Notification title"),
+    message: z.string().describe("Notification message"),
+  }),
+  // No execute function = client-side tool
+});
+```
+
+### How to handle client-side tools
+
+When the agent wants to use a client-side tool, you handle it with `onToolCall`:
+
+```ts
+const stream = await agent.streamText("Show me a notification that says hello!");
+
+// This runs when the agent calls a client-side tool
+stream.onToolCall(async (toolCall) => {
+  if (toolCall.toolName === "show_notification") {
+    // Show the notification (browser API)
+    const notification = new Notification(toolCall.args.title, {
+      body: toolCall.args.message,
+    });
+
+    // Return the result to the agent
+    return { success: true, shown: true };
+  }
+});
+
+// The agent continues the conversation after getting the result
+for await (const chunk of stream.textStream) {
+  console.log(chunk);
+}
+```
+
+### When to use client-side tools
+
+Client-side tools are great for:
+
+- **Browser APIs**: Notifications, clipboard, fullscreen, camera, microphone
+- **UI changes**: Theme switching, modal dialogs, tooltips
+- **User actions**: File downloads, form submissions, navigation
+- **Local storage**: Reading/writing browser storage, cookies
+- **Security-sensitive operations**: Anything that needs explicit user permission
+
+### Complete example
+
+Here's a simple chat app with a client-side tool:
+
+```ts
+import { Agent, createTool } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { z } from "zod";
+
+// Define a client-side tool (no execute function)
+const copyToClipboardTool = createTool({
+  name: "copy_to_clipboard",
+  description: "Copies text to the user's clipboard",
+  parameters: z.object({
+    text: z.string().describe("Text to copy"),
+  }),
+});
+
+// Create agent with the tool
+const agent = new Agent({
+  name: "Helpful Assistant",
+  description: "I can help you copy things",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+  tools: [copyToClipboardTool],
+});
+
+// Handle user request
+async function handleChat(userMessage: string) {
+  const stream = await agent.streamText(userMessage);
+
+  // Handle client-side tool execution
+  stream.onToolCall(async (toolCall) => {
+    if (toolCall.toolName === "copy_to_clipboard") {
+      try {
+        // Use browser API to copy text
+        await navigator.clipboard.writeText(toolCall.args.text);
+        return { success: true, message: "Copied to clipboard!" };
+      } catch (error) {
+        return { success: false, message: "Failed to copy" };
+      }
+    }
+  });
+
+  // Show the response
+  let response = "";
+  for await (const chunk of stream.textStream) {
+    response += chunk;
+  }
+  console.log(response);
+}
+
+// Example usage
+await handleChat("Copy the text 'Hello World' to my clipboard");
+// Agent will call the tool and then respond with something like:
+// "I've copied 'Hello World' to your clipboard!"
+```
+
+### Important notes
+
+- The `onToolCall` handler **must** be set up before you start reading the stream
+- Always return a result from your tool handler (the agent needs it to continue)
+- Client-side tools only work with providers that support the `messages` property (like `@voltagent/vercel-ai`)
+- The agent will wait for your tool to finish before continuing the conversation
+
+### Using client-side tools with generateText
+
+Client-side tools also work with `generateText` (non-streaming). The `onToolCall` is optional in this case:
+
+```ts
+const response = await agent.generateText("Change the theme to dark mode");
+
+// Check if the response has tool calls
+if (response.onToolCall) {
+  response.onToolCall(async (toolCall) => {
+    if (toolCall.toolName === "change_theme") {
+      // Get user permission
+      const approved = confirm(`Change theme to ${toolCall.args.theme}?`);
+
+      if (approved) {
+        document.body.className = toolCall.args.theme;
+        return { success: true, theme: toolCall.args.theme };
+      } else {
+        return { success: false, reason: "User denied permission" };
+      }
+    }
+  });
+}
+
+// The response already includes the tool execution result
+console.log(response.text);
+// Output: "I've changed the theme to dark mode for you."
+```
+
+This approach is useful when you:
+
+- Don't need real-time streaming
+- Want a simpler API without managing streams
+- Need the complete response before showing it to the user
+
 ## MCP (Model Context Protocol) Support
 
 VoltAgent supports the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/mcp), allowing your agents to seamlessly connect with external model servers, AI systems, and other tools that implement this protocol. This enables you to expand your agent's capabilities without having to write complex integration code.

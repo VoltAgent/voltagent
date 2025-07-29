@@ -37,6 +37,7 @@ import {
   streamEventForwarder,
   transformStreamEventToStreamPart,
 } from "../utils/streams";
+import type { StreamPart } from "./providers/base/types";
 import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
@@ -64,6 +65,7 @@ import type {
   InternalGenerateOptions,
   ModelDynamicValue,
   ModelType,
+  OnToolCallHandler,
   OperationContext,
   ProviderInstance,
   PublicGenerateOptions,
@@ -1392,14 +1394,48 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
+   * Build updated messages with tool results
+   */
+  private buildMessagesWithToolResults(
+    messages: BaseMessage[],
+    toolResults: Array<{
+      toolCallId: string;
+      toolName: string;
+      result: any;
+    }>,
+  ): BaseMessage[] {
+    return [
+      ...(messages || []),
+      {
+        role: "tool",
+        content: toolResults.map((tr) => ({
+          type: "tool-result",
+          toolCallId: tr.toolCallId,
+          toolName: tr.toolName,
+          result: tr.result,
+        })),
+      },
+    ];
+  }
+
+  /**
    * Create an enhanced fullStream with real-time SubAgent event injection
    */
   private createEnhancedFullStream(
-    originalStream: AsyncIterable<any>,
-    streamController: { current: ReadableStreamDefaultController<any> | null },
+    originalStream: AsyncIterable<StreamPart>,
+    streamController: { current: ReadableStreamDefaultController<StreamPart> | null },
     subAgentStatus: Map<string, { isActive: boolean; isCompleted: boolean }>,
-  ): AsyncIterable<any> {
+    options: {
+      onToolCall?: (toolCall: {
+        toolCallId: string;
+        toolName: string;
+        args: any;
+        clientSide?: boolean;
+      }) => void;
+    } = {},
+  ): AsyncIterable<StreamPart> {
     const logger = this.logger; // Capture logger reference
+    const toolManager = this.toolManager; // Capture toolManager reference
     return {
       async *[Symbol.asyncIterator]() {
         // Create a merged stream using ReadableStream for real-time injection
@@ -1412,6 +1448,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
             (async () => {
               try {
                 for await (const chunk of originalStream) {
+                  // Check if this is a tool-call chunk and notify callback
+                  if (chunk.type === "tool-call" && options.onToolCall) {
+                    const tool = toolManager.getToolByName(chunk.toolName);
+                    const isClientSide = tool ? tool.isClientSide() : false;
+
+                    options.onToolCall({
+                      toolCallId: chunk.toolCallId,
+                      toolName: chunk.toolName,
+                      args: chunk.args,
+                      clientSide: isClientSide,
+                    });
+                  }
                   controller.enqueue(chunk);
                 }
 
@@ -1924,10 +1972,78 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context: operationContext,
       });
 
+      // Check for client-side tool calls in the response
+      const hasClientSideToolCalls = response.toolCalls?.some((toolCall: any) => {
+        const tool = this.toolManager.getToolByName(toolCall.toolName || toolCall.name);
+        return tool?.isClientSide();
+      });
+
+      // Create onToolCall function if there are client-side tools and messages are supported
+      let onToolCall: ((handler: OnToolCallHandler) => void) | undefined;
+
+      if (hasClientSideToolCalls && response.messages) {
+        onToolCall = (handler: OnToolCallHandler) => {
+          // Process tool calls asynchronously without blocking
+          (async () => {
+            try {
+              const messages = response.messages;
+              if (!messages) {
+                return;
+              }
+
+              // Process tool calls
+              const toolResults = [];
+              for (const toolCall of response.toolCalls || []) {
+                const tool = this.toolManager.getToolByName(toolCall.toolName || toolCall.name);
+                if (tool?.isClientSide()) {
+                  const result = await handler({
+                    toolCallId: toolCall.toolCallId || toolCall.id,
+                    toolName: toolCall.toolName || toolCall.name,
+                    args: toolCall.args || toolCall.arguments,
+                    clientSide: true,
+                  });
+                  if (result !== undefined) {
+                    toolResults.push({
+                      toolCallId: toolCall.toolCallId || toolCall.id,
+                      toolName: toolCall.toolName || toolCall.name,
+                      result,
+                    });
+                  }
+                }
+              }
+
+              // Continue with tool results if any
+              if (toolResults.length > 0) {
+                const updatedMessages = this.buildMessagesWithToolResults(messages, toolResults);
+                await this.generateText(updatedMessages, {
+                  ...options,
+                  userId: internalOptions.userId,
+                  conversationId: finalConversationId,
+                });
+              }
+            } catch (error) {
+              methodLogger.error(
+                buildAgentLogMessage(this.name, ActionType.ERROR, "Tool call handler failed"),
+                {
+                  event: LogEvents.TOOL_EXECUTION_FAILED,
+                  error,
+                },
+              );
+            }
+          })();
+        };
+      } else if (hasClientSideToolCalls && !response.messages) {
+        // Provide a helpful error message
+        throw new Error(
+          "Provider does not support messages property. The onToolCall API requires a provider that returns messages in the response. Currently only @voltagent/vercel-ai provider supports this feature.",
+        );
+      }
+
       // Extend the original response with userContext AFTER onEnd hook
       const extendedResponse: GenerateTextResponse<TProvider> = {
         ...response,
         userContext: new Map(operationContext.userContext),
+        ...(onToolCall ? { onToolCall } : {}),
       };
 
       this.updateHistoryEntry(operationContext, {
@@ -2210,7 +2326,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Create real-time SubAgent event tracking
     const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
-    const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+    const streamController: { current: ReadableStreamDefaultController<StreamPart> | null } = {
       current: null,
     };
 
@@ -2676,13 +2792,158 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       },
     });
 
+    // Tool call handler setup
+    const toolCallHandlers: Array<OnToolCallHandler> = [];
+    const collectedToolCalls: Array<{
+      toolCallId: string;
+      toolName: string;
+      args: any;
+      clientSide?: boolean;
+    }> = [];
+
+    // Create enhanced stream that also collects tool calls
+    const enhancedStream = response.fullStream
+      ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus, {
+          onToolCall: (toolCall) => {
+            if (toolCall.clientSide) {
+              collectedToolCalls.push(toolCall);
+            }
+          },
+        })
+      : undefined;
+
+    // Store continuation promise to append to stream later
+    let continuationPromise: Promise<AsyncIterable<StreamPart> | null> | null = null;
+
+    // Create onToolCall function
+    const onToolCall = (handler: OnToolCallHandler) => {
+      if (!response.messages) {
+        throw new Error(
+          "Provider does not support messages property. The onToolCall API requires a provider that returns messages in the response. Currently only @voltagent/vercel-ai provider supports this feature.",
+        );
+      }
+
+      toolCallHandlers.push(handler);
+
+      // Initialize continuation promise if not already done
+      if (!continuationPromise) {
+        continuationPromise = new Promise<AsyncIterable<StreamPart> | null>((resolve) => {
+          (async () => {
+            try {
+              // Wait for messages to be available
+              const messages = await response.messages!;
+
+              // Process collected tool calls
+              if (collectedToolCalls.length > 0 && toolCallHandlers.length > 0) {
+                const toolResults = [];
+
+                // Execute all handlers
+                for (const handler of toolCallHandlers) {
+                  for (const toolCall of collectedToolCalls) {
+                    try {
+                      const result = await handler(toolCall);
+                      if (result !== undefined) {
+                        toolResults.push({
+                          toolCallId: toolCall.toolCallId,
+                          toolName: toolCall.toolName,
+                          result,
+                        });
+                      }
+                    } catch (error) {
+                      methodLogger.error(
+                        buildAgentLogMessage(
+                          this.name,
+                          ActionType.ERROR,
+                          "Tool call handler failed",
+                        ),
+                        {
+                          event: LogEvents.TOOL_EXECUTION_FAILED,
+                          error,
+                          toolName: toolCall.toolName,
+                        },
+                      );
+                    }
+                  }
+                }
+
+                // Continue with tool results if any
+                if (toolResults.length > 0) {
+                  try {
+                    const updatedMessages = this.buildMessagesWithToolResults(
+                      messages || [],
+                      toolResults,
+                    );
+
+                    // Make the continuation call
+                    const continuationResponse = await this.streamText(updatedMessages, {
+                      ...options,
+                      userId: internalOptions.userId,
+                      conversationId: finalConversationId,
+                    });
+
+                    // Return the continuation stream
+                    resolve(continuationResponse.fullStream || null);
+                  } catch (error) {
+                    methodLogger.error(
+                      buildAgentLogMessage(this.name, ActionType.ERROR, "Tool continuation failed"),
+                      {
+                        event: LogEvents.AGENT_STREAM_FAILED,
+                        error,
+                      },
+                    );
+                    resolve(null);
+                  }
+                } else {
+                  resolve(null);
+                }
+              } else {
+                resolve(null);
+              }
+            } catch (error) {
+              methodLogger.error(
+                buildAgentLogMessage(this.name, ActionType.ERROR, "Tool processing failed"),
+                {
+                  event: LogEvents.TOOL_EXECUTION_FAILED,
+                  error,
+                },
+              );
+              resolve(null);
+            }
+          })();
+        });
+      }
+    };
+
+    // Create a combined stream that includes continuation
+    const createCombinedStream = (): AsyncIterable<StreamPart> => {
+      return {
+        async *[Symbol.asyncIterator]() {
+          // First, yield from the enhanced stream
+          if (enhancedStream) {
+            for await (const chunk of enhancedStream) {
+              yield chunk;
+            }
+          }
+
+          // Then yield from continuation if available
+          if (continuationPromise) {
+            const continuationStream = await continuationPromise;
+            if (continuationStream) {
+              for await (const chunk of continuationStream) {
+                yield chunk;
+              }
+            }
+          }
+        },
+      };
+    };
+
     // Create enhanced stream with real-time SubAgent event injection and add userContext
     const wrappedResponse: StreamTextResponse<TProvider> = {
       ...response,
-      fullStream: response.fullStream
-        ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
-        : undefined,
+      fullStream: enhancedStream ? createCombinedStream() : undefined,
       userContext: new Map(operationContext.userContext),
+      onToolCall,
     };
 
     return wrappedResponse;

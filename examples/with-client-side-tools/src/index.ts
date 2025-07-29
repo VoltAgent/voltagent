@@ -24,17 +24,6 @@ const changeSystemThemeTool = createTool({
   // No execute function - this will be handled client-side
 });
 
-const showNotificationTool = createTool({
-  name: "showNotification",
-  description: "Shows a system notification",
-  parameters: z.object({
-    title: z.string().describe("The notification title"),
-    message: z.string().describe("The notification message"),
-    type: z.enum(["info", "success", "warning", "error"]).optional().default("info"),
-  }),
-  // No execute function - this will be handled client-side
-});
-
 const openUrlTool = createTool({
   name: "openUrl",
   description: "Opens a URL in the default browser",
@@ -68,7 +57,6 @@ const agent = new Agent({
   name: "UI Assistant",
   instructions: `You are a helpful UI assistant that can:
 - Change the system theme between light and dark mode
-- Show notifications to the user
 - Open URLs in the browser (with user permission)
 - Get system information
 
@@ -76,7 +64,7 @@ Always be helpful and explain what you're doing. When using tools that affect th
 explain why you're using them.`,
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  tools: [changeSystemThemeTool, showNotificationTool, openUrlTool, getSystemInfoTool],
+  tools: [changeSystemThemeTool, openUrlTool, getSystemInfoTool],
 });
 
 // Create readline interface for user interaction
@@ -207,72 +195,27 @@ async function main() {
       console.log("\nAssistant: ");
 
       // Stream the response
-      const stream = await agent.streamText(input, {
-        userId, // Required for memory system
-        conversationId,
-      });
+      const stream = await agent.streamText(input, {});
 
-      let assistantMessage = "";
-      const pendingToolCalls: Array<{
-        toolCallId: string;
-        toolName: string;
-        args: any;
-        clientSide?: boolean;
-      }> = [];
+      // Register tool call handler
+      stream.onToolCall(async (toolCall) => {
+        console.log(`\n⚡ Tool Request: ${toolCall.toolName}`);
+
+        const executor = clientToolExecutors[toolCall.toolName as keyof typeof clientToolExecutors];
+        if (!executor) {
+          console.log("❌ No executor found for this tool");
+          return;
+        }
+
+        // Execute the tool and return result
+        return await executor(toolCall.args);
+      });
 
       // Process the stream
       for await (const part of stream.fullStream ?? []) {
         if (part.type === "text-delta") {
           process.stdout.write(part.textDelta);
-          assistantMessage += part.textDelta;
-        } else if (part.type === "tool-call") {
-          pendingToolCalls.push({
-            toolCallId: part.toolCallId,
-            toolName: part.toolName,
-            args: part.args,
-            clientSide: true,
-          });
         }
-      }
-
-      const _response = await stream.provider.response;
-
-      // Process any pending tool calls
-      for (const toolCall of pendingToolCalls) {
-        if (toolCall.clientSide) {
-          // Execute client-side tool with user approval
-          const executor =
-            clientToolExecutors[toolCall.toolName as keyof typeof clientToolExecutors];
-          if (executor) {
-            const result = await executor(toolCall.args);
-
-            // Send tool result back to agent as a tool message
-            const toolResultMessage = {
-              role: "tool",
-              content: [
-                {
-                  type: "tool-result",
-                  toolCallId: toolCall.toolCallId,
-                  toolName: toolCall.toolName,
-                  result,
-                },
-              ],
-            } as any;
-
-            console.log("\n\nAssistant (after tool execution): ");
-            const followUpStream = await agent.streamText([toolResultMessage], {
-              userId,
-              conversationId,
-            });
-
-            for await (const part of followUpStream.fullStream ?? []) {
-              if (part.type === "text-delta") {
-                process.stdout.write(part.textDelta);
-              }
-            }
-          }
-        }
-        // Server-side tools are executed automatically
       }
 
       console.log("\n");
