@@ -15,6 +15,30 @@ export default function TutorialMemory() {
       prevStepUrl="/tutorial/chatbot-problem"
     >
       <div className="space-y-20">
+        {/* Video Introduction */}
+        <div className="mb-20">
+          <div className="text-center relative overflow-hidden">
+            <div className="relative z-10">
+              <h2 className="text-xl landing-md:text-2xl font-bold text-white mb-4">
+                Watch This Step Video
+              </h2>
+
+              <div className="max-w-4xl mx-auto">
+                <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden border border-white/10">
+                  <iframe
+                    src="https://www.youtube.com/embed/agy4YjzPEJ8"
+                    title="VoltAgent Memory Tutorial - Agents That Remember"
+                    className="absolute top-0 left-0 w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* The Problem */}
         <div className="space-y-6">
           <h2 className="text-2xl landing-md:text-3xl font-bold text-white">

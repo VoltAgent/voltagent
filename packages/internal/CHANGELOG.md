@@ -1,5 +1,27 @@
 # @voltagent/internal
 
+## 0.0.6
+
+### Patch Changes
+
+- [#404](https://github.com/VoltAgent/voltagent/pull/404) [`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: remove devLogger in favor of standardized logging approach
+
+  Removed the internal `devLogger` utility to align with the new standardized logging architecture. This change simplifies the internal package and reduces code duplication by leveraging the comprehensive logging system now available in @voltagent/core and @voltagent/logger.
+
+  **Changes:**
+
+  - Removed `devLogger` from exports
+  - Removed development-only logging utility
+  - Consumers should use the logger instance provided by VoltAgent or create their own using @voltagent/logger
+
+  This is part of the logging system refactoring to provide a more consistent and powerful logging experience across all VoltAgent packages.
+
+## 0.0.5
+
+### Patch Changes
+
+- [`6fadbb0`](https://github.com/VoltAgent/voltagent/commit/6fadbb098fe40d8b658aa3386e6126fea155f117) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: createAsyncIterableStream import issue
+
 ## 0.0.4
 
 ### Patch Changes

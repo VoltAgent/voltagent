@@ -5,6 +5,16 @@
 
 > **Build powerful, type-safe AI workflows.** Go from a simple chain of functions to a complex, multi-step process that combines your code, AI models, and conditional logic with ease.
 
+## What are Workflows?
+
+A workflow is a chain of steps. Each step does something and passes its result to the next step.
+
+```typescript
+workflow = step1 → step2 → step3 → result
+```
+
+That's it. The power comes from what each step can do: run code, call AI, make decisions, run in parallel.
+
 ## Get Started in 2 Minutes
 
 Let's build a workflow from scratch. We'll start with a simple function, add AI, and then introduce conditional logic. Each step will show the complete, runnable code.
@@ -431,6 +441,47 @@ new VoltAgent({
 
 This registration step is what connects your locally executed workflows to the broader observability layer, allowing you to monitor, debug, and manage them from a central location.
 
+### Executing Workflows via REST API
+
+Once your workflows are registered with VoltAgent, they can also be executed through the REST API. This is useful for triggering workflows from web applications, mobile apps, or any external system.
+
+**Execute Workflow Endpoint:** `POST /workflows/{id}/execute`
+
+```bash
+curl -X POST http://localhost:3141/workflows/my-workflow/execute \
+     -H "Content-Type: application/json" \
+     -d '{
+       "input": {
+         "email": "user@example.com",
+         "name": "John Doe"
+       },
+       "options": {
+         "userId": "user-123",
+         "conversationId": "conv-456"
+       }
+     }'
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_1234567890_abc123",
+    "startAt": "2024-01-15T10:00:00.000Z",
+    "endAt": "2024-01-15T10:00:05.123Z",
+    "status": "completed",
+    "result": {
+      "userId": "usr_generated_123",
+      "welcome": "Welcome John!"
+    }
+  }
+}
+```
+
+The workflow can also suspend during execution and be resumed later. For detailed information about suspending and resuming workflows via REST API, see the [Suspend & Resume documentation](./suspend-resume.md#rest-api-usage).
+
 ## Workflow Hooks
 
 Workflows provide hooks that allow you to tap into the lifecycle of a workflow run. You can execute custom logic at key points, such as before and after a step or at the beginning and end of the entire workflow. This is useful for logging, metrics, or any other side effects you want to perform.
@@ -454,8 +505,30 @@ For more details, see the [Workflow Hooks](./hooks.md) documentation.
 | **`andAll`**   | Run steps in parallel (wait all)   | Batch processing, multiple API calls |
 | **`andRace`**  | Run steps in parallel (first wins) | Fallbacks, cache vs. API race        |
 
+## Workflow Schemas
+
+Workflows can validate data at key points using schemas:
+
+```typescript
+const workflow = createWorkflowChain({
+  id: "user-onboarding",
+  name: "User Onboarding",
+  // Validates initial input
+  input: z.object({ email: z.string().email() }),
+  // Validates final result
+  result: z.object({ userId: z.string(), welcome: z.string() }),
+  // Validates data when workflow suspends
+  suspendSchema: z.object({ waitingFor: z.string() }),
+  // Validates data when workflow resumes
+  resumeSchema: z.object({ approved: z.boolean() }),
+});
+```
+
+Each step can also have its own schemas that override the workflow defaults. This ensures type safety throughout your workflow.
+
 ## Next Steps
 
 1.  **Explore the Step Types**: Dive deeper into each step, starting with [`andThen`](./steps/and-then.md).
 2.  **Learn about Hooks**: Understand how to use [Workflow Hooks](./hooks.md) to add custom logic to your workflows.
 3.  **Check out Example**: See [with-workflow](https://github.com/VoltAgent/voltagent/tree/main/examples/with-workflow) example.
+4.  **REST API Integration**: Learn how to [execute, suspend, and resume workflows via REST API](../api/overview.md#workflow-endpoints).

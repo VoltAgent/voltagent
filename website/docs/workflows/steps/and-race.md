@@ -1,487 +1,240 @@
-# andRace - Race Execution
+# andRace
 
-> **First completed step wins.** Run multiple steps in parallel and return the first result.
+> Run multiple steps in parallel and use the first one that finishes. Perfect for timeouts, fallbacks, or getting the fastest response.
 
-## What is andRace?
+## Quick Start
 
-`andRace` executes multiple steps simultaneously and returns the result from whichever completes first. Like `Promise.race()` but for workflow steps.
+Get data from whichever source responds first:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
+import { createWorkflowChain, andThen, andRace } from "@voltagent/core";
 import { z } from "zod";
 
 const workflow = createWorkflowChain({
-  id: "fast-response",
-  name: "Fast Response",
-  input: z.object({ query: z.string() }),
-  result: z.object({
-    source: z.string(),
-    result: z.string(),
-    responseTime: z.number(),
+  id: "get-user-data",
+  input: z.object({ userId: z.string() }),
+}).andRace([
+  // Fast: Check cache (100ms)
+  andThen({
+    id: "check-cache",
+    execute: async ({ data }) => {
+      const cached = await checkCache(data.userId);
+      if (cached) return { data: cached, source: "cache" };
+      throw new Error("Not in cache");
+    },
   }),
-}).andRace({
-  steps: [
-    // Check cache (fast)
-    andThen({
-      id: "check-cache",
-      execute: async ({ data }) => {
-        await new Promise((resolve) => setTimeout(resolve, 100)); // 100ms
-        const cached = await getFromCache(data.query);
-        return {
-          source: "cache",
-          result: cached || "Not found in cache",
-          responseTime: 100,
-        };
-      },
-    }),
-    // Query database (slower)
-    andThen({
-      id: "query-db",
-      execute: async ({ data }) => {
-        await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms
-        const dbResult = await queryDatabase(data.query);
-        return {
-          source: "database",
-          result: dbResult,
-          responseTime: 500,
-        };
-      },
-    }),
-    // AI fallback (slowest)
-    andAgent(({ data }) => `Generate response for: ${data.query}`, agent, {
-      schema: z.object({
-        source: z.literal("ai"),
-        result: z.string(),
-        responseTime: z.literal(1000),
-      }),
-    }),
-  ],
-});
 
-const result = await workflow.run({ query: "What is AI?" });
-// Returns cache result (fastest) after ~100ms
-// { source: "cache", result: "...", responseTime: 100 }
+  // Medium: Database (300ms)
+  andThen({
+    id: "check-database",
+    execute: async ({ data }) => {
+      const user = await database.getUser(data.userId);
+      return { data: user, source: "database" };
+    },
+  }),
+
+  // Slow: External API (1000ms)
+  andThen({
+    id: "fetch-from-api",
+    execute: async ({ data }) => {
+      const response = await fetch(`/api/users/${data.userId}`);
+      return { data: await response.json(), source: "api" };
+    },
+  }),
+]);
+
+const result = await workflow.run({ userId: "123" });
+// If cache has data: returns in ~100ms from cache
+// If cache misses: returns in ~300ms from database
+// If both fail: returns in ~1000ms from API
 ```
+
+## How It Works
+
+1. All steps start at the same time
+2. First one to finish "wins"
+3. Its result becomes the workflow result
+4. Other steps stop running
+5. If winner fails, next fastest wins
+
+Think of it like a race - whoever crosses the finish line first wins, regardless of who started strongest.
 
 ## Function Signature
 
 ```typescript
-.andRace({
-  steps: [step1, step2, step3, ...]  // array of workflow steps
-})
-```
-
-### How It Works
-
-1. **All steps start simultaneously** with the same input data
-2. **First step to complete wins** and returns its result
-3. **Other steps are cancelled** (if possible)
-4. **If fastest step fails, race continues** with remaining steps
-
-```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const redundantAPIWorkflow = createWorkflowChain({
-  id: "redundant-api-workflow",
-  name: "Redundant API Workflow",
-  input: z.object({ userId: z.string() }),
-  result: z.object({
-    userData: any,
-    source: z.string(),
-  }),
-}).andRace({
-  steps: [
-    // Primary API
-    andThen({
-      id: "call-primary-api",
-      execute: async ({ data }) => {
-        const userData = await fetch(`https://api1.example.com/users/${data.userId}`);
-        return {
-          userData: await userData.json(),
-          source: "primary-api",
-        };
-      },
-    }),
-    // Backup API
-    andThen({
-      id: "call-backup-api",
-      execute: async ({ data }) => {
-        const userData = await fetch(`https://api2.example.com/users/${data.userId}`);
-        return {
-          userData: await userData.json(),
-          source: "backup-api",
-        };
-      },
-    }),
-    // Fallback API
-    andThen({
-      id: "call-fallback-api",
-      execute: async ({ data }) => {
-        const userData = await fetch(`https://api3.example.com/users/${data.userId}`);
-        return {
-          userData: await userData.json(),
-          source: "fallback-api",
-        };
-      },
-    }),
-  ],
-});
-
-// Returns result from whichever API responds first
-```
-
-## Using State in Race Steps
-
-Each racing step receives the same input data and state:
-
-```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-const multiProviderSearch = createWorkflowChain({
-  id: "multi-provider-search",
-  name: "Multi-Provider Search",
-  input: z.object({ searchTerm: z.string() }),
-  result: z.object({
-    results: any[],
-    provider: z.string(),
-    userTier: z.string()
-  })
-})
-.andRace({
-  steps: [
-    andThen({
-      id: "premium-search",
-      execute: async ({ data, state }) => {
-        // Premium search (faster for premium users)
-        const userTier = state.userContext?.get('tier');
-        if (userTier === 'premium') {
-          const results = await premiumSearch(data.searchTerm);
-          return { results, provider: "premium", userTier };
-        }
-        throw new Error("Not premium user");
-      }
-    }),
-    andThen({
-      id: "standard-search",
-      execute: async ({ data, state }) => {
-        // Standard search (available for all)
-        const results = await standardSearch(data.searchTerm);
-        const userTier = state.userContext?.get('tier') || 'standard';
-        return { results, provider: "standard", userTier };
-      }
-    }),
-    andAgent(
-      ({ data, state }) => {
-        const userTier = state.userContext?.get('tier') || 'free';
-        return `Search for "${data.searchTerm}" with ${userTier} tier limitations`;
-      },
-      agent,
-      {
-        schema: z.object({
-          results: z.array(z.string()),
-          provider: z.literal("ai"),
-          userTier: z.string()
-        })
-      }
-    )
-  ]
-});
+.andRace([step1, step2, step3])  // Array of steps to race
 ```
 
 ## Common Patterns
 
-### Timeout with Fallback
+### Timeout Pattern
+
+Add a timeout to any operation:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "timeout-with-fallback",
-  name: "Timeout with Fallback",
-  input: z.object({}),
-  result: z.object({ result: z.string(), source: z.string() }),
-}).andRace({
-  steps: [
-    // Main operation
-    andThen({
-      id: "slow-api-call",
-      execute: async ({ data }) => {
-        const result = await slowAPICall(data);
-        return { result, source: "api" };
-      },
-    }),
-    // Timeout fallback
-    andThen({
-      id: "timeout-fallback",
-      execute: async ({ data }) => {
-        await new Promise((resolve) => setTimeout(resolve, 5000)); // 5s timeout
-        return { result: "Request timed out", source: "timeout" };
-      },
-    }),
-  ],
-});
+.andRace([
+  // Main operation
+  andThen({
+    id: "slow-api",
+    execute: async ({ data }) => {
+      const result = await slowAPICall(data);
+      return { result, timedOut: false };
+    }
+  }),
+  // Timeout after 5 seconds
+  andThen({
+    id: "timeout",
+    execute: async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return { result: "Timeout", timedOut: true };
+    }
+  })
+])
 ```
 
 ### Multiple AI Providers
 
-```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
+Get response from fastest AI:
 
-createWorkflowChain({
-  id: "multiple-ai-providers",
-  name: "Multiple AI Providers",
-  input: z.object({ prompt: z.string() }),
-  result: z.object({ response: z.string(), provider: z.string() }),
-}).andRace({
-  steps: [
-    andAgent(({ data }) => data.prompt, openaiAgent, {
-      schema: z.object({ response: z.string(), provider: z.literal("openai") }),
-    }),
-    andAgent(({ data }) => data.prompt, claudeAgent, {
-      schema: z.object({ response: z.string(), provider: z.literal("claude") }),
-    }),
-    andAgent(({ data }) => data.prompt, geminiAgent, {
-      schema: z.object({ response: z.string(), provider: z.literal("gemini") }),
-    }),
-  ],
-});
+```typescript
+.andRace([
+  andAgent(
+    ({ data }) => data.prompt,
+    openaiAgent,
+    { schema: z.object({ response: z.string(), ai: z.literal("openai") }) }
+  ),
+  andAgent(
+    ({ data }) => data.prompt,
+    claudeAgent,
+    { schema: z.object({ response: z.string(), ai: z.literal("claude") }) }
+  ),
+  andAgent(
+    ({ data }) => data.prompt,
+    geminiAgent,
+    { schema: z.object({ response: z.string(), ai: z.literal("gemini") }) }
+  )
+])
 ```
 
-### Cache vs Compute
+### Cache vs Database
+
+Try cache first, fall back to database:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "cache-vs-compute",
-  name: "Cache vs Compute",
-  input: z.object({ key: z.string() }),
-  result: z.object({ result: any, fromCache: z.boolean() }),
-}).andRace({
-  steps: [
-    // Check cache first
-    andThen({
-      id: "check-cache",
-      execute: async ({ data }) => {
-        const cached = await redis.get(`result:${data.key}`);
-        if (cached) {
-          return { result: JSON.parse(cached), fromCache: true };
-        }
-        throw new Error("Cache miss");
-      },
-    }),
-    // Expensive computation
-    andThen({
-      id: "expensive-computation",
-      execute: async ({ data }) => {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate work
-        const computed = await expensiveComputation(data);
-        await redis.set(`result:${data.key}`, JSON.stringify(computed), "EX", 3600);
-        return { result: computed, fromCache: false };
-      },
-    }),
-  ],
-});
-```
-
-### Geographic Failover
-
-```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "geographic-failover",
-  name: "Geographic Failover",
-  input: z.object({ id: z.string() }),
-  result: z.object({ data: any, region: z.string() }),
-}).andRace({
-  steps: [
-    // Primary region
-    andThen({
-      id: "fetch-us-east",
-      execute: async ({ data }) => {
-        const result = await fetch(`https://us-east.api.com/data/${data.id}`);
-        return { data: await result.json(), region: "us-east" };
-      },
-    }),
-    // Secondary region
-    andThen({
-      id: "fetch-eu-west",
-      execute: async ({ data }) => {
-        const result = await fetch(`https://eu-west.api.com/data/${data.id}`);
-        return { data: await result.json(), region: "eu-west" };
-      },
-    }),
-    // Tertiary region
-    andThen({
-      id: "fetch-asia",
-      execute: async ({ data }) => {
-        const result = await fetch(`https://asia.api.com/data/${data.id}`);
-        return { data: await result.json(), region: "asia" };
-      },
-    }),
-  ],
-});
+.andRace([
+  // Try cache (fast)
+  andThen({
+    id: "cache-lookup",
+    execute: async ({ data }) => {
+      const cached = await cache.get(data.key);
+      if (!cached) throw new Error("Cache miss");
+      return { value: cached, from: "cache" };
+    }
+  }),
+  // Fall back to database (slower)
+  andThen({
+    id: "db-lookup",
+    execute: async ({ data }) => {
+      const value = await db.find(data.key);
+      await cache.set(data.key, value); // Update cache
+      return { value, from: "database" };
+    }
+  })
+])
 ```
 
 ## Error Handling
 
-If the fastest step fails, race continues with remaining steps:
+If the fastest step fails, the race continues:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "error-handling-race",
-  name: "Error Handling Race",
-  input: z.object({}),
-  result: z.object({ result: z.string(), success: z.boolean() }),
-})
-  .andRace({
-    steps: [
-      andThen({
-        id: "fast-operation",
-        execute: async ({ data }) => {
-          // This might fail quickly
-          if (Math.random() > 0.5) {
-            throw new Error("Fast operation failed");
-          }
-          return { result: "fast", success: true };
-        },
-      }),
-      andThen({
-        id: "reliable-operation",
-        execute: async ({ data }) => {
-          // This is slower but more reliable
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          return { result: "reliable", success: true };
-        },
-      }),
-    ],
+.andRace([
+  andThen({
+    id: "unreliable-fast",
+    execute: async () => {
+      if (Math.random() > 0.5) {
+        throw new Error("Failed!");
+      }
+      return { result: "fast" };
+    }
+  }),
+  andThen({
+    id: "reliable-slow",
+    execute: async () => {
+      await sleep(1000);
+      return { result: "slow but reliable" };
+    }
   })
-  .andThen({
-    id: "log-winner",
-    execute: async ({ data }) => {
-      console.log(`Winner: ${data.result}`);
-      return data;
-    },
-  });
+])
+// If fast fails, you get slow result
+// If fast succeeds, you get fast result
 ```
 
-## Performance Benefits
-
-`andRace` optimizes for speed by using the fastest available option:
+## Performance Comparison
 
 ```typescript
-// Instead of always waiting for slowest option
-createWorkflowChain({
-  id: "slow-api-workflow",
-  name: "Slow API Workflow",
-  input: z.object({}),
-  result: z.object({}),
-}).andThen({ id: "slow-api", execute: async ({ data }) => await slowButReliableAPI(data) }); // Always 2s
+// Without race: Always slow (2 seconds)
+.andThen({ execute: async () => await slowAPI() })
 
-// Use race for speed optimization
-createWorkflowChain({
-  id: "fast-api-workflow",
-  name: "Fast API Workflow",
-  input: z.object({}),
-  result: z.object({}),
-}).andRace({
-  steps: [
-    andThen({ id: "fast-cache", execute: async ({ data }) => await fastCache(data) }), // 50ms
-    andThen({ id: "medium-api", execute: async ({ data }) => await mediumAPI(data) }), // 500ms
-    andThen({
-      id: "slow-api-fallback",
-      execute: async ({ data }) => await slowButReliableAPI(data),
-    }), // 2s
-  ],
-});
-// Usually completes in 50ms, falls back to 500ms or 2s if needed
+// With race: Usually fast (50ms)
+.andRace([
+  andThen({ execute: async () => await cache() }),    // 50ms
+  andThen({ execute: async () => await database() }), // 500ms
+  andThen({ execute: async () => await slowAPI() })   // 2000ms
+])
 ```
 
 ## Best Practices
 
-### Order Steps by Speed
+### 1. Order by Speed
 
 ```typescript
-// Good: Fastest first, slowest last
-createWorkflowChain({
-  id: "ordered-race",
-  name: "Ordered Race",
-  input: z.object({}),
-  result: z.object({}),
-}).andRace({
-  steps: [
-    andThen({ id: "cache-step", execute: async ({ data }) => await cache(data) }), // 50ms
-    andThen({ id: "db-step", execute: async ({ data }) => await database(data) }), // 200ms
-    andThen({ id: "api-step", execute: async ({ data }) => await externalAPI(data) }), // 1000ms
-  ],
-});
-
-// Less optimal: Random order
-createWorkflowChain({
-  id: "random-race",
-  name: "Random Race",
-  input: z.object({}),
-  result: z.object({}),
-}).andRace({
-  steps: [
-    andThen({ id: "api-step-random", execute: async ({ data }) => await externalAPI(data) }), // 1000ms
-    andThen({ id: "cache-step-random", execute: async ({ data }) => await cache(data) }), // 50ms
-    andThen({ id: "db-step-random", execute: async ({ data }) => await database(data) }), // 200ms
-  ],
-});
+// Good: Fastest first
+.andRace([
+  cacheStep,    // 10ms
+  databaseStep, // 100ms
+  apiStep       // 1000ms
+])
 ```
 
-### Handle All Possible Results
+### 2. Handle Different Results
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
-import { z } from "zod";
-
-createWorkflowChain({
-  id: "handle-results-race",
-  name: "Handle Results Race",
-  input: z.object({}),
-  result: z.object({}),
+.andRace([...steps])
+.andThen({
+  execute: async ({ data }) => {
+    // Check which source won
+    if (data.source === "cache") {
+      console.log("Got cached data");
+    }
+    return data;
+  }
 })
-  .andRace({
-    steps: [fastStep, mediumStep, slowStep],
-  })
-  .andThen({
-    id: "handle-race-result",
-    execute: async ({ data }) => {
-      // Handle different result sources
-      switch (data.source) {
-        case "cache":
-          console.log("Got cached result");
-          break;
-        case "database":
-          console.log("Got database result");
-          break;
-        case "api":
-          console.log("Got API result");
-          break;
-      }
-      return data;
-    },
-  });
 ```
+
+### 3. Use for Redundancy
+
+```typescript
+// Multiple APIs for reliability
+.andRace([
+  primaryAPI,
+  backupAPI,
+  fallbackAPI
+])
+```
+
+## Comparison with andAll
+
+| Feature  | andRace                | andAll            |
+| -------- | ---------------------- | ----------------- |
+| Returns  | First to finish        | All results       |
+| Speed    | Fast as possible       | Slow as slowest   |
+| Use case | Need any result        | Need all results  |
+| Failure  | Continues if one fails | Fails if any fail |
 
 ## Next Steps
 
-- **[andAll](./and-all.md)** - Wait for all steps to complete
-- **[andThen](./and-then.md)** - Process race winner with functions
-- **[andWhen](./and-when.md)** - Add conditions to racing steps
-
----
-
-> **Quick Summary**: `andRace` runs multiple steps simultaneously and returns the first completed result. Perfect for speed optimization, redundancy, and fallback scenarios where you want the fastest available response.
+- Learn about [andAll](./and-all.md) for when you need all results
+- Explore [andThen](./and-then.md) for sequential processing
+- See [andWhen](./and-when.md) for conditional execution
+- Execute workflows via [REST API](../../api/overview.md#workflow-endpoints)

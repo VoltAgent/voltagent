@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -34,9 +35,8 @@ const dynamicAgent = new Agent({
 
     if (role === "admin") {
       return `You are an admin assistant. Respond in ${language}. You have special privileges.`;
-    } else {
-      return `You are a helpful assistant. Respond in ${language}. You help with basic questions.`;
     }
+    return `You are a helpful assistant. Respond in ${language}. You help with basic questions.`;
   },
   model: ({ userContext }) => {
     const tier = (userContext.get("tier") as string) || "free";
@@ -55,8 +55,15 @@ const dynamicAgent = new Agent({
   llm: new VercelAIProvider(),
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-dynamic-parameters",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     dynamicAgent,
   },
+  logger,
 });

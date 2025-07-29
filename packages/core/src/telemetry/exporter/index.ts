@@ -35,11 +35,13 @@ import {
   TelemetryServiceApiClient,
 } from "../client";
 import { BackgroundQueue } from "../../utils/queue/queue";
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
+import { LoggerProxy } from "../../logger";
 
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;
   public readonly publicKey: string;
+  private logger: Logger;
 
   /**
    * Internal queue for all telemetry export operations
@@ -54,6 +56,7 @@ export class VoltAgentExporter {
     }
     this.apiClient = new TelemetryServiceApiClient({ ...options, baseUrl });
     this.publicKey = options.publicKey;
+    this.logger = new LoggerProxy({ component: "volt-agent-exporter" });
 
     // Initialize dedicated telemetry export queue
     this.telemetryQueue = new BackgroundQueue({
@@ -88,11 +91,12 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.exportHistoryEntry(historyEntryData);
-          devLogger.debug(
-            `[VoltAgentExporter] History entry exported: ${historyEntryData.history_id}`,
-          );
+          this.logger.trace(`History entry exported: ${historyEntryData.history_id}`);
         } catch (error) {
-          devLogger.error("Failed to export history entry:", error);
+          this.logger.error(
+            "Failed to sending history entry to VoltOps. Check your publicKey & secretKey",
+            { error },
+          );
           throw error;
         }
       },
@@ -124,9 +128,7 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.exportTimelineEvent(timelineEventData);
-          devLogger.debug(
-            `[VoltAgentExporter] Timeline event exported: ${timelineEventData.event_id}`,
-          );
+          this.logger.trace(`Timeline event exported: ${timelineEventData.event_id}`);
         } catch (error) {
           throw error;
         }
@@ -155,9 +157,9 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.exportHistorySteps(history_id, steps);
-          devLogger.debug(`[VoltAgentExporter] History steps exported: ${history_id}`);
+          this.logger.trace(`History steps exported: ${history_id}`);
         } catch (error) {
-          devLogger.error("Failed to export history steps:", error);
+          this.logger.error("Failed to export history steps", { error });
           throw error;
         }
       },
@@ -191,9 +193,9 @@ export class VoltAgentExporter {
       operation: async () => {
         try {
           await this.updateHistoryEntry(history_id, updates);
-          devLogger.debug(`[VoltAgentExporter] History entry updated: ${history_id}`);
+          this.logger.trace(`History entry updated: ${history_id}`);
         } catch (error) {
-          devLogger.error("Failed to update history entry:", error);
+          this.logger.error("Failed to update history entry", { error });
           throw error;
         }
       },

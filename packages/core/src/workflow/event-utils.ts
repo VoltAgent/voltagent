@@ -3,9 +3,11 @@ import type {
   WorkflowStartEvent,
   WorkflowSuccessEvent,
   WorkflowErrorEvent,
+  WorkflowSuspendEvent,
   WorkflowStepStartEvent,
   WorkflowStepSuccessEvent,
   WorkflowStepErrorEvent,
+  WorkflowStepSuspendEvent,
   WorkflowEventMetadata,
   WorkflowStepEventMetadata,
 } from "../events/types";
@@ -13,16 +15,11 @@ import { createWorkflowStepNodeId, type WorkflowStepType } from "../utils/node-u
 import type { WorkflowExecutionContext, WorkflowStepContext } from "./context";
 
 /**
- * Global sequence counter for workflow events to ensure proper ordering
- * This counter is incremented for each event to guarantee sequential ordering
+ * Get next sequence number for event ordering from workflow context
+ * This maintains event sequence per workflow execution
  */
-let globalEventSequence = 0;
-
-/**
- * Get next sequence number for event ordering
- */
-function getNextEventSequence(): number {
-  return ++globalEventSequence;
+function getNextEventSequence(workflowContext: WorkflowExecutionContext): number {
+  return ++workflowContext.eventSequence;
 }
 
 /**
@@ -45,7 +42,7 @@ export function createWorkflowStartEvent(
     currentStep: 0,
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
-    eventSequence: getNextEventSequence(),
+    eventSequence: getNextEventSequence(workflowContext),
     userContext: userContextObject,
   };
 
@@ -85,7 +82,7 @@ export function createWorkflowSuccessEvent(
     currentStep: workflowContext.currentStepIndex,
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
-    eventSequence: getNextEventSequence(),
+    eventSequence: getNextEventSequence(workflowContext),
     userContext: userContextObject,
   };
 
@@ -101,6 +98,54 @@ export function createWorkflowSuccessEvent(
     output: result as Record<string, unknown> | null,
     metadata,
     traceId: workflowContext.executionId,
+    parentEventId,
+  };
+}
+
+/**
+ * Create a workflow suspend event
+ */
+export function createWorkflowSuspendEvent(
+  workflowContext: WorkflowExecutionContext,
+  reason: string,
+  suspendedStepIndex: number,
+  parentEventId: string,
+): WorkflowSuspendEvent {
+  // ✅ Convert userContext Map to object for serialization
+  const userContextObject = workflowContext.userContext
+    ? Object.fromEntries(workflowContext.userContext)
+    : undefined;
+
+  const metadata: WorkflowEventMetadata = {
+    id: workflowContext.executionId,
+    workflowId: workflowContext.workflowId,
+    workflowName: workflowContext.workflowName,
+    executionId: workflowContext.executionId,
+    currentStep: workflowContext.currentStepIndex,
+    totalSteps: workflowContext.steps.length,
+    displayName: `Workflow: ${workflowContext.workflowName}`,
+    eventSequence: getNextEventSequence(workflowContext),
+    userContext: userContextObject,
+  };
+
+  return {
+    id: crypto.randomUUID(),
+    name: "workflow:suspend",
+    type: "workflow",
+    status: "suspended",
+    level: "INFO",
+    startTime: new Date().toISOString(),
+    endTime: new Date().toISOString(),
+    input: null,
+    output: null,
+    statusMessage: {
+      message: reason || "Workflow suspended",
+      reason,
+      suspendedAt: new Date().toISOString(),
+      suspendedStepIndex,
+    },
+    metadata,
+    traceId: workflowContext.historyEntry?.id || workflowContext.executionId,
     parentEventId,
   };
 }
@@ -128,7 +173,7 @@ export function createWorkflowErrorEvent(
     currentStep: workflowContext.currentStepIndex,
     totalSteps: workflowContext.steps.length,
     displayName: `Workflow: ${workflowContext.workflowName}`,
-    eventSequence: getNextEventSequence(),
+    eventSequence: getNextEventSequence(workflowContext),
     userContext: userContextObject,
   };
 
@@ -164,7 +209,6 @@ export function createWorkflowStepStartEvent(
   input: unknown, // ✅ ADD: Input parameter
   options: {
     agentId?: string;
-    agentName?: string;
     parallelIndex?: number;
     parallelParentEventId?: string;
     stepFunction?: string;
@@ -200,10 +244,9 @@ export function createWorkflowStepStartEvent(
     stepName: stepContext.stepName,
     displayName: `Step ${stepContext.stepIndex + 1}: ${stepContext.stepName}`,
     agentId: options.agentId,
-    agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     parallelParentEventId: options.parallelParentEventId,
-    eventSequence: getNextEventSequence(),
+    eventSequence: getNextEventSequence(workflowContext),
     stepFunction: options.stepFunction,
     taskString: options.taskString,
     userContext: userContextObject,
@@ -270,10 +313,9 @@ export function createWorkflowStepSuccessEvent(
     stepName: stepContext.stepName,
     displayName: `Step ${stepContext.stepIndex + 1}: ${stepContext.stepName}`,
     agentId: options.agentId,
-    agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     isSkipped: options.isSkipped,
-    eventSequence: getNextEventSequence(),
+    eventSequence: getNextEventSequence(workflowContext),
     stepFunction: options.stepFunction,
     taskString: options.taskString,
     userContext: userContextObject,
@@ -290,6 +332,63 @@ export function createWorkflowStepSuccessEvent(
     output: { result },
     metadata,
     traceId: workflowContext.executionId,
+    parentEventId,
+  };
+}
+
+/**
+ * Create a workflow step suspend event
+ */
+export function createWorkflowStepSuspendEvent(
+  stepContext: WorkflowStepContext,
+  workflowContext: WorkflowExecutionContext,
+  reason: string,
+  parentEventId?: string,
+  options: {
+    stepFunction?: string;
+    userContext?: Record<string, unknown>;
+  } = {},
+): WorkflowStepSuspendEvent {
+  const stepEndTime = new Date().toISOString();
+  const nodeId = createWorkflowStepNodeId(
+    workflowContext.workflowId,
+    stepContext.stepType as WorkflowStepType,
+    stepContext.stepId,
+  );
+
+  const metadata: WorkflowStepEventMetadata = {
+    ...options,
+    node_id: nodeId,
+    id: stepContext.executionId,
+    workflowId: workflowContext.workflowId,
+    workflowName: workflowContext.workflowName,
+    executionId: stepContext.executionId,
+    stepId: stepContext.stepId,
+    stepName: stepContext.stepName,
+    stepType: stepContext.stepType,
+    stepIndex: stepContext.stepIndex,
+    parallelIndex: stepContext.parallelIndex,
+    parentStepId: stepContext.parentStepId,
+    displayName: stepContext.stepName || `Step ${stepContext.stepIndex + 1}`,
+    eventSequence: getNextEventSequence(workflowContext),
+  };
+
+  return {
+    id: crypto.randomUUID(),
+    name: "workflow-step:suspend",
+    type: "workflow-step",
+    status: "suspended",
+    level: "INFO",
+    startTime: stepContext.startTime.toISOString(),
+    endTime: stepEndTime,
+    input: null,
+    output: null,
+    statusMessage: {
+      message: reason || "Step suspended",
+      suspendedAt: stepEndTime,
+    },
+    metadata,
+    traceId: workflowContext.historyEntry?.id || workflowContext.executionId,
     parentEventId,
   };
 }
@@ -339,9 +438,8 @@ export function createWorkflowStepErrorEvent(
     stepName: stepContext.stepName,
     displayName: `Step ${stepContext.stepIndex + 1}: ${stepContext.stepName}`,
     agentId: options.agentId,
-    agentName: options.agentName,
     parallelIndex: options.parallelIndex,
-    eventSequence: getNextEventSequence(),
+    eventSequence: getNextEventSequence(workflowContext),
     stepFunction: options.stepFunction,
     taskString: options.taskString,
     userContext: userContextObject,
@@ -466,9 +564,11 @@ export async function publishWorkflowEvent(
     | WorkflowStartEvent
     | WorkflowSuccessEvent
     | WorkflowErrorEvent
+    | WorkflowSuspendEvent
     | WorkflowStepStartEvent
     | WorkflowStepSuccessEvent
-    | WorkflowStepErrorEvent,
+    | WorkflowStepErrorEvent
+    | WorkflowStepSuspendEvent,
   workflowContext: WorkflowExecutionContext,
 ): Promise<void> {
   try {

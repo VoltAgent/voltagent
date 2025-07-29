@@ -35,7 +35,7 @@ export interface WorkflowStats {
  * - Pagination support
  * - PostgreSQL-optimized queries with proper indexing
  *
- * @see {@link https://voltagent.ai/docs/agents/memory/postgres | PostgreSQL Storage Documentation}
+ * @see {@link https://voltagent.dev/docs/agents/memory/postgres | PostgreSQL Storage Documentation}
  */
 
 /**
@@ -1074,6 +1074,7 @@ export class PostgresStorage implements Memory {
       before,
       after,
       role,
+      types,
     } = options;
 
     const client = await this.pool.connect();
@@ -1121,27 +1122,45 @@ export class PostgresStorage implements Memory {
         paramCount++;
       }
 
+      // Add types filter
+      if (types) {
+        const placeholders = types.map((_, index) => `$${paramCount + index}`).join(", ");
+        conditions.push(`m.type IN (${placeholders})`);
+        params.push(...types);
+        paramCount += types.length;
+      }
+
       // Add WHERE clause if we have conditions
       if (conditions.length > 0) {
         sql += ` WHERE ${conditions.join(" AND ")}`;
       }
 
       // Add ordering and limit
-      sql += " ORDER BY m.created_at ASC";
+      // When limit is specified, we need to get the most recent messages
       if (limit && limit > 0) {
-        sql += ` LIMIT $${paramCount}`;
+        sql += ` ORDER BY m.created_at DESC LIMIT $${paramCount}`;
         params.push(limit);
+      } else {
+        sql += " ORDER BY m.created_at ASC";
       }
 
       const result = await client.query(sql, params);
 
-      return result.rows.map((row: any) => ({
+      // Map the results
+      const messages = result.rows.map((row: any) => ({
         id: row.message_id,
         role: row.role,
         content: row.content,
         type: row.type,
         createdAt: row.created_at,
       }));
+
+      // If we used DESC order with limit, reverse to get chronological order
+      if (limit && limit > 0) {
+        return messages.reverse();
+      }
+
+      return messages;
     } catch (error) {
       this.debug("Error getting messages:", error);
       throw new Error("Failed to get messages from PostgreSQL database");
@@ -1379,7 +1398,7 @@ export class PostgresStorage implements Memory {
    *
    * @param options Query options for filtering and pagination
    * @returns Promise that resolves to an array of conversations matching the criteria
-   * @see {@link https://voltagent.ai/docs/agents/memory/postgres#querying-conversations | Querying Conversations}
+   * @see {@link https://voltagent.dev/docs/agents/memory/postgres#querying-conversations | Querying Conversations}
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     await this.initialized;
@@ -1451,7 +1470,7 @@ export class PostgresStorage implements Memory {
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
    * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   * @see {@link https://voltagent.ai/docs/agents/memory/postgres#conversation-messages | Getting Conversation Messages}
+   * @see {@link https://voltagent.dev/docs/agents/memory/postgres#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,

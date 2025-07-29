@@ -65,8 +65,9 @@ export type TimelineEventCoreType =
 /**
  * Defines the operational status of a TimelineEvent.
  * 'idle' is added for consistency with frontend initial states.
+ * 'suspended' is added for workflow suspension state.
  */
-export type TimelineEventCoreStatus = "idle" | "running" | "completed" | "error";
+export type TimelineEventCoreStatus = "idle" | "running" | "completed" | "error" | "suspended";
 
 /**
  * Defines the severity level of a TimelineEvent.
@@ -321,6 +322,17 @@ export type WorkflowErrorEvent = BaseTimelineEvent<WorkflowEventMetadata> & {
   level: "ERROR" | "CRITICAL";
 };
 
+export type WorkflowSuspendEvent = BaseTimelineEvent<WorkflowEventMetadata> & {
+  name: "workflow:suspend";
+  type: "workflow";
+  status: "suspended";
+  statusMessage?: {
+    reason?: string;
+    suspendedAt: string;
+    suspendedStepIndex: number;
+  };
+};
+
 // --- Workflow Step Event Types ---
 export type WorkflowStepStartEvent = BaseTimelineEvent<WorkflowStepEventMetadata> & {
   name: "workflow-step:start";
@@ -339,6 +351,16 @@ export type WorkflowStepErrorEvent = BaseTimelineEvent<WorkflowStepEventMetadata
   type: "workflow-step";
   status: "error";
   level: "ERROR" | "CRITICAL";
+};
+
+export type WorkflowStepSuspendEvent = BaseTimelineEvent<WorkflowStepEventMetadata> & {
+  name: "workflow-step:suspend";
+  type: "workflow-step";
+  status: "suspended";
+  statusMessage?: {
+    reason?: string;
+    suspendedAt: string;
+  };
 };
 
 // Agent-only events (no workflow events - they use WorkflowEventEmitter)
@@ -364,9 +386,11 @@ export type WorkflowTimelineEvent =
   | WorkflowStartEvent
   | WorkflowSuccessEvent
   | WorkflowErrorEvent
+  | WorkflowSuspendEvent
   | WorkflowStepStartEvent
   | WorkflowStepSuccessEvent
-  | WorkflowStepErrorEvent;
+  | WorkflowStepErrorEvent
+  | WorkflowStepSuspendEvent;
 
 // The main TimelineEvent type (backward compatibility)
 export type NewTimelineEvent = AgentTimelineEvent | WorkflowTimelineEvent;

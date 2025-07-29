@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { devLogger } from "@voltagent/internal/dev";
+import { getGlobalLogger } from "../../logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { MCPClient } from "./index";
@@ -29,12 +29,22 @@ vi.mock("zod-from-json-schema", () => ({
   convertJsonSchemaToZod: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock("@voltagent/internal/dev", () => ({
-  devLogger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-  },
+// Mock the logger
+const mockLoggerInstance = {
+  trace: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+  child: vi.fn(),
+};
+
+// Set up child to return itself
+mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
+
+vi.mock("../../logger", () => ({
+  getGlobalLogger: vi.fn(() => mockLoggerInstance),
 }));
 
 describe("MCPClient", () => {
@@ -71,10 +81,15 @@ describe("MCPClient", () => {
     // Reset mocks
     vi.clearAllMocks();
 
-    // Reset devLogger mock
-    (devLogger.error as vi.Mock).mockClear();
-    (devLogger.warn as vi.Mock).mockClear();
-    (devLogger.info as vi.Mock).mockClear();
+    // Clear logger mock calls
+    mockLoggerInstance.trace.mockClear();
+    mockLoggerInstance.debug.mockClear();
+    mockLoggerInstance.info.mockClear();
+    mockLoggerInstance.warn.mockClear();
+    mockLoggerInstance.error.mockClear();
+    mockLoggerInstance.fatal.mockClear();
+    mockLoggerInstance.child.mockClear();
+    mockLoggerInstance.child.mockReturnValue(mockLoggerInstance);
 
     // Create a mock client
     mockClient = {
@@ -237,7 +252,9 @@ describe("MCPClient", () => {
 
       // Should emit connect on successful fallback
       expect(connectSpy).toHaveBeenCalledWith("connect");
-      expect(devLogger.info).toHaveBeenCalledWith(
+
+      // Check that the logger debug method was called
+      expect(mockLoggerInstance.debug).toHaveBeenCalledWith(
         "Streamable HTTP connection failed, attempting SSE fallback",
       );
     });
@@ -424,9 +441,12 @@ describe("MCPClient", () => {
         },
       });
 
-      expect(devLogger.error).toHaveBeenCalledWith(
+      // Check that the logger error method was called
+      expect(mockLoggerInstance.error).toHaveBeenCalledWith(
         "Failed to create executable tool wrapper for 'tool1':",
-        expect.any(Error),
+        expect.objectContaining({
+          error: expect.any(Error),
+        }),
       );
     });
 
@@ -457,8 +477,8 @@ describe("MCPClient", () => {
 
       await expect(agentTools.TestClient_tool1.execute({ param: "value" })).rejects.toThrow();
 
-      // Just check that devLogger.error was called at least once
-      expect(devLogger.error).toHaveBeenCalled();
+      // Check that the logger error method was called at least once
+      expect(mockLoggerInstance.error).toHaveBeenCalled();
     });
   });
 

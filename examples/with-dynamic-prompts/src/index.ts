@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const voltOpsClient = new VoltOpsClient({
@@ -23,13 +24,15 @@ const supportAgent = new Agent({
   },
 });
 
-// Initialize VoltAgent with VoltOps client
+const logger = createPinoLogger({
+  name: "with-dynamic-prompts",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     supportAgent,
   },
+  logger,
   voltOpsClient: voltOpsClient,
 });
-
-console.log(process.env.VOLTOPS_PUBLIC_KEY);
-console.log(process.env.NODE_ENV);

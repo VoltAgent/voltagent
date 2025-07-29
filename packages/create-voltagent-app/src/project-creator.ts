@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import path from "node:path";
 import chalk from "chalk";
 import fs from "fs-extra";
@@ -5,15 +6,18 @@ import type { ProjectOptions } from "./types";
 import { createSpinner } from "./utils/animation";
 import fileManager from "./utils/file-manager";
 import { configureMcpForIde, showMcpConfigurationMessage } from "./utils/mcp-config";
+import { installProviderDependency } from "./utils/dependency-installer";
 import { getAllTemplates } from "./utils/templates";
+import { AI_PROVIDER_CONFIG } from "./types";
 
 export const createProject = async (options: ProjectOptions, targetDir: string): Promise<void> => {
-  // Check and create folder
-  if (fs.existsSync(targetDir)) {
-    const files = fs.readdirSync(targetDir);
-    if (files.length > 0) {
-      throw new Error(`The directory ${options.projectName} already exists and is not empty`);
-    }
+  // Directory should already exist with base dependencies installed
+  // Just check if we need to handle any edge cases
+  const files = fs.readdirSync(targetDir);
+  if (files.length === 0) {
+    throw new Error(
+      `The directory ${options.projectName} is empty. Something went wrong with base installation.`,
+    );
   }
 
   // Animated spinner
@@ -21,20 +25,11 @@ export const createProject = async (options: ProjectOptions, targetDir: string):
   spinner.start();
 
   try {
-    // Create base directory structure
-    await fileManager.ensureDir(targetDir);
-    spinner.text = "Creating directory structure...";
-    await fileManager.ensureDir(path.join(targetDir, "src"));
-    await fileManager.ensureDir(path.join(targetDir, ".voltagent")); // VoltAgent folder
+    // Directory structure already created during base dependency installation
 
     // Try processing templates, use default content if error occurs
     spinner.text = "Processing templates...";
     const templates = getAllTemplates();
-
-    // Log the sourcePath of the first template
-    if (templates.length > 0) {
-      console.log("[project-creator.ts] First template sourcePath:", templates[0].sourcePath);
-    }
 
     let templateCounter = 0;
     const totalTemplates = templates.length;
@@ -212,6 +207,49 @@ dist
     }
 
     spinner.succeed(chalk.green("VoltAgent project created successfully! 📁"));
+
+    // Install provider-specific dependency
+    if (options.aiProvider && options.aiProvider !== "ollama") {
+      const providerConfig = AI_PROVIDER_CONFIG[options.aiProvider];
+      await installProviderDependency(
+        targetDir,
+        providerConfig.package,
+        providerConfig.packageVersion,
+      );
+    } else if (options.aiProvider === "ollama") {
+      const providerConfig = AI_PROVIDER_CONFIG.ollama;
+      await installProviderDependency(
+        targetDir,
+        providerConfig.package,
+        providerConfig.packageVersion,
+      );
+    }
+
+    // Initialize git repository
+    const gitSpinner = createSpinner("Initializing git repository...");
+    gitSpinner.start();
+
+    try {
+      execSync("git init", {
+        cwd: targetDir,
+        stdio: "ignore",
+      });
+
+      // Add initial commit
+      execSync("git add .", {
+        cwd: targetDir,
+        stdio: "ignore",
+      });
+
+      execSync('git commit -m "Initial commit from create-voltagent-app"', {
+        cwd: targetDir,
+        stdio: "ignore",
+      });
+
+      gitSpinner.succeed(chalk.green("Git repository initialized! 🎯"));
+    } catch (error) {
+      gitSpinner.warn(chalk.yellow("Git init skipped (git not installed or failed)"));
+    }
   } catch (error) {
     spinner.fail(
       chalk.red(

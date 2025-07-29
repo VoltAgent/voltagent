@@ -1,14 +1,23 @@
+import "dotenv/config";
 import { VoltAgent, Agent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
-import { comprehensiveWorkflow } from "./workflows";
+import { expenseApprovalWorkflow } from "./workflows";
+import { weatherTool } from "./tools";
+
+// Create a logger instance
+const logger = createPinoLogger({
+  name: "{{projectName}}",
+  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+});
 
 const agent = new Agent({
   name: "{{projectName}}",
-  instructions: "A helpful assistant that answers questions without using tools",
+  instructions: "A helpful assistant that can check weather and help with various tasks",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  tools: [],
+  tools: [weatherTool],
 });
 
 new VoltAgent({
@@ -16,6 +25,7 @@ new VoltAgent({
     agent,
   },
   workflows: {
-    comprehensiveWorkflow,
+    expenseApprovalWorkflow,
   },
+  logger, // Pass the logger instance
 });

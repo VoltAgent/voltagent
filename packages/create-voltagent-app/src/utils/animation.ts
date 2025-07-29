@@ -38,7 +38,7 @@ export const showLogo = async (): Promise<void> => {
 
         setTimeout(() => {
           resolve();
-        }, 500);
+        }, 100);
       },
     );
   });
@@ -70,7 +70,7 @@ export const createSpinner = (text: string) => {
 };
 
 // Typewriter effect
-export const typewriter = async (text: string, speed = 50): Promise<void> => {
+export const typewriter = async (text: string, speed = 20): Promise<void> => {
   return new Promise((resolve) => {
     let i = 0;
     const timer = setInterval(() => {
@@ -86,7 +86,7 @@ export const typewriter = async (text: string, speed = 50): Promise<void> => {
 };
 
 // Colorful typewriter
-export const colorTypewriter = async (text: string, speed = 50): Promise<void> => {
+export const colorTypewriter = async (text: string, speed = 20): Promise<void> => {
   return new Promise((resolve) => {
     let i = 0;
     const timer = setInterval(() => {

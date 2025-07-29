@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { type AgentTool, ToolManager, createTool } from "../index";
+import { createToolkit } from "../toolkit";
+import type { Toolkit } from "../toolkit";
 
 describe("ToolManager", () => {
   let toolManager: ToolManager;
@@ -136,6 +138,49 @@ describe("ToolManager", () => {
       expect(preparedTools.length).toBe(2);
       expect(preparedTools[0].name).toBe("tool1");
       expect(preparedTools[1].name).toBe("tool2");
+    });
+
+    it("should handle dynamic toolkits", () => {
+      toolManager.addTool(mockTool1);
+
+      // Create a toolkit with mockTool2
+      const testToolkit: Toolkit = createToolkit({
+        name: "test-toolkit",
+        description: "Test toolkit",
+        tools: [mockTool2],
+      });
+
+      const preparedTools = toolManager.prepareToolsForGeneration([testToolkit]);
+      expect(preparedTools.length).toBe(2); // mockTool1 + mockTool2 from toolkit
+      expect(preparedTools[0].name).toBe("tool1");
+      expect(preparedTools[1].name).toBe("tool2");
+    });
+
+    it("should handle mixed dynamic tools and toolkits", () => {
+      // Create a third tool
+      const mockTool3 = createTool({
+        name: "tool3",
+        description: "Test tool 3",
+        parameters: z.object({
+          param3: z.boolean(),
+        }),
+        execute: vi.fn().mockResolvedValue("Tool 3 result"),
+      });
+
+      // Create a toolkit
+      const testToolkit: Toolkit = createToolkit({
+        name: "test-toolkit",
+        description: "Test toolkit",
+        tools: [mockTool2],
+      });
+
+      const preparedTools = toolManager.prepareToolsForGeneration([
+        mockTool1,
+        testToolkit,
+        mockTool3,
+      ]);
+      expect(preparedTools.length).toBe(3); // mockTool1 + mockTool2 from toolkit + mockTool3
+      expect(preparedTools.map((t) => t.name).sort()).toEqual(["tool1", "tool2", "tool3"]);
     });
   });
 

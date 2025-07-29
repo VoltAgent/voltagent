@@ -1,4 +1,5 @@
 import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 
@@ -32,10 +33,17 @@ async function main() {
       markdown: true,
     });
 
+    // Create logger
+    const logger = createPinoLogger({
+      name: "with-zapier-mcp",
+      level: "info",
+    });
+
     new VoltAgent({
       agents: {
         agent,
       },
+      logger,
     });
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);

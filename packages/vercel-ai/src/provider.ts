@@ -115,6 +115,8 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         toolCalls: result.toolCalls,
         toolResults: result.toolResults,
         finishReason: result.finishReason,
+        reasoning: result.reasoning,
+        warnings: result.warnings,
       };
     } catch (sdkError) {
       const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "llm_generate");
@@ -224,11 +226,15 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         },
       });
 
-      // Return provider, textStream, and mapped fullStream
+      // Return provider, textStream, fullStream, and Promise properties
       return {
         provider: result,
         textStream: result.textStream as any,
         fullStream: createMappedFullStream(result.fullStream),
+        text: result.text,
+        finishReason: result.finishReason,
+        usage: result.usage,
+        reasoning: result.reasoning,
       };
     } catch (error) {
       throw createVoltagentErrorFromSdkError(error, "llm_stream");
@@ -291,6 +297,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         object: result.object,
         usage: getUsageInfo(result.usage),
         finishReason: result.finishReason,
+        warnings: result.warnings,
       };
     } catch (sdkError) {
       const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "object_generate");
@@ -360,10 +367,13 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
 
     // TODO: Add usage to the result - https://sdk.vercel.ai/docs/reference/ai-sdk-core/stream-object
     const partialObjectStream = result.partialObjectStream;
-    // Return only provider and objectStream
+    // Return provider, objectStream, and Promise properties
     return {
       provider: { ...result, partialObjectStream },
       objectStream: partialObjectStream,
+      object: result.object,
+      usage: result.usage,
+      warnings: result.warnings,
     };
   }
 

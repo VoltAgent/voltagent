@@ -1,16 +1,22 @@
 import type { Client } from "@libsql/client";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
 import type { WorkflowTimelineEvent, WorkflowStats } from "../../workflow/types";
+import { LoggerProxy } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 
 /**
  * LibSQL extension for workflow memory operations
  * This class provides workflow-specific storage operations for LibSQL
  */
 export class LibSQLWorkflowExtension {
+  private logger: Logger;
+
   constructor(
     private client: Client,
     private _tablePrefix = "voltagent_memory",
-  ) {}
+  ) {
+    this.logger = new LoggerProxy({ component: "libsql-workflow" });
+  }
 
   /**
    * Store a workflow history entry
@@ -71,6 +77,12 @@ export class LibSQLWorkflowExtension {
    * Update a workflow history entry
    */
   async updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void> {
+    this.logger.trace(`Updating workflow history ${id}`, {
+      status: updates.status,
+      hasMetadata: !!updates.metadata,
+      hasSuspension: !!updates.metadata?.suspension,
+    });
+
     const setClauses: string[] = [];
     const args: any[] = [];
 
@@ -96,17 +108,27 @@ export class LibSQLWorkflowExtension {
     }
     if (updates.metadata !== undefined) {
       setClauses.push("metadata = ?");
-      args.push(JSON.stringify(updates.metadata));
+      const metadataJson = JSON.stringify(updates.metadata);
+      args.push(metadataJson);
+      this.logger.trace(`Setting metadata for ${id}:`, { metadata: metadataJson });
     }
 
     setClauses.push("updated_at = ?");
     args.push(new Date().toISOString());
     args.push(id);
 
-    await this.client.execute({
-      sql: `UPDATE ${this._tablePrefix}_workflow_history SET ${setClauses.join(", ")} WHERE id = ?`,
-      args,
-    });
+    const sql = `UPDATE ${this._tablePrefix}_workflow_history SET ${setClauses.join(", ")} WHERE id = ?`;
+    this.logger.trace("Executing SQL:", { sql, args });
+
+    try {
+      const result = await this.client.execute({ sql, args });
+      this.logger.trace(
+        `Successfully updated workflow history ${id}, rows affected: ${result.rowsAffected}`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to update workflow history ${id}:`, { error });
+      throw error;
+    }
   }
 
   /**

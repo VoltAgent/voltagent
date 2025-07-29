@@ -1,5 +1,59 @@
 # create-voltagent-app
 
+## 0.2.3
+
+### Patch Changes
+
+- [#404](https://github.com/VoltAgent/voltagent/pull/404) [`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add @voltagent/logger with createPinoLogger to new project templates
+
+  Enhanced the create-voltagent-app templates to include @voltagent/logger by default in new projects. This provides new VoltAgent applications with production-ready logging capabilities out of the box.
+
+  **Changes:**
+
+  - Added `@voltagent/logger` as a dependency in generated projects
+  - Updated templates to import and use `createPinoLogger` instead of relying on the default ConsoleLogger
+  - New projects now have pretty-formatted, colored logs in development
+  - Automatic environment-based configuration (pretty in dev, JSON in production)
+
+  **Generated Code Example:**
+
+  ```typescript
+  import { createPinoLogger } from "@voltagent/logger";
+
+  const logger = createPinoLogger({
+    level: "info",
+    name: "my-voltagent-app",
+  });
+
+  const voltAgent = new VoltAgent({
+    agents: [agent],
+    logger,
+  });
+  ```
+
+  This ensures new VoltAgent projects start with professional logging capabilities, improving the developer experience and making applications production-ready from day one.
+
+## 0.2.0
+
+### Minor Changes
+
+- [`8b143cb`](https://github.com/VoltAgent/voltagent/commit/8b143cbd6f4349fe62158d7e78a5a239fec7a9e2) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: modernize create-voltagent-app CLI
+
+  - Add AI provider selection (OpenAI, Anthropic, Google, Groq, Mistral, Ollama)
+  - Add optional API key input with skip option
+  - Automatic .env file generation based on selected provider
+  - Package manager detection - only show installed ones
+  - Auto-install dependencies after project creation
+  - Full Windows support with cross-platform commands
+  - Ollama local LLM support with default configuration
+  - Dynamic template generation based on selected AI provider
+
+### Patch Changes
+
+- [`8b143cb`](https://github.com/VoltAgent/voltagent/commit/8b143cbd6f4349fe62158d7e78a5a239fec7a9e2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: include create-voltagent-app in build:all script
+
+  The create-voltagent-app package was not being built during GitHub Actions release workflow because it doesn't have the @voltagent/ scope prefix. Added explicit scope to build:all command to ensure the CLI tool is properly built before publishing.
+
 ## 0.1.33
 
 ### Patch Changes

@@ -1,5 +1,403 @@
 # @voltagent/core
 
+## 0.1.69
+
+### Patch Changes
+
+- [#425](https://github.com/VoltAgent/voltagent/pull/425) [`8605e70`](https://github.com/VoltAgent/voltagent/commit/8605e708d17e6fa0150bd13235e795288422c52b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Promise-based properties and warnings to AI responses - #422
+
+  Enhanced AI response types to align with Vercel AI SDK's API and provide better metadata:
+
+  **For `streamObject`:**
+
+  - Added optional `object?: Promise<T>` property that resolves to the final generated object
+  - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
+  - Added optional `warnings?: Promise<any[] | undefined>` property for provider warnings
+
+  **For `streamText`:**
+
+  - Added optional `text?: Promise<string>` property that resolves to the full generated text
+  - Added optional `finishReason?: Promise<string>` property that resolves to the reason generation stopped
+  - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
+  - Added optional `reasoning?: Promise<string | undefined>` property that resolves to model's reasoning text
+
+  **For `generateText` and `generateObject`:**
+
+  - Added optional `reasoning?: string` property for model's reasoning text (generateText only)
+  - Added optional `warnings?: any[]` property for provider warnings
+
+  These properties are optional to maintain backward compatibility. Providers that support these features (like Vercel AI) now return these values, allowing users to access rich metadata:
+
+  ```typescript
+  // For streamObject
+  const response = await agent.streamObject(input, schema);
+  const finalObject = await response.object; // Promise<T>
+  const usage = await response.usage; // Promise<UsageInfo>
+
+  // For streamText
+  const response = await agent.streamText(input);
+  const fullText = await response.text; // Promise<string>
+  const usage = await response.usage; // Promise<UsageInfo>
+
+  // For generateText
+  const response = await agent.generateText(input);
+  console.log(response.warnings); // Any provider warnings
+  console.log(response.reasoning); // Model's reasoning (if available)
+  ```
+
+## 0.1.68
+
+### Patch Changes
+
+- [#423](https://github.com/VoltAgent/voltagent/pull/423) [`089c039`](https://github.com/VoltAgent/voltagent/commit/089c03993e3b9e05655a1108355e7bee940d33a7) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add message type filtering support to memory storage implementations
+
+  Added the ability to filter messages by type when retrieving conversation history. This enhancement allows the framework to distinguish between different message types (text, tool-call, tool-result) and retrieve only the desired types, improving context preparation for LLMs.
+
+  ## Key Changes
+
+  - **MessageFilterOptions**: Added optional `types` parameter to filter messages by type
+  - **prepareConversationContext**: Now filters to only include text messages, excluding tool-call and tool-result messages for cleaner LLM context
+  - **All storage implementations**: Added database-level filtering for better performance
+
+  ## Usage
+
+  ```typescript
+  // Get only text messages
+  const textMessages = await memory.getMessages({
+    userId: "user-123",
+    conversationId: "conv-456",
+    types: ["text"],
+  });
+
+  // Get tool-related messages
+  const toolMessages = await memory.getMessages({
+    userId: "user-123",
+    conversationId: "conv-456",
+    types: ["tool-call", "tool-result"],
+  });
+
+  // Get all messages (default behavior - backward compatible)
+  const allMessages = await memory.getMessages({
+    userId: "user-123",
+    conversationId: "conv-456",
+  });
+  ```
+
+  ## Implementation Details
+
+  - **InMemoryStorage**: Filters messages in memory after retrieval
+  - **LibSQLStorage**: Adds SQL WHERE clause with IN operator for type filtering
+  - **PostgreSQL**: Uses parameterized IN clause with proper parameter counting
+  - **Supabase**: Utilizes query builder's `.in()` method for type filtering
+
+  This change ensures that `prepareConversationContext` provides cleaner, more focused context to LLMs by excluding intermediate tool execution details, while maintaining full backward compatibility for existing code.
+
+## 0.1.67
+
+### Patch Changes
+
+- [#417](https://github.com/VoltAgent/voltagent/pull/417) [`67450c3`](https://github.com/VoltAgent/voltagent/commit/67450c3bc4306ab6021ca8feed2afeef6dcc320e) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: dynamic toolkit resolution and VoltOps UI visibility
+
+  Fixed an issue where dynamic tools and toolkits weren't being displayed in VoltOps UI when resolved during agent execution. The fix includes:
+
+  **Key Changes:**
+
+  - **Dynamic Tool Resolution**: Modified `prepareToolsForGeneration` to properly accept and process both `BaseTool` and `Toolkit` types
+  - **VoltOps UI Integration**: Dynamic tools now appear in the Console UI by updating history metadata when tools are resolved
+  - **Data Persistence**: Tools persist across page refreshes by storing them in history entry metadata
+
+  **Technical Details:**
+
+  - `prepareToolsForGeneration` now accepts `(BaseTool | Toolkit)[]` instead of just `BaseTool[]`
+  - Uses temporary ToolManager with `addItems()` to handle both tools and toolkits consistently
+  - Updates history entry metadata with complete agent snapshot when dynamic tools are resolved
+  - Removed WebSocket-based TOOLS_UPDATE events in favor of metadata-based approach
+
+  This ensures that dynamic tools like `createReasoningTools()` and other toolkits work seamlessly when provided through the `dynamicTools` parameter.
+
+- [#418](https://github.com/VoltAgent/voltagent/pull/418) [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: memory storage implementations now correctly return the most recent messages when using context limit
+
+  Fixed an issue where memory storage implementations (LibSQL, PostgreSQL, Supabase) were returning the oldest messages instead of the most recent ones when a context limit was specified. This was causing AI agents to lose important recent context in favor of old conversation history.
+
+  **Before:**
+
+  - `contextLimit: 10` returned the first 10 messages (oldest)
+  - Agents were working with outdated context
+
+  **After:**
+
+  - `contextLimit: 10` returns the last 10 messages (most recent) in chronological order
+  - Agents now have access to the most relevant recent context
+  - InMemoryStorage was already working correctly and remains unchanged
+
+  Changes:
+
+  - LibSQLStorage: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - PostgreSQL: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - Supabase: Modified query to use `ascending: false` with `limit`, then reverse results
+
+  This ensures consistent behavior across all storage implementations where context limits provide the most recent messages, improving AI agent response quality and relevance.
+
+- [#418](https://github.com/VoltAgent/voltagent/pull/418) [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: tool errors now properly recorded in conversation history and allow agent retry - #349
+
+  Fixed critical issues where tool execution errors were halting agent runs and not being recorded in conversation/event history. This prevented agents from retrying failed tool calls and lost important error context.
+
+  **Before:**
+
+  - Tool errors would throw and halt agent execution immediately
+  - No error events or steps were recorded in conversation history
+  - Agents couldn't learn from or retry after tool failures
+  - Error context was lost, making debugging difficult
+
+  **After:**
+
+  - Tool errors are caught and handled gracefully
+  - Error events (`tool:error`) are created and persisted
+  - Error steps are added to conversation history with full error details
+  - Agents can continue execution and retry within `maxSteps` limit
+  - Tool lifecycle hooks (onEnd) are properly called even on errors
+
+  Changes:
+
+  - Added `handleToolError` helper method to centralize error handling logic
+  - Modified `generateText` to catch and handle tool errors without halting execution
+  - Updated `streamText` onError callback to use the same error handling
+  - Ensured tool errors are saved to memory storage for context retention
+
+  This improves agent resilience and debugging capabilities when working with potentially unreliable tools.
+
+## 0.1.66
+
+### Patch Changes
+
+- [`1f8ce22`](https://github.com/VoltAgent/voltagent/commit/1f8ce226fec449f16f1dce6c2b96cef7030eff3a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod peer dependency to allow flexible versioning (^3.24.2 instead of 3.24.2) to resolve npm install conflicts
+
+## 0.1.65
+
+### Patch Changes
+
+- [#404](https://github.com/VoltAgent/voltagent/pull/404) [`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: integrate comprehensive logging system with @voltagent/logger support
+
+  Enhanced the core package with a flexible logging infrastructure that supports both the built-in ConsoleLogger and the advanced @voltagent/logger package. This update provides better debugging, monitoring, and observability capabilities across all VoltAgent components.
+
+  **Key Changes:**
+
+  - **Logger Integration**: VoltAgent, Agents, and Workflows now accept a logger instance for centralized logging
+  - **Default ConsoleLogger**: Built-in logger for quick prototyping with basic timestamp formatting
+  - **Logger Propagation**: Parent loggers automatically create child loggers for agents and workflows
+  - **Context Preservation**: Child loggers maintain context (component names, IDs) throughout execution
+  - **Environment Variables**: Support for `VOLTAGENT_LOG_LEVEL` and `LOG_LEVEL` environment variables
+  - **Backward Compatible**: Existing code works without changes, using the default ConsoleLogger
+
+  **Installation:**
+
+  ```bash
+  # npm
+  npm install @voltagent/logger
+
+  # pnpm
+  pnpm add @voltagent/logger
+
+  # yarn
+  yarn add @voltagent/logger
+  ```
+
+  **Usage Examples:**
+
+  ```typescript
+  // Using default ConsoleLogger
+  const voltAgent = new VoltAgent({ agents: [agent] });
+
+  // Using @voltagent/logger for production
+  import { createPinoLogger } from "@voltagent/logger";
+
+  const logger = createPinoLogger({ level: "info" });
+  const voltAgent = new VoltAgent({
+    logger,
+    agents: [agent],
+  });
+  ```
+
+  This update lays the foundation for comprehensive observability and debugging capabilities in VoltAgent applications.
+
+- Updated dependencies [[`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726)]:
+  - @voltagent/internal@0.0.6
+
+## 0.1.64
+
+### Patch Changes
+
+- [`aea3c78`](https://github.com/VoltAgent/voltagent/commit/aea3c78c467e42c53d10ad6c0890514dff861fca) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: replace `npm-check-updates` with native package manager support
+
+  This update replaces the `npm-check-updates` dependency with a native implementation that properly detects installed package versions and supports all major package managers (`npm`, `pnpm`, `yarn`, `bun`).
+
+  ### Key improvements:
+
+  - **Native package manager support**: Automatically detects and uses npm, pnpm, yarn, or bun based on lock files
+  - **Accurate version detection**: Shows actual installed versions instead of package.json semver ranges (e.g., shows 1.0.63 instead of ^1.0.0)
+  - **Monorepo compatibility**: Smart version detection that works with hoisted dependencies and workspace protocols
+  - **Non-blocking startup**: Update checks run in background without slowing down application startup (70-80% faster)
+  - **Intelligent caching**: 1-hour cache with package.json hash validation to reduce redundant checks
+  - **Major version updates**: Fixed update commands to use add/install instead of update to handle breaking changes
+  - **Restart notifications**: Added requiresRestart flag to API responses for better UX
+
+  ### Technical details:
+
+  - Removed execSync calls in favor of direct file system operations
+  - Parallel HTTP requests to npm registry for better performance
+  - Multiple fallback methods for version detection (direct access → require.resolve → tree search)
+  - Background processing with Promise.resolve().then() for true async behavior
+
+  This change significantly improves the developer experience with faster startup times and more accurate dependency information.
+
+## 0.1.63
+
+### Patch Changes
+
+- [`6089462`](https://github.com/VoltAgent/voltagent/commit/60894629cef27950021da323390f455098b5bce2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent duplicate column errors in LibSQL agent_history table initialization
+
+  Fixed a first-time database initialization error where the `migrateAgentHistorySchema` function was attempting to add `userId` and `conversationId` columns that already existed in newly created `agent_history` tables.
+
+  The issue occurred because:
+
+  - The CREATE TABLE statement now includes `userId` and `conversationId` columns by default
+  - The migration function was still trying to add these columns, causing "duplicate column name" SQLite errors
+
+  Changes:
+
+  - Added check in `migrateAgentHistorySchema` to skip migration if both columns already exist
+  - Properly set migration flag to prevent unnecessary migration attempts
+  - Ensured backward compatibility for older databases that need the migration
+
+## 0.1.62
+
+### Patch Changes
+
+- [`6fadbb0`](https://github.com/VoltAgent/voltagent/commit/6fadbb098fe40d8b658aa3386e6126fea155f117) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: createAsyncIterableStream import issue
+
+- Updated dependencies [[`6fadbb0`](https://github.com/VoltAgent/voltagent/commit/6fadbb098fe40d8b658aa3386e6126fea155f117)]:
+  - @voltagent/internal@0.0.5
+
+## 0.1.61
+
+### Patch Changes
+
+- [#391](https://github.com/VoltAgent/voltagent/pull/391) [`57c4874`](https://github.com/VoltAgent/voltagent/commit/57c4874d4d4807c50242b2e34ab9574fc6129888) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improve workflow execute API with context-based pattern
+
+  Breaking change: The workflow execute functions now use a context-based API for better developer experience and extensibility.
+
+  **Before:**
+
+  ```typescript
+  .andThen({
+    execute: async (data, state) => {
+      // old API with separate parameters
+      return { ...data, processed: true };
+    }
+  })
+  ```
+
+  **After:**
+
+  ```typescript
+  .andThen({
+    execute: async ({ data, state, getStepData }) => {
+      // new API with context object
+      const previousStep = getStepData("step-id");
+      return { ...data, processed: true };
+    }
+  })
+  ```
+
+  This change applies to:
+
+  - `andThen` execute functions
+  - `andAgent` prompt functions
+  - `andWhen` condition functions
+  - `andTap` execute functions
+
+  The new API provides:
+
+  - Better TypeScript inference
+  - Access to previous step data via `getStepData`
+  - Cleaner, more extensible design
+
+- [#399](https://github.com/VoltAgent/voltagent/pull/399) [`da66f86`](https://github.com/VoltAgent/voltagent/commit/da66f86d92a278007c2d3386d22b482fa70d93ff) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add suspend/resume functionality for workflows
+
+  **Workflows can now be paused and resumed!** Perfect for human-in-the-loop processes, waiting for external events, or managing long-running operations.
+
+  ## Two Ways to Suspend
+
+  ### 1. Internal Suspension (Inside Steps)
+
+  ```typescript
+  const approvalWorkflow = createWorkflowChain({
+    id: "simple-approval",
+    name: "Simple Approval",
+    input: z.object({ item: z.string() }),
+    result: z.object({ approved: z.boolean() }),
+  }).andThen({
+    id: "wait-for-approval",
+    execute: async ({ data, suspend, resumeData }) => {
+      // If resuming, return the decision
+      if (resumeData) {
+        return { approved: resumeData.approved };
+      }
+
+      // Otherwise suspend and wait
+      await suspend("Waiting for approval");
+    },
+  });
+
+  // Run and resume
+  const execution = await approvalWorkflow.run({ item: "New laptop" });
+  const result = await execution.resume({ approved: true });
+  ```
+
+  ### 2. External Suspension (From Outside)
+
+  ```typescript
+  import { createSuspendController } from "@voltagent/core";
+
+  // Create controller
+  const controller = createSuspendController();
+
+  // Run workflow with controller
+  const execution = await workflow.run(input, {
+    suspendController: controller,
+  });
+
+  // Pause from outside (e.g., user clicks pause)
+  controller.suspend("User paused workflow");
+
+  // Resume later
+  if (execution.status === "suspended") {
+    const result = await execution.resume();
+  }
+  ```
+
+  ## Key Features
+
+  - ⏸️ **Internal suspension** with `await suspend()` inside steps
+  - 🎮 **External control** with `createSuspendController()`
+  - 📝 **Type-safe resume data** with schemas
+  - 💾 **State persists** across server restarts
+  - 🚀 **Simplified API** - just pass `suspendController`, no need for separate `signal`
+
+  📚 **For detailed documentation: [https://voltagent.dev/docs/workflows/suspend-resume](https://voltagent.dev/docs/workflows/suspend-resume)**
+
+- [#401](https://github.com/VoltAgent/voltagent/pull/401) [`4a7145d`](https://github.com/VoltAgent/voltagent/commit/4a7145debd66c7b1dfb953608e400b6c1ed02db7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve TypeScript performance issues by fixing Zod dependency configuration (#377)
+
+  Moved Zod from direct dependencies to peer dependencies in @voltagent/vercel-ai to prevent duplicate Zod installations that were causing TypeScript server slowdowns. Also standardized Zod versions across the workspace to ensure consistency.
+
+  Changes:
+
+  - @voltagent/vercel-ai: Moved `zod` from dependencies to peerDependencies
+  - @voltagent/docs-mcp: Updated `zod` from `^3.23.8` to `3.24.2`
+  - @voltagent/with-postgres: Updated `zod` from `^3.24.2` to `3.24.2` (removed caret)
+
+  This fix significantly improves TypeScript language server performance by ensuring only one Zod version is processed, eliminating the "Type instantiation is excessively deep and possibly infinite" errors that users were experiencing.
+
 ## 0.1.60
 
 ### Patch Changes

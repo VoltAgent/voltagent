@@ -1,5 +1,85 @@
 # @voltagent/supabase
 
+## 0.1.15
+
+### Patch Changes
+
+- [#423](https://github.com/VoltAgent/voltagent/pull/423) [`089c039`](https://github.com/VoltAgent/voltagent/commit/089c03993e3b9e05655a1108355e7bee940d33a7) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add message type filtering support to memory storage implementations
+
+  Added the ability to filter messages by type when retrieving conversation history. This enhancement allows the framework to distinguish between different message types (text, tool-call, tool-result) and retrieve only the desired types, improving context preparation for LLMs.
+
+  ## Key Changes
+
+  - **MessageFilterOptions**: Added optional `types` parameter to filter messages by type
+  - **prepareConversationContext**: Now filters to only include text messages, excluding tool-call and tool-result messages for cleaner LLM context
+  - **All storage implementations**: Added database-level filtering for better performance
+
+  ## Usage
+
+  ```typescript
+  // Get only text messages
+  const textMessages = await memory.getMessages({
+    userId: "user-123",
+    conversationId: "conv-456",
+    types: ["text"],
+  });
+
+  // Get tool-related messages
+  const toolMessages = await memory.getMessages({
+    userId: "user-123",
+    conversationId: "conv-456",
+    types: ["tool-call", "tool-result"],
+  });
+
+  // Get all messages (default behavior - backward compatible)
+  const allMessages = await memory.getMessages({
+    userId: "user-123",
+    conversationId: "conv-456",
+  });
+  ```
+
+  ## Implementation Details
+
+  - **InMemoryStorage**: Filters messages in memory after retrieval
+  - **LibSQLStorage**: Adds SQL WHERE clause with IN operator for type filtering
+  - **PostgreSQL**: Uses parameterized IN clause with proper parameter counting
+  - **Supabase**: Utilizes query builder's `.in()` method for type filtering
+
+  This change ensures that `prepareConversationContext` provides cleaner, more focused context to LLMs by excluding intermediate tool execution details, while maintaining full backward compatibility for existing code.
+
+- Updated dependencies [[`089c039`](https://github.com/VoltAgent/voltagent/commit/089c03993e3b9e05655a1108355e7bee940d33a7)]:
+  - @voltagent/core@0.1.68
+
+## 0.1.14
+
+### Patch Changes
+
+- [#418](https://github.com/VoltAgent/voltagent/pull/418) [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: memory storage implementations now correctly return the most recent messages when using context limit
+
+  Fixed an issue where memory storage implementations (LibSQL, PostgreSQL, Supabase) were returning the oldest messages instead of the most recent ones when a context limit was specified. This was causing AI agents to lose important recent context in favor of old conversation history.
+
+  **Before:**
+
+  - `contextLimit: 10` returned the first 10 messages (oldest)
+  - Agents were working with outdated context
+
+  **After:**
+
+  - `contextLimit: 10` returns the last 10 messages (most recent) in chronological order
+  - Agents now have access to the most relevant recent context
+  - InMemoryStorage was already working correctly and remains unchanged
+
+  Changes:
+
+  - LibSQLStorage: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - PostgreSQL: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
+  - Supabase: Modified query to use `ascending: false` with `limit`, then reverse results
+
+  This ensures consistent behavior across all storage implementations where context limits provide the most recent messages, improving AI agent response quality and relevance.
+
+- Updated dependencies [[`67450c3`](https://github.com/VoltAgent/voltagent/commit/67450c3bc4306ab6021ca8feed2afeef6dcc320e), [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858), [`aa024c1`](https://github.com/VoltAgent/voltagent/commit/aa024c1a7c643b2aff7a5fd0d150c87f8a9a1858)]:
+  - @voltagent/core@0.1.67
+
 ## 0.1.13
 
 ### Patch Changes

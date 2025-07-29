@@ -1,4 +1,5 @@
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -40,8 +41,15 @@ export const agent = new Agent({
   subAgents: [subAgent],
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "nextjs-example",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

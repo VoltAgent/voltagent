@@ -1,4 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
+import { LoggerProxy } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 
 export interface QueueTask<T = any> {
   id: string;
@@ -21,6 +22,7 @@ export class BackgroundQueue {
   private tasks: QueueTask[] = [];
   private activeTasks = new Set<Promise<any>>();
   private options: Required<QueueOptions>;
+  private logger: Logger;
 
   constructor(options: QueueOptions = {}) {
     this.options = {
@@ -28,6 +30,7 @@ export class BackgroundQueue {
       defaultTimeout: options.defaultTimeout ?? 10000, // 10 seconds
       defaultRetries: options.defaultRetries ?? 2,
     };
+    this.logger = new LoggerProxy({ component: "background-queue" });
   }
 
   /**
@@ -41,7 +44,7 @@ export class BackgroundQueue {
     // Simple FIFO: add to end of queue
     this.tasks.push(task);
 
-    devLogger.debug(`[Queue] Enqueued task ${task.id}`);
+    this.logger.trace(`Enqueued task ${task.id}`);
 
     setTimeout(() => this.processNext(), 0);
   }
@@ -92,7 +95,7 @@ export class BackgroundQueue {
           clearTimeout(timeoutId);
         }
 
-        devLogger.debug(`[Queue] Task ${task.id} completed (attempt ${attempt}/${maxAttempts})`);
+        this.logger.trace(`Task ${task.id} completed (attempt ${attempt}/${maxAttempts}`);
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
@@ -101,10 +104,9 @@ export class BackgroundQueue {
           // Wait a bit before retry
           await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
         } else {
-          devLogger.error(
-            `[Queue] Task ${task.id} failed after ${maxAttempts} attempts:`,
-            lastError,
-          );
+          this.logger.error(`Task ${task.id} failed after ${maxAttempts} attempts`, {
+            error: lastError,
+          });
         }
       }
     }

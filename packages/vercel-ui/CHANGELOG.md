@@ -1,5 +1,25 @@
 # @voltagent/vercel-ui
 
+## 0.1.7
+
+### Patch Changes
+
+- [#404](https://github.com/VoltAgent/voltagent/pull/404) [`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: remove devLogger dependency and use native console methods
+
+  Removed the dependency on `@voltagent/internal/dev` logger and replaced devLogger calls with standard console methods (console.error, console.warn) for a cleaner dependency tree and better compatibility.
+
+- Updated dependencies [[`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726), [`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726)]:
+  - @voltagent/internal@0.0.6
+  - @voltagent/core@0.1.65
+
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [[`6fadbb0`](https://github.com/VoltAgent/voltagent/commit/6fadbb098fe40d8b658aa3386e6126fea155f117)]:
+  - @voltagent/internal@0.0.5
+  - @voltagent/core@0.1.62
+
 ## 0.1.5
 
 ### Patch Changes

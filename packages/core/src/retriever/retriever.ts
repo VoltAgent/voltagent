@@ -2,6 +2,9 @@ import type { BaseMessage } from "../agent/providers";
 import type { AgentTool } from "../tool";
 import { createRetrieverTool } from "./tools";
 import type { Retriever, RetrieverOptions, RetrieveOptions } from "./types";
+import { getGlobalLogger, type Logger } from "../logger";
+import { LogEvents } from "../logger/events";
+import { buildRetrieverLogMessage, buildLogContext, ResourceType } from "../logger/message-builder";
 
 /**
  * Abstract base class for Retriever implementations.
@@ -12,6 +15,11 @@ export abstract class BaseRetriever {
    * Options that configure the retriever's behavior
    */
   protected options: RetrieverOptions;
+
+  /**
+   * Logger instance for the retriever
+   */
+  protected logger: Logger;
 
   /**
    * Ready-to-use tool property for direct destructuring
@@ -42,10 +50,22 @@ export abstract class BaseRetriever {
       ...options,
     };
 
+    // Initialize logger
+    this.logger = this.options.logger || getGlobalLogger().child({ component: "retriever" });
+
+    // Log initialization
+    const retrieverName = this.options.toolName || "search_knowledge";
+    this.logger.debug(
+      buildRetrieverLogMessage(retrieverName, "initialized", "retriever instance created"),
+      buildLogContext(ResourceType.RETRIEVER, retrieverName, "initialized", {
+        event: LogEvents.RETRIEVER_INITIALIZED,
+      }),
+    );
+
     // Create the bound tool property during initialization with proper fallbacks
     // This ensures the tool always maintains its 'this' context
     const toolParams = {
-      name: this.options.toolName || "search_knowledge",
+      name: retrieverName,
       description:
         this.options.toolDescription ||
         "Searches for relevant information in the knowledge base based on the query.",

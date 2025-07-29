@@ -43,7 +43,7 @@ export interface SupabaseMemoryOptions extends MemoryOptions {
  * - Storage limits for managing message history
  * - Workflow history, steps, and timeline events persistence
  *
- * @see {@link https://voltagent.ai/docs/agents/memory/supabase | Supabase Storage Documentation}
+ * @see {@link https://voltagent.dev/docs/agents/memory/supabase | Supabase Storage Documentation}
  */
 export class SupabaseMemory implements Memory {
   private client: SupabaseClient;
@@ -879,7 +879,7 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
   }
 
   public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
-    const { conversationId, before, after, role } = options;
+    const { conversationId, before, after, role, types } = options;
     // Handle the case where limit is explicitly set to 0 (unlimited)
     const actualLimit = options.limit !== undefined ? options.limit : this.options.storageLimit;
 
@@ -892,6 +892,10 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
     if (role) {
       query = query.eq("role", role);
     }
+
+    if (types) {
+      query = query.in("type", types);
+    }
     if (before) {
       // Assuming "before" is a timestamp or message ID that can be compared with created_at
       query = query.lt("created_at", before); // Use ISO string format for timestamp
@@ -900,11 +904,14 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
       query = query.gt("created_at", after);
     }
 
-    // Order by creation time, typically ascending for chat history
-    query = query.order("created_at", { ascending: true });
-
+    // Order by creation time
+    // When limit is specified, we need to get the most recent messages
     if (actualLimit && actualLimit > 0) {
-      query = query.limit(actualLimit);
+      // Get the most recent messages first
+      query = query.order("created_at", { ascending: false }).limit(actualLimit);
+    } else {
+      // No limit, order ascending
+      query = query.order("created_at", { ascending: true });
     }
 
     const { data, error } = await query;
@@ -915,15 +922,21 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
     }
 
     // Map Supabase rows back to MemoryMessage objects
-    return (
+    const messages =
       data?.map((row) => ({
         id: row.message_id,
         role: row.role as MemoryMessage["role"],
         content: row.content, // Assuming content is stored as text/json string
         type: row.type as MemoryMessage["type"],
         createdAt: row.created_at,
-      })) || []
-    );
+      })) || [];
+
+    // If we used descending order with limit, reverse to get chronological order
+    if (actualLimit && actualLimit > 0 && messages.length > 0) {
+      return messages.reverse();
+    }
+
+    return messages;
   }
 
   public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {

@@ -37,7 +37,7 @@ describe("VoltAgentObservabilitySDK", () => {
   let sdk: VoltAgentObservabilitySDK;
   let mockCoreClient: Mocked<VoltAgentCoreAPI>;
   const defaultOptions: VoltAgentClientOptions = {
-    baseUrl: "https://api.voltagent.ai",
+    baseUrl: "https://api.voltagent.dev",
     publicKey: "test-public-key",
     secretKey: "test-secret-key",
   };

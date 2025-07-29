@@ -1,12 +1,106 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
-import type { z } from "zod";
+import { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
 import type { UserContext } from "../agent/types";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
 import type { Memory } from "../memory";
+import type { Logger } from "@voltagent/internal";
+
+export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> {
+  /** Timestamp when the workflow was suspended */
+  suspendedAt: Date;
+  /** Reason for suspension (user-requested, system, error, etc.) */
+  reason?: string;
+  /** The step index where suspension occurred */
+  suspendedStepIndex: number;
+  /** Last event sequence number before suspension */
+  lastEventSequence?: number;
+  /** Validated data passed when suspending (if suspendSchema was provided) */
+  suspendData?: SUSPEND_DATA;
+  /** Checkpoint data for resumption */
+  checkpoint?: {
+    /** Current step's partial execution state */
+    stepExecutionState?: DangerouslyAllowAny;
+    /** Results from completed steps that need to be preserved */
+    completedStepsData?: DangerouslyAllowAny[];
+  };
+}
+
+/**
+ * Custom abort controller for workflow suspension with reason tracking
+ */
+export interface WorkflowSuspendController {
+  /**
+   * The abort signal to pass to the workflow
+   */
+  signal: AbortSignal;
+  /**
+   * Suspend the workflow with a reason
+   */
+  suspend: (reason?: string) => void;
+  /**
+   * Check if the workflow has been suspended
+   */
+  isSuspended: () => boolean;
+  /**
+   * Get the suspension reason
+   */
+  getReason: () => string | undefined;
+}
+
+/**
+ * Result returned from workflow execution with suspend/resume capabilities
+ */
+export interface WorkflowExecutionResult<
+  RESULT_SCHEMA extends z.ZodTypeAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+> {
+  /**
+   * Unique execution ID for this workflow run
+   */
+  executionId: string;
+  /**
+   * The workflow ID
+   */
+  workflowId: string;
+  /**
+   * When the workflow execution started
+   */
+  startAt: Date;
+  /**
+   * When the workflow execution ended (completed, suspended, or errored)
+   */
+  endAt: Date;
+  /**
+   * Current status of the workflow execution
+   */
+  status: "completed" | "suspended" | "error";
+  /**
+   * The result data if workflow completed successfully
+   */
+  result: z.infer<RESULT_SCHEMA> | null;
+  /**
+   * Suspension metadata if workflow was suspended
+   */
+  suspension?: WorkflowSuspensionMetadata;
+  /**
+   * Error information if workflow failed
+   */
+  error?: unknown;
+  /**
+   * Resume a suspended workflow execution
+   * @param input - Optional new input data for resuming (validated against resumeSchema if provided)
+   * @param options - Optional options for resuming, including stepId to resume from a specific step
+   * @returns A new execution result that can also be resumed if suspended again
+   */
+  resume: (
+    input: z.infer<RESUME_SCHEMA>,
+    options?: { stepId?: string },
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+}
 
 export interface WorkflowRunOptions {
   /**
@@ -36,6 +130,52 @@ export interface WorkflowRunOptions {
    * Takes priority over workflow config memory and global memory
    */
   memory?: Memory;
+  /**
+   * Suspension controller for managing workflow suspension
+   */
+  suspendController?: WorkflowSuspendController;
+  /**
+   * Options for resuming a suspended workflow
+   */
+  resumeFrom?: WorkflowResumeOptions;
+  /**
+   * Suspension mode:
+   * - 'graceful': Wait for current step to complete before suspending (default)
+   * - 'immediate': Suspend immediately, even during step execution
+   * @default 'graceful'
+   */
+  suspensionMode?: "immediate" | "graceful";
+  /**
+   * Logger instance to use for this workflow execution
+   * If not provided, will use the workflow's logger or global logger
+   */
+  logger?: Logger;
+}
+
+export interface WorkflowResumeOptions {
+  /**
+   * The execution ID of the suspended workflow to resume
+   */
+  executionId: string;
+  /**
+   * The checkpoint data from the suspension
+   */
+  checkpoint?: {
+    stepExecutionState?: DangerouslyAllowAny;
+    completedStepsData?: DangerouslyAllowAny[];
+  };
+  /**
+   * The step index to resume from
+   */
+  resumeStepIndex: number;
+  /**
+   * The last event sequence number before suspension
+   */
+  lastEventSequence?: number;
+  /**
+   * Data to pass to the resumed step (validated against resumeSchema)
+   */
+  resumeData?: DangerouslyAllowAny;
 }
 
 /**
@@ -84,6 +224,8 @@ export type WorkflowResult<RESULT_SCHEMA extends z.ZodTypeAny> = RESULT_SCHEMA e
 export type WorkflowConfig<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > = {
   /**
    * Unique identifier for the workflow
@@ -106,6 +248,14 @@ export type WorkflowConfig<
    */
   result: RESULT_SCHEMA;
   /**
+   * Schema for data passed when suspending (optional)
+   */
+  suspendSchema?: SUSPEND_SCHEMA;
+  /**
+   * Schema for data passed when resuming (optional)
+   */
+  resumeSchema?: RESUME_SCHEMA;
+  /**
    * Hooks for the workflow
    */
   hooks?: WorkflowHooks<WorkflowInput<INPUT_SCHEMA>, WorkflowResult<RESULT_SCHEMA>>;
@@ -114,6 +264,11 @@ export type WorkflowConfig<
    * Overrides global workflow memory from VoltAgent
    */
   memory?: Memory;
+  /**
+   * Logger instance to use for this workflow
+   * If not provided, will use the global logger or create a default one
+   */
+  logger?: Logger;
 };
 
 /**
@@ -122,6 +277,8 @@ export type WorkflowConfig<
 export type Workflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
+  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > = {
   /**
    * Unique identifier for the workflow
@@ -145,6 +302,14 @@ export type Workflow<
    */
   inputSchema?: INPUT_SCHEMA;
   /**
+   * Suspend schema for the workflow (for API access)
+   */
+  suspendSchema?: SUSPEND_SCHEMA;
+  /**
+   * Resume schema for the workflow (for API access)
+   */
+  resumeSchema?: RESUME_SCHEMA;
+  /**
    * Memory storage for this workflow (exposed for registry access)
    */
   memory?: Memory;
@@ -156,13 +321,12 @@ export type Workflow<
   run: (
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
-  ) => Promise<{
-    executionId: string;
-    startAt: Date;
-    endAt: Date;
-    status: "completed";
-    result: z.infer<RESULT_SCHEMA>;
-  }>;
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Create a WorkflowSuspendController that can be used to suspend the workflow
+   * @returns A WorkflowSuspendController instance
+   */
+  createSuspendController?: () => WorkflowSuspendController;
 };
 
 // ===================================
@@ -277,6 +441,7 @@ export interface CreateWorkflowExecutionOptions {
   conversationId?: string;
   userContext?: UserContext;
   metadata?: Record<string, unknown>;
+  executionId?: string;
 }
 
 /**

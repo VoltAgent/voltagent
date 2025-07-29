@@ -1,6 +1,6 @@
 {
   "name": "@voltagent/internal",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
   "license": "MIT",
   "exports": {
@@ -8,11 +8,6 @@
       "types": "./dist/main/index.d.ts",
       "import": "./dist/main/index.mjs",
       "require": "./dist/main/index.js"
-    },
-    "./dev": {
-      "types": "./dist/dev/index.d.ts",
-      "import": "./dist/dev/index.mjs",
-      "require": "./dist/dev/index.js"
     },
     "./test": {
       "types": "./dist/test/index.d.ts",

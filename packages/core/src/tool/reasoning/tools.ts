@@ -1,4 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
+import { getGlobalLogger } from "../../logger";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { createTool } from "..";
@@ -35,9 +36,12 @@ export const thinkTool = createTool({
     const { title, thought, action, confidence } = args;
     const reasoningOptions = options as ReasoningToolExecuteOptions | undefined;
     const { agentId, historyEntryId } = reasoningOptions || {};
+    const logger =
+      options?.operationContext?.logger ||
+      getGlobalLogger().child({ component: "reasoning-tools" });
 
     if (!agentId || !historyEntryId) {
-      devLogger.error("Think tool requires agentId and historyEntryId in options.");
+      logger.error("Think tool requires agentId and historyEntryId in options");
       return "Error: Missing required agentId or historyEntryId in execution options.";
     }
 
@@ -59,7 +63,7 @@ export const thinkTool = createTool({
 
       return `Thought step "${title}" recorded successfully.`;
     } catch (error) {
-      devLogger.error("Error processing or emitting thought step:", error);
+      logger.error("Error processing or emitting thought step", { error });
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       return `Error recording thought step: ${errorMessage}`;
     }
@@ -97,9 +101,12 @@ export const analyzeTool = createTool({
     const { title, result, analysis, next_action, confidence } = args;
     const reasoningOptions = options as ReasoningToolExecuteOptions | undefined;
     const { agentId, historyEntryId } = reasoningOptions || {};
+    const logger =
+      options?.operationContext?.logger ||
+      getGlobalLogger().child({ component: "reasoning-tools" });
 
     if (!agentId || !historyEntryId) {
-      devLogger.error("Analyze tool requires agentId and historyEntryId in options.");
+      logger.error("Analyze tool requires agentId and historyEntryId in options");
       return "Error: Missing required agentId or historyEntryId in execution options.";
     }
 
@@ -122,7 +129,7 @@ export const analyzeTool = createTool({
 
       return `Analysis step "${title}" recorded successfully. Next action: ${next_action}.`;
     } catch (error) {
-      devLogger.error("Error processing or emitting analysis step:", error);
+      logger.error("Error processing or emitting analysis step", { error });
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       return `Error recording analysis step: ${errorMessage}`;
     }

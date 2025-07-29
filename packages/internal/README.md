@@ -9,10 +9,12 @@ pnpm add @voltagent/internal
 ```
 
 ```typescript
-import { devLogger } from "@voltagent/internal";
+import { isObject, isString } from "@voltagent/internal";
 
-// will only log if process.env.NODE_ENV is "development"
-devLogger.info("Hello, world!");
+// Use utility functions
+if (isObject(data)) {
+  console.log("Data is an object");
+}
 ```
 
 ## 📦 Imports
@@ -20,8 +22,8 @@ devLogger.info("Hello, world!");
 You can also import specific subsets of the package:
 
 ```typescript
-import { devLogger } from "@voltagent/internal/dev";
 import { convertArrayToAsyncIterable } from "@voltagent/internal/test";
+import { deepClone, hasKey } from "@voltagent/internal/utils";
 ```
 
 Allowing you to only import the tools you need.

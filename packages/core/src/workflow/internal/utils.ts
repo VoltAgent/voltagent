@@ -12,11 +12,13 @@ import type {
  * Convert a workflow state to a parameter for a step or hook
  * @param state - The workflow state
  * @param executionContext - The workflow execution context for event tracking
+ * @param signal - Optional AbortSignal for step suspension
  * @returns The parameter for the step or hook
  */
 export function convertWorkflowStateToParam<INPUT>(
   state: WorkflowState<INPUT, DangerouslyAllowAny>,
   executionContext?: WorkflowExecutionContext,
+  signal?: AbortSignal,
 ): InternalWorkflowStateParam<INPUT> & { workflowContext?: WorkflowExecutionContext } {
   return {
     executionId: state.executionId,
@@ -30,6 +32,7 @@ export function convertWorkflowStateToParam<INPUT>(
     status: state.status,
     error: state.error,
     workflowContext: executionContext,
+    signal,
   };
 }
 
@@ -51,16 +54,22 @@ export function defaultStepConfig<CONFIG extends InternalWorkflowStepConfig>(con
  * @param data - The step input data
  * @param state - The workflow state
  * @param executionContext - The workflow execution context
+ * @param suspendFn - The suspend function for the step
  * @returns The execution context for the step
  */
-export function createStepExecutionContext<INPUT, DATA>(
+export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>(
   data: InternalExtractWorkflowInputData<DATA>,
   state: InternalWorkflowStateParam<INPUT>,
-  executionContext?: WorkflowExecutionContext,
-): WorkflowExecuteContext<INPUT, DATA> {
+  executionContext: WorkflowExecutionContext,
+  suspendFn: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>,
+  resumeData?: RESUME_DATA,
+): WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
   return {
     data,
     state,
     getStepData: (stepId: string) => executionContext?.stepData.get(stepId),
+    suspend: suspendFn,
+    resumeData,
+    logger: executionContext.logger,
   };
 }

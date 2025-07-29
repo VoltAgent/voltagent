@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
-import { devLogger } from "@voltagent/internal/dev";
 import { v4 as uuidv4 } from "uuid";
+import { LoggerProxy } from "../logger";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
 import { WorkflowRegistry } from "../workflow/registry";
@@ -8,9 +8,11 @@ import type {
   WorkflowStartEvent,
   WorkflowSuccessEvent,
   WorkflowErrorEvent,
+  WorkflowSuspendEvent,
   WorkflowStepStartEvent,
   WorkflowStepSuccessEvent,
   WorkflowStepErrorEvent,
+  WorkflowStepSuspendEvent,
 } from "./types";
 
 /**
@@ -20,9 +22,18 @@ export type WorkflowEvent =
   | WorkflowStartEvent
   | WorkflowSuccessEvent
   | WorkflowErrorEvent
+  | WorkflowSuspendEvent
   | WorkflowStepStartEvent
   | WorkflowStepSuccessEvent
-  | WorkflowStepErrorEvent;
+  | WorkflowStepErrorEvent
+  | WorkflowStepSuspendEvent;
+
+/**
+ * Extended workflow event with persistence status
+ */
+export type WorkflowEventWithStatus = WorkflowEvent & {
+  isPersisted?: boolean;
+};
 
 /**
  * Workflow event emitter for publishing workflow events to the timeline
@@ -32,6 +43,7 @@ export class WorkflowEventEmitter extends EventEmitter {
 
   // Background queue for workflow events (similar to AgentEventEmitter)
   private workflowEventQueue: BackgroundQueue;
+  private logger = new LoggerProxy({ component: "workflow-event-emitter" });
 
   private constructor() {
     super();
@@ -72,11 +84,18 @@ export class WorkflowEventEmitter extends EventEmitter {
       event.startTime = new Date().toISOString();
     }
 
-    // Add to the background queue
+    // DUAL-PATH: Emit immediately for real-time updates
+    this.emitImmediateEvent({
+      workflowId,
+      executionId,
+      event: { ...event, isPersisted: false } as WorkflowEventWithStatus,
+    });
+
+    // Add to the background queue for persistence
     this.workflowEventQueue.enqueue({
       id: `workflow-event-${event.id}`,
       operation: async () => {
-        const clonedEvent = deepClone(event);
+        const clonedEvent = deepClone(event, this.logger);
 
         await this.publishWorkflowEventSync({
           workflowId,
@@ -102,14 +121,36 @@ export class WorkflowEventEmitter extends EventEmitter {
 
       await registry.persistWorkflowTimelineEvent(workflowId, executionId, event);
 
-      devLogger.debug(
-        `[WorkflowEventEmitter] Event delegated to WorkflowRegistry: ${event.name} for execution ${executionId}`,
+      this.logger.trace(
+        `Event delegated to WorkflowRegistry: ${event.name} for execution ${executionId}`,
       );
     } catch (error) {
-      devLogger.error(
-        "[WorkflowEventEmitter] Failed to delegate event to WorkflowRegistry:",
-        error,
-      );
+      this.logger.error("Failed to delegate event to WorkflowRegistry", { error });
+    }
+  }
+
+  /**
+   * Emit immediate event for real-time updates (bypasses queue)
+   */
+  private emitImmediateEvent(params: {
+    workflowId: string;
+    executionId: string;
+    event: WorkflowEventWithStatus;
+  }): void {
+    const { workflowId, executionId, event } = params;
+
+    try {
+      // Emit event immediately for WebSocket broadcast
+      this.emit("immediateWorkflowEvent", {
+        workflowId,
+        executionId,
+        event,
+      });
+
+      this.logger.trace(`Immediate event emitted: ${event.name} for execution ${executionId}`);
+    } catch (error) {
+      // Don't throw - immediate events are best-effort
+      this.logger.error("Failed to emit immediate event", { error });
     }
   }
 }

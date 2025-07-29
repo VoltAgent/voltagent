@@ -1,93 +1,90 @@
 # Execute Function API
 
-All workflow steps use a consistent context-based API for their execute functions. This document explains how to use the execute function API effectively.
+> **The heart of every workflow step.** Learn how to use the execute function to process data, access workflow state, and control flow.
 
-## Basic Structure
+## Quick Start
 
-Every execute function receives a single context object with three properties:
-
-```typescript
-execute: async ({ data, state, getStepData }) => {
-  // Your step logic here
-  return result;
-};
-```
-
-## Context Properties
-
-### `data`
-
-The input data passed to this step. For the first step, this is the workflow input. For subsequent steps, this is the output from the previous step.
+Every workflow step has an `execute` function that receives a context object:
 
 ```typescript
 .andThen({
-  id: "process-user",
-  execute: async ({ data }) => {
-    // data contains the output from the previous step
-    console.log(data.name); // Access properties
-    return {
-      ...data,
-      processed: true
-    };
+  id: "my-step",
+  execute: async ({ data, state, getStepData, suspend, resumeData }) => {
+    // Your logic here
+    return { result: "processed" };
   }
 })
 ```
 
-### `state`
+## What's in the Context?
 
-The workflow state containing execution metadata and context.
+The execute function receives one parameter - a context object with these properties:
 
-Available properties:
+### 1. `data` - The Step's Input
 
-- `executionId` - Unique ID for this workflow execution
-- `conversationId` - Optional conversation ID
-- `userId` - Optional user ID
-- `userContext` - User-specific context
-- `input` - The original input to the workflow
-- `startAt` - When the workflow started
-- `status` - Current workflow status
+This is the data flowing into your step:
+
+- **First step**: Gets the workflow's initial input
+- **Other steps**: Gets the output from the previous step
+
+```typescript
+const workflow = createWorkflowChain({
+  input: z.object({ name: z.string() }),
+  // ...
+})
+  .andThen({
+    id: "step-1",
+    execute: async ({ data }) => {
+      console.log(data.name); // Original input
+      return { ...data, step1: "done" };
+    },
+  })
+  .andThen({
+    id: "step-2",
+    execute: async ({ data }) => {
+      console.log(data.name); // Still there!
+      console.log(data.step1); // "done" - from previous step
+      return { ...data, step2: "also done" };
+    },
+  });
+```
+
+### 2. `state` - Workflow Information
+
+Contains metadata about the current workflow execution:
 
 ```typescript
 .andThen({
-  id: "log-execution",
+  id: "log-info",
   execute: async ({ data, state }) => {
-    console.log(`Execution ID: ${state.executionId}`);
-    console.log(`Original input:`, state.input);
+    console.log(state.executionId);    // Unique ID for this run
+    console.log(state.userId);         // Who's running it
+    console.log(state.conversationId); // Conversation context
+    console.log(state.input);          // Original workflow input
+    console.log(state.startAt);        // When it started
+
+    // userContext is a Map for custom data
+    const userRole = state.userContext?.get("role");
+
     return data;
   }
 })
 ```
 
-### `getStepData`
+### 3. `getStepData` - Access Any Previous Step
 
-A helper function to access data from any previously executed step.
-
-```typescript
-getStepData(stepId: string): { input: any; output: any } | undefined
-```
-
-Returns an object with:
-
-- `input` - The data that was passed to that step
-- `output` - The data that step returned
-- Returns `undefined` if the step hasn't been executed yet
+Get data from any step that has already executed:
 
 ```typescript
 .andThen({
   id: "combine-results",
   execute: async ({ data, getStepData }) => {
-    // Access data from specific previous steps
-    const analysisStep = getStepData("analyze-text");
-    const validationStep = getStepData("validate-input");
+    // Get data from a specific step
+    const step1Data = getStepData("step-1");
 
-    if (analysisStep && validationStep) {
-      return {
-        currentData: data,
-        analysisResult: analysisStep.output,
-        validationResult: validationStep.output,
-        // Access what was passed to the analysis step
-        originalAnalysisInput: analysisStep.input
-      };
+    if (step1Data) {
+      console.log(step1Data.input);  // What went INTO step-1
+      console.log(step1Data.output); // What came OUT of step-1
     }
 
     return data;
@@ -95,235 +92,306 @@ Returns an object with:
 })
 ```
 
-## Step Types
+### 4. `suspend` - Pause the Workflow
 
-### Function Steps (`andThen`)
-
-Basic function steps for data transformation:
+Pause execution and wait for external input (like human approval):
 
 ```typescript
 .andThen({
-  id: "transform-data",
-  name: "Transform Data",
-  execute: async ({ data }) => {
-    return {
-      ...data,
-      transformed: true,
-      timestamp: new Date().toISOString()
-    };
-  }
-})
-```
-
-### Agent Steps (`andAgent`)
-
-AI agent steps where the task function also receives the context:
-
-```typescript
-.andAgent(
-  // Task function receives the same context
-  async ({ data }) => `Analyze this text: ${data.content}`,
-  myAgent,
-  {
-    schema: z.object({
-      sentiment: z.string(),
-      summary: z.string()
-    })
-  }
-)
-```
-
-### Conditional Steps (`andWhen`)
-
-Steps that only execute when a condition is met:
-
-```typescript
-.andWhen({
-  id: "process-if-valid",
-  // Condition function also receives the context
-  condition: async ({ data, getStepData }) => {
-    const validation = getStepData("validate");
-    return validation?.output?.isValid === true;
-  },
-  step: andThen({
-    id: "process-valid-data",
-    execute: async ({ data }) => {
-      return { ...data, processed: true };
+  id: "wait-for-approval",
+  execute: async ({ data, suspend }) => {
+    if (data.amount > 1000) {
+      // This stops execution immediately
+      await suspend("Manager approval required");
+      // Code below never runs during suspension
     }
-  })
-})
-```
 
-### Tap Steps (`andTap`)
-
-Side-effect steps that don't modify the data flow:
-
-```typescript
-.andTap({
-  id: "log-progress",
-  execute: async ({ data, state }) => {
-    console.log(`Processing ${state.executionId}: ${data.status}`);
-    // Return value is ignored - data passes through unchanged
+    return { ...data, approved: true };
   }
 })
 ```
 
-### Parallel Steps (`andAll`, `andRace`)
+### 5. `resumeData` - Data from Resume
 
-Execute multiple steps in parallel:
-
-```typescript
-.andAll({
-  id: "parallel-processing",
-  steps: [
-    andThen({
-      id: "process-a",
-      execute: async ({ data }) => ({ ...data, a: true })
-    }),
-    andThen({
-      id: "process-b",
-      execute: async ({ data }) => ({ ...data, b: true })
-    })
-  ]
-})
-```
-
-## Advanced Patterns
-
-### Accessing Multiple Previous Steps
+When a suspended workflow resumes, this contains the resume data:
 
 ```typescript
 .andThen({
-  id: "final-summary",
-  execute: async ({ data, getStepData }) => {
-    // Collect results from multiple steps
-    const steps = ['step1', 'step2', 'step3'];
-    const results = steps
-      .map(id => getStepData(id))
-      .filter(Boolean)
-      .map(step => step.output);
-
-    return {
-      finalData: data,
-      allResults: results
-    };
-  }
-})
-```
-
-### Conditional Processing Based on Previous Steps
-
-```typescript
-.andThen({
-  id: "adaptive-processing",
-  execute: async ({ data, getStepData }) => {
-    const analysisStep = getStepData("analyze");
-
-    if (analysisStep?.output?.complexity === 'high') {
-      // Complex processing
-      return await complexProcess(data);
-    } else {
-      // Simple processing
-      return await simpleProcess(data);
-    }
-  }
-})
-```
-
-### Error Handling with Step Data
-
-```typescript
-.andThen({
-  id: "error-recovery",
-  execute: async ({ data, getStepData }) => {
-    const previousStep = getStepData("risky-operation");
-
-    if (!previousStep || previousStep.output.error) {
-      // Fallback logic
+  id: "approval-step",
+  execute: async ({ data, suspend, resumeData }) => {
+    // Check if we're resuming
+    if (resumeData) {
+      // We're resuming! Use the approval decision
       return {
         ...data,
-        fallbackUsed: true,
-        result: await fallbackOperation(data)
+        approved: resumeData.approved,
+        approvedBy: resumeData.managerId
       };
     }
 
-    return previousStep.output;
+    // First time through - suspend for approval
+    if (data.amount > 1000) {
+      await suspend("Needs approval");
+    }
+
+    // Auto-approve small amounts
+    return { ...data, approved: true, approvedBy: "auto" };
   }
 })
 ```
 
-## Type Safety
+## Complete Example
 
-The execute function is fully type-safe. TypeScript will infer the correct types based on your workflow definition:
+Here's a real-world example using all context properties:
 
 ```typescript
-const workflow = createWorkflowChain({
-  input: z.object({ name: z.string(), age: z.number() }),
-  result: z.object({ message: z.string() }),
-  // ...
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+const orderWorkflow = createWorkflowChain({
+  id: "order-processor",
+  name: "Order Processing",
+  input: z.object({
+    orderId: z.string(),
+    amount: z.number(),
+    items: z.array(z.string()),
+  }),
+  result: z.object({
+    status: z.string(),
+    trackingNumber: z.string(),
+  }),
 })
   .andThen({
-    id: "process",
-    execute: async ({ data }) => {
-      // TypeScript knows data has { name: string, age: number }
-      if (data.age >= 18) {
-        return {
-          ...data,
-          isAdult: true,
-        };
-      }
-      return data;
+    id: "validate-order",
+    execute: async ({ data, state }) => {
+      console.log(`Processing order ${data.orderId} for user ${state.userId}`);
+
+      const isValid = data.items.length > 0 && data.amount > 0;
+      return { ...data, isValid };
     },
   })
   .andThen({
-    id: "create-message",
-    execute: async ({ data }) => {
-      // TypeScript knows data might have isAdult property
-      const status = "isAdult" in data ? "an adult" : "a minor";
+    id: "check-inventory",
+    execute: async ({ data, getStepData }) => {
+      // Only check if validation passed
+      const validation = getStepData("validate-order");
+      if (!validation?.output?.isValid) {
+        return { ...data, inStock: false };
+      }
+
+      // Check inventory for each item
+      const inStock = await checkInventory(data.items);
+      return { ...data, inStock };
+    },
+  })
+  .andThen({
+    id: "approve-payment",
+    execute: async ({ data, suspend, resumeData }) => {
+      // Handle resume from suspension
+      if (resumeData) {
+        return {
+          ...data,
+          paymentApproved: resumeData.approved,
+          approvedBy: resumeData.approver,
+        };
+      }
+
+      // Auto-approve small amounts
+      if (data.amount <= 100) {
+        return { ...data, paymentApproved: true, approvedBy: "auto" };
+      }
+
+      // Suspend for manual approval
+      await suspend(`Payment approval needed for $${data.amount}`);
+    },
+  })
+  .andThen({
+    id: "ship-order",
+    execute: async ({ data, state }) => {
+      if (!data.paymentApproved) {
+        return {
+          status: "cancelled",
+          trackingNumber: "N/A",
+        };
+      }
+
+      // Ship the order
+      const tracking = await createShipment(data.orderId);
+
+      // Log completion
+      console.log(`Order ${data.orderId} shipped after ${Date.now() - state.startAt.getTime()}ms`);
+
       return {
-        message: `${data.name} is ${status}`,
+        status: "shipped",
+        trackingNumber: tracking,
       };
     },
   });
 ```
 
+## Different Step Types
+
+### Basic Steps (`andThen`)
+
+Transform data or perform operations:
+
+```typescript
+.andThen({
+  id: "calculate-total",
+  execute: async ({ data }) => {
+    const total = data.items.reduce((sum, item) => sum + item.price, 0);
+    return { ...data, total };
+  }
+})
+```
+
+### AI Agent Steps (`andAgent`)
+
+The task function also gets the context:
+
+```typescript
+.andAgent(
+  async ({ data }) => `Summarize this order: ${JSON.stringify(data.items)}`,
+  myAgent,
+  { schema: z.object({ summary: z.string() }) }
+)
+```
+
+### Conditional Steps (`andWhen`)
+
+Only run when a condition is met:
+
+```typescript
+.andWhen({
+  id: "apply-discount",
+  condition: async ({ data }) => data.total > 50,
+  step: andThen({
+    id: "discount",
+    execute: async ({ data }) => ({
+      ...data,
+      total: data.total * 0.9,
+      discountApplied: true
+    })
+  })
+})
+```
+
+### Side Effects (`andTap`)
+
+Run code without changing the data:
+
+```typescript
+.andTap({
+  id: "send-notification",
+  execute: async ({ data, state }) => {
+    await sendEmail(state.userId, `Order ${data.orderId} processed`);
+    // Return value ignored - data passes through
+  }
+})
+```
+
+## Suspend & Resume Deep Dive
+
+For human-in-the-loop workflows, suspension is key:
+
+```typescript
+.andThen({
+  id: "review-step",
+  execute: async ({ data, suspend, resumeData }) => {
+    // Step 1: Check if we're resuming
+    if (resumeData) {
+      console.log("Resuming with:", resumeData);
+      return { ...data, reviewed: true, reviewer: resumeData.userId };
+    }
+
+    // Step 2: Check if we need to suspend
+    if (data.requiresReview) {
+      // This immediately stops execution
+      await suspend("Document needs review", {
+        documentId: data.id,
+        reason: "High risk score"
+      });
+      // Never reaches here during suspension
+    }
+
+    // Step 3: Continue if no suspension needed
+    return { ...data, reviewed: true, reviewer: "auto" };
+  }
+})
+```
+
+**Important**: When resumed, the step runs again from the beginning with `resumeData` available.
+
+For more details on suspension patterns, see [Suspend & Resume](./suspend-resume.md).
+
 ## Best Practices
 
-1. **Always destructure the context** for cleaner code:
+### 1. Always Return New Objects
 
-   ```typescript
-   execute: async ({ data, state, getStepData }) => { ... }
-   ```
+```typescript
+// ✅ Good - creates new object
+return { ...data, processed: true };
 
-2. **Check if steps exist** before accessing their data:
+// ❌ Bad - mutates existing object
+data.processed = true;
+return data;
+```
 
-   ```typescript
-   const stepData = getStepData("step-id");
-   if (stepData) {
-     // Use stepData.input or stepData.output
-   }
-   ```
+### 2. Check Step Data Exists
 
-3. **Use meaningful step IDs** for easier debugging and data access:
+```typescript
+const previousStep = getStepData("step-id");
+if (previousStep) {
+  // Safe to use previousStep.output
+}
+```
 
-   ```typescript
-   id: "validate-user-input"; // Good
-   id: "step1"; // Less descriptive
-   ```
+### 3. Use Clear Step IDs
 
-4. **Return new objects** instead of mutating:
+```typescript
+// ✅ Good - descriptive
+id: "validate-payment";
 
-   ```typescript
-   // Good
-   return { ...data, newField: value };
+// ❌ Bad - unclear
+id: "step2";
+```
 
-   // Avoid
-   data.newField = value;
-   return data;
-   ```
+### 4. Handle Errors Gracefully
 
-5. **Handle optional step data** gracefully:
-   ```typescript
-   const validation = getStepData("validate");
-   const isValid = validation?.output?.isValid ?? false;
-   ```
+```typescript
+execute: async ({ data }) => {
+  try {
+    const result = await riskyOperation(data);
+    return { ...data, result };
+  } catch (error) {
+    return { ...data, error: error.message, success: false };
+  }
+};
+```
+
+### 5. Log Important Events
+
+```typescript
+execute: async ({ data, state }) => {
+  console.log(`[${state.executionId}] Processing ${data.id}`);
+  const result = await process(data);
+  console.log(`[${state.executionId}] Completed with status: ${result.status}`);
+  return result;
+};
+```
+
+## TypeScript Types
+
+The execute function is fully type-safe:
+
+```typescript
+interface ExecuteContext<TData, TSuspendData = any, TResumeData = any> {
+  data: TData;
+  state: WorkflowState;
+  getStepData: (stepId: string) => { input: any; output: any } | undefined;
+  suspend: (reason?: string, data?: TSuspendData) => Promise<never>;
+  resumeData?: TResumeData;
+}
+```
+
+Types flow automatically through your workflow - TypeScript knows what data is available at each step!

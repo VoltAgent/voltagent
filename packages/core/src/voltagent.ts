@@ -1,6 +1,7 @@
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
+import { getGlobalLogger } from "./logger";
 import type { Agent } from "./agent/agent";
 import type { SubAgentConfig } from "./agent/subagent/types";
 import { startServer } from "./server";
@@ -29,10 +30,17 @@ export class VoltAgent {
   private customEndpoints: CustomEndpointDefinition[] = [];
   private serverConfig: ServerConfig = {};
   private serverOptions: ServerOptions = {};
+  private logger: Logger;
 
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
+
+    // Initialize logger
+    this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
+
+    // Setup graceful shutdown handlers
+    this.setupShutdownHandlers();
 
     // NEW: Handle unified VoltOps client
     if (options.voltOpsClient) {
@@ -44,9 +52,15 @@ export class VoltAgent {
         this.initializeGlobalTelemetry(options.voltOpsClient.observability);
       }
     }
+
+    // Handle global logger
+    if (options.logger) {
+      this.registry.setGlobalLogger(options.logger);
+      // Buffer management is now handled by LoggerProxy/BufferedLogger
+    }
     // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
     else if (options.telemetryExporter) {
-      devLogger.warn(
+      this.logger.warn(
         `⚠️  DEPRECATION WARNING: 'telemetryExporter' parameter is deprecated!
         
 🔄 MIGRATION REQUIRED:
@@ -104,18 +118,46 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       this.serverConfig.port = this.serverOptions.port;
     }
 
-    // Check dependencies if enabled
+    // Check dependencies if enabled (run in background)
     if (options.checkDependencies !== false) {
-      this.checkDependencies();
+      // Run dependency check in background to not block startup
+      Promise.resolve().then(() => {
+        this.checkDependencies().catch(() => {
+          // Silently ignore errors
+        });
+      });
     }
 
     // Auto-start server if enabled
     if (this.serverOptions.autoStart !== false) {
       this.startServer().catch((err) => {
-        devLogger.error("Failed to start server:", err);
+        this.logger.error("Failed to start server:", err);
         process.exit(1);
       });
     }
+  }
+
+  /**
+   * Setup graceful shutdown handlers
+   */
+  private setupShutdownHandlers(): void {
+    const shutdown = async (signal: string) => {
+      this.logger.info(`[VoltAgent] Received ${signal}, starting graceful shutdown...`);
+
+      try {
+        // Suspend all active workflows
+        await this.workflowRegistry.suspendAllActiveWorkflows();
+
+        this.logger.info("[VoltAgent] All workflows suspended, exiting...");
+        process.exit(0);
+      } catch (error) {
+        this.logger.error("[VoltAgent] Error during shutdown:", { error });
+        process.exit(1);
+      }
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
   }
 
   /**
@@ -123,19 +165,33 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    */
   private async checkDependencies(): Promise<void> {
     try {
-      const result = await checkForUpdates(undefined, {
+      // Quick cache check first
+      const cachedResult = await checkForUpdates(undefined, {
         filter: "@voltagent",
+        useCache: true,
       });
 
-      if (result.hasUpdates) {
-        devLogger.info("\n");
-        devLogger.info(result.message);
-        devLogger.info("Run 'npm run volt update' to update VoltAgent packages");
-      } else {
-        devLogger.info(result.message);
+      // Show cached results if available
+      if (cachedResult?.hasUpdates) {
+        this.logger.trace("\n");
+        this.logger.trace(cachedResult.message);
+        this.logger.trace("Run 'npm run volt update' to update VoltAgent packages");
       }
-    } catch (error) {
-      devLogger.error("Error checking dependencies:", error);
+
+      // Schedule background update after 100ms
+      setTimeout(async () => {
+        try {
+          await checkForUpdates(undefined, {
+            filter: "@voltagent",
+            useCache: true,
+            forceRefresh: true,
+          });
+        } catch (_error) {
+          // Silently ignore background update errors
+        }
+      }, 100);
+    } catch (_error) {
+      // Silently ignore all errors
     }
   }
 
@@ -186,7 +242,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    */
   public async startServer(): Promise<void> {
     if (this.serverStarted) {
-      devLogger.info("Server is already running");
+      this.logger.info("Server is already running");
       return;
     }
 
@@ -199,7 +255,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       await startServer(this.serverConfig);
       this.serverStarted = true;
     } catch (error) {
-      devLogger.error(
+      this.logger.error(
         `Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
@@ -221,7 +277,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         registerCustomEndpoint(endpoint);
       }
     } catch (error) {
-      devLogger.error(
+      this.logger.error(
         `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
@@ -247,7 +303,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         registerCustomEndpoints(endpoints);
       }
     } catch (error) {
-      devLogger.error(
+      this.logger.error(
         `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
@@ -281,8 +337,14 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   public registerWorkflows(
     workflows: Record<
       string,
-      | Workflow<DangerouslyAllowAny, DangerouslyAllowAny>
-      | WorkflowChain<DangerouslyAllowAny, DangerouslyAllowAny>
+      | Workflow<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>
+      | WorkflowChain<
+          DangerouslyAllowAny,
+          DangerouslyAllowAny,
+          DangerouslyAllowAny,
+          DangerouslyAllowAny,
+          DangerouslyAllowAny
+        >
     >,
   ): void {
     Object.values(workflows).forEach((workflow) => {
@@ -295,7 +357,14 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   /**
    * Register a single workflow
    */
-  public registerWorkflow(workflow: Workflow<DangerouslyAllowAny, DangerouslyAllowAny>): void {
+  public registerWorkflow(
+    workflow: Workflow<
+      DangerouslyAllowAny,
+      DangerouslyAllowAny,
+      DangerouslyAllowAny,
+      DangerouslyAllowAny
+    >,
+  ): void {
     this.workflowRegistry.registerWorkflow(workflow);
   }
 
@@ -325,7 +394,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
     exporterOrExporters: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[],
   ): void {
     if (isTelemetryInitializedByVoltAgent) {
-      devLogger.warn(
+      this.logger.warn(
         "Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
       );
       return;
@@ -368,11 +437,11 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       // Add automatic shutdown on SIGTERM
       process.on("SIGTERM", () => {
         this.shutdownTelemetry().catch((err) =>
-          devLogger.error("Error during SIGTERM telemetry shutdown:", err),
+          this.logger.error("Error during SIGTERM telemetry shutdown:", { error: err }),
         );
       });
     } catch (error) {
-      devLogger.error("Failed to initialize OpenTelemetry:", error);
+      this.logger.error("Failed to initialize OpenTelemetry:", { error });
     }
   }
 
@@ -383,10 +452,10 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         isTelemetryInitializedByVoltAgent = false;
         registeredProvider = null;
       } catch (error) {
-        devLogger.error("Error shutting down OpenTelemetry provider:", error);
+        this.logger.error("Error shutting down OpenTelemetry provider:", { error });
       }
     } else {
-      devLogger.info(
+      this.logger.info(
         "Telemetry provider was not initialized by this VoltAgent instance or already shut down.",
       );
     }

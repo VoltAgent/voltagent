@@ -1,14 +1,24 @@
 import { vi, describe, expect, it, beforeEach } from "vitest";
 import { BackgroundQueue } from "./queue";
 
-// Mock devLogger to avoid console noise in tests
-vi.mock("@voltagent/internal/dev", () => ({
-  devLogger: {
+// Mock logger to avoid console noise in tests
+vi.mock("../../logger", () => ({
+  LoggerProxy: vi.fn().mockImplementation(() => ({
+    trace: vi.fn(),
+    debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn(),
-  },
+    fatal: vi.fn(),
+    child: vi.fn(() => ({
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      fatal: vi.fn(),
+    })),
+  })),
 }));
 
 describe("BackgroundQueue", () => {

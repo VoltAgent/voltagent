@@ -134,14 +134,7 @@ export default function Navbar() {
             <Link to="/customers/" className={`${styles.navLink}`}>
               Customers
             </Link>
-            <Link
-              to="/pricing/"
-              className={`${styles.navLink}   ${
-                isActive("(launch-week-june-25/") ? styles.active : ""
-              }`}
-            >
-              Pricing
-            </Link>
+
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
                 Resources
@@ -416,14 +409,7 @@ export default function Navbar() {
           >
             Voltops Docs
           </Link>
-          <Link
-            to="/pricing/"
-            className={`${styles.mobileNavLink} ${
-              isActive("/pricing/") ? styles.active : ""
-            }`}
-          >
-            Pricing
-          </Link>
+
           <Link to="/customers/" className={`${styles.mobileNavLink}`}>
             Customers
           </Link>

@@ -27,7 +27,10 @@ import {
   streamObjectRoute,
   streamRoute,
   textRoute,
+  suspendWorkflowRoute,
+  resumeWorkflowRoute,
 } from "./api.routes";
+import { getLogsRoute } from "./api.routes.logs";
 import type { CustomEndpointDefinition } from "./custom-endpoints";
 import {
   CustomEndpointError,
@@ -38,6 +41,9 @@ import { AgentRegistry } from "./registry";
 import { WorkflowRegistry } from "../workflow/registry";
 import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 import { zodSchemaToJsonUI } from "..";
+import type { LogFilter } from "@voltagent/internal";
+import { LoggerProxy, getGlobalLogBuffer } from "../logger";
+import { LogStreamManager } from "./log-stream";
 
 // Configuration interface
 export interface ServerConfig {
@@ -46,6 +52,7 @@ export interface ServerConfig {
 }
 
 const app = new OpenAPIHono();
+const logger = new LoggerProxy({ component: "api-server" });
 
 // Function to setup Swagger UI based on config
 export const setupSwaggerUI = (config?: ServerConfig) => {
@@ -143,6 +150,8 @@ app.use("/*", cors());
 const agentConnections = new Map<string, Set<WebSocket>>();
 // Store WebSocket connections for each workflow
 const workflowConnections = new Map<string, Set<WebSocket>>();
+// Log stream manager for real-time log streaming
+const logStreamManager = new LogStreamManager();
 
 // Enable CORS for all routes
 app.use(
@@ -202,7 +211,7 @@ app.openapi(getAgentsRoute, (c) => {
 
     return c.json(response, 200);
   } catch (error) {
-    console.error("Failed to get agents:", error);
+    logger.error("Failed to get agents:", { error });
     return c.json(
       { success: false, error: "Failed to retrieve agents" } satisfies z.infer<typeof ErrorSchema>,
       500,
@@ -269,7 +278,7 @@ app.openapi(getWorkflowsRoute, (c) => {
 
     return c.json(response, 200);
   } catch (error) {
-    console.error("Failed to get workflows:", error);
+    logger.error("Failed to get workflows:", { error });
     return c.json({ success: false as const, error: "Failed to retrieve workflows" }, 500);
   }
 });
@@ -288,24 +297,88 @@ app.get("/workflows/:id", (c: ApiContext) => {
     return c.json(response, 404);
   }
 
-  // Get the registered workflow to access input schema
+  // Get the registered workflow to access schemas
   const registeredWorkflow = registry.getWorkflow(id);
   let inputSchema = null;
+  let suspendSchema = null;
+  let resumeSchema = null;
 
   if (registeredWorkflow?.inputSchema) {
     try {
       // Convert Zod schema to JSON schema using zodToJsonSchema
       inputSchema = zodSchemaToJsonUI(registeredWorkflow.inputSchema);
     } catch (error) {
-      console.warn("Failed to convert input schema to JSON schema:", error);
+      logger.warn("Failed to convert input schema to JSON schema:", { error });
     }
   }
 
-  const response: ApiResponse<typeof workflowData & { inputSchema?: any }> = {
+  if (registeredWorkflow?.suspendSchema) {
+    try {
+      suspendSchema = zodSchemaToJsonUI(registeredWorkflow.suspendSchema);
+    } catch (error) {
+      logger.warn("Failed to convert suspend schema to JSON schema:", { error });
+    }
+  }
+
+  if (registeredWorkflow?.resumeSchema) {
+    try {
+      resumeSchema = zodSchemaToJsonUI(registeredWorkflow.resumeSchema);
+    } catch (error) {
+      logger.warn("Failed to convert resume schema to JSON schema:", { error });
+    }
+  }
+
+  // Convert step-level schemas to JSON format
+  if (workflowData.steps) {
+    workflowData.steps = workflowData.steps.map((step: any) => {
+      const convertedStep = { ...step };
+
+      // Convert step schemas if they exist
+      if (step.inputSchema) {
+        try {
+          convertedStep.inputSchema = zodSchemaToJsonUI(step.inputSchema);
+        } catch (error) {
+          logger.warn(`Failed to convert input schema for step ${step.id}:`, { error });
+        }
+      }
+
+      if (step.outputSchema) {
+        try {
+          convertedStep.outputSchema = zodSchemaToJsonUI(step.outputSchema);
+        } catch (error) {
+          logger.warn(`Failed to convert output schema for step ${step.id}:`, { error });
+        }
+      }
+
+      if (step.suspendSchema) {
+        try {
+          convertedStep.suspendSchema = zodSchemaToJsonUI(step.suspendSchema);
+        } catch (error) {
+          logger.warn(`Failed to convert suspend schema for step ${step.id}:`, { error });
+        }
+      }
+
+      if (step.resumeSchema) {
+        try {
+          convertedStep.resumeSchema = zodSchemaToJsonUI(step.resumeSchema);
+        } catch (error) {
+          logger.warn(`Failed to convert resume schema for step ${step.id}:`, { error });
+        }
+      }
+
+      return convertedStep;
+    });
+  }
+
+  const response: ApiResponse<
+    typeof workflowData & { inputSchema?: any; suspendSchema?: any; resumeSchema?: any }
+  > = {
     success: true,
     data: {
       ...workflowData,
       inputSchema,
+      suspendSchema,
+      resumeSchema,
     },
   };
 
@@ -336,6 +409,12 @@ app.openapi(executeWorkflowRoute, async (c) => {
       };
     };
 
+    // Create suspension controller
+    const suspendController = registeredWorkflow.workflow.createSuspendController?.();
+    if (!suspendController) {
+      throw new Error("Workflow does not support suspension");
+    }
+
     // Convert userContext from object to Map if provided
     const processedOptions = options
       ? {
@@ -343,25 +422,69 @@ app.openapi(executeWorkflowRoute, async (c) => {
           ...(options.userContext && {
             userContext: new Map(Object.entries(options.userContext)),
           }),
+          signal: suspendController.signal, // Add signal for suspension
+          suspendController: suspendController, // Add controller for suspension tracking
         }
-      : undefined;
+      : {
+          signal: suspendController.signal,
+          suspendController: suspendController,
+        };
 
-    const result = await registeredWorkflow.workflow.run(input, processedOptions);
-
-    const response = {
-      success: true as const,
-      data: {
-        executionId: result.executionId,
-        startAt: result.startAt,
-        endAt: result.endAt,
-        status: "completed" as const,
-        result: result.result,
-      },
+    // Listen for workflow execution creation to capture the execution ID
+    let capturedExecutionId: string | null = null;
+    const historyCreatedHandler = (historyEntry: any) => {
+      if (historyEntry.workflowId === id && !capturedExecutionId) {
+        capturedExecutionId = historyEntry.id;
+        registry.activeExecutions.set(historyEntry.id, suspendController);
+        logger.trace(
+          `[API] Captured and stored suspension controller for execution ${historyEntry.id}`,
+        );
+      }
     };
 
-    return c.json(response, 200);
+    registry.on("historyCreated", historyCreatedHandler);
+
+    try {
+      // Run the workflow
+      logger.trace("[API] Starting workflow execution with signal");
+      const result = await registeredWorkflow.workflow.run(input, processedOptions);
+
+      // Remove the listener
+      registry.off("historyCreated", historyCreatedHandler);
+
+      // Remove from active executions when complete
+      const actualExecutionId = result.executionId;
+      registry.activeExecutions.delete(actualExecutionId);
+      logger.trace(
+        `[API] Workflow execution ${actualExecutionId} completed with status: ${result.status}`,
+      );
+
+      const response = {
+        success: true as const,
+        data: {
+          executionId: result.executionId,
+          startAt: result.startAt instanceof Date ? result.startAt.toISOString() : result.startAt,
+          endAt: result.endAt instanceof Date ? result.endAt.toISOString() : result.endAt,
+          status: "completed" as const,
+          result: result.result,
+        },
+      };
+
+      return c.json(response, 200);
+    } catch (error) {
+      // Remove the listener
+      registry.off("historyCreated", historyCreatedHandler);
+
+      // Try to clean up if we captured an execution ID
+      if (capturedExecutionId) {
+        registry.activeExecutions.delete(capturedExecutionId);
+      }
+
+      logger.error("[API] Workflow execution failed:", { error });
+      throw error;
+    }
   } catch (error) {
-    console.error("Failed to execute workflow:", error);
+    logger.error("Failed to execute workflow:", { error });
     return c.json(
       {
         success: false as const,
@@ -430,6 +553,7 @@ app.get("/workflows/:id/history", async (c: ApiContext) => {
       events: execution.events, // Always include events in local API
       userId: execution.userId,
       conversationId: execution.conversationId,
+      metadata: execution.metadata, // Include metadata for suspension info
     }));
 
     const response: ApiResponse<{
@@ -455,7 +579,7 @@ app.get("/workflows/:id/history", async (c: ApiContext) => {
 
     return c.json(response);
   } catch (error) {
-    console.error("Failed to get workflow history:", error);
+    logger.error("Failed to get workflow history:", { error });
     const response: ApiResponse<null> = {
       success: false,
       error: "Failed to retrieve workflow history",
@@ -475,6 +599,179 @@ app.get("/workflows/count", (c: ApiContext) => {
   };
 
   return c.json(response);
+});
+
+// Suspend workflow execution
+app.openapi(suspendWorkflowRoute, async (c) => {
+  const { id, executionId } = c.req.valid("param") as { id: string; executionId: string };
+  const registry = WorkflowRegistry.getInstance();
+
+  try {
+    const { reason } = c.req.valid("json") as { reason?: string };
+
+    // Find the execution in the registry
+    const executions = await registry.getWorkflowExecutionsAsync(id);
+    const execution = executions.find((e) => e.id === executionId);
+
+    if (!execution) {
+      return c.json(
+        { success: false, error: "Workflow execution not found" } satisfies z.infer<
+          typeof ErrorSchema
+        >,
+        404,
+      );
+    }
+
+    if (execution.status !== "running") {
+      return c.json(
+        {
+          success: false,
+          error: `Cannot suspend workflow in ${execution.status} state`,
+        } satisfies z.infer<typeof ErrorSchema>,
+        400,
+      );
+    }
+
+    // Trigger suspension via abort signal if available
+    logger.trace(`[API] Checking for active execution ${executionId}`, {
+      hasExecution: registry.activeExecutions?.has(executionId),
+      activeExecutions: Array.from(registry.activeExecutions?.keys() || []),
+    });
+
+    if (registry.activeExecutions?.has(executionId)) {
+      const controller = registry.activeExecutions.get(executionId);
+      logger.trace(`[API] Found suspension controller for execution ${executionId}`, {
+        hasController: !!controller,
+        isAborted: controller?.signal.aborted,
+      });
+
+      if (controller) {
+        // Suspend the workflow with reason
+        controller.suspend(reason);
+        logger.trace(
+          `[API] Sent suspend signal to execution ${executionId} with reason: ${reason}`,
+        );
+      }
+    } else {
+      logger.warn(`[API] No active execution found for ${executionId}`);
+    }
+
+    const response = {
+      success: true as const,
+      data: {
+        executionId,
+        status: "suspended" as const,
+        suspension: {
+          suspendedAt: new Date().toISOString(),
+          reason,
+        },
+      },
+    };
+
+    return c.json(response, 200);
+  } catch (error) {
+    logger.error("Failed to suspend workflow:", { error });
+    return c.json(
+      {
+        success: false as const,
+        error: error instanceof Error ? error.message : "Failed to suspend workflow",
+      } satisfies z.infer<typeof ErrorSchema>,
+      500,
+    );
+  }
+});
+
+// Resume suspended workflow
+app.openapi(resumeWorkflowRoute, async (c) => {
+  const { id, executionId } = c.req.valid("param") as { id: string; executionId: string };
+  const body = c.req.valid("json") as
+    | { resumeData?: any; options?: { stepId?: string } }
+    | undefined;
+  const registry = WorkflowRegistry.getInstance();
+
+  try {
+    const result = await registry.resumeSuspendedWorkflow(
+      id,
+      executionId,
+      body?.resumeData,
+      body?.options?.stepId,
+    );
+
+    if (!result) {
+      return c.json(
+        {
+          success: false,
+          error: "Failed to resume workflow - execution not found or not suspended",
+        } satisfies z.infer<typeof ErrorSchema>,
+        404,
+      );
+    }
+
+    const response = {
+      success: true as const,
+      data: {
+        executionId: result.executionId,
+        startAt: result.startAt instanceof Date ? result.startAt.toISOString() : result.startAt,
+        endAt: result.endAt instanceof Date ? result.endAt.toISOString() : result.endAt,
+        status: result.status,
+        result: result.result,
+      },
+    };
+
+    return c.json(response, 200);
+  } catch (error) {
+    logger.error("Failed to resume workflow:", { error });
+    return c.json(
+      {
+        success: false as const,
+        error: error instanceof Error ? error.message : "Failed to resume workflow",
+      } satisfies z.infer<typeof ErrorSchema>,
+      500,
+    );
+  }
+});
+
+// --- Logging Endpoints ---
+
+// Get logs
+app.openapi(getLogsRoute, (c) => {
+  try {
+    const query = c.req.valid("query");
+    const logBuffer = getGlobalLogBuffer();
+
+    // Build filter from query parameters
+    const filter: LogFilter = {
+      level: query.level,
+      agentId: query.agentId,
+      conversationId: query.conversationId,
+      workflowId: query.workflowId,
+      executionId: query.executionId,
+      since: query.since ? new Date(query.since) : undefined,
+      until: query.until ? new Date(query.until) : undefined,
+      limit: query.limit,
+    };
+
+    const logs = logBuffer.query(filter);
+
+    return c.json(
+      {
+        success: true as const,
+        data: logs,
+        total: logs.length,
+        query,
+      },
+      200,
+    );
+  } catch (error) {
+    logger.error("Failed to get logs:", { error });
+    return c.json(
+      {
+        success: false as const,
+        error: error instanceof Error ? error.message : "Failed to retrieve logs",
+      },
+      500,
+    );
+  }
 });
 
 // Get agent history
@@ -588,7 +885,7 @@ app.openapi(streamRoute, async (c) => {
               try {
                 controller.enqueue(new TextEncoder().encode(data));
               } catch (e) {
-                console.error("Failed to enqueue data:", e);
+                logger.error("Failed to enqueue data:", { error: e });
                 streamClosed = true;
               }
             }
@@ -601,7 +898,7 @@ app.openapi(streamRoute, async (c) => {
                 controller.close();
                 streamClosed = true;
               } catch (e) {
-                console.error("Failed to close controller:", e);
+                logger.error("Failed to close controller:", { error: e });
               }
             }
           };
@@ -785,7 +1082,7 @@ app.openapi(streamRoute, async (c) => {
             }
           } catch (iterationError) {
             // Handle errors during stream iteration
-            console.error("Error during stream iteration:", iterationError);
+            logger.error("Error during stream iteration:", { error: iterationError });
             const errorData = {
               error: (iterationError as Error)?.message ?? "Stream iteration failed",
               timestamp: new Date().toISOString(),
@@ -798,7 +1095,7 @@ app.openapi(streamRoute, async (c) => {
           }
         } catch (error) {
           // Handle errors during initial setup
-          console.error("Error during stream setup:", error);
+          logger.error("Error during stream setup:", { error });
           const errorData = {
             error: error instanceof Error ? error.message : "Stream setup failed",
             timestamp: new Date().toISOString(),
@@ -809,17 +1106,17 @@ app.openapi(streamRoute, async (c) => {
           try {
             controller.enqueue(new TextEncoder().encode(errorMessage));
           } catch (e) {
-            console.error("Failed to enqueue setup error message:", e);
+            logger.error("Failed to enqueue setup error message:", { error: e });
           }
           try {
             controller.close();
           } catch (e) {
-            console.error("Failed to close controller after setup error:", e);
+            logger.error("Failed to close controller after setup error:", { error: e });
           }
         }
       },
       cancel(reason) {
-        console.log("Stream cancelled:", reason);
+        logger.info("Stream cancelled:", reason);
       },
     });
 
@@ -920,7 +1217,7 @@ app.openapi(streamObjectRoute, async (c) => {
 
     // Listen for request abort (when client cancels fetch)
     c.req.raw.signal?.addEventListener("abort", () => {
-      console.log("🛑 API: Client aborted object stream request, stopping agent stream...");
+      logger.info("🛑 API: Client aborted object stream request, stopping agent stream...");
       abortController.abort();
     });
 
@@ -936,7 +1233,7 @@ app.openapi(streamObjectRoute, async (c) => {
               try {
                 controller.enqueue(new TextEncoder().encode(data));
               } catch (e) {
-                console.error("Failed to enqueue data:", e);
+                logger.error("Failed to enqueue data:", { error: e });
                 streamClosed = true;
               }
             }
@@ -949,7 +1246,7 @@ app.openapi(streamObjectRoute, async (c) => {
                 controller.close();
                 streamClosed = true;
               } catch (e) {
-                console.error("Failed to close controller:", e);
+                logger.error("Failed to close controller:", { error: e });
               }
             }
           };
@@ -964,7 +1261,7 @@ app.openapi(streamObjectRoute, async (c) => {
               ...(options as any).provider,
               // Add onError callback to handle streaming errors
               onError: async (error: any) => {
-                console.error("Object stream error occurred:", error);
+                logger.error("Object stream error occurred:", { error });
                 const errorData = {
                   error: error?.message ?? "Object streaming failed",
                   timestamp: new Date().toISOString(),
@@ -1019,7 +1316,7 @@ app.openapi(streamObjectRoute, async (c) => {
             }
           } catch (iterationError) {
             // Handle errors during stream iteration
-            console.error("Error during object stream iteration:", iterationError);
+            logger.error("Error during object stream iteration:", { error: iterationError });
             const errorData = {
               error: (iterationError as Error)?.message ?? "Object stream iteration failed",
               timestamp: new Date().toISOString(),
@@ -1034,7 +1331,7 @@ app.openapi(streamObjectRoute, async (c) => {
           }
         } catch (error) {
           // Handle errors during initial setup
-          console.error("Error during object stream setup:", error);
+          logger.error("Error during object stream setup:", { error });
           const errorData = {
             error: error instanceof Error ? error.message : "Object stream setup failed",
             timestamp: new Date().toISOString(),
@@ -1045,17 +1342,17 @@ app.openapi(streamObjectRoute, async (c) => {
           try {
             controller.enqueue(new TextEncoder().encode(errorMessage));
           } catch (e) {
-            console.error("Failed to enqueue setup error message:", e);
+            logger.error("Failed to enqueue setup error message:", { error: e });
           }
           try {
             controller.close();
           } catch (e) {
-            console.error("Failed to close controller after setup error:", e);
+            logger.error("Failed to close controller after setup error:", { error: e });
           }
         }
       },
       cancel(reason) {
-        console.log("Object Stream cancelled:", reason);
+        logger.info("Object Stream cancelled:", reason);
       },
     });
 
@@ -1080,10 +1377,28 @@ app.openapi(streamObjectRoute, async (c) => {
 // Check for updates
 app.get("/updates", async (c: ApiContext) => {
   try {
-    const updates = await checkForUpdates();
+    const forceRefresh = c.req.query("force") === "true";
 
-    // npm-check package directly provides the bump value (major, minor, patch)
-    // We can use the data as is
+    // Use cache by default, force refresh if requested
+    const updates = await checkForUpdates(undefined, {
+      useCache: true,
+      forceRefresh,
+    });
+
+    // If using cache and not forcing refresh, also trigger background update
+    if (!forceRefresh) {
+      setImmediate(async () => {
+        try {
+          await checkForUpdates(undefined, {
+            useCache: true,
+            forceRefresh: true,
+          });
+        } catch (error) {
+          logger.error("Background update check failed:", { error });
+        }
+      });
+    }
+
     const response: ApiResponse<{
       hasUpdates: boolean;
       updates: PackageUpdateInfo[];
@@ -1120,10 +1435,11 @@ app.post("/updates", async (c: ApiContext) => {
         message: result.message,
         updatedPackages: result.updatedPackages || [],
         updatedAt: new Date().toISOString(),
+        requiresRestart: result.requiresRestart,
       },
     });
   } catch (error) {
-    console.error("Failed to update all packages:", error);
+    logger.error("Failed to update all packages:", { error });
     return c.json(
       {
         success: false,
@@ -1147,10 +1463,11 @@ app.post("/updates/:packageName", async (c: ApiContext) => {
         message: result.message,
         packageName: result.packageName,
         updatedAt: new Date().toISOString(),
+        requiresRestart: result.requiresRestart,
       },
     });
   } catch (error) {
-    console.error("Failed to update package:", error);
+    logger.error("Failed to update package:", { error });
     return c.json(
       {
         success: false,
@@ -1402,7 +1719,7 @@ export const createWebSocketServer = () => {
             }),
           );
         } catch (error) {
-          console.error("[WebSocket] Failed to parse message:", error);
+          logger.error("[WebSocket] Failed to parse message:", { error });
         }
       });
 
@@ -1410,6 +1727,25 @@ export const createWebSocketServer = () => {
     }
 
     // Handle different WebSocket paths
+    if (pathParts[2] === "logs") {
+      // /ws/logs - Real-time log streaming
+      const query = Object.fromEntries(url.searchParams.entries());
+      const filter: LogFilter = {
+        level: query.level as any,
+        agentId: query.agentId,
+        conversationId: query.conversationId,
+        workflowId: query.workflowId,
+        executionId: query.executionId,
+        since: query.since ? new Date(query.since) : undefined,
+        until: query.until ? new Date(query.until) : undefined,
+        limit: query.limit ? Number.parseInt(query.limit) : undefined,
+      };
+
+      logStreamManager.addClient(ws, filter);
+
+      return;
+    }
+
     if (pathParts[2] === "workflows" && pathParts.length >= 4) {
       // /ws/workflows/:id
       const workflowId = decodeURIComponent(pathParts[3]);
@@ -1543,7 +1879,7 @@ export const createWebSocketServer = () => {
     });
 
     ws.on("error", (error) => {
-      console.error("[WebSocket] Error:", error);
+      logger.error("[WebSocket] Error:", { error });
     });
   });
 

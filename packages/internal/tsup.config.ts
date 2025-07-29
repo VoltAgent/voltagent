@@ -27,11 +27,6 @@ export default defineConfig([
   },
   {
     ...baseConfig,
-    outDir: "dist/dev",
-    entry: ["src/dev/index.ts"],
-  },
-  {
-    ...baseConfig,
     outDir: "dist/utils",
     entry: ["src/utils/index.ts"],
   },

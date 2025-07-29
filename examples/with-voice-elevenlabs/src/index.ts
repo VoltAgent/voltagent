@@ -1,4 +1,5 @@
 import { VoltAgent, Agent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { ElevenLabsVoiceProvider } from "@voltagent/voice";
 import { openai } from "@ai-sdk/openai";
@@ -29,10 +30,18 @@ const agent = new Agent({
 });
 
 // Create the VoltAgent with our voice-enabled agent
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-voice-elevenlabs",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });
 
 (async () => {

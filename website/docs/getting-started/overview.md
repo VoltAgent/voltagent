@@ -15,7 +15,7 @@ Instead of building everything from scratch, VoltAgent provides ready-made build
 - **Connect to Anything**: VoltAgent helps your AI connect to other websites, tools, or data sources, allowing it to perform real tasks.
 - **Memory**: It helps the AI remember past conversations and learn, making interactions more natural and helpful.
 - **Works with Many AI Brains**: You're not locked into one AI provider. VoltAgent can work with popular AI models from OpenAI (like ChatGPT), Google, Anthropic, and others.
-- **Quick Start Tools (`create-voltagent-app`, `@voltagent/cli`)**: Helpers to get developers up and running with a new AI project quickly.
+- **Quick Start Tools (`create-voltagent-app`, `@voltagent/cli`)**: Helpers to get developers up and running with a new AI project quickly. The create-voltagent-app CLI provides an interactive setup with AI provider selection, automatic dependency installation, and IDE configuration.
 
 To easily monitor and manage the agents you build with VoltAgent, there's a complementary tool called **[VoltOps LLM Observability Platform](https://console.voltagent.dev/)** (available separately). It provides a user-friendly interface, bridging the gap between coding flexibility and no-code convenience.
 

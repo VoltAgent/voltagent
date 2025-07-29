@@ -3,7 +3,8 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import { devLogger } from "@voltagent/internal/dev";
+import { LoggerProxy } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
 import { safeJsonParse } from "../../utils";
@@ -17,6 +18,7 @@ import type {
   MessageFilterOptions,
 } from "../types";
 import { createWorkflowTables } from "../migrations/workflow-tables";
+import { addSuspendedStatusMigration } from "../migrations/add-suspended-status";
 import { LibSQLWorkflowExtension } from "./workflow-extension";
 
 /**
@@ -28,7 +30,7 @@ import { LibSQLWorkflowExtension } from "./workflow-extension";
  * - Query builder pattern for flexible data retrieval
  * - Pagination support
  *
- * @see {@link https://voltagent.ai/docs/agents/memory/libsql | LibSQL Storage Documentation}
+ * @see {@link https://voltagent.dev/docs/agents/memory/libsql | LibSQL Storage Documentation}
  * Function to add a delay between 0-0 seconds for debugging
  */
 async function debugDelay(): Promise<void> {
@@ -89,12 +91,14 @@ export class LibSQLStorage implements Memory {
   private options: LibSQLStorageOptions;
   private initialized: Promise<void>;
   private workflowExtension: LibSQLWorkflowExtension;
+  private logger: Logger;
 
   /**
    * Create a new LibSQL storage
    * @param options Configuration options
    */
   constructor(options: LibSQLStorageOptions) {
+    this.logger = new LoggerProxy({ component: "libsql-storage" });
     this.options = {
       storageLimit: options.storageLimit || 100,
       tablePrefix: options.tablePrefix || "voltagent_memory",
@@ -160,7 +164,7 @@ export class LibSQLStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options?.debug) {
-      devLogger.info(`[LibSQLStorage] ${message}`, data || "");
+      this.logger.debug(`${message}`, data || "");
     }
   }
 
@@ -171,6 +175,10 @@ export class LibSQLStorage implements Memory {
     try {
       await createWorkflowTables(this.client, this.options.tablePrefix);
       this.debug("Workflow tables initialized successfully");
+
+      // Run migrations
+      await addSuspendedStatusMigration(this.client, this.options.tablePrefix);
+      this.debug("Workflow migrations applied successfully");
     } catch (error) {
       this.debug("Error initializing workflow tables:", error);
       // Don't throw error to avoid breaking existing functionality
@@ -223,7 +231,9 @@ export class LibSQLStorage implements Memory {
           input TEXT,
           output TEXT,
           usage TEXT,
-          metadata TEXT
+          metadata TEXT,
+          userId TEXT,
+          conversationId TEXT
         )
       `);
 
@@ -353,12 +363,12 @@ export class LibSQLStorage implements Memory {
 
       if (migrationResult.success) {
         if ((migrationResult.migratedCount || 0) > 0) {
-          devLogger.info(
+          this.logger.info(
             `${migrationResult.migratedCount} conversation records successfully migrated`,
           );
         }
       } else {
-        devLogger.error("Conversation migration error:", migrationResult.error);
+        this.logger.error("Conversation migration error:", migrationResult.error);
       }
     } catch (error) {
       this.debug("Error migrating conversation schema:", error);
@@ -369,7 +379,7 @@ export class LibSQLStorage implements Memory {
       const migrationResult = await this.migrateAgentHistorySchema();
 
       if (!migrationResult.success) {
-        devLogger.error("Agent history schema migration error:", migrationResult.error);
+        this.logger.error("Agent history schema migration error:", migrationResult.error);
       }
     } catch (error) {
       this.debug("Error migrating agent history schema:", error);
@@ -382,16 +392,16 @@ export class LibSQLStorage implements Memory {
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
-          devLogger.info(`${result.migratedCount} records successfully migrated`);
+          this.logger.info(`${result.migratedCount} records successfully migrated`);
         }
       } else {
-        devLogger.error("Migration error:", result.error);
+        this.logger.error("Migration error:", result.error);
 
         // Restore from backup in case of error
         const restoreResult = await this.migrateAgentHistoryData({});
 
         if (restoreResult.success) {
-          devLogger.info("Successfully restored from backup");
+          this.logger.info("Successfully restored from backup");
         }
       }
     } catch (error) {
@@ -422,7 +432,15 @@ export class LibSQLStorage implements Memory {
     // Add delay for debugging
     await debugDelay();
 
-    const { userId = "default", conversationId = "default", limit, before, after, role } = options;
+    const {
+      userId = "default",
+      conversationId = "default",
+      limit,
+      before,
+      after,
+      role,
+      types,
+    } = options;
 
     const messagesTableName = `${this.options.tablePrefix}_messages`;
     const conversationsTableName = `${this.options.tablePrefix}_conversations`;
@@ -465,16 +483,25 @@ export class LibSQLStorage implements Memory {
         args.push(role);
       }
 
+      // Add types filter
+      if (types) {
+        const placeholders = types.map(() => "?").join(", ");
+        conditions.push(`m.type IN (${placeholders})`);
+        args.push(...types);
+      }
+
       // Add WHERE clause if we have conditions
       if (conditions.length > 0) {
         sql += ` WHERE ${conditions.join(" AND ")}`;
       }
 
       // Add ordering and limit
-      sql += " ORDER BY m.created_at ASC";
+      // When limit is specified, we need to get the most recent messages
       if (limit && limit > 0) {
-        sql += " LIMIT ?";
+        sql += " ORDER BY m.created_at DESC LIMIT ?";
         args.push(limit);
+      } else {
+        sql += " ORDER BY m.created_at ASC";
       }
 
       const result = await this.client.execute({
@@ -482,13 +509,21 @@ export class LibSQLStorage implements Memory {
         args,
       });
 
-      return result.rows.map((row) => ({
+      // Map the results
+      const messages = result.rows.map((row) => ({
         id: row.message_id as string,
         role: row.role as BaseMessage["role"],
         content: row.content as string,
         type: row.type as "text" | "tool-call" | "tool-result",
         createdAt: row.created_at as string,
       }));
+
+      // If we used DESC order with limit, reverse to get chronological order
+      if (limit && limit > 0) {
+        return messages.reverse();
+      }
+
+      return messages;
     } catch (error) {
       this.debug("Error getting messages:", error);
       throw new Error("Failed to get messages from LibSQL database");
@@ -1102,7 +1137,7 @@ export class LibSQLStorage implements Memory {
    *
    * @param options Query options for filtering and pagination
    * @returns Promise that resolves to an array of conversations matching the criteria
-   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#querying-conversations | Querying Conversations}
+   * @see {@link https://voltagent.dev/docs/agents/memory/libsql#querying-conversations | Querying Conversations}
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     await this.initialized;
@@ -1173,7 +1208,7 @@ export class LibSQLStorage implements Memory {
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
    * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   * @see {@link https://voltagent.ai/docs/agents/memory/libsql#conversation-messages | Getting Conversation Messages}
+   * @see {@link https://voltagent.dev/docs/agents/memory/libsql#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,
@@ -2666,6 +2701,16 @@ export class LibSQLStorage implements Memory {
       // Check if columns already exist
       const hasUserIdColumn = tableInfo.rows.some((row) => row.name === "userId");
       const hasConversationIdColumn = tableInfo.rows.some((row) => row.name === "conversationId");
+
+      // If both columns already exist, skip migration
+      if (hasUserIdColumn && hasConversationIdColumn) {
+        this.debug("Both userId and conversationId columns already exist, skipping migration");
+
+        // Set migration flag
+        await this.setMigrationFlag("agent_history_schema_migration", 0);
+
+        return { success: true };
+      }
 
       // Add userId column if it doesn't exist
       if (!hasUserIdColumn) {
