@@ -494,7 +494,7 @@ const agent = new Agent({
   name: "Assistant",
   instructions: "Helpful assistant",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o", { temperature: 0.7 }),
+  model: openai("gpt-4o"),
   // Memory automatic - no configuration needed
 });
 ```
