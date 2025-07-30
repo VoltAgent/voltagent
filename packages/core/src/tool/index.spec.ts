@@ -17,6 +17,10 @@ describe("Tool", () => {
           param1: z.string(),
           param2: z.number().optional(),
         }),
+        output: z.object({
+          param1: z.string(),
+          param2: z.number().optional(),
+        }),
         execute: vi.fn(),
       };
 
@@ -33,6 +37,7 @@ describe("Tool", () => {
       const options = {
         name: "testTool",
         parameters: z.object({}),
+        output: z.object({}),
         description: "A test tool",
         execute: vi.fn(),
       };
@@ -46,6 +51,7 @@ describe("Tool", () => {
       const options = {
         name: "testTool",
         parameters: z.object({}),
+        output: z.object({}),
         description: "A test tool",
         execute: vi.fn(),
       };

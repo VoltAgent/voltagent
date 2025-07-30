@@ -16,7 +16,7 @@ export type AgentTool = BaseTool;
 /**
  * Tool options for creating a new tool
  */
-export type ToolOptions<T extends ToolSchema = ToolSchema> = {
+export type ToolOptions<T extends ToolSchema = ToolSchema, O extends ToolSchema = ToolSchema> = {
   /**
    * Unique identifier for the tool
    */
@@ -38,15 +38,21 @@ export type ToolOptions<T extends ToolSchema = ToolSchema> = {
   parameters: T;
 
   /**
+   * Tool output schema
+   */
+  output: O;
+
+  /**
    * Function to execute when the tool is called
    */
-  execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
+  execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<z.infer<O>>;
 };
 
 /**
  * Tool class for defining tools that agents can use
  */
-export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.infer<T>> */ {
+export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema = ToolSchema> {
+  /* implements BaseTool<z.infer<T>> */
   /**
    * Unique identifier for the tool
    */
@@ -68,14 +74,19 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
   readonly parameters: T;
 
   /**
+   * Tool parameter schema
+   */
+  readonly output?: O;
+
+  /**
    * Function to execute when the tool is called
    */
-  readonly execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<unknown>;
+  readonly execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<z.infer<O>>;
 
   /**
    * Create a new tool
    */
-  constructor(options: ToolOptions<T>) {
+  constructor(options: ToolOptions<T, O>) {
     if (!options.name) {
       throw new Error("Tool name is required");
     }
@@ -94,6 +105,7 @@ export class Tool<T extends ToolSchema = ToolSchema> /* implements BaseTool<z.in
     this.name = options.name;
     this.description = options.description || "";
     this.parameters = options.parameters;
+    this.output = options.output;
     this.execute = options.execute;
   }
 }
