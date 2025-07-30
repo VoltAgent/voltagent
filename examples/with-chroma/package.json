@@ -28,7 +28,7 @@
     "@voltagent/logger": "^0.1.1",
     "@voltagent/vercel-ai": "^0.1.16",
     "chromadb": "^3.0.4",
-    "zod": "3.24.2"
+    "zod": "4.0.14"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
