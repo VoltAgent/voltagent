@@ -1,5 +1,5 @@
 import { createTool } from "@voltagent/core";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 /**
  * A tool for fetching weather information for a given location

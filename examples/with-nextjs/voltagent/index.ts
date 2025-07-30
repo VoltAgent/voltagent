@@ -1,7 +1,7 @@
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { openai } from "@ai-sdk/openai";
 

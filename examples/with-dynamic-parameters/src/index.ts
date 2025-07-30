@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 const greetingTool = createTool({
   name: "get_greeting",
