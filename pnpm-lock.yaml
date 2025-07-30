@@ -268,21 +268,33 @@ importers:
       '@ai-sdk/openai':
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
-      '@voltagent/cli':
-        specifier: ^0.1.9
-        version: link:../../packages/cli
+      '@ai-sdk/react':
+        specifier: ^1.0.14
+        version: 1.2.12(react@19.1.0)(zod@3.24.2)
+      '@libsql/client':
+        specifier: 0.15.0
+        version: 0.15.0
       '@voltagent/core':
         specifier: ^0.1.68
         version: link:../../packages/core
-      '@voltagent/logger':
-        specifier: ^0.1.1
-        version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.15
         version: link:../../packages/vercel-ai
-      readline:
-        specifier: ^1.3.0
-        version: 1.3.0
+      '@voltagent/vercel-ui':
+        specifier: ^0.1.7
+        version: link:../../packages/vercel-ui
+      ai:
+        specifier: ^4.0.0
+        version: 4.3.16(react@19.1.0)(zod@3.24.2)
+      next:
+        specifier: 15.3.1
+        version: 15.3.1(@babel/core@7.27.1)(react-dom@19.1.0)(react@19.1.0)
+      react:
+        specifier: ^19.0.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.1.0(react@19.1.0)
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -290,9 +302,12 @@ importers:
       '@types/node':
         specifier: ^22.13.5
         version: 22.15.21
-      tsx:
-        specifier: ^4.19.3
-        version: 4.19.4
+      '@types/react':
+        specifier: ^19
+        version: 19.1.2
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.1.2(@types/react@19.1.2)
       typescript:
         specifier: ^5.8.2
         version: 5.8.3
@@ -725,9 +740,6 @@ importers:
       next:
         specifier: 15.3.1
         version: 15.3.1(@babel/core@7.27.1)(react-dom@19.1.0)(react@19.1.0)
-      npm-check-updates:
-        specifier: ^17.1.18
-        version: 17.1.18
       postcss:
         specifier: ^8.5.3
         version: 8.5.3
@@ -6718,10 +6730,10 @@ packages:
   /@libsql/client@0.15.0:
     resolution: {integrity: sha512-AkJg9mxnAVCtHAVndZ8YwxqG43nSYVNZHAEX55MZ0R06rBcCoYLwjAr8grxC02/tNZpf4KMJj+BVPqNnQOD8ZQ==}
     dependencies:
-      '@libsql/core': 0.15.0
+      '@libsql/core': 0.15.4
       '@libsql/hrana-client': 0.7.0
       js-base64: 3.7.7
-      libsql: 0.5.1
+      libsql: 0.5.8
       promise-limit: 2.7.0
     transitivePeerDependencies:
       - bufferutil
@@ -6741,37 +6753,15 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@libsql/core@0.15.0:
-    resolution: {integrity: sha512-8SReMzkCPmqoDl1tkAa9FCmoxDmiiuDM2eM8cTlKnMD6xG2jUczvckYM/x7VCWy0O9zu0LR/u7sEYEd2CPPTJA==}
-    dependencies:
-      js-base64: 3.7.7
-    dev: false
-
   /@libsql/core@0.15.4:
     resolution: {integrity: sha512-NMvh6xnn3vrcd7DNehj0HiJcRWB2a8hHhJUTkOBej3Pf3KB21HOmdOUjXxJ5pGbjWXh4ezQBmHtF5ozFhocXaA==}
     dependencies:
       js-base64: 3.7.7
     dev: false
 
-  /@libsql/darwin-arm64@0.5.1:
-    resolution: {integrity: sha512-ETWRV8+h2l1P4/BB+ct1yWoBJMokUfCLe8W7TEbGo/9mAqk4NWkacVlAJgRdVIFQsA+3/vrQF7LyaIQOSEELTg==}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@libsql/darwin-arm64@0.5.8:
     resolution: {integrity: sha512-dJRfwCHAKOIgysMbB+PBo3ZmCVuGC02fH57kFEFlqbbUv6wnAZV5g7GErQIv4IlC4VPKAS4RL20fjLUgXE+0Xg==}
     cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/darwin-x64@0.5.1:
-    resolution: {integrity: sha512-zB1Sid7vTBt/PiiLyQmw9AXZZv3MziNRx/rJ6xc/HTUYG7c2QHwOMikVuad1Lafvvf3OyGYSAPHKg9hdvNFP9A==}
-    cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: false
@@ -6812,24 +6802,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@libsql/linux-arm64-gnu@0.5.1:
-    resolution: {integrity: sha512-RbDc3fcRH5gjg2UUsMTPncSMCqTZ6re59t4jhNFpaLb3n2raD8S3XfvMq9LFqirzK+JDKHhxRPTow0E+QLaLJQ==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@libsql/linux-arm64-gnu@0.5.8:
     resolution: {integrity: sha512-6HHZlPbMu+cmCJafg/dwOcWFMu07hTB5teMKU5ke66kqeWLRBnOs5/DnZGVz6q0k+Z4L4UTRbdrnCklR3GmvFg==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/linux-arm64-musl@0.5.1:
-    resolution: {integrity: sha512-JwK6Ne8dmtt+D+0zESwKvrjnylSDHNN7Mt9gb+TbWZZVvmro8n/ApvRVJh8ZO3R7dH32rUJoc2cQmKD6B691sA==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
@@ -6844,24 +6818,8 @@ packages:
     dev: false
     optional: true
 
-  /@libsql/linux-x64-gnu@0.5.1:
-    resolution: {integrity: sha512-9U1yo0H8OaxGsVPQFDm/SrQjhyMFUHinmfPOwQcLjcnWwv1GqfNdYlGnp2ZfdJr2QOx7k5klouJjJgy8KzhY4g==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@libsql/linux-x64-gnu@0.5.8:
     resolution: {integrity: sha512-HUWxOvLE5W287O/vaHWFpZMqaaebEBZvcUqJJ/E+IcC9kmKc6GqDW+fJkfPfosrpGyPNbYDj0w9pIcck0l/oeA==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/linux-x64-musl@0.5.1:
-    resolution: {integrity: sha512-2TEX6SJqi88wPbv1ZHiTHtqaWOf+Mj7L8jOSgQY/aMoPzV5VFtDFF68ApIUNR6L+4eMwlD28NpahwJf8ilWYIw==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
@@ -6872,14 +6830,6 @@ packages:
     resolution: {integrity: sha512-hfhkPwqzFroU01xUB7ZXFw3bP+jqcGolGLyhEkeh/Rsoune0ucm1KPrU2tqTBqQP4a7lL0nSL1A37nfjIO61Hw==}
     cpu: [x64]
     os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/win32-x64-msvc@0.5.1:
-    resolution: {integrity: sha512-rOtBBJhLuCeSgXBWIRNTLADdSLfwsII6za/ci5+XJKSiSi0STO4bcGEfVKLEJ6HDqdCJ2zdH1WGc9rTwhsUB0g==}
-    cpu: [x64]
-    os: [win32]
     requiresBuild: true
     dev: false
     optional: true
@@ -11038,7 +10988,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001716
+      caniuse-lite: 1.0.30001723
       electron-to-chromium: 1.5.149
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.24.5)
@@ -11277,12 +11227,8 @@ packages:
     resolution: {integrity: sha512-faRs/AW3jA9nTwmJBSO1PQ6L/EOgsB5HMQQq4iCu5zhPgVVgO/pZRHlmatwijZKetFw8/Pr4q6dEN8sJuq8qTw==}
     dev: false
 
-  /caniuse-lite@1.0.30001716:
-    resolution: {integrity: sha512-49/c1+x3Kwz7ZIWt+4DvK3aMJy9oYXXG6/97JKsnjdCk/6n9vVyWL8NAwVt95Lwt9eigI10Hl782kDfZUUlRXw==}
-
   /caniuse-lite@1.0.30001723:
     resolution: {integrity: sha512-1R/elMjtehrFejxwmexeXAtae5UO9iSyFn6G/I806CYC/BLyyBk1EPhrKBkWhy6wM6Xnm47dSJQec+tLJ39WHw==}
-    dev: true
 
   /ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -15745,23 +15691,6 @@ packages:
       - supports-color
     dev: true
 
-  /libsql@0.5.1:
-    resolution: {integrity: sha512-ePnm5zj6T//GKiTY/v5b0a272NX73hqdRORmD8gzz1nUui9051dtTt6t0XCrIqxwJAHSmQiZcfAx3YSASn9Y+A==}
-    cpu: [x64, arm64, wasm32]
-    os: [darwin, linux, win32]
-    dependencies:
-      '@neon-rs/load': 0.0.4
-      detect-libc: 2.0.2
-    optionalDependencies:
-      '@libsql/darwin-arm64': 0.5.1
-      '@libsql/darwin-x64': 0.5.1
-      '@libsql/linux-arm64-gnu': 0.5.1
-      '@libsql/linux-arm64-musl': 0.5.1
-      '@libsql/linux-x64-gnu': 0.5.1
-      '@libsql/linux-x64-musl': 0.5.1
-      '@libsql/win32-x64-msvc': 0.5.1
-    dev: false
-
   /libsql@0.5.8:
     resolution: {integrity: sha512-+OopMI1wM/NvAJTHf3O3+beHd1YfKLnSVsOGBl3/7UBDZ4ydVadkbBk5Hjjs9d3ALC5rBaftMY59AvwyC8MzPw==}
     cpu: [x64, arm64, wasm32]
@@ -18816,10 +18745,6 @@ packages:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
     dev: true
-
-  /readline@1.3.0:
-    resolution: {integrity: sha512-k2d6ACCkiNYz222Fs/iNze30rRJ1iIicW7JuX/7/cozvih6YCkFZH+J6mAFDVgv0dRBaAyr4jDqC95R2y4IADg==}
-    dev: false
 
   /real-require@0.2.0:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
