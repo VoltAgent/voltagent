@@ -1,5 +1,32 @@
 # @voltagent/core
 
+## 0.1.70
+
+### Patch Changes
+
+- [#400](https://github.com/VoltAgent/voltagent/pull/400) [`57825dd`](https://github.com/VoltAgent/voltagent/commit/57825ddb359177b5abc3696f3c54e5fc873ea621) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat(core): Add in new `andWorkflow` step to allow for running a workflow from another workflow
+
+- [#436](https://github.com/VoltAgent/voltagent/pull/436) [`89e4ef1`](https://github.com/VoltAgent/voltagent/commit/89e4ef1f0e84f3f42bb208cf70f39cca0898ddc7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: make tool errors non-fatal for better agent resilience - #430 & #349
+
+  Previously, when tools encountered errors (timeouts, connection issues, etc.), the entire agent execution would fail. This change improves resilience by:
+
+  - Catching tool execution errors and returning them as structured results instead of throwing
+  - Allowing the LLM to see tool errors and decide whether to retry or use alternative approaches
+  - Including error details (message and stack trace) in the tool result for debugging
+  - Ensuring agent execution only fails when it reaches maxSteps or the LLM cannot proceed
+
+  The error result format includes:
+
+  ```json
+  {
+    "error": true,
+    "message": "Error message",
+    "stack": "Error stack trace (optional)"
+  }
+  ```
+
+  This change makes agents more robust when dealing with unreliable external tools or transient network issues.
+
 ## 0.1.69
 
 ### Patch Changes
