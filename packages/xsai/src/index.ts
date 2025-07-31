@@ -25,7 +25,6 @@ import type {
   TextPart,
   Tool,
 } from "xsai";
-import { toAsyncIterator } from "xsai";
 import type { z } from "zod";
 import { createMappedFullStream } from "./utils";
 
