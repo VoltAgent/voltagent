@@ -45,7 +45,7 @@ jobs:
     concurrency:
       group: ${{ github.ref }}-pr-build-${{ matrix.node-version }}
       cancel-in-progress: true
-    name: Build & Test (Node ${{ matrix.node-version }})
+    name: Build (Node ${{ matrix.node-version }})
     env:
       NODE_OPTIONS: --max_old_space_size=8192
     steps:
@@ -65,8 +65,51 @@ jobs:
         run: pnpm publint:all
       - name: Are The Types Wrong
         run: pnpm attw:all
-      - name: Test
-        run: pnpm test:all --skip-nx-cache
+
+  test-packages:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        package:
+          - anthropic-ai
+          - cli
+          - core
+          - create-voltagent-app
+          - docs-mcp
+          - google-ai
+          - groq-ai
+          - internal
+          - langfuse-exporter
+          - logger
+          - postgres
+          - sdk
+          - supabase
+          - vercel-ai
+          - vercel-ai-exporter
+          - vercel-ui
+          - voice
+          - xsai
+      fail-fast: false
+    concurrency:
+      group: ${{ github.ref }}-test-${{ matrix.package }}
+      cancel-in-progress: true
+    name: Test @voltagent/${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Install Dependencies
+        run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+      - name: Build Package and Dependencies
+        run: pnpm build --filter @voltagent/${{ matrix.package }}...
+      - name: Test Package
+        run: pnpm test --filter @voltagent/${{ matrix.package }}
 
   postgres-integration:
     runs-on: ubuntu-latest
