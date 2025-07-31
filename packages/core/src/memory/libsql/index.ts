@@ -3,7 +3,8 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import { devLogger } from "@voltagent/internal/dev";
+import { LoggerProxy } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
 import { safeJsonParse } from "../../utils";
@@ -90,12 +91,14 @@ export class LibSQLStorage implements Memory {
   private options: LibSQLStorageOptions;
   private initialized: Promise<void>;
   private workflowExtension: LibSQLWorkflowExtension;
+  private logger: Logger;
 
   /**
    * Create a new LibSQL storage
    * @param options Configuration options
    */
   constructor(options: LibSQLStorageOptions) {
+    this.logger = new LoggerProxy({ component: "libsql-storage" });
     this.options = {
       storageLimit: options.storageLimit || 100,
       tablePrefix: options.tablePrefix || "voltagent_memory",
@@ -161,7 +164,7 @@ export class LibSQLStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options?.debug) {
-      devLogger.info(`[LibSQLStorage] ${message}`, data || "");
+      this.logger.debug(`${message}`, data || "");
     }
   }
 
@@ -360,12 +363,12 @@ export class LibSQLStorage implements Memory {
 
       if (migrationResult.success) {
         if ((migrationResult.migratedCount || 0) > 0) {
-          devLogger.info(
+          this.logger.info(
             `${migrationResult.migratedCount} conversation records successfully migrated`,
           );
         }
       } else {
-        devLogger.error("Conversation migration error:", migrationResult.error);
+        this.logger.error("Conversation migration error:", migrationResult.error);
       }
     } catch (error) {
       this.debug("Error migrating conversation schema:", error);
@@ -376,7 +379,7 @@ export class LibSQLStorage implements Memory {
       const migrationResult = await this.migrateAgentHistorySchema();
 
       if (!migrationResult.success) {
-        devLogger.error("Agent history schema migration error:", migrationResult.error);
+        this.logger.error("Agent history schema migration error:", migrationResult.error);
       }
     } catch (error) {
       this.debug("Error migrating agent history schema:", error);
@@ -389,16 +392,16 @@ export class LibSQLStorage implements Memory {
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
-          devLogger.info(`${result.migratedCount} records successfully migrated`);
+          this.logger.info(`${result.migratedCount} records successfully migrated`);
         }
       } else {
-        devLogger.error("Migration error:", result.error);
+        this.logger.error("Migration error:", result.error);
 
         // Restore from backup in case of error
         const restoreResult = await this.migrateAgentHistoryData({});
 
         if (restoreResult.success) {
-          devLogger.info("Successfully restored from backup");
+          this.logger.info("Successfully restored from backup");
         }
       }
     } catch (error) {
@@ -429,7 +432,15 @@ export class LibSQLStorage implements Memory {
     // Add delay for debugging
     await debugDelay();
 
-    const { userId = "default", conversationId = "default", limit, before, after, role } = options;
+    const {
+      userId = "default",
+      conversationId = "default",
+      limit,
+      before,
+      after,
+      role,
+      types,
+    } = options;
 
     const messagesTableName = `${this.options.tablePrefix}_messages`;
     const conversationsTableName = `${this.options.tablePrefix}_conversations`;
@@ -472,16 +483,25 @@ export class LibSQLStorage implements Memory {
         args.push(role);
       }
 
+      // Add types filter
+      if (types) {
+        const placeholders = types.map(() => "?").join(", ");
+        conditions.push(`m.type IN (${placeholders})`);
+        args.push(...types);
+      }
+
       // Add WHERE clause if we have conditions
       if (conditions.length > 0) {
         sql += ` WHERE ${conditions.join(" AND ")}`;
       }
 
       // Add ordering and limit
-      sql += " ORDER BY m.created_at ASC";
+      // When limit is specified, we need to get the most recent messages
       if (limit && limit > 0) {
-        sql += " LIMIT ?";
+        sql += " ORDER BY m.created_at DESC LIMIT ?";
         args.push(limit);
+      } else {
+        sql += " ORDER BY m.created_at ASC";
       }
 
       const result = await this.client.execute({
@@ -489,13 +509,21 @@ export class LibSQLStorage implements Memory {
         args,
       });
 
-      return result.rows.map((row) => ({
+      // Map the results
+      const messages = result.rows.map((row) => ({
         id: row.message_id as string,
         role: row.role as BaseMessage["role"],
         content: row.content as string,
         type: row.type as "text" | "tool-call" | "tool-result",
         createdAt: row.created_at as string,
       }));
+
+      // If we used DESC order with limit, reverse to get chronological order
+      if (limit && limit > 0) {
+        return messages.reverse();
+      }
+
+      return messages;
     } catch (error) {
       this.debug("Error getting messages:", error);
       throw new Error("Failed to get messages from LibSQL database");

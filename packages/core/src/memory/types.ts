@@ -47,6 +47,12 @@ export type MessageFilterOptions = {
    * Only retrieve messages with this role
    */
   role?: BaseMessage["role"];
+
+  /**
+   * Only retrieve messages with these types
+   * If not specified, all message types are returned
+   */
+  types?: Array<"text" | "tool-call" | "tool-result">;
 };
 
 /**

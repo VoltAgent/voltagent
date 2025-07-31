@@ -1,6 +1,6 @@
 {
   "name": "create-voltagent-app",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "Create VoltAgent applications with one command",
   "license": "MIT",
   "main": "dist/index.js",

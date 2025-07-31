@@ -1,4 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
+import { LoggerProxy } from "../../logger";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type {
   WorkflowHistoryEntry,
@@ -19,12 +20,14 @@ export class WorkflowMemoryManager {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // @ts-ignore
   private _exporter?: VoltAgentExporter;
+  private logger: Logger;
 
   constructor(
     private storage: Memory,
     _exporter?: VoltAgentExporter,
   ) {
     this._exporter = _exporter;
+    this.logger = new LoggerProxy({ component: "workflow-memory-manager" });
   }
 
   /**
@@ -44,7 +47,7 @@ export class WorkflowMemoryManager {
     options: CreateWorkflowExecutionOptions = {},
   ): Promise<WorkflowHistoryEntry> {
     const entry: WorkflowHistoryEntry = {
-      id: crypto.randomUUID(),
+      id: options.executionId || crypto.randomUUID(),
       workflowName: workflowName,
       workflowId,
       status: "running",
@@ -64,7 +67,7 @@ export class WorkflowMemoryManager {
     };
 
     await this.storage.storeWorkflowHistory(entry);
-    devLogger.debug(`[WorkflowMemoryManager] Created workflow execution: ${entry.id}`);
+    this.logger.trace(`Created workflow execution: ${entry.id}`);
 
     // Export to telemetry
     // TODO: Add workflow-specific telemetry methods to VoltAgentExporter
@@ -90,7 +93,7 @@ export class WorkflowMemoryManager {
     id: string,
     updates: Partial<WorkflowHistoryEntry>,
   ): Promise<WorkflowHistoryEntry | null> {
-    devLogger.debug(`[WorkflowMemoryManager] Updating workflow execution ${id}`, {
+    this.logger.trace(`Updating workflow execution ${id}`, {
       updates: {
         status: updates.status,
         hasSuspension: !!updates.metadata?.suspension,
@@ -104,9 +107,7 @@ export class WorkflowMemoryManager {
     };
 
     await this.storage.updateWorkflowHistory(id, updatedEntry);
-    devLogger.info(
-      `[WorkflowMemoryManager] Updated workflow execution: ${id} with status: ${updates.status}`,
-    );
+    this.logger.trace(`Updated workflow execution: ${id} with status: ${updates.status}`);
 
     // Export update to telemetry
     // TODO: Add workflow-specific telemetry methods to VoltAgentExporter
@@ -180,7 +181,7 @@ export class WorkflowMemoryManager {
     };
 
     await this.storage.storeWorkflowStep(step);
-    devLogger.debug(`[WorkflowMemoryManager] Recorded step start: ${step.id}`);
+    this.logger.trace(`Recorded step start: ${step.id}`);
 
     return step;
   }
@@ -203,7 +204,7 @@ export class WorkflowMemoryManager {
     };
 
     await this.storage.updateWorkflowStep(stepId, updates);
-    devLogger.debug(`[WorkflowMemoryManager] Recorded step end: ${stepId}`);
+    this.logger.trace(`Recorded step end: ${stepId}`);
 
     return this.storage.getWorkflowStep(stepId);
   }
@@ -222,7 +223,7 @@ export class WorkflowMemoryManager {
     };
 
     await this.storage.storeWorkflowTimelineEvent(fullEvent);
-    devLogger.debug(`[WorkflowMemoryManager] Recorded timeline event: ${event.eventId}`);
+    this.logger.trace(`Recorded timeline event: ${event.eventId}`);
 
     // Export event to telemetry
     // TODO: Add workflow-specific telemetry methods to VoltAgentExporter
@@ -254,7 +255,7 @@ export class WorkflowMemoryManager {
    */
   async deleteExecution(id: string): Promise<void> {
     await this.storage.deleteWorkflowHistoryWithRelated(id);
-    devLogger.debug(`[WorkflowMemoryManager] Deleted workflow execution: ${id}`);
+    this.logger.trace(`Deleted workflow execution: ${id}`);
   }
 
   /**
@@ -262,9 +263,7 @@ export class WorkflowMemoryManager {
    */
   async cleanupOldExecutions(workflowId: string, maxEntries: number): Promise<number> {
     const deletedCount = await this.storage.cleanupOldWorkflowHistories(workflowId, maxEntries);
-    devLogger.debug(
-      `[WorkflowMemoryManager] Cleaned up ${deletedCount} old executions for workflow: ${workflowId}`,
-    );
+    this.logger.trace(`Cleaned up ${deletedCount} old executions for workflow: ${workflowId}`);
     return deletedCount;
   }
 
@@ -295,7 +294,7 @@ export class WorkflowMemoryManager {
     };
 
     await this.storage.updateWorkflowStep(stepId, updatedStep);
-    devLogger.debug(`[WorkflowMemoryManager] Updated workflow step: ${stepId}`);
+    this.logger.trace(`Updated workflow step: ${stepId}`);
 
     return this.storage.getWorkflowStep(stepId);
   }
@@ -319,14 +318,10 @@ export class WorkflowMemoryManager {
    * Store suspension checkpoint data
    */
   async storeSuspensionCheckpoint(executionId: string, suspensionMetadata: any): Promise<void> {
-    devLogger.debug(
-      `[WorkflowMemoryManager] Attempting to store suspension checkpoint for execution ${executionId}`,
-    );
+    this.logger.trace(`Attempting to store suspension checkpoint for execution ${executionId}`);
     const execution = await this.getExecution(executionId);
     if (execution) {
-      devLogger.debug(
-        `[WorkflowMemoryManager] Found execution ${executionId}, updating with suspension metadata`,
-      );
+      this.logger.trace(`Found execution ${executionId}, updating with suspension metadata`);
       await this.updateExecution(executionId, {
         status: "suspended" as any,
         metadata: {
@@ -334,12 +329,10 @@ export class WorkflowMemoryManager {
           suspension: suspensionMetadata,
         },
       });
-      devLogger.info(
-        `[WorkflowMemoryManager] Successfully stored suspension checkpoint for execution ${executionId}`,
-      );
+      this.logger.trace(`Successfully stored suspension checkpoint for execution ${executionId}`);
     } else {
-      devLogger.error(
-        `[WorkflowMemoryManager] Execution ${executionId} not found when trying to store suspension checkpoint`,
+      this.logger.error(
+        `Execution ${executionId} not found when trying to store suspension checkpoint`,
       );
       throw new Error(`Execution ${executionId} not found`);
     }

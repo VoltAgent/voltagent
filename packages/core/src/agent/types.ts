@@ -27,6 +27,7 @@ import type {
   PromptHelper,
 } from "../voltops/types";
 import type { AgentHooks } from "./hooks";
+import type { Logger } from "@voltagent/internal";
 
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
@@ -44,7 +45,9 @@ export type ModelDynamicValue<T> = T | DynamicValue<T>;
 /**
  * Enhanced dynamic value for tools that supports static or dynamic values
  */
-export type ToolsDynamicValue = (Tool<any> | Toolkit)[] | DynamicValue<(Tool<any> | Toolkit)[]>;
+export type ToolsDynamicValue =
+  | (Tool<any, any> | Toolkit)[]
+  | DynamicValue<(Tool<any, any> | Toolkit)[]>;
 
 /**
  * Provider options type for LLM configurations
@@ -187,6 +190,12 @@ export type AgentOptions = {
    * Configuration for supervisor behavior when subAgents are present
    */
   supervisorConfig?: SupervisorConfig;
+
+  /**
+   * Logger instance to use for this agent
+   * If not provided, will use the global logger or create a default one
+   */
+  logger?: Logger;
 } & (
   | {
       /**
@@ -552,6 +561,9 @@ export type OperationContext = {
 
   /** The root OpenTelemetry span for this operation */
   otelSpan?: Span;
+
+  /** Execution-scoped logger with full context (userId, conversationId, executionId) */
+  logger: Logger;
 
   /** Map to store active OpenTelemetry spans for tool calls within this operation */
   toolSpans?: Map<string, Span>; // Key: toolCallId

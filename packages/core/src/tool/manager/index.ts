@@ -1,8 +1,9 @@
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
 import type { BaseTool, ToolExecuteOptions } from "../../agent/providers/base/types";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import { type AgentTool, createTool } from "../index";
 import type { Toolkit } from "../toolkit";
+import { getGlobalLogger, LogEvents, buildToolLogMessage, ActionType } from "../../logger";
 
 /**
  * Status of a tool at any given time
@@ -43,12 +44,17 @@ export class ToolManager {
    * Toolkits managed by this manager.
    */
   private toolkits: Toolkit[] = [];
+  /**
+   * Logger instance
+   */
+  private logger: Logger;
 
   /**
    * Creates a new ToolManager.
    * Accepts both individual tools and toolkits.
    */
-  constructor(items: (AgentTool | Toolkit)[] = []) {
+  constructor(items: (AgentTool | Toolkit)[] = [], logger?: Logger) {
+    this.logger = logger || getGlobalLogger().child({ component: "tool-manager" });
     this.addItems(items);
   }
 
@@ -68,6 +74,7 @@ export class ToolManager {
               description: tool.description || tool.name,
               parameters: tool.parameters,
               execute: tool.execute,
+              outputSchema: tool.outputSchema,
             }) as BaseTool,
         ),
       ); // Explicit cast can help ensure compatibility
@@ -101,7 +108,7 @@ export class ToolManager {
       toolkit.tools.some((t) => t.name === tool.name),
     );
     if (conflictsWithToolkitTool) {
-      devLogger.warn(
+      this.logger.warn(
         `[ToolManager] Warning: Standalone tool name '${tool.name}' conflicts with a tool inside an existing toolkit.`,
       );
     }
@@ -112,6 +119,7 @@ export class ToolManager {
       description: tool.description || tool.name,
       parameters: tool.parameters,
       execute: tool.execute,
+      outputSchema: tool.outputSchema,
     });
 
     // Check if tool exists in the standalone list and replace or add
@@ -157,7 +165,7 @@ export class ToolManager {
           .filter((tk) => tk.name !== toolkit.name)
           .some((tk) => tk.tools.some((t) => t.name === tool.name))
       ) {
-        devLogger.warn(
+        this.logger.warn(
           `[ToolManager] Warning: Tool '${tool.name}' in toolkit '${toolkit.name}' conflicts with an existing tool. Toolkit not added/replaced.`,
         );
         return false;
@@ -169,10 +177,10 @@ export class ToolManager {
       // Before replacing, ensure no name conflicts are introduced by the *new* toolkit's tools
       // (This check is already done above, but double-checking can be safer depending on logic complexity)
       this.toolkits[existingIndex] = toolkit;
-      devLogger.debug(`Replaced toolkit: ${toolkit.name}`);
+      this.logger.debug(`Replaced toolkit: ${toolkit.name}`);
     } else {
       this.toolkits.push(toolkit);
-      devLogger.debug(`Added toolkit: ${toolkit.name}`);
+      this.logger.debug(`Added toolkit: ${toolkit.name}`);
     }
     return true;
   }
@@ -185,7 +193,7 @@ export class ToolManager {
     for (const item of items) {
       // Basic validation of item
       if (!item || !("name" in item)) {
-        devLogger.warn("Skipping invalid item in addItems:", item);
+        this.logger.warn("Skipping invalid item in addItems:", item);
         continue;
       }
 
@@ -194,7 +202,7 @@ export class ToolManager {
         if (item.tools && Array.isArray(item.tools)) {
           this.addToolkit(item);
         } else {
-          devLogger.warn(
+          this.logger.warn(
             `[ToolManager] Skipping toolkit '${item.name}' due to missing or invalid 'tools' array.`,
           );
         }
@@ -203,7 +211,7 @@ export class ToolManager {
         if (typeof item.execute === "function") {
           this.addTool(item);
         } else {
-          devLogger.warn(
+          this.logger.warn(
             `[ToolManager] Skipping tool '${item.name}' due to missing or invalid 'execute' function.`,
           );
         }
@@ -220,7 +228,7 @@ export class ToolManager {
     this.tools = this.tools.filter((t) => t.name !== toolName);
     const removed = this.tools.length < initialLength;
     if (removed) {
-      devLogger.debug(`Removed standalone tool: ${toolName}`);
+      this.logger.debug(`Removed standalone tool: ${toolName}`);
     }
     return removed;
   }
@@ -234,7 +242,7 @@ export class ToolManager {
     this.toolkits = this.toolkits.filter((tk) => tk.name !== toolkitName);
     const removed = this.toolkits.length < initialLength;
     if (removed) {
-      devLogger.debug(`Removed toolkit: ${toolkitName}`);
+      this.logger.debug(`Removed toolkit: ${toolkitName}`);
     }
     return removed;
   }
@@ -242,20 +250,22 @@ export class ToolManager {
   /**
    * Prepare tools for text generation (includes tools from toolkits).
    */
-  prepareToolsForGeneration(dynamicTools?: BaseTool[]): BaseTool[] {
-    let toolsToUse = this.getTools(); // Get the flattened list
+  prepareToolsForGeneration(dynamicTools?: (BaseTool | Toolkit)[]): BaseTool[] {
+    // Start with existing tools
+    let toolsToUse = this.getTools();
+
     if (dynamicTools?.length) {
-      // Filter valid dynamic tools before adding
-      const validDynamicTools = dynamicTools.filter(
-        (dt) => dt?.name && dt?.parameters && typeof dt?.execute === "function", // Apply optional chaining
-      );
-      if (validDynamicTools.length !== dynamicTools.length) {
-        devLogger.warn(
-          "[ToolManager] Some dynamic tools provided to prepareToolsForGeneration were invalid and ignored.",
-        );
-      }
-      toolsToUse = [...toolsToUse, ...validDynamicTools];
+      // Create a temporary manager to process dynamic items using the same logic as static items
+      const tempManager = new ToolManager([], this.logger);
+      tempManager.addItems(dynamicTools);
+
+      // Get all tools from the temp manager (handles both tools and toolkits)
+      const dynamicToolsList = tempManager.getTools();
+
+      // Combine with existing tools
+      toolsToUse = [...toolsToUse, ...dynamicToolsList];
     }
+
     return toolsToUse;
   }
 
@@ -308,6 +318,7 @@ export class ToolManager {
           description: toolInToolkit.description || toolInToolkit.name,
           parameters: toolInToolkit.parameters,
           execute: toolInToolkit.execute,
+          outputSchema: toolInToolkit.outputSchema,
         } as BaseTool;
       }
     }
@@ -333,12 +344,84 @@ export class ToolManager {
       throw new Error(`Tool '${toolName}' found but has no executable function.`);
     }
 
+    // Create tool-specific logger
+    const executionId = options?.toolCallId || crypto.randomUUID();
+    const toolLogger = this.logger.child({
+      component: `Tool:${toolName}`,
+      toolName,
+      executionId,
+      agentId: options?.agentId,
+      conversationId: options?.conversationId,
+      userId: options?.userId,
+    });
+
+    const startTime = Date.now();
+
+    // Log tool execution start
+    toolLogger.trace(buildToolLogMessage(toolName, ActionType.START, "Starting execution"), {
+      event: LogEvents.TOOL_EXECUTION_STARTED,
+      toolName,
+      executionId,
+      agentId: options?.agentId,
+      conversationId: options?.conversationId,
+      userId: options?.userId,
+      input: args,
+    });
+
     try {
       // We assume the tool object retrieved by getToolByName has the correct execute signature
-      return await tool.execute(args, options);
+      const result = await tool.execute(args, options);
+
+      const duration = Date.now() - startTime;
+
+      // Log successful execution
+      toolLogger.trace(
+        buildToolLogMessage(toolName, ActionType.COMPLETE, `Completed in ${duration}ms`),
+        {
+          event: LogEvents.TOOL_EXECUTION_COMPLETED,
+          toolName,
+          executionId,
+          agentId: options?.agentId,
+          conversationId: options?.conversationId,
+          userId: options?.userId,
+          duration,
+          success: true,
+          output: result,
+        },
+      );
+
+      return result;
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       // Log the specific error for better debugging
-      devLogger.error(`Error executing tool '${toolName}':`, error);
+      toolLogger.error(
+        buildToolLogMessage(
+          toolName,
+          ActionType.ERROR,
+          error instanceof Error ? error.message : "Unknown error",
+        ),
+        {
+          event: LogEvents.TOOL_EXECUTION_FAILED,
+          toolName,
+          executionId,
+          userId: options?.userId,
+          conversationId: options?.conversationId,
+          agentId: options?.agentId,
+          duration,
+          success: false,
+          error:
+            error instanceof Error
+              ? {
+                  message: error.message,
+                  type: error.constructor?.name || "Error",
+                  // Include stack trace only in development
+                  ...(process.env.NODE_ENV !== "production" && { stack: error.stack }),
+                }
+              : "Unknown error",
+        },
+      );
+
       // Re-throw a more informative error
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to execute tool ${toolName}: ${errorMessage}`);

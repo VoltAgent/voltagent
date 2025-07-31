@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 export const agent = new Agent({
@@ -10,8 +11,15 @@ export const agent = new Agent({
   markdown: true,
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "google-drive-mcp-server",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

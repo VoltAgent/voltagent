@@ -1,28 +1,23 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { z } from "zod";
 import { createWorkflowChain } from "./chain";
-import { LibSQLStorage } from "../memory/libsql";
+import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { WorkflowRegistry } from "./registry";
 
-describe("Step-level Schema Runtime Tests", () => {
+describe.sequential("Step-level Schema Runtime Tests", () => {
   let registry: WorkflowRegistry;
-  let memory: LibSQLStorage;
 
   beforeEach(() => {
     // Clear registry before each test
     registry = WorkflowRegistry.getInstance();
     (registry as any).workflows.clear();
     (registry as any).workflowHistoryManagers.clear();
-
-    // Create in-memory storage
-    memory = new LibSQLStorage({ url: ":memory:" });
-  });
-
-  afterEach(() => {
     vi.clearAllMocks();
   });
   describe("resumeSchema runtime behavior", () => {
     it("should handle resume with step-level resumeSchema", async () => {
+      const memory = createTestLibSQLStorage("step_resume_schema");
+
       const workflow = createWorkflowChain({
         id: "test-resume-runtime",
         name: "Test Resume Runtime",
@@ -110,6 +105,8 @@ describe("Step-level Schema Runtime Tests", () => {
     });
 
     it("should use step resumeSchema over workflow resumeSchema", async () => {
+      const memory = createTestLibSQLStorage("schema_priority");
+
       const workflow = createWorkflowChain({
         id: "test-schema-priority",
         name: "Test Schema Priority",
@@ -174,6 +171,8 @@ describe("Step-level Schema Runtime Tests", () => {
 
   describe("multiple steps with different schemas", () => {
     it("should handle workflow with multiple schema-defined steps", async () => {
+      const memory = createTestLibSQLStorage("multi_schema_steps");
+
       const workflow = createWorkflowChain({
         id: "multi-step-schemas",
         name: "Multi Step Schemas",

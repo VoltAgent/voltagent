@@ -14,6 +14,7 @@ import {
 } from "../event-utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepParallelRace } from "./types";
+import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a race execution step that runs multiple steps simultaneously and returns the first completed result
@@ -21,31 +22,43 @@ import type { WorkflowStepParallelRace } from "./types";
  * @example
  * ```ts
  * const w = createWorkflow(
- *   andRace([
- *     andThen(async (data) => {
- *       // Fast operation
- *       const cacheResult = await checkCache(data.query);
- *       return { source: "cache", result: cacheResult };
- *     }),
- *     andThen(async (data) => {
- *       // Slower operation
- *       const dbResult = await queryDatabase(data.query);
- *       return { source: "database", result: dbResult };
- *     }),
- *     andAgent(
- *       (data) => `Generate fallback response for: ${data.query}`,
- *       agent,
- *       { schema: z.object({ source: z.literal("ai"), result: z.string() }) }
- *     )
- *   ]),
- *   andThen(async (data) => {
- *     // data is the result from whichever step completed first
- *     return { finalResult: data.result, source: data.source };
+ *   andRace({
+ *     id: "race-data-sources",
+ *     steps: [
+ *       andThen({
+ *         id: "check-cache",
+ *         execute: async ({ data }) => {
+ *           // Fast operation
+ *           const cacheResult = await checkCache(data.query);
+ *           return { source: "cache", result: cacheResult };
+ *         }
+ *       }),
+ *       andThen({
+ *         id: "query-database",
+ *         execute: async ({ data }) => {
+ *           // Slower operation
+ *           const dbResult = await queryDatabase(data.query);
+ *           return { source: "database", result: dbResult };
+ *         }
+ *       }),
+ *       andAgent(
+ *         ({ data }) => `Generate fallback response for: ${data.query}`,
+ *         agent,
+ *         { schema: z.object({ source: z.literal("ai"), result: z.string() }) }
+ *       )
+ *     ]
+ *   }),
+ *   andThen({
+ *     id: "process-result",
+ *     execute: async ({ data }) => {
+ *       // data is the result from whichever step completed first
+ *       return { finalResult: data.result, source: data.source };
+ *     }
  *   })
  * );
  * ```
  *
- * @param steps - Array of workflow steps to execute in parallel
+ * @param config - Configuration object with steps array and metadata
  * @returns A workflow step that executes all steps simultaneously and returns the result from the first step to complete
  */
 export function andRace<
@@ -90,7 +103,9 @@ export function andRace<
       try {
         await publishWorkflowEvent(stepStartEvent, state.workflowContext);
       } catch (eventError) {
-        console.warn("Failed to publish workflow step start event:", eventError);
+        getGlobalLogger()
+          .child({ component: "workflow", stepType: "race" })
+          .warn("Failed to publish workflow step start event:", { error: eventError });
       }
 
       try {
@@ -118,7 +133,9 @@ export function andRace<
               await publishWorkflowEvent(subStepStartEvent, workflowContext);
             }
           } catch (eventError) {
-            console.warn(`Failed to publish sub-step ${index} start event:`, eventError);
+            getGlobalLogger()
+              .child({ component: "workflow", stepType: "race" })
+              .warn(`Failed to publish sub-step ${index} start event:`, { error: eventError });
           }
 
           const subState = {
@@ -223,10 +240,11 @@ export function andRace<
             await publishWorkflowEvent(subStepSuccessEvent, state.workflowContext);
           } catch (eventError) {
             const eventType = isWinner ? "winner" : "loser";
-            console.warn(
-              `Failed to publish ${eventType} success event for sub-step ${i}:`,
-              eventError,
-            );
+            getGlobalLogger()
+              .child({ component: "workflow", stepType: "race" })
+              .warn(`Failed to publish ${eventType} success event for sub-step ${i}:`, {
+                error: eventError,
+              });
           }
         }
 
@@ -244,7 +262,9 @@ export function andRace<
         try {
           await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step success event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "race" })
+            .warn("Failed to publish workflow step success event:", { error: eventError });
         }
 
         return finalResult;
@@ -270,7 +290,9 @@ export function andRace<
         try {
           await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step error event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "race" })
+            .warn("Failed to publish workflow step error event:", { error: eventError });
         }
 
         throw error;

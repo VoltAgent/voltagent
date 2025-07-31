@@ -1,6 +1,5 @@
 import path from "node:path";
 import { AI_PROVIDER_CONFIG, type ProjectOptions, type TemplateFile } from "../types";
-import { generateEnvContent } from "./env-manager";
 
 // Determine the correct base path for templates.
 // In the built version, templates are at ../templates relative to dist/
@@ -93,8 +92,21 @@ export const getBaseTemplates = (): TemplateFile[] => {
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/.env.template"),
       targetPath: ".env",
-      transform: (_content: string, options: ProjectOptions) => {
-        return generateEnvContent(options.aiProvider || "openai", options.apiKey);
+      transform: (content: string, options: ProjectOptions) => {
+        const provider = options.aiProvider || "openai";
+        const config = AI_PROVIDER_CONFIG[provider];
+
+        let envExample = "";
+        if (config.envVar && options.apiKey) {
+          envExample = `# ${config.name} API Key\n# Get your key at: ${config.apiKeyUrl}\n${config.envVar}=${options.apiKey}`;
+        } else if (config.envVar) {
+          envExample = `# ${config.name} API Key\n# Get your key at: ${config.apiKeyUrl}\n${config.envVar}=your-api-key-here`;
+        }
+        if (provider === "ollama") {
+          envExample = `# Ollama Configuration\n# Download from: ${config.apiKeyUrl}\n# Default: http://localhost:11434\nOLLAMA_HOST=http://localhost:11434`;
+        }
+
+        return content.replace(/{{envExample}}/g, envExample);
       },
     },
     {
@@ -119,24 +131,6 @@ export const getBaseTemplates = (): TemplateFile[] => {
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/.dockerignore.template"),
       targetPath: ".dockerignore",
-    },
-    {
-      sourcePath: path.join(TEMPLATES_DIR, "base/.env.example.template"),
-      targetPath: ".env.example",
-      transform: (content: string, options: ProjectOptions) => {
-        const provider = options.aiProvider || "openai";
-        const config = AI_PROVIDER_CONFIG[provider];
-
-        let envExample = "";
-        if (config.envVar) {
-          envExample = `# ${config.name} API Key\n# Get your key at: ${config.apiKeyUrl}\n${config.envVar}=your-api-key-here`;
-        }
-        if (provider === "ollama") {
-          envExample = `# Ollama Configuration\n# Download from: ${config.apiKeyUrl}\n# Default: http://localhost:11434\nOLLAMA_HOST=http://localhost:11434`;
-        }
-
-        return content.replace(/{{envExample}}/g, envExample);
-      },
     },
   ];
 };

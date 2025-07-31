@@ -209,7 +209,6 @@ export function createWorkflowStepStartEvent(
   input: unknown, // ✅ ADD: Input parameter
   options: {
     agentId?: string;
-    agentName?: string;
     parallelIndex?: number;
     parallelParentEventId?: string;
     stepFunction?: string;
@@ -245,7 +244,6 @@ export function createWorkflowStepStartEvent(
     stepName: stepContext.stepName,
     displayName: `Step ${stepContext.stepIndex + 1}: ${stepContext.stepName}`,
     agentId: options.agentId,
-    agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     parallelParentEventId: options.parallelParentEventId,
     eventSequence: getNextEventSequence(workflowContext),
@@ -315,7 +313,6 @@ export function createWorkflowStepSuccessEvent(
     stepName: stepContext.stepName,
     displayName: `Step ${stepContext.stepIndex + 1}: ${stepContext.stepName}`,
     agentId: options.agentId,
-    agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     isSkipped: options.isSkipped,
     eventSequence: getNextEventSequence(workflowContext),
@@ -441,7 +438,6 @@ export function createWorkflowStepErrorEvent(
     stepName: stepContext.stepName,
     displayName: `Step ${stepContext.stepIndex + 1}: ${stepContext.stepName}`,
     agentId: options.agentId,
-    agentName: options.agentName,
     parallelIndex: options.parallelIndex,
     eventSequence: getNextEventSequence(workflowContext),
     stepFunction: options.stepFunction,

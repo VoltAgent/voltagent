@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createWorkflowChain, andThen } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -324,54 +325,22 @@ const contentAnalysisWorkflow = createWorkflowChain({
   });
 
 // Register workflows with VoltAgent
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-workflow",
+  level: "debug",
+});
+
 new VoltAgent({
   agents: {
     analysisAgent,
     contentAgent,
   },
+  logger,
   workflows: {
     orderProcessingWorkflow,
     expenseApprovalWorkflow,
     contentAnalysisWorkflow,
   },
 });
-
-// Example: Running the workflows
-export async function runExamples() {
-  console.log("=== Order Processing Example ===");
-  const orderResult = await orderProcessingWorkflow.run({
-    orderId: "ORD-123",
-    customerId: "VIP-456",
-    amount: 250,
-    items: ["laptop", "mouse"],
-  });
-  console.log("Order result:", orderResult);
-
-  console.log("\n=== Expense Approval Example ===");
-  const expenseResult = await expenseApprovalWorkflow.run({
-    employeeId: "EMP-789",
-    amount: 750,
-    category: "travel",
-    description: "Client meeting in NYC",
-  });
-
-  // If suspended, resume with manager decision
-  if (expenseResult.status === "suspended") {
-    console.log("Workflow suspended for approval...");
-    const resumedResult = await expenseResult.resume({
-      approved: true,
-      managerId: "MGR-001",
-      comments: "Approved for important client",
-      adjustedAmount: 700,
-    });
-    console.log("Final result:", resumedResult);
-  }
-
-  console.log("\n=== Content Analysis Example ===");
-  const contentResult = await contentAnalysisWorkflow.run({
-    content:
-      "This new AI-powered tool is absolutely fantastic! It has revolutionized our workflow and saved us countless hours. The interface is intuitive and the results are consistently accurate. Highly recommended for any team looking to improve productivity.",
-    language: "en",
-  });
-  console.log("Analysis result:", contentResult);
-}

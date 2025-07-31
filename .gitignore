@@ -161,3 +161,7 @@ vitest.config.*.timestamp*
 
 # vscode
 .vscode
+
+# claude
+.claude
+CLAUDE.md

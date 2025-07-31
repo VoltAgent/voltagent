@@ -11,7 +11,8 @@
         "noUnusedVariables": "error"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noConsoleLog": "error"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "warn",

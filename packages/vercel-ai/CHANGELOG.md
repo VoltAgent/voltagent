@@ -1,5 +1,62 @@
 # @voltagent/vercel-ai
 
+## 0.1.16
+
+### Patch Changes
+
+- [#425](https://github.com/VoltAgent/voltagent/pull/425) [`8605e70`](https://github.com/VoltAgent/voltagent/commit/8605e708d17e6fa0150bd13235e795288422c52b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Promise-based properties and warnings to AI responses - #422
+
+  Enhanced AI response types to align with Vercel AI SDK's API and provide better metadata:
+
+  **For `streamObject`:**
+
+  - Added optional `object?: Promise<T>` property that resolves to the final generated object
+  - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
+  - Added optional `warnings?: Promise<any[] | undefined>` property for provider warnings
+
+  **For `streamText`:**
+
+  - Added optional `text?: Promise<string>` property that resolves to the full generated text
+  - Added optional `finishReason?: Promise<string>` property that resolves to the reason generation stopped
+  - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
+  - Added optional `reasoning?: Promise<string | undefined>` property that resolves to model's reasoning text
+
+  **For `generateText` and `generateObject`:**
+
+  - Added optional `reasoning?: string` property for model's reasoning text (generateText only)
+  - Added optional `warnings?: any[]` property for provider warnings
+
+  These properties are optional to maintain backward compatibility. Providers that support these features (like Vercel AI) now return these values, allowing users to access rich metadata:
+
+  ```typescript
+  // For streamObject
+  const response = await agent.streamObject(input, schema);
+  const finalObject = await response.object; // Promise<T>
+  const usage = await response.usage; // Promise<UsageInfo>
+
+  // For streamText
+  const response = await agent.streamText(input);
+  const fullText = await response.text; // Promise<string>
+  const usage = await response.usage; // Promise<UsageInfo>
+
+  // For generateText
+  const response = await agent.generateText(input);
+  console.log(response.warnings); // Any provider warnings
+  console.log(response.reasoning); // Model's reasoning (if available)
+  ```
+
+- Updated dependencies [[`8605e70`](https://github.com/VoltAgent/voltagent/commit/8605e708d17e6fa0150bd13235e795288422c52b)]:
+  - @voltagent/core@0.1.69
+
+## 0.1.15
+
+### Patch Changes
+
+- [`1f8ce22`](https://github.com/VoltAgent/voltagent/commit/1f8ce226fec449f16f1dce6c2b96cef7030eff3a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod peer dependency to allow flexible versioning (^3.24.2 instead of 3.24.2) to resolve npm install conflicts
+
+- Updated dependencies [[`1f8ce22`](https://github.com/VoltAgent/voltagent/commit/1f8ce226fec449f16f1dce6c2b96cef7030eff3a)]:
+  - @voltagent/core@0.1.66
+
 ## 0.1.14
 
 ### Patch Changes

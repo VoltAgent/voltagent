@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { devLogger } from "../dev";
 import { deepClone, hasKey } from "./objects";
+import type { Logger } from "../logger/types";
 
-// Mock devLogger
-vi.mock("../dev", () => ({
-  devLogger: {
-    warn: vi.fn(),
-  },
-}));
+// Mock logger
+const mockLogger: Logger = {
+  trace: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+  child: vi.fn(() => mockLogger),
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -82,11 +86,11 @@ describe("deepClone", () => {
     const circular: any = { a: 1 };
     circular.circular = circular;
 
-    const cloned = deepClone(circular);
+    const cloned = deepClone(circular, mockLogger);
 
-    expect(devLogger.warn).toHaveBeenCalledWith(
-      "Failed to deep clone object, using shallow clone:",
-      expect.any(TypeError),
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "Failed to deep clone object, using shallow clone",
+      { error: expect.any(TypeError) },
     );
     expect(cloned.a).toBe(1);
     expect(cloned.circular).toBe(circular); // Shallow clone reference

@@ -9,6 +9,7 @@ import {
 } from "../event-utils";
 import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 import type { WorkflowExecuteContext } from "../internal/types";
+import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates an async function step for the workflow
@@ -16,17 +17,23 @@ import type { WorkflowExecuteContext } from "../internal/types";
  * @example
  * ```ts
  * const w = createWorkflow(
- *   andThen(async (data) => {
- *     const processed = await someAsyncOperation(data.value);
- *     return { ...data, processed };
+ *   andThen({
+ *     id: "process-data",
+ *     execute: async ({ data }) => {
+ *       const processed = await someAsyncOperation(data.value);
+ *       return { ...data, processed };
+ *     }
  *   }),
- *   andThen(async (data) => {
- *     return { result: `Processed: ${data.processed}` };
+ *   andThen({
+ *     id: "format-result",
+ *     execute: async ({ data }) => {
+ *       return { result: `Processed: ${data.processed}` };
+ *     }
  *   })
  * );
  * ```
  *
- * @param fn - The async function to execute with the workflow data
+ * @param config - Configuration object with execute function and metadata
  * @returns A workflow step that executes the function and returns the result
  */
 export function andThen<
@@ -80,7 +87,9 @@ export function andThen<
       try {
         await publishWorkflowEvent(stepStartEvent, state.workflowContext);
       } catch (eventError) {
-        console.warn("Failed to publish workflow step start event:", eventError);
+        getGlobalLogger()
+          .child({ component: "workflow", stepType: "then" })
+          .warn("Failed to publish workflow step start event:", { error: eventError });
       }
 
       try {
@@ -101,7 +110,9 @@ export function andThen<
         try {
           await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step success event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "then" })
+            .warn("Failed to publish workflow step success event:", { error: eventError });
         }
 
         return result;
@@ -128,7 +139,9 @@ export function andThen<
         try {
           await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
         } catch (eventError) {
-          console.warn("Failed to publish workflow step error event:", eventError);
+          getGlobalLogger()
+            .child({ component: "workflow", stepType: "then" })
+            .warn("Failed to publish workflow step error event:", { error: eventError });
         }
 
         throw error;

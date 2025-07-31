@@ -6,7 +6,6 @@ import { DotPattern } from "../ui/dot-pattern";
 import FrameworkIntegration from "./FrameworkIntegration";
 import { HowToGetStarted } from "./HowToGetStarted";
 import ObservabilityFeatures from "./ObservabilityFeatures";
-import PricingSection from "./PricingSection";
 
 export const Console = () => {
   return (
@@ -80,8 +79,6 @@ export const Console = () => {
       <HowToGetStarted />
       {/* Observability Features */}
       <ObservabilityFeatures />
-
-      <PricingSection />
     </section>
   );
 };

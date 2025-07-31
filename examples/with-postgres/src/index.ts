@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { PostgresStorage } from "@voltagent/postgres";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
@@ -38,8 +39,15 @@ const agent = new Agent({
   memory: memoryStorage, // Use the configured PostgreSQL storage
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-postgres",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

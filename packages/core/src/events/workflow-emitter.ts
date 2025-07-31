@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
-import { devLogger } from "@voltagent/internal/dev";
 import { v4 as uuidv4 } from "uuid";
+import { LoggerProxy } from "../logger";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
 import { WorkflowRegistry } from "../workflow/registry";
@@ -43,6 +43,7 @@ export class WorkflowEventEmitter extends EventEmitter {
 
   // Background queue for workflow events (similar to AgentEventEmitter)
   private workflowEventQueue: BackgroundQueue;
+  private logger = new LoggerProxy({ component: "workflow-event-emitter" });
 
   private constructor() {
     super();
@@ -94,7 +95,7 @@ export class WorkflowEventEmitter extends EventEmitter {
     this.workflowEventQueue.enqueue({
       id: `workflow-event-${event.id}`,
       operation: async () => {
-        const clonedEvent = deepClone(event);
+        const clonedEvent = deepClone(event, this.logger);
 
         await this.publishWorkflowEventSync({
           workflowId,
@@ -120,14 +121,11 @@ export class WorkflowEventEmitter extends EventEmitter {
 
       await registry.persistWorkflowTimelineEvent(workflowId, executionId, event);
 
-      devLogger.debug(
-        `[WorkflowEventEmitter] Event delegated to WorkflowRegistry: ${event.name} for execution ${executionId}`,
+      this.logger.trace(
+        `Event delegated to WorkflowRegistry: ${event.name} for execution ${executionId}`,
       );
     } catch (error) {
-      devLogger.error(
-        "[WorkflowEventEmitter] Failed to delegate event to WorkflowRegistry:",
-        error,
-      );
+      this.logger.error("Failed to delegate event to WorkflowRegistry", { error });
     }
   }
 
@@ -149,12 +147,10 @@ export class WorkflowEventEmitter extends EventEmitter {
         event,
       });
 
-      devLogger.debug(
-        `[WorkflowEventEmitter] Immediate event emitted: ${event.name} for execution ${executionId}`,
-      );
+      this.logger.trace(`Immediate event emitted: ${event.name} for execution ${executionId}`);
     } catch (error) {
       // Don't throw - immediate events are best-effort
-      devLogger.error("[WorkflowEventEmitter] Failed to emit immediate event:", error);
+      this.logger.error("Failed to emit immediate event", { error });
     }
   }
 }

@@ -39,6 +39,8 @@ export class SimpleRetriever extends BaseRetriever {
     // Convert input to searchable string
     let searchText = "";
 
+    options.logger?.debug("selam");
+
     if (typeof input === "string") {
       searchText = input;
     } else if (Array.isArray(input) && input.length > 0) {

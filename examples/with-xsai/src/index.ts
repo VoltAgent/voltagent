@@ -1,4 +1,5 @@
 import { VoltAgent, Agent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { XSAIProvider } from "@voltagent/xsai";
 
 const agent = new Agent({
@@ -10,8 +11,15 @@ const agent = new Agent({
   model: "gpt-4o-mini",
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-xsai",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });

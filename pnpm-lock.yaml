@@ -114,10 +114,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -142,10 +145,13 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -166,6 +172,9 @@ importers:
 
   examples/sdk-trace-example:
     dependencies:
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/sdk':
         specifier: ^0.1.5
         version: link:../../packages/sdk
@@ -186,14 +195,17 @@ importers:
         specifier: ^0.40.0
         version: 0.40.0
       '@voltagent/anthropic-ai':
-        specifier: ^0.1.11
+        specifier: ^0.1.12
         version: link:../../packages/anthropic-ai
       '@voltagent/cli':
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -226,10 +238,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       chromadb:
         specifier: ^3.0.4
@@ -257,10 +272,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -285,10 +303,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -313,10 +334,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -341,10 +365,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -366,11 +393,14 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.4.0
         version: link:../../packages/google-ai
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -445,6 +475,9 @@ importers:
       '@voltagent/core':
         specifier: ^0.1.7
         version: link:../../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.0
+        version: link:../../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.3
         version: link:../../../packages/vercel-ai
@@ -477,11 +510,14 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.4.0
         version: link:../../packages/google-ai
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -502,11 +538,14 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
       '@voltagent/groq-ai':
         specifier: ^0.1.13
         version: link:../../packages/groq-ai
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -530,10 +569,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -558,13 +600,16 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^0.1.4
         version: link:../../packages/langfuse-exporter
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -589,10 +634,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -626,13 +674,16 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       '@voltagent/vercel-ui':
-        specifier: ^0.1.6
+        specifier: ^0.1.7
         version: link:../../packages/vercel-ui
       ai:
         specifier: ^4.2.11
@@ -681,10 +732,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -712,10 +766,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       openai:
         specifier: ^4.73.1
@@ -755,10 +812,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       axios:
         specifier: ^1.5.0
@@ -795,13 +855,16 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/postgres':
-        specifier: ^0.1.8
+        specifier: ^0.1.10
         version: link:../../packages/postgres
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -826,10 +889,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -854,10 +920,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -882,10 +951,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -913,13 +985,16 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/supabase':
-        specifier: ^0.1.13
+        specifier: ^0.1.15
         version: link:../../packages/supabase
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -944,10 +1019,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -972,10 +1050,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -1000,10 +1081,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -1028,10 +1112,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -1056,10 +1143,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
         specifier: ^0.2.1
@@ -1087,10 +1177,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
         specifier: ^0.2.1
@@ -1124,10 +1217,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
         specifier: ^0.2.1
@@ -1161,10 +1257,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -1189,10 +1288,13 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.14
+        specifier: ^0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -1214,8 +1316,11 @@ importers:
         specifier: ^0.1.9
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.64
+        specifier: ^0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/xsai':
         specifier: ^0.2.4
         version: link:../../packages/xsai
@@ -1242,10 +1347,13 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~0.1.64
+        specifier: ~0.1.70
         version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.1
+        version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ~0.1.14
+        specifier: ~0.1.16
         version: link:../../packages/vercel-ai
       zod:
         specifier: 3.24.2
@@ -1267,7 +1375,7 @@ importers:
         specifier: ^0.40.0
         version: 0.40.0
       '@voltagent/core':
-        specifier: ^0.1.32
+        specifier: ^0.1.68
         version: link:../core
       zod:
         specifier: 3.24.2
@@ -1401,8 +1509,11 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       '@voltagent/internal':
-        specifier: ^0.0.5
+        specifier: ^0.0.6
         version: link:../internal
+      '@voltagent/logger':
+        specifier: ^0.1.0
+        version: link:../logger
       hono:
         specifier: ^4.7.7
         version: 4.7.7
@@ -1671,10 +1782,38 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3(@types/node@20.19.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
+  packages/logger:
+    dependencies:
+      '@voltagent/internal':
+        specifier: ^0.0.6
+        version: link:../internal
+      pino:
+        specifier: ^9.7.0
+        version: 9.7.0
+      pino-pretty:
+        specifier: ^13.0.0
+        version: 13.0.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.0.3
+      '@types/pino':
+        specifier: ^7.0.5
+        version: 7.0.5
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(@swc/core@1.5.29)(typescript@5.8.3)
+      typescript:
+        specifier: ^5.0.4
+        version: 5.8.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.0.3)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+
   packages/postgres:
     dependencies:
       '@voltagent/core':
-        specifier: ^0.1.60
+        specifier: ^0.1.68
         version: link:../core
       pg:
         specifier: ^8.16.0
@@ -1727,7 +1866,7 @@ importers:
         specifier: ^2.49.4
         version: 2.49.4
       '@voltagent/core':
-        specifier: ^0.1.60
+        specifier: ^0.1.68
         version: link:../core
     devDependencies:
       '@types/node':
@@ -1752,7 +1891,7 @@ importers:
         specifier: ^1.3.10
         version: 1.3.10(zod@3.24.2)
       '@voltagent/core':
-        specifier: ^0.1.62
+        specifier: ^0.1.69
         version: link:../core
       ai:
         specifier: ^4.2.11
@@ -1771,7 +1910,7 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3(vitest@3.2.3)
       '@voltagent/internal':
-        specifier: workspace:^0.0.5
+        specifier: workspace:^0.0.6
         version: link:../internal
       tsup:
         specifier: ^6.7.0
@@ -1829,10 +1968,10 @@ importers:
         specifier: ^1.2.11
         version: 1.2.11(zod@3.24.2)
       '@voltagent/core':
-        specifier: ^0.1.62
+        specifier: ^0.1.65
         version: link:../core
       '@voltagent/internal':
-        specifier: ^0.0.5
+        specifier: ^0.0.6
         version: link:../internal
       ai:
         specifier: ^4.3.16
@@ -1873,10 +2012,10 @@ importers:
         version: link:../core
       '@xsai/generate-speech':
         specifier: ^0.3.3
-        version: 0.3.3
+        version: 0.3.4
       '@xsai/generate-transcription':
         specifier: ^0.3.3
-        version: 0.3.3
+        version: 0.3.4
       elevenlabs:
         specifier: ^1.55.0
         version: 1.55.0
@@ -6545,10 +6684,10 @@ packages:
   /@libsql/client@0.15.0:
     resolution: {integrity: sha512-AkJg9mxnAVCtHAVndZ8YwxqG43nSYVNZHAEX55MZ0R06rBcCoYLwjAr8grxC02/tNZpf4KMJj+BVPqNnQOD8ZQ==}
     dependencies:
-      '@libsql/core': 0.15.0
+      '@libsql/core': 0.15.4
       '@libsql/hrana-client': 0.7.0
       js-base64: 3.7.7
-      libsql: 0.5.1
+      libsql: 0.5.8
       promise-limit: 2.7.0
     transitivePeerDependencies:
       - bufferutil
@@ -6568,37 +6707,15 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@libsql/core@0.15.0:
-    resolution: {integrity: sha512-8SReMzkCPmqoDl1tkAa9FCmoxDmiiuDM2eM8cTlKnMD6xG2jUczvckYM/x7VCWy0O9zu0LR/u7sEYEd2CPPTJA==}
-    dependencies:
-      js-base64: 3.7.7
-    dev: false
-
   /@libsql/core@0.15.4:
     resolution: {integrity: sha512-NMvh6xnn3vrcd7DNehj0HiJcRWB2a8hHhJUTkOBej3Pf3KB21HOmdOUjXxJ5pGbjWXh4ezQBmHtF5ozFhocXaA==}
     dependencies:
       js-base64: 3.7.7
     dev: false
 
-  /@libsql/darwin-arm64@0.5.1:
-    resolution: {integrity: sha512-ETWRV8+h2l1P4/BB+ct1yWoBJMokUfCLe8W7TEbGo/9mAqk4NWkacVlAJgRdVIFQsA+3/vrQF7LyaIQOSEELTg==}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@libsql/darwin-arm64@0.5.8:
     resolution: {integrity: sha512-dJRfwCHAKOIgysMbB+PBo3ZmCVuGC02fH57kFEFlqbbUv6wnAZV5g7GErQIv4IlC4VPKAS4RL20fjLUgXE+0Xg==}
     cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/darwin-x64@0.5.1:
-    resolution: {integrity: sha512-zB1Sid7vTBt/PiiLyQmw9AXZZv3MziNRx/rJ6xc/HTUYG7c2QHwOMikVuad1Lafvvf3OyGYSAPHKg9hdvNFP9A==}
-    cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: false
@@ -6639,24 +6756,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@libsql/linux-arm64-gnu@0.5.1:
-    resolution: {integrity: sha512-RbDc3fcRH5gjg2UUsMTPncSMCqTZ6re59t4jhNFpaLb3n2raD8S3XfvMq9LFqirzK+JDKHhxRPTow0E+QLaLJQ==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@libsql/linux-arm64-gnu@0.5.8:
     resolution: {integrity: sha512-6HHZlPbMu+cmCJafg/dwOcWFMu07hTB5teMKU5ke66kqeWLRBnOs5/DnZGVz6q0k+Z4L4UTRbdrnCklR3GmvFg==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/linux-arm64-musl@0.5.1:
-    resolution: {integrity: sha512-JwK6Ne8dmtt+D+0zESwKvrjnylSDHNN7Mt9gb+TbWZZVvmro8n/ApvRVJh8ZO3R7dH32rUJoc2cQmKD6B691sA==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
@@ -6671,24 +6772,8 @@ packages:
     dev: false
     optional: true
 
-  /@libsql/linux-x64-gnu@0.5.1:
-    resolution: {integrity: sha512-9U1yo0H8OaxGsVPQFDm/SrQjhyMFUHinmfPOwQcLjcnWwv1GqfNdYlGnp2ZfdJr2QOx7k5klouJjJgy8KzhY4g==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@libsql/linux-x64-gnu@0.5.8:
     resolution: {integrity: sha512-HUWxOvLE5W287O/vaHWFpZMqaaebEBZvcUqJJ/E+IcC9kmKc6GqDW+fJkfPfosrpGyPNbYDj0w9pIcck0l/oeA==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/linux-x64-musl@0.5.1:
-    resolution: {integrity: sha512-2TEX6SJqi88wPbv1ZHiTHtqaWOf+Mj7L8jOSgQY/aMoPzV5VFtDFF68ApIUNR6L+4eMwlD28NpahwJf8ilWYIw==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
@@ -6699,14 +6784,6 @@ packages:
     resolution: {integrity: sha512-hfhkPwqzFroU01xUB7ZXFw3bP+jqcGolGLyhEkeh/Rsoune0ucm1KPrU2tqTBqQP4a7lL0nSL1A37nfjIO61Hw==}
     cpu: [x64]
     os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@libsql/win32-x64-msvc@0.5.1:
-    resolution: {integrity: sha512-rOtBBJhLuCeSgXBWIRNTLADdSLfwsII6za/ci5+XJKSiSi0STO4bcGEfVKLEJ6HDqdCJ2zdH1WGc9rTwhsUB0g==}
-    cpu: [x64]
-    os: [win32]
     requiresBuild: true
     dev: false
     optional: true
@@ -9588,6 +9665,13 @@ packages:
     resolution: {integrity: sha512-PIzZZlEppgrpoT2QgbnDU+MMzuR6BbCjllj0bM70lWoejMeNJAxCchxnv7J3XFkI8MpygtRpzXrIlmWUBclP5A==}
     dev: false
 
+  /@types/pino@7.0.5:
+    resolution: {integrity: sha512-wKoab31pknvILkxAF8ss+v9iNyhw5Iu/0jLtRkUD74cNfOOLJNnqfFKAv0r7wVaTQxRZtWrMpGfShwwBjOcgcg==}
+    deprecated: This is a stub types definition. pino provides its own type definitions, so you do not need this installed.
+    dependencies:
+      pino: 9.7.0
+    dev: true
+
   /@types/react-dom@19.1.2(@types/react@19.1.2):
     resolution: {integrity: sha512-XGJkWF41Qq305SKWEILa1O8vzhb3aOo3ogBlSmiqNko/WmRb6QIaweuZCXjKygVDXpzXb5wyxKTSOsmkuqj+Qw==}
     peerDependencies:
@@ -9942,23 +10026,23 @@ packages:
       tinyrainbow: 2.0.0
     dev: true
 
-  /@xsai/embed@0.3.3:
-    resolution: {integrity: sha512-yl2/e5G9mIZZpjhrWX80zhJxiZkm/g471VpM7bi0QAdoMQODEdK3gJwXOo+bmXy8WPPeHsUchgHPVTsrc3dqLw==}
+  /@xsai/embed@0.3.4:
+    resolution: {integrity: sha512-s3cMMgAt+FzDUvfJD12uccpv9VkkcfSKgQ6iW8/OpmQg/jPr6VD/wOaz/NJW+RYx/3WCGeOahrh1FSfk5kOhyQ==}
     dependencies:
-      '@xsai/shared': 0.3.3
+      '@xsai/shared': 0.3.4
     dev: false
 
-  /@xsai/generate-image@0.3.3:
-    resolution: {integrity: sha512-e5KfGdPEo5t7jzmuZ8eir+fyfnXsivmn9DNLoeP5qJXr3jmuGK098Q471JjxvsWyg5QVen9g8asdhvhMlluzIQ==}
+  /@xsai/generate-image@0.3.4:
+    resolution: {integrity: sha512-de+tApHiz9z/YLmP8X+mANnWMaLmxU1HEJV3MSPxEP55elO1oEh1lJsY+rweA725WIwl+3Jdd5HwRFr6BvweCA==}
     dependencies:
-      '@xsai/shared': 0.3.3
+      '@xsai/shared': 0.3.4
     dev: false
 
-  /@xsai/generate-object@0.3.3(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-TJOt0UhkEEsUyKaZd89bhd8Yi90JPOGxGKF60nVHuf1ogzZWsi70yiPv+NCTVRo/ivxPzXswK3GTR9qX18gXXw==}
+  /@xsai/generate-object@0.3.4(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-W6ovs8d7igbWvLH2TKhQweMEofWreXF2kdJdE9V6NBDSHJhR3eEzMygQLOrymNCXCqHgQVMIm8L8Ak5+aNeLLg==}
     dependencies:
-      '@xsai/generate-text': 0.3.3
-      xsschema: 0.3.3(effect@3.12.7)(zod@3.24.2)
+      '@xsai/generate-text': 0.3.4
+      xsschema: 0.3.4(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -9968,46 +10052,46 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /@xsai/generate-speech@0.3.3:
-    resolution: {integrity: sha512-3FVems91T2AepJEx2KDG1OOYuGSfDq7lzWe3jIrJleT8lzspus4VBTFkGpLdHtnS6t4UCX0SQ6bAQ7sBoqvsfw==}
+  /@xsai/generate-speech@0.3.4:
+    resolution: {integrity: sha512-3JJ/pR/QhOBvSid0gsXgoWF2WBS+mo04GCa4AXtWHDNvWMZwthAHXvH3wRuPjBT1Kd+wah6ebSZKKYTDkI2Lgg==}
     dependencies:
-      '@xsai/shared': 0.3.3
+      '@xsai/shared': 0.3.4
     dev: false
 
-  /@xsai/generate-text@0.3.3:
-    resolution: {integrity: sha512-lVaUzbIgGOdsbKUm5p1ftSYteq3tMCismodY7tK+MEOlaEErmSeS+SRLZmz6X2Jn23ZuYsrj1gbGqdTciBjgHg==}
+  /@xsai/generate-text@0.3.4:
+    resolution: {integrity: sha512-MS1KuYPYfvwRgKITPsEShBmxEjPFRIAwJ/vXNgomH4/rhw8/v2+VQ2EPtt+CDcm9w+QS+zt9S0HN6qGxi/WFWA==}
     dependencies:
-      '@xsai/shared': 0.3.3
-      '@xsai/shared-chat': 0.3.3
+      '@xsai/shared': 0.3.4
+      '@xsai/shared-chat': 0.3.4
     dev: false
 
-  /@xsai/generate-transcription@0.3.3:
-    resolution: {integrity: sha512-FfX/xKE6Tc41VHeKaGI7LJW17MDQJvKfEzrWa9e9JppbpzyL+dpM1E7bdqSm2voPRzou0Y3Xb4D34SGrALwSSw==}
+  /@xsai/generate-transcription@0.3.4:
+    resolution: {integrity: sha512-UCnHF2g01YsqQhg1mBLRhvjWIb1+QdONhRNXJFpnejLJkZoQ3OO7xUE0HiZ/QUHjMlQG9XSHN8Y2Rjv2vuLxpw==}
     dependencies:
-      '@xsai/shared': 0.3.3
+      '@xsai/shared': 0.3.4
     dev: false
 
-  /@xsai/model@0.3.3:
-    resolution: {integrity: sha512-gnCbPIX37OY7wVinqg3zSiAI8tQH5B0Qg4YnHW6n62MpDfDDiJtNQKuTJ9R31PztucidxewN2YduyxVUYAXySw==}
+  /@xsai/model@0.3.4:
+    resolution: {integrity: sha512-0y93wk3ZBJQqcvxEvP2MD0Hy4wtotczQtmOzBiad4rfOTguT3kBJQIZoKx4zydLJgvrdnMt2pl6W41jxklkEzA==}
     dependencies:
-      '@xsai/shared': 0.3.3
+      '@xsai/shared': 0.3.4
     dev: false
 
-  /@xsai/shared-chat@0.3.3:
-    resolution: {integrity: sha512-zCfAlXhNfQ3+ErhP8BnSIdsELAENHubfscLdImls+9zNHfY1AzIaBuRIf5dWJYmC4/NsOop1QHYjfM+7Wg4gjw==}
+  /@xsai/shared-chat@0.3.4:
+    resolution: {integrity: sha512-4Z8Mb+v3p457ZcS7VZp9L58XWd8mbxP1ZSWFu4Cduz261nVlY/WP+g5Dya2pShiJq5t1FAbXCpAkd8m4ydZlfA==}
     dependencies:
-      '@xsai/shared': 0.3.3
+      '@xsai/shared': 0.3.4
     dev: false
 
-  /@xsai/shared@0.3.3:
-    resolution: {integrity: sha512-1xul8h7He5cM+H/gGx8pdE/LLqujO3xSHM2+V4XVEjI05VxQq+s5lk42/7NUUbjcvcFxi5Ow9IL4pezHgxq9aQ==}
+  /@xsai/shared@0.3.4:
+    resolution: {integrity: sha512-Age17VqIqiu3X/yTlEP+tQRqY9Xb/0yTlxkvPIN9HAeky0WGWkXAt5RIgR0GMgwOVjBRYXsyZA5jYvCbmvF5hQ==}
     dev: false
 
-  /@xsai/stream-object@0.3.3(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-Xn114v9At/NQ2bPEosRMPFHQV8BulIHhYEW/wJ+VEpJ7y7jq/xJo95uPViG2RhPyzfm6EUfQiV4k9ya7shTXvQ==}
+  /@xsai/stream-object@0.3.4(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-4bcFLfMlchkkQ5HfMqcA+cr/ROPDTfFIvvZvvRRkK4WKH7FJh4XiF/3xMVJWE+2/l9Zr/fx6K7VG9h2zVJaX0A==}
     dependencies:
-      '@xsai/stream-text': 0.3.3
-      xsschema: 0.3.3(effect@3.12.7)(zod@3.24.2)
+      '@xsai/stream-text': 0.3.4
+      xsschema: 0.3.4(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -10017,18 +10101,18 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /@xsai/stream-text@0.3.3:
-    resolution: {integrity: sha512-Y/f4EkvWIF6nJ/07RJpneAugMV6pHiDi1c0X2pn6m6NhGodpj1HZKzvYTFryW/ZYc5NCG+B7AXUQyCy8PUSOeg==}
+  /@xsai/stream-text@0.3.4:
+    resolution: {integrity: sha512-5hI1zvBGwC8J9BiuChHwIxIJOetIwl1kmt4OR9b/CGLuhK1OR5JnxhbMcwXjJKqfOMKMkqM74KHTQG+QSVfsGg==}
     dependencies:
-      '@xsai/shared-chat': 0.3.3
+      '@xsai/shared-chat': 0.3.4
     dev: false
 
-  /@xsai/tool@0.3.3(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-mhF+sgIGlfz1scEXekpJEx+YimIQkunlE+7CPSd3rrTymdMCC5SG7hRg1HiGlq+8cSgmhqPHJuUPVS4Dsll9lA==}
+  /@xsai/tool@0.3.4(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-O3HMGTGrSAsRTgviMhgf9uI9KEf0XFmhNeyDGIM3Vxvaan1quUPpACJQReBJSjBO4NcFYrhVHSKLo+dkiJb2Ng==}
     dependencies:
-      '@xsai/shared': 0.3.3
-      '@xsai/shared-chat': 0.3.3
-      xsschema: 0.3.3(effect@3.12.7)(zod@3.24.2)
+      '@xsai/shared': 0.3.4
+      '@xsai/shared-chat': 0.3.4
+      xsschema: 0.3.4(effect@3.12.7)(zod@3.24.2)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -10038,18 +10122,18 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /@xsai/utils-chat@0.3.3:
-    resolution: {integrity: sha512-RgGEZW+dQZmUQ4WWxKI8bM/6G/cgp9Ws55qFy98dXLwMPqIDAdGOrD2vdKHvB4/iiex5CCVj2JwW6HBl5CdiBA==}
+  /@xsai/utils-chat@0.3.4:
+    resolution: {integrity: sha512-Q2ataY9i1jbbTClbZbGaUb6l6mHEjE1xA4KmGM6rqwZElllNMTzisk5JU2MoqPg4T3auTR5UkcxaySkB7BVLfQ==}
     dependencies:
-      '@xsai/shared-chat': 0.3.3
+      '@xsai/shared-chat': 0.3.4
     dev: false
 
-  /@xsai/utils-reasoning@0.3.3:
-    resolution: {integrity: sha512-4YiikRMij9ns9I2qEZeyHrG3SSfghfxMJU4DpvNdmZznDT3OujUMHrgD3BuvWXTyuGuyAyV8ZiZ0TR+DXl/Rkg==}
+  /@xsai/utils-reasoning@0.3.4:
+    resolution: {integrity: sha512-ns4qtKHH+aN0/2jlnWAb5SDRXAppZNECRhKDyz4GH9NF6ldR+05rGSrxPUb0XaeQFDnA6YA6EtX1PLuBVGE9sQ==}
     dev: false
 
-  /@xsai/utils-stream@0.3.3:
-    resolution: {integrity: sha512-RYajRRmujcumAKKIjuu0vbpqOeWOlEC8Qiv9+yuM6OfIyloY1upGRbHDu2Em9n9toAOoyVxgLvbsQetqFhNclA==}
+  /@xsai/utils-stream@0.3.4:
+    resolution: {integrity: sha512-/htZ2JEINJIGccu3ZD2XiOQStH1PyAO391QM3LYrNIa1ZYUMKdF/V+rC+t6eocNaw5z3tygOJkrnuyCg+NrZhQ==}
     dev: false
 
   /@yarnpkg/lockfile@1.1.0:
@@ -10454,6 +10538,10 @@ packages:
   /asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
+  /atomic-sleep@1.0.0:
+    resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
+    engines: {node: '>=8.0.0'}
+
   /atomically@1.7.0:
     resolution: {integrity: sha512-Xcz9l0z7y9yQ9rdDaxlmaI4uJHf/T8g9hOEzJcsEqX2SjCj4J20uK7+ldkDHMbpJDK76wF7xEIgxc/vSlsfw5w==}
     engines: {node: '>=10.12.0'}
@@ -10842,7 +10930,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001716
+      caniuse-lite: 1.0.30001723
       electron-to-chromium: 1.5.149
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.24.5)
@@ -11081,12 +11169,8 @@ packages:
     resolution: {integrity: sha512-faRs/AW3jA9nTwmJBSO1PQ6L/EOgsB5HMQQq4iCu5zhPgVVgO/pZRHlmatwijZKetFw8/Pr4q6dEN8sJuq8qTw==}
     dev: false
 
-  /caniuse-lite@1.0.30001716:
-    resolution: {integrity: sha512-49/c1+x3Kwz7ZIWt+4DvK3aMJy9oYXXG6/97JKsnjdCk/6n9vVyWL8NAwVt95Lwt9eigI10Hl782kDfZUUlRXw==}
-
   /caniuse-lite@1.0.30001723:
     resolution: {integrity: sha512-1R/elMjtehrFejxwmexeXAtae5UO9iSyFn6G/I806CYC/BLyyBk1EPhrKBkWhy6wM6Xnm47dSJQec+tLJ39WHw==}
-    dev: true
 
   /ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -11472,7 +11556,6 @@ packages:
 
   /colorette@2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
-    dev: true
 
   /columnify@1.6.0:
     resolution: {integrity: sha512-lomjuFZKfM6MSAnV9aCZC9sc0qGbmZdfygNv+nCpqVkSKdCxCklLtd16O0EILGkImHw9ZpHkAnHaB+8Zxq5W6Q==}
@@ -11971,6 +12054,10 @@ packages:
   /dateformat@3.0.3:
     resolution: {integrity: sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==}
     dev: true
+
+  /dateformat@4.6.3:
+    resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
+    dev: false
 
   /debounce-fn@4.0.0:
     resolution: {integrity: sha512-8pYCQiL9Xdcg0UPSD3d+0KMlOjp+KGU5EPwYddgzQ7DATsg4fuUDjQtsYLmWjnk2obnNHgV3vE2Y4jejSOJVBQ==}
@@ -12968,6 +13055,10 @@ packages:
     resolution: {integrity: sha512-nGqtvLrj5w0naR6tDPfB4cUmYCqouzyQiz6C5y/LtcDllJdrcc6WaWW6iXyIIOErTa/XRybj28aasdn4LkVk6Q==}
     dev: false
 
+  /fast-copy@3.0.2:
+    resolution: {integrity: sha512-dl0O9Vhju8IrcLndv2eU4ldt1ftXMqqfgN4H1cpmGV7P6jeB9FwpN9a2c8DPGE1Ys88rNUJVYDHq73CGAGOPfQ==}
+    dev: false
+
   /fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
@@ -12992,6 +13083,14 @@ packages:
   /fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
     dev: true
+
+  /fast-redact@3.5.0:
+    resolution: {integrity: sha512-dwsoQlS7h9hMeYUq1W++23NDcBLV4KqONnITDV9DjfS3q1SgDGVrBdvvTLUotWtPSD7asWDV9/CmsZPy8Hf70A==}
+    engines: {node: '>=6'}
+
+  /fast-safe-stringify@2.1.1:
+    resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
+    dev: false
 
   /fast-uri@3.0.6:
     resolution: {integrity: sha512-Atfo14OibSv5wAp4VWNsFYE1AchQRTv9cBGWET4pZWHzYshFSS9NQI6I57rdKn9croWVMbYFbLhJ+yJvmZIIHw==}
@@ -13865,6 +13964,10 @@ packages:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
     dev: true
+
+  /help-me@5.0.0:
+    resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
+    dev: false
 
   /highlight.js@10.7.3:
     resolution: {integrity: sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==}
@@ -15045,7 +15148,6 @@ packages:
   /joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
-    dev: true
 
   /js-base64@3.7.7:
     resolution: {integrity: sha512-7rCnleh0z2CkXhH67J8K1Ytz0b2Y+yxTPL+/KOJoa20hfnVQ/3/T6W/KflYI4bRHRagNeXeU2bkNGI3v1oS/lw==}
@@ -15530,23 +15632,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /libsql@0.5.1:
-    resolution: {integrity: sha512-ePnm5zj6T//GKiTY/v5b0a272NX73hqdRORmD8gzz1nUui9051dtTt6t0XCrIqxwJAHSmQiZcfAx3YSASn9Y+A==}
-    cpu: [x64, arm64, wasm32]
-    os: [darwin, linux, win32]
-    dependencies:
-      '@neon-rs/load': 0.0.4
-      detect-libc: 2.0.2
-    optionalDependencies:
-      '@libsql/darwin-arm64': 0.5.1
-      '@libsql/darwin-x64': 0.5.1
-      '@libsql/linux-arm64-gnu': 0.5.1
-      '@libsql/linux-arm64-musl': 0.5.1
-      '@libsql/linux-x64-gnu': 0.5.1
-      '@libsql/linux-x64-musl': 0.5.1
-      '@libsql/win32-x64-msvc': 0.5.1
-    dev: false
 
   /libsql@0.5.8:
     resolution: {integrity: sha512-+OopMI1wM/NvAJTHf3O3+beHd1YfKLnSVsOGBl3/7UBDZ4ydVadkbBk5Hjjs9d3ALC5rBaftMY59AvwyC8MzPw==}
@@ -17191,6 +17276,10 @@ packages:
       whatwg-fetch: 3.6.20
     dev: false
 
+  /on-exit-leak-free@2.1.2:
+    resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
+    engines: {node: '>=14.0.0'}
+
   /on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
     engines: {node: '>= 0.8'}
@@ -17902,6 +17991,49 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
+  /pino-abstract-transport@2.0.0:
+    resolution: {integrity: sha512-F63x5tizV6WCh4R6RHyi2Ml+M70DNRXt/+HANowMflpgGFMAym/VKm6G7ZOQRjqN7XbGxK1Lg9t6ZrtzOaivMw==}
+    dependencies:
+      split2: 4.2.0
+
+  /pino-pretty@13.0.0:
+    resolution: {integrity: sha512-cQBBIVG3YajgoUjo1FdKVRX6t9XPxwB9lcNJVD5GCnNM4Y6T12YYx8c6zEejxQsU0wrg9TwmDulcE9LR7qcJqA==}
+    hasBin: true
+    dependencies:
+      colorette: 2.0.20
+      dateformat: 4.6.3
+      fast-copy: 3.0.2
+      fast-safe-stringify: 2.1.1
+      help-me: 5.0.0
+      joycon: 3.1.1
+      minimist: 1.2.8
+      on-exit-leak-free: 2.1.2
+      pino-abstract-transport: 2.0.0
+      pump: 3.0.2
+      secure-json-parse: 2.7.0
+      sonic-boom: 4.2.0
+      strip-json-comments: 3.1.1
+    dev: false
+
+  /pino-std-serializers@7.0.0:
+    resolution: {integrity: sha512-e906FRY0+tV27iq4juKzSYPbUj2do2X2JX4EzSca1631EB2QJQUqGbDuERal7LCtOpxl6x3+nvo9NPZcmjkiFA==}
+
+  /pino@9.7.0:
+    resolution: {integrity: sha512-vnMCM6xZTb1WDmLvtG2lE/2p+t9hDEIvTWJsu6FejkE62vB7gDhvzrpFR4Cw2to+9JNQxVnkAKVPA1KPB98vWg==}
+    hasBin: true
+    dependencies:
+      atomic-sleep: 1.0.0
+      fast-redact: 3.5.0
+      on-exit-leak-free: 2.1.2
+      pino-abstract-transport: 2.0.0
+      pino-std-serializers: 7.0.0
+      process-warning: 5.0.0
+      quick-format-unescaped: 4.0.4
+      real-require: 0.2.0
+      safe-stable-stringify: 2.5.0
+      sonic-boom: 4.2.0
+      thread-stream: 3.1.0
+
   /pirates@4.0.7:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
@@ -18141,6 +18273,9 @@ packages:
   /process-nextick-args@2.0.1:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
 
+  /process-warning@5.0.0:
+    resolution: {integrity: sha512-a39t9ApHNx2L4+HBnQKqxxHNs1r7KF+Intd8Q/g1bUh6q0WIp9voPXJ/x0j+ZL45KF1pJd9+q2jLIRMfvEshkA==}
+
   /process@0.11.10:
     resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==}
     engines: {node: '>= 0.6.0'}
@@ -18305,6 +18440,9 @@ packages:
   /queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
     dev: true
+
+  /quick-format-unescaped@4.0.4:
+    resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
 
   /quick-lru@4.0.1:
     resolution: {integrity: sha512-ARhCpm70fzdcvNQfPoy49IaanKkTlRWF2JMzqhcJbhSFRZv7nPTvZJdcY7301IPmvW+/p0RgIWnQDLJxifsQ7g==}
@@ -18549,6 +18687,10 @@ packages:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
     dev: true
+
+  /real-require@0.2.0:
+    resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
+    engines: {node: '>= 12.13.0'}
 
   /redent@3.0.0:
     resolution: {integrity: sha512-6tDA8g98We0zd0GvVeMT9arEOnTw9qM03L9cJXaCjrip1OO764RDBLBfrB4cwzNGDj5OA5ioymC9GkizgWJDUg==}
@@ -18894,6 +19036,10 @@ packages:
   /safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
+  /safe-stable-stringify@2.5.0:
+    resolution: {integrity: sha512-b3rppTKm9T+PsVCBEOUR46GWI7fdOs00VKZ1+9c1EWDaDMvjQc6tUwuFyIprgGgTcWoVHSKrU8H31ZHA2e0RHA==}
+    engines: {node: '>=10'}
+
   /safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
@@ -19233,6 +19379,11 @@ packages:
       smart-buffer: 4.2.0
     dev: true
 
+  /sonic-boom@4.2.0:
+    resolution: {integrity: sha512-INb7TM37/mAcsGmc9hyyI6+QR3rR1zVRu36B0NeGXKnOOLiZOfER5SA+N7X7k3yUYRzLWafduTDvJAfDswwEww==}
+    dependencies:
+      atomic-sleep: 1.0.0
+
   /sort-keys-length@1.0.1:
     resolution: {integrity: sha512-GRbEOUqCxemTAk/b32F2xa8wDTs+Z1QHOkbhJDQTvv/6G3ZkbJ+frYWsTcc7cBB3Fu4wy4XlLCuNtJuMn7Gsvw==}
     engines: {node: '>=0.10.0'}
@@ -19552,7 +19703,6 @@ packages:
   /strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
-    dev: true
 
   /strip-literal@2.1.1:
     resolution: {integrity: sha512-631UJ6O00eNGfMiWG78ck80dfBab8X6IVFB51jZK5Icd7XAs60Z5y7QdSd/wGIklnWvRbUNloVzhOKKmutxQ6Q==}
@@ -19873,6 +20023,11 @@ packages:
     dependencies:
       any-promise: 1.3.0
     dev: true
+
+  /thread-stream@3.1.0:
+    resolution: {integrity: sha512-OqyPZ9u96VohAyMfJykzmivOrY2wfMSf3C5TtFJVgN+Hm6aj+voFhlK+kZEIv2FBh1X6Xp3DlnCOfEQ3B2J86A==}
+    dependencies:
+      real-require: 0.2.0
 
   /throttleit@2.1.0:
     resolution: {integrity: sha512-nt6AMGKW1p/70DF/hGBdJB57B8Tspmbp5gfJ8ilhLnt7kkr2ye7hzD6NVG8GGErk2HWF34igrL2CXmNIkzKqKw==}
@@ -21886,21 +22041,21 @@ packages:
   /xsai@0.3.3(effect@3.12.7)(zod@3.24.2):
     resolution: {integrity: sha512-qK1176jWkbPR7pV5adx9oE7xrQIsCNTdij/aohRIDS1Lh6hzgsZfZYpX1GqMF5JVVdJK87VoH0+97Puy8qQOdw==}
     dependencies:
-      '@xsai/embed': 0.3.3
-      '@xsai/generate-image': 0.3.3
-      '@xsai/generate-object': 0.3.3(effect@3.12.7)(zod@3.24.2)
-      '@xsai/generate-speech': 0.3.3
-      '@xsai/generate-text': 0.3.3
-      '@xsai/generate-transcription': 0.3.3
-      '@xsai/model': 0.3.3
-      '@xsai/shared': 0.3.3
-      '@xsai/shared-chat': 0.3.3
-      '@xsai/stream-object': 0.3.3(effect@3.12.7)(zod@3.24.2)
-      '@xsai/stream-text': 0.3.3
-      '@xsai/tool': 0.3.3(effect@3.12.7)(zod@3.24.2)
-      '@xsai/utils-chat': 0.3.3
-      '@xsai/utils-reasoning': 0.3.3
-      '@xsai/utils-stream': 0.3.3
+      '@xsai/embed': 0.3.4
+      '@xsai/generate-image': 0.3.4
+      '@xsai/generate-object': 0.3.4(effect@3.12.7)(zod@3.24.2)
+      '@xsai/generate-speech': 0.3.4
+      '@xsai/generate-text': 0.3.4
+      '@xsai/generate-transcription': 0.3.4
+      '@xsai/model': 0.3.4
+      '@xsai/shared': 0.3.4
+      '@xsai/shared-chat': 0.3.4
+      '@xsai/stream-object': 0.3.4(effect@3.12.7)(zod@3.24.2)
+      '@xsai/stream-text': 0.3.4
+      '@xsai/tool': 0.3.4(effect@3.12.7)(zod@3.24.2)
+      '@xsai/utils-chat': 0.3.4
+      '@xsai/utils-reasoning': 0.3.4
+      '@xsai/utils-stream': 0.3.4
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -21910,8 +22065,8 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /xsschema@0.3.3(effect@3.12.7)(zod@3.24.2):
-    resolution: {integrity: sha512-XtUzDlmCPbo+HE3yQYiForOXZJ4bczdOYLdJifav5mDCKBQmtWk2D6p0LSzYG2SL4SXJwbfgBvFQ0/TDr1yIUw==}
+  /xsschema@0.3.4(effect@3.12.7)(zod@3.24.2):
+    resolution: {integrity: sha512-V1XDcAahM7ve0VP2SW7Ca1e4u6Q5quXT/NEhwbmGSONNQk3W14CApRzTsr70vWn8ELLFPgeSqFd1LxBPPinAag==}
     peerDependencies:
       '@valibot/to-json-schema': ^1.0.0
       arktype: ^2.1.20

@@ -2,6 +2,7 @@ import { join } from "path";
 import { createReadStream, createWriteStream } from "fs";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { VoltAgent, Agent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
 import { XSAIVoiceProvider } from "@voltagent/voice";
 import { openai } from "@ai-sdk/openai";
 
@@ -18,10 +19,18 @@ const agent = new Agent({
 });
 
 // Create the VoltAgent with our voice-enabled agent
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-voice-xsai",
+  level: "info",
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });
 
 (async () => {

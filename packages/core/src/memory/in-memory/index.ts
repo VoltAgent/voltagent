@@ -1,4 +1,5 @@
-import { devLogger } from "@voltagent/internal/dev";
+import { LoggerProxy } from "../../logger";
+import type { Logger } from "@voltagent/internal";
 import type { NewTimelineEvent } from "../../events/types";
 import type {
   Conversation,
@@ -49,6 +50,7 @@ export class InMemoryStorage implements Memory {
   private workflowHistoryIndex: Record<string, string[]> = {}; // workflowId -> historyIds[]
 
   private options: InMemoryStorageOptions;
+  private logger: Logger;
 
   /**
    * Create a new in-memory storage
@@ -59,6 +61,7 @@ export class InMemoryStorage implements Memory {
       storageLimit: options.storageLimit || 100,
       debug: options.debug || false,
     };
+    this.logger = new LoggerProxy({ component: "in-memory-storage" });
   }
 
   /**
@@ -295,7 +298,7 @@ export class InMemoryStorage implements Memory {
    */
   private debug(message: string, data?: unknown): void {
     if (this.options.debug) {
-      devLogger.info(`[InMemoryStorage] ${message}`, data || "");
+      this.logger.debug(message, data ? { data } : undefined);
     }
   }
 
@@ -312,6 +315,7 @@ export class InMemoryStorage implements Memory {
       before,
       after,
       role,
+      types,
     } = options;
 
     this.debug(
@@ -333,6 +337,11 @@ export class InMemoryStorage implements Memory {
       filteredMessages = filteredMessages.filter((m) => m.role === role);
     }
 
+    // Filter by types if specified
+    if (types) {
+      filteredMessages = filteredMessages.filter((m) => types.includes(m.type));
+    }
+
     // Filter by created timestamp if specified
     if (before) {
       filteredMessages = filteredMessages.filter(
@@ -348,7 +357,7 @@ export class InMemoryStorage implements Memory {
 
     // Sort by created timestamp (ascending)
     filteredMessages.sort((a, b) => {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
     // Apply limit if specified

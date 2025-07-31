@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { z } from "zod";
 import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
@@ -19,13 +19,15 @@ import {
   andTap,
   andThen,
   andWhen,
+  andWorkflow,
 } from "./steps";
+import type { InternalWorkflow } from "./steps/types";
 import type {
+  Workflow,
   WorkflowConfig,
+  WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
-  Workflow,
-  WorkflowExecutionResult,
 } from "./types";
 
 /**
@@ -48,23 +50,30 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  *   result: z.object({ processed: z.boolean(), content: z.string() }),
  *   memory: new LibSQLStorage({ url: "file:memory.db" }) // Optional workflow-specific memory
  * })
- *   .andThen(async (data) => {
- *     const userInfo = await fetchUserInfo(data.userId);
- *     return { ...data, userInfo };
+ *   .andThen({
+ *     id: "fetch-user",
+ *     execute: async ({ data }) => {
+ *       const userInfo = await fetchUserInfo(data.userId);
+ *       return { ...data, userInfo };
+ *     }
  *   })
- *   .andWhen(
- *     (data) => data.userType === "admin",
- *     async (data) => ({ ...data, permissions: ["read", "write", "delete"] })
- *   )
+ *   .andWhen({
+ *     id: "admin-permissions",
+ *     condition: async ({ data }) => data.userType === "admin",
+ *     execute: async ({ data }) => ({ ...data, permissions: ["read", "write", "delete"] })
+ *   })
  *   .andAgent(
- *     (data) => `Generate personalized content for ${data.userInfo.name}`,
+ *     ({ data }) => `Generate personalized content for ${data.userInfo.name}`,
  *     agent,
  *     { schema: z.object({ content: z.string() }) }
  *   )
- *   .andThen(async (data) => ({
- *     processed: true,
- *     content: data.content
- *   }));
+ *   .andThen({
+ *     id: "finalize-result",
+ *     execute: async ({ data }) => ({
+ *       processed: true,
+ *       content: data.content
+ *     })
+ *   });
  *
  * // Run with optional memory override
  * const result = await workflow.run(
@@ -97,13 +106,20 @@ export class WorkflowChain<
    *
    * @example
    * ```ts
-   * const w = createWorkflowChain<{ name: string }>()
+   * const w = createWorkflowChain({
+   *   id: "greeting-workflow",
+   *   input: z.object({ name: z.string() }),
+   *   result: z.string()
+   * })
    *   .andAgent(
-   *     (data) => `Generate a greeting for the user ${data.name}`,
+   *     ({ data }) => `Generate a greeting for the user ${data.name}`,
    *     agent,
    *     { schema: z.object({ greeting: z.string() }) }
    *   )
-   *   .andThen(async (data) => data.greeting)
+   *   .andThen({
+   *     id: "extract-greeting",
+   *     execute: async ({ data }) => data.greeting
+   *   })
    * ```
    *
    * @param task - The task (prompt) to execute for the agent, can be a string or a function that returns a string
@@ -344,22 +360,27 @@ export class WorkflowChain<
    * @example
    * ```ts
    * const workflow = createWorkflowChain(config)
-   *   .andWhen(
-   *     (data) => data.userType === "admin",
-   *     async (data) => ({ ...data, permissions: ["read", "write", "delete"] })
-   *   )
-   *   .andWhen(
-   *     (data) => data.value > 1000,
-   *     async (data) => ({ ...data, flagged: true, requiresReview: true })
-   *   )
-   *   .andWhen(
-   *     (data) => data.status === "pending",
-   *     (data) => andAgent(
-   *       `Process pending request for ${data.userId}`,
-   *       agent,
-   *       { schema: z.object({ processed: z.boolean() }) }
-   *     )
-   *   );
+   *   .andWhen({
+   *     id: "admin-permissions",
+   *     condition: async ({ data }) => data.userType === "admin",
+   *     execute: async ({ data }) => ({ ...data, permissions: ["read", "write", "delete"] })
+   *   })
+   *   .andWhen({
+   *     id: "high-value-flag",
+   *     condition: async ({ data }) => data.value > 1000,
+   *     execute: async ({ data }) => ({ ...data, flagged: true, requiresReview: true })
+   *   })
+   *   .andWhen({
+   *     id: "process-pending",
+   *     condition: async ({ data }) => data.status === "pending",
+   *     execute: async ({ data }) => {
+   *       const result = await agent.generateObject(
+   *         `Process pending request for ${data.userId}`,
+   *         z.object({ processed: z.boolean() })
+   *       );
+   *       return { ...data, ...result.object };
+   *     }
+   *   });
    * ```
    *
    * @param condition - Function that determines if the step should execute based on the current data
@@ -427,13 +448,15 @@ export class WorkflowChain<
    * ```ts
    * const workflow = createWorkflowChain(config)
    *   .andTap({
-   *     execute: async (data) => {
+   *     id: "log-translation",
+   *     execute: async ({ data }) => {
    *       console.log("🔄 Translating text:", data);
    *     }
    *   })
    *   .andThen({
+   *     id: "return-translation",
    *     // the input data is still the same as the andTap ONLY executes, it doesn't return anything
-   *     execute: async (data) => {
+   *     execute: async ({ data }) => {
    *       return { ...data, translatedText: data.translatedText };
    *     }
    *   });
@@ -442,7 +465,7 @@ export class WorkflowChain<
    * @param fn - The async function to execute with the current workflow data
    * @returns A new chain with the tap step added
    */
-  andTap<NEW_DATA>(config: {
+  andTap<_NEW_DATA>(config: {
     execute: (context: {
       data: CURRENT_DATA;
       state: any;
@@ -465,29 +488,77 @@ export class WorkflowChain<
   }
 
   /**
+   * Add a workflow step to the workflow
+   *
+   * @example
+   * ```ts
+   * import { myWorkflow } from "./my-workflow";
+   *
+   * const workflow = createWorkflowChain(config)
+   *   .andThen({
+   *     id: "fetch-user",
+   *     execute: async ({ data }) => {
+   *       const userInfo = await fetchUserInfo(data.userId);
+   *       return { userInfo };
+   *     }
+   *   })
+   *   .andWorkflow(myWorkflow)
+   * ```
+   */
+  andWorkflow<NEW_DATA>(
+    workflow: InternalWorkflow<INPUT_SCHEMA, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA> {
+    this.steps.push(
+      andWorkflow(workflow) as unknown as WorkflowStep<
+        WorkflowInput<INPUT_SCHEMA>,
+        CURRENT_DATA,
+        NEW_DATA
+      >,
+    );
+    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA>;
+  }
+
+  /**
    * Add a parallel execution step that runs multiple steps simultaneously and waits for all to complete
    *
    * @example
    * ```ts
    * const workflow = createWorkflowChain(config)
-   *   .andAll([
-   *     async (data) => {
-   *       const userInfo = await fetchUserInfo(data.userId);
-   *       return { userInfo };
-   *     },
-   *     async (data) => {
-   *       const permissions = await fetchPermissions(data.userId);
-   *       return { permissions };
-   *     },
-   *     (data) => andAgent(
-   *       `Generate recommendations for user ${data.userId}`,
-   *       agent,
-   *       { schema: z.object({ recommendations: z.array(z.string()) }) }
-   *     )
-   *   ])
-   *   .andThen(async (data) => {
-   *     // data is now an array: [{ userInfo }, { permissions }, { recommendations }]
-   *     return { combined: data.flat() };
+   *   .andAll({
+   *     id: "parallel-fetch",
+   *     steps: [
+   *       {
+   *         id: "fetch-user",
+   *         execute: async ({ data }) => {
+   *           const userInfo = await fetchUserInfo(data.userId);
+   *           return { userInfo };
+   *         }
+   *       },
+   *       {
+   *         id: "fetch-permissions",
+   *         execute: async ({ data }) => {
+   *           const permissions = await fetchPermissions(data.userId);
+   *           return { permissions };
+   *         }
+   *       },
+   *       {
+   *         id: "generate-recommendations",
+   *         execute: async ({ data }) => {
+   *           const result = await agent.generateObject(
+   *             `Generate recommendations for user ${data.userId}`,
+   *             z.object({ recommendations: z.array(z.string()) })
+   *           );
+   *           return result.object;
+   *         }
+   *       }
+   *     ]
+   *   })
+   *   .andThen({
+   *     id: "combine-results",
+   *     execute: async ({ data }) => {
+   *       // data is now an array: [{ userInfo }, { permissions }, { recommendations }]
+   *       return { combined: data.flat() };
+   *     }
    *   });
    * ```
    *
@@ -526,26 +597,43 @@ export class WorkflowChain<
    * @example
    * ```ts
    * const workflow = createWorkflowChain(config)
-   *   .andRace([
-   *     async (data) => {
-   *       // Fast operation
-   *       const cacheResult = await checkCache(data.query);
-   *       return { source: "cache", result: cacheResult };
-   *     },
-   *     async (data) => {
-   *       // Slower operation
-   *       const dbResult = await queryDatabase(data.query);
-   *       return { source: "database", result: dbResult };
-   *     },
-   *     (data) => andAgent(
-   *       `Generate fallback response for: ${data.query}`,
-   *       agent,
-   *       { schema: z.object({ source: z.literal("ai"), result: z.string() }) }
-   *     )
-   *   ])
-   *   .andThen(async (data) => {
-   *     // data is the result from whichever step completed first
-   *     return { finalResult: data.result, source: data.source };
+   *   .andRace({
+   *     id: "race-data-sources",
+   *     steps: [
+   *       {
+   *         id: "check-cache",
+   *         execute: async ({ data }) => {
+   *           // Fast operation
+   *           const cacheResult = await checkCache(data.query);
+   *           return { source: "cache", result: cacheResult };
+   *         }
+   *       },
+   *       {
+   *         id: "query-database",
+   *         execute: async ({ data }) => {
+   *           // Slower operation
+   *           const dbResult = await queryDatabase(data.query);
+   *           return { source: "database", result: dbResult };
+   *         }
+   *       },
+   *       {
+   *         id: "ai-fallback",
+   *         execute: async ({ data }) => {
+   *           const result = await agent.generateObject(
+   *             `Generate fallback response for: ${data.query}`,
+   *             z.object({ source: z.literal("ai"), result: z.string() })
+   *           );
+   *           return result.object;
+   *         }
+   *       }
+   *     ]
+   *   })
+   *   .andThen({
+   *     id: "process-result",
+   *     execute: async ({ data }) => {
+   *       // data is the result from whichever step completed first
+   *       return { finalResult: data.result, source: data.source };
+   *     }
    *   });
    * ```
    *

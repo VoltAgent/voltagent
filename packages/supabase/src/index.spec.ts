@@ -523,6 +523,301 @@ describe("SupabaseMemory", () => {
     });
   });
 
+  describe("Message Type Filtering", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockClient = createMockSupabaseClient();
+      memory = new SupabaseMemory({
+        client: mockClient as any,
+        storageLimit: 100,
+      });
+      // Mock the initialization to avoid database setup issues in tests
+      // @ts-expect-error - Accessing private property for testing
+      memory.initialized = Promise.resolve();
+    });
+
+    it("should filter messages by single type - text only", async () => {
+      const mockMessages = [
+        {
+          message_id: "msg1",
+          conversation_id: "test-conv",
+          role: "user",
+          content: "User question",
+          type: "text",
+          created_at: "2023-01-01T12:00:00.000Z",
+        },
+        {
+          message_id: "msg2",
+          conversation_id: "test-conv",
+          role: "assistant",
+          content: "Response",
+          type: "text",
+          created_at: "2023-01-01T12:00:01.000Z",
+        },
+      ];
+
+      const builderWithData = {
+        select: () => builderWithData,
+        eq: () => builderWithData,
+        in: (...args: any[]) => {
+          mockClient._mockMethods.in(...args);
+          return builderWithData;
+        },
+        order: () => builderWithData,
+        limit: () => builderWithData,
+        then: (callback: any) => callback({ data: mockMessages, error: null }),
+      };
+      mockClient.from = vi.fn(() => builderWithData);
+
+      const messages = await memory.getMessages({
+        conversationId: "test-conv",
+        types: ["text"],
+      });
+
+      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["text"]);
+      expect(messages).toHaveLength(2);
+      expect(messages.every((m) => m.type === "text")).toBe(true);
+    });
+
+    it("should filter messages by single type - tool-call only", async () => {
+      const mockMessages = [
+        {
+          message_id: "msg1",
+          conversation_id: "test-conv",
+          role: "assistant",
+          content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
+          type: "tool-call",
+          created_at: "2023-01-01T12:00:00.000Z",
+        },
+      ];
+
+      const builderWithData = {
+        select: () => builderWithData,
+        eq: () => builderWithData,
+        in: (...args: any[]) => {
+          mockClient._mockMethods.in(...args);
+          return builderWithData;
+        },
+        order: () => builderWithData,
+        limit: () => builderWithData,
+        then: (callback: any) => callback({ data: mockMessages, error: null }),
+      };
+      mockClient.from = vi.fn(() => builderWithData);
+
+      const messages = await memory.getMessages({
+        conversationId: "test-conv",
+        types: ["tool-call"],
+      });
+
+      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["tool-call"]);
+      expect(messages).toHaveLength(1);
+      expect(messages[0].type).toBe("tool-call");
+    });
+
+    it("should filter messages by single type - tool-result only", async () => {
+      const mockMessages = [
+        {
+          message_id: "msg1",
+          conversation_id: "test-conv",
+          role: "tool",
+          content: JSON.stringify({ result: 3 }),
+          type: "tool-result",
+          created_at: "2023-01-01T12:00:00.000Z",
+        },
+      ];
+
+      const builderWithData = {
+        select: () => builderWithData,
+        eq: () => builderWithData,
+        in: (...args: any[]) => {
+          mockClient._mockMethods.in(...args);
+          return builderWithData;
+        },
+        order: () => builderWithData,
+        limit: () => builderWithData,
+        then: (callback: any) => callback({ data: mockMessages, error: null }),
+      };
+      mockClient.from = vi.fn(() => builderWithData);
+
+      const messages = await memory.getMessages({
+        conversationId: "test-conv",
+        types: ["tool-result"],
+      });
+
+      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["tool-result"]);
+      expect(messages).toHaveLength(1);
+      expect(messages[0].type).toBe("tool-result");
+    });
+
+    it("should filter messages by multiple types", async () => {
+      const mockMessages = [
+        {
+          message_id: "msg1",
+          conversation_id: "test-conv",
+          role: "user",
+          content: "Question",
+          type: "text",
+          created_at: "2023-01-01T12:00:00.000Z",
+        },
+        {
+          message_id: "msg2",
+          conversation_id: "test-conv",
+          role: "assistant",
+          content: JSON.stringify({ tool: "calculator" }),
+          type: "tool-call",
+          created_at: "2023-01-01T12:00:01.000Z",
+        },
+        {
+          message_id: "msg3",
+          conversation_id: "test-conv",
+          role: "assistant",
+          content: "Answer",
+          type: "text",
+          created_at: "2023-01-01T12:00:02.000Z",
+        },
+      ];
+
+      const builderWithData = {
+        select: () => builderWithData,
+        eq: () => builderWithData,
+        in: (...args: any[]) => {
+          mockClient._mockMethods.in(...args);
+          return builderWithData;
+        },
+        order: () => builderWithData,
+        limit: () => builderWithData,
+        then: (callback: any) => callback({ data: mockMessages, error: null }),
+      };
+      mockClient.from = vi.fn(() => builderWithData);
+
+      const messages = await memory.getMessages({
+        conversationId: "test-conv",
+        types: ["text", "tool-call"],
+      });
+
+      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["text", "tool-call"]);
+      expect(messages).toHaveLength(3);
+      expect(messages.filter((m) => m.type === "text")).toHaveLength(2);
+      expect(messages.filter((m) => m.type === "tool-call")).toHaveLength(1);
+    });
+
+    it("should return no messages when types array is empty", async () => {
+      const builderWithData = {
+        select: () => builderWithData,
+        eq: () => builderWithData,
+        in: (...args: any[]) => {
+          mockClient._mockMethods.in(...args);
+          return builderWithData;
+        },
+        order: () => builderWithData,
+        limit: () => builderWithData,
+        then: (callback: any) => callback({ data: [], error: null }),
+      };
+      mockClient.from = vi.fn(() => builderWithData);
+
+      const messages = await memory.getMessages({
+        conversationId: "test-conv",
+        types: [],
+      });
+
+      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", []);
+      expect(messages).toHaveLength(0);
+    });
+
+    it("should return all messages when types is undefined", async () => {
+      const mockMessages = [
+        {
+          message_id: "msg1",
+          conversation_id: "test-conv",
+          role: "user",
+          content: "Question",
+          type: "text",
+          created_at: "2023-01-01T12:00:00.000Z",
+        },
+        {
+          message_id: "msg2",
+          conversation_id: "test-conv",
+          role: "assistant",
+          content: JSON.stringify({ tool: "calculator" }),
+          type: "tool-call",
+          created_at: "2023-01-01T12:00:01.000Z",
+        },
+        {
+          message_id: "msg3",
+          conversation_id: "test-conv",
+          role: "tool",
+          content: JSON.stringify({ result: 3 }),
+          type: "tool-result",
+          created_at: "2023-01-01T12:00:02.000Z",
+        },
+      ];
+
+      const builderWithData = {
+        select: () => builderWithData,
+        eq: () => builderWithData,
+        order: () => builderWithData,
+        limit: () => builderWithData,
+        then: (callback: any) => callback({ data: mockMessages, error: null }),
+      };
+      mockClient.from = vi.fn(() => builderWithData);
+
+      const messages = await memory.getMessages({
+        conversationId: "test-conv",
+      });
+
+      expect(mockClient._mockMethods.in).not.toHaveBeenCalled();
+      expect(messages).toHaveLength(3);
+    });
+
+    it("should combine type filtering with limit", async () => {
+      const mockMessages = [
+        {
+          message_id: "msg2",
+          conversation_id: "test-conv",
+          role: "user",
+          content: "Second text",
+          type: "text",
+          created_at: "2023-01-01T12:00:01.000Z",
+        },
+        {
+          message_id: "msg3",
+          conversation_id: "test-conv",
+          role: "assistant",
+          content: "Latest text",
+          type: "text",
+          created_at: "2023-01-01T12:00:02.000Z",
+        },
+      ];
+
+      const builderWithData = {
+        select: () => builderWithData,
+        eq: () => builderWithData,
+        in: (...args: any[]) => {
+          mockClient._mockMethods.in(...args);
+          return builderWithData;
+        },
+        order: () => builderWithData,
+        limit: (...args: any[]) => {
+          mockClient._mockMethods.limit(...args);
+          return builderWithData;
+        },
+        then: (callback: any) => callback({ data: mockMessages, error: null }),
+      };
+      mockClient.from = vi.fn(() => builderWithData);
+
+      const messages = await memory.getMessages({
+        conversationId: "test-conv",
+        types: ["text"],
+        limit: 2,
+      });
+
+      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["text"]);
+      expect(mockClient._mockMethods.limit).toHaveBeenCalledWith(2);
+      expect(messages).toHaveLength(2);
+      expect(messages.every((m) => m.type === "text")).toBe(true);
+    });
+  });
+
   describe("Conversation Operations", () => {
     beforeEach(() => {
       vi.clearAllMocks();

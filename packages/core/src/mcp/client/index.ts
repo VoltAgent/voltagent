@@ -12,10 +12,11 @@ import {
   CallToolResultSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { devLogger } from "@voltagent/internal/dev";
+import type { Logger } from "@voltagent/internal";
 import type * as z from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { type Tool, createTool } from "../../tool";
+import { getGlobalLogger } from "../../logger";
 import type {
   ClientInfo,
   HTTPServerConfig,
@@ -56,6 +57,11 @@ export class MCPClient extends EventEmitter {
   private readonly timeout: number; // Renamed back from requestTimeoutMs
 
   /**
+   * Logger instance
+   */
+  private logger: Logger;
+
+  /**
    * Information identifying this client to the server.
    */
   private readonly clientInfo: ClientInfo; // Renamed back from identity
@@ -76,6 +82,19 @@ export class MCPClient extends EventEmitter {
   private readonly capabilities: Record<string, unknown>;
 
   /**
+   * Get server info for logging
+   */
+  private getServerInfo(server: MCPServerConfig): { type: string; url?: string } {
+    if ("type" in server) {
+      if (server.type === "http" || server.type === "sse" || server.type === "streamable-http") {
+        return { type: server.type, url: (server as any).url };
+      }
+      return { type: server.type };
+    }
+    return { type: "unknown" };
+  }
+
+  /**
    * Creates a new MCP client instance.
    * @param config Configuration for the client, including server details and client identity.
    */
@@ -85,6 +104,15 @@ export class MCPClient extends EventEmitter {
     this.clientInfo = config.clientInfo;
     this.serverConfig = config.server;
     this.capabilities = config.capabilities || {};
+
+    // Initialize logger
+    const serverInfo = this.getServerInfo(config.server);
+    this.logger = getGlobalLogger().child({
+      component: "mcp-client",
+      serverType: serverInfo.type,
+      serverUrl: serverInfo.url,
+    });
+
     this.client = new Client(this.clientInfo, {
       capabilities: this.capabilities,
     });
@@ -146,11 +174,39 @@ export class MCPClient extends EventEmitter {
       return;
     }
 
+    // Create MCP-specific logger
+    const serverInfo = this.getServerInfo(this.serverConfig);
+    const mcpLogger = this.logger.child({
+      component: `MCP:${serverInfo.type}-server`,
+      serverName: `${serverInfo.type}-server`,
+      transport: serverInfo.type,
+      method: "connect",
+    });
+
     try {
       await this.client.connect(this.transport);
       this.connected = true;
+
+      // Log successful connection
+      mcpLogger.info(`MCP server connected: ${serverInfo.type}-server`, {
+        event: `mcp_connect`,
+        serverName: `${serverInfo.type}-server`,
+        serverType: serverInfo.type,
+        serverUrl: serverInfo.url,
+      });
+
       this.emit("connect");
     } catch (error) {
+      // Log connection error
+      mcpLogger.error(
+        `MCP connection error: ${serverInfo.type}-server - ${error instanceof Error ? error.message : "Unknown error"}`,
+        {
+          event: `mcp_error`,
+          serverName: `${serverInfo.type}-server`,
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        },
+      );
+
       // If this is an HTTP config with fallback enabled, try SSE
       if (this.shouldAttemptFallback && this.isHTTPServer(this.serverConfig)) {
         await this.attemptSSEFallback(error);
@@ -169,7 +225,7 @@ export class MCPClient extends EventEmitter {
    * @param originalError The error from the initial connection attempt.
    */
   private async attemptSSEFallback(originalError: unknown): Promise<void> {
-    devLogger.info("Streamable HTTP connection failed, attempting SSE fallback");
+    this.logger.debug("Streamable HTTP connection failed, attempting SSE fallback");
 
     // Create new SSE transport
     if (!this.isHTTPServer(this.serverConfig)) {
@@ -288,7 +344,9 @@ export class MCPClient extends EventEmitter {
                 });
                 return result.content;
               } catch (execError) {
-                devLogger.error(`Error executing remote tool '${toolDef.name}':`, execError);
+                this.logger.error(`Error executing remote tool '${toolDef.name}':`, {
+                  error: execError,
+                });
                 throw execError;
               }
             },
@@ -296,10 +354,9 @@ export class MCPClient extends EventEmitter {
 
           executableTools[namespacedToolName] = agentTool;
         } catch (toolCreationError) {
-          devLogger.error(
-            `Failed to create executable tool wrapper for '${toolDef.name}':`,
-            toolCreationError,
-          );
+          this.logger.error(`Failed to create executable tool wrapper for '${toolDef.name}':`, {
+            error: toolCreationError,
+          });
         }
       }
 

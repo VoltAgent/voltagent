@@ -181,6 +181,10 @@ const config: Config = {
             to: "/customers/",
             from: "/showcase/999-dev-ai-teammate/",
           },
+          {
+            to: "/",
+            from: "/pricing/",
+          },
         ],
       },
     ],

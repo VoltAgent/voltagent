@@ -114,6 +114,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "observability/overview",
         "observability/developer-console",
+        "observability/logging",
         "observability/langfuse",
       ],
     },

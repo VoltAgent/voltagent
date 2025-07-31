@@ -124,6 +124,9 @@ await chat("What's the weather like in London?");
 // Example using generateText for a complete response
 const completeResponse = await agent.generateText("Explain machine learning briefly.");
 console.log("Complete Response:", completeResponse.text);
+// Additional metadata available (provider-dependent):
+// completeResponse.reasoning - Model's reasoning process (if available)
+// completeResponse.warnings - Any provider warnings
 ```
 
 #### Enhanced Streaming with `fullStream`
@@ -177,6 +180,73 @@ await enhancedChat("Write a short story about a cat and format it nicely");
 Currently, `fullStream` is only supported by the `@voltagent/vercel-ai` provider. For other providers (Google AI, Groq, Anthropic, XsAI), the response will fall back to the standard `textStream`.
 
 We're actively looking for community contributions to add `fullStream` support to other providers! If you're interested in helping, please check out our [GitHub repository](https://github.com/VoltAgent/voltagent) or join our [Discord community](https://s.voltagent.dev/discord).
+
+:::
+
+#### Promise-based Properties in Streaming Responses
+
+For more convenient access to final values when streaming, VoltAgent provides Promise-based properties that resolve when the stream completes:
+
+```ts
+// Example using Promise properties with streamText
+async function streamWithPromises(input: string) {
+  const response = await agent.streamText(input);
+
+  // Start processing the stream
+  const streamProcessing = (async () => {
+    for await (const chunk of response.textStream) {
+      process.stdout.write(chunk);
+    }
+  })();
+
+  // Access final values via Promises (these resolve when streaming completes)
+  const [fullText, usage, finishReason] = await Promise.all([
+    response.text, // Promise<string> - Full generated text
+    response.usage, // Promise<UsageInfo> - Token usage statistics
+    response.finishReason, // Promise<string> - Why generation stopped
+  ]);
+
+  console.log("\n\nGeneration complete!");
+  console.log(`Total text: ${fullText.length} characters`);
+  console.log(`Tokens used: ${usage?.totalTokens}`);
+  console.log(`Finish reason: ${finishReason}`);
+}
+
+// Example using Promise properties with streamObject
+async function streamObjectWithPromises() {
+  const schema = z.object({
+    name: z.string(),
+    age: z.number(),
+    skills: z.array(z.string()),
+  });
+
+  const response = await agent.streamObject("Generate a developer profile", schema);
+
+  // Process partial updates
+  console.log("Building object...");
+  for await (const partial of response.objectStream) {
+    console.log("Partial:", partial);
+  }
+
+  // Get the final complete object and metadata
+  const finalObject = await response.object; // Promise<T> - Final validated object
+  const usage = await response.usage; // Promise<UsageInfo> - Token usage
+
+  console.log("\nFinal object:", finalObject);
+  console.log("Generation used", usage?.totalTokens, "tokens");
+}
+```
+
+:::info Promise Properties Availability
+
+Promise-based properties for streaming responses are currently only implemented in the `@voltagent/vercel-ai` provider. These properties are optional in the provider interface to maintain backward compatibility.
+
+**Available Promise properties:**
+
+- **streamText**: `text`, `finishReason`, `usage`, `reasoning`
+- **streamObject**: `object`, `usage`, `warnings`
+
+For providers that don't support these properties, you'll need to collect the values manually from the stream or use callbacks.
 
 :::
 
@@ -295,8 +365,11 @@ for await (const partial of streamObjectResponse.objectStream) {
   console.log("Received update:", partial); // Shows the object being built incrementally
 }
 
-const finalObject = await streamObjectResponse.object;
-console.log("Final streamed object:", finalObject);
+// Get the final object (if supported by provider)
+if (streamObjectResponse.object) {
+  const finalObject = await streamObjectResponse.object;
+  console.log("Final object:", finalObject);
+}
 ```
 
 ## Advanced Features

@@ -60,7 +60,7 @@ export function defaultStepConfig<CONFIG extends InternalWorkflowStepConfig>(con
 export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>(
   data: InternalExtractWorkflowInputData<DATA>,
   state: InternalWorkflowStateParam<INPUT>,
-  executionContext: WorkflowExecutionContext | undefined,
+  executionContext: WorkflowExecutionContext,
   suspendFn: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>,
   resumeData?: RESUME_DATA,
 ): WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
@@ -70,5 +70,6 @@ export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DAT
     getStepData: (stepId: string) => executionContext?.stepData.get(stepId),
     suspend: suspendFn,
     resumeData,
+    logger: executionContext.logger,
   };
 }

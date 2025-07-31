@@ -8,6 +8,7 @@ import type {
   InternalWorkflowFunc,
   InternalWorkflowStepConfig,
 } from "../internal/types";
+import type { Workflow, WorkflowRunOptions } from "../types";
 
 export type WorkflowStepType =
   | "agent"
@@ -39,6 +40,12 @@ export type WorkflowStepFuncConfig<
 export interface WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA = any>
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
   type: "func";
+}
+
+export interface WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA = any>
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
+  type: "workflow";
+  workflow: InternalWorkflow<INPUT, DATA, RESULT>;
 }
 
 export type WorkflowStepTapConfig<
@@ -108,4 +115,24 @@ export type WorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA = any> =
   | WorkflowStepConditionalWhen<INPUT, DATA, RESULT>
   | WorkflowStepParallelAll<INPUT, DATA, RESULT>
   | WorkflowStepTap<INPUT, DATA, RESULT, SUSPEND_DATA>
-  | WorkflowStepParallelRace<INPUT, DATA, RESULT>;
+  | WorkflowStepParallelRace<INPUT, DATA, RESULT>
+  | WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA>;
+
+/**
+ * Internal type to allow overriding the run method for the workflow
+ */
+export interface InternalWorkflow<_INPUT, DATA, RESULT>
+  extends Omit<Workflow<DangerouslyAllowAny, DangerouslyAllowAny>, "run"> {
+  run: (
+    input: InternalExtractWorkflowInputData<DATA>,
+    options?: InternalWorkflowRunOptions,
+  ) => Promise<{
+    executionId: string;
+    startAt: Date;
+    endAt: Date;
+    status: "completed";
+    result: RESULT;
+  }>;
+}
+
+export interface InternalWorkflowRunOptions extends WorkflowRunOptions {}
