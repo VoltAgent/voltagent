@@ -88,6 +88,7 @@ const sidebars: SidebarsConfig = {
         "rag/custom-retrievers",
         "rag/chroma",
         "rag/pinecone",
+        "rag/qdrant",
       ],
     },
     {
