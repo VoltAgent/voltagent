@@ -45,7 +45,9 @@ export type ModelDynamicValue<T> = T | DynamicValue<T>;
 /**
  * Enhanced dynamic value for tools that supports static or dynamic values
  */
-export type ToolsDynamicValue = (Tool<any> | Toolkit)[] | DynamicValue<(Tool<any> | Toolkit)[]>;
+export type ToolsDynamicValue =
+  | (Tool<any, any> | Toolkit)[]
+  | DynamicValue<(Tool<any, any> | Toolkit)[]>;
 
 /**
  * Provider options type for LLM configurations

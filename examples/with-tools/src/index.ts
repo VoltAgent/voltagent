@@ -15,6 +15,12 @@ const agent = new Agent({
   tools: [weatherTool, checkCalendarTool, addCalendarEventTool, searchTool],
 });
 
+(
+  await weatherTool.execute({
+    location: "New York",
+  })
+).message;
+
 // Create logger
 const logger = createPinoLogger({
   name: "with-tools",

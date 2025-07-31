@@ -16,7 +16,10 @@ export type AgentTool = BaseTool;
 /**
  * Tool options for creating a new tool
  */
-export type ToolOptions<T extends ToolSchema = ToolSchema, O extends ToolSchema = ToolSchema> = {
+export type ToolOptions<
+  T extends ToolSchema = ToolSchema,
+  O extends ToolSchema | undefined = undefined,
+> = {
   /**
    * Unique identifier for the tool
    */
@@ -38,20 +41,23 @@ export type ToolOptions<T extends ToolSchema = ToolSchema, O extends ToolSchema 
   parameters: T;
 
   /**
-   * Tool output schema
+   * Tool output schema (optional)
    */
-  output: O;
+  outputSchema?: O;
 
   /**
    * Function to execute when the tool is called
    */
-  execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<z.infer<O>>;
+  execute: (
+    args: z.infer<T>,
+    options?: ToolExecuteOptions,
+  ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
 };
 
 /**
  * Tool class for defining tools that agents can use
  */
-export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema = ToolSchema> {
+export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | undefined = undefined> {
   /* implements BaseTool<z.infer<T>> */
   /**
    * Unique identifier for the tool
@@ -74,14 +80,17 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema = Tool
   readonly parameters: T;
 
   /**
-   * Tool parameter schema
+   * Tool output schema
    */
-  readonly output?: O;
+  readonly outputSchema?: O;
 
   /**
    * Function to execute when the tool is called
    */
-  readonly execute: (args: z.infer<T>, options?: ToolExecuteOptions) => Promise<z.infer<O>>;
+  readonly execute: (
+    args: z.infer<T>,
+    options?: ToolExecuteOptions,
+  ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
 
   /**
    * Create a new tool
@@ -105,7 +114,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema = Tool
     this.name = options.name;
     this.description = options.description || "";
     this.parameters = options.parameters;
-    this.output = options.output;
+    this.outputSchema = options.outputSchema;
     this.execute = options.execute;
   }
 }
@@ -113,9 +122,17 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema = Tool
 /**
  * Helper function for creating a new tool
  */
-export const createTool = <T extends ToolSchema>(options: ToolOptions<T>): Tool<T> => {
-  return new Tool<T>(options);
-};
+export function createTool<T extends ToolSchema>(
+  options: ToolOptions<T, undefined>,
+): Tool<T, undefined>;
+export function createTool<T extends ToolSchema, O extends ToolSchema>(
+  options: ToolOptions<T, O>,
+): Tool<T, O>;
+export function createTool<T extends ToolSchema, O extends ToolSchema | undefined = undefined>(
+  options: ToolOptions<T, O>,
+): Tool<T, O> {
+  return new Tool<T, O>(options);
+}
 
 /**
  * Alias for createTool function
