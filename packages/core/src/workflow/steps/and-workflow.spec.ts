@@ -4,6 +4,8 @@ import { VoltAgent } from "../../voltagent";
 import { createWorkflow } from "../core";
 import { andThen } from "./and-then";
 import { andWorkflow } from "./and-workflow";
+import { LibSQLStorage } from "../../memory";
+import { WorkflowRegistry } from "../registry";
 
 describe("andWorkflow", () => {
   it("should run the nested workflow", async () => {
@@ -15,6 +17,9 @@ describe("andWorkflow", () => {
           processed: z.boolean(),
           workflow: z.string(),
           count: z.number(),
+        }),
+        memory: new LibSQLStorage({
+          url: ":memory:",
         }),
       },
       andThen({
@@ -39,6 +44,9 @@ describe("andWorkflow", () => {
           processed: z.boolean(),
           workflow: z.string().nullable(),
         }),
+        memory: new LibSQLStorage({
+          url: ":memory:",
+        }),
       },
       andThen({
         id: "root-step",
@@ -49,14 +57,9 @@ describe("andWorkflow", () => {
       andWorkflow(nestedWorkflow),
     );
 
-    new VoltAgent({
-      agents: {},
-      workflows: {
-        root: workflow,
-        nested: nestedWorkflow,
-      },
-      autoStart: false,
-    });
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(nestedWorkflow);
+    registry.registerWorkflow(workflow);
 
     const result = await workflow.run({});
 
