@@ -26,6 +26,8 @@
   },
   "dependencies": {
     "@voltagent/core": "^0.1.55",
+    "ts-pattern": "^5.7.1",
+    "type-fest": "^4.41.0",
     "xsai": "0.3.3",
     "zod": "3.24.2"
   },
