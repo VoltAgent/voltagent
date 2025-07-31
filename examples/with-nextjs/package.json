@@ -21,7 +21,6 @@
     "@voltagent/vercel-ui": "^0.1.7",
     "ai": "^4.2.11",
     "next": "15.3.1",
-    "npm-check-updates": "^17.1.18",
     "postcss": "^8.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

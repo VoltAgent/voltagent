@@ -162,23 +162,25 @@ function convertToV4UIMessages(
         return [{ type: "text", text: content }];
       })
       .otherwise((content) => {
-        return content.map((part) => {
-          return match(part)
-            .returnType<UIMessage<"v4">["parts"][number]>()
-            .with({ type: "text" }, (p) => ({ type: "text", text: p.text }))
-            .with({ type: "image" }, (p) => ({
-              type: "file",
-              data: p.image.toString(),
-              /* c8 ignore next 1 */
-              mimeType: p.mimeType ?? "image/png",
-            }))
-            .with({ type: "file" }, (p) => ({
-              type: "file",
-              data: p.data.toString(),
-              mimeType: p.mimeType,
-            }))
-            .exhaustive();
-        });
+        return content
+          .filter((part) => part.type !== "tool-result") // Filter out tool-result parts
+          .map((part) => {
+            return match(part)
+              .returnType<UIMessage<"v4">["parts"][number]>()
+              .with({ type: "text" }, (p) => ({ type: "text", text: p.text }))
+              .with({ type: "image" }, (p) => ({
+                type: "file",
+                data: p.image.toString(),
+                /* c8 ignore next 1 */
+                mimeType: p.mimeType ?? "image/png",
+              }))
+              .with({ type: "file" }, (p) => ({
+                type: "file",
+                data: p.data.toString(),
+                mimeType: p.mimeType,
+              }))
+              .exhaustive();
+          });
       }),
   })) satisfies UIMessage<"v4">[];
 

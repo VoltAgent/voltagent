@@ -72,6 +72,11 @@ export type ProviderTextResponse<TOriginalResponse> = {
    * Warnings from the model provider (if applicable)
    */
   warnings?: any[];
+
+  /**
+   * Messages array from the response (includes assistant messages with tool calls)
+   */
+  messages?: BaseMessage[];
 };
 
 // Standard stream part types for fullStream
@@ -194,6 +199,13 @@ export type ProviderTextStreamResponse<TOriginalResponse> = {
    * Optional - only available in providers that support it.
    */
   reasoning?: Promise<string | undefined>;
+
+  /**
+   * Messages array from the response (includes assistant messages with tool calls).
+   * Resolved when the response is finished.
+   * Optional - only available in providers that support it.
+   */
+  messages?: Promise<BaseMessage[] | undefined>;
 };
 
 /**
@@ -317,9 +329,28 @@ export type FilePart = {
 };
 
 /**
+ * Tool result part of a message
+ */
+export type ToolResultPart = {
+  type: "tool-result";
+  /**
+   * The ID of the tool call
+   */
+  toolCallId: string;
+  /**
+   * The name of the tool
+   */
+  toolName: string;
+  /**
+   * The result from the tool execution
+   */
+  result: any;
+};
+
+/**
  * Message content can be either a string or an array of parts
  */
-export type MessageContent = string | Array<TextPart | ImagePart | FilePart>;
+export type MessageContent = string | Array<TextPart | ImagePart | FilePart | ToolResultPart>;
 
 /**
  * Message role types

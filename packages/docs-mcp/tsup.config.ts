@@ -3,7 +3,16 @@ import fs from "node:fs";
 import path from "node:path";
 
 // Copy docs functionality
-const skipDirs = new Set(["node_modules", ".git", ".next", "dist", "build", ".turbo", ".vercel"]);
+const skipDirs = new Set([
+  "node_modules",
+  ".git",
+  ".next",
+  "dist",
+  "build",
+  ".turbo",
+  ".vercel",
+  ".voltagent",
+]);
 const skipFiles = new Set([".DS_Store", "Thumbs.db", ".env"]);
 
 function shouldSkip(itemName: string, isDirectory: boolean) {

@@ -100,16 +100,18 @@ export class XSAIProvider implements LLMProvider<string> {
     const { tool } = await import("xsai");
 
     const functions = await Promise.all(
-      tools.map(async (t) => {
-        return await tool({
-          name: t.name,
-          description: t.description,
-          parameters: t.parameters as any,
-          execute: async (input) => {
-            return await t.execute(input);
-          },
-        });
-      }),
+      tools
+        .filter((t) => t.execute)
+        .map(async (t) => {
+          return await tool({
+            name: t.name,
+            description: t.description,
+            parameters: t.parameters as any,
+            execute: async (input) => {
+              return await t.execute?.(input);
+            },
+          });
+        }),
     );
 
     return functions;

@@ -37,6 +37,7 @@ import {
   streamEventForwarder,
   transformStreamEventToStreamPart,
 } from "../utils/streams";
+import type { StreamPart } from "./providers/base/types";
 import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
@@ -755,6 +756,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Wrap ALL tools to inject ToolExecutionContext
     const toolsToUse = baseTools.map((tool) => {
       const originalExecute = tool.execute;
+
+      // For client-side tools (no execute function), return tool as-is
+      if (!originalExecute) {
+        return tool;
+      }
+
       return {
         ...tool,
         execute: async (args: unknown, execOptions?: ToolExecuteOptions): Promise<unknown> => {
@@ -934,7 +941,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     return {
-      tools: toolsToUse,
+      tools: toolsToUse as BaseTool[],
       maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
     };
   }
@@ -1331,10 +1338,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Create an enhanced fullStream with real-time SubAgent event injection
    */
   private createEnhancedFullStream(
-    originalStream: AsyncIterable<any>,
-    streamController: { current: ReadableStreamDefaultController<any> | null },
+    originalStream: AsyncIterable<StreamPart>,
+    streamController: { current: ReadableStreamDefaultController<StreamPart> | null },
     subAgentStatus: Map<string, { isActive: boolean; isCompleted: boolean }>,
-  ): AsyncIterable<any> {
+  ): AsyncIterable<StreamPart> {
     const logger = this.logger; // Capture logger reference
     return {
       async *[Symbol.asyncIterator]() {
@@ -1865,6 +1872,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         context: operationContext,
       });
 
+      // Check for client-side tool calls in the response
+
       // Extend the original response with userContext AFTER onEnd hook
       const extendedResponse: GenerateTextResponse<TProvider> = {
         ...response,
@@ -2141,7 +2150,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Create real-time SubAgent event tracking
     const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
-    const streamController: { current: ReadableStreamDefaultController<any> | null } = {
+    const streamController: { current: ReadableStreamDefaultController<StreamPart> | null } = {
       current: null,
     };
 
@@ -2605,12 +2614,15 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       },
     });
 
+    // Create enhanced stream
+    const enhancedStream = response.fullStream
+      ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
+      : undefined;
+
     // Create enhanced stream with real-time SubAgent event injection and add userContext
     const wrappedResponse: StreamTextResponse<TProvider> = {
       ...response,
-      fullStream: response.fullStream
-        ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
-        : undefined,
+      fullStream: enhancedStream,
       userContext: new Map(operationContext.userContext),
     };
 
