@@ -6,7 +6,7 @@ import { andThen, andAll, andWhen } from "./steps";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { WorkflowRegistry } from "./registry";
 
-describe("workflow suspend/resume functionality", () => {
+describe.sequential("workflow suspend/resume functionality", () => {
   let registry: WorkflowRegistry;
 
   beforeEach(() => {

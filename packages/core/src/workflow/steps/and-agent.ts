@@ -25,11 +25,14 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
  * ```ts
  * const w = createWorkflow(
  *   andAgent(
- *     (data) => `Generate a greeting for the user ${data.name}`,
+ *     ({ data }) => `Generate a greeting for the user ${data.name}`,
  *     agent,
- *    { schema: z.object({ greeting: z.string() }) }
+ *     { schema: z.object({ greeting: z.string() }) }
  *   ),
- *   andThen(async (data) => data.greeting)
+ *   andThen({
+ *     id: "extract-greeting",
+ *     execute: async ({ data }) => data.greeting
+ *   })
  * );
  * ```
  *

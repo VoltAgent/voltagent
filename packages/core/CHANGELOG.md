@@ -1,5 +1,99 @@
 # @voltagent/core
 
+## 0.1.71
+
+### Patch Changes
+
+- [#438](https://github.com/VoltAgent/voltagent/pull/438) [`99fe836`](https://github.com/VoltAgent/voltagent/commit/99fe83662e9b3e550380fce066521a5c27d69eb3) Thanks [@danielyogel](https://github.com/danielyogel)! - feat: add optional outputSchema validation for tools
+
+  VoltAgent now supports optional output schema validation for tools, providing runtime type safety and enabling LLM self-correction when tool outputs don't match expected formats.
+
+  **Key Features:**
+
+  - **Optional Output Schema**: Tools can now define an `outputSchema` using Zod schemas
+  - **Runtime Validation**: Tool outputs are validated against the schema when provided
+  - **LLM Error Recovery**: Validation errors are returned to the LLM instead of throwing, allowing it to retry with corrected output
+  - **Full Backward Compatibility**: Existing tools without output schemas continue to work as before
+  - **TypeScript Type Safety**: Output types are inferred from schemas when provided
+
+  **Usage Example:**
+
+  ```typescript
+  import { createTool } from "@voltagent/core";
+  import { z } from "zod";
+
+  // Define output schema
+  const weatherOutputSchema = z.object({
+    temperature: z.number(),
+    condition: z.enum(["sunny", "cloudy", "rainy", "snowy"]),
+    humidity: z.number().min(0).max(100),
+  });
+
+  // Create tool with output validation
+  const weatherTool = createTool({
+    name: "getWeather",
+    description: "Get current weather",
+    parameters: z.object({
+      location: z.string(),
+    }),
+    outputSchema: weatherOutputSchema, // Optional
+    execute: async ({ location }) => {
+      // Return value will be validated
+      return {
+        temperature: 22,
+        condition: "sunny",
+        humidity: 65,
+      };
+    },
+  });
+  ```
+
+  **Validation Behavior:**
+
+  When a tool with `outputSchema` is executed:
+
+  1. The output is validated against the schema
+  2. If validation succeeds, the validated output is returned
+  3. If validation fails, an error object is returned to the LLM:
+     ```json
+     {
+       "error": true,
+       "message": "Output validation failed: Expected number, received string",
+       "validationErrors": [...],
+       "actualOutput": {...}
+     }
+     ```
+  4. The LLM can see the error and potentially fix it by calling the tool again
+
+  This feature enhances tool reliability while maintaining the flexibility for LLMs to handle validation errors gracefully.
+
+## 0.1.70
+
+### Patch Changes
+
+- [#400](https://github.com/VoltAgent/voltagent/pull/400) [`57825dd`](https://github.com/VoltAgent/voltagent/commit/57825ddb359177b5abc3696f3c54e5fc873ea621) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat(core): Add in new `andWorkflow` step to allow for running a workflow from another workflow
+
+- [#436](https://github.com/VoltAgent/voltagent/pull/436) [`89e4ef1`](https://github.com/VoltAgent/voltagent/commit/89e4ef1f0e84f3f42bb208cf70f39cca0898ddc7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: make tool errors non-fatal for better agent resilience - #430 & #349
+
+  Previously, when tools encountered errors (timeouts, connection issues, etc.), the entire agent execution would fail. This change improves resilience by:
+
+  - Catching tool execution errors and returning them as structured results instead of throwing
+  - Allowing the LLM to see tool errors and decide whether to retry or use alternative approaches
+  - Including error details (message and stack trace) in the tool result for debugging
+  - Ensuring agent execution only fails when it reaches maxSteps or the LLM cannot proceed
+
+  The error result format includes:
+
+  ```json
+  {
+    "error": true,
+    "message": "Error message",
+    "stack": "Error stack trace (optional)"
+  }
+  ```
+
+  This change makes agents more robust when dealing with unreliable external tools or transient network issues.
+
 ## 0.1.69
 
 ### Patch Changes

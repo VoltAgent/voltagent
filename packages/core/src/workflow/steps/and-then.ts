@@ -17,17 +17,23 @@ import { getGlobalLogger } from "../../logger";
  * @example
  * ```ts
  * const w = createWorkflow(
- *   andThen(async (data) => {
- *     const processed = await someAsyncOperation(data.value);
- *     return { ...data, processed };
+ *   andThen({
+ *     id: "process-data",
+ *     execute: async ({ data }) => {
+ *       const processed = await someAsyncOperation(data.value);
+ *       return { ...data, processed };
+ *     }
  *   }),
- *   andThen(async (data) => {
- *     return { result: `Processed: ${data.processed}` };
+ *   andThen({
+ *     id: "format-result",
+ *     execute: async ({ data }) => {
+ *       return { result: `Processed: ${data.processed}` };
+ *     }
  *   })
  * );
  * ```
  *
- * @param fn - The async function to execute with the workflow data
+ * @param config - Configuration object with execute function and metadata
  * @returns A workflow step that executes the function and returns the result
  */
 export function andThen<

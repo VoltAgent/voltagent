@@ -388,7 +388,7 @@ export type ToolExecuteOptions = {
   [key: string]: any;
 };
 
-export type BaseTool = Tool<any>;
+export type BaseTool = Tool<any, any>;
 
 export type BaseToolCall = {
   name: string;

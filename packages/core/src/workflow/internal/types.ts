@@ -1,10 +1,10 @@
+import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny, PlainObject } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
-import type { WorkflowState } from "./state";
 import type { WorkflowExecutionContext } from "../context";
-import type { Logger } from "@voltagent/internal";
+import type { WorkflowState } from "./state";
 
 /**
  * The base input type for the workflow
@@ -134,14 +134,10 @@ export type InternalAnyWorkflowStep<
  * @private - INTERNAL USE ONLY
  */
 export type InternalInferWorkflowStepsResult<
-  STEPS extends ReadonlyArray<
-    InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>
-  >,
+  STEPS extends ReadonlyArray<InternalAnyWorkflowStep<any, any, any, any, any>>,
 > = {
-  [K in keyof STEPS]: Awaited<ReturnType<STEPS[K]["execute"]>>;
+  [K in keyof STEPS]: ExtractExecuteResult<STEPS[K]>;
 };
-
-// Awaited<ReturnType<GetFunc<STEPS[K]>>>
 
 export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
   ? BaseMessage | BaseMessage[] | string
@@ -151,10 +147,15 @@ export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
       ? z.infer<T>
       : T;
 
-// type GetFunc<T> = T extends InternalAnyWorkflowStep<
-//   DangerouslyAllowAny,
-//   DangerouslyAllowAny,
-//   DangerouslyAllowAny
-// >
-//   ? T["execute"]
-//   : never;
+/*
+|------------------
+| Internals
+|------------------
+*/
+
+// Type to extract the awaited return type from an execute function
+type ExtractExecuteResult<T> = T extends { execute: (...args: any[]) => infer R }
+  ? R extends Promise<infer U>
+    ? U
+    : R
+  : never;

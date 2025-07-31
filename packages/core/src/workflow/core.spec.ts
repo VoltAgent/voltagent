@@ -1,11 +1,11 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createWorkflow } from "./core";
-import { andThen } from "./steps";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
+import { andAll, andThen } from "./steps";
 
-describe("workflow.run", () => {
+describe.sequential("workflow.run", () => {
   beforeEach(() => {
     // Clear registry before each test
     const registry = WorkflowRegistry.getInstance();

@@ -9,7 +9,7 @@ import { weatherTool } from "./tools";
 // Create a logger instance
 const logger = createPinoLogger({
   name: "{{projectName}}",
-  level: process.env.VOLTAGENT_LOG_LEVEL || "info",
+  level: "info",
 });
 
 const agent = new Agent({

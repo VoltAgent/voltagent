@@ -1,5 +1,14 @@
 # @voltagent/voice
 
+## 0.2.2
+
+### Patch Changes
+
+- [#411](https://github.com/VoltAgent/voltagent/pull/411) [`80b24e2`](https://github.com/VoltAgent/voltagent/commit/80b24e245daa9584733762c9aaf7e23e1d90c6c5) Thanks [@kwaa](https://github.com/kwaa)! - chore(deps): bump xsai to 0.3.3
+
+- Updated dependencies [[`99fe836`](https://github.com/VoltAgent/voltagent/commit/99fe83662e9b3e550380fce066521a5c27d69eb3)]:
+  - @voltagent/core@0.1.71
+
 ## 0.2.1
 
 ### Patch Changes

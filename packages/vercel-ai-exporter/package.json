@@ -35,8 +35,8 @@
     "dev": "tsup --watch",
     "lint": "biome check src/",
     "lint:fix": "biome check --apply src/",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test-disabled": "vitest",
+    "test:coverage-disabled": "vitest run --coverage"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.18.0",

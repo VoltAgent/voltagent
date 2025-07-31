@@ -6,7 +6,27 @@ import { getGlobalLogger } from "../../logger";
 
 /**
  * A safe way to tap into the workflow state without affecting the result.
- * @param fn - The async function to execute
+ *
+ * @example
+ * ```ts
+ * const w = createWorkflow(
+ *   andTap({
+ *     id: "log-processing",
+ *     execute: async ({ data }) => {
+ *       console.log("Processing data:", data);
+ *     }
+ *   }),
+ *   andThen({
+ *     id: "process-data",
+ *     execute: async ({ data }) => {
+ *       // data is unchanged from the tap step
+ *       return { ...data, processed: true };
+ *     }
+ *   })
+ * );
+ * ```
+ *
+ * @param config - Configuration object with execute function and metadata
  * @returns A workflow step that executes the function
  */
 export function andTap<

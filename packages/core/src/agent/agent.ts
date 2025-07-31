@@ -795,6 +795,36 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               // Pass the correctly typed options
               const result = await originalExecute(args, reasoningOptions);
 
+              // Validate output against schema if provided (even for reasoning tools)
+              if (tool.outputSchema && "safeParse" in tool.outputSchema) {
+                const parseResult = tool.outputSchema.safeParse(result);
+                if (!parseResult.success) {
+                  const errorLogger = logger || this.logger;
+                  errorLogger.error(
+                    buildToolLogMessage(
+                      tool.name,
+                      ActionType.TOOL_ERROR,
+                      `Output validation failed: ${parseResult.error.message}`,
+                    ),
+                    {
+                      event: LogEvents.TOOL_EXECUTION_FAILED,
+                      toolName: tool.name,
+                      error: parseResult.error,
+                      validationErrors: parseResult.error.errors,
+                    },
+                  );
+
+                  // Return validation error as a tool result so LLM can see and potentially fix it
+                  return {
+                    error: true,
+                    message: `Output validation failed: ${parseResult.error.message}`,
+                    validationErrors: parseResult.error.errors,
+                    actualOutput: result,
+                  };
+                }
+                return parseResult.data;
+              }
+
               // Tool execution already logged in Stream Step Change
 
               return result;
@@ -802,6 +832,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
             // Execute regular tools with the injected context
             const result = await originalExecute(args, finalExecOptions);
+
+            // Validate output against schema if provided
+            if (tool.outputSchema && "safeParse" in tool.outputSchema) {
+              const parseResult = tool.outputSchema.safeParse(result);
+              if (!parseResult.success) {
+                const errorLogger = logger || this.logger;
+                errorLogger.error(
+                  buildToolLogMessage(
+                    tool.name,
+                    ActionType.TOOL_ERROR,
+                    `Output validation failed: ${parseResult.error.message}`,
+                  ),
+                  {
+                    event: LogEvents.TOOL_EXECUTION_FAILED,
+                    toolName: tool.name,
+                    agentId: this.id,
+                    modelName: this.getModelName(),
+                    error: parseResult.error,
+                    validationErrors: parseResult.error.errors,
+                  },
+                );
+
+                // Return validation error as a tool result so LLM can see and potentially fix it
+                return {
+                  error: true,
+                  message: `Output validation failed: ${parseResult.error.message}`,
+                  validationErrors: parseResult.error.errors,
+                  actualOutput: result,
+                };
+              }
+              return parseResult.data;
+            }
 
             // Tool execution already logged in Stream Step Change
 
@@ -819,10 +881,19 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 toolName: tool.name,
                 agentId: this.id,
                 modelName: this.getModelName(),
-                error: error instanceof Error ? error.message : error,
+                error,
               },
             );
-            throw error;
+
+            // Return error as a tool result instead of throwing
+            // This allows the LLM to see the error and potentially recover
+            const result = {
+              error: true,
+              message: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined,
+            };
+
+            return result;
           }
         },
       };
@@ -1083,135 +1154,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
 
     context.conversationSteps.push(finalStep);
-  }
-
-  /**
-   * Handle tool execution errors by creating appropriate events and steps
-   */
-  private async handleToolError(
-    error: VoltAgentError,
-    operationContext: OperationContext,
-    options: {
-      userId?: string;
-      conversationId?: string;
-      internalOptions?: InternalGenerateOptions;
-    },
-  ): Promise<void> {
-    if (!error.toolError) {
-      // Handle non-tool errors
-      return;
-    }
-    const { userId, conversationId, internalOptions } = options;
-    const { toolCallId, toolName } = error.toolError;
-
-    try {
-      // [NEW EVENT SYSTEM] Create a tool:error event for tool error
-      const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
-        eventId: string;
-        startTime: string;
-      }) || { eventId: undefined, startTime: new Date().toISOString() };
-
-      const toolErrorEvent: ToolErrorEvent = {
-        id: crypto.randomUUID(),
-        name: "tool:error",
-        type: "tool",
-        startTime: toolStartInfo.startTime,
-        endTime: new Date().toISOString(),
-        status: "error",
-        level: "ERROR",
-        input: null,
-        output: null,
-        statusMessage: {
-          message: error.message,
-          code: error.code,
-          ...(error.toolError && { toolError: error.toolError }),
-        },
-        metadata: {
-          displayName: toolName,
-          id: toolName,
-          agentId: this.id,
-        },
-        traceId: operationContext.historyEntry.id,
-        parentEventId: toolStartInfo.eventId,
-      };
-
-      // Publish the tool:error event (background)
-      this.publishTimelineEvent(operationContext, toolErrorEvent);
-
-      // Add tool error step to history
-      const toolErrorStep: StepWithContent = {
-        id: toolCallId,
-        type: "tool_result",
-        name: toolName,
-        result: {
-          error: error,
-        },
-        content: JSON.stringify([
-          {
-            type: "tool-result",
-            toolCallId: toolCallId,
-            toolName: toolName,
-            result: {
-              error: {
-                message: error.message,
-                code: error.code,
-              },
-            },
-          },
-        ]),
-        role: "assistant",
-      };
-
-      // Add the error step to history
-      this.addStepToHistory(toolErrorStep, operationContext);
-
-      // Save to conversation memory
-      if (userId) {
-        const onStepFinish = this.memoryManager.createStepFinishHandler(
-          operationContext,
-          userId,
-          conversationId,
-        );
-        await onStepFinish(toolErrorStep);
-      }
-
-      // Call tool end hook with error
-      const tool = this.toolManager.getToolByName(toolName);
-      if (tool && internalOptions) {
-        await this.getMergedHooks(internalOptions).onToolEnd?.({
-          agent: this,
-          tool,
-          output: undefined,
-          error: error,
-          context: operationContext,
-        });
-      }
-
-      // Log tool error
-      const methodLogger = operationContext.logger || this.logger;
-      methodLogger.error(
-        buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Tool ${toolName} failed`),
-        {
-          event: LogEvents.TOOL_EXECUTION_FAILED,
-          toolName,
-          toolCallId,
-          error: {
-            message: error.message,
-            code: error.code,
-          },
-        },
-      );
-    } catch (updateError) {
-      const methodLogger = operationContext.logger || this.logger;
-      methodLogger.error(
-        `Failed to update tool event to error status for ${toolName} (${toolCallId})`,
-        {
-          toolName,
-          toolCallId,
-          error: updateError,
-        },
-      );
-    }
   }
 
   /**
@@ -1603,6 +1545,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId,
         historyEntryId: operationContext.historyEntry.id,
         operationContext: operationContext,
+        logger: methodLogger,
       });
 
       // Resolve dynamic model based on user context
@@ -1798,8 +1741,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                   level: "ERROR",
                   input: null,
                   output: null,
-                  statusMessage: step.result?.error || {
-                    message: "Unknown tool error",
+                  statusMessage: {
+                    message: step.result?.message || "Unknown tool error",
+                    // Include stack trace if available (from tool wrapper)
+                    ...(step.result?.stack && {
+                      stack: step.result.stack,
+                    }),
                   },
                   metadata: {
                     displayName: toolName,
@@ -1974,16 +1921,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       return extendedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
-
-      // Check if this is a tool error
-      if (voltagentError.toolError) {
-        // Handle tool error
-        await this.handleToolError(voltagentError, operationContext, {
-          userId,
-          conversationId: finalConversationId,
-          internalOptions,
-        });
-      }
 
       // [NEW EVENT SYSTEM] Create an agent:error event
       const agentErrorStartInfo = {
@@ -2243,6 +2180,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       operationContext: operationContext,
       // Pass the internal forwarder to tools
       internalStreamForwarder: internalStreamEventForwarder,
+      logger: methodLogger,
     });
 
     // Resolve dynamic model based on user context
@@ -2353,7 +2291,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 level: "ERROR",
                 input: null,
                 output: null,
-                statusMessage: chunk.result?.error || { message: "Unknown tool error" },
+                statusMessage: {
+                  message: chunk.result?.message || "Unknown tool error",
+                  // Include stack trace if available (from tool wrapper)
+                  ...(chunk.result?.stack && {
+                    stack: chunk.result.stack,
+                  }),
+                },
                 metadata: {
                   displayName: toolName,
                   id: toolName,
@@ -2582,15 +2526,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         }
       },
       onError: async (error: VoltAgentError) => {
-        if (error.toolError) {
-          // Handle tool error using the shared helper method
-          await this.handleToolError(error, operationContext, {
-            userId,
-            conversationId: finalConversationId,
-            internalOptions,
-          });
-        }
-
         // [NEW EVENT SYSTEM] Create an agent:error event
         const agentErrorStartInfo = {
           startTime:

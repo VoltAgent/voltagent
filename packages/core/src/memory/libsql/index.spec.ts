@@ -3,7 +3,7 @@ import { LibSQLStorage } from ".";
 import type { MemoryMessage } from "../types";
 import { generateTestTablePrefix } from "../../test-utils/libsql-test-helpers";
 
-describe("LibSQLStorage", () => {
+describe.sequential("LibSQLStorage", () => {
   let storage: LibSQLStorage;
   let testPrefix: string;
 

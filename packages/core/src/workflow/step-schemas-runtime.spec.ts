@@ -4,7 +4,7 @@ import { createWorkflowChain } from "./chain";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { WorkflowRegistry } from "./registry";
 
-describe("Step-level Schema Runtime Tests", () => {
+describe.sequential("Step-level Schema Runtime Tests", () => {
   let registry: WorkflowRegistry;
 
   beforeEach(() => {

@@ -673,6 +673,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A helpful AI assistant",
+        memory: mockMemory,
       });
 
       expect(defaultAgent.id).toBeDefined();
@@ -689,6 +690,7 @@ describe("Agent", () => {
         instructions: "Custom description",
         model: mockModel,
         llm: mockProvider,
+        memory: mockMemory,
       });
 
       expect(customAgent.id).toBe("custom-id");
@@ -703,6 +705,7 @@ describe("Agent", () => {
         description: "Uses provided description",
         model: mockModel,
         llm: mockProvider,
+        memory: mockMemory,
         // instructions property is intentionally omitted
       });
       expect(agentWithDesc.instructions).toBe("Uses provided description");
@@ -716,6 +719,7 @@ describe("Agent", () => {
         description: "This description should be ignored",
         model: mockModel,
         llm: mockProvider,
+        memory: mockMemory,
       });
       expect(agentWithBoth.instructions).toBe("Uses provided instructions");
       expect(agentWithBoth.description).toBe("Uses provided instructions");
@@ -728,6 +732,7 @@ describe("Agent", () => {
         llm: mockProvider,
         model: mockModel,
         maxSteps: 25,
+        memory: mockMemory,
       });
 
       expect(agentWithMaxSteps.name).toBe("MaxSteps Agent");
@@ -741,6 +746,7 @@ describe("Agent", () => {
         instructions: "Agent without maxSteps",
         llm: mockProvider,
         model: mockModel,
+        memory: mockMemory,
         // No maxSteps
       });
 
@@ -2245,6 +2251,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A mock sub-agent for testing",
+        memory: mockMemory,
       });
 
       // Create an agent with sub-agents
@@ -2255,6 +2262,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A parent agent with sub-agents",
+        memory: mockMemory,
       });
 
       // // Add the sub-agent
@@ -2296,6 +2304,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "No SubAgents Agent instructions",
+        memory: mockMemory,
       });
 
       const tools = agentWithoutSubAgents.getTools();
@@ -2397,6 +2406,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A test sub agent",
+        memory: mockMemory,
       });
 
       const parentAgent = new TestAgent({
@@ -2405,6 +2415,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A parent agent",
+        memory: mockMemory,
       });
 
       parentAgent.addSubAgent(mockSubAgent);
@@ -2512,6 +2523,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "Parent without fullStream",
+        memory: mockMemory,
       });
 
       parentAgent.addSubAgent(mockSubAgent);
@@ -6161,6 +6173,223 @@ describe("SupervisorConfig", () => {
       // Should fall back to some reasonable behavior
       expect(systemMessage.systemMessages.content).toBeDefined();
       expect(typeof systemMessage.systemMessages.content).toBe("string");
+    });
+  });
+
+  describe("tool error handling", () => {
+    it("should return tool errors as results instead of throwing", async () => {
+      const errorMessage = "Tool execution failed: timeout";
+      const failingTool = createTool({
+        name: "failing-tool",
+        description: "A tool that always fails",
+        parameters: z.object({ input: z.string() }),
+        execute: async () => {
+          throw new Error(errorMessage);
+        },
+      });
+
+      const agent = new Agent({
+        name: "test-agent",
+        instructions: "Agent with failing tool",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        tools: [failingTool],
+        memory: false,
+      });
+
+      // Mock provider to simulate tool call and capture the wrapped tool
+      let capturedTool: any;
+      vi.spyOn(mockLLM, "generateText").mockImplementation(async (options: any) => {
+        // Capture the wrapped tool
+        capturedTool = options.tools?.find((t: any) => t.name === "failing-tool");
+
+        // Simulate the LLM making a tool call
+        await options.onStepFinish({
+          id: "tool-call-1",
+          type: "tool_call",
+          name: "failing-tool",
+          arguments: { input: "test" },
+          content: "",
+          role: "assistant",
+        });
+
+        // Execute the tool to test error handling
+        const toolResult = await capturedTool.execute({ input: "test" });
+
+        // Tool result should contain error info instead of throwing
+        expect(toolResult).toMatchObject({
+          error: true,
+          message: errorMessage,
+        });
+        // stack should be present
+        expect(toolResult.stack).toBeDefined();
+        expect(toolResult.stack).toContain(errorMessage);
+
+        // Simulate tool result step with error
+        await options.onStepFinish({
+          id: "tool-call-1",
+          type: "tool_result",
+          name: "failing-tool",
+          result: toolResult,
+          content: JSON.stringify(toolResult),
+          role: "assistant",
+        });
+
+        return {
+          provider: { text: "I encountered an error with the tool." },
+          text: "I encountered an error with the tool.",
+          usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+          finishReason: "stop",
+          toolCalls: [],
+          toolResults: [],
+        };
+      });
+
+      const result = await agent.generateText("Use the failing tool");
+
+      // Agent should complete successfully despite tool error
+      expect(result.text).toBe("I encountered an error with the tool.");
+      expect(mockLLM.generateText).toHaveBeenCalled();
+    });
+
+    it("should handle MCP tool timeouts gracefully", async () => {
+      const timeoutError = new Error("Request timeout");
+      const mcpTool = createTool({
+        name: "mcp_server_tool",
+        description: "An MCP tool that times out",
+        parameters: z.object({ query: z.string() }),
+        execute: async () => {
+          // Simulate MCP timeout
+          throw timeoutError;
+        },
+      });
+
+      const agent = new Agent({
+        name: "test-agent",
+        instructions: "Agent with MCP tool",
+        model: { modelId: "test-model" },
+        llm: mockLLM,
+        tools: [mcpTool],
+        memory: false,
+      });
+
+      let capturedTool: any;
+      let toolResultReceived = false;
+
+      vi.spyOn(mockLLM, "generateText").mockImplementation(async (options: any) => {
+        capturedTool = options.tools?.find((t: any) => t.name === "mcp_server_tool");
+
+        // Simulate tool call
+        await options.onStepFinish({
+          id: "mcp-call-1",
+          type: "tool_call",
+          name: "mcp_server_tool",
+          arguments: { query: "search" },
+          content: "",
+          role: "assistant",
+        });
+
+        // Execute the tool - should return error result
+        const toolResult = await capturedTool.execute({ query: "search" });
+
+        expect(toolResult).toMatchObject({
+          error: true,
+          message: "Request timeout",
+        });
+
+        toolResultReceived = true;
+
+        // Simulate tool result with error
+        await options.onStepFinish({
+          id: "mcp-call-1",
+          type: "tool_result",
+          name: "mcp_server_tool",
+          result: toolResult,
+          content: JSON.stringify(toolResult),
+          role: "assistant",
+        });
+
+        return {
+          provider: { text: "The tool timed out. Let me try a different approach." },
+          text: "The tool timed out. Let me try a different approach.",
+          usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+          finishReason: "stop",
+          toolCalls: [],
+          toolResults: [],
+        };
+      });
+
+      const result = await agent.generateText("Search for information");
+
+      expect(toolResultReceived).toBe(true);
+      expect(result.text).toContain("timed out");
+    });
+
+    it("should store error details in _errorDetails field", async () => {
+      const errorMessage = "Tool failed with details";
+      const failingTool = createTool({
+        name: "detailed-failing-tool",
+        description: "A tool that fails with details",
+        parameters: z.object({ input: z.string() }),
+        execute: async () => {
+          const error = new Error(errorMessage);
+          error.name = "CustomToolError";
+          throw error;
+        },
+      });
+
+      const agent = new Agent({
+        name: "test-agent",
+        instructions: "Agent with detailed failing tool",
+        llm: mockLLM,
+        model: { modelId: "test-model" },
+        tools: [failingTool],
+        memory: false,
+      });
+
+      let capturedTool: any;
+      vi.spyOn(mockLLM, "generateText").mockImplementation(async (options: any) => {
+        capturedTool = options.tools?.find((t: any) => t.name === "detailed-failing-tool");
+
+        await options.onStepFinish({
+          id: "tool-call-1",
+          type: "tool_call",
+          name: "detailed-failing-tool",
+          arguments: { input: "test" },
+          content: "",
+          role: "assistant",
+        });
+
+        const toolResult = await capturedTool.execute({ input: "test" });
+
+        // Stack should be present
+        expect(toolResult).toMatchObject({
+          error: true,
+          message: errorMessage,
+        });
+        expect(toolResult.stack).toBeDefined();
+        expect(toolResult.stack).toContain("CustomToolError: Tool failed with details");
+
+        await options.onStepFinish({
+          id: "tool-call-1",
+          type: "tool_result",
+          name: "detailed-failing-tool",
+          result: toolResult,
+          content: JSON.stringify(toolResult), // Include full result with errorDetails
+          role: "assistant",
+        });
+
+        return {
+          provider: { text: "Tool failed with details" },
+          text: "Tool failed with details",
+          usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+          finishReason: "stop",
+          toolCalls: [],
+          toolResults: [],
+        };
+      });
+
+      await agent.generateText("Test with details");
     });
   });
 });
