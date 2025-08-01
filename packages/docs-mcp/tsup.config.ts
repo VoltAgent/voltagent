@@ -1,6 +1,6 @@
-import { defineConfig } from "tsup";
 import fs from "node:fs";
 import path from "node:path";
+import { defineConfig } from "tsup";
 
 // Copy docs functionality
 const skipDirs = new Set(["node_modules", ".git", ".next", "dist", "build", ".turbo", ".vercel"]);
