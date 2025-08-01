@@ -76,6 +76,19 @@ export interface LibSQLStorageOptions extends MemoryOptions {
    * @default 100
    */
   storageLimit?: number;
+
+  /**
+   * Number of retry attempts for database operations when encountering busy/locked errors
+   * @default 3
+   */
+  retryAttempts?: number;
+
+  /**
+   * Base delay in milliseconds before retrying a failed operation
+   * Uses a jittered exponential backoff strategy for better load distribution
+   * @default 50
+   */
+  baseDelayMs?: number;
 }
 
 /**
@@ -92,6 +105,8 @@ export class LibSQLStorage implements Memory {
   private initialized: Promise<void>;
   private workflowExtension: LibSQLWorkflowExtension;
   private logger: Logger;
+  private retryAttempts: number;
+  private baseDelayMs: number;
 
   /**
    * Create a new LibSQL storage
@@ -99,12 +114,17 @@ export class LibSQLStorage implements Memory {
    */
   constructor(options: LibSQLStorageOptions) {
     this.logger = new LoggerProxy({ component: "libsql-storage" });
+    this.retryAttempts = options.retryAttempts ?? 3;
+    this.baseDelayMs = options.baseDelayMs ?? 50;
+
     this.options = {
       storageLimit: options.storageLimit || 100,
       tablePrefix: options.tablePrefix || "voltagent_memory",
       debug: options.debug || false,
       url: this.normalizeUrl(options.url),
       authToken: options.authToken,
+      retryAttempts: this.retryAttempts,
+      baseDelayMs: this.baseDelayMs,
     };
 
     // Initialize the LibSQL client
@@ -166,6 +186,74 @@ export class LibSQLStorage implements Memory {
     if (this.options?.debug) {
       this.logger.debug(`${message}`, data || "");
     }
+  }
+
+  /**
+   * Calculate delay with jitter for better load distribution
+   * @param attempt Current retry attempt number
+   * @returns Delay in milliseconds
+   */
+  private calculateRetryDelay(attempt: number): number {
+    // Exponential backoff: baseDelay * 2^(attempt-1)
+    const exponentialDelay = this.baseDelayMs * 2 ** (attempt - 1);
+
+    // Add 20-40% jitter to prevent thundering herd
+    const jitterFactor = 0.2 + Math.random() * 0.2;
+    const delayWithJitter = exponentialDelay * (1 + jitterFactor);
+
+    // Cap at 2 seconds max
+    return Math.min(delayWithJitter, 2000);
+  }
+
+  /**
+   * Execute a database operation with retry strategy
+   * Implements jittered exponential backoff
+   * @param operationFn The operation function to execute
+   * @param operationName Operation name for logging
+   * @returns The result of the operation
+   */
+  private async executeWithRetryStrategy<T>(
+    operationFn: () => Promise<T>,
+    operationName: string,
+  ): Promise<T> {
+    let attempt = 0;
+
+    while (attempt < this.retryAttempts) {
+      attempt++;
+
+      try {
+        return await operationFn();
+      } catch (error: any) {
+        const isBusyError =
+          error.message &&
+          (error.message.includes("SQLITE_BUSY") ||
+            error.message.includes("database is locked") ||
+            error.code === "SQLITE_BUSY");
+
+        if (!isBusyError || attempt >= this.retryAttempts) {
+          this.debug(`Operation failed: ${operationName}`, {
+            attempt,
+            error: error.message,
+          });
+          throw error;
+        }
+
+        // Calculate delay with jitter
+        const delay = this.calculateRetryDelay(attempt);
+
+        this.debug(`Retrying ${operationName}`, {
+          attempt,
+          remainingAttempts: this.retryAttempts - attempt,
+          delay,
+        });
+
+        // Wait before retry
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    // Should never reach here
+    throw new Error(`Max retry attempts (${this.retryAttempts}) exceeded for ${operationName}`);
   }
 
   /**
@@ -562,7 +650,8 @@ export class LibSQLStorage implements Memory {
 
     const tableName = `${this.options.tablePrefix}_messages`;
     const contentString = JSON.stringify(message.content);
-    try {
+
+    await this.executeWithRetryStrategy(async () => {
       await this.client.execute({
         sql: `INSERT INTO ${tableName} (conversation_id, message_id, role, content, type, created_at)
               VALUES (?, ?, ?, ?, ?, ?)`,
@@ -585,10 +674,7 @@ export class LibSQLStorage implements Memory {
         this.debug("Error pruning old messages:", pruneError);
         // Don't throw error for pruning failure
       }
-    } catch (error) {
-      this.debug("Error adding message:", error);
-      throw new Error("Failed to add message to LibSQL database");
-    }
+    }, `addMessage[${message.id}]`);
   }
 
   /**
@@ -685,6 +771,7 @@ export class LibSQLStorage implements Memory {
     } catch {
       // Ignore initialization errors when closing
     }
+
     this.client.close();
   }
 
@@ -1007,7 +1094,7 @@ export class LibSQLStorage implements Memory {
 
     const tableName = `${this.options.tablePrefix}_conversations`;
 
-    try {
+    return await this.executeWithRetryStrategy(async () => {
       await this.client.execute({
         sql: `INSERT INTO ${tableName} (id, resource_id, user_id, title, metadata, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -1031,10 +1118,7 @@ export class LibSQLStorage implements Memory {
         createdAt: now,
         updatedAt: now,
       };
-    } catch (error) {
-      this.debug("Error creating conversation:", error);
-      throw new Error("Failed to create conversation in LibSQL database");
-    }
+    }, `createConversation[${conversation.id}]`);
   }
 
   async getConversation(id: string): Promise<Conversation | null> {
