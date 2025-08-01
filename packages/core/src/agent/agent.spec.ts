@@ -1,12 +1,12 @@
 import { createAsyncIterableStream } from "@voltagent/internal/utils";
 import type { Mock, Mocked } from "vitest";
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
-import type { MemoryMessage } from "../memory/types";
 import type { LibSQLStorage } from "../memory/libsql";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import type { MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
+import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { createTool } from "../tool";
 import { Agent } from "./index";
 import type {
@@ -629,7 +629,7 @@ describe("Agent", () => {
       createdStorages.map(async (storage) => {
         try {
           await storage.close();
-        } catch (error) {
+        } catch (_error) {
           // Ignore errors
         }
       }),
@@ -805,14 +805,14 @@ describe("Agent", () => {
   describe("generate", () => {
     it("should delegate text generation to provider", async () => {
       expect(agent).not.toBeNull();
-      const response = await agent!.generateText("Hello!");
+      const response = await agent?.generateText("Hello!");
       expect(mockProvider.generateTextCalls).toBe(1);
       expect(response.text).toBe("Hello, I am a test agent!");
     });
 
     it("should always include system message at the beginning of messages", async () => {
       expect(agent).not.toBeNull();
-      await agent!.generateText("Hello!");
+      await agent?.generateText("Hello!");
       expect(mockProvider.lastMessages[0].role).toBe("system");
       expect(getStringContent(mockProvider.lastMessages[0].content)).toContain("Test Agent");
       expect(mockProvider.lastMessages[1].role).toBe("user");
@@ -827,7 +827,7 @@ describe("Agent", () => {
       ];
 
       expect(agent).not.toBeNull();
-      await agent!.generateText(messages);
+      await agent?.generateText(messages);
       expect(mockProvider.lastMessages[0].role).toBe("system");
       expect(getStringContent(mockProvider.lastMessages[0].content)).toContain("Test Agent");
       expect(mockProvider.lastMessages.slice(1)).toEqual(messages);
@@ -838,7 +838,7 @@ describe("Agent", () => {
       const message = "Hello!";
 
       expect(agent).not.toBeNull();
-      await agent!.generateText(message, { userId });
+      await agent?.generateText(message, { userId });
 
       // Verify system message is at the beginning
       expect(mockProvider.lastMessages[0].role).toBe("system");
@@ -886,7 +886,7 @@ describe("Agent", () => {
         conversationId,
       );
 
-      await agent!.generateText(message, { userId, contextLimit, conversationId });
+      await agent?.generateText(message, { userId, contextLimit, conversationId });
 
       // Verify system message is at the beginning
       expect(mockProvider.lastMessages[0].role).toBe("system");
@@ -5445,7 +5445,7 @@ describe("Agent Abort Signal", () => {
           };
         });
 
-      const streamResponse = await agent.streamObject("Generate list", schema, {
+      const _streamResponse = await agent.streamObject("Generate list", schema, {
         signal: abortController.signal,
       });
 
@@ -5619,7 +5619,7 @@ describe("Agent Abort Signal", () => {
         await agent.generateText("Test input", {
           signal: abortController.signal,
         });
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw
       }
 

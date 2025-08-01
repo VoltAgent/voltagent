@@ -1,13 +1,13 @@
 import { vi } from "vitest";
 import { InMemoryStorage } from ".";
 import type { NewTimelineEvent } from "../../events/types";
-import type { Conversation, MemoryMessage } from "../types";
 // ✅ ADD: Import workflow types for testing
 import type {
   WorkflowHistoryEntry,
   WorkflowStepHistoryEntry,
   WorkflowTimelineEvent,
 } from "../../workflow/types";
+import type { Conversation, MemoryMessage } from "../types";
 
 // Mock logger
 vi.mock("../../logger", () => ({

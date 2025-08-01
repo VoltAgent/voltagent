@@ -1,5 +1,5 @@
-import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { NewTimelineEvent } from "../events/types";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
 
 /**

@@ -1,14 +1,14 @@
-import { defaultStepConfig } from "../internal/utils";
+import { getGlobalLogger } from "../../logger";
 import {
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
 } from "../event-utils";
+import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a conditional step for the workflow that executes only when a condition is met

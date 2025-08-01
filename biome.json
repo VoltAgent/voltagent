@@ -15,7 +15,12 @@
         "noConsoleLog": "error"
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": "warn",
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 50
+          }
+        },
         "noForEach": "off"
       }
     }
@@ -34,5 +39,17 @@
   },
   "files": {
     "ignore": ["node_modules", "dist", "build", ".next", "coverage", "*.template"]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["**/server/**/*.ts", "**/server/**/*.js"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsoleLog": "off"
+          }
+        }
+      }
+    }
+  ]
 }

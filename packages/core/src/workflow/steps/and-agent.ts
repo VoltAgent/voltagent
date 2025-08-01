@@ -3,16 +3,16 @@ import type { z } from "zod";
 import type { Agent } from "../../agent/agent";
 import type { BaseMessage } from "../../agent/providers";
 import type { PublicGenerateOptions } from "../../agent/types";
+import { getGlobalLogger } from "../../logger";
 import {
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
 } from "../event-utils";
-import type { WorkflowStepAgent } from "./types";
 import type { InternalWorkflowFunc } from "../internal/types";
-import { getGlobalLogger } from "../../logger";
+import type { WorkflowStepAgent } from "./types";
 
 export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
   schema: SCHEMA;

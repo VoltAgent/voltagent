@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { type AgentTool, createTool } from "../../tool";
 import type { ToolExecuteOptions } from "../../agent/providers";
-import type { Retriever } from "../types";
 import { LogEvents } from "../../logger/events";
 import {
-  buildRetrieverLogMessage,
   ActionType,
-  buildLogContext,
   ResourceType,
+  buildLogContext,
+  buildRetrieverLogMessage,
 } from "../../logger/message-builder";
+import { type AgentTool, createTool } from "../../tool";
+import type { Retriever } from "../types";
 
 /**
  * Creates an AgentTool from a retriever, allowing it to be used as a tool in an agent.

@@ -5,7 +5,7 @@ import { LibSQLStorage } from "../memory/libsql";
  * @param testName - Name of the test for better identification
  * @returns A unique table prefix
  */
-export function generateTestTablePrefix(testName: string = ""): string {
+export function generateTestTablePrefix(testName = ""): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
   const sanitized = testName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20);
@@ -17,7 +17,7 @@ export function generateTestTablePrefix(testName: string = ""): string {
  * @param testName - Name of the test for identification
  * @returns A new LibSQLStorage instance with unique tables
  */
-export function createTestLibSQLStorage(testName: string = ""): LibSQLStorage {
+export function createTestLibSQLStorage(testName = ""): LibSQLStorage {
   return new LibSQLStorage({
     url: ":memory:",
     tablePrefix: generateTestTablePrefix(testName),

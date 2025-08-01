@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
-import { LoggerProxy } from "../logger";
 import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
+import { LoggerProxy } from "../logger";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";

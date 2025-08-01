@@ -1,7 +1,7 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectTypeOf } from "vitest";
 import { VoltOpsClient, createVoltOpsClient } from "./client";
-import type { VoltOpsClientOptions, VoltOpsClient as IVoltOpsClient } from "./types";
+import type { VoltOpsClient as IVoltOpsClient, VoltOpsClientOptions } from "./types";
 
 // Hoist mock logger instance creation
 const { mockLoggerInstance } = vi.hoisted(() => {
@@ -31,10 +31,6 @@ vi.mock("../logger", () => {
     error = mockLoggerInstance.error;
     fatal = mockLoggerInstance.fatal;
     child = mockLoggerInstance.child;
-
-    constructor() {
-      // Constructor accepts bindings but we don't need them for the mock
-    }
   }
 
   return {
@@ -44,8 +40,8 @@ vi.mock("../logger", () => {
 
 // Mock message builder module
 vi.mock("../logger/message-builder", () => ({
-  buildVoltOpsLogMessage: vi.fn((resource, action, message) => message),
-  buildLogContext: vi.fn((resourceType, resource, action, data) => data),
+  buildVoltOpsLogMessage: vi.fn((_resource, _action, message) => message),
+  buildLogContext: vi.fn((_resourceType, _resource, _action, data) => data),
   ResourceType: {
     VOLTOPS: "voltops",
   },
@@ -270,19 +266,19 @@ describe("VoltOpsClient", () => {
 
   describe("prompts property", () => {
     it("should expose getPrompt method", () => {
-      expect(typeof client.prompts!.getPrompt).toBe("function");
+      expect(typeof client.prompts?.getPrompt).toBe("function");
     });
 
     it("should expose preload method", () => {
-      expect(typeof client.prompts!.preload).toBe("function");
+      expect(typeof client.prompts?.preload).toBe("function");
     });
 
     it("should expose clearCache method", () => {
-      expect(typeof client.prompts!.clearCache).toBe("function");
+      expect(typeof client.prompts?.clearCache).toBe("function");
     });
 
     it("should expose getCacheStats method", () => {
-      expect(typeof client.prompts!.getCacheStats).toBe("function");
+      expect(typeof client.prompts?.getCacheStats).toBe("function");
     });
   });
 
@@ -402,9 +398,9 @@ describe("createVoltOpsClient", () => {
     const client = createVoltOpsClient(options);
 
     expect(client.prompts).toBeDefined();
-    expect(typeof client.prompts!.getPrompt).toBe("function");
-    expect(typeof client.prompts!.preload).toBe("function");
-    expect(typeof client.prompts!.clearCache).toBe("function");
-    expect(typeof client.prompts!.getCacheStats).toBe("function");
+    expect(typeof client.prompts?.getPrompt).toBe("function");
+    expect(typeof client.prompts?.preload).toBe("function");
+    expect(typeof client.prompts?.clearCache).toBe("function");
+    expect(typeof client.prompts?.getCacheStats).toBe("function");
   });
 });

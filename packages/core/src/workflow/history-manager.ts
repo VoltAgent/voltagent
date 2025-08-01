@@ -1,10 +1,10 @@
-import type { VoltAgentExporter } from "../telemetry/exporter";
+import type { Logger } from "@voltagent/internal";
+import { v4 as uuidv4 } from "uuid";
 import type { WorkflowEvent } from "../events/workflow-emitter";
+import { getGlobalLogger } from "../logger";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { WorkflowMemoryManager } from "./memory/manager";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
-import { v4 as uuidv4 } from "uuid";
-import type { Logger } from "@voltagent/internal";
-import { getGlobalLogger } from "../logger";
 
 /**
  * Manages workflow execution history and event tracking

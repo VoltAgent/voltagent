@@ -1,15 +1,15 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import { defaultStepConfig } from "../internal/utils";
+import { getGlobalLogger } from "../../logger";
 import {
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
 } from "../event-utils";
-import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 import type { WorkflowExecuteContext } from "../internal/types";
-import { getGlobalLogger } from "../../logger";
+import { defaultStepConfig } from "../internal/utils";
+import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 
 /**
  * Creates an async function step for the workflow

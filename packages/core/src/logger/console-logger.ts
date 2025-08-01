@@ -3,8 +3,8 @@
  * Used when @voltagent/logger is not available
  */
 
-import type { Logger, LogFn, LogBuffer, LogEntry, LogFilter } from "@voltagent/internal";
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
+import type { LogBuffer, LogEntry, LogFilter, LogFn, Logger } from "@voltagent/internal";
 
 /**
  * Simple console logger that implements the Logger interface

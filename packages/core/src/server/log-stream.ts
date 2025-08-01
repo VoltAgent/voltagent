@@ -1,5 +1,5 @@
+import type { LogEntry, LogFilter, Logger } from "@voltagent/internal";
 import type { WebSocket } from "ws";
-import type { LogFilter, LogEntry, Logger } from "@voltagent/internal";
 import { getGlobalLogBuffer, getGlobalLogger } from "../logger";
 
 export interface LogStreamClient {

@@ -20,6 +20,7 @@ import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
 import type { SubAgentConfig } from "./subagent/types";
 
+import type { Logger } from "@voltagent/internal";
 import type {
   DynamicValue,
   DynamicValueOptions,
@@ -27,7 +28,6 @@ import type {
   PromptHelper,
 } from "../voltops/types";
 import type { AgentHooks } from "./hooks";
-import type { Logger } from "@voltagent/internal";
 
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };

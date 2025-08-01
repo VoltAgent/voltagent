@@ -1,6 +1,6 @@
-import type { Logger, LogFn } from "@voltagent/internal";
-import { getGlobalLogger } from "./index";
+import type { LogFn, Logger } from "@voltagent/internal";
 import { BufferedLogger } from "./buffered-logger";
+import { getGlobalLogger } from "./index";
 
 /**
  * LoggerProxy implements the Logger interface but delegates all calls to the current global logger.

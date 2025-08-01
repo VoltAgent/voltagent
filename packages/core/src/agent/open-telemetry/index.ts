@@ -7,8 +7,8 @@ import {
   trace,
 } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
-import { getGlobalLogger } from "../../logger";
 import type { EventStatus, StandardEventData } from "../../events/types";
+import { getGlobalLogger } from "../../logger";
 import type { UsageInfo } from "../providers/base/types";
 
 // Get a tracer instance for this library

@@ -1,4 +1,4 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryManager } from ".";
 import type { AgentHistoryEntry } from "../../agent/history";
 import type { BaseMessage } from "../../agent/providers/base/types";

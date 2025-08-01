@@ -1,4 +1,4 @@
-import { vi, describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createSuspendController } from "./suspend-controller";
 
 describe("createSuspendController", () => {

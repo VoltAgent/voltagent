@@ -1,9 +1,9 @@
-import { describe, it, expectTypeOf } from "vitest";
+import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
+import type { Agent } from "../agent/agent";
 import { createWorkflowChain } from "./chain";
 import { createWorkflow } from "./core";
 import { andThen } from "./steps";
-import { Agent } from "../agent/agent";
 
 describe("Workflow Type System", () => {
   // Mock agent for testing - we just need the type, not a real instance
@@ -392,7 +392,7 @@ describe("Workflow Type System", () => {
         // No suspendSchema provided - should default to z.ZodAny
       }).andThen({
         id: "step",
-        execute: async ({ data, suspend }) => {
+        execute: async ({ data: _data, suspend }) => {
           // Should be able to pass any data without type errors
           await suspend("reason", {
             anyField: "value",
@@ -480,13 +480,12 @@ describe("Workflow Type System", () => {
                 message: string;
               }>();
               return { result: data.message };
-            } else {
-              expectTypeOf(data).toEqualTypeOf<{
-                value: number;
-                isPositive: boolean;
-              }>();
-              return { result: "negative value" };
             }
+            expectTypeOf(data).toEqualTypeOf<{
+              value: number;
+              isPositive: boolean;
+            }>();
+            return { result: "negative value" };
           },
         });
 
@@ -510,7 +509,6 @@ describe("Workflow Type System", () => {
           id: "log",
           execute: async ({ data }) => {
             expectTypeOf(data).toEqualTypeOf<{ id: string; timestamp: number }>();
-            console.log("Processing:", data);
           },
         })
         .andThen({

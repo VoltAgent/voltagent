@@ -1,18 +1,18 @@
 import { EventEmitter } from "node:events";
+import { deepClone } from "@voltagent/internal/utils";
 import { v4 as uuidv4 } from "uuid";
 import { LoggerProxy } from "../logger";
 import { BackgroundQueue } from "../utils/queue/queue";
-import { deepClone } from "@voltagent/internal/utils";
 import { WorkflowRegistry } from "../workflow/registry";
 import type {
-  WorkflowStartEvent,
-  WorkflowSuccessEvent,
   WorkflowErrorEvent,
-  WorkflowSuspendEvent,
+  WorkflowStartEvent,
+  WorkflowStepErrorEvent,
   WorkflowStepStartEvent,
   WorkflowStepSuccessEvent,
-  WorkflowStepErrorEvent,
   WorkflowStepSuspendEvent,
+  WorkflowSuccessEvent,
+  WorkflowSuspendEvent,
 } from "./types";
 
 /**

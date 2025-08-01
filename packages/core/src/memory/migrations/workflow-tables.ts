@@ -131,7 +131,6 @@ export async function createWorkflowTables(
   if (checkWorkflowIdColumn.rows[0].count === 0) {
     // Add workflow_id column to existing agent_history table
     await db.execute("ALTER TABLE agent_history ADD COLUMN workflow_id TEXT");
-    console.log("[Migration] Added workflow_id column to agent_history table");
   }
 
   // Check if workflow_step_id column exists in agent_history table
@@ -144,7 +143,6 @@ export async function createWorkflowTables(
   if (checkWorkflowStepIdColumn.rows[0].count === 0) {
     // Add workflow_step_id column to existing agent_history table
     await db.execute("ALTER TABLE agent_history ADD COLUMN workflow_step_id TEXT");
-    console.log("[Migration] Added workflow_step_id column to agent_history table");
   }
 
   // Create indexes for new columns in agent_history
@@ -154,8 +152,6 @@ export async function createWorkflowTables(
   await db.execute(
     "CREATE INDEX IF NOT EXISTS idx_agent_history_workflow_step ON agent_history(workflow_step_id)",
   );
-
-  console.log("[Migration] Workflow tables created successfully!");
 }
 
 /**
@@ -165,14 +161,10 @@ export async function dropWorkflowTables(
   db: Client,
   tablePrefix = "voltagent_memory",
 ): Promise<void> {
-  console.log("[Migration] Dropping workflow tables...");
-
   // Drop tables in reverse order due to foreign key constraints
   await db.execute(`DROP TABLE IF EXISTS ${tablePrefix}_workflow_timeline_events`);
   await db.execute(`DROP TABLE IF EXISTS ${tablePrefix}_workflow_steps`);
   await db.execute(`DROP TABLE IF EXISTS ${tablePrefix}_workflow_history`);
-
-  console.log("[Migration] Workflow tables dropped successfully!");
 }
 
 /**
@@ -182,10 +174,6 @@ export async function resetWorkflowTables(
   db: Client,
   tablePrefix = "voltagent_memory",
 ): Promise<void> {
-  console.log("[Migration] Resetting workflow tables...");
-
   await dropWorkflowTables(db, tablePrefix);
   await createWorkflowTables(db, tablePrefix);
-
-  console.log("[Migration] Workflow tables reset successfully!");
 }

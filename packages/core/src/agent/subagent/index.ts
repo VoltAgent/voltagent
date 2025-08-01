@@ -1,7 +1,7 @@
-import { getGlobalLogger } from "../../logger";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { MergeDeep } from "type-fest";
 import { z } from "zod";
+import { getGlobalLogger } from "../../logger";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
 import type {
