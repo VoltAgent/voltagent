@@ -4,9 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
 import type { LibSQLStorage } from "../memory/libsql";
-import type { MemoryMessage } from "../memory/types";
 import { AgentRegistry } from "../server/registry";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { createTool } from "../tool";
 import { Agent } from "./index";
 import type {

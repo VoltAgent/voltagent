@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 0.1.72
+
+### Patch Changes
+
+- [#445](https://github.com/VoltAgent/voltagent/pull/445) [`a658ae6`](https://github.com/VoltAgent/voltagent/commit/a658ae6fd5ae404448a43026f21bfa0351189f01) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Fixed types in andAll and andRace where the inferred result from the steps was NOT being passed along
+
 ## 0.1.71
 
 ### Patch Changes
