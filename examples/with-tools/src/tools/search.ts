@@ -1,21 +1,8 @@
 import { createTool } from "@voltagent/core";
 import { z } from "zod";
 
-// Define output schema for search results
-const searchResultSchema = z.object({
-  title: z.string(),
-  snippet: z.string(),
-  url: z.string(),
-});
-
-const searchOutputSchema = z.object({
-  results: z.array(searchResultSchema),
-  message: z.string(),
-});
-
 /**
  * A tool for performing web searches
- * With output schema validation to ensure consistent response format
  */
 export const searchTool = createTool({
   name: "search",
@@ -23,7 +10,6 @@ export const searchTool = createTool({
   parameters: z.object({
     query: z.string().describe("The search query"),
   }),
-  outputSchema: searchOutputSchema,
   execute: async ({ query }) => {
     // In a real implementation, this would call a search API like Google
     // This is a mock implementation for demonstration purposes

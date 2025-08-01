@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { Tool, createTool } from "./index";
+import { Tool } from "./index";
 
 // Mock UUID generation
 vi.mock("uuid", () => ({
@@ -18,10 +17,6 @@ describe("Tool", () => {
           param1: z.string(),
           param2: z.number().optional(),
         }),
-        outputSchema: z.object({
-          result: z.string(),
-          count: z.number().optional(),
-        }),
         execute: vi.fn(),
       };
 
@@ -31,7 +26,6 @@ describe("Tool", () => {
       expect(tool.name).toBe("testTool");
       expect(tool.description).toBe("A test tool");
       expect(tool.parameters).toEqual(options.parameters);
-      expect(tool.outputSchema).toEqual(options.outputSchema);
       expect(tool.execute).toEqual(options.execute);
     });
 
@@ -61,7 +55,6 @@ describe("Tool", () => {
       expect(tool.name).toBe("testTool");
       expect(tool.description).toBe("A test tool");
       expect(tool.parameters).toEqual(options.parameters);
-      expect(tool.outputSchema).toBeUndefined();
       expect(tool.execute).toEqual(options.execute);
     });
 
@@ -93,203 +86,6 @@ describe("Tool", () => {
       } as any;
 
       expect(() => new Tool(options)).toThrow("Tool 'testTool' execute function is required");
-    });
-  });
-
-  describe("createTool with output schema", () => {
-    it("should create a tool without output schema", () => {
-      const tool = createTool({
-        name: "testTool",
-        description: "A test tool",
-        parameters: z.object({
-          input: z.string(),
-        }),
-        execute: async ({ input }) => {
-          return { result: input.toUpperCase() };
-        },
-      });
-
-      expect(tool.name).toBe("testTool");
-      expect(tool.outputSchema).toBeUndefined();
-    });
-
-    it("should create a tool with output schema", () => {
-      const outputSchema = z.object({
-        result: z.string(),
-        length: z.number(),
-      });
-
-      const tool = createTool({
-        name: "testToolWithSchema",
-        description: "A test tool with output schema",
-        parameters: z.object({
-          input: z.string(),
-        }),
-        outputSchema,
-        execute: async ({ input }) => {
-          return {
-            result: input.toUpperCase(),
-            length: input.length,
-          };
-        },
-      });
-
-      expect(tool.name).toBe("testToolWithSchema");
-      expect(tool.outputSchema).toBe(outputSchema);
-    });
-
-    it("should validate output when schema is provided", async () => {
-      const outputSchema = z.object({
-        result: z.string(),
-        count: z.number(),
-      });
-
-      const tool = createTool({
-        name: "validatingTool",
-        description: "A tool that validates its output",
-        parameters: z.object({
-          text: z.string(),
-        }),
-        outputSchema,
-        execute: async ({ text }) => {
-          return {
-            result: text.toUpperCase(),
-            count: text.length,
-          };
-        },
-      });
-
-      // Execute the tool
-      const result = await tool.execute({ text: "hello" });
-
-      // The output should match the schema
-      expect(result).toEqual({
-        result: "HELLO",
-        count: 5,
-      });
-
-      // Validate the output against the schema
-      const parseResult = tool.outputSchema?.safeParse(result);
-      expect(parseResult?.success).toBe(true);
-    });
-
-    it("should detect invalid output when schema is provided", async () => {
-      const outputSchema = z.object({
-        result: z.string(),
-        count: z.number(),
-      });
-
-      const tool = createTool({
-        name: "invalidOutputTool",
-        description: "A tool that returns invalid output",
-        parameters: z.object({
-          text: z.string(),
-        }),
-        outputSchema,
-        execute: async ({ text }) => {
-          // Intentionally return wrong type
-          return {
-            result: text.toUpperCase(),
-            count: "invalid", // This should be a number
-          } as any;
-        },
-      });
-
-      // Execute the tool
-      const result = await tool.execute({ text: "test" });
-
-      // Validate the output against the schema
-      const parseResult = tool.outputSchema?.safeParse(result);
-      expect(parseResult?.success).toBe(false);
-      expect(parseResult?.error?.errors?.[0]?.message).toContain("Expected number");
-    });
-
-    it("should maintain backward compatibility for tools without output schema", async () => {
-      const tool = createTool({
-        name: "backwardCompatibleTool",
-        description: "A tool without output schema",
-        parameters: z.object({
-          value: z.number(),
-        }),
-        execute: async ({ value }) => {
-          // Can return any type
-          return {
-            doubled: value * 2,
-            tripled: value * 3,
-            asString: value.toString(),
-            nested: {
-              original: value,
-            },
-          };
-        },
-      });
-
-      const result = await tool.execute({ value: 5 });
-
-      // Should work without schema
-      expect(result).toEqual({
-        doubled: 10,
-        tripled: 15,
-        asString: "5",
-        nested: {
-          original: 5,
-        },
-      });
-
-      // No output schema to validate against
-      expect(tool.outputSchema).toBeUndefined();
-    });
-
-    it("should handle complex output schemas", async () => {
-      const outputSchema = z.object({
-        status: z.enum(["success", "error"]),
-        data: z.object({
-          items: z.array(
-            z.object({
-              id: z.string(),
-              name: z.string(),
-              value: z.number(),
-            }),
-          ),
-          total: z.number(),
-        }),
-        metadata: z.record(z.string(), z.any()).optional(),
-      });
-
-      const tool = createTool({
-        name: "complexTool",
-        description: "A tool with complex output schema",
-        parameters: z.object({
-          count: z.number(),
-        }),
-        outputSchema,
-        execute: async ({ count }) => {
-          return {
-            status: "success" as const,
-            data: {
-              items: Array.from({ length: count }, (_, i) => ({
-                id: `item-${i}`,
-                name: `Item ${i}`,
-                value: i * 10,
-              })),
-              total: count,
-            },
-            metadata: {
-              processedAt: new Date().toISOString(),
-              version: "1.0",
-            },
-          };
-        },
-      });
-
-      const result = await tool.execute({ count: 3 });
-
-      // Validate against schema
-      const parseResult = tool.outputSchema?.safeParse(result);
-      expect(parseResult?.success).toBe(true);
-      expect(result.status).toBe("success");
-      expect(result.data.items).toHaveLength(3);
-      expect(result.data.total).toBe(3);
     });
   });
 });

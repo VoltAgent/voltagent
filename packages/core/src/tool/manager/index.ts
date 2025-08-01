@@ -74,7 +74,6 @@ export class ToolManager {
               description: tool.description || tool.name,
               parameters: tool.parameters,
               execute: tool.execute,
-              outputSchema: tool.outputSchema,
             }) as BaseTool,
         ),
       ); // Explicit cast can help ensure compatibility
@@ -119,7 +118,6 @@ export class ToolManager {
       description: tool.description || tool.name,
       parameters: tool.parameters,
       execute: tool.execute,
-      outputSchema: tool.outputSchema,
     });
 
     // Check if tool exists in the standalone list and replace or add
@@ -318,7 +316,6 @@ export class ToolManager {
           description: toolInToolkit.description || toolInToolkit.name,
           parameters: toolInToolkit.parameters,
           execute: toolInToolkit.execute,
-          outputSchema: toolInToolkit.outputSchema,
         } as BaseTool;
       }
     }

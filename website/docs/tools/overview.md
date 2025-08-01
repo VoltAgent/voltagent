@@ -16,7 +16,6 @@ A tool requires:
 - `description`: A clear description of what the tool does (used by the LLM to decide when to use it).
 - `parameters`: A Zod schema defining the input arguments the tool expects.
 - `execute`: An asynchronous function that contains the tool's logic, taking the validated arguments as input.
-- `outputSchema` (optional): A Zod schema defining the expected output format. When provided, the tool's output will be validated against this schema.
 
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
@@ -51,83 +50,6 @@ const agent = new Agent({
 
 // Now the agent can use the 'get_weather' tool when asked about weather.
 ```
-
-## Tool Output Schema Validation
-
-VoltAgent supports optional output schema validation for tools. This feature ensures that tool outputs conform to a predefined structure, providing several benefits:
-
-- **Type Safety**: Tool outputs are typed based on the schema
-- **Runtime Validation**: Invalid outputs are caught immediately
-- **Error Recovery**: When validation fails, the LLM receives an error message and can retry with corrected output
-- **Consistency**: All tool responses follow the same structure
-- **Documentation**: Output schemas serve as API contracts
-
-### Example with Output Schema
-
-```typescript
-import { createTool } from "@voltagent/core";
-import { z } from "zod";
-
-// Define the output schema
-const weatherOutputSchema = z.object({
-  location: z.string(),
-  temperature: z.number(),
-  condition: z.enum(["sunny", "cloudy", "rainy", "snowy"]),
-  humidity: z.number().min(0).max(100),
-  forecast: z.object({
-    high: z.number(),
-    low: z.number(),
-    description: z.string(),
-  }),
-});
-
-// Create a tool with output validation
-const weatherTool = createTool({
-  name: "get_weather",
-  description: "Get current weather with forecast",
-  parameters: z.object({
-    location: z.string().describe("City name"),
-  }),
-  outputSchema: weatherOutputSchema, // Optional output schema
-  execute: async ({ location }) => {
-    // This output will be validated against weatherOutputSchema
-    return {
-      location,
-      temperature: 22,
-      condition: "sunny",
-      humidity: 65,
-      forecast: {
-        high: 25,
-        low: 18,
-        description: "Clear skies throughout the day",
-      },
-    };
-  },
-});
-```
-
-### How Output Validation Works
-
-1. When a tool is executed, its output is validated against the `outputSchema` if provided
-2. If validation succeeds, the validated output is returned
-3. If validation fails, an error object is returned to the LLM:
-   ```json
-   {
-     "error": true,
-     "message": "Output validation failed: Expected number, received string",
-     "validationErrors": [...],
-     "actualOutput": {...}
-   }
-   ```
-4. The LLM can see the validation error and potentially fix the issue by calling the tool again
-
-### Best Practices
-
-- Use output schemas for tools that need consistent response formats
-- Keep schemas focused and avoid overly complex nested structures
-- Use descriptive error messages in your schemas with `.describe()`
-- Consider making some fields optional with `.optional()` for flexibility
-- Output schemas are completely optional - tools without them work as before
 
 ## Grouping Tools with Toolkits
 
