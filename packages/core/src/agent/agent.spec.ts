@@ -23,6 +23,7 @@ import type { AgentHistoryEntry } from "../agent/history";
 import type { NewTimelineEvent } from "../events/types";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { VoltAgentExporter } from "../telemetry/exporter";
+import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import type { Tool, Toolkit } from "../tool";
 import { HistoryManager } from "./history";
 import { createHooks } from "./hooks";
