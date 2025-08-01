@@ -106,9 +106,9 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
       - name: Build Package and Dependencies
-        run: pnpm build --scope "@voltagent/${{ matrix.package }}" --include-dependencies
+        run: lerna run build --scope "@voltagent/${{ matrix.package }}" --include-dependencies
       - name: Test Package
-        run: pnpm test --scope "@voltagent/${{ matrix.package }}"
+        run: lerna run test --scope "@voltagent/${{ matrix.package }}"
 
   postgres-integration:
     runs-on: ubuntu-latest
