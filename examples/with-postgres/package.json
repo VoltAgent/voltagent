@@ -2,14 +2,7 @@
   "name": "voltagent-example-with-postgres",
   "private": true,
   "description": "VoltAgent example demonstrating PostgreSQL integration for memory.",
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "postgresql",
-    "postgres",
-    "memory"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "postgresql", "postgres", "memory"],
   "license": "MIT",
   "author": "",
   "type": "module",

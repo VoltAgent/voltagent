@@ -1,12 +1,7 @@
 {
   "name": "voltagent-example-with-subagents",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "subagents"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "subagents"],
   "license": "MIT",
   "author": "",
   "type": "module",

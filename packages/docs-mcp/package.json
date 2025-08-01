@@ -17,11 +17,7 @@
   "bin": {
     "voltagent-docs-mcp": "dist/index.js"
   },
-  "files": [
-    "dist",
-    "docs",
-    "examples"
-  ],
+  "files": ["dist", "docs", "examples"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-qdrant",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "qdrant",
-    "vector-database"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "qdrant", "vector-database"],
   "license": "MIT",
   "author": "",
   "type": "module",

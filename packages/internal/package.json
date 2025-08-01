@@ -26,11 +26,7 @@
   "main": "dist/main/index.js",
   "module": "dist/main/index.mjs",
   "types": "dist/main/index.d.ts",
-  "files": [
-    "dist/**/*",
-    "dev/dist/**/*",
-    "test/dist/**/*"
-  ],
+  "files": ["dist/**/*", "dev/dist/**/*", "test/dist/**/*"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

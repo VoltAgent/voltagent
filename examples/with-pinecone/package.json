@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-pinecone",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "pinecone",
-    "vector-database"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "pinecone", "vector-database"],
   "license": "MIT",
   "author": "",
   "type": "module",

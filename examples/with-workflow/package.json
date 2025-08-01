@@ -1,12 +1,7 @@
 {
   "name": "voltagent-example-with-workflow",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "workflow"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "workflow"],
   "license": "MIT",
   "author": "",
   "type": "module",

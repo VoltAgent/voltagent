@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-voice-openai",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "voice",
-    "openai"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "voice", "openai"],
   "license": "MIT",
   "author": "",
   "type": "module",

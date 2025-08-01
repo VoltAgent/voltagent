@@ -1,14 +1,7 @@
 {
   "name": "voltagent-example-with-dynamic-parameters",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "dynamic",
-    "parameters",
-    "user-context"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "dynamic", "parameters", "user-context"],
   "license": "MIT",
   "author": "",
   "type": "module",

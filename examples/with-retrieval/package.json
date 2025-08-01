@@ -1,12 +1,7 @@
 {
   "name": "voltagent-example-with-retrieval",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "retrieval"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "retrieval"],
   "license": "MIT",
   "author": "",
   "type": "module",

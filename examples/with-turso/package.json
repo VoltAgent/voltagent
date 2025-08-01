@@ -2,14 +2,7 @@
   "name": "voltagent-example-with-turso",
   "private": true,
   "description": "VoltAgent example demonstrating Turso/LibSQL integration for memory.",
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "turso",
-    "libsql",
-    "memory"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "turso", "libsql", "memory"],
   "license": "MIT",
   "author": "",
   "type": "module",

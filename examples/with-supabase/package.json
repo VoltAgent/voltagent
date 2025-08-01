@@ -1,11 +1,7 @@
 {
   "name": "voltagent-example-with-supabase",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent"
-  ],
+  "keywords": ["voltagent", "ai", "agent"],
   "license": "MIT",
   "author": "",
   "type": "module",

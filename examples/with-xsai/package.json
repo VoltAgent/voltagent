@@ -1,11 +1,7 @@
 {
   "name": "voltagent-example-xsai",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent"
-  ],
+  "keywords": ["voltagent", "ai", "agent"],
   "license": "MIT",
   "author": "",
   "type": "module",

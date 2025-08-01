@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-chroma",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "chroma",
-    "vector-database"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "chroma", "vector-database"],
   "license": "MIT",
   "author": "",
   "type": "module",

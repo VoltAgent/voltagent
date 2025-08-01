@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-voice-elevenlabs",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "voice",
-    "elevenlabs"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "voice", "elevenlabs"],
   "license": "MIT",
   "author": "",
   "type": "module",

@@ -1,14 +1,7 @@
 {
   "name": "voltagent-example-with-thinking-tool",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "reasoning",
-    "think",
-    "analyze"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "reasoning", "think", "analyze"],
   "license": "MIT",
   "author": "",
   "type": "module",

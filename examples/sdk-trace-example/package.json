@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-sdk-trace",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "sdk",
-    "trace"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "sdk", "trace"],
   "license": "MIT",
   "author": "",
   "type": "module",

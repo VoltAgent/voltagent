@@ -1,12 +1,7 @@
 {
   "name": "voltagent-example-with-tools",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "tools"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "tools"],
   "license": "MIT",
   "author": "",
   "type": "module",

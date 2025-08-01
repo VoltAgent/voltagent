@@ -1,13 +1,7 @@
 {
   "name": "voltagent-example-with-dynamic-prompts",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "prompts",
-    "dynamic"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "prompts", "dynamic"],
   "license": "MIT",
   "author": "",
   "type": "module",

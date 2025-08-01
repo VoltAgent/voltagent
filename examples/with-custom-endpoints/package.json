@@ -1,12 +1,7 @@
 {
   "name": "voltagent-example-custom-endpoints",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "custom-endpoints"
-  ],
+  "keywords": ["voltagent", "ai", "agent", "custom-endpoints"],
   "license": "MIT",
   "author": "",
   "type": "module",
