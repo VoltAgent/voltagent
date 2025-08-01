@@ -397,6 +397,7 @@ describe("AnthropicProvider", () => {
       };
 
       // Mock response that simulates the previous problematic behavior where AI returns JSON wrapped in markdown
+      // biome-ignore lint/style/useTemplate: Intentionally using concatenation to simulate specific formatting
       const markdownWrappedJSON = "```json\n" + JSON.stringify(testObject) + "\n```";
 
       const mockAnthropicClient = {
