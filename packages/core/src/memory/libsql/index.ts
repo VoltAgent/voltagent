@@ -190,6 +190,23 @@ export class LibSQLStorage implements Memory {
    * @returns Promise that resolves when initialization is complete
    */
   private async initializeDatabase(): Promise<void> {
+    // Set PRAGMA settings for better concurrency, especially for file-based databases
+    if (this.options.url.startsWith("file:") || this.options.url.includes(":memory:")) {
+      try {
+        await this.client.execute("PRAGMA journal_mode=WAL;");
+        this.debug("PRAGMA journal_mode=WAL set.");
+      } catch (err) {
+        this.debug("Failed to set PRAGMA journal_mode=WAL.", err);
+      }
+
+      try {
+        await this.client.execute("PRAGMA busy_timeout = 5000;"); // 5 seconds
+        this.debug("PRAGMA busy_timeout=5000 set.");
+      } catch (err) {
+        this.debug("Failed to set PRAGMA busy_timeout.", err);
+      }
+    }
+
     // Create conversations table if it doesn't exist
     const conversationsTableName = `${this.options.tablePrefix}_conversations`;
 

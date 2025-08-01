@@ -46,8 +46,6 @@ jobs:
       group: ${{ github.ref }}-pr-build-${{ matrix.node-version }}
       cancel-in-progress: true
     name: Build (Node ${{ matrix.node-version }})
-    env:
-      NODE_OPTIONS: --max_old_space_size=8192
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
