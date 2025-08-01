@@ -9,9 +9,9 @@ import { WorkflowRegistry } from "../registry";
 describe.sequential("andWorkflow", () => {
   const storageInstances: LibSQLStorage[] = [];
 
-  afterEach(() => {
+  afterEach(async () => {
     // Close all storage instances
-    storageInstances.forEach((storage) => storage.close());
+    await Promise.all(storageInstances.map((storage) => storage.close()));
     storageInstances.length = 0;
 
     // Clear workflow registry

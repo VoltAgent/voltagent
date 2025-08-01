@@ -26,9 +26,9 @@ describe.sequential("LibSQLStorage", () => {
     await setupTestData();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // Close the database connection
-    storage.close();
+    await storage.close();
   });
 
   async function setupTestData() {
@@ -632,13 +632,13 @@ describe.sequential("LibSQLStorage", () => {
   describe("Error Handling", () => {
     it("should handle database errors gracefully", async () => {
       // Force an error by closing the connection
-      storage.close();
+      await storage.close();
 
       await expect(storage.getConversation("any-id")).rejects.toThrow();
     });
 
-    it("should close the database connection", () => {
-      expect(() => storage.close()).not.toThrow();
+    it("should close the database connection", async () => {
+      await expect(storage.close()).resolves.not.toThrow();
     });
   });
 });
