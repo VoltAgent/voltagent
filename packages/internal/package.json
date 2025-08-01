@@ -12,19 +12,34 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/main/index.d.ts",
-      "import": "./dist/main/index.mjs",
-      "require": "./dist/main/index.js"
+      "import": {
+        "types": "./dist/main/index.d.mts",
+        "default": "./dist/main/index.mjs"
+      },
+      "require": {
+        "types": "./dist/main/index.d.ts",
+        "default": "./dist/main/index.js"
+      }
     },
     "./test": {
-      "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.mjs",
-      "require": "./dist/test/index.js"
+      "import": {
+        "types": "./dist/test/index.d.mts",
+        "default": "./dist/test/index.mjs"
+      },
+      "require": {
+        "types": "./dist/test/index.d.ts",
+        "default": "./dist/test/index.js"
+      }
     },
     "./utils": {
-      "types": "./dist/utils/index.d.ts",
-      "import": "./dist/utils/index.mjs",
-      "require": "./dist/utils/index.js"
+      "import": {
+        "types": "./dist/utils/index.d.mts",
+        "default": "./dist/utils/index.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/index.d.ts",
+        "default": "./dist/utils/index.js"
+      }
     },
     "./types": {
       "types": "./dist/types/index.d.ts"
@@ -38,7 +53,16 @@
   "license": "MIT",
   "main": "dist/main/index.js",
   "module": "dist/main/index.mjs",
+  "typesVersions": {
+    "*": {
+      "*": ["dist/main/index.d.ts"],
+      "test": ["dist/test/index.d.ts"],
+      "utils": ["dist/utils/index.d.ts"],
+      "types": ["dist/types/index.d.ts"]
+    }
+  },
   "scripts": {
+    "attw": "attw --pack",
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "biome check .",

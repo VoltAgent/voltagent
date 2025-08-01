@@ -48,6 +48,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
+    "attw": "attw --pack",
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "biome check .",

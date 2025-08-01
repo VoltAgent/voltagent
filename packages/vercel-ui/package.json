@@ -23,9 +23,14 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     }
   },
   "files": [
@@ -39,6 +44,7 @@
     "zod": "^3.24.2"
   },
   "scripts": {
+    "attw": "attw --pack",
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "biome check .",

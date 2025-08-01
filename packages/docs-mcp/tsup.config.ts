@@ -1,9 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig } from "tsup";
+import { markAsExternalPlugin } from "../shared/tsup-plugins/mark-as-external";
 
 // Copy docs functionality
-const skipDirs = new Set(["node_modules", ".git", ".next", "dist", "build", ".turbo", ".vercel"]);
+const skipDirs = new Set([
+  "node_modules",
+  ".git",
+  ".next",
+  "dist",
+  "build",
+  ".turbo",
+  ".vercel",
+  ".voltagent",
+]);
 const skipFiles = new Set([".DS_Store", "Thumbs.db", ".env"]);
 
 function shouldSkip(itemName: string, isDirectory: boolean) {
@@ -132,15 +142,21 @@ function copyPackageChangelogs(sourcePkgPath: string, targetPkgPath: string) {
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["esm", "cjs"],
-  dts: true,
+  format: ["cjs", "esm"],
   sourcemap: true,
   clean: false,
+  target: "es2022",
   outDir: "dist",
   banner: {
     js: "#!/usr/bin/env node",
   },
   onSuccess: async () => {
     copyDocs();
+  },
+  dts: true,
+  esbuildPlugins: [markAsExternalPlugin],
+  esbuildOptions(options) {
+    options.keepNames = true;
+    return options;
   },
 });
