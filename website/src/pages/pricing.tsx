@@ -1,7 +1,4 @@
-import {
-  ArrowTopRightOnSquareIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/outline";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import React, { useState } from "react";
@@ -42,19 +39,13 @@ export default function Pricing(): JSX.Element {
           VoltOps Core plan includes 5,000 traces per month for $50, and Pro
           plan includes 20,000 traces per month for $500. If you exceed these
           limits, you'll be charged $10 for every additional 5,000 traces.{" "}
-          <span
+          <button
+            type="button"
             onClick={() => setCalculatorOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                setCalculatorOpen(true);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            className="text-emerald-400 hover:text-emerald-300 cursor-pointer transition-colors"
+            className="text-emerald-400 hover:text-emerald-300 cursor-pointer transition-colors bg-transparent border-none p-0 font-inherit underline"
           >
             Use our pricing calculator
-          </span>{" "}
+          </button>{" "}
           to estimate your monthly costs based on expected usage. You can set up
           billing alerts to monitor your usage.
         </span>

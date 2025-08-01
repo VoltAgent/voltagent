@@ -58,7 +58,7 @@ export const GitHubStarsProvider = ({ children }: GitHubStarsProviderProps) => {
             if (errorData && (errorData.error || errorData.message)) {
               errorMsg += ` - ${errorData.error || errorData.message}`;
             }
-          } catch (e) {
+          } catch (_e) {
             /* Ignore if body isn't JSON */
           }
           throw new Error(errorMsg);

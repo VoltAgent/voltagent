@@ -1,7 +1,5 @@
 "use client";
 
-import { cn } from "@site/src/utils/index";
-import { MotionStyle, type Transition, motion } from "motion/react";
 import type React from "react";
 
 interface BorderBeamProps {
@@ -48,19 +46,7 @@ interface BorderBeamProps {
   children?: React.ReactNode;
 }
 
-export function BorderBeam({
-  className,
-  size = 50,
-  delay = 0,
-  duration = 6,
-  colorFrom = "#ffaa40",
-  colorTo = "#9c40ff",
-  transition,
-  style,
-  reverse = false,
-  initialOffset = 0,
-  children,
-}: BorderBeamProps) {
+export function BorderBeam({ className }: BorderBeamProps) {
   return (
     <div className={`relative ${className} rounded-xl`}>
       <div

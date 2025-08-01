@@ -29,7 +29,7 @@ export default function Navbar() {
     error: starsError,
   } = useGitHubStars();
 
-  const isActive = (path: string) => {
+  const _isActive = (path: string) => {
     const currentPath = location.pathname.endsWith("/")
       ? location.pathname
       : `${location.pathname}/`;

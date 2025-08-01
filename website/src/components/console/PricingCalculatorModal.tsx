@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import styles from "./PricingCalculatorModal.module.css";
 
 interface PricingCalculatorModalProps {
   isOpen: boolean;
@@ -155,37 +156,11 @@ const PricingCalculatorModal = ({
               step={1000}
               value={traceCount}
               onChange={(e) => setTraceCount(Number(e.target.value))}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              className={`w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer ${styles.rangeSlider}`}
               style={{
                 background: `linear-gradient(to right, #00d992 0%, #00d992 ${
                   (traceCount / 50000) * 100
                 }%, #374151 ${(traceCount / 50000) * 100}%, #374151 100%)`,
-              }}
-            />
-            <style
-              dangerouslySetInnerHTML={{
-                __html: `
-                                input[type="range"]::-webkit-slider-thumb {
-                                    appearance: none;
-                                    height: 20px;
-                                    width: 20px;
-                                    border-radius: 50%;
-                                    background: #00d992;
-                                    cursor: pointer;
-                                    border: 2px solid #191c24;
-                                    box-shadow: 0 0 0 1px rgba(0, 217, 146, 0.3);
-                                }
-                                input[type="range"]::-moz-range-thumb {
-                                    height: 20px;
-                                    width: 20px;
-                                    border-radius: 50%;
-                                    background: #00d992;
-                                    cursor: pointer;
-                                    border: 2px solid #191c24;
-                                    box-shadow: 0 0 0 1px rgba(0, 217, 146, 0.3);
-                                    border: none;
-                                }
-                            `,
               }}
             />
           </div>

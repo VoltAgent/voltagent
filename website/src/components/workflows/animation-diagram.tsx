@@ -6,7 +6,7 @@ import {
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { AnimatedBeam } from "../magicui/animated-beam";
 
 interface WorkflowCodeExampleProps {
@@ -95,7 +95,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
   }, [isAnimating, animationStep]);
 
   // Start animation function
-  const startAnimation = () => {
+  const startAnimation = useCallback(() => {
     setAnimationStep(0);
     setIsAnimating(true);
     setShowFullDiagram(false);
@@ -118,14 +118,14 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
 
     // Start the animation sequence
     setTimeout(animateNextStep, 300);
-  };
+  }, []);
 
   // Reset animation when isVisible changes
   useEffect(() => {
     if (isVisible) {
       startAnimation();
     }
-  }, [isVisible]);
+  }, [isVisible, startAnimation]);
 
   // Auto-replay animation after completing
   useEffect(() => {
@@ -136,7 +136,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
 
       return () => clearTimeout(timer);
     }
-  }, [animationStep, isAnimating]);
+  }, [animationStep, isAnimating, startAnimation]);
 
   // Handle hover to show full diagram
   const handleMouseEnter = () => {
@@ -157,7 +157,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
         onMouseLeave={handleMouseLeave}
         ref={containerRef}
       >
-        <div className={`w-full  rounded-lg transition-all duration-500`}>
+        <div className={"w-full  rounded-lg transition-all duration-500"}>
           <div className="flex flex-col md:flex-row md:items-center items-start">
             {/* Code Section - Left Side */}
             <div className={`border-r ${colors.workflow.border}`}>

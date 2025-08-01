@@ -317,7 +317,7 @@ const contentAnalysisWorkflow = createWorkflowChain({
       wordCount: z.number(),
     }),
     execute: async ({ data }) => {
-      console.log(`\nAnalysis Metrics:`);
+      console.log("\nAnalysis Metrics:");
       console.log(`- Sentiment: ${data.sentiment}`);
       console.log(`- Keywords: ${data.keywords.join(", ")}`);
       console.log(`- Word count: ${data.wordCount}`);

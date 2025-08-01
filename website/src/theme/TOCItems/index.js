@@ -27,7 +27,7 @@ export default function TOCItems({
     maxHeadingLevel,
   });
 
-  const tocHighlightConfig = useMemo(() => {
+  const _tocHighlightConfig = useMemo(() => {
     if (linkClassName && linkActiveClassName) {
       return {
         linkClassName,

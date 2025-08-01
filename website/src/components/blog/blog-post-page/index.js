@@ -1,6 +1,5 @@
 import Link from "@docusaurus/Link";
 import { useBlogPost } from "@docusaurus/theme-common/internal";
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { blogPostContainerID } from "@docusaurus/utils-common";
 import BlogPostItemContainer from "@theme/BlogPostItem/Container";
 import MDXContent from "@theme/MDXContent";
@@ -8,7 +7,6 @@ import clsx from "clsx";
 import React from "react";
 
 import { DateComponent, ReadingTime } from "@site/src/components/blog/common";
-import Markdown from "react-markdown";
 
 const SimilarBlogs = () => {
   const { metadata } = useBlogPost();
@@ -57,22 +55,9 @@ const SimilarBlogs = () => {
 
 export const BlogPostPageView = ({ children }) => {
   const { metadata, isBlogPostPage } = useBlogPost();
-  const {
-    permalink,
-    title,
-    date,
-    formattedDate,
-    readingTime,
-    frontMatter,
-    tags,
-    description,
-    authors,
-  } = metadata;
+  const { permalink, title, date, formattedDate, readingTime, tags, authors } =
+    metadata;
   const author = authors[0];
-
-  const {
-    siteConfig: { url },
-  } = useDocusaurusContext();
 
   return (
     <BlogPostItemContainer

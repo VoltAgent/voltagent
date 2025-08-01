@@ -16,7 +16,7 @@ async function main() {
       servers: {
         zapier: {
           type: "http",
-          url: process.env.ZAPIER_MCP_URL!,
+          url: process.env.ZAPIER_MCP_URL || "",
         },
       },
     });

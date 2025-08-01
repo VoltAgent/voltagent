@@ -22,6 +22,10 @@
           }
         },
         "noForEach": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "off",
+        "useSemanticElements": "off"
       }
     }
   },
@@ -38,7 +42,19 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", "dist", "build", ".next", "coverage", "*.template"]
+    "ignore": [
+      "node_modules",
+      "dist",
+      "build",
+      ".next",
+      "coverage",
+      "*.template",
+      ".nx",
+      "packages/docs-mcp/examples",
+      "**/*.module.css",
+      "**/.docusaurus/**",
+      "**/generated/**"
+    ]
   },
   "overrides": [
     {

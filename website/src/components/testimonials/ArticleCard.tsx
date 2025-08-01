@@ -20,17 +20,12 @@ interface ArticleCardProps {
 export function ArticleCard({
   title,
   coverImage,
-  excerpt,
   author,
   publication,
-  date,
   url,
-  readTime,
   type = "article",
   videoId,
   channel,
-  views,
-  duration,
 }: ArticleCardProps) {
   const isYouTube = type === "youtube";
   const thumbnailUrl =
