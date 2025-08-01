@@ -5,7 +5,7 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import ora from "ora";
 import { createProject } from "./project-creator";
-import { AI_PROVIDER_CONFIG, type AIProvider, type ProjectOptions } from "./types";
+import { type AIProvider, AI_PROVIDER_CONFIG, type ProjectOptions } from "./types";
 import { captureError, captureProjectCreation } from "./utils/analytics";
 import {
   colorTypewriter,
@@ -14,10 +14,10 @@ import {
   showWelcomeMessage,
   sleep,
 } from "./utils/animation";
+import { createBaseDependencyInstaller } from "./utils/dependency-installer";
 import { promptForApiKey } from "./utils/env-manager";
 import { downloadExample, existsInRepo } from "./utils/github";
 import logger from "./utils/logger";
-import { createBaseDependencyInstaller } from "./utils/dependency-installer";
 
 export const runCLI = async (): Promise<void> => {
   const program = new Command();
@@ -169,7 +169,7 @@ export const runCLI = async (): Promise<void> => {
           logger.blank();
           logger.info(chalk.bold("🤖 Ollama Setup:"));
           logger.info("  1. Install Ollama from https://ollama.com");
-          logger.info("  2. Run: " + chalk.cyan("ollama pull llama3.2"));
+          logger.info(`  2. Run: ${chalk.cyan("ollama pull llama3.2")}`);
           logger.info("  3. Start Ollama before running your app");
         } else if (!apiKey && aiProvider !== "ollama") {
           logger.blank();

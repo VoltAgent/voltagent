@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import inquirer from "inquirer";
-import { AI_PROVIDER_CONFIG, type AIProvider } from "../types";
+import { type AIProvider, AI_PROVIDER_CONFIG } from "../types";
 import logger from "./logger";
 
 export const promptForApiKey = async (provider: AIProvider): Promise<string | undefined> => {

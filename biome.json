@@ -12,7 +12,7 @@
       },
       "suspicious": {
         "noExplicitAny": "off",
-        "noConsoleLog": "error"
+        "noConsoleLog": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": {
@@ -42,17 +42,17 @@
   },
   "overrides": [
     {
-      "include": ["**/server/**/*.ts", "**/server/**/*.js"],
+      "include": ["**/packages/core/**/*.ts", "**/packages/core/**/*.js"],
       "linter": {
         "rules": {
           "suspicious": {
-            "noConsoleLog": "off"
+            "noConsoleLog": "error"
           }
         }
       }
     },
     {
-      "include": ["**/packages/cli/**/*.ts"],
+      "include": ["**/server/**/*.ts", "**/server/**/*.js"],
       "linter": {
         "rules": {
           "suspicious": {
