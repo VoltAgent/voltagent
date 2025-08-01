@@ -22,7 +22,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:single": "vitest run --reporter=verbose"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
