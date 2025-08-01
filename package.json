@@ -15,7 +15,7 @@
     "biome": "biome",
     "bootstrap": "lerna bootstrap",
     "build": "lerna run build",
-    "build:all": "lerna run build --scope @voltagent/* --scope create-voltagent-app",
+    "build:all": "lerna run build --scope @voltagent/* --scope create-voltagent-app --concurrency 1",
     "build:example": "lerna run build --scope voltagent-basic-example",
     "changeset": "changeset",
     "clean": "lerna run clean && lerna clean --yes && rimraf node_modules",
