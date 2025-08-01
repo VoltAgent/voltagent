@@ -1,7 +1,7 @@
-import chalk from "chalk";
-import type { Command } from "commander";
 import fs from "node:fs";
 import path from "node:path";
+import chalk from "chalk";
+import type { Command } from "commander";
 import inquirer from "inquirer";
 import ora from "ora";
 import { captureError } from "../utils/analytics";
