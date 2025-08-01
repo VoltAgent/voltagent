@@ -1,7 +1,7 @@
 import type { SetRequired } from "type-fest";
+import type { Logger } from "../logger/types";
 import type { PlainObject } from "../types";
 import { isObject } from "./lang";
-import type { Logger } from "../logger/types";
 
 /**
  * Deep clone an object using JSON serialization with fallback to shallow clone

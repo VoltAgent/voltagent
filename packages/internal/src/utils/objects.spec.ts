@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deepClone, hasKey } from "./objects";
 import type { Logger } from "../logger/types";
+import { deepClone, hasKey } from "./objects";
 
 // Mock logger
 const mockLogger: Logger = {
