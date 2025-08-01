@@ -113,10 +113,6 @@ jobs:
       - name: Are The Types Wrong
         run: pnpm attw:all
 
-      # Test kısmını comment out ediyoruz çünkü ayrı job'da çalışacak
-      # - name: Test
-      #   run: pnpm test:all
-      
       - name: PostgreSQL Integration Tests
         run: |
           cd packages/postgres
