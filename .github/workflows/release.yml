@@ -30,7 +30,7 @@ jobs:
           - voice
           - xsai
       fail-fast: false
-    name: Test @voltagent/${{ matrix.package }}
+    name: Test ${{ matrix.package }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -43,9 +43,9 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
       - name: Build Package and Dependencies
-        run: pnpm build --filter @voltagent/${{ matrix.package }}...
+        run: pnpm build --scope "@voltagent/${{ matrix.package }}" --include-dependencies
       - name: Test Package
-        run: pnpm test --filter @voltagent/${{ matrix.package }}
+        run: pnpm test --scope "@voltagent/${{ matrix.package }}"
 
   publish:
     needs: test-packages
