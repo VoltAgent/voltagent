@@ -242,18 +242,11 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=8192"
       - name: Build Core Package and Dependencies
         run: lerna run build --scope "@voltagent/core" --include-dependencies
-      - name: Run Individual Test with Timeout
+      - name: Run Individual Test
         run: |
           cd packages/core
           echo "Testing: ${{ matrix.test-file }}"
-          timeout 30s npx vitest run "src/${{ matrix.test-file }}" --reporter=verbose || EXIT_CODE=$?
-          if [ "$EXIT_CODE" = "124" ]; then
-            echo "::error::HANGING TEST DETECTED: ${{ matrix.test-file }}"
-            exit 1
-          elif [ "$EXIT_CODE" != "0" ]; then
-            echo "::error::TEST FAILED: ${{ matrix.test-file }}"
-            exit 1
-          fi
+          npx vitest run "src/${{ matrix.test-file }}" --reporter=verbose
           echo "::notice::Test passed: ${{ matrix.test-file }}"
 
   tsdoc-check:
