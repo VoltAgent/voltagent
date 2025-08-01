@@ -10,8 +10,8 @@ vi.mock("ai", () => ({
 }));
 
 // Spy on console methods
-const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(console, "error").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => {});
 
 describe("data-stream", () => {
   beforeEach(() => {
