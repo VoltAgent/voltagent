@@ -1,4 +1,4 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InMemoryLogBuffer } from "./buffer";
 import type { LogEntry, LogFilter } from "./types";
 

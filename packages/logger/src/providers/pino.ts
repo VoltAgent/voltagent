@@ -1,7 +1,7 @@
 import pino from "pino";
 import type { LoggerOptions as PinoLoggerOptions } from "pino";
-import { getDefaultLogLevel, getDefaultLogFormat, getDefaultRedactionPaths } from "../formatters";
-import type { Logger, LoggerOptions, LogBuffer } from "../types";
+import { getDefaultLogFormat, getDefaultLogLevel, getDefaultRedactionPaths } from "../formatters";
+import type { LogBuffer, Logger, LoggerOptions } from "../types";
 import type { LoggerProvider, LoggerWithProvider } from "./interface";
 
 /**

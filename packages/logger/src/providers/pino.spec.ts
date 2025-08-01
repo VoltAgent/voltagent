@@ -1,8 +1,8 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
 import pino from "pino";
-import { PinoLoggerProvider } from "./pino";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InMemoryLogBuffer } from "../buffer";
-import type { LoggerOptions, LogBuffer } from "../types";
+import type { LogBuffer, LoggerOptions } from "../types";
+import { PinoLoggerProvider } from "./pino";
 
 // Mock pino
 vi.mock("pino", () => {
@@ -155,7 +155,7 @@ describe("PinoLoggerProvider", () => {
         redact: ["apiKey"],
       };
 
-      const logger = provider.createLogger(options);
+      provider.createLogger(options);
 
       expect(pino).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -172,7 +172,7 @@ describe("PinoLoggerProvider", () => {
     it("should add pretty transport in development", () => {
       process.env.NODE_ENV = "development";
 
-      const logger = provider.createLogger({ format: "pretty" });
+      provider.createLogger({ format: "pretty" });
 
       expect(pino).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -189,7 +189,7 @@ describe("PinoLoggerProvider", () => {
     it("should not add pretty transport in production by default", () => {
       process.env.NODE_ENV = "production";
 
-      const logger = provider.createLogger({ format: "pretty" });
+      provider.createLogger({ format: "pretty" });
 
       expect(pino).toHaveBeenCalledWith(
         expect.not.objectContaining({
@@ -203,7 +203,7 @@ describe("PinoLoggerProvider", () => {
         browser: { asObject: true },
       });
 
-      const logger = customProvider.createLogger();
+      customProvider.createLogger();
 
       expect(pino).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -288,7 +288,7 @@ describe("PinoLoggerProvider", () => {
       provider = new PinoLoggerProvider();
       const parentLogger = provider.createLogger();
 
-      const childLogger = provider.createChildLogger(parentLogger, { childId: "123" });
+      provider.createChildLogger(parentLogger, { childId: "123" });
 
       expect(mockPinoInstance.child).toHaveBeenCalledWith({ childId: "123" });
     });
@@ -345,11 +345,11 @@ describe("PinoLoggerProvider", () => {
       vi.mocked(pino).mockReturnValueOnce(localMockPino);
 
       provider = new PinoLoggerProvider(1000, externalBuffer);
-      const logger = provider.createLogger();
+      provider.createLogger();
 
       // The setupLogCapture should have intercepted the write function
       // Let's test by calling the wrapped logger methods instead
-      const testLogger = provider.createLogger();
+      provider.createLogger();
 
       // Note: In the real implementation, setupLogCapture intercepts the stream
       // But in our test, we can verify the expected behavior would occur
@@ -363,7 +363,7 @@ describe("PinoLoggerProvider", () => {
 
     it("should handle non-JSON log entries gracefully", () => {
       provider = new PinoLoggerProvider();
-      const logger = provider.createLogger();
+      provider.createLogger();
 
       const stream = mockPinoInstance[(pino as any).__streamSymbol];
 
