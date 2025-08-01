@@ -1,6 +1,26 @@
 import { createTool } from "@voltagent/core";
 import { z } from "zod";
 
+// Define schemas for calendar event data
+const calendarEventSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  date: z.string(),
+  time: z.string(),
+  duration: z.number(),
+});
+
+// Define output schemas for calendar tools
+const checkCalendarOutputSchema = z.object({
+  events: z.array(calendarEventSchema),
+  message: z.string(),
+});
+
+const addCalendarEventOutputSchema = z.object({
+  event: calendarEventSchema,
+  message: z.string(),
+});
+
 // Mock calendar database for demonstration
 const mockCalendar = [
   {
@@ -28,6 +48,7 @@ const mockCalendar = [
 
 /**
  * A tool for checking calendar events
+ * With output schema validation to ensure consistent response format
  */
 export const checkCalendarTool = createTool({
   name: "checkCalendar",
@@ -35,6 +56,7 @@ export const checkCalendarTool = createTool({
   parameters: z.object({
     date: z.string().describe("The date to check calendar events for (YYYY-MM-DD)"),
   }),
+  outputSchema: checkCalendarOutputSchema,
   execute: async ({ date }) => {
     const events = mockCalendar.filter((event) => event.date === date);
 
@@ -56,6 +78,7 @@ export const checkCalendarTool = createTool({
 
 /**
  * A tool for adding a calendar event
+ * With output schema validation to ensure consistent response format
  */
 export const addCalendarEventTool = createTool({
   name: "addCalendarEvent",
@@ -66,6 +89,7 @@ export const addCalendarEventTool = createTool({
     time: z.string().describe("The time of the event (HH:MM)"),
     duration: z.number().describe("The duration of the event in minutes"),
   }),
+  outputSchema: addCalendarEventOutputSchema,
   execute: async ({ title, date, time, duration }) => {
     const id = (mockCalendar.length + 1).toString();
     const newEvent = { id, title, date, time, duration };

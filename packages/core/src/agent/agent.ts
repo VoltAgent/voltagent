@@ -788,6 +788,36 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               // Pass the correctly typed options
               const result = await originalExecute(args, reasoningOptions);
 
+              // Validate output against schema if provided (even for reasoning tools)
+              if (tool.outputSchema && "safeParse" in tool.outputSchema) {
+                const parseResult = tool.outputSchema.safeParse(result);
+                if (!parseResult.success) {
+                  const errorLogger = logger || this.logger;
+                  errorLogger.error(
+                    buildToolLogMessage(
+                      tool.name,
+                      ActionType.TOOL_ERROR,
+                      `Output validation failed: ${parseResult.error.message}`,
+                    ),
+                    {
+                      event: LogEvents.TOOL_EXECUTION_FAILED,
+                      toolName: tool.name,
+                      error: parseResult.error,
+                      validationErrors: parseResult.error.errors,
+                    },
+                  );
+
+                  // Return validation error as a tool result so LLM can see and potentially fix it
+                  return {
+                    error: true,
+                    message: `Output validation failed: ${parseResult.error.message}`,
+                    validationErrors: parseResult.error.errors,
+                    actualOutput: result,
+                  };
+                }
+                return parseResult.data;
+              }
+
               // Tool execution already logged in Stream Step Change
 
               return result;
@@ -795,6 +825,38 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
             // Execute regular tools with the injected context
             const result = await originalExecute(args, finalExecOptions);
+
+            // Validate output against schema if provided
+            if (tool.outputSchema && "safeParse" in tool.outputSchema) {
+              const parseResult = tool.outputSchema.safeParse(result);
+              if (!parseResult.success) {
+                const errorLogger = logger || this.logger;
+                errorLogger.error(
+                  buildToolLogMessage(
+                    tool.name,
+                    ActionType.TOOL_ERROR,
+                    `Output validation failed: ${parseResult.error.message}`,
+                  ),
+                  {
+                    event: LogEvents.TOOL_EXECUTION_FAILED,
+                    toolName: tool.name,
+                    agentId: this.id,
+                    modelName: this.getModelName(),
+                    error: parseResult.error,
+                    validationErrors: parseResult.error.errors,
+                  },
+                );
+
+                // Return validation error as a tool result so LLM can see and potentially fix it
+                return {
+                  error: true,
+                  message: `Output validation failed: ${parseResult.error.message}`,
+                  validationErrors: parseResult.error.errors,
+                  actualOutput: result,
+                };
+              }
+              return parseResult.data;
+            }
 
             // Tool execution already logged in Stream Step Change
 
