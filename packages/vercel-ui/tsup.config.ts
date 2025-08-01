@@ -13,7 +13,6 @@ export default defineConfig({
   dts: true,
   external: ["ai", "ai-v5", "@ai-sdk/ui-utils", "@ai-sdk/provider"],
   esbuildPlugins: [markAsExternalPlugin],
-
   esbuildOptions(options) {
     options.keepNames = true;
     return options;

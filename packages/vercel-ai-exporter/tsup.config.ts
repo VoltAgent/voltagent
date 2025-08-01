@@ -11,7 +11,6 @@ export default defineConfig({
   outDir: "dist",
   dts: true,
   esbuildPlugins: [markAsExternalPlugin],
-
   esbuildOptions(options) {
     options.keepNames = true;
     return options;

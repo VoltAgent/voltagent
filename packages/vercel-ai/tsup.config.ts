@@ -12,7 +12,6 @@ export default defineConfig({
   minify: false,
   dts: true,
   esbuildPlugins: [markAsExternalPlugin],
-
   esbuildOptions(options) {
     options.keepNames = true;
     return options;
