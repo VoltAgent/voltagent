@@ -1,10 +1,10 @@
-import type React from "react";
-import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
-import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import CodeBlock from "@theme/CodeBlock";
+import type React from "react";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 
 export default function SubagentsTutorial() {
   return (

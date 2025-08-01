@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createWorkflowChain, andThen } from "@voltagent/core";
+import { Agent, VoltAgent, andThen, createWorkflowChain } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";

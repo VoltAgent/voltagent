@@ -1,4 +1,4 @@
-import { VoltAgent, Agent } from "@voltagent/core";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { XSAIProvider } from "@voltagent/xsai";
 

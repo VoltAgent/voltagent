@@ -1,7 +1,7 @@
 import {
+  CalculatorIcon,
   CheckCircleIcon,
   XMarkIcon,
-  CalculatorIcon,
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import React, { useState } from "react";

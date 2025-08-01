@@ -10,9 +10,9 @@ import LivePreview from "../components/live-preview";
 import Ops from "../components/ops";
 import { Rag } from "../components/rag";
 import { SupervisorAgent } from "../components/supervisor-agent";
-import { DotPattern } from "../components/ui/dot-pattern";
-import { TwoBlocks } from "../components/two-blocks";
 import { Testimonials } from "../components/testimonials";
+import { TwoBlocks } from "../components/two-blocks";
+import { DotPattern } from "../components/ui/dot-pattern";
 import { Workflows } from "../components/workflows";
 export default function Home(): JSX.Element {
   const title = "VoltAgent - Open Source TypeScript AI Agent Framework";

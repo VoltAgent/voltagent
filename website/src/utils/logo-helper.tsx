@@ -1,6 +1,7 @@
 import React from "react";
 
 import { ServerIcon } from "@heroicons/react/20/solid";
+import { DifferentLogo } from "@site/static/img/logos/customers/different";
 import { Claude37Logo } from "../../static/img/logos/claudie";
 import { ComposioLogo } from "../../static/img/logos/composio";
 import { CursorLogo } from "../../static/img/logos/cursor";
@@ -11,6 +12,7 @@ import { AhrefLogo } from "../../static/img/logos/integrations/ahref";
 import { AirtableLogo } from "../../static/img/logos/integrations/airtable";
 import { AnthropicLogo } from "../../static/img/logos/integrations/anthropic";
 import { AsanaLogo } from "../../static/img/logos/integrations/asana";
+import { CalendlyLogo } from "../../static/img/logos/integrations/calendy";
 import { CohereLogo } from "../../static/img/logos/integrations/cohere";
 import { DropboxLogo } from "../../static/img/logos/integrations/dropbox";
 import { FigmaLogo } from "../../static/img/logos/integrations/figma";
@@ -30,8 +32,6 @@ import { OneDriveLogo } from "../../static/img/logos/integrations/one-drive";
 import { PineconeLogo } from "../../static/img/logos/integrations/pinecone";
 import { SlackLogo } from "../../static/img/logos/integrations/slack";
 import { ZapierLogo } from "../../static/img/logos/integrations/zapier";
-import { CalendlyLogo } from "../../static/img/logos/integrations/calendy";
-import { DifferentLogo } from "@site/static/img/logos/customers/different";
 
 // Map logo components by key
 export const logoMap = {

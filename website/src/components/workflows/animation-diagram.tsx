@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
-import { AnimatedBeam } from "../magicui/animated-beam";
 import {
+  ArrowPathIcon,
   BoltIcon,
+  CpuChipIcon,
   CubeIcon,
   UserCircleIcon,
-  ArrowPathIcon,
-  CpuChipIcon,
 } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import React, { useState, useEffect, useRef } from "react";
+import { AnimatedBeam } from "../magicui/animated-beam";
 
 interface WorkflowCodeExampleProps {
   isVisible: boolean;

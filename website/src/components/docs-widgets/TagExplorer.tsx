@@ -1,5 +1,5 @@
-import React, { useState } from "react";
 import CodeBlock from "@theme/CodeBlock";
+import React, { useState } from "react";
 
 const tagExamples = [
   {

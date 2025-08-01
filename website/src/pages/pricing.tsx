@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import Layout from "@theme/Layout";
-import { motion } from "framer-motion";
-import PricingSection from "../components/console/PricingSection";
-import PricingCalculatorModal from "../components/console/PricingCalculatorModal";
-import { DotPattern } from "../components/ui/dot-pattern";
 import {
   ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
+import Layout from "@theme/Layout";
+import { motion } from "framer-motion";
+import React, { useState } from "react";
+import PricingCalculatorModal from "../components/console/PricingCalculatorModal";
+import PricingSection from "../components/console/PricingSection";
 import { TwoBlocks } from "../components/two-blocks-pricing";
+import { DotPattern } from "../components/ui/dot-pattern";
 
 export default function Pricing(): JSX.Element {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);

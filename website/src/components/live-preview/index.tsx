@@ -6,7 +6,7 @@ import {
 } from "@codesandbox/sandpack-react";
 import { amethyst } from "@codesandbox/sandpack-themes";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function LivePreview() {
   const [activeTab, setActiveTab] = useState<"code" | "console">("code");

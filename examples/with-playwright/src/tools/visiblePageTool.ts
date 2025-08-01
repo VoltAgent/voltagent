@@ -3,10 +3,10 @@
  * @description Tools for working with visible elements on the page
  */
 
-import { z } from "zod";
-import { createTool, type ToolExecuteOptions } from "@voltagent/core";
-import { safeBrowserOperation } from "./browserBaseTools";
+import { type ToolExecuteOptions, createTool } from "@voltagent/core";
 import type { ToolExecutionContext } from "@voltagent/core";
+import { z } from "zod";
+import { safeBrowserOperation } from "./browserBaseTools";
 
 /**
  * Tool for getting all visible text on a page

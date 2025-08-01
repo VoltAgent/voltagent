@@ -1,5 +1,5 @@
-import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
 import { Pinecone } from "@pinecone-database/pinecone";
+import { type BaseMessage, BaseRetriever, type RetrieveOptions } from "@voltagent/core";
 
 // Initialize Pinecone client
 const pc = new Pinecone({

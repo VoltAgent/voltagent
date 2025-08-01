@@ -1,10 +1,10 @@
-import { WorkflowCodeExample } from "./animation-diagram";
 import {
+  EyeIcon,
   Squares2X2Icon,
   UserPlusIcon,
-  EyeIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import { WorkflowCodeExample } from "./animation-diagram";
 
 export function Workflows() {
   return (

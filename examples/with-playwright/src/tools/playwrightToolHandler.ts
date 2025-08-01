@@ -10,8 +10,8 @@
  * - Preserves browser state between tool invocations when possible
  */
 
-import { chromium, firefox, webkit, type Browser, type Page } from "playwright";
 import type { OperationContext } from "@voltagent/core";
+import { type Browser, type Page, chromium, firefox, webkit } from "playwright";
 
 // Define keys for storing browser/page in userContext
 const BROWSER_INSTANCE_KEY = Symbol("playwrightBrowserInstance");

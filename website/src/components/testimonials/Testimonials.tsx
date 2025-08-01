@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ClientTweetCard } from "../magicui/tweet-card-client";
+import { ArticleCard } from "./ArticleCard";
 import { DiscordMessage } from "./DiscordMessage";
 import { LinkedInMessage } from "./LinkedInMessage";
-import { ArticleCard } from "./ArticleCard";
 import { LinkedInPost } from "./LinkedInPost";
 
 // Seamless infinite scroll CSS with calculated values

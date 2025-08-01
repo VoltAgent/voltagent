@@ -1,13 +1,13 @@
-import type React from "react";
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
-import { TutorialNavbar } from "./TutorialNavbar";
+import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
-import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import type React from "react";
+import { TutorialNavbar } from "./TutorialNavbar";
 
 interface TutorialLayoutProps {
   children: React.ReactNode;

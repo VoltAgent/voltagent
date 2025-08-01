@@ -1,10 +1,10 @@
-import { VoltAgent, Agent } from "@voltagent/core";
+import { createReadStream, createWriteStream } from "fs";
+import path, { join } from "path";
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { OpenAIVoiceProvider } from "@voltagent/voice";
-import { openai } from "@ai-sdk/openai";
-import path, { join } from "path";
-import { createReadStream, createWriteStream } from "fs";
 
 // Initialize voice provider
 const voiceProvider = new OpenAIVoiceProvider({

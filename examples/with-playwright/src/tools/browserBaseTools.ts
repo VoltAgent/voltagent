@@ -1,5 +1,5 @@
-import type { Page } from "playwright";
 import type { ToolExecuteOptions, ToolExecutionContext } from "@voltagent/core";
+import type { Page } from "playwright";
 import {
   ensureBrowser,
   resetBrowserState as resetBrowserStateInternal,

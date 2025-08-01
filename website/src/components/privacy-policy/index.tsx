@@ -100,8 +100,9 @@ export function PrivacyPolicy() {
         <p>
           While using our Service, we may ask you to provide us with certain
           personally identifiable information that can be used to contact or
-          identify you (<strong>“Personal Data”</strong>). Personally
-          identifiable information may include, but is not limited to:
+          identify you (<strong>“Personal Data”</strong>
+          ). Personally identifiable information may include, but is not limited
+          to:
         </p>
         <ul className="list-disc ml-5">
           <li>Email address</li>

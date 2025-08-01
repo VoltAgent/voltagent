@@ -164,8 +164,8 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
             </div>
           )}
         </div>
-        
-  {/* Customer Case Studies Grid */}
+
+        {/* Customer Case Studies Grid */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

@@ -4,8 +4,8 @@ import {
   ArrowLeftIcon,
   ArrowTopRightOnSquareIcon,
   BuildingOfficeIcon,
-  UsersIcon,
   GlobeAltIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import Layout from "@theme/Layout";

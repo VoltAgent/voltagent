@@ -1,13 +1,13 @@
-import type React from "react";
-import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
-import CodeBlock from "@theme/CodeBlock";
-import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
-import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import { MobileAgentCode } from "../../components/tutorial";
 import Link from "@docusaurus/Link";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import CodeBlock from "@theme/CodeBlock";
+import type React from "react";
+import { useState } from "react";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { MobileAgentCode } from "../../components/tutorial";
+import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 
 export default function TutorialIntroduction() {
   const [highlightedSection, setHighlightedSection] = useState<string | null>(

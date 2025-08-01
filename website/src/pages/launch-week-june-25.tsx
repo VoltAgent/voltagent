@@ -1,8 +1,8 @@
-import React from "react";
-import Layout from "@theme/Layout";
-import CodeBlock from "@theme/CodeBlock";
-import { DotPattern } from "../components/ui/dot-pattern";
 import { BoltIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
+import CodeBlock from "@theme/CodeBlock";
+import Layout from "@theme/Layout";
+import React from "react";
+import { DotPattern } from "../components/ui/dot-pattern";
 
 // Day component props type
 interface DayProps {

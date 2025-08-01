@@ -1,17 +1,17 @@
 import React from "react";
 import {
-  TypeScriptLogo,
-  PythonLogo,
-  VercelLogo,
   LangChainLogo,
   OpenTelemetryLogo,
   PydanticLogo,
+  PythonLogo,
+  TypeScriptLogo,
+  VercelLogo,
 } from "../../../static/img/logos";
 import {
-  VoltAgentLogo,
+  AutogenLogo,
   CrewAILogo,
   LlamaIndexLogo,
-  AutogenLogo,
+  VoltAgentLogo,
 } from "../../../static/img/logos/integrations";
 
 export function TwoBlocks() {

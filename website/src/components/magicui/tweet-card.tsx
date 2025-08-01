@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import {
-  enrichTweet,
   type EnrichedTweet,
   type TweetProps,
   type TwitterComponents,
+  enrichTweet,
 } from "react-tweet";
-import { getTweet, type Tweet } from "react-tweet/api";
+import { type Tweet, getTweet } from "react-tweet/api";
 
 import { cn } from "@site/src/utils/index";
 import { XLogo } from "@site/static/img/logos/x";

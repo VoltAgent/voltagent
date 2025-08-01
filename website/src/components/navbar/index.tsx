@@ -1,13 +1,13 @@
 import Link from "@docusaurus/Link";
 import { useLocation } from "@docusaurus/router";
 import {
+  BookOpenIcon,
   CommandLineIcon,
   ComputerDesktopIcon,
+  PencilSquareIcon,
   ServerIcon,
   ShoppingCartIcon,
   UserIcon,
-  BookOpenIcon,
-  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon, ChevronDownIcon, StarIcon } from "@heroicons/react/24/solid";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";

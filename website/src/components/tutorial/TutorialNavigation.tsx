@@ -1,10 +1,10 @@
-import type React from "react";
 import Link from "@docusaurus/Link";
 import {
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import type React from "react";
 
 interface TutorialStep {
   id: string;

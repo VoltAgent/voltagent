@@ -3,10 +3,10 @@
  * @description Tools for handling and asserting network responses
  */
 
-import { z } from "zod";
-import { createTool, type ToolExecuteOptions } from "@voltagent/core";
-import { safeBrowserOperation } from "./browserBaseTools";
+import { type ToolExecuteOptions, createTool } from "@voltagent/core";
 import type { ToolExecutionContext } from "@voltagent/core";
+import { z } from "zod";
+import { safeBrowserOperation } from "./browserBaseTools";
 
 /**
  * Tool for setting up response wait operations
@@ -114,7 +114,7 @@ export const assertResponseTool = createTool({
       }
 
       let assertionsPassed = true;
-      let failureMessages: string[] = [];
+      const failureMessages: string[] = [];
 
       // Assert Status Code
       if (args.expectedStatus !== undefined) {

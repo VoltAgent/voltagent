@@ -1,6 +1,6 @@
 import { Agent, VoltAgent } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
 import { GoogleGenAIProvider } from "@voltagent/google-ai";
+import { createPinoLogger } from "@voltagent/logger";
 
 const GOOGLE_CLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT;
 const GOOGLE_CLOUD_LOCATION = process.env.GOOGLE_CLOUD_LOCATION;

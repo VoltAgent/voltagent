@@ -1,8 +1,8 @@
+import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import CodeBlock from "@theme/CodeBlock";
 import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
-import CodeBlock from "@theme/CodeBlock";
-import { ColorModeProvider } from "@docusaurus/theme-common/internal";
-import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 export default function TutorialMemory() {
   return (
