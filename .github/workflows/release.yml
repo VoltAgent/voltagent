@@ -106,8 +106,8 @@ jobs:
         run: pnpm build:all
       - name: Lint with Biome
         run: pnpm lint:ci
-   #   - name: Syncpack
-   #     run: pnpm sp lint
+      - name: Syncpack
+        run: pnpm sp lint
       - name: Publint
         run: pnpm publint:all
       - name: Are The Types Wrong

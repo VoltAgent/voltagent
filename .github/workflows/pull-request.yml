@@ -35,8 +35,8 @@ jobs:
       - name: Lint with Biome
         run: |
           pnpm lint:ci
-   #   - name: Syncpack
-   #     run: pnpm sp lint
+      - name: Syncpack
+        run: pnpm sp lint
   build:
     runs-on: ubuntu-latest
     strategy:

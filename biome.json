@@ -53,7 +53,8 @@
       "packages/docs-mcp/examples",
       "**/*.module.css",
       "**/.docusaurus/**",
-      "**/generated/**"
+      "**/generated/**",
+      "**/package.json"
     ]
   },
   "overrides": [

@@ -1,15 +1,20 @@
 {
   "name": "@voltagent/vercel-ai-exporter",
-  "version": "0.1.5",
   "description": "OpenTelemetry exporter for VoltAgent observability with Vercel AI SDK",
-  "keywords": ["voltagent", "vercel-ai", "opentelemetry", "observability", "llm", "ai"],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/voltagentai/voltagent.git",
-    "directory": "packages/vercel-ai-exporter"
-  },
-  "license": "MIT",
+  "version": "0.1.5",
   "author": "VoltAgent Team",
+  "dependencies": {
+    "@opentelemetry/core": "^2.0.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@voltagent/sdk": "^0.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@voltagent/core": "^0.1.71",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,10 +22,32 @@
       "require": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "ai",
+    "llm",
+    "observability",
+    "opentelemetry",
+    "vercel-ai",
+    "voltagent"
+  ],
+  "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "peerDependencies": {
+    "@voltagent/core": "^0.1.71",
+    "ai": "^3.0.0 || ^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voltagentai/voltagent.git",
+    "directory": "packages/vercel-ai-exporter"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -29,22 +56,5 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "dependencies": {
-    "@opentelemetry/core": "^1.18.0",
-    "@opentelemetry/sdk-trace-base": "^1.18.0",
-    "@voltagent/core": "^0.1.31",
-    "@voltagent/sdk": "^0.1.5"
-  },
-  "devDependencies": {
-    "@types/node": "^20.19.0",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
-    "vitest": "^3.2.3"
-  },
-  "peerDependencies": {
-    "ai": "^3.0.0 || ^4.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
+  "types": "dist/index.d.ts"
 }

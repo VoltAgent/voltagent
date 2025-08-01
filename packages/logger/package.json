@@ -1,27 +1,7 @@
 {
   "name": "@voltagent/logger",
-  "version": "0.1.1",
   "description": "VoltAgent logger - @voltagent/logger",
-  "license": "MIT",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": ["dist"],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "lint": "biome check .",
-    "lint:fix": "biome check . --write",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage"
-  },
+  "version": "0.1.1",
   "dependencies": {
     "@voltagent/internal": "^0.0.6",
     "pino": "^9.7.0",
@@ -31,7 +11,29 @@
     "@types/node": "^24.0.3",
     "@types/pino": "^7.0.5",
     "tsup": "^8.5.0",
-    "typescript": "^5.0.4",
+    "typescript": "^5.8.2",
     "vitest": "^3.2.4"
-  }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "types": "dist/index.d.ts"
 }

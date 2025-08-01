@@ -1,8 +1,20 @@
 {
   "name": "@voltagent/langfuse-exporter",
-  "version": "0.1.4",
   "description": "OpenTelemetry SpanExporter for sending VoltAgent traces to Langfuse.",
-  "license": "MIT",
+  "version": "0.1.4",
+  "dependencies": {
+    "@opentelemetry/core": "^2.0.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "langfuse": "^3.37.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@voltagent/core": "^0.1.71",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -10,10 +22,18 @@
       "require": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/core": "^2.0.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@voltagent/core": "^0.1.71"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -22,23 +42,5 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "dependencies": {
-    "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@voltagent/core": "^0.1.31",
-    "langfuse": "^3.37.2"
-  },
-  "devDependencies": {
-    "@types/node": "^20.19.0",
-    "@vitest/coverage-v8": "^3.2.3",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
-    "vitest": "^3.2.3"
-  },
-  "peerDependencies": {
-    "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@voltagent/core": "^0.1.0"
-  }
+  "types": "dist/index.d.ts"
 }

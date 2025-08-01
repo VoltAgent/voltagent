@@ -1,19 +1,36 @@
 {
   "name": "@voltagent/google-ai",
-  "version": "0.4.0",
   "description": "VoltAgent Google AI - Google Generative AI provider integration for VoltAgent",
-  "license": "MIT",
+  "version": "0.4.0",
+  "dependencies": {
+    "@google/genai": "^0.10.0",
+    "zod-to-json-schema": "^3.24.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4",
+    "zod": "^3.24.2"
+  },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "peerDependencies": {
+    "@voltagent/core": "^0.1.71",
+    "zod": "^3.24.2"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -22,17 +39,5 @@
     "test": "vitest",
     "test:coverage": "vitest run"
   },
-  "dependencies": {
-    "@google/genai": "^0.10.0",
-    "@voltagent/core": "^0.1.38",
-    "zod": "3.24.2",
-    "zod-to-json-schema": "^3.24.5"
-  },
-  "devDependencies": {
-    "@types/node": "^20.19.0",
-    "@vitest/coverage-v8": "^3.2.3",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
-    "vitest": "^3.2.3"
-  }
+  "types": "dist/index.d.ts"
 }

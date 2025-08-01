@@ -1,16 +1,6 @@
 {
   "name": "voltagent-example-with-playwright",
-  "private": true,
-  "keywords": ["voltagent", "ai", "agent"],
-  "license": "MIT",
   "author": "",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src ",
-    "start": "node dist/index.js",
-    "volt": "volt"
-  },
   "dependencies": {
     "@ai-sdk/mistral": "^1.2.7",
     "@playwright/browser-chromium": "1.51.1",
@@ -24,12 +14,26 @@
     "axios": "^1.5.0",
     "playwright": "1.51.1",
     "uuid": "^9.0.1",
-    "zod": "3.24.2"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.0.3",
     "@types/uuid": "^10.0.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  }
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src ",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
 }
