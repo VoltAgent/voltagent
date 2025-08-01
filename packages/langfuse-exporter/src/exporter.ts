@@ -1,6 +1,6 @@
+import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { Langfuse, type LangfuseOptions } from "langfuse";
-import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
 
 function safeJsonParse(jsonString: string | undefined | null): any {
   if (typeof jsonString !== "string") return jsonString; // Return as is if not a string
