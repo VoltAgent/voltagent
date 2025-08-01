@@ -599,11 +599,7 @@ const Node = forwardRef<
 
 Node.displayName = "Node";
 
-export function AgentsAnimation({
-  className,
-}: {
-  className?: string;
-}) {
+export function AgentsAnimation({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Input nodes

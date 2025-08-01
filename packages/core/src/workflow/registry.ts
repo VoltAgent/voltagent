@@ -197,11 +197,7 @@ export class WorkflowRegistry extends EventEmitter {
     const emitter = WorkflowEventEmitter.getInstance();
     emitter.on(
       "immediateWorkflowEvent",
-      (params: {
-        workflowId: string;
-        executionId: string;
-        event: WorkflowEventWithStatus;
-      }) => {
+      (params: { workflowId: string; executionId: string; event: WorkflowEventWithStatus }) => {
         this.handleImmediateWorkflowEvent(params);
       },
     );

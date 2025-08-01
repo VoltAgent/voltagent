@@ -317,7 +317,10 @@ export const getChangelogTool = new Tool({
   execute: async ({
     packageName,
     maxEntries = 10,
-  }: { packageName: string; maxEntries?: number }) => {
+  }: {
+    packageName: string;
+    maxEntries?: number;
+  }) => {
     try {
       const paths = getVoltAgentPaths();
       const changelogPath = path.join(paths.packagesPath, packageName, "CHANGELOG.md");

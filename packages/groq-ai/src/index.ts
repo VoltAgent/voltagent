@@ -151,10 +151,7 @@ export class GroqProvider implements LLMProvider<string> {
     }
   };
 
-  createStepFromChunk = (chunk: {
-    type: string;
-    [key: string]: any;
-  }): StepWithContent | null => {
+  createStepFromChunk = (chunk: { type: string; [key: string]: any }): StepWithContent | null => {
     if (chunk.type === "text" && chunk.text) {
       return {
         id: "",
