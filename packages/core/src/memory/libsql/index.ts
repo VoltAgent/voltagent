@@ -661,7 +661,13 @@ export class LibSQLStorage implements Memory {
   /**
    * Close the database connection
    */
-  close(): void {
+  async close(): Promise<void> {
+    try {
+      // Wait for initialization to complete before closing
+      await this.initialized;
+    } catch {
+      // Ignore initialization errors when closing
+    }
     this.client.close();
   }
 
