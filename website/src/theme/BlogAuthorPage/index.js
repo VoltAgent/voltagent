@@ -1,9 +1,5 @@
 import Link from "@docusaurus/Link";
-import {
-  HtmlClassNameProvider,
-  PageMetadata,
-  ThemeClassNames,
-} from "@docusaurus/theme-common";
+import { HtmlClassNameProvider, PageMetadata, ThemeClassNames } from "@docusaurus/theme-common";
 import BlogPostItems from "@theme/BlogPostItems";
 import Layout from "@theme/Layout";
 import SearchMetadata from "@theme/SearchMetadata";
@@ -41,10 +37,7 @@ export default function BlogAuthorPage({ metadata, items }) {
         )}
       >
         <div>
-          <Link
-            to="/blog"
-            className={clsx("!text-gray-500 text-sm no-underline")}
-          >
+          <Link to="/blog" className={clsx("!text-gray-500 text-sm no-underline")}>
             ← Back to blog
           </Link>
 

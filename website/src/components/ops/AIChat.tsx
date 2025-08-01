@@ -1,7 +1,4 @@
-import {
-  ChatBubbleLeftIcon,
-  PaperAirplaneIcon,
-} from "@heroicons/react/24/outline";
+import { ChatBubbleLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OpenAILogo } from "../../../static/img/logos/openai";
@@ -85,8 +82,7 @@ export default function AIChat() {
 
     // Simulate typing delay
     setTimeout(() => {
-      const randomResponse =
-        aiResponses[Math.floor(Math.random() * aiResponses.length)];
+      const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
       const updatedMessages = [
         ...messages,
         { id: generateId(), content: randomResponse, isUser: false },
@@ -159,9 +155,7 @@ export default function AIChat() {
                 </span>
                 <div className="border border-[#1e293b] bg-black/20 flex items-center gap-2 border-solid rounded px-2 py-2 min-w-20">
                   <OpenAILogo className="w-3.5 h-3.5" />
-                  <span className="text-gray-300 text-xs">
-                    {chatDetails.model}
-                  </span>
+                  <span className="text-gray-300 text-xs">{chatDetails.model}</span>
                 </div>
               </div>
 
@@ -171,9 +165,7 @@ export default function AIChat() {
                   Tools
                 </span>
                 <div className="border flex items-center bg-black/20 border-[#1e293b] border-solid rounded px-2 py-2 min-w-20">
-                  <span className="text-gray-300 text-xs">
-                    {chatDetails.tools}
-                  </span>
+                  <span className="text-gray-300 text-xs">{chatDetails.tools}</span>
                 </div>
               </div>
 
@@ -183,9 +175,7 @@ export default function AIChat() {
                   Instructions
                 </span>
                 <div className="border flex items-center bg-black/20 border-[#1e293b] border-solid rounded px-2 py-2">
-                  <span className="text-gray-300 text-xs">
-                    {chatDetails.instructions}
-                  </span>
+                  <span className="text-gray-300 text-xs">{chatDetails.instructions}</span>
                 </div>
               </div>
             </div>
@@ -194,10 +184,7 @@ export default function AIChat() {
       </div>
 
       {/* Chat Area */}
-      <div
-        className="flex-1 flex flex-col"
-        style={{ maxHeight: "calc(100% - 120px)" }}
-      >
+      <div className="flex-1 flex flex-col" style={{ maxHeight: "calc(100% - 120px)" }}>
         {/* Messages */}
         <div
           ref={messagesContainerRef}
@@ -208,9 +195,7 @@ export default function AIChat() {
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <ChatBubbleLeftIcon className="w-6 h-6 sm:w-8 sm:h-8 text-main-emerald mx-auto mb-2" />
-                <p className="text-gray-400 text-xs ">
-                  How can I help you today?
-                </p>
+                <p className="text-gray-400 text-xs ">How can I help you today?</p>
               </div>
             </div>
           ) : (
@@ -218,9 +203,7 @@ export default function AIChat() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${
-                    message.isUser ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`max-w-[80%] p-2 sm:p-3 rounded-lg ${
@@ -252,9 +235,7 @@ export default function AIChat() {
             <div className="flex flex-wrap gap-2 sm:gap-3 justify-center overflow-x-auto [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
-                onClick={() =>
-                  setInputValue("Show marketing performance for last month")
-                }
+                onClick={() => setInputValue("Show marketing performance for last month")}
                 className="px-2 sm:px-3 py-1 rounded-full text-[#00d992] border-main-emerald border-solid text-xs cursor-pointer transition-all duration-200 whitespace-nowrap border border-gray-800 bg-transparent"
               >
                 Show marketing performance
@@ -268,9 +249,7 @@ export default function AIChat() {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setInputValue("Analyze competitor social campaigns")
-                }
+                onClick={() => setInputValue("Analyze competitor social campaigns")}
                 className="px-2 sm:px-3 py-1 rounded-full text-[#00d992] border-main-emerald border-solid text-xs cursor-pointer transition-all duration-200 whitespace-nowrap border border-gray-800 bg-transparent"
               >
                 Analyze competitors

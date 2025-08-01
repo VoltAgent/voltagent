@@ -1,9 +1,5 @@
 import Link from "@docusaurus/Link";
-import {
-  HtmlClassNameProvider,
-  PageMetadata,
-  ThemeClassNames,
-} from "@docusaurus/theme-common";
+import { HtmlClassNameProvider, PageMetadata, ThemeClassNames } from "@docusaurus/theme-common";
 import BlogLayout from "@theme/BlogLayout";
 import SearchMetadata from "@theme/SearchMetadata";
 import clsx from "clsx";
@@ -14,10 +10,7 @@ export default function BlogTagsListPage({ tags }) {
 
   return (
     <HtmlClassNameProvider
-      className={clsx(
-        ThemeClassNames.wrapper.blogPages,
-        ThemeClassNames.page.blogTagsListPage,
-      )}
+      className={clsx(ThemeClassNames.wrapper.blogPages, ThemeClassNames.page.blogTagsListPage)}
     >
       <PageMetadata title="All Tags" />
       <SearchMetadata tag="blog_tags_list" />
@@ -32,10 +25,9 @@ export default function BlogTagsListPage({ tags }) {
                 All Topics
               </p>
               <p className="max-w-3xl landing-md:text-base landing-xs:text-xs text-gray-400">
-                Technical articles and best practices on building autonomous AI
-                agents - Comprehensive guides on agent design, LLM integration,
-                reasoning capabilities, and app development with the{" "}
-                <span className="text-main-emerald">VoltAgent</span>.
+                Technical articles and best practices on building autonomous AI agents -
+                Comprehensive guides on agent design, LLM integration, reasoning capabilities, and
+                app development with the <span className="text-main-emerald">VoltAgent</span>.
               </p>
             </div>
           </div>

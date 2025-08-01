@@ -2,12 +2,7 @@ import React, { useState } from "react";
 
 type Volume = "low" | "medium" | "high" | "enterprise" | "unknown";
 type ResponseType = "simple" | "complex" | "mixed" | "unknown";
-type AccuracyRequirement =
-  | "best-possible"
-  | "high"
-  | "balanced"
-  | "cost-first"
-  | "unknown";
+type AccuracyRequirement = "best-possible" | "high" | "balanced" | "cost-first" | "unknown";
 type Architecture = "single-agent" | "multi-agent" | "hybrid" | "unknown";
 
 interface CostOptimization {
@@ -68,8 +63,7 @@ const optimizationStrategies: Record<string, CostOptimization[]> = {
     {
       strategy: "Multi-tier model architecture",
       expectedSavings: "40-60%",
-      description:
-        "Screening layer with cheap models, premium for complex tasks",
+      description: "Screening layer with cheap models, premium for complex tasks",
       implementation: "Hard",
     },
     {
@@ -148,8 +142,7 @@ const optimizationStrategies: Record<string, CostOptimization[]> = {
 export default function CostOptimizationCalculator(): JSX.Element {
   const [volume, setVolume] = useState<Volume>("unknown");
   const [responseType, setResponseType] = useState<ResponseType>("unknown");
-  const [accuracyRequirement, setAccuracyRequirement] =
-    useState<AccuracyRequirement>("unknown");
+  const [accuracyRequirement, setAccuracyRequirement] = useState<AccuracyRequirement>("unknown");
   const [architecture, setArchitecture] = useState<Architecture>("unknown");
 
   const getOptimizations = (): CostOptimization[] => {
@@ -181,8 +174,7 @@ export default function CostOptimizationCalculator(): JSX.Element {
       optimizations.push({
         strategy: "Multi-tier model architecture",
         expectedSavings: "40-60%",
-        description:
-          "Screening layer with cheap models, premium for complex tasks",
+        description: "Screening layer with cheap models, premium for complex tasks",
         implementation: "Hard",
       });
       optimizations.push({
@@ -272,8 +264,7 @@ export default function CostOptimizationCalculator(): JSX.Element {
 
     // Remove duplicates based on strategy name
     const uniqueOptimizations = optimizations.filter(
-      (opt, index, self) =>
-        index === self.findIndex((o) => o.strategy === opt.strategy),
+      (opt, index, self) => index === self.findIndex((o) => o.strategy === opt.strategy),
     );
 
     return uniqueOptimizations;
@@ -324,19 +315,14 @@ export default function CostOptimizationCalculator(): JSX.Element {
 
   return (
     <div className="my-6 rounded-lg border-2 border-solid border-emerald-500 bg-gray-800 p-5 shadow-lg">
-      <h4 className="mb-2 text-lg font-semibold text-white">
-        💰 Cost Optimization Calculator
-      </h4>
+      <h4 className="mb-2 text-lg font-semibold text-white">💰 Cost Optimization Calculator</h4>
       <p className="mb-4 text-sm text-gray-300">
         Discover strategies to reduce your LLM costs while maintaining quality:
       </p>
 
       <div className="space-y-4">
         <div>
-          <label
-            htmlFor="volumeSelect"
-            className="mb-1 block text-sm font-medium text-gray-200"
-          >
+          <label htmlFor="volumeSelect" className="mb-1 block text-sm font-medium text-gray-200">
             1. What's your expected usage volume?
           </label>
           <select
@@ -364,10 +350,7 @@ export default function CostOptimizationCalculator(): JSX.Element {
         </div>
 
         <div>
-          <label
-            htmlFor="responseSelect"
-            className="mb-1 block text-sm font-medium text-gray-200"
-          >
+          <label htmlFor="responseSelect" className="mb-1 block text-sm font-medium text-gray-200">
             2. What type of responses do you need?
           </label>
           <select
@@ -392,18 +375,13 @@ export default function CostOptimizationCalculator(): JSX.Element {
         </div>
 
         <div>
-          <label
-            htmlFor="accuracySelect"
-            className="mb-1 block text-sm font-medium text-gray-200"
-          >
+          <label htmlFor="accuracySelect" className="mb-1 block text-sm font-medium text-gray-200">
             3. How important is response accuracy?
           </label>
           <select
             id="accuracySelect"
             value={accuracyRequirement}
-            onChange={(e) =>
-              setAccuracyRequirement(e.target.value as AccuracyRequirement)
-            }
+            onChange={(e) => setAccuracyRequirement(e.target.value as AccuracyRequirement)}
             className={`${selectBaseClass} ${selectBorderClass} ${selectHoverClass} ${selectFocusClass}`}
           >
             <option value="unknown" className="bg-gray-800">
@@ -456,16 +434,10 @@ export default function CostOptimizationCalculator(): JSX.Element {
       {(volume !== "unknown" || responseType !== "unknown") && (
         <div className="mt-6 rounded-md border border-emerald-500/50 bg-emerald-900/60 p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <h5 className="font-medium text-emerald-400">
-              📊 Optimization Strategies:
-            </h5>
+            <h5 className="font-medium text-emerald-400">📊 Optimization Strategies:</h5>
             <div className="text-right">
-              <div className="text-xs text-emerald-300/70">
-                Potential total savings:
-              </div>
-              <div className="font-bold text-emerald-400">
-                {totalSavingsRange()}
-              </div>
+              <div className="text-xs text-emerald-300/70">Potential total savings:</div>
+              <div className="font-bold text-emerald-400">{totalSavingsRange()}</div>
             </div>
           </div>
           <div className="space-y-3">
@@ -479,19 +451,11 @@ export default function CostOptimizationCalculator(): JSX.Element {
                     <div className="font-medium text-emerald-100">
                       {index + 1}. {opt.strategy}
                     </div>
-                    <p className="mt-1 text-xs text-emerald-200/80">
-                      {opt.description}
-                    </p>
+                    <p className="mt-1 text-xs text-emerald-200/80">{opt.description}</p>
                   </div>
                   <div className="ml-3 text-right">
-                    <div className="text-sm font-bold text-emerald-400">
-                      {opt.expectedSavings}
-                    </div>
-                    <div
-                      className={`text-xs ${getImplementationColor(
-                        opt.implementation,
-                      )}`}
-                    >
+                    <div className="text-sm font-bold text-emerald-400">{opt.expectedSavings}</div>
+                    <div className={`text-xs ${getImplementationColor(opt.implementation)}`}>
                       {opt.implementation}
                     </div>
                   </div>
@@ -500,24 +464,15 @@ export default function CostOptimizationCalculator(): JSX.Element {
             ))}
           </div>
           <div className="mt-4 rounded border border-emerald-600/50 bg-emerald-900/40 p-3">
-            <h6 className="mb-2 text-sm font-medium text-emerald-300">
-              💡 Implementation Tips:
-            </h6>
+            <h6 className="mb-2 text-sm font-medium text-emerald-300">💡 Implementation Tips:</h6>
             <ul className="space-y-1 text-xs text-emerald-200/70">
               <li>
-                • Start with <span className="text-green-400">Easy</span>{" "}
-                strategies first for quick wins
+                • Start with <span className="text-green-400">Easy</span> strategies first for quick
+                wins
               </li>
-              <li>
-                • Implement monitoring before optimization to measure impact
-              </li>
-              <li>
-                • Test thoroughly - cost savings shouldn't compromise user
-                experience
-              </li>
-              <li>
-                • Consider implementing strategies gradually to minimize risk
-              </li>
+              <li>• Implement monitoring before optimization to measure impact</li>
+              <li>• Test thoroughly - cost savings shouldn't compromise user experience</li>
+              <li>• Consider implementing strategies gradually to minimize risk</li>
             </ul>
           </div>
         </div>

@@ -5,8 +5,7 @@ const sessionExamples = [
   {
     id: "basic",
     name: "Basic Session Creation",
-    description:
-      "Create a session by adding conversationId to group related traces together.",
+    description: "Create a session by adding conversationId to group related traces together.",
     examples: {
       python: `async with sdk.trace(
     agentId="support-agent-v1",
@@ -52,8 +51,7 @@ const sessionExamples = [
   {
     id: "multi-turn",
     name: "Multi-Turn Conversation",
-    description:
-      "Create multiple traces within the same session for conversation flow tracking.",
+    description: "Create multiple traces within the same session for conversation flow tracking.",
     examples: {
       python: `# First interaction - Session begins
 async with sdk.trace(
@@ -159,9 +157,7 @@ const SessionExplorer = () => {
   const [selectedExampleId, setSelectedExampleId] = useState<string>("basic");
   const [selectedSDK, setSelectedSDK] = useState<string>("javascript");
 
-  const selectedExample = sessionExamples.find(
-    (example) => example.id === selectedExampleId,
-  );
+  const selectedExample = sessionExamples.find((example) => example.id === selectedExampleId);
 
   const sdkOptions = [
     { id: "javascript", name: "JS/TS SDK" },
@@ -206,12 +202,8 @@ const SessionExplorer = () => {
           className="mt-5 rounded-md border border-gray-700 bg-gray-800 p-4 text-gray-200"
           style={{ backgroundColor: "#242424" }}
         >
-          <h4 className="mb-2 mt-0 text-lg text-emerald-300">
-            {selectedExample.name}
-          </h4>
-          <p className="leading-relaxed text-gray-200 mb-4">
-            {selectedExample.description}
-          </p>
+          <h4 className="mb-2 mt-0 text-lg text-emerald-300">{selectedExample.name}</h4>
+          <p className="leading-relaxed text-gray-200 mb-4">{selectedExample.description}</p>
 
           {/* SDK Tabs */}
           <div className="mb-4">

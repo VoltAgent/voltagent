@@ -59,12 +59,8 @@ export function LinkedInMessage({
               {username}
             </span>
             <div className="flex items-center space-x-1">
-              {title && (
-                <span className="text-xs text-gray-500 truncate">{title}</span>
-              )}
-              {timestamp && (
-                <span className="ml-1 text-gray-500 text-xs">{timestamp}</span>
-              )}
+              {title && <span className="text-xs text-gray-500 truncate">{title}</span>}
+              {timestamp && <span className="ml-1 text-gray-500 text-xs">{timestamp}</span>}
             </div>
           </div>
         </div>

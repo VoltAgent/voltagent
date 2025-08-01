@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 
-type Issue =
-  | "hallucinations"
-  | "latency"
-  | "cost"
-  | "toxicity"
-  | "drift"
-  | "unknown";
+type Issue = "hallucinations" | "latency" | "cost" | "toxicity" | "drift" | "unknown";
 
 interface IssueDetail {
   name: string;
@@ -18,8 +12,7 @@ const issues: Record<Issue, IssueDetail | { name: string }> = {
   unknown: { name: "-- Select an Issue --" },
   hallucinations: {
     name: "Hallucinations/Making Things Up",
-    description:
-      "When the LLM generates plausible but incorrect or nonsensical information.",
+    description: "When the LLM generates plausible but incorrect or nonsensical information.",
     relevantPillars: [
       "Output/Response Monitoring",
       "User Feedback Loop",
@@ -37,18 +30,12 @@ const issues: Record<Issue, IssueDetail | { name: string }> = {
   },
   cost: {
     name: "Unexpected High Costs",
-    description:
-      "When the LLM usage incurs higher than expected financial costs.",
-    relevantPillars: [
-      "Cost Tracking",
-      "Performance Metrics (Tokens)",
-      "Input/Prompt Tracking",
-    ],
+    description: "When the LLM usage incurs higher than expected financial costs.",
+    relevantPillars: ["Cost Tracking", "Performance Metrics (Tokens)", "Input/Prompt Tracking"],
   },
   toxicity: {
     name: "Toxic or Biased Output",
-    description:
-      "When the LLM generates harmful, biased, or inappropriate content.",
+    description: "When the LLM generates harmful, biased, or inappropriate content.",
     relevantPillars: [
       "Output/Response Monitoring",
       "User Feedback Loop",
@@ -80,9 +67,7 @@ export default function LlmIssueSpotter(): JSX.Element {
 
   return (
     <div className="my-6 rounded-lg border-2 border-solid border-emerald-500 bg-gray-800 p-5 shadow-lg">
-      <h4 className="mb-2 text-lg font-semibold text-white">
-        LLM Common Issue Spotter
-      </h4>
+      <h4 className="mb-2 text-lg font-semibold text-white">LLM Common Issue Spotter</h4>
       <p className="mb-1 text-sm text-gray-300">
         Select an issue to see which observability areas can help:
       </p>
@@ -103,15 +88,9 @@ export default function LlmIssueSpotter(): JSX.Element {
 
       {currentIssueDetails && selectedIssue !== "unknown" && (
         <div className="mt-6 rounded-md border border-emerald-500/50 bg-emerald-900/60 p-4 shadow-sm">
-          <h5 className="mb-1 font-semibold text-emerald-400">
-            {currentIssueDetails.name}
-          </h5>
-          <p className="mb-3 text-sm text-emerald-100">
-            {currentIssueDetails.description}
-          </p>
-          <h6 className="mb-1 text-sm font-medium text-emerald-300">
-            Key Observability Pillars:
-          </h6>
+          <h5 className="mb-1 font-semibold text-emerald-400">{currentIssueDetails.name}</h5>
+          <p className="mb-3 text-sm text-emerald-100">{currentIssueDetails.description}</p>
+          <h6 className="mb-1 text-sm font-medium text-emerald-300">Key Observability Pillars:</h6>
           <ul className="list-inside list-disc space-y-1 text-sm text-emerald-100">
             {currentIssueDetails.relevantPillars.map((pillar) => (
               <li key={pillar}>{pillar}</li>

@@ -18,9 +18,7 @@ interface RecommendedServersProps {
   similarMcps?: SimilarMcp[];
 }
 
-export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
-  similarMcps,
-}) => {
+export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({ similarMcps }) => {
   console.log({ similarMcps });
   return (
     <div className="hidden lg:block rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm bg-[rgba(58,66,89,0.3)]">
@@ -30,9 +28,7 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
         </div>
         <div>
           <span className="text-md font-semibold text-white mb-1">
-            {similarMcps && similarMcps.length > 0
-              ? "Similar MCPs"
-              : "Recommended Servers"}
+            {similarMcps && similarMcps.length > 0 ? "Similar MCPs" : "Recommended Servers"}
           </span>
           <div className="text-gray-400 text-sm">
             {similarMcps && similarMcps.length > 0
@@ -44,9 +40,7 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
 
       <div className="p-4 space-y-3">
         {similarMcps.map((mcp) => {
-          const LogoComponent = mcp.logoKey
-            ? getLogoComponent(mcp.logoKey)
-            : null;
+          const LogoComponent = mcp.logoKey ? getLogoComponent(mcp.logoKey) : null;
 
           return (
             <Link
@@ -65,9 +59,7 @@ export const RecommendedServersSection: React.FC<RecommendedServersProps> = ({
                   )}
                 </div>
                 <div className="flex flex-col min-w-0 flex-1">
-                  <div className="text-white font-semibold text-sm mb-1 truncate">
-                    {mcp.name}
-                  </div>
+                  <div className="text-white font-semibold text-sm mb-1 truncate">{mcp.name}</div>
                   <div className="text-xs text-gray-400 line-clamp-2">
                     {mcp.short_description || mcp.category}
                   </div>

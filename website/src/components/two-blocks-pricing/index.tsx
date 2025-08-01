@@ -28,8 +28,7 @@ export function TwoBlocks() {
                 DEVELOPMENT & ORCHESTRATION{" "}
               </p>
               <span className="text-gray-300 landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-center">
-                Build agents with{" "}
-                <span className="text-[#00d992] font-bold">VoltAgent</span>
+                Build agents with <span className="text-[#00d992] font-bold">VoltAgent</span>
               </span>
             </div>
 
@@ -65,9 +64,8 @@ export function TwoBlocks() {
                   </p>
                 </div>
                 <p className="text-gray-400 landing-xs:text-xs landing-md:text-lg  text-left leading-relaxed">
-                  A TypeScript framework for building AI agents and LLM apps
-                  with enterprise-grade capabilities, fully free and
-                  open-source.
+                  A TypeScript framework for building AI agents and LLM apps with enterprise-grade
+                  capabilities, fully free and open-source.
                 </p>
               </div>
 
@@ -133,8 +131,8 @@ export function TwoBlocks() {
                   </span>
                 </p>
                 <p className="text-gray-400 landing-xs:text-xs landing-md:text-lg text-left leading-relaxed">
-                  Framework-agnostic observability platform for tracing,
-                  debugging, and monitoring AI agents & LLM apps.
+                  Framework-agnostic observability platform for tracing, debugging, and monitoring
+                  AI agents & LLM apps.
                 </p>
               </div>
 

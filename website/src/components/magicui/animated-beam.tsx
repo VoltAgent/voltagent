@@ -112,14 +112,10 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
         const svgHeight = containerRect.height;
         setSvgDimensions({ width: svgWidth, height: svgHeight });
 
-        const startX =
-          rectA.left - containerRect.left + rectA.width / 2 + startXOffset;
-        const startY =
-          rectA.top - containerRect.top + rectA.height / 2 + startYOffset;
-        const endX =
-          rectB.left - containerRect.left + rectB.width / 2 + endXOffset;
-        const endY =
-          rectB.top - containerRect.top + rectB.height / 2 + endYOffset;
+        const startX = rectA.left - containerRect.left + rectA.width / 2 + startXOffset;
+        const startY = rectA.top - containerRect.top + rectA.height / 2 + startYOffset;
+        const endX = rectB.left - containerRect.left + rectB.width / 2 + endXOffset;
+        const endY = rectB.top - containerRect.top + rectB.height / 2 + endYOffset;
 
         let d = "";
 
@@ -191,14 +187,10 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
           // First vertical segment with rounded corner
           if (vOffset > 0) {
             d += ` L ${startX},${startY + radius}`;
-            d += ` Q ${startX},${midY - radius} ${startX + radius},${
-              midY - radius
-            }`;
+            d += ` Q ${startX},${midY - radius} ${startX + radius},${midY - radius}`;
           } else {
             d += ` L ${startX},${startY - radius}`;
-            d += ` Q ${startX},${midY + radius} ${startX + radius},${
-              midY + radius
-            }`;
+            d += ` Q ${startX},${midY + radius} ${startX + radius},${midY + radius}`;
           }
 
           // Horizontal segment
@@ -240,10 +232,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
             const dx = Math.abs(endX - startX);
             const vOffset = Math.abs(verticalOffset || 30);
             const approxLength =
-              dx +
-              Math.abs(startY - (startY + vOffset)) +
-              Math.abs(startY + vOffset - endY) +
-              40; // Add extra for corners
+              dx + Math.abs(startY - (startY + vOffset)) + Math.abs(startY + vOffset - endY) + 40; // Add extra for corners
             setPathLength(approxLength);
           }
         }
@@ -287,10 +276,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
       width={svgDimensions.width}
       height={svgDimensions.height}
       xmlns="http://www.w3.org/2000/svg"
-      className={cn(
-        "pointer-events-none absolute left-0 top-0 transform-gpu",
-        className,
-      )}
+      className={cn("pointer-events-none absolute left-0 top-0 transform-gpu", className)}
       viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
     >
       <title>Animated beam</title>
@@ -344,11 +330,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
           {/* First particle (always shown) */}
           <circle r={particleSize} fill={particleColor}>
             <motion.animateMotion
-              path={
-                particleDirection === "backward"
-                  ? pathD.split("").reverse().join("")
-                  : pathD
-              }
+              path={particleDirection === "backward" ? pathD.split("").reverse().join("") : pathD}
               dur={`${particleSpeed}s`}
               repeatCount="indefinite"
               rotate="auto"
@@ -361,11 +343,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
           {particleCount >= 2 && (
             <circle r={particleSize * 0.8} fill={particleColor} opacity="0.8">
               <motion.animateMotion
-                path={
-                  particleDirection === "backward"
-                    ? pathD.split("").reverse().join("")
-                    : pathD
-                }
+                path={particleDirection === "backward" ? pathD.split("").reverse().join("") : pathD}
                 dur={`${particleSpeed * 1.3}s`}
                 repeatCount="indefinite"
                 rotate="auto"
@@ -380,11 +358,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
           {particleCount >= 3 && (
             <circle r={particleSize * 0.6} fill={particleColor} opacity="0.6">
               <motion.animateMotion
-                path={
-                  particleDirection === "backward"
-                    ? pathD.split("").reverse().join("")
-                    : pathD
-                }
+                path={particleDirection === "backward" ? pathD.split("").reverse().join("") : pathD}
                 dur={`${particleSpeed * 0.8}s`}
                 repeatCount="indefinite"
                 rotate="auto"

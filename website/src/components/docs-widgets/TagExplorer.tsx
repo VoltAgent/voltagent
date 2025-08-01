@@ -5,8 +5,7 @@ const tagExamples = [
   {
     id: "basic",
     name: "Basic Categorization",
-    description:
-      "Simple tag usage for categorizing traces by function and priority.",
+    description: "Simple tag usage for categorizing traces by function and priority.",
     examples: {
       typescript: `const trace = await sdk.trace({
   name: "Customer Support Query",
@@ -53,8 +52,7 @@ const tagExamples = [
   {
     id: "hierarchical",
     name: "Hierarchical Tags",
-    description:
-      "Organized tag structure using prefixes for better categorization.",
+    description: "Organized tag structure using prefixes for better categorization.",
     examples: {
       typescript: `const trace = await sdk.trace({
   name: "Content Generation",
@@ -112,8 +110,7 @@ const tagExamples = [
   {
     id: "environment",
     name: "Environment & Deployment",
-    description:
-      "Tag traces by environment, region, and deployment stage for better operations.",
+    description: "Tag traces by environment, region, and deployment stage for better operations.",
     examples: {
       typescript: `const trace = await sdk.trace({
   name: "API Request Processing",
@@ -176,8 +173,7 @@ const tagExamples = [
   {
     id: "dynamic",
     name: "Dynamic Tagging",
-    description:
-      "Generate tags programmatically based on request context and user attributes.",
+    description: "Generate tags programmatically based on request context and user attributes.",
     examples: {
       typescript: `const generateTags = (user, request) => {
   const tags = ["support"];
@@ -267,9 +263,7 @@ const TagExplorer = () => {
   const [selectedExampleId, setSelectedExampleId] = useState<string>("basic");
   const [selectedSDK, setSelectedSDK] = useState<string>("typescript");
 
-  const selectedExample = tagExamples.find(
-    (example) => example.id === selectedExampleId,
-  );
+  const selectedExample = tagExamples.find((example) => example.id === selectedExampleId);
 
   const sdkOptions = [
     { id: "typescript", name: "JS/TS SDK" },
@@ -314,12 +308,8 @@ const TagExplorer = () => {
           className="mt-5 rounded-md border border-gray-700 bg-gray-800 p-4 text-gray-200"
           style={{ backgroundColor: "#242424" }}
         >
-          <h4 className="mb-2 mt-0 text-lg text-emerald-300">
-            {selectedExample.name}
-          </h4>
-          <p className="leading-relaxed text-gray-200 mb-4">
-            {selectedExample.description}
-          </p>
+          <h4 className="mb-2 mt-0 text-lg text-emerald-300">{selectedExample.name}</h4>
+          <p className="leading-relaxed text-gray-200 mb-4">{selectedExample.description}</p>
 
           {/* SDK Tabs */}
           <div className="mb-4">
@@ -364,9 +354,7 @@ const TagExplorer = () => {
               {selectedExample.examples[selectedSDK]}
             </CodeBlock>
           </div>
-          <p className="leading-relaxed text-gray-200">
-            {selectedExample.details}
-          </p>
+          <p className="leading-relaxed text-gray-200">{selectedExample.details}</p>
         </div>
       )}
     </div>

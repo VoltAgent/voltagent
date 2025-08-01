@@ -18,13 +18,7 @@ type DeploymentStage = {
   duration?: string;
 };
 
-type LogType =
-  | "build"
-  | "data"
-  | "complete"
-  | "integration"
-  | "deploy"
-  | "default";
+type LogType = "build" | "data" | "complete" | "integration" | "deploy" | "default";
 
 type DeploymentLog = {
   id: number;
@@ -262,17 +256,12 @@ const timeline: TimelineEvent[] = [
 ];
 
 // Status indicator component with smooth transitions
-const StatusIndicator = ({
-  status,
-  duration,
-}: { status: StageStatus; duration?: string }) => {
+const StatusIndicator = ({ status, duration }: { status: StageStatus; duration?: string }) => {
   if (status === "complete") {
     return (
       <div className="flex items-center justify-end gap-2 transition-all duration-500 ease-in-out animate-fadeIn">
         <CheckCircleIcon className="w-3 h-3 landing-xs:w-4 landing-xs:h-4 text-green-500 transition-transform duration-500 ease-in-out animate-scaleIn" />
-        <span className="landing-md:text-xs landing-xs:text-[10px] text-gray-400">
-          {duration}
-        </span>
+        <span className="landing-md:text-xs landing-xs:text-[10px] text-gray-400">{duration}</span>
       </div>
     );
   }
@@ -290,9 +279,7 @@ const StatusIndicator = ({
     return (
       <div className="flex items-center justify-end gap-2 transition-all duration-500 ease-in-out animate-fadeIn">
         <ExclamationTriangleIcon className="w-3 h-3 landing-xs:w-4 landing-xs:h-4 text-red-500 transition-transform duration-500 ease-in-out animate-scaleIn" />
-        <span className="landing-md:text-xs landing-xs:text-[10px] text-gray-400">
-          {duration}
-        </span>
+        <span className="landing-md:text-xs landing-xs:text-[10px] text-gray-400">{duration}</span>
       </div>
     );
   }
@@ -380,9 +367,7 @@ const DeploymentLogItem = ({ log }: { log: DeploymentLog }) => {
 };
 
 export default function Deployment() {
-  const [stages, setStages] = useState<DeploymentStage[]>(
-    initialDeploymentStages,
-  );
+  const [stages, setStages] = useState<DeploymentStage[]>(initialDeploymentStages);
   const [logs, setLogs] = useState<DeploymentLog[]>(initialDeploymentLogs);
   // const timelineIndex = useRef(0); // Removed unused timelineIndex ref
   const timeoutRef = useRef<NodeJS.Timeout | null>(null); // For simulation events
@@ -469,38 +454,22 @@ export default function Deployment() {
     (event: TimelineEvent) => {
       if (event.action === "startStage" && event.stageIndex !== undefined) {
         setStages((prev) =>
-          prev.map((s, i) =>
-            i === event.stageIndex ? { ...s, status: "in-progress" } : s,
-          ),
+          prev.map((s, i) => (i === event.stageIndex ? { ...s, status: "in-progress" } : s)),
         );
-      } else if (
-        event.action === "completeStage" &&
-        event.stageIndex !== undefined
-      ) {
+      } else if (event.action === "completeStage" && event.stageIndex !== undefined) {
         setStages((prev) =>
-          prev.map((s, i) =>
-            i === event.stageIndex ? { ...s, status: "complete" } : s,
-          ),
+          prev.map((s, i) => (i === event.stageIndex ? { ...s, status: "complete" } : s)),
         );
-      } else if (
-        event.action === "failStage" &&
-        event.stageIndex !== undefined
-      ) {
+      } else if (event.action === "failStage" && event.stageIndex !== undefined) {
         setStages((prev) =>
-          prev.map((s, i) =>
-            i === event.stageIndex ? { ...s, status: "failed" } : s,
-          ),
+          prev.map((s, i) => (i === event.stageIndex ? { ...s, status: "failed" } : s)),
         );
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
         return;
       } else if (event.action === "showLog" && event.logIndex !== undefined) {
-        setLogs((prev) =>
-          prev.map((l, i) =>
-            i === event.logIndex ? { ...l, visible: true } : l,
-          ),
-        );
+        setLogs((prev) => prev.map((l, i) => (i === event.logIndex ? { ...l, visible: true } : l)));
       } else if (event.action === "complete") {
         // When animation completes, schedule a restart after a short delay
         const restartDelay = 2000; // 2 seconds pause before restarting

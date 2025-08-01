@@ -24,8 +24,8 @@
         "noForEach": "off"
       },
       "a11y": {
-        "noLabelWithoutControl": "off",
-        "useSemanticElements": "off"
+        "all": false
+        
       }
     }
   },

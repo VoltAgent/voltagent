@@ -8,9 +8,7 @@ import { MobileToolCode } from "../../components/tutorial";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 
 export default function ChatbotProblemTutorial() {
-  const [highlightedSection, setHighlightedSection] = useState<string | null>(
-    "tool_definition",
-  );
+  const [highlightedSection, setHighlightedSection] = useState<string | null>("tool_definition");
   const isMobile = useMediaQuery("(max-width: 1023px)");
 
   // Function to define code sections
@@ -75,9 +73,8 @@ export default function ChatbotProblemTutorial() {
             Why Most Chatbots Fail
           </h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            You've probably interacted with dozens of chatbots. Most of them are
-            frustrating, limited, and feel like talking to a very sophisticated
-            answering machine. Here's why:
+            You've probably interacted with dozens of chatbots. Most of them are frustrating,
+            limited, and feel like talking to a very sophisticated answering machine. Here's why:
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
@@ -153,8 +150,7 @@ export default function ChatbotProblemTutorial() {
             Real-World Example: Customer Support
           </h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's see the difference in action. Imagine a customer needs help
-            with a billing issue:
+            Let's see the difference in action. Imagine a customer needs help with a billing issue:
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
@@ -163,12 +159,8 @@ export default function ChatbotProblemTutorial() {
                 What Users Want:
               </h4>
               <div className="space-y-2 text-xs landing-md:text-sm">
-                <div className="text-gray-300">
-                  "Book a meeting room for 3pm"
-                </div>
-                <div className="text-gray-300">
-                  "Check our website's status"
-                </div>
+                <div className="text-gray-300">"Book a meeting room for 3pm"</div>
+                <div className="text-gray-300">"Check our website's status"</div>
                 <div className="text-gray-300">"Generate a sales report"</div>
                 <div className="text-gray-300">"Order lunch for the team"</div>
                 <div className="text-gray-300">"Deploy the new feature"</div>
@@ -180,21 +172,11 @@ export default function ChatbotProblemTutorial() {
                 What Your Agent Says:
               </h4>
               <div className="space-y-2 text-xs landing-md:text-sm">
-                <div className="text-gray-300">
-                  "I can't book rooms, but here's how..."
-                </div>
-                <div className="text-gray-300">
-                  "I can't check websites, but you should..."
-                </div>
-                <div className="text-gray-300">
-                  "I can't generate reports, but try..."
-                </div>
-                <div className="text-gray-300">
-                  "I can't order food, but here are some..."
-                </div>
-                <div className="text-gray-300">
-                  "I can't deploy code, but the process is..."
-                </div>
+                <div className="text-gray-300">"I can't book rooms, but here's how..."</div>
+                <div className="text-gray-300">"I can't check websites, but you should..."</div>
+                <div className="text-gray-300">"I can't generate reports, but try..."</div>
+                <div className="text-gray-300">"I can't order food, but here are some..."</div>
+                <div className="text-gray-300">"I can't deploy code, but the process is..."</div>
               </div>
             </div>
           </div>
@@ -204,9 +186,8 @@ export default function ChatbotProblemTutorial() {
               The Reality Check
             </h4>
             <p className="text-xs landing-md:text-base text-gray-300 mb-0">
-              After a week, users stop using your "AI assistant" because it's
-              just a fancy search engine that can't actually assist with
-              anything. Sound familiar?
+              After a week, users stop using your "AI assistant" because it's just a fancy search
+              engine that can't actually assist with anything. Sound familiar?
             </p>
           </div>
         </div>
@@ -217,8 +198,8 @@ export default function ChatbotProblemTutorial() {
             The Solution: Give Your Agent Tools
           </h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's fix your useless chatbot by adding a real tool. Hover over the
-            explanations to see how each part works.
+            Let's fix your useless chatbot by adding a real tool. Hover over the explanations to see
+            how each part works.
           </p>
 
           {/* Interactive Code Section - Wider Container */}
@@ -265,19 +246,14 @@ export default function ChatbotProblemTutorial() {
                       </div>
                       <code className="py-5 px-3 block text-xs">
                         {/* Imports */}
-                        <span
-                          className={`block ${getHighlightClasses("imports")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("imports")}`}>
                           <span className="text-blue-400">import</span>
                           <span>
                             {" "}
                             {"{"} VoltAgent, Agent, createTool {"}"}{" "}
                           </span>
                           <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300">
-                            {" "}
-                            "@voltagent/core"
-                          </span>
+                          <span className="text-yellow-300"> "@voltagent/core"</span>
                           <span>;</span>
                           <br />
                           <span className="text-blue-400">import</span>
@@ -286,10 +262,7 @@ export default function ChatbotProblemTutorial() {
                             {"{"} VercelAIProvider {"}"}{" "}
                           </span>
                           <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300">
-                            {" "}
-                            "@voltagent/vercel-ai"
-                          </span>
+                          <span className="text-yellow-300"> "@voltagent/vercel-ai"</span>
                           <span>;</span>
                           <br />
                           <span className="text-blue-400">import</span>
@@ -298,10 +271,7 @@ export default function ChatbotProblemTutorial() {
                             {"{"} openai {"}"}{" "}
                           </span>
                           <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300">
-                            {" "}
-                            "@ai-sdk/openai"
-                          </span>
+                          <span className="text-yellow-300"> "@ai-sdk/openai"</span>
                           <span>;</span>
                           <br />
                           <span className="text-blue-400">import</span>
@@ -317,11 +287,7 @@ export default function ChatbotProblemTutorial() {
                         </span>
 
                         {/* Tool Definition */}
-                        <span
-                          className={`block ${getHighlightClasses(
-                            "tool_definition",
-                          )}`}
-                        >
+                        <span className={`block ${getHighlightClasses("tool_definition")}`}>
                           <span className="text-blue-400">const</span>
                           <span> getWeatherTool = </span>
                           <span className="text-green-400">createTool</span>
@@ -330,11 +296,7 @@ export default function ChatbotProblemTutorial() {
                         </span>
 
                         {/* Tool Name & Description */}
-                        <span
-                          className={`block ${getHighlightClasses(
-                            "tool_meta",
-                          )}`}
-                        >
+                        <span className={`block ${getHighlightClasses("tool_meta")}`}>
                           <span className="ml-4">name: </span>
                           <span className="text-yellow-300">"get_weather"</span>
                           <span>,</span>
@@ -348,11 +310,7 @@ export default function ChatbotProblemTutorial() {
                         </span>
 
                         {/* Parameters */}
-                        <span
-                          className={`block ${getHighlightClasses(
-                            "parameters",
-                          )}`}
-                        >
+                        <span className={`block ${getHighlightClasses("parameters")}`}>
                           <span className="ml-4">parameters: </span>
                           <span className="text-green-400">z</span>
                           <span>.object({"{"}</span>
@@ -370,9 +328,7 @@ export default function ChatbotProblemTutorial() {
                         </span>
 
                         {/* Execute Function */}
-                        <span
-                          className={`block ${getHighlightClasses("execute")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("execute")}`}>
                           <span className="ml-4">execute: </span>
                           <span className="text-blue-400">async</span>
                           <span>
@@ -385,16 +341,12 @@ export default function ChatbotProblemTutorial() {
                           </span>
                           <br />
                           <span className="ml-8">console.log(</span>
-                          <span className="text-yellow-300">
-                            "Getting weather for "
-                          </span>
+                          <span className="text-yellow-300">"Getting weather for "</span>
                           <span> + location + </span>
                           <span className="text-yellow-300">"..."</span>
                           <span>);</span>
                           <br />
-                          <span className="ml-8 text-gray-300">
-                            {"// Simple demo logic"}
-                          </span>
+                          <span className="ml-8 text-gray-300">{"// Simple demo logic"}</span>
                           <br />
                           <span className="ml-8">
                             <span className="text-blue-400">if</span>
@@ -408,9 +360,7 @@ export default function ChatbotProblemTutorial() {
                             <span> {"{"} temperature: </span>
                             <span className="text-yellow-300">"18°C"</span>
                             <span>, condition: </span>
-                            <span className="text-yellow-300">
-                              "Partly cloudy"
-                            </span>
+                            <span className="text-yellow-300">"Partly cloudy"</span>
                             <span> {"}"};</span>
                           </span>
                           <br />
@@ -429,20 +379,14 @@ export default function ChatbotProblemTutorial() {
                           <br />
                         </span>
 
-                        <span
-                          className={`block ${getHighlightClasses(
-                            "tool_definition",
-                          )}`}
-                        >
+                        <span className={`block ${getHighlightClasses("tool_definition")}`}>
                           <span>{"});"}</span>
                           <br />
                           <br />
                         </span>
 
                         {/* Agent Creation */}
-                        <span
-                          className={`block ${getHighlightClasses("agent")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("agent")}`}>
                           <span className="text-blue-400">const</span>
                           <span> agent = </span>
                           <span className="text-blue-400">new</span>
@@ -461,10 +405,7 @@ export default function ChatbotProblemTutorial() {
                           <br />
                           <span className="ml-4">llm: </span>
                           <span className="text-blue-400">new</span>
-                          <span className="text-green-400">
-                            {" "}
-                            VercelAIProvider
-                          </span>
+                          <span className="text-green-400"> VercelAIProvider</span>
                           <span>(),</span>
                           <br />
                           <span className="ml-4">model: </span>
@@ -481,9 +422,7 @@ export default function ChatbotProblemTutorial() {
                         </span>
 
                         {/* Server Setup */}
-                        <span
-                          className={`block ${getHighlightClasses("server")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("server")}`}>
                           <span className="text-blue-400">new</span>
                           <span className="text-green-400"> VoltAgent</span>
                           <span>{"({"}</span>
@@ -524,8 +463,8 @@ export default function ChatbotProblemTutorial() {
                         "I need to define what the tool does"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        createTool is your starting point. Give it a clear name
-                        and description so the LLM knows when to use it.
+                        createTool is your starting point. Give it a clear name and description so
+                        the LLM knows when to use it.
                       </div>
                     </div>
                   </div>
@@ -545,16 +484,14 @@ export default function ChatbotProblemTutorial() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "tool_meta"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "tool_meta" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "What should I call it?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        Name and description tell the LLM what this tool does
-                        and when to use it. Be descriptive but concise.
+                        Name and description tell the LLM what this tool does and when to use it. Be
+                        descriptive but concise.
                       </div>
                     </div>
                   </div>
@@ -574,16 +511,14 @@ export default function ChatbotProblemTutorial() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "parameters"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "parameters" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "What inputs does it need?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        Use Zod schemas to define and validate inputs. This
-                        gives you type safety and runtime validation.
+                        Use Zod schemas to define and validate inputs. This gives you type safety
+                        and runtime validation.
                       </div>
                     </div>
                   </div>
@@ -603,16 +538,14 @@ export default function ChatbotProblemTutorial() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "execute"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "execute" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "What should it actually do?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        The execute function is where the magic happens. Call
-                        APIs, query databases, whatever you need.
+                        The execute function is where the magic happens. Call APIs, query databases,
+                        whatever you need.
                       </div>
                     </div>
                   </div>
@@ -632,16 +565,14 @@ export default function ChatbotProblemTutorial() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "agent"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "agent" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "How do I give it to my agent?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        Add the tool to your agent's tools array. The agent will
-                        automatically understand when to use it.
+                        Add the tool to your agent's tools array. The agent will automatically
+                        understand when to use it.
                       </div>
                     </div>
                   </div>
@@ -656,13 +587,11 @@ export default function ChatbotProblemTutorial() {
                 The Magic
               </h4>
               <p className="text-gray-300 mb-0 text-xs landing-md:text-base">
-                Your agent now <strong>takes action</strong> instead of giving
-                advice. It calls your{" "}
+                Your agent now <strong>takes action</strong> instead of giving advice. It calls your{" "}
                 <code className="text-emerald-500 font-mono text-xs landing-md:text-base">
                   get_weather
                 </code>{" "}
-                function automatically and provides real data. This is the power
-                of tools.
+                function automatically and provides real data. This is the power of tools.
               </p>
             </div>
           )}
@@ -684,9 +613,7 @@ export default function ChatbotProblemTutorial() {
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-sm">
-                    1
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-sm">1</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-0 pt-1 text-xs landing-md:text-base">
@@ -699,9 +626,7 @@ export default function ChatbotProblemTutorial() {
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-base">
-                    2
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-base">2</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-0 pt-1 text-xs landing-md:text-base">
@@ -719,21 +644,15 @@ export default function ChatbotProblemTutorial() {
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-base">
-                    3
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-base">3</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-0 pt-1 text-xs landing-md:text-base">
                     Try these inputs to see your tool in action:
                   </p>
                   <div className="space-y-2 my-2">
-                    <CodeBlock language="text">
-                      What's the weather in New York?
-                    </CodeBlock>
-                    <CodeBlock language="text">
-                      Check weather in San Francisco
-                    </CodeBlock>
+                    <CodeBlock language="text">What's the weather in New York?</CodeBlock>
+                    <CodeBlock language="text">Check weather in San Francisco</CodeBlock>
                     <CodeBlock language="text">Is it sunny in Tokyo?</CodeBlock>
                   </div>
                 </div>
@@ -789,9 +708,7 @@ export default function ChatbotProblemTutorial() {
               </div>
               <div className="flex items-start space-x-2 landing-md:space-x-3">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5 landing-md:mt-2" />
-                <span className="text-gray-300 text-xs landing-md:text-base">
-                  Error tracking
-                </span>
+                <span className="text-gray-300 text-xs landing-md:text-base">Error tracking</span>
               </div>
             </div>
           </div>
@@ -803,8 +720,7 @@ export default function ChatbotProblemTutorial() {
             The Transformation: From Chatbot to Agent
           </h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Watch how your agent's behavior completely changes with just one
-            tool.
+            Watch how your agent's behavior completely changes with just one tool.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
@@ -814,20 +730,16 @@ export default function ChatbotProblemTutorial() {
               </h3>
               <div className="space-y-2 landing-md:space-y-3">
                 <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-sm">
-                    User:
-                  </div>
+                  <div className="text-gray-400 text-xs landing-md:text-sm">User:</div>
                   <div className="text-gray-300 text-xs landing-md:text-sm">
                     "What's the weather in NYC?"
                   </div>
                 </div>
                 <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-sm">
-                    Agent:
-                  </div>
+                  <div className="text-gray-400 text-xs landing-md:text-sm">Agent:</div>
                   <div className="text-red-500 text-xs landing-md:text-sm leading-relaxed">
-                    "I can't check current weather data. Try checking
-                    weather.com or your local weather app."
+                    "I can't check current weather data. Try checking weather.com or your local
+                    weather app."
                   </div>
                 </div>
               </div>
@@ -839,20 +751,16 @@ export default function ChatbotProblemTutorial() {
               </h3>
               <div className="space-y-2 landing-md:space-y-3">
                 <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-sm">
-                    User:
-                  </div>
+                  <div className="text-gray-400 text-xs landing-md:text-sm">User:</div>
                   <div className="text-gray-300 text-xs landing-md:text-sm">
                     "What's the weather in NYC?"
                   </div>
                 </div>
                 <div className=" border-solid border-gray-500/30 rounded p-2 landing-md:p-3">
-                  <div className="text-gray-400 text-xs landing-md:text-sm">
-                    Agent:
-                  </div>
+                  <div className="text-gray-400 text-xs landing-md:text-sm">Agent:</div>
                   <div className="text-emerald-500 text-xs landing-md:text-sm leading-relaxed">
-                    "Let me check that for you... The current weather in New
-                    York is 18°C with partly cloudy conditions."
+                    "Let me check that for you... The current weather in New York is 18°C with
+                    partly cloudy conditions."
                   </div>
                 </div>
               </div>
@@ -864,13 +772,11 @@ export default function ChatbotProblemTutorial() {
               The Magic
             </h4>
             <p className="text-gray-300 mb-0 text-xs landing-md:text-base leading-relaxed">
-              Your agent now <strong>takes action</strong> instead of giving
-              advice. It calls your{" "}
+              Your agent now <strong>takes action</strong> instead of giving advice. It calls your{" "}
               <code className="text-[#00d992] font-mono text-xs landing-md:text-base">
                 get_weather
               </code>{" "}
-              function automatically and provides real data. This is the power
-              of tools.
+              function automatically and provides real data. This is the power of tools.
             </p>
           </div>
         </div>

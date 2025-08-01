@@ -25,9 +25,7 @@ const agentDecisionOptions = [
 const RetrieverMethodHelper: React.FC = () => {
   const [frequency, setFrequency] = useState<string>("");
   const [agentDecision, setAgentDecision] = useState<string>("");
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(
-    null,
-  );
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
 
   const handleFrequencyChange = (value: string) => {
     setFrequency(value);
@@ -39,10 +37,7 @@ const RetrieverMethodHelper: React.FC = () => {
     calculateRecommendation(frequency, value);
   };
 
-  const calculateRecommendation = (
-    currentFrequency: string,
-    currentAgentDecision: string,
-  ) => {
+  const calculateRecommendation = (currentFrequency: string, currentAgentDecision: string) => {
     if (!currentFrequency || !currentAgentDecision) {
       setRecommendation(null);
       return;

@@ -29,9 +29,7 @@ export function ArticleCard({
 }: ArticleCardProps) {
   const isYouTube = type === "youtube";
   const thumbnailUrl =
-    isYouTube && videoId
-      ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
-      : coverImage;
+    isYouTube && videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : coverImage;
 
   const CardContent = () => (
     <div className="relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid">
@@ -100,9 +98,7 @@ export function ArticleCard({
 
       {/* Title and Description */}
       <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
-        <h3 className="font-semibold text-lg mb-2 text-white line-clamp-2">
-          {title}
-        </h3>
+        <h3 className="font-semibold text-lg mb-2 text-white line-clamp-2">{title}</h3>
       </div>
     </div>
   );

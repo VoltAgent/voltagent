@@ -7,10 +7,7 @@ export const GoogleDriveLogo = ({ className }: { className?: string }) => (
   >
     <title id="googleDriveTitle">Google Drive</title>
     <g>
-      <polygon
-        fill="none"
-        points="110.86,173.56 150,173.56 189.14,173.56 150,105.18"
-      />
+      <polygon fill="none" points="110.86,173.56 150,173.56 189.14,173.56 150,105.18" />
       <polygon
         fill="none"
         points="110.86,173.56 110.86,173.56 150,105.18 189.14,173.56 189.14,173.56 150,105.18"

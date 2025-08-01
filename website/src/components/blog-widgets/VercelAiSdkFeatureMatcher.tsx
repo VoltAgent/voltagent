@@ -48,8 +48,7 @@ const recommendations: Record<InteractionType, Recommendation> = {
 };
 
 export default function VercelAiSdkFeatureMatcher(): JSX.Element {
-  const [interactionType, setInteractionType] =
-    useState<InteractionType>("unknown");
+  const [interactionType, setInteractionType] = useState<InteractionType>("unknown");
 
   const currentRecommendation = recommendations[interactionType];
 
@@ -65,8 +64,7 @@ export default function VercelAiSdkFeatureMatcher(): JSX.Element {
         Which Vercel AI SDK Feature Is Right For You?
       </h4>
       <p className="mb-4 text-sm text-gray-300">
-        Select what you want to do with LLM, and we'll suggest the right
-        feature:
+        Select what you want to do with LLM, and we'll suggest the right feature:
       </p>
       <div className="mb-4">
         <label
@@ -78,9 +76,7 @@ export default function VercelAiSdkFeatureMatcher(): JSX.Element {
         <select
           id="interactionTypeSelect"
           value={interactionType}
-          onChange={(e) =>
-            setInteractionType(e.target.value as InteractionType)
-          }
+          onChange={(e) => setInteractionType(e.target.value as InteractionType)}
           className={`${selectBaseClass} ${selectBorderClass} ${selectHoverClass} ${selectFocusClass}`}
         >
           <option value="unknown" className="bg-gray-800">
@@ -106,15 +102,9 @@ export default function VercelAiSdkFeatureMatcher(): JSX.Element {
 
       {interactionType !== "unknown" && (
         <div className="mt-6 rounded-md border border-emerald-500/50 bg-emerald-900/60 p-4 shadow-sm">
-          <h5 className="mb-2 font-medium text-emerald-400">
-            Recommended Vercel AI SDK Feature:
-          </h5>
-          <p className="text-md font-semibold text-emerald-100">
-            {currentRecommendation.feature}
-          </p>
-          <p className="mt-1 text-sm text-emerald-200">
-            {currentRecommendation.description}
-          </p>
+          <h5 className="mb-2 font-medium text-emerald-400">Recommended Vercel AI SDK Feature:</h5>
+          <p className="text-md font-semibold text-emerald-100">{currentRecommendation.feature}</p>
+          <p className="mt-1 text-sm text-emerald-200">{currentRecommendation.description}</p>
           {currentRecommendation.docsLink && (
             <p className="mt-2 text-xs">
               <a

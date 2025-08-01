@@ -1,8 +1,5 @@
 import Link from "@docusaurus/Link";
-import {
-  ArrowTopRightOnSquareIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowTopRightOnSquareIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
@@ -41,10 +38,7 @@ const MCPCard = ({ mcp }) => {
 
             {/* View Details Icon - Bottom right */}
             <div className=" p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <ArrowTopRightOnSquareIcon
-                className="w-5 h-5 text-emerald-400"
-                aria-hidden="true"
-              />
+              <ArrowTopRightOnSquareIcon className="w-5 h-5 text-emerald-400" aria-hidden="true" />
             </div>
           </div>
 
@@ -85,9 +79,7 @@ export default function McpListPage(props) {
 
     const searchTermLower = searchTerm.toLowerCase();
     const categoryMatch = Array.isArray(item.metadata.category)
-      ? item.metadata.category.some((cat) =>
-          cat.toLowerCase().includes(searchTermLower),
-        )
+      ? item.metadata.category.some((cat) => cat.toLowerCase().includes(searchTermLower))
       : item.metadata.category?.toLowerCase().includes(searchTermLower);
 
     return (
@@ -98,10 +90,7 @@ export default function McpListPage(props) {
   });
 
   return (
-    <Layout
-      title="MCP Providers"
-      description="Model Context Providers for Voltagent"
-    >
+    <Layout title="MCP Providers" description="Model Context Providers for Voltagent">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 sm:py-20 flex flex-col items-center">
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
 
@@ -112,13 +101,9 @@ export default function McpListPage(props) {
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
               </div>
-              <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
-                voltagent
-              </span>
+              <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">voltagent</span>
               <div className="relative">
-                <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
-                  MCP
-                </span>
+                <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">MCP</span>
                 <span className="absolute -top-6 -right-12 landing-sm:-right-16 px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-md font-medium border border-emerald-400/30">
                   Directory
                 </span>
@@ -137,8 +122,8 @@ export default function McpListPage(props) {
               className="text-center sm:text-left md:ml-8"
             >
               <p className="text-sm sm:text-base md:text-lg text-[#dcdcdc] mb-3 sm:mb-4">
-                A curated directory of the most widely-used Model Context
-                Providers (MCPs) in the AI ecosystem.
+                A curated directory of the most widely-used Model Context Providers (MCPs) in the AI
+                ecosystem.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-gray-400">
                 <span className="text-[#00d992] font-bold text-base sm:text-lg">

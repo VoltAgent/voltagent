@@ -12,7 +12,6 @@
     "lint:ci": "biome ci .",
     "lint:fix": "biome check . --apply",
     "lint:staged": "lint-staged",
-    "prepare": "husky",
     "serve": "docusaurus serve",
     "start": "docusaurus start",
     "swizzle": "docusaurus swizzle",

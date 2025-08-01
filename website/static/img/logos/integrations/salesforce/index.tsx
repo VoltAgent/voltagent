@@ -6,25 +6,11 @@ export const SalesforceLogo = ({ className }: { className?: string }) => (
     aria-labelledby="salesforceTitle"
   >
     <title id="salesforceTitle">Salesforce</title>
-    <mask
-      id="salesforceMaskA"
-      maskUnits="userSpaceOnUse"
-      x="9"
-      y="16"
-      width="44"
-      height="31"
-    >
+    <mask id="salesforceMaskA" maskUnits="userSpaceOnUse" x="9" y="16" width="44" height="31">
       <path d="M53 16H9v30.784h44V16z" fill="#fff" />
     </mask>
     <g mask="url(#salesforceMaskA)">
-      <mask
-        id="salesforceMaskB"
-        maskUnits="userSpaceOnUse"
-        x="9"
-        y="16"
-        width="44"
-        height="31"
-      >
+      <mask id="salesforceMaskB" maskUnits="userSpaceOnUse" x="9" y="16" width="44" height="31">
         <path d="M9.011 16.081H52.85v30.623H9.011V16.081z" fill="#00a1e0" />
       </mask>
       <g mask="url(#salesforceMaskB)">

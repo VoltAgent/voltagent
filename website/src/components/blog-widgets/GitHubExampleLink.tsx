@@ -1,8 +1,5 @@
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
-import {
-  ClipboardDocumentCheckIcon,
-  ClipboardIcon,
-} from "@heroicons/react/24/outline";
+import { ClipboardDocumentCheckIcon, ClipboardIcon } from "@heroicons/react/24/outline";
 import type React from "react";
 import { useState } from "react";
 import { GitHubLogo } from "../../../static/img/logos/github";
@@ -12,10 +9,7 @@ interface GitHubExampleLinkProps {
   npmCommand: string;
 }
 
-const GitHubExampleLink: React.FC<GitHubExampleLinkProps> = ({
-  repoUrl,
-  npmCommand,
-}) => {
+const GitHubExampleLink: React.FC<GitHubExampleLinkProps> = ({ repoUrl, npmCommand }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
@@ -58,10 +52,7 @@ const GitHubExampleLink: React.FC<GitHubExampleLinkProps> = ({
                   aria-hidden="true"
                 />
               ) : (
-                <ClipboardIcon
-                  className="w-5 h-5 text-gray-400"
-                  aria-hidden="true"
-                />
+                <ClipboardIcon className="w-5 h-5 text-gray-400" aria-hidden="true" />
               )}
             </button>
           </code>

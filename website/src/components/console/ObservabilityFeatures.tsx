@@ -42,8 +42,8 @@ const ObservabilityFeatures = () => {
             AI Agent Observability Matters
           </h2>
           <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg mb-3 landing-xs:mb-2 landing-sm:mb-4">
-            Without proper observability, debugging and managing agent behavior
-            becomes overwhelming.
+            Without proper observability, debugging and managing agent behavior becomes
+            overwhelming.
           </p>
         </div>
       </div>
@@ -84,9 +84,7 @@ const ObservabilityFeatures = () => {
               </div>
               <div>
                 <FlowOverview
-                  onImageClick={() =>
-                    openModal("/img/ops/flow-1.png", "Connection Manager")
-                  }
+                  onImageClick={() => openModal("/img/ops/flow-1.png", "Connection Manager")}
                 />
               </div>
             </motion.div>
@@ -127,9 +125,7 @@ const ObservabilityFeatures = () => {
               </div>
               <div>
                 <AgentChat
-                  onImageClick={() =>
-                    openModal("/img/ops/agent-chat.png", "Message Inspector")
-                  }
+                  onImageClick={() => openModal("/img/ops/agent-chat.png", "Message Inspector")}
                 />
               </div>
             </motion.div>
@@ -169,9 +165,7 @@ const ObservabilityFeatures = () => {
               </div>
               <div>
                 <AgentDetailView
-                  onImageClick={() =>
-                    openModal("/img/ops/flow-detail-2.png", "Agent Detail")
-                  }
+                  onImageClick={() => openModal("/img/ops/flow-detail-2.png", "Agent Detail")}
                 />
               </div>
             </motion.div>
@@ -208,9 +202,7 @@ const ObservabilityFeatures = () => {
                 </div>
               </div>
               <AgentListView
-                onImageClick={() =>
-                  openModal("/img/ops/agent-list.png", "Agent Sessions List")
-                }
+                onImageClick={() => openModal("/img/ops/agent-list.png", "Agent Sessions List")}
               />
             </motion.div>
           </div>

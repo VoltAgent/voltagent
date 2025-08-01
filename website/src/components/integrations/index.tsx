@@ -163,10 +163,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
     >
       <title id="boltLogoTitle">Lightning Bolt</title>
       {/* Background bolt path */}
-      <path
-        d="M45 15L20 40H35L30 65L55 40H40L45 15Z"
-        fill="rgba(255,255,255,0.1)"
-      />
+      <path d="M45 15L20 40H35L30 65L55 40H40L45 15Z" fill="rgba(255,255,255,0.1)" />
       {/* Animated filling bolt path */}
       <path
         d="M45 15L20 40H35L30 65L55 40H40L45 15Z"
@@ -222,9 +219,7 @@ export function Integrations() {
       tooltip: "OpenAI",
     },
     {
-      logo: (
-        <AnthropicLogo key="anthropic-1" className="w-6 h-6 sm:w-8 sm:h-8" />
-      ),
+      logo: <AnthropicLogo key="anthropic-1" className="w-6 h-6 sm:w-8 sm:h-8" />,
       tooltip: "Anthropic",
     },
     {
@@ -252,60 +247,31 @@ export function Integrations() {
       tooltip: "Gmail",
     },
     {
-      logo: (
-        <OneDriveLogo key="onedrive-1" className="w-6 h-6 sm:w-10 sm:h-10" />
-      ),
+      logo: <OneDriveLogo key="onedrive-1" className="w-6 h-6 sm:w-10 sm:h-10" />,
       tooltip: "OneDrive",
     },
     {
-      logo: (
-        <GoogleSheetsLogo
-          key="google-sheets-1"
-          className="w-6 h-6 sm:w-8 sm:h-8"
-        />
-      ),
+      logo: <GoogleSheetsLogo key="google-sheets-1" className="w-6 h-6 sm:w-8 sm:h-8" />,
       tooltip: "Google Sheets",
     },
     {
-      logo: (
-        <GoogleDriveLogo
-          key="google-drive-1"
-          className="w-6 h-6 sm:w-10 sm:h-10"
-        />
-      ),
+      logo: <GoogleDriveLogo key="google-drive-1" className="w-6 h-6 sm:w-10 sm:h-10" />,
       tooltip: "Google Drive",
     },
     {
-      logo: (
-        <GoogleCalendarLogo
-          key="google-calendar-1"
-          className="w-6 h-6 sm:w-10 sm:h-10"
-        />
-      ),
+      logo: <GoogleCalendarLogo key="google-calendar-1" className="w-6 h-6 sm:w-10 sm:h-10" />,
       tooltip: "Google Calendar",
     },
     {
-      logo: (
-        <MicrosoftTeamsLogo
-          key="microsoft-teams-1"
-          className="w-6 h-6 sm:w-8 sm:h-8"
-        />
-      ),
+      logo: <MicrosoftTeamsLogo key="microsoft-teams-1" className="w-6 h-6 sm:w-8 sm:h-8" />,
       tooltip: "Microsoft Teams",
     },
     {
-      logo: (
-        <MailchimpLogo key="mailchimp-1" className="w-6 h-6 sm:w-8 sm:h-8" />
-      ),
+      logo: <MailchimpLogo key="mailchimp-1" className="w-6 h-6 sm:w-8 sm:h-8" />,
       tooltip: "Mailchimp",
     },
     {
-      logo: (
-        <SalesforceLogo
-          key="salesforce-1"
-          className="w-6 h-6 sm:w-12 sm:h-12"
-        />
-      ),
+      logo: <SalesforceLogo key="salesforce-1" className="w-6 h-6 sm:w-12 sm:h-12" />,
       tooltip: "Salesforce",
     },
     {
@@ -316,12 +282,7 @@ export function Integrations() {
 
   const bottomRowLogos = [
     {
-      logo: (
-        <GitHubLogo
-          key="github-1"
-          className="w-6  h-6 text-white sm:w-8 sm:h-8"
-        />
-      ),
+      logo: <GitHubLogo key="github-1" className="w-6  h-6 text-white sm:w-8 sm:h-8" />,
       tooltip: "GitHub",
     },
 
@@ -374,20 +335,14 @@ export function Integrations() {
       tooltip: "Sentry",
     },
     {
-      logo: (
-        <SnowflakeLogo key="snowflake-1" className="w-6 h-6 sm:w-8 sm:h-8" />
-      ),
+      logo: <SnowflakeLogo key="snowflake-1" className="w-6 h-6 sm:w-8 sm:h-8" />,
       tooltip: "Snowflake",
     },
   ];
 
   // Duplicate logos for continuous scrolling effect
   const duplicatedTopLogos = [...topRowLogos, ...topRowLogos, ...topRowLogos];
-  const duplicatedBottomLogos = [
-    ...bottomRowLogos,
-    ...bottomRowLogos,
-    ...bottomRowLogos,
-  ];
+  const duplicatedBottomLogos = [...bottomRowLogos, ...bottomRowLogos, ...bottomRowLogos];
 
   // Detect touch device on mount
   useEffect(() => {
@@ -403,27 +358,12 @@ export function Integrations() {
   const handleTopRowTouchStart = useCallback(() => setIsTopRowPaused(true), []);
   const handleTopRowTouchEnd = useCallback(() => setIsTopRowPaused(false), []);
   const handleTopRowMouseEnter = useCallback(() => setIsTopRowPaused(true), []);
-  const handleTopRowMouseLeave = useCallback(
-    () => setIsTopRowPaused(false),
-    [],
-  );
+  const handleTopRowMouseLeave = useCallback(() => setIsTopRowPaused(false), []);
 
-  const handleBottomRowTouchStart = useCallback(
-    () => setIsBottomRowPaused(true),
-    [],
-  );
-  const handleBottomRowTouchEnd = useCallback(
-    () => setIsBottomRowPaused(false),
-    [],
-  );
-  const handleBottomRowMouseEnter = useCallback(
-    () => setIsBottomRowPaused(true),
-    [],
-  );
-  const handleBottomRowMouseLeave = useCallback(
-    () => setIsBottomRowPaused(false),
-    [],
-  );
+  const handleBottomRowTouchStart = useCallback(() => setIsBottomRowPaused(true), []);
+  const handleBottomRowTouchEnd = useCallback(() => setIsBottomRowPaused(false), []);
+  const handleBottomRowMouseEnter = useCallback(() => setIsBottomRowPaused(true), []);
+  const handleBottomRowMouseLeave = useCallback(() => setIsBottomRowPaused(false), []);
 
   useEffect(() => {
     // Add touch event listeners for mobile - top row
@@ -457,10 +397,7 @@ export function Integrations() {
 
       // Clean up bottom row listeners
       if (bottomElement) {
-        bottomElement.removeEventListener(
-          "touchstart",
-          handleBottomRowTouchStart,
-        );
+        bottomElement.removeEventListener("touchstart", handleBottomRowTouchStart);
         bottomElement.removeEventListener("touchend", handleBottomRowTouchEnd);
       }
     };
@@ -485,8 +422,7 @@ export function Integrations() {
                   Easily connect with 40+ apps in no time
                 </h2>
                 <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
-                  Integrate your AI agents with your preferred tools and
-                  services effortlessly.
+                  Integrate your AI agents with your preferred tools and services effortlessly.
                 </p>
               </div>
             </div>
@@ -496,10 +432,7 @@ export function Integrations() {
             <div className="w-full flex md:w-[40%] justify-center items-center landing-xs:hidden landing-sm:flex">
               <style>{fillAnimation}</style>
               <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-lg flex items-center justify-center">
-                <CustomBolt
-                  width={isDesktop ? 200 : 150}
-                  height={isDesktop ? 200 : 150}
-                />
+                <CustomBolt width={isDesktop ? 200 : 150} height={isDesktop ? 200 : 150} />
               </div>
             </div>
 

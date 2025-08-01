@@ -29,11 +29,7 @@ export default function BlogPostItem({ className }) {
               {author && (
                 <>
                   {author.imageURL && (
-                    <img
-                      src={author.imageURL}
-                      alt={author.name}
-                      className="w-5 h-5 rounded-full"
-                    />
+                    <img src={author.imageURL} alt={author.name} className="w-5 h-5 rounded-full" />
                   )}
                   <span className="text-xs text-gray-400">{author.name}</span>
                 </>

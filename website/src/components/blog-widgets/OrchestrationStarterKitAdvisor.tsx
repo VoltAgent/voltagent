@@ -23,8 +23,7 @@ const goals = [
   },
   {
     id: "explore_rag",
-    label:
-      "I'm specifically interested in Retrieval Augmented Generation (RAG).",
+    label: "I'm specifically interested in Retrieval Augmented Generation (RAG).",
     advice: [
       "<strong>1. Understand the RAG Flow:</strong> Use the 'Interactive RAG Flow' widget to get a clear picture of all the steps involved.",
       "<strong>2. Prepare Your Data:</strong> Start with a small set of clean documents (e.g., a few text files or PDFs).",
@@ -66,11 +65,7 @@ const OrchestrationStarterKitAdvisor = () => {
           className="w-full appearance-none rounded-md border border-gray-600 bg-gray-800 p-3 pr-8 text-sm text-gray-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 focus:ring-offset-gray-800"
         >
           {goals.map((goal) => (
-            <option
-              key={goal.id}
-              value={goal.id}
-              className="bg-gray-800 text-gray-100"
-            >
+            <option key={goal.id} value={goal.id} className="bg-gray-800 text-gray-100">
               {goal.label}
             </option>
           ))}
@@ -82,9 +77,7 @@ const OrchestrationStarterKitAdvisor = () => {
 
       {selectedGoal && (
         <div className="mt-6 rounded-md border border-emerald-500/50 bg-emerald-900/60 p-5 shadow-sm">
-          <h4 className="mb-2 text-base font-medium text-emerald-400">
-            Recommended Steps:
-          </h4>
+          <h4 className="mb-2 text-base font-medium text-emerald-400">Recommended Steps:</h4>
           <ul className="list-none p-0">
             {selectedGoal.advice.map((item) => (
               <li

@@ -32,8 +32,8 @@ export default function Ops() {
                 Stay in control at every stage
               </p>
               <p className="max-w-3xl landing-md:text-xl landing-xs:text-md text-gray-400">
-                From tracking deployments to debugging and live interaction,
-                VoltAgent gives you full visibility into your AI agents.
+                From tracking deployments to debugging and live interaction, VoltAgent gives you
+                full visibility into your AI agents.
               </p>
             </div>
           </div>

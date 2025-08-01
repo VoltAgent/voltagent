@@ -1,8 +1,4 @@
-export function BannerButton({
-  children,
-  color = "bg-light-yellow",
-  ...props
-}) {
+export function BannerButton({ children, color = "bg-light-yellow", ...props }) {
   return (
     <a
       href="#_"

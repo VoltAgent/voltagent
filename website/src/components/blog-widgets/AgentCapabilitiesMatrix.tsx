@@ -4,8 +4,7 @@ const capabilitiesData = [
   {
     id: "multi-step-reasoning",
     name: "Multi-Step Reasoning",
-    description:
-      "Breaking complex problems into manageable pieces and solving them step by step",
+    description: "Breaking complex problems into manageable pieces and solving them step by step",
     difficulty: "Medium",
     difficultyLevel: 2,
     icon: "🧠",
@@ -90,8 +89,7 @@ const capabilitiesData = [
   {
     id: "structured-output",
     name: "Structured Output",
-    description:
-      "Generating responses in specific formats like JSON, XML, or custom schemas",
+    description: "Generating responses in specific formats like JSON, XML, or custom schemas",
     difficulty: "Easy",
     difficultyLevel: 1,
     icon: "📋",
@@ -141,9 +139,7 @@ const getDifficultyBars = (level: number) => {
   return bars.map((bar) => (
     <div
       key={bar.id}
-      className={`h-1.5 w-3 rounded-sm ${
-        bar.active ? "bg-emerald-500" : "bg-gray-600"
-      }`}
+      className={`h-1.5 w-3 rounded-sm ${bar.active ? "bg-emerald-500" : "bg-gray-600"}`}
     />
   ));
 };
@@ -152,9 +148,7 @@ const AgentCapabilitiesMatrix = () => {
   const [selectedCapabilityId, setSelectedCapabilityId] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
 
-  const selectedCapability = capabilitiesData.find(
-    (cap) => cap.id === selectedCapabilityId,
-  );
+  const selectedCapability = capabilitiesData.find((cap) => cap.id === selectedCapabilityId);
 
   return (
     <div className="my-4 rounded-lg border-2 border-emerald-500 bg-gray-800 p-4 text-gray-100 shadow-lg">
@@ -174,20 +168,13 @@ const AgentCapabilitiesMatrix = () => {
               : "Select a capability to explore"}
           </span>
           <svg
-            className={`w-4 h-4 transition-transform duration-200 ${
-              isOpen ? "rotate-180" : ""
-            }`}
+            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
@@ -206,9 +193,7 @@ const AgentCapabilitiesMatrix = () => {
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{capability.icon}</span>
-                    <span className="text-sm font-medium text-white">
-                      {capability.name}
-                    </span>
+                    <span className="text-sm font-medium text-white">{capability.name}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span
@@ -223,9 +208,7 @@ const AgentCapabilitiesMatrix = () => {
                     </div>
                   </div>
                 </div>
-                <div className="text-xs text-gray-300">
-                  {capability.description}
-                </div>
+                <div className="text-xs text-gray-300">{capability.description}</div>
               </button>
             ))}
           </div>
@@ -248,24 +231,18 @@ const AgentCapabilitiesMatrix = () => {
             </span>
           </div>
 
-          <p className="text-sm leading-relaxed text-gray-200 mb-4">
-            {selectedCapability.details}
-          </p>
+          <p className="text-sm leading-relaxed text-gray-200 mb-4">{selectedCapability.details}</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <h5 className="text-xs text-emerald-200 font-medium mb-2">
-                💡 Examples:
-              </h5>
+              <h5 className="text-xs text-emerald-200 font-medium mb-2">💡 Examples:</h5>
               <div className="space-y-1">
                 {selectedCapability.examples.map((example, index) => (
                   <div
                     key={`example-${selectedCapability.id}-${index}`}
                     className="text-xs text-gray-300 leading-relaxed flex items-start"
                   >
-                    <span className="text-emerald-400 mr-2 mt-0.5 flex-shrink-0">
-                      •
-                    </span>
+                    <span className="text-emerald-400 mr-2 mt-0.5 flex-shrink-0">•</span>
                     <span>{example}</span>
                   </div>
                 ))}
@@ -273,18 +250,14 @@ const AgentCapabilitiesMatrix = () => {
             </div>
 
             <div>
-              <h5 className="text-xs text-emerald-200 font-medium mb-2">
-                🎯 Use Cases:
-              </h5>
+              <h5 className="text-xs text-emerald-200 font-medium mb-2">🎯 Use Cases:</h5>
               <div className="space-y-1">
                 {selectedCapability.useCases.map((useCase, index) => (
                   <div
                     key={`usecase-${selectedCapability.id}-${index}`}
                     className="text-xs text-gray-300 leading-relaxed flex items-start"
                   >
-                    <span className="text-emerald-400 mr-2 mt-0.5 flex-shrink-0">
-                      •
-                    </span>
+                    <span className="text-emerald-400 mr-2 mt-0.5 flex-shrink-0">•</span>
                     <span>{useCase}</span>
                   </div>
                 ))}
@@ -292,18 +265,14 @@ const AgentCapabilitiesMatrix = () => {
             </div>
 
             <div>
-              <h5 className="text-xs text-emerald-200 font-medium mb-2">
-                ✨ Benefits:
-              </h5>
+              <h5 className="text-xs text-emerald-200 font-medium mb-2">✨ Benefits:</h5>
               <div className="space-y-1">
                 {selectedCapability.benefits.map((benefit, index) => (
                   <div
                     key={`benefit-${selectedCapability.id}-${index}`}
                     className="text-xs text-gray-300 leading-relaxed flex items-start"
                   >
-                    <span className="text-emerald-400 mr-2 mt-0.5 flex-shrink-0">
-                      •
-                    </span>
+                    <span className="text-emerald-400 mr-2 mt-0.5 flex-shrink-0">•</span>
                     <span>{benefit}</span>
                   </div>
                 ))}

@@ -52,8 +52,7 @@ export function BorderBeam({ className }: BorderBeamProps) {
       <div
         className="absolute -inset-[2px] rounded-lg z-0"
         style={{
-          background:
-            "linear-gradient(45deg, #00d992, #00d992, #00d992, #00d992)",
+          background: "linear-gradient(45deg, #00d992, #00d992, #00d992, #00d992)",
         }}
       />
     </div>

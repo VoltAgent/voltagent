@@ -1,8 +1,4 @@
-import {
-  ClockIcon,
-  CpuChipIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/24/outline";
+import { ClockIcon, CpuChipIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 
 type ModelResponse = {
@@ -19,10 +15,7 @@ const sampleQueries = [
   "Can you explain our refund policy?",
 ];
 
-const mockResponses: Record<
-  string,
-  { rag: ModelResponse; finetuned: ModelResponse }
-> = {
+const mockResponses: Record<string, { rag: ModelResponse; finetuned: ModelResponse }> = {
   "What are the key features of our new product?": {
     rag: {
       response:
@@ -106,9 +99,7 @@ export default function ModelPerformanceComparator(): JSX.Element {
 
   return (
     <div className="border-2 border-solid border-emerald-500 rounded-lg p-5 mb-6 bg-gray-800">
-      <h3 className="text-xl font-bold text-white mb-4">
-        Compare Model Responses
-      </h3>
+      <h3 className="text-xl font-bold text-white mb-4">Compare Model Responses</h3>
 
       {/* Query Input */}
       <div className="mb-6">
@@ -148,18 +139,12 @@ export default function ModelPerformanceComparator(): JSX.Element {
         <div className="grid md:grid-cols-2 gap-3">
           {/* RAG Response */}
           <div className="bg-gray-700/60 p-3 rounded-lg border border-gray-600">
-            <h4 className="text-base font-semibold text-white mb-2">
-              RAG Response
-            </h4>
-            <div className="text-sm text-gray-300 mb-3">
-              {responses.rag.response}
-            </div>
+            <h4 className="text-base font-semibold text-white mb-2">RAG Response</h4>
+            <div className="text-sm text-gray-300 mb-3">{responses.rag.response}</div>
 
             {/* Retrieved Chunks */}
             <div className="mb-3">
-              <h5 className="text-xs font-medium text-white mb-1">
-                Retrieved Chunks:
-              </h5>
+              <h5 className="text-xs font-medium text-white mb-1">Retrieved Chunks:</h5>
               <div className="space-y-1">
                 {responses.rag.retrievedChunks?.map((chunk) => (
                   <div
@@ -187,12 +172,8 @@ export default function ModelPerformanceComparator(): JSX.Element {
 
           {/* Fine-tuned Response */}
           <div className="bg-emerald-900/30 p-3 rounded-lg border border-emerald-500/50">
-            <h4 className="text-base font-semibold text-emerald-400 mb-2">
-              Fine-tuned Response
-            </h4>
-            <div className="text-sm text-emerald-100 mb-3">
-              {responses.finetuned.response}
-            </div>
+            <h4 className="text-base font-semibold text-emerald-400 mb-2">Fine-tuned Response</h4>
+            <div className="text-sm text-emerald-100 mb-3">{responses.finetuned.response}</div>
 
             {/* Direct Response Note */}
             <div className="mb-3">
@@ -220,17 +201,12 @@ export default function ModelPerformanceComparator(): JSX.Element {
       {/* Performance Insights */}
       {responses && (
         <div className="mt-4 bg-gray-700/30 p-3 rounded-lg">
-          <h4 className="text-base font-semibold text-white mb-2">
-            Performance Insights
-          </h4>
+          <h4 className="text-base font-semibold text-white mb-2">Performance Insights</h4>
           <div className="space-y-1 text-xs text-gray-300">
             <p>
               • Latency Difference:{" "}
               <span className="text-emerald-400">
-                {(responses.rag.latency - responses.finetuned.latency).toFixed(
-                  1,
-                )}
-                s faster
+                {(responses.rag.latency - responses.finetuned.latency).toFixed(1)}s faster
               </span>{" "}
               with fine-tuning
             </p>
@@ -238,22 +214,15 @@ export default function ModelPerformanceComparator(): JSX.Element {
               • Token Usage:{" "}
               <span className="text-emerald-400">
                 {(
-                  ((responses.rag.tokens - responses.finetuned.tokens) /
-                    responses.rag.tokens) *
+                  ((responses.rag.tokens - responses.finetuned.tokens) / responses.rag.tokens) *
                   100
                 ).toFixed(0)}
                 % fewer
               </span>{" "}
               tokens with fine-tuning
             </p>
-            <p>
-              • RAG provides source context but requires additional processing
-              time
-            </p>
-            <p>
-              • Fine-tuned model gives direct answers but needs retraining for
-              new information
-            </p>
+            <p>• RAG provides source context but requires additional processing time</p>
+            <p>• Fine-tuned model gives direct answers but needs retraining for new information</p>
           </div>
         </div>
       )}

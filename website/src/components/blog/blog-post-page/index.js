@@ -21,23 +21,14 @@ const SimilarBlogs = () => {
       <h2 className="text-2xl font-bold mb-6">Related Posts</h2>
       <div className="flex flex-col gap-8">
         {relatedPosts.map((post) => (
-          <Link
-            key={post.permalink}
-            to={post.permalink}
-            className="no-underline group"
-          >
+          <Link key={post.permalink} to={post.permalink} className="no-underline group">
             <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 transition-all duration-200 hover:shadow-md bg-white dark:bg-gray-900">
               <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100 group-hover:text-primary">
                 {post.title}
               </h3>
-              <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
-                {post.description}
-              </p>
+              <p className="text-base text-gray-600 dark:text-gray-400 mb-4">{post.description}</p>
               <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <DateComponent
-                  date={post.date}
-                  formattedDate={post.formattedDate}
-                />
+                <DateComponent date={post.date} formattedDate={post.formattedDate} />
                 {post.readingTime && (
                   <>
                     <span className="mx-2">·</span>
@@ -55,8 +46,7 @@ const SimilarBlogs = () => {
 
 export const BlogPostPageView = ({ children }) => {
   const { metadata, isBlogPostPage } = useBlogPost();
-  const { permalink, title, date, formattedDate, readingTime, tags, authors } =
-    metadata;
+  const { permalink, title, date, formattedDate, readingTime, tags, authors } = metadata;
   const author = authors[0];
 
   return (
@@ -71,28 +61,14 @@ export const BlogPostPageView = ({ children }) => {
         "blog-content",
       )}
     >
-      <div
-        className={clsx(
-          "flex",
-          "justify-between",
-          "items-center",
-          "blog-sm:px-6",
-          "mb-8",
-        )}
-      >
-        <Link
-          to="/blog"
-          className={clsx("!text-main-emerald text-sm no-underline")}
-        >
+      <div className={clsx("flex", "justify-between", "items-center", "blog-sm:px-6", "mb-8")}>
+        <Link to="/blog" className={clsx("!text-main-emerald text-sm no-underline")}>
           ← Back to blog
         </Link>
       </div>
 
       <div className="blog-sm:px-6">
-        <p
-          className="mb-6 leading-[1.3] text-3xl font-bold"
-          itemProp="headline"
-        >
+        <p className="mb-6 leading-[1.3] text-3xl font-bold" itemProp="headline">
           {isBlogPostPage ? (
             title
           ) : (
@@ -108,9 +84,7 @@ export const BlogPostPageView = ({ children }) => {
               <div className="flex items-center mb-2 sm:mb-0">
                 {author.imageURL && (
                   <Link
-                    to={`/blog/author/${author.key
-                      .toLowerCase()
-                      .replace(/_/g, "-")}`}
+                    to={`/blog/author/${author.key.toLowerCase().replace(/_/g, "-")}`}
                     className="mr-3"
                   >
                     <img
@@ -123,9 +97,7 @@ export const BlogPostPageView = ({ children }) => {
                 <div>
                   <div className="flex items-center">
                     <Link
-                      to={`/blog/author/${author.key
-                        .toLowerCase()
-                        .replace(/_/g, "-")}`}
+                      to={`/blog/author/${author.key.toLowerCase().replace(/_/g, "-")}`}
                       className="text-main-emerald no-underline font-medium"
                     >
                       {author.name}
@@ -154,19 +126,11 @@ export const BlogPostPageView = ({ children }) => {
           </div>
         </div>
 
-        <div
-          id={blogPostContainerID}
-          className="markdown"
-          itemProp="articleBody"
-        >
+        <div id={blogPostContainerID} className="markdown" itemProp="articleBody">
           <MDXContent>{children}</MDXContent>
         </div>
 
-        <SimilarBlogs
-          currentPostTags={tags}
-          currentPostId={metadata.id}
-          title={title}
-        />
+        <SimilarBlogs currentPostTags={tags} currentPostId={metadata.id} title={title} />
       </div>
     </BlogPostItemContainer>
   );

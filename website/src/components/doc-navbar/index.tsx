@@ -45,12 +45,8 @@ export default function DocNavbar() {
                         voltagent
                       </span>
                     </div>
-                    <span className="text-gray-400 mx-2 mt-1 text-base">
-                      Framework
-                    </span>
-                    <span className="text-main-emerald  mt-1 font-semibold text-base">
-                      Docs
-                    </span>
+                    <span className="text-gray-400 mx-2 mt-1 text-base">Framework</span>
+                    <span className="text-main-emerald  mt-1 font-semibold text-base">Docs</span>
                   </div>
                 </Link>
               )}
@@ -69,12 +65,8 @@ export default function DocNavbar() {
                         ops
                       </span>
                     </div>
-                    <span className="text-gray-400 mt-1 mx-2 text-base ">
-                      LLM Observability
-                    </span>
-                    <span className="text-main-emerald mt-1 font-semibold text-base">
-                      Docs
-                    </span>
+                    <span className="text-gray-400 mt-1 mx-2 text-base ">LLM Observability</span>
+                    <span className="text-main-emerald mt-1 font-semibold text-base">Docs</span>
                   </div>
                 </Link>
               )}
@@ -85,10 +77,7 @@ export default function DocNavbar() {
             <div className={styles.navLinks}>
               {/* Show link to VoltOps docs when on regular docs */}
               {isActive("/docs/") && (
-                <Link
-                  to="/voltops-llm-observability-docs/"
-                  className={`${styles.navLink}`}
-                >
+                <Link to="/voltops-llm-observability-docs/" className={`${styles.navLink}`}>
                   VoltOps Docs
                 </Link>
               )}
@@ -136,9 +125,7 @@ export default function DocNavbar() {
 
             <button
               type="button"
-              className={`${styles.menuButton} ${
-                isMenuOpen ? styles.menuButtonOpen : ""
-              }`}
+              className={`${styles.menuButton} ${isMenuOpen ? styles.menuButtonOpen : ""}`}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -174,9 +161,7 @@ export default function DocNavbar() {
             {!isActive("/voltops-llm-observability-docs/") && (
               <Link
                 to="/docs/"
-                className={`${styles.mobileNavLink} ${
-                  isActive("/docs/") ? styles.active : ""
-                }`}
+                className={`${styles.mobileNavLink} ${isActive("/docs/") ? styles.active : ""}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Framework Docs
@@ -187,9 +172,7 @@ export default function DocNavbar() {
               <Link
                 to="/voltops-llm-observability-docs/"
                 className={`${styles.mobileNavLink} ${
-                  isActive("/voltops-llm-observability-docs/")
-                    ? styles.active
-                    : ""
+                  isActive("/voltops-llm-observability-docs/") ? styles.active : ""
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -200,9 +183,7 @@ export default function DocNavbar() {
             {!isActive("/voltops-llm-observability-docs/") && (
               <Link
                 to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-                className={`${styles.navLink} ${
-                  isActive("/changelog/") ? styles.active : ""
-                }`}
+                className={`${styles.navLink} ${isActive("/changelog/") ? styles.active : ""}`}
               >
                 Changelog
               </Link>

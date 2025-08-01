@@ -34,11 +34,7 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
         <title>{stepTitle} - VoltAgent Tutorial</title>
         <meta name="description" content={stepDescription} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
@@ -57,9 +53,7 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
               <div className="mb-8 md:mb-12">
                 <div className="flex items-start justify-center space-x-3 md:space-x-4 mb-4 md:mb-6">
                   <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-xl flex items-center justify-center">
-                    <span className="font-bold text-lg md:text-xl">
-                      {currentStep}
-                    </span>
+                    <span className="font-bold text-lg md:text-xl">{currentStep}</span>
                   </div>
                   <div className="text-left">
                     <span className="text-xl md:text-3xl font-bold text-[#f7fafc] leading-tight">
@@ -89,9 +83,7 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
               </div>
 
               {/* Content */}
-              <div className="prose prose-invert prose-sm md:prose-lg max-w-none">
-                {children}
-              </div>
+              <div className="prose prose-invert prose-sm md:prose-lg max-w-none">{children}</div>
 
               {/* Navigation Buttons */}
               <div className="flex flex-col sm:flex-row justify-between items-center mt-12 md:mt-16 pt-6 md:pt-8 border-t border-[#4a5568] space-y-4 sm:space-y-0">

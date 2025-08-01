@@ -5,8 +5,7 @@ const metadataUsageData = [
   {
     id: "basic",
     name: "Basic Agent ID",
-    description:
-      "Simple agent identification for better tracking and organization.",
+    description: "Simple agent identification for better tracking and organization.",
     examples: {
       vercel: `experimental_telemetry: {
   isEnabled: true,
@@ -39,8 +38,7 @@ const metadataUsageData = [
   {
     id: "user-session",
     name: "User & Session Context",
-    description:
-      "Track user interactions and conversation flows across multiple turns.",
+    description: "Track user interactions and conversation flows across multiple turns.",
     examples: {
       vercel: `experimental_telemetry: {
   isEnabled: true,
@@ -70,8 +68,7 @@ const metadataUsageData = [
   {
     id: "organizational",
     name: "Organizational Context",
-    description:
-      "Categorize traces by business units, projects, and environments.",
+    description: "Categorize traces by business units, projects, and environments.",
     examples: {
       vercel: `experimental_telemetry: {
   isEnabled: true,
@@ -106,8 +103,7 @@ const metadataUsageData = [
   {
     id: "multi-agent",
     name: "Multi-Agent Relationships",
-    description:
-      "Establish hierarchical relationships between coordinating agents.",
+    description: "Establish hierarchical relationships between coordinating agents.",
     examples: {
       vercel: `// Parent Agent
 experimental_telemetry: {
@@ -186,8 +182,7 @@ policy_checker = await agent.add_agent({
   {
     id: "technical",
     name: "LLM Model Parameters",
-    description:
-      "Track model parameters and technical settings for optimization.",
+    description: "Track model parameters and technical settings for optimization.",
     examples: {
       vercel: `experimental_telemetry: {
   isEnabled: true,
@@ -228,14 +223,10 @@ policy_checker = await agent.add_agent({
 ];
 
 const MetadataUsageExplorer = () => {
-  const [selectedUsageId, setSelectedUsageId] = useState<string | null>(
-    "basic",
-  );
+  const [selectedUsageId, setSelectedUsageId] = useState<string | null>("basic");
   const [selectedSDK, setSelectedSDK] = useState<string>("typescript");
 
-  const selectedUsage = metadataUsageData.find(
-    (usage) => usage.id === selectedUsageId,
-  );
+  const selectedUsage = metadataUsageData.find((usage) => usage.id === selectedUsageId);
 
   const sdkOptions = [
     { id: "typescript", name: "JS/TS SDK" },
@@ -280,12 +271,8 @@ const MetadataUsageExplorer = () => {
           className="mt-5 rounded-md border border-gray-700 bg-gray-800 p-4 text-gray-200"
           style={{ backgroundColor: "#242424" }}
         >
-          <h4 className="mb-2 mt-0 text-lg text-emerald-300">
-            {selectedUsage.name}
-          </h4>
-          <p className="leading-relaxed text-gray-200 mb-4">
-            {selectedUsage.description}
-          </p>
+          <h4 className="mb-2 mt-0 text-lg text-emerald-300">{selectedUsage.name}</h4>
+          <p className="leading-relaxed text-gray-200 mb-4">{selectedUsage.description}</p>
 
           {/* SDK Tabs */}
           <div className="mb-4">
@@ -298,9 +285,7 @@ const MetadataUsageExplorer = () => {
                       ? "bg-gray-900 text-emerald-300 border-b-2 border-emerald-500"
                       : "bg-gray-700 text-gray-400 hover:text-gray-200 hover:bg-gray-600"
                   }`}
-                  style={
-                    selectedSDK === sdk.id ? { backgroundColor: "#1a1a1a" } : {}
-                  }
+                  style={selectedSDK === sdk.id ? { backgroundColor: "#1a1a1a" } : {}}
                   onClick={() => setSelectedSDK(sdk.id)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {

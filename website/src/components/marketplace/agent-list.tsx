@@ -104,8 +104,7 @@ const dummyAgents = [
     id: 6,
     name: "Social Media Manager",
     rating: 4.6,
-    description:
-      "Schedule posts across multiple platforms like X, LinkedIn, and Instagram.",
+    description: "Schedule posts across multiple platforms like X, LinkedIn, and Instagram.",
     price: "$9/month",
     usageStats: "31,845 posts published",
     lastUsed: "6 hours ago",
@@ -145,9 +144,7 @@ const AgentCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={`border-solid ${
-        isFirstCard
-          ? "border-[#00d992]/40 cursor-pointer"
-          : "border-[#1e293b]/40"
+        isFirstCard ? "border-[#00d992]/40 cursor-pointer" : "border-[#1e293b]/40"
       } rounded-lg overflow-hidden transition-all duration-300 h-full`}
       style={{
         backdropFilter: "blur(4px)",
@@ -197,17 +194,13 @@ const AgentCard = ({
         </div>
 
         {/* Description - reduced margin */}
-        <p className="text-gray-400 text-xs sm:text-sm mb-3">
-          {agent.description}
-        </p>
+        <p className="text-gray-400 text-xs sm:text-sm mb-3">{agent.description}</p>
 
         {/* Price and Try Now in same row */}
         <div className="mb-3 flex flex-wrap items-center justify-between">
           <div className="flex items-center mb-2 xs:mb-0">
             <CurrencyDollarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#00d992] mr-1" />
-            <span className="text-gray-300 text-xs sm:text-sm font-medium">
-              {agent.price}
-            </span>
+            <span className="text-gray-300 text-xs sm:text-sm font-medium">{agent.price}</span>
           </div>
           <button
             className={`px-2 sm:px-3 py-1 sm:py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-xs sm:text-sm rounded transition-colors ${
@@ -285,9 +278,8 @@ export const AgentList = () => {
                     index === 0
                       ? () => {
                           // Find the AgentDetail section in index.tsx and scroll to it
-                          const agentDetailElement = document.getElementById(
-                            "agent-detail-section",
-                          );
+                          const agentDetailElement =
+                            document.getElementById("agent-detail-section");
                           if (agentDetailElement) {
                             agentDetailElement.scrollIntoView({
                               behavior: "smooth",

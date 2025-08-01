@@ -13,9 +13,7 @@ interface MobileAgentCodeProps {
 }
 
 export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
-  const [selectedFeature, setSelectedFeature] = useState<Feature | null>(
-    "agent",
-  );
+  const [selectedFeature, setSelectedFeature] = useState<Feature | null>("agent");
   const [overlayPosition, setOverlayPosition] = useState<{
     top: number;
     height: number;
@@ -26,9 +24,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
     if (selectedFeature === "agent" && isVisible) {
       // Small delay to ensure DOM is ready
       setTimeout(() => {
-        const agentElement = document.querySelector(
-          '[data-feature="agent"]',
-        ) as HTMLElement;
+        const agentElement = document.querySelector('[data-feature="agent"]') as HTMLElement;
         if (agentElement) {
           setOverlayPosition({
             top: agentElement.offsetTop,
@@ -72,10 +68,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
     },
   ];
 
-  const handleFeatureClick = (
-    feature: Feature,
-    event: React.MouseEvent<HTMLSpanElement>,
-  ) => {
+  const handleFeatureClick = (feature: Feature, event: React.MouseEvent<HTMLSpanElement>) => {
     const element = event.currentTarget;
 
     if (selectedFeature === feature) {
@@ -91,8 +84,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
   };
 
   const getHighlightClasses = (section: Feature) => {
-    const baseHighlightClass =
-      "transition-all duration-300 ease-in-out cursor-pointer relative";
+    const baseHighlightClass = "transition-all duration-300 ease-in-out cursor-pointer relative";
 
     return selectedFeature === section
       ? `bg-gradient-to-r from-blue-600/40 to-blue-500/20 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-blue-500 pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
@@ -159,14 +151,10 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 data-feature="agent"
-                className={`block ${getHighlightClasses(
-                  "agent",
-                )} break-words whitespace-pre-wrap`}
+                className={`block ${getHighlightClasses("agent")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("agent", e)}
               >
-                <span className="text-gray-300">
-                  {"// Create your first agent"}
-                </span>
+                <span className="text-gray-300">{"// Create your first agent"}</span>
                 <br />
                 <span className="text-blue-400">const</span>
                 <span> myFirstAgent = </span>
@@ -179,9 +167,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               {/* Agent Name */}
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
-                className={`block ${getHighlightClasses(
-                  "name",
-                )} break-words whitespace-pre-wrap`}
+                className={`block ${getHighlightClasses("name")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("name", e)}
               >
                 <span className="ml-4">name: </span>
@@ -199,9 +185,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
                 onClick={(e) => handleFeatureClick("behavior", e)}
               >
                 <span className="ml-4">description: </span>
-                <span className="text-yellow-300">
-                  "A simple agent that introduces itself"
-                </span>
+                <span className="text-yellow-300">"A simple agent that introduces itself"</span>
                 <span>,</span>
                 <br />
                 <span className="ml-4">llm: </span>
@@ -214,9 +198,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               {/* Model Selection */}
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
-                className={`block ${getHighlightClasses(
-                  "model",
-                )} break-words whitespace-pre-wrap`}
+                className={`block ${getHighlightClasses("model")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("model", e)}
               >
                 <span className="ml-4">model: </span>
@@ -238,14 +220,10 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               {/* Server Setup */}
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
-                className={`block ${getHighlightClasses(
-                  "server",
-                )} break-words whitespace-pre-wrap`}
+                className={`block ${getHighlightClasses("server")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("server", e)}
               >
-                <span className="text-gray-300">
-                  {"// Start VoltAgent server"}
-                </span>
+                <span className="text-gray-300">{"// Start VoltAgent server"}</span>
                 <br />
                 <span className="text-blue-400">new</span>
                 <span className="text-green-400"> VoltAgent</span>
@@ -277,10 +255,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
                         {features.find((f) => f.id === selectedFeature)?.title}
                       </div>
                       <p className="text-[11px] leading-[16px] text-white/70 whitespace-normal overflow-wrap-normal">
-                        {
-                          features.find((f) => f.id === selectedFeature)
-                            ?.description
-                        }
+                        {features.find((f) => f.id === selectedFeature)?.description}
                       </p>
                     </div>
                   </div>
@@ -293,13 +268,11 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
 
       {/* The Result - Mobile */}
       <div className="mt-6">
-        <h4 className="text-emerald-500 font-semibold mb-2 text-sm">
-          The Result
-        </h4>
+        <h4 className="text-emerald-500 font-semibold mb-2 text-sm">The Result</h4>
         <p className="text-gray-300 mb-0 text-xs">
-          In just 15 lines of code, you've created a production-ready AI agent
-          with monitoring, debugging, and a web interface. That's the power of
-          VoltAgent - less boilerplate, more building.
+          In just 15 lines of code, you've created a production-ready AI agent with monitoring,
+          debugging, and a web interface. That's the power of VoltAgent - less boilerplate, more
+          building.
         </p>
       </div>
     </div>

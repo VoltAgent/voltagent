@@ -20,10 +20,7 @@ export default function LivePreview() {
     window.addEventListener("activateVoltOpsTab", handleActivateVoltOpsTab);
 
     return () => {
-      window.removeEventListener(
-        "activateVoltOpsTab",
-        handleActivateVoltOpsTab,
-      );
+      window.removeEventListener("activateVoltOpsTab", handleActivateVoltOpsTab);
     };
   }, []);
 

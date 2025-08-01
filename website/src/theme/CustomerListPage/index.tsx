@@ -8,15 +8,13 @@ interface CustomerListPageProps {
   customers: any[];
 }
 
-export default function CustomerListPage({
-  customers,
-}: CustomerListPageProps): JSX.Element {
+export default function CustomerListPage({ customers }: CustomerListPageProps): JSX.Element {
   return (
     <Layout>
       <Head>
         <title>
-          VoltAgent Customer Success Stories - Real Companies Using AI Agents |
-          TypeScript AI Framework
+          VoltAgent Customer Success Stories - Real Companies Using AI Agents | TypeScript AI
+          Framework
         </title>
         <meta
           name="description"

@@ -98,10 +98,7 @@ export default function LlmChoiceHelper(): JSX.Element {
     <div className="border-2 border-solid border-emerald-500 rounded-lg p-5 mb-6 bg-gray-800 shadow-lg">
       {/* Question 1: Role */}
       <div className="mb-5">
-        <label
-          htmlFor="agentRole"
-          className="block mb-2 font-medium text-white text-sm"
-        >
+        <label htmlFor="agentRole" className="block mb-2 font-medium text-white text-sm">
           1. What is the primary role of this agent?
         </label>
         <div className="relative cursor-pointer">
@@ -117,11 +114,7 @@ export default function LlmChoiceHelper(): JSX.Element {
               -- Select Role --
             </option>
             {roles.map((role) => (
-              <option
-                key={role.value}
-                value={role.value}
-                className="bg-gray-800 "
-              >
+              <option key={role.value} value={role.value} className="bg-gray-800 ">
                 {role.label}
               </option>
             ))}
@@ -134,10 +127,7 @@ export default function LlmChoiceHelper(): JSX.Element {
 
       {/* Question 2: Priority */}
       <div className="mb-4">
-        <label
-          htmlFor="agentPriority"
-          className="block mb-2 font-medium text-white text-sm"
-        >
+        <label htmlFor="agentPriority" className="block mb-2 font-medium text-white text-sm">
           2. What's more important for this agent?
         </label>
         <div className="relative cursor-pointer">
@@ -158,11 +148,7 @@ export default function LlmChoiceHelper(): JSX.Element {
               -- Select Priority --
             </option>
             {priorities.map((priority) => (
-              <option
-                key={priority.value}
-                value={priority.value}
-                className="bg-gray-800"
-              >
+              <option key={priority.value} value={priority.value} className="bg-gray-800">
                 {priority.label}
               </option>
             ))}
@@ -176,9 +162,7 @@ export default function LlmChoiceHelper(): JSX.Element {
       {/* Recommendation Output */}
       {selectedRole && selectedPriority && (
         <div className="mt-6 p-4 bg-emerald-900/60 border border-emerald-500/50 rounded-md shadow-sm">
-          <div className="text-emerald-400 font-medium mb-2 text-base">
-            Suggestion:
-          </div>
+          <div className="text-emerald-400 font-medium mb-2 text-base">Suggestion:</div>
           <p className="text-emerald-100 mb-2">{recommendation}</p>
           <div className="text-emerald-300/70 text-xs mt-3">
             Remember to test, as model performance evolves!

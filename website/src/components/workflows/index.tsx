@@ -1,9 +1,4 @@
-import {
-  EyeIcon,
-  Squares2X2Icon,
-  UserPlusIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline";
+import { EyeIcon, Squares2X2Icon, UserPlusIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { WorkflowCodeExample } from "./animation-diagram";
 
 export function Workflows() {
@@ -41,8 +36,8 @@ export function Workflows() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Build sophisticated multi agent workflows with our intuitive
-                Chain API. Compose, branch, and orchestrate with ease.
+                Build sophisticated multi agent workflows with our intuitive Chain API. Compose,
+                branch, and orchestrate with ease.
               </div>
             </div>
           </div>
@@ -59,9 +54,8 @@ export function Workflows() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Every workflow step is fully typed with Zod schemas. Get compile
-                time safety and runtime validation for all agent inputs and
-                outputs.
+                Every workflow step is fully typed with Zod schemas. Get compile time safety and
+                runtime validation for all agent inputs and outputs.
               </div>
             </div>
           </div>
@@ -78,9 +72,8 @@ export function Workflows() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Optimized for long running workflows. Pause execution, save
-                state, and seamlessly resume with human intervention when
-                needed.
+                Optimized for long running workflows. Pause execution, save state, and seamlessly
+                resume with human intervention when needed.
               </div>
             </div>
           </div>
@@ -97,8 +90,8 @@ export function Workflows() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Monitor agent execution, debug workflows, and get real time
-                insights with VoltOps observability platform.
+                Monitor agent execution, debug workflows, and get real time insights with VoltOps
+                observability platform.
               </div>
             </div>
           </div>

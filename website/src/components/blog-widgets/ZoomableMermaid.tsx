@@ -6,9 +6,7 @@ interface ZoomableMermaidProps {
   chart: string;
 }
 
-export default function ZoomableMermaid({
-  chart,
-}: ZoomableMermaidProps): JSX.Element {
+export default function ZoomableMermaid({ chart }: ZoomableMermaidProps): JSX.Element {
   const [isZoomed, setIsZoomed] = useState(false);
   const [svg, setSvg] = useState<string>("");
 
@@ -43,9 +41,7 @@ export default function ZoomableMermaid({
           // biome-ignore lint/security/noDangerouslySetInnerHtml: ignore
           dangerouslySetInnerHTML={{ __html: svg }}
         />
-        <div className={styles.zoomHint}>
-          {isZoomed ? "Click to minimize" : "Click to zoom"}
-        </div>
+        <div className={styles.zoomHint}>{isZoomed ? "Click to minimize" : "Click to zoom"}</div>
       </div>
       {isZoomed && (
         // biome-ignore lint/a11y/useKeyWithClickEvents: ignore

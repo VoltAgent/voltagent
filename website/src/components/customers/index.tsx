@@ -80,9 +80,7 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
               </div>
-              <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
-                voltagent
-              </span>
+              <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">voltagent</span>
               <div className="relative">
                 <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
                   Customer Case Studies
@@ -91,12 +89,10 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
             </div>
 
             <p className="text-base text-gray-400 mb-8 leading-relaxed">
-              <span className="text-[#00d992] font-semibold">VoltAgent</span> is
-              the TypeScript AI agent framework, while{" "}
-              <span className="text-orange-400 font-semibold">VoltOps</span>{" "}
-              provides framework-agnostic LLM observability. Companies use both
-              to build powerful AI agents and gain visibility into their
-              applications across any tech stack.
+              <span className="text-[#00d992] font-semibold">VoltAgent</span> is the TypeScript AI
+              agent framework, while <span className="text-orange-400 font-semibold">VoltOps</span>{" "}
+              provides framework-agnostic LLM observability. Companies use both to build powerful AI
+              agents and gain visibility into their applications across any tech stack.
             </p>
           </div>
 
@@ -150,9 +146,7 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
                           type="button"
                           onClick={() => setCurrentTestimonial(index)}
                           className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                            index === currentTestimonial
-                              ? "bg-[#00d992]"
-                              : "bg-gray-600"
+                            index === currentTestimonial ? "bg-[#00d992]" : "bg-gray-600"
                           }`}
                           aria-label={`Go to testimonial ${index + 1}`}
                         />

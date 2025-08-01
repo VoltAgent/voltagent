@@ -8,14 +8,12 @@ import React, { useState } from "react";
 import { CodeExample } from "./code-example";
 
 export function AgentsDetail() {
-  const [selectedFeature, setSelectedFeature] = useState<
-    "api" | "memory" | "prompt" | "tools"
-  >("api");
+  const [selectedFeature, setSelectedFeature] = useState<"api" | "memory" | "prompt" | "tools">(
+    "api",
+  );
 
   // Handler for feature card clicks
-  const handleFeatureClick = (
-    featureType: "api" | "memory" | "prompt" | "tools",
-  ) => {
+  const handleFeatureClick = (featureType: "api" | "memory" | "prompt" | "tools") => {
     setSelectedFeature(featureType);
   };
 
@@ -67,8 +65,7 @@ export function AgentsDetail() {
                     </div>
                   </div>
                   <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
-                    Enable agents to invoke functions, interact with systems,
-                    and perform actions.
+                    Enable agents to invoke functions, interact with systems, and perform actions.
                   </p>
                 </div>
               </div>
@@ -92,8 +89,7 @@ export function AgentsDetail() {
                     </div>
                   </div>
                   <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
-                    Seamlessly switch between different AI providers with a
-                    simple code update.
+                    Seamlessly switch between different AI providers with a simple code update.
                   </p>
                 </div>
               </div>
@@ -118,8 +114,7 @@ export function AgentsDetail() {
                     </div>
                   </div>
                   <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
-                    Experiment, fine-tune, and iterate your AI prompts in an
-                    integrated environment.
+                    Experiment, fine-tune, and iterate your AI prompts in an integrated environment.
                   </p>
                 </div>
               </div>
@@ -144,8 +139,7 @@ export function AgentsDetail() {
                     </div>
                   </div>
                   <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
-                    Store and recall interactions to enhance your agents
-                    intelligence and context.
+                    Store and recall interactions to enhance your agents intelligence and context.
                   </p>
                 </div>
               </div>

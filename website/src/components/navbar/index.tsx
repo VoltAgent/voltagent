@@ -22,12 +22,7 @@ export default function Navbar() {
   const isMobile = useMediaQuery("(max-width: 768px)", { defaultValue: true });
 
   const location = useLocation();
-  const {
-    stars,
-    recent_stargazers,
-    loading: isLoadingStars,
-    error: starsError,
-  } = useGitHubStars();
+  const { stars, recent_stargazers, loading: isLoadingStars, error: starsError } = useGitHubStars();
 
   const _isActive = (path: string) => {
     const currentPath = location.pathname.endsWith("/")
@@ -61,11 +56,7 @@ export default function Navbar() {
             </div>
             <span className={styles.logoText}>voltagent</span>
           </Link>
-          <div
-            className={`${styles.navLinks} ${
-              isMenuOpen ? styles.navLinksOpen : ""
-            }`}
-          >
+          <div className={`${styles.navLinks} ${isMenuOpen ? styles.navLinksOpen : ""}`}>
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
                 Products
@@ -94,9 +85,7 @@ export default function Navbar() {
                     className="flex items-center no-underline text-inherit "
                   >
                     <ShoppingCartIcon className="w-5 h-5 mr-3 text-[#00d992]" />
-                    <span className="text-sm font-['Inter'] font-semibold">
-                      Marketplace
-                    </span>
+                    <span className="text-sm font-['Inter'] font-semibold">Marketplace</span>
                   </Link>
                 </div>
                 <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
@@ -112,9 +101,7 @@ export default function Navbar() {
                 <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors rounded-b-md border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
                   <div className="flex items-center font-['Inter']">
                     <CommandLineIcon className="w-5 h-5 mr-3 text-[#00d992]" />
-                    <span className="text-sm font-semibold">
-                      Agentic App Builder
-                    </span>
+                    <span className="text-sm font-semibold">Agentic App Builder</span>
                   </div>
                   <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full font-['Inter'] font-normal">
                     Soon
@@ -125,10 +112,7 @@ export default function Navbar() {
             <Link to="/docs/" className={`${styles.navLink}  `}>
               Voltagent Docs
             </Link>
-            <Link
-              to="/voltops-llm-observability-docs/"
-              className={`${styles.navLink}  `}
-            >
+            <Link to="/voltops-llm-observability-docs/" className={`${styles.navLink}  `}>
               Voltops Docs
             </Link>
             <Link to="/customers/" className={`${styles.navLink}`}>
@@ -167,9 +151,7 @@ export default function Navbar() {
                       <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 mb-2">
                         <CommandLineIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
                         <div className="min-w-0 font-['Inter']">
-                          <div className="text-sm font-semibold whitespace-nowrap">
-                            Examples
-                          </div>
+                          <div className="text-sm font-semibold whitespace-nowrap">Examples</div>
                           <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
                             Explore sample projects and code
                           </div>
@@ -200,9 +182,7 @@ export default function Navbar() {
                       <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 mb-2">
                         <PencilSquareIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
                         <div className="min-w-0 font-['Inter']">
-                          <div className="text-sm font-semibold whitespace-nowrap">
-                            Blog
-                          </div>
+                          <div className="text-sm font-semibold whitespace-nowrap">Blog</div>
                           <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
                             Read the technical blog
                           </div>
@@ -213,9 +193,7 @@ export default function Navbar() {
                       <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 mb-2">
                         <BoltIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
                         <div className="min-w-0 font-['Inter']">
-                          <div className="text-sm font-semibold whitespace-nowrap">
-                            About Us
-                          </div>
+                          <div className="text-sm font-semibold whitespace-nowrap">About Us</div>
                           <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
                             Learn more about VoltAgent
                           </div>
@@ -263,26 +241,24 @@ export default function Navbar() {
                         Thank you!
                       </span>
                       <div className="flex space-x-[-10px]">
-                        {recent_stargazers
-                          .slice(0, 5)
-                          .map((stargazer, index) => (
-                            <a
-                              key={stargazer.login}
-                              href="https://github.com/voltagent/voltagent/stargazers/"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={stargazer.login}
-                              className="block w-6 h-6 rounded-full overflow-hidden border border-gray-600 hover:scale-110 transition-transform duration-200 pointer-events-auto"
-                              style={{ zIndex: 3 - index }}
-                            >
-                              <img
-                                src={stargazer.avatar_url}
-                                alt={`${stargazer.login} avatar`}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            </a>
-                          ))}
+                        {recent_stargazers.slice(0, 5).map((stargazer, index) => (
+                          <a
+                            key={stargazer.login}
+                            href="https://github.com/voltagent/voltagent/stargazers/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={stargazer.login}
+                            className="block w-6 h-6 rounded-full overflow-hidden border border-gray-600 hover:scale-110 transition-transform duration-200 pointer-events-auto"
+                            style={{ zIndex: 3 - index }}
+                          >
+                            <img
+                              src={stargazer.avatar_url}
+                              alt={`${stargazer.login} avatar`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </a>
+                        ))}
                       </div>
                     </>
                   )}
@@ -291,11 +267,7 @@ export default function Navbar() {
 
             <div className="flex items-center ml-2 font-medium text-sm">
               <span className="">
-                {isLoadingStars
-                  ? "✨"
-                  : starsError
-                    ? "-"
-                    : formatStarCount(stars)}
+                {isLoadingStars ? "✨" : starsError ? "-" : formatStarCount(stars)}
               </span>
               <StarIcon className="w-4 h-4 ml-1 text-yellow-400 group-hover:animate-bounce" />
             </div>
@@ -313,9 +285,7 @@ export default function Navbar() {
 
           <button
             type="button"
-            className={`${styles.menuButton} ${
-              isMenuOpen ? styles.menuButtonOpen : ""
-            }`}
+            className={`${styles.menuButton} ${isMenuOpen ? styles.menuButtonOpen : ""}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -344,17 +314,13 @@ export default function Navbar() {
               type="button"
               className="flex items-center px-0  w-full cursor-pointer bg-transparent border-none text-inherit"
               onClick={() => {
-                const elem = document.getElementById(
-                  "mobile-products-dropdown",
-                );
+                const elem = document.getElementById("mobile-products-dropdown");
                 if (elem) {
                   elem.classList.toggle("hidden");
                 }
               }}
             >
-              <span className="font-['IBM_Plex_Mono'] font-semibold">
-                Products
-              </span>
+              <span className="font-['IBM_Plex_Mono'] font-semibold">Products</span>
               <ChevronDownIcon className="w-5 h-5 ml-1" />
             </button>
             <div id="mobile-products-dropdown" className="hidden  mt-4 mb-2 ">
@@ -390,9 +356,7 @@ export default function Navbar() {
               <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
                 <div className="flex items-center font-['Inter']">
                   <CommandLineIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                  <span className="text-sm font-semibold">
-                    Agentic App Builder
-                  </span>
+                  <span className="text-sm font-semibold">Agentic App Builder</span>
                 </div>
                 <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full font-['Inter'] font-normal">
                   Soon
@@ -403,10 +367,7 @@ export default function Navbar() {
           <Link to="/docs/" className={`${styles.mobileNavLink}`}>
             Voltagent Docs
           </Link>
-          <Link
-            to="/voltops-llm-observability-docs/"
-            className={`${styles.mobileNavLink}`}
-          >
+          <Link to="/voltops-llm-observability-docs/" className={`${styles.mobileNavLink}`}>
             Voltops Docs
           </Link>
 
@@ -424,9 +385,7 @@ export default function Navbar() {
                 }
               }}
             >
-              <span className="font-['IBM_Plex_Mono'] font-semibold">
-                Resources
-              </span>
+              <span className="font-['IBM_Plex_Mono'] font-semibold">Resources</span>
               <ChevronDownIcon className="w-5 h-5 ml-1" />
             </button>
             <div id="mobile-resources-menu" className="hidden mt-4 mb-2">
@@ -434,9 +393,7 @@ export default function Navbar() {
                 <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center rounded-t-md transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <BookOpenIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      5 Steps Tutorial
-                    </div>
+                    <div className="text-sm font-semibold whitespace-nowrap">5 Steps Tutorial</div>
                     <div className="text-xs text-gray-400 whitespace-nowrap">
                       Learn AI agent development in 5 steps
                     </div>
@@ -450,9 +407,7 @@ export default function Navbar() {
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <CommandLineIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Examples
-                    </div>
+                    <div className="text-sm font-semibold whitespace-nowrap">Examples</div>
                     <div className="text-xs text-gray-400 whitespace-nowrap">
                       Explore sample projects and code
                     </div>
@@ -463,9 +418,7 @@ export default function Navbar() {
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <ServerIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      MCP Directory
-                    </div>
+                    <div className="text-sm font-semibold whitespace-nowrap">MCP Directory</div>
                     <div className="text-xs text-gray-400 whitespace-nowrap">
                       Browse Model Context Protocol services
                     </div>
@@ -476,9 +429,7 @@ export default function Navbar() {
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <PencilSquareIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Blog
-                    </div>
+                    <div className="text-sm font-semibold whitespace-nowrap">Blog</div>
                     <div className="text-xs text-gray-400 whitespace-nowrap">
                       Read the technical blog
                     </div>
@@ -489,9 +440,7 @@ export default function Navbar() {
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <BoltIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      About Us
-                    </div>
+                    <div className="text-sm font-semibold whitespace-nowrap">About Us</div>
                     <div className="text-xs text-gray-400 whitespace-nowrap">
                       Learn more about VoltAgent
                     </div>
@@ -502,9 +451,7 @@ export default function Navbar() {
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <BoltIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Launch Week #1
-                    </div>
+                    <div className="text-sm font-semibold whitespace-nowrap">Launch Week #1</div>
                     <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
                       Explore our product launch updates
                     </div>
@@ -514,10 +461,7 @@ export default function Navbar() {
             </div>
           </div>
           <div className={styles.mobileButtons}>
-            <Link
-              to="https://console.voltagent.dev/demo"
-              className={styles.mobileLoginButton}
-            >
+            <Link to="https://console.voltagent.dev/demo" className={styles.mobileLoginButton}>
               Log in to VoltOps
             </Link>
             <Link

@@ -4,10 +4,7 @@ export interface TutorialStep {
   description: string;
   path: string;
   completed?: boolean;
-  files: Record<
-    string,
-    { code: string; active?: boolean; hidden?: boolean; readOnly?: boolean }
-  >;
+  files: Record<string, { code: string; active?: boolean; hidden?: boolean; readOnly?: boolean }>;
   dependencies?: Record<string, string>;
 }
 

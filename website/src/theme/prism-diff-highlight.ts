@@ -52,14 +52,10 @@ export function diffHighlight(Prism: PrismLib) {
       if (typeof token === "string") {
         newTokens.push(...Prism.tokenize(token, diffGrammar));
       } else if (token.type === "unchanged") {
-        newTokens.push(
-          ...Prism.tokenize(tokenStreamToString(token), diffGrammar),
-        );
+        newTokens.push(...Prism.tokenize(tokenStreamToString(token), diffGrammar));
       } else if (["deleted-sign", "inserted-sign"].includes(token.type)) {
         token.alias = [
-          token.type === "deleted-sign"
-            ? "diff-highlight-deleted"
-            : "diff-highlight-inserted",
+          token.type === "deleted-sign" ? "diff-highlight-deleted" : "diff-highlight-inserted",
         ];
         // diff parser always return "deleted" and "inserted" lines with content of type array
         if (token.content.length > 1) {
@@ -70,9 +66,7 @@ export function diffHighlight(Prism: PrismLib) {
             if (subToken.type === "prefix") {
               newTokenContent.push(subToken);
             } else {
-              newTokenContent.push(
-                ...Prism.tokenize(tokenStreamToString(subToken), diffGrammar),
-              );
+              newTokenContent.push(...Prism.tokenize(tokenStreamToString(subToken), diffGrammar));
             }
           }
           token.content = newTokenContent;

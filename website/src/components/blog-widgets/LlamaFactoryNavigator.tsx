@@ -21,20 +21,17 @@ const goals: Record<FineTuningGoal, GoalDetail | { name: string }> = {
   unknown: { name: "-- What's your fine-tuning goal? --" },
   limited_vram: {
     name: "I have limited GPU VRAM",
-    description:
-      "Fine-tuning large models on consumer hardware with memory constraints.",
+    description: "Fine-tuning large models on consumer hardware with memory constraints.",
     recommendedFeatures: [
       "QLoRA (2-8 bit quantization)",
       "LoRA (Low-Rank Adaptation)",
       "Parameter-Efficient Fine-Tuning (PEFT)",
     ],
-    quickTip:
-      "4-bit QLoRA can run surprisingly large models on consumer GPUs with 8-16GB VRAM!",
+    quickTip: "4-bit QLoRA can run surprisingly large models on consumer GPUs with 8-16GB VRAM!",
   },
   instruction_following: {
     name: "I want my model to follow instructions better",
-    description:
-      "Training the model to understand and execute specific instructions precisely.",
+    description: "Training the model to understand and execute specific instructions precisely.",
     recommendedFeatures: [
       "Supervised Fine-Tuning (SFT)",
       "Instruction-tuning datasets",
@@ -58,8 +55,7 @@ const goals: Record<FineTuningGoal, GoalDetail | { name: string }> = {
   },
   speed_efficiency: {
     name: "I want the fastest possible training",
-    description:
-      "Optimizing the fine-tuning process for speed without sacrificing quality.",
+    description: "Optimizing the fine-tuning process for speed without sacrificing quality.",
     recommendedFeatures: [
       "FlashAttention-2",
       "Unsloth accelerator",
@@ -84,8 +80,7 @@ const goals: Record<FineTuningGoal, GoalDetail | { name: string }> = {
   },
   model_variety: {
     name: "I want to try many different open-source models",
-    description:
-      "Experimenting with various foundation models to find the best fit for your task.",
+    description: "Experimenting with various foundation models to find the best fit for your task.",
     recommendedFeatures: [
       "100+ model support (LLaMA, Mistral, ChatGLM, etc.)",
       "Hugging Face and ModelScope integration",
@@ -96,8 +91,7 @@ const goals: Record<FineTuningGoal, GoalDetail | { name: string }> = {
   },
   deployment: {
     name: "I need to deploy my model via an API",
-    description:
-      "Making your fine-tuned model available through an API for applications.",
+    description: "Making your fine-tuned model available through an API for applications.",
     recommendedFeatures: [
       "OpenAI-compatible API server",
       "vLLM worker integration",
@@ -123,12 +117,9 @@ export default function LlamaFactoryNavigator(): JSX.Element {
 
   return (
     <div className="my-6 rounded-lg border-2 border-solid border-emerald-500 bg-gray-800 p-5 shadow-lg">
-      <h4 className="mb-2 text-lg font-semibold text-white">
-        LLaMA-Factory Fine-Tuning Navigator
-      </h4>
+      <h4 className="mb-2 text-lg font-semibold text-white">LLaMA-Factory Fine-Tuning Navigator</h4>
       <p className="mb-1 text-sm text-gray-300">
-        Select your fine-tuning goal to discover the best LLaMA-Factory features
-        for your needs:
+        Select your fine-tuning goal to discover the best LLaMA-Factory features for your needs:
       </p>
       <div className="mb-4">
         <select
@@ -147,12 +138,8 @@ export default function LlamaFactoryNavigator(): JSX.Element {
 
       {currentGoalDetails && selectedGoal !== "unknown" && (
         <div className="mt-6 rounded-md border border-emerald-500/50 bg-emerald-900/60 p-4 shadow-sm">
-          <h5 className="mb-1 font-semibold text-emerald-400">
-            {currentGoalDetails.name}
-          </h5>
-          <p className="mb-3 text-sm text-emerald-100">
-            {currentGoalDetails.description}
-          </p>
+          <h5 className="mb-1 font-semibold text-emerald-400">{currentGoalDetails.name}</h5>
+          <p className="mb-3 text-sm text-emerald-100">{currentGoalDetails.description}</p>
           <h6 className="mb-1 text-sm font-medium text-emerald-300">
             Recommended LLaMA-Factory Features:
           </h6>
@@ -162,8 +149,7 @@ export default function LlamaFactoryNavigator(): JSX.Element {
             ))}
           </ul>
           <div className="mt-3 rounded bg-emerald-950/50 p-2 text-xs text-emerald-200">
-            <span className="font-medium">💡 Quick Tip:</span>{" "}
-            {currentGoalDetails.quickTip}
+            <span className="font-medium">💡 Quick Tip:</span> {currentGoalDetails.quickTip}
           </div>
         </div>
       )}

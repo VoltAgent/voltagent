@@ -30,9 +30,7 @@ export default function TOC({ toc, ...props }) {
       },
     );
 
-    const headings = document.querySelectorAll(
-      "h1[id], h2[id], h3[id], h4[id]",
-    );
+    const headings = document.querySelectorAll("h1[id], h2[id], h3[id], h4[id]");
     for (const heading of headings) {
       observer.observe(heading);
     }

@@ -14,12 +14,7 @@ export default function BlogPostItemHeaderAuthor({ author, className }) {
     <div className={clsx("avatar margin-bottom--sm", className)}>
       {imageURL && (
         <MaybeLink href={link} className="avatar__photo-link">
-          <img
-            className="avatar__photo"
-            src={imageURL}
-            alt={name}
-            itemProp="image"
-          />
+          <img className="avatar__photo" src={imageURL} alt={name} itemProp="image" />
         </MaybeLink>
       )}
 

@@ -58,8 +58,8 @@ export function TwoBlocks() {
                   </span>
                 </div>
                 <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg leading-relaxed">
-                  A TypeScript framework for building and AI agents with
-                  enterprise-grade capabilities and seamless integrations.
+                  A TypeScript framework for building and AI agents with enterprise-grade
+                  capabilities and seamless integrations.
                 </p>
               </div>
 
@@ -123,8 +123,8 @@ export function TwoBlocks() {
                   </span>
                 </p>
                 <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg leading-relaxed">
-                  Framework-agnostic observability platform for tracing,
-                  debugging, and monitoring AI agents across tech stacks.
+                  Framework-agnostic observability platform for tracing, debugging, and monitoring
+                  AI agents across tech stacks.
                 </p>
               </div>
 

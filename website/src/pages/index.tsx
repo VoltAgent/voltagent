@@ -16,8 +16,7 @@ import { DotPattern } from "../components/ui/dot-pattern";
 import { Workflows } from "../components/workflows";
 export default function Home(): JSX.Element {
   const title = "VoltAgent - Open Source TypeScript AI Agent Framework";
-  const description =
-    "VoltAgent is an observability-first TypeScript AI Agent framework.";
+  const description = "VoltAgent is an observability-first TypeScript AI Agent framework.";
 
   return (
     <>
@@ -26,9 +25,7 @@ export default function Home(): JSX.Element {
         <meta property="og:title" content={title} />
 
         {description && <meta name="description" content={description} />}
-        {description && (
-          <meta property="og:description" content={description} />
-        )}
+        {description && <meta property="og:description" content={description} />}
       </Head>
       <Layout>
         <main className="flex-1">

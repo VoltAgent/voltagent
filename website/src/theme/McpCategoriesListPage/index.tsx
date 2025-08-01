@@ -9,10 +9,7 @@ export default function McpCategoriesListPage(props) {
   const { categories } = props;
 
   return (
-    <Layout
-      title="MCP Categories"
-      description="Browse Model Context Providers by category"
-    >
+    <Layout title="MCP Categories" description="Browse Model Context Providers by category">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 sm:py-20 flex flex-col items-center">
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
 
@@ -23,13 +20,9 @@ export default function McpCategoriesListPage(props) {
             <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
               <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
             </div>
-            <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
-              voltagent
-            </span>
+            <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">voltagent</span>
             <div className="relative">
-              <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
-                MCP
-              </span>
+              <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">MCP</span>
               <span className="absolute -top-7 -right-16 px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-md font-medium border border-emerald-400/30">
                 Categories
               </span>
@@ -52,15 +45,12 @@ export default function McpCategoriesListPage(props) {
                 <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center mr-3">
                   <TagIcon className="w-4 h-4 text-[#00d992]" />
                 </div>
-                <span className="text-lg font-bold text-emerald-400">
-                  {category.name}
-                </span>
+                <span className="text-lg font-bold text-emerald-400">{category.name}</span>
               </div>
 
               <div className="flex justify-between items-center mt-3">
                 <span className="text-sm text-gray-400">
-                  {category.count}{" "}
-                  {category.count === 1 ? "provider" : "providers"}
+                  {category.count} {category.count === 1 ? "provider" : "providers"}
                 </span>
 
                 <div className="px-2.5 py-1 bg-white/5 text-gray-300 rounded-full text-xs">
@@ -72,9 +62,7 @@ export default function McpCategoriesListPage(props) {
               {category.items && category.items.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   <div className="w-full h-px bg-white/10" />
-                  <p className="text-xs text-gray-500 mt-1.5 mb-1">
-                    Top providers:
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1.5 mb-1">Top providers:</p>
                   {category.items.slice(0, 3).map((item) => (
                     <div
                       key={item.metadata.id}
@@ -92,10 +80,7 @@ export default function McpCategoriesListPage(props) {
 
         {/* Back to MCPs link */}
         <div className="mt-10">
-          <Link
-            to="/mcp"
-            className="text-[#00d992] hover:text-emerald-400 font-medium"
-          >
+          <Link to="/mcp" className="text-[#00d992] hover:text-emerald-400 font-medium">
             ← Back to all MCPs
           </Link>
         </div>

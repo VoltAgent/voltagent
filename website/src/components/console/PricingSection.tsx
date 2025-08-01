@@ -1,8 +1,4 @@
-import {
-  CalculatorIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { CalculatorIcon, CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import React, { useState } from "react";
 import PricingCalculatorModal from "./PricingCalculatorModal";
@@ -360,9 +356,7 @@ const PricingSection = ({
     }
 
     return (
-      <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-300">
-        {value}
-      </span>
+      <span className="text-xs landing-xs:text-xs landing-sm:text-sm text-gray-300">{value}</span>
     );
   };
 
@@ -379,8 +373,8 @@ const PricingSection = ({
             <h2
               className={`text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl ${primaryColorTextClasses.text} font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4`}
             >
-              <span className="text-[#DCDCDC]">Simple, Transparent</span>{" "}
-              VoltOps <span className="text-[#DCDCDC]">Pricing</span>
+              <span className="text-[#DCDCDC]">Simple, Transparent</span> VoltOps{" "}
+              <span className="text-[#DCDCDC]">Pricing</span>
             </h2>
             <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
               Start free, scale as you grow.
@@ -417,10 +411,7 @@ const PricingSection = ({
                   type="button"
                   onClick={() => {
                     if (tier.name === "Enterprise") {
-                      window.open(
-                        "https://forms.gle/BrnyFF4unP9pZxAh7",
-                        "_blank",
-                      );
+                      window.open("https://forms.gle/BrnyFF4unP9pZxAh7", "_blank");
                     } else if (
                       tier.name === "Free" ||
                       tier.name === "Core" ||
@@ -450,9 +441,7 @@ const PricingSection = ({
                     )}
                   </div>
                   {tier.name === "Free" && (
-                    <p
-                      className={`${primaryColorClasses.text} text-xs landing-xs:text-xs mt-1`}
-                    >
+                    <p className={`${primaryColorClasses.text} text-xs landing-xs:text-xs mt-1`}>
                       No credit card required
                     </p>
                   )}
@@ -575,8 +564,7 @@ const PricingSection = ({
           className="text-center mt-8 landing-xs:mt-6 landing-sm:mt-12"
         >
           <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm">
-            All plans include our core monitoring features. Need something
-            custom?{" "}
+            All plans include our core monitoring features. Need something custom?{" "}
             <a
               href="https://forms.gle/BrnyFF4unP9pZxAh7"
               target="_blank"
@@ -591,10 +579,7 @@ const PricingSection = ({
       </div>
 
       {/* Pricing Calculator Modal */}
-      <PricingCalculatorModal
-        isOpen={calculatorOpen}
-        onClose={() => setCalculatorOpen(false)}
-      />
+      <PricingCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
     </section>
   );
 };
