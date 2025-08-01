@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { CreateConversationInput, MemoryMessage } from "@voltagent/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SupabaseMemory } from "./index";
-import type { MemoryMessage, CreateConversationInput } from "@voltagent/core";
 
 // Mock Supabase client with proper query builder pattern
 const createMockSupabaseClient = () => {
@@ -302,7 +302,7 @@ describe("SupabaseMemory", () => {
       const pruneOldMessagesSpy = vi
         .spyOn(limitedMemory as any, "pruneOldMessages")
         .mockImplementation(async (...args: any[]) => {
-          const conversationId = args[0] as string;
+          const _conversationId = args[0] as string;
           // Simulate the count check that would NOT trigger deletion
           const countResult = { count: 2, error: null }; // Within limit of 5
 
@@ -337,9 +337,8 @@ describe("SupabaseMemory", () => {
       let conv2CallCount = 0;
 
       // Mock the pruneOldMessages method to track calls per conversation
-      const pruneOldMessagesSpy = vi
-        .spyOn(limitedMemory as any, "pruneOldMessages")
-        .mockImplementation(async (...args: any[]) => {
+      vi.spyOn(limitedMemory as any, "pruneOldMessages").mockImplementation(
+        async (...args: any[]) => {
           const conversationId = args[0] as string;
           if (conversationId === "conv1") {
             conv1CallCount++;
@@ -348,7 +347,8 @@ describe("SupabaseMemory", () => {
           }
 
           return Promise.resolve();
-        });
+        },
+      );
 
       // Add messages to both conversations
       await limitedMemory.addMessage(createMessage({ content: "Conv1 msg" }), "conv1");
@@ -421,11 +421,12 @@ describe("SupabaseMemory", () => {
           // Simulate the actual logic: if limit is 0 or undefined, return all; otherwise apply limit
           if (limit === 0) {
             return mockData; // Return all messages (no limit applied)
-          } else if (limit && limit > 0) {
-            return mockData.slice(0, limit); // Apply the limit
-          } else {
-            return mockData.slice(0, 2); // Use storage limit (2)
           }
+          if (limit && limit > 0) {
+            return mockData.slice(0, limit); // Apply the limit
+          }
+
+          return mockData.slice(0, 2); // Use storage limit (2)
         });
 
       // Test: when limit=0, should return all messages
@@ -565,6 +566,7 @@ describe("SupabaseMemory", () => {
         },
         order: () => builderWithData,
         limit: () => builderWithData,
+        // biome-ignore lint/suspicious/noThenProperty: <explanation>
         then: (callback: any) => callback({ data: mockMessages, error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);
@@ -600,6 +602,7 @@ describe("SupabaseMemory", () => {
         },
         order: () => builderWithData,
         limit: () => builderWithData,
+        // biome-ignore lint/suspicious/noThenProperty: <explanation>
         then: (callback: any) => callback({ data: mockMessages, error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);
@@ -635,6 +638,7 @@ describe("SupabaseMemory", () => {
         },
         order: () => builderWithData,
         limit: () => builderWithData,
+        // biome-ignore lint/suspicious/noThenProperty: <explanation>
         then: (callback: any) => callback({ data: mockMessages, error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);
@@ -686,6 +690,7 @@ describe("SupabaseMemory", () => {
         },
         order: () => builderWithData,
         limit: () => builderWithData,
+        // biome-ignore lint/suspicious/noThenProperty: <explanation>
         then: (callback: any) => callback({ data: mockMessages, error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);
@@ -711,6 +716,7 @@ describe("SupabaseMemory", () => {
         },
         order: () => builderWithData,
         limit: () => builderWithData,
+        // biome-ignore lint/suspicious/noThenProperty: <explanation>
         then: (callback: any) => callback({ data: [], error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);
@@ -757,6 +763,7 @@ describe("SupabaseMemory", () => {
         eq: () => builderWithData,
         order: () => builderWithData,
         limit: () => builderWithData,
+        // biome-ignore lint/suspicious/noThenProperty: <explanation>
         then: (callback: any) => callback({ data: mockMessages, error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);
@@ -801,6 +808,7 @@ describe("SupabaseMemory", () => {
           mockClient._mockMethods.limit(...args);
           return builderWithData;
         },
+        // biome-ignore lint/suspicious/noThenProperty: <explanation>
         then: (callback: any) => callback({ data: mockMessages, error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);

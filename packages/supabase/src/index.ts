@@ -3012,7 +3012,7 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
       // Check if the table exists first by trying to query it
       const { error: tableError } = await this.client.from(this.historyTable).select("id").limit(1);
 
-      if (tableError && tableError.message?.includes("does not exist")) {
+      if (tableError?.message?.includes("does not exist")) {
         console.log("Agent history table doesn't exist, migration not needed");
         return { success: true };
       }
