@@ -42,10 +42,18 @@ jobs:
         run: pnpm install
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
+      - name: Set package scope
+        id: scope
+        run: |
+          if [[ "${{ matrix.package }}" == "create-voltagent-app" ]]; then
+            echo "scope=create-voltagent-app" >> $GITHUB_OUTPUT
+          else
+            echo "scope=@voltagent/${{ matrix.package }}" >> $GITHUB_OUTPUT
+          fi
       - name: Build Package and Dependencies
-        run: lerna run build --scope "@voltagent/${{ matrix.package }}" --include-dependencies
+        run: lerna run build --scope "${{ steps.scope.outputs.scope }}" --include-dependencies
       - name: Test Package
-        run: lerna run test --scope "@voltagent/${{ matrix.package }}"
+        run: lerna run test --scope "${{ steps.scope.outputs.scope }}"
 
   publish:
     needs: test-packages

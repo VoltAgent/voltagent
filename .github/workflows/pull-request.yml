@@ -105,10 +105,18 @@ jobs:
         run: pnpm install
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
+      - name: Set package scope
+        id: scope
+        run: |
+          if [[ "${{ matrix.package }}" == "create-voltagent-app" ]]; then
+            echo "scope=create-voltagent-app" >> $GITHUB_OUTPUT
+          else
+            echo "scope=@voltagent/${{ matrix.package }}" >> $GITHUB_OUTPUT
+          fi
       - name: Build Package and Dependencies
-        run: lerna run build --scope "@voltagent/${{ matrix.package }}" --include-dependencies
+        run: lerna run build --scope "${{ steps.scope.outputs.scope }}" --include-dependencies
       - name: Test Package
-        run: lerna run test --scope "@voltagent/${{ matrix.package }}"
+        run: lerna run test --scope "${{ steps.scope.outputs.scope }}"
 
   postgres-integration:
     runs-on: ubuntu-latest
@@ -173,81 +181,6 @@ jobs:
           npm run test:integration:ci
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/voltagent_test
-
-  test-core-files:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        test-file:
-          - agent/agent.spec.ts
-          - agent/history/index.spec.ts
-          - agent/hooks/index.spec.ts
-          - agent/open-telemetry/index.spec.ts
-          - agent/subagent/index.spec.ts
-          - events/index.spec.ts
-          - index.spec.ts
-          - logger/console-logger.spec.ts
-          - logger/events.spec.ts
-          - logger/index.spec.ts
-          - logger/logger-proxy.spec.ts
-          - logger/message-builder.spec.ts
-          - mcp/client/index.spec.ts
-          - mcp/registry/index.spec.ts
-          - memory/in-memory/index.spec.ts
-          - memory/libsql/index.spec.ts
-          - memory/manager/index.spec.ts
-          - retriever/retriever.spec.ts
-          - retriever/tools/index.spec.ts
-          - server/api.spec.ts
-          - server/custom-endpoints/index.spec.ts
-          - telemetry/client/index.spec.ts
-          - telemetry/exporter/index.spec.ts
-          - tool/index.spec.ts
-          - tool/manager/index.spec.ts
-          - tool/reasoning/index.spec.ts
-          - utils/createPrompt/index.spec.ts
-          - utils/queue/queue.spec.ts
-          - utils/serialization/index.spec.ts
-          - utils/streams/stream-event-forwarder.spec.ts
-          - utils/streams/transformers.spec.ts
-          - utils/toolParser/index.spec.ts
-          - voltops/client-priority.spec.ts
-          - voltops/client.spec.ts
-          - voltops/prompt-api-client.spec.ts
-          - voltops/prompt-manager.spec.ts
-          - voltops/template-engine.spec.ts
-          - voltops/types.spec.ts
-          - workflow/chain.spec.ts
-          - workflow/core.spec.ts
-          - workflow/internal/state.spec.ts
-          - workflow/step-schemas-runtime.spec.ts
-          - workflow/suspend-controller.spec.ts
-          - workflow/suspend-resume.spec.ts
-          - workflow/workflow-types.spec.ts
-      fail-fast: false
-    name: Test core/${{ matrix.test-file }}
-    concurrency:
-      group: ${{ github.ref }}-test-core-${{ matrix.test-file }}
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-      - name: Install Dependencies
-        run: pnpm install
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
-      - name: Build Core Package and Dependencies
-        run: lerna run build --scope "@voltagent/core" --include-dependencies
-      - name: Run Individual Test
-        run: |
-          cd packages/core
-          echo "Testing: ${{ matrix.test-file }}"
-          npx vitest run "src/${{ matrix.test-file }}" --reporter=verbose
-          echo "::notice::Test passed: ${{ matrix.test-file }}"
 
   tsdoc-check:
     runs-on: ubuntu-latest
