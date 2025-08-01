@@ -53,14 +53,6 @@
   "license": "MIT",
   "main": "dist/main/index.js",
   "module": "dist/main/index.mjs",
-  "typesVersions": {
-    "*": {
-      "*": ["dist/main/index.d.ts"],
-      "test": ["dist/test/index.d.ts"],
-      "utils": ["dist/utils/index.d.ts"],
-      "types": ["dist/types/index.d.ts"]
-    }
-  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -70,5 +62,21 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "types": "dist/main/index.d.ts"
+  "types": "dist/main/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/main/index.d.ts"
+      ],
+      "test": [
+        "dist/test/index.d.ts"
+      ],
+      "utils": [
+        "dist/utils/index.d.ts"
+      ],
+      "types": [
+        "dist/types/index.d.ts"
+      ]
+    }
+  }
 }
