@@ -19,6 +19,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:integration": "npm run test:integration:setup && vitest run --config vitest.integration.config.mts && npm run test:integration:teardown",
