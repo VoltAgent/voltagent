@@ -100,8 +100,8 @@ const createMockHistoryEntry = (
 const createdStorages: LibSQLStorage[] = [];
 
 // Helper to create and track storage instances
-function createTrackedStorage(testName: string): LibSQLStorage {
-  const storage = createTestLibSQLStorage(testName);
+function createTrackedStorage(): LibSQLStorage {
+  const storage = createTestLibSQLStorage();
   createdStorages.push(storage);
   return storage;
 }
@@ -600,7 +600,7 @@ describe("Agent", () => {
     mockProvider = new MockProvider(mockModel);
 
     // Create fresh storage for each test
-    testStorage = createTrackedStorage("agent-test");
+    testStorage = createTrackedStorage();
 
     // Create a ready test agent
     agent = new TestAgent({
@@ -641,7 +641,7 @@ describe("Agent", () => {
 
   describe("constructor", () => {
     it("should create an agent with default values", () => {
-      const storage = createTrackedStorage("default-agent");
+      const storage = createTrackedStorage();
       const defaultAgent = new TestAgent({
         name: "Default Agent",
         model: mockModel,
@@ -661,7 +661,7 @@ describe("Agent", () => {
     });
 
     it("should create an agent with custom values", () => {
-      const storage = createTrackedStorage("custom-agent");
+      const storage = createTrackedStorage();
       const customAgent = new TestAgent({
         id: "custom-id",
         name: "Custom Agent",
@@ -681,7 +681,7 @@ describe("Agent", () => {
     });
 
     it("should use description for instructions if instructions property is not provided", () => {
-      const storage = createTrackedStorage("desc-only-agent");
+      const storage = createTrackedStorage();
       const agentWithDesc = new TestAgent({
         name: "Agent With Description Only",
         description: "Uses provided description",
@@ -698,7 +698,7 @@ describe("Agent", () => {
     });
 
     it("should use instructions if both instructions and description are provided", () => {
-      const storage = createTrackedStorage("both-props-agent");
+      const storage = createTrackedStorage();
       const agentWithBoth = new TestAgent({
         name: "Agent With Both Properties",
         instructions: "Uses provided instructions",
@@ -715,7 +715,7 @@ describe("Agent", () => {
     });
 
     it("should create agent with maxSteps", () => {
-      const storage = createTrackedStorage("maxsteps-agent");
+      const storage = createTrackedStorage();
       const agentWithMaxSteps = new TestAgent({
         name: "MaxSteps Agent",
         instructions: "Agent with maxSteps",
@@ -734,7 +734,7 @@ describe("Agent", () => {
     });
 
     it("should create agent without maxSteps", () => {
-      const storage = createTrackedStorage("no-maxsteps-agent");
+      const storage = createTrackedStorage();
       const agentWithoutMaxSteps = new TestAgent({
         name: "No MaxSteps Agent",
         instructions: "Agent without maxSteps",
@@ -755,7 +755,7 @@ describe("Agent", () => {
     it("should pass telemetryExporter to HistoryManager if provided", () => {
       (HistoryManager as Mock).mockClear();
 
-      const storage = createTrackedStorage("telemetry-agent");
+      const storage = createTrackedStorage();
       const telemetryAgent = new Agent({
         name: "TelemetryAgent",
         instructions: "Telemetry agent instructions",
@@ -781,7 +781,7 @@ describe("Agent", () => {
     it("should instantiate HistoryManager without telemetryExporter if not provided", () => {
       (HistoryManager as Mock).mockClear();
 
-      const storage = createTrackedStorage("no-telemetry-agent");
+      const storage = createTrackedStorage();
       const noTelemetryAgent = new Agent({
         name: "NoTelemetryAgent",
         instructions: "No telemetry agent instructions",
@@ -932,29 +932,17 @@ describe("Agent", () => {
         { role: "user", content: "How are you?" },
       ];
 
-      const stream = await agent.streamText(messages);
+      const stream = await agent?.streamText(messages);
       expect(mockProvider.streamTextCalls).toBe(1);
       expect(stream).toBeDefined();
       expect(mockProvider.lastMessages).toEqual(expect.arrayContaining(messages));
     });
-
-    it.skip("should store messages in memory when userId is provided", async () => {
-      // Skip - tests internal implementation with mockMemory
-    });
-
-    it.skip("should store tool-related messages in memory when tools are used", async () => {
-      // Skip - tests internal implementation with mockMemory
-    });
-  });
-
-  describe.skip("memory interactions", () => {
-    // Skip - tests internal implementation with mockMemory
   });
 
   describe("historyMemory configuration", () => {
     it("should use provided historyMemory instance when specified", () => {
-      const conversationStorage = createTrackedStorage("conversation-memory");
-      const historyStorage = createTrackedStorage("history-memory");
+      const conversationStorage = createTrackedStorage();
+      const historyStorage = createTrackedStorage();
 
       const agentWithCustomHistoryMemory = new Agent({
         name: "Test Agent",
@@ -975,7 +963,7 @@ describe("Agent", () => {
     });
 
     it("should use same memory instance for historyMemory when not specified", () => {
-      const storage = createTrackedStorage("default-history");
+      const storage = createTrackedStorage();
 
       const agentWithDefaultHistory = new Agent({
         name: "Test Agent",
@@ -996,7 +984,7 @@ describe("Agent", () => {
     });
 
     it("should allow same memory instance for both conversation and history", () => {
-      const sharedStorage = createTrackedStorage("shared-memory");
+      const sharedStorage = createTrackedStorage();
 
       const agentWithSharedMemory = new Agent({
         name: "Test Agent",
@@ -2239,7 +2227,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A mock sub-agent for testing",
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       // Create an agent with sub-agents
@@ -2250,7 +2238,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A parent agent with sub-agents",
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       // // Add the sub-agent
@@ -2292,7 +2280,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "No SubAgents Agent instructions",
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const tools = agentWithoutSubAgents.getTools();
@@ -2394,7 +2382,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A test sub agent",
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const parentAgent = new TestAgent({
@@ -2403,7 +2391,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A parent agent",
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       parentAgent.addSubAgent(mockSubAgent);
@@ -2511,7 +2499,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "Parent without fullStream",
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       parentAgent.addSubAgent(mockSubAgent);
@@ -4419,7 +4407,7 @@ describe("Agent Dynamic Values", () => {
         model: { modelId: "test-model" },
         tools: dynamicTools,
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const userContext = new Map<string | symbol, unknown>([
@@ -4503,7 +4491,7 @@ describe("Agent Dynamic Values", () => {
         instructions: "Test instructions",
         model: dynamicModel,
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const userContext = new Map([["tier", "premium"]]);
@@ -4540,7 +4528,7 @@ describe("Agent Dynamic Values", () => {
         model: { modelId: "test-model" },
         tools: dynamicTools,
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const userContext = new Map([["isAdmin", true]]);
@@ -4592,7 +4580,7 @@ describe("Agent Dynamic Values", () => {
         model: dynamicModel,
         tools: dynamicTools,
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const userContext = new Map([
@@ -4634,7 +4622,7 @@ describe("Agent Dynamic Values", () => {
         instructions: "I stream responses",
         model: dynamicModel,
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const userContext = new Map([["preferredModel", "streaming-model"]]);
@@ -4663,7 +4651,7 @@ describe("Agent Dynamic Values", () => {
         instructions: "I generate objects",
         model: dynamicModel,
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const schema = z.object({
@@ -4698,7 +4686,7 @@ describe("Agent Dynamic Values", () => {
         instructions: "I use async model resolution",
         model: asyncDynamicModel,
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const userContext = new Map([["tier", "enterprise"]]);
@@ -5043,7 +5031,7 @@ describe("Agent Abort Signal", () => {
       instructions: "Test instructions",
       model: { modelId: "test-model" },
       llm: mockLLM,
-      memory: createTrackedStorage("test"),
+      memory: createTrackedStorage(),
     });
   });
 
@@ -5467,7 +5455,7 @@ describe("Agent Abort Signal", () => {
         instructions: "Test instructions",
         model: { modelId: "test-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       // Create a sub-agent using TestAgent
@@ -5476,7 +5464,7 @@ describe("Agent Abort Signal", () => {
         instructions: "Sub agent instructions",
         model: { modelId: "sub-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       // Add sub-agent to test agent
@@ -5769,7 +5757,7 @@ describe("SupervisorConfig", () => {
         instructions: "Test instructions",
         model: { modelId: "test-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         supervisorConfig,
       });
 
@@ -5783,7 +5771,7 @@ describe("SupervisorConfig", () => {
         instructions: "Test instructions",
         model: { modelId: "test-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       expect((agent as any).supervisorConfig).toBeUndefined();
@@ -5799,7 +5787,7 @@ describe("SupervisorConfig", () => {
         instructions: "Test instructions",
         model: { modelId: "test-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         supervisorConfig,
       });
 
@@ -5820,7 +5808,7 @@ describe("SupervisorConfig", () => {
         purpose: "A specialized writing assistant",
         model: { modelId: "writer-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       subAgent2 = new Agent({
@@ -5828,7 +5816,7 @@ describe("SupervisorConfig", () => {
         instructions: "Reviews and edits content",
         model: { modelId: "editor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
     });
 
@@ -5843,7 +5831,7 @@ describe("SupervisorConfig", () => {
         instructions: "Base supervisor instructions",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent1, subAgent2],
         supervisorConfig,
       });
@@ -5876,7 +5864,7 @@ describe("SupervisorConfig", () => {
         instructions: "Base instructions",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent1],
         supervisorConfig,
       });
@@ -5905,7 +5893,7 @@ describe("SupervisorConfig", () => {
         instructions: "Coordinate between agents",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent1],
         supervisorConfig,
       });
@@ -5928,7 +5916,7 @@ describe("SupervisorConfig", () => {
         instructions: "Default supervisor behavior",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent1],
         // No supervisorConfig
       });
@@ -5957,7 +5945,7 @@ describe("SupervisorConfig", () => {
         instructions: "Regular agent instructions",
         model: { modelId: "regular-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         // No subAgents
         supervisorConfig,
       });
@@ -5986,7 +5974,7 @@ describe("SupervisorConfig", () => {
         instructions: "Base instructions",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent1],
         supervisorConfig,
       });
@@ -6013,7 +6001,7 @@ describe("SupervisorConfig", () => {
         instructions: "Base instructions",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent1],
         supervisorConfig,
       });
@@ -6043,7 +6031,7 @@ describe("SupervisorConfig", () => {
         instructions: "Sub agent instructions",
         model: { modelId: "sub-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const agent = new Agent({
@@ -6051,7 +6039,7 @@ describe("SupervisorConfig", () => {
         instructions: "Supervisor instructions",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent],
         supervisorConfig,
       });
@@ -6090,7 +6078,7 @@ describe("SupervisorConfig", () => {
         instructions: "Write great content",
         model: { modelId: "writer-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const subAgent2 = new Agent({
@@ -6098,7 +6086,7 @@ describe("SupervisorConfig", () => {
         instructions: "Edit and improve content",
         model: { modelId: "editor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const agent = new Agent({
@@ -6106,7 +6094,7 @@ describe("SupervisorConfig", () => {
         instructions: "Manage content creation process",
         model: { modelId: "manager-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent1, subAgent2],
         supervisorConfig,
       });
@@ -6138,7 +6126,7 @@ describe("SupervisorConfig", () => {
         instructions: "Sub agent instructions",
         model: { modelId: "sub-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
       });
 
       const agent = new Agent({
@@ -6146,7 +6134,7 @@ describe("SupervisorConfig", () => {
         instructions: "Supervisor instructions",
         model: { modelId: "supervisor-model" },
         llm: mockLLM,
-        memory: createTrackedStorage("test"),
+        memory: createTrackedStorage(),
         subAgents: [subAgent],
         supervisorConfig,
       });
