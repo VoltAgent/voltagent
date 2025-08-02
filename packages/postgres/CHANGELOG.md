@@ -1,5 +1,22 @@
 # @voltagent/postgres
 
+## 0.1.11
+
+### Patch Changes
+
+- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
+
+  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
+
+  **Key improvements:**
+  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
+  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
+  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
+  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
+  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
+
+  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
+
 ## 0.1.10
 
 ### Patch Changes
@@ -9,7 +26,6 @@
   Added the ability to filter messages by type when retrieving conversation history. This enhancement allows the framework to distinguish between different message types (text, tool-call, tool-result) and retrieve only the desired types, improving context preparation for LLMs.
 
   ## Key Changes
-
   - **MessageFilterOptions**: Added optional `types` parameter to filter messages by type
   - **prepareConversationContext**: Now filters to only include text messages, excluding tool-call and tool-result messages for cleaner LLM context
   - **All storage implementations**: Added database-level filtering for better performance
@@ -39,7 +55,6 @@
   ```
 
   ## Implementation Details
-
   - **InMemoryStorage**: Filters messages in memory after retrieval
   - **LibSQLStorage**: Adds SQL WHERE clause with IN operator for type filtering
   - **PostgreSQL**: Uses parameterized IN clause with proper parameter counting
@@ -59,18 +74,15 @@
   Fixed an issue where memory storage implementations (LibSQL, PostgreSQL, Supabase) were returning the oldest messages instead of the most recent ones when a context limit was specified. This was causing AI agents to lose important recent context in favor of old conversation history.
 
   **Before:**
-
   - `contextLimit: 10` returned the first 10 messages (oldest)
   - Agents were working with outdated context
 
   **After:**
-
   - `contextLimit: 10` returns the last 10 messages (most recent) in chronological order
   - Agents now have access to the most relevant recent context
   - InMemoryStorage was already working correctly and remains unchanged
 
   Changes:
-
   - LibSQLStorage: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
   - PostgreSQL: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
   - Supabase: Modified query to use `ascending: false` with `limit`, then reverse results
@@ -115,7 +127,6 @@
   This release adds comprehensive support for `userId` and `conversationId` fields in agent history tables across all memory storage implementations, enabling better conversation tracking and user-specific history management.
 
   ### New Features
-
   - **Agent History Enhancement**: Added `userId` and `conversationId` columns to agent history tables
   - **Cross-Implementation Support**: Consistent implementation across PostgreSQL, Supabase, LibSQL, and In-Memory storage
   - **Automatic Migration**: Safe schema migrations for existing installations
@@ -128,7 +139,6 @@
   **In-Memory**: No migration required, immediate support
 
   ### Technical Details
-
   - **Database Schema**: Added `userid TEXT` and `conversationid TEXT` columns (PostgreSQL uses lowercase)
   - **Indexing**: Performance-optimized indexes for new columns
   - **Migration Safety**: Non-destructive migrations with proper error handling
@@ -146,7 +156,6 @@
   Fixed PostgreSQL syntax error where `level TEXT DEFAULT "INFO"` was using double quotes instead of single quotes for string literals. This resolves table creation failures during fresh installations and migrations.
 
   ### Changes
-
   - **Fixed**: `level TEXT DEFAULT "INFO"` → `level TEXT DEFAULT 'INFO'`
   - **Affects**: Timeline events table creation in both fresh installations and migrations
   - **Impact**: PostgreSQL database setup now works without syntax errors
@@ -156,7 +165,6 @@
   PostgreSQL requires single quotes for string literals and double quotes for identifiers. The timeline events table creation was failing due to incorrect quote usage for the default value.
 
   **Migration Notes:**
-
   - Existing installations with timeline events table will not be affected
   - Fresh installations will now complete successfully
   - No manual intervention required
@@ -214,7 +222,6 @@
 - [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - The `error` column has been deprecated and replaced with `statusMessage` column for better consistency and clearer messaging. The old `error` column is still supported for backward compatibility but will be removed in a future major version.
 
   Changes:
-
   - Deprecated `error` column (still functional)
   - Improved error handling and status reporting
 

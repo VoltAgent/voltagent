@@ -1,9 +1,9 @@
 {
   "name": "@voltagent/sdk",
   "description": "VoltAgent SDK - Client SDK for interacting with VoltAgent API",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "dependencies": {
-    "@voltagent/core": "^0.1.71"
+    "@voltagent/core": "^0.1.73"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

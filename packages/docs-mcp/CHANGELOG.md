@@ -1,5 +1,22 @@
 # @voltagent/docs-mcp
 
+## 0.2.2
+
+### Patch Changes
+
+- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
+
+  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
+
+  **Key improvements:**
+  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
+  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
+  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
+  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
+  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
+
+  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
+
 ## 0.2.1
 
 ### Patch Changes
@@ -9,7 +26,6 @@
   Moved Zod from direct dependencies to peer dependencies in @voltagent/vercel-ai to prevent duplicate Zod installations that were causing TypeScript server slowdowns. Also standardized Zod versions across the workspace to ensure consistency.
 
   Changes:
-
   - @voltagent/vercel-ai: Moved `zod` from dependencies to peerDependencies
   - @voltagent/docs-mcp: Updated `zod` from `^3.23.8` to `3.24.2`
   - @voltagent/with-postgres: Updated `zod` from `^3.24.2` to `3.24.2` (removed caret)
@@ -44,7 +60,6 @@
   Added comprehensive MCP (Model Context Protocol) Docs Server integration to enable AI assistants in IDEs to access VoltAgent documentation directly. This feature allows developers to ask their AI assistants questions about VoltAgent directly within their development environment.
 
   **New Features:**
-
   - **`@voltagent/docs-mcp`** package: MCP server that provides access to VoltAgent documentation
   - **CLI MCP commands**: Setup, test, status, and remove MCP configurations
     - `volt mcp setup` - Interactive setup for Cursor, Windsurf, or VS Code
@@ -68,7 +83,6 @@
   ```
 
   Once configured, developers can ask their AI assistant questions like:
-
   - "How do I create an agent in VoltAgent?"
   - "Is there a VoltAgent example with Next.js?"
   - "How do I use voice features?"

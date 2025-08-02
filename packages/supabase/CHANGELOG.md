@@ -1,5 +1,22 @@
 # @voltagent/supabase
 
+## 0.1.16
+
+### Patch Changes
+
+- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
+
+  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
+
+  **Key improvements:**
+  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
+  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
+  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
+  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
+  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
+
+  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
+
 ## 0.1.15
 
 ### Patch Changes
@@ -9,7 +26,6 @@
   Added the ability to filter messages by type when retrieving conversation history. This enhancement allows the framework to distinguish between different message types (text, tool-call, tool-result) and retrieve only the desired types, improving context preparation for LLMs.
 
   ## Key Changes
-
   - **MessageFilterOptions**: Added optional `types` parameter to filter messages by type
   - **prepareConversationContext**: Now filters to only include text messages, excluding tool-call and tool-result messages for cleaner LLM context
   - **All storage implementations**: Added database-level filtering for better performance
@@ -39,7 +55,6 @@
   ```
 
   ## Implementation Details
-
   - **InMemoryStorage**: Filters messages in memory after retrieval
   - **LibSQLStorage**: Adds SQL WHERE clause with IN operator for type filtering
   - **PostgreSQL**: Uses parameterized IN clause with proper parameter counting
@@ -59,18 +74,15 @@
   Fixed an issue where memory storage implementations (LibSQL, PostgreSQL, Supabase) were returning the oldest messages instead of the most recent ones when a context limit was specified. This was causing AI agents to lose important recent context in favor of old conversation history.
 
   **Before:**
-
   - `contextLimit: 10` returned the first 10 messages (oldest)
   - Agents were working with outdated context
 
   **After:**
-
   - `contextLimit: 10` returns the last 10 messages (most recent) in chronological order
   - Agents now have access to the most relevant recent context
   - InMemoryStorage was already working correctly and remains unchanged
 
   Changes:
-
   - LibSQLStorage: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
   - PostgreSQL: Modified query to use `ORDER BY DESC` with `LIMIT`, then reverse results
   - Supabase: Modified query to use `ascending: false` with `limit`, then reverse results
@@ -89,7 +101,6 @@
   This update introduces persistence for workflow history in Supabase, including execution details, steps, and timeline events.
 
   ### Manual Migration Required
-
   - **Database Migration Required**: This version introduces new tables (`voltagent_memory_workflow_history`, `voltagent_memory_workflow_steps`, and `voltagent_memory_workflow_timeline_events`) to your Supabase database. After updating, you must run the SQL migration script logged to the console in your Supabase SQL Editor to apply the changes.
 
 - Updated dependencies [[`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945)]:
@@ -100,7 +111,6 @@
 ### Patch Changes
 
 - [#270](https://github.com/VoltAgent/voltagent/pull/270) [`a65069c`](https://github.com/VoltAgent/voltagent/commit/a65069c511713239cf70bdb4d2885df224d1aee2) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - feat(supabase): Implement storage limit
-
   - BEFORE:
 
     ```
@@ -140,7 +150,6 @@
   This release adds comprehensive support for `userId` and `conversationId` fields in agent history tables across all memory storage implementations, enabling better conversation tracking and user-specific history management.
 
   ### New Features
-
   - **Agent History Enhancement**: Added `userId` and `conversationId` columns to agent history tables
   - **Cross-Implementation Support**: Consistent implementation across PostgreSQL, Supabase, LibSQL, and In-Memory storage
   - **Automatic Migration**: Safe schema migrations for existing installations
@@ -153,7 +162,6 @@
   **In-Memory**: No migration required, immediate support
 
   ### Technical Details
-
   - **Database Schema**: Added `userid TEXT` and `conversationid TEXT` columns (PostgreSQL uses lowercase)
   - **Indexing**: Performance-optimized indexes for new columns
   - **Migration Safety**: Non-destructive migrations with proper error handling
@@ -189,7 +197,6 @@
   ```
 
   ### Migration System Improvements
-
   - **Fixed PostgreSQL syntax error**: Resolved `level TEXT DEFAULT "INFO"` syntax issue by using single quotes for string literals
   - **Enhanced migration flag detection**: Improved handling of multiple migration flags without causing "multiple rows returned" errors
   - **Better error differentiation**: System now correctly distinguishes between "table missing" and "multiple records" scenarios
@@ -211,7 +218,6 @@
   ```
 
   **Migration Notes:**
-
   - Existing installations will benefit from improved migration flag detection
   - Fresh installations will have a cleaner, faster setup experience
   - PostgreSQL syntax errors in timeline events table creation are resolved
@@ -270,7 +276,6 @@
 - [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - The `error` column has been deprecated and replaced with `statusMessage` column for better consistency and clearer messaging. The old `error` column is still supported for backward compatibility but will be removed in a future major version.
 
   Changes:
-
   - Deprecated `error` column (still functional)
   - Improved error handling and status reporting
 
@@ -288,14 +293,12 @@
   Migration commands will appear in your terminal - follow those instructions to apply the database changes. If you experience any issues with the migration or memory operations, please reach out on [Discord](https://s.voltagent.dev/discord) for assistance.
 
   **What's Improved:**
-
   - Better performance for memory operations and large datasets
   - Enhanced database schema with optimized indexing
   - Improved error handling and data validation
   - Better support for timeline events and metadata storage
 
   **Migration Notes:**
-
   - Migration commands will be displayed in your terminal
   - Follow the terminal instructions to update your database schema
   - Existing memory data will be preserved during the migration
@@ -346,15 +349,12 @@
   This change introduces a more robust and consistent way errors and successful finishes are handled across the `@voltagent/core` Agent and LLM provider implementations (like `@voltagent/vercel-ai`).
 
   **Key Improvements:**
-
   - **Standardized Errors (`VoltAgentError`):**
-
     - Introduced `VoltAgentError`, `ToolErrorInfo`, and `StreamOnErrorCallback` types in `@voltagent/core`.
     - LLM Providers (e.g., Vercel) now wrap underlying SDK/API errors into a structured `VoltAgentError` before passing them to `onError` callbacks or throwing them.
     - Agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) now consistently handle `VoltAgentError`, enabling richer context (stage, code, tool details) in history events and logs.
 
   - **Standardized Stream Finish Results:**
-
     - Introduced `StreamTextFinishResult`, `StreamTextOnFinishCallback`, `StreamObjectFinishResult`, and `StreamObjectOnFinishCallback` types in `@voltagent/core`.
     - LLM Providers (e.g., Vercel) now construct these standardized result objects upon successful stream completion.
     - Agent streaming methods (`streamText`, `streamObject`) now receive these standardized results in their `onFinish` handlers, ensuring consistent access to final output (`text` or `object`), `usage`, `finishReason`, etc., for history, events, and hooks.
@@ -371,7 +371,6 @@
 ### Patch Changes
 
 - [#33](https://github.com/VoltAgent/voltagent/pull/33) [`3ef2eaa`](https://github.com/VoltAgent/voltagent/commit/3ef2eaa9661e8ecfebf17af56b09af41285d0ca9) Thanks [@kwaa](https://github.com/kwaa)! - Update package.json files:
-
   - Remove `src` directory from the `files` array.
   - Add explicit `exports` field for better module resolution.
 
@@ -387,7 +386,6 @@
   This new package provides a persistent memory solution for VoltAgent using Supabase.
 
   **Features:**
-
   - Stores conversation history, agent history entries, events, and steps in your Supabase database.
   - Requires specific table setup in your Supabase project (SQL provided in the package README).
   - Easy integration by initializing `SupabaseMemory` with your Supabase URL and key and passing it to your `Agent` configuration.

@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/groq-ai",
   "description": "VoltAgent Groq AI - Groq provider integration for VoltAgent",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "dependencies": {
     "groq-sdk": "^0.20.0",
     "zod-to-json-schema": "^3.24.5"
