@@ -1,5 +1,22 @@
 # @voltagent/cli
 
+## 0.1.10
+
+### Patch Changes
+
+- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
+
+  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
+
+  **Key improvements:**
+  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
+  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
+  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
+  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
+  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
+
+  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
+
 ## 0.1.9
 
 ### Patch Changes
@@ -15,7 +32,6 @@
   Added comprehensive MCP (Model Context Protocol) Docs Server integration to enable AI assistants in IDEs to access VoltAgent documentation directly. This feature allows developers to ask their AI assistants questions about VoltAgent directly within their development environment.
 
   **New Features:**
-
   - **`@voltagent/docs-mcp`** package: MCP server that provides access to VoltAgent documentation
   - **CLI MCP commands**: Setup, test, status, and remove MCP configurations
     - `volt mcp setup` - Interactive setup for Cursor, Windsurf, or VS Code
@@ -39,7 +55,6 @@
   ```
 
   Once configured, developers can ask their AI assistant questions like:
-
   - "How do I create an agent in VoltAgent?"
   - "Is there a VoltAgent example with Next.js?"
   - "How do I use voice features?"
@@ -94,7 +109,6 @@
 ### Patch Changes
 
 - [#33](https://github.com/VoltAgent/voltagent/pull/33) [`3ef2eaa`](https://github.com/VoltAgent/voltagent/commit/3ef2eaa9661e8ecfebf17af56b09af41285d0ca9) Thanks [@kwaa](https://github.com/kwaa)! - Update package.json files:
-
   - Remove `src` directory from the `files` array.
   - Add explicit `exports` field for better module resolution.
 
@@ -106,7 +120,6 @@
 
   ![VoltAgent Demo](https://cdn.voltagent.dev/readme/demo.gif)
   VoltAgent aims to fix that by providing the building blocks you need:
-
   - **`@voltagent/core`**: The foundational engine for agent capabilities.
   - **`@voltagent/voice`**: Easily add voice interaction.
   - **`@voltagent/vercel-ai`**: Seamless integration with [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction).

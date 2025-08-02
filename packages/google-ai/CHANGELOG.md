@@ -1,5 +1,24 @@
 # @voltagent/google-ai
 
+## 0.4.1
+
+### Patch Changes
+
+- [#454](https://github.com/VoltAgent/voltagent/pull/454) [`07f0889`](https://github.com/VoltAgent/voltagent/commit/07f08896a73db988bcf8f439d8fbeef424624507) Thanks [@yusuf-eren](https://github.com/yusuf-eren)! - feat(google-ai): add maxSteps option to @voltagent/google-ai
+
+- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
+
+  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
+
+  **Key improvements:**
+  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
+  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
+  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
+  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
+  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
+
+  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
+
 ## 0.4.0
 
 ### Minor Changes
@@ -50,7 +69,6 @@
   ```
 
   New exports:
-
   - `createAsyncIterableStream`
   - `type AsyncIterableStream`
 
@@ -79,7 +97,6 @@
 ### Patch Changes
 
 - [#160](https://github.com/VoltAgent/voltagent/pull/160) [`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: remove peer dependencies and update package configuration
-
   - Remove `@voltagent/core` peer dependency from Google AI and Groq AI packages
   - Clean up package.json formatting and configuration
   - Improve dependency management for better compatibility
@@ -194,19 +211,16 @@
 ### Patch Changes
 
 - [#77](https://github.com/VoltAgent/voltagent/pull/77) [`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2) Thanks [@omeraplak](https://github.com/omeraplak)! - **API & Providers:** Standardized message content format for array inputs.
-
   - The API (`/text`, `/stream`, `/object`, `/stream-object` endpoints) now strictly expects the `content` field within message objects (when `input` is an array) to be either a `string` or an `Array` of content parts (e.g., `[{ type: 'text', text: '...' }]`).
   - The previous behavior of allowing a single content object (e.g., `{ type: 'text', ... }`) directly as the value for `content` in message arrays is no longer supported in the API schema. Raw string inputs remain unchanged.
   - Provider logic (`google-ai`, `groq-ai`, `xsai`) updated to align with this stricter definition.
 
   **Console:**
-
   - **Added file and image upload functionality to the Assistant Chat.** Users can now attach multiple files/images via a button, preview attachments, and send them along with text messages.
   - Improved the Assistant Chat resizing: Replaced size toggle buttons with a draggable handle (top-left corner).
   - Chat window dimensions are now saved to local storage and restored on reload.
 
   **Internal:**
-
   - Added comprehensive test suites for Groq and XsAI providers.
 
 - Updated dependencies [[`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2)]:
@@ -233,7 +247,6 @@
   Introduces the `@voltagent/google-ai` package to integrate Google's Generative AI capabilities directly into VoltAgent. This allows developers to leverage powerful models like Gemini within their agents.
 
   This initial version includes:
-
   - The core `GoogleGenAIProvider` class for interfacing with the `@google/genai` SDK.
   - Configuration options for API key authentication.
   - Basic setup and usage examples in the README.

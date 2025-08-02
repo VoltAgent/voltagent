@@ -1,5 +1,22 @@
 # @voltagent/vercel-ai
 
+## 0.1.17
+
+### Patch Changes
+
+- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
+
+  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
+
+  **Key improvements:**
+  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
+  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
+  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
+  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
+  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
+
+  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
+
 ## 0.1.16
 
 ### Patch Changes
@@ -9,20 +26,17 @@
   Enhanced AI response types to align with Vercel AI SDK's API and provide better metadata:
 
   **For `streamObject`:**
-
   - Added optional `object?: Promise<T>` property that resolves to the final generated object
   - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
   - Added optional `warnings?: Promise<any[] | undefined>` property for provider warnings
 
   **For `streamText`:**
-
   - Added optional `text?: Promise<string>` property that resolves to the full generated text
   - Added optional `finishReason?: Promise<string>` property that resolves to the reason generation stopped
   - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
   - Added optional `reasoning?: Promise<string | undefined>` property that resolves to model's reasoning text
 
   **For `generateText` and `generateObject`:**
-
   - Added optional `reasoning?: string` property for model's reasoning text (generateText only)
   - Added optional `warnings?: any[]` property for provider warnings
 
@@ -66,7 +80,6 @@
   Moved Zod from direct dependencies to peer dependencies in @voltagent/vercel-ai to prevent duplicate Zod installations that were causing TypeScript server slowdowns. Also standardized Zod versions across the workspace to ensure consistency.
 
   Changes:
-
   - @voltagent/vercel-ai: Moved `zod` from dependencies to peerDependencies
   - @voltagent/docs-mcp: Updated `zod` from `^3.23.8` to `3.24.2`
   - @voltagent/with-postgres: Updated `zod` from `^3.24.2` to `3.24.2` (removed caret)
@@ -166,19 +179,16 @@
 ### Patch Changes
 
 - [#77](https://github.com/VoltAgent/voltagent/pull/77) [`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2) Thanks [@omeraplak](https://github.com/omeraplak)! - **API & Providers:** Standardized message content format for array inputs.
-
   - The API (`/text`, `/stream`, `/object`, `/stream-object` endpoints) now strictly expects the `content` field within message objects (when `input` is an array) to be either a `string` or an `Array` of content parts (e.g., `[{ type: 'text', text: '...' }]`).
   - The previous behavior of allowing a single content object (e.g., `{ type: 'text', ... }`) directly as the value for `content` in message arrays is no longer supported in the API schema. Raw string inputs remain unchanged.
   - Provider logic (`google-ai`, `groq-ai`, `xsai`) updated to align with this stricter definition.
 
   **Console:**
-
   - **Added file and image upload functionality to the Assistant Chat.** Users can now attach multiple files/images via a button, preview attachments, and send them along with text messages.
   - Improved the Assistant Chat resizing: Replaced size toggle buttons with a draggable handle (top-left corner).
   - Chat window dimensions are now saved to local storage and restored on reload.
 
   **Internal:**
-
   - Added comprehensive test suites for Groq and XsAI providers.
 
 - Updated dependencies [[`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2)]:
@@ -193,15 +203,12 @@
   This change introduces a more robust and consistent way errors and successful finishes are handled across the `@voltagent/core` Agent and LLM provider implementations (like `@voltagent/vercel-ai`).
 
   **Key Improvements:**
-
   - **Standardized Errors (`VoltAgentError`):**
-
     - Introduced `VoltAgentError`, `ToolErrorInfo`, and `StreamOnErrorCallback` types in `@voltagent/core`.
     - LLM Providers (e.g., Vercel) now wrap underlying SDK/API errors into a structured `VoltAgentError` before passing them to `onError` callbacks or throwing them.
     - Agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) now consistently handle `VoltAgentError`, enabling richer context (stage, code, tool details) in history events and logs.
 
   - **Standardized Stream Finish Results:**
-
     - Introduced `StreamTextFinishResult`, `StreamTextOnFinishCallback`, `StreamObjectFinishResult`, and `StreamObjectOnFinishCallback` types in `@voltagent/core`.
     - LLM Providers (e.g., Vercel) now construct these standardized result objects upon successful stream completion.
     - Agent streaming methods (`streamText`, `streamObject`) now receive these standardized results in their `onFinish` handlers, ensuring consistent access to final output (`text` or `object`), `usage`, `finishReason`, etc., for history, events, and hooks.
@@ -218,7 +225,6 @@
 ### Patch Changes
 
 - [#33](https://github.com/VoltAgent/voltagent/pull/33) [`3ef2eaa`](https://github.com/VoltAgent/voltagent/commit/3ef2eaa9661e8ecfebf17af56b09af41285d0ca9) Thanks [@kwaa](https://github.com/kwaa)! - Update package.json files:
-
   - Remove `src` directory from the `files` array.
   - Add explicit `exports` field for better module resolution.
 
@@ -233,7 +239,6 @@
 
   ![VoltAgent Demo](https://cdn.voltagent.dev/readme/demo.gif)
   VoltAgent aims to fix that by providing the building blocks you need:
-
   - **`@voltagent/core`**: The foundational engine for agent capabilities.
   - **`@voltagent/voice`**: Easily add voice interaction.
   - **`@voltagent/vercel-ai`**: Seamless integration with [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction).
