@@ -1,6 +1,6 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
-import { z } from "zod";
+import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
 import type { UserContext } from "../agent/types";
 import type { WorkflowState } from "./internal/state";
@@ -8,6 +8,7 @@ import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
 import type { Memory } from "../memory";
 import type { Logger } from "@voltagent/internal";
+import type { createScheduler } from "./scheduler";
 
 export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> {
   /** Timestamp when the workflow was suspended */
@@ -150,6 +151,10 @@ export interface WorkflowRunOptions {
    * If not provided, will use the workflow's logger or global logger
    */
   logger?: Logger;
+  /**
+   * Schedule for the workflow
+   */
+  schedule?: WorkflowScheduleOptions;
 }
 
 export interface WorkflowResumeOptions {
@@ -323,6 +328,20 @@ export type Workflow<
     options?: WorkflowRunOptions,
   ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
   /**
+   * Execute the workflow with the given input
+   * @param input - The input to the workflow
+   * @param optionsWithSchedule - The options for the workflow with schedule properties
+   *
+   * All node-cron options are supported, see https://nodecron.com/scheduling-options.html
+   *
+   * @returns The scheduler instance if a schedule is provided, otherwise undefined.
+   * More details: https://nodecron.com/task-controls.html
+   */
+  scheduledRun: (
+    input: WorkflowInput<INPUT_SCHEMA>,
+    optionsWithSchedule: { schedule: WorkflowScheduleOptions } & Partial<WorkflowRunOptions>,
+  ) => Promise<WorkflowScheduler | undefined>;
+  /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance
    */
@@ -466,5 +485,17 @@ export interface UpdateWorkflowStepOptions {
 }
 
 /**
- * Workflow memory storage interface - provides abstraction for different storage backends
+ * Workflow schedule options
  */
+export interface WorkflowScheduleOptions {
+  expression: string;
+  onResult?: (result: WorkflowExecutionResult<z.ZodTypeAny, z.ZodTypeAny>) => void;
+  options?: {
+    timezone?: string;
+    name?: string;
+    maxExecutions?: number;
+    maxRandomDelay?: number;
+  };
+}
+
+export interface WorkflowScheduler extends ReturnType<typeof createScheduler> {}

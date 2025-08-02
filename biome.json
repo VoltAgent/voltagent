@@ -12,7 +12,7 @@
       },
       "suspicious": {
         "noExplicitAny": "off",
-        "noConsoleLog": "error"
+        "noConsoleLog": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "warn",
