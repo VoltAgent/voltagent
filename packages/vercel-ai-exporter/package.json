@@ -59,6 +59,7 @@
     "dev": "tsup --watch",
     "lint": "biome check src/",
     "lint:fix": "biome check --apply src/",
+    "publint": "publint --strict",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },

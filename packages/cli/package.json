@@ -53,6 +53,7 @@
     "dev": "tsup --watch",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
+    "publint": "publint --strict",
     "start": "node dist/index.js",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
