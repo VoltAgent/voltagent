@@ -447,7 +447,7 @@ describe("Agent", () => {
 
       const history = await agent.getHistory();
 
-      expect(history).toEqual([]);
+      expect(history.entries).toEqual([]);
     });
   });
 
@@ -1022,8 +1022,8 @@ describe("Agent", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       const history = await agent.getHistory();
-      expect(history.length).toBeGreaterThanOrEqual(1);
-      expect(history[0]).toMatchObject({
+      expect(history.entries.length).toBeGreaterThanOrEqual(1);
+      expect(history.entries[0]).toMatchObject({
         input: "Hello",
         output: "Test response",
         status: "completed",
@@ -1439,8 +1439,8 @@ describe("Agent", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       const history = await agent.getHistory();
-      expect(history.length).toBeGreaterThanOrEqual(1);
-      expect(history[0]).toMatchObject({
+      expect(history.entries.length).toBeGreaterThanOrEqual(1);
+      expect(history.entries[0]).toMatchObject({
         input: "Hello",
         // Output may be null in streaming until completion
       });
@@ -1817,10 +1817,10 @@ describe("Agent", () => {
 
       // The actual behavior: maxHistoryEntries is not strictly enforced
       // The agent keeps all history entries in the current implementation
-      expect(history.length).toBeGreaterThanOrEqual(2);
+      expect(history.entries.length).toBeGreaterThanOrEqual(2);
 
       // Verify we have the most recent entries
-      const inputs = history.map((h) => h.input);
+      const inputs = history.entries.map((h) => h.input);
       expect(inputs).toContain("Request 5");
       expect(inputs).toContain("Request 4");
 
@@ -2555,9 +2555,9 @@ describe("Agent", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const history = await agent.getHistory();
-      expect(history).toHaveLength(1);
+      expect(history.entries).toHaveLength(1);
 
-      const entry = history[0];
+      const entry = history.entries[0];
       // In the current implementation, userContext is stored as a plain object in metadata
       expect(entry.metadata).toBeDefined();
       if (entry.metadata && typeof entry.metadata === "object" && "userContext" in entry.metadata) {
@@ -2585,7 +2585,7 @@ describe("Agent", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const history = await agent.getHistory();
-      const entry = history[0];
+      const entry = history.entries[0];
 
       // Note: In the current implementation, events are not directly accessible from history entry
       // They are stored internally but not exposed in the AgentHistoryEntry type

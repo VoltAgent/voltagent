@@ -681,19 +681,53 @@ export class MemoryManager {
   }
 
   /**
-   * Get all history entries for an agent
+   * Get all history entries for an agent with optional pagination
    *
    * @param agentId - The ID of the agent
-   * @returns A promise that resolves to an array of entries
+   * @param options - Pagination options
+   * @returns A promise that resolves to entries and pagination info
    */
-  async getAllHistoryEntries(agentId: string): Promise<any[]> {
+  async getAllHistoryEntries(
+    agentId: string,
+    options?: { page?: number; limit?: number },
+  ): Promise<{
+    entries: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
     try {
-      // Get history records directly by agent ID from history memory
-      const agentEntries = await this.historyMemory.getAllHistoryEntriesByAgent(agentId);
-      return agentEntries;
+      const page = options?.page ?? 0;
+      const limit = options?.limit ?? 10;
+
+      // Get paginated history records from history memory
+      const result = await this.historyMemory.getAllHistoryEntriesByAgent(agentId, page, limit);
+
+      const totalPages = Math.ceil(result.total / limit);
+
+      return {
+        entries: result.entries,
+        pagination: {
+          page,
+          limit,
+          total: result.total,
+          totalPages,
+        },
+      };
     } catch (error) {
       this.logger.error("Failed to get all history entries", { error, agentId });
-      return [];
+      return {
+        entries: [],
+        pagination: {
+          page: 0,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        },
+      };
     }
   }
 

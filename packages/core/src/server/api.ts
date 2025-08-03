@@ -777,6 +777,9 @@ app.openapi(getLogsRoute, (c) => {
 // Get agent history
 app.get("/agents/:id/history", async (c: ApiContext) => {
   const id = c.req.param("id");
+  const page = Number.parseInt(c.req.query("page") || "0");
+  const limit = Number.parseInt(c.req.query("limit") || "10");
+
   const registry = AgentRegistry.getInstance();
   const agent = registry.getAgent(id);
 
@@ -788,14 +791,34 @@ app.get("/agents/:id/history", async (c: ApiContext) => {
     return c.json(response, 404);
   }
 
-  const history = await agent.getHistory();
+  try {
+    const result = await agent.getHistory({ page, limit });
 
-  const response: ApiResponse<AgentHistoryEntry[]> = {
-    success: true,
-    data: history,
-  };
+    const response: ApiResponse<{
+      entries: AgentHistoryEntry[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }> = {
+      success: true,
+      data: {
+        entries: result.entries,
+        pagination: result.pagination,
+      },
+    };
 
-  return c.json(response);
+    return c.json(response);
+  } catch (error) {
+    logger.error("Failed to get agent history:", { error });
+    const response: ApiResponse<null> = {
+      success: false,
+      error: "Failed to retrieve agent history",
+    };
+    return c.json(response, 500);
+  }
 });
 
 // Generate text response
@@ -1840,21 +1863,22 @@ export const createWebSocketServer = () => {
     // Get agent and send initial full state
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (agent) {
-      // Get history - needs await
-      const history = await agent.getHistory();
+      // Get first page of history - needs await
+      const result = await agent.getHistory({ page: 0, limit: 20 });
 
-      if (history && history.length > 0) {
-        // Send all history entries in one message
+      if (result && result.entries.length > 0) {
+        // Send first page of history entries with pagination info
         ws.send(
           JSON.stringify({
             type: "HISTORY_LIST",
             success: true,
-            data: history,
+            data: result.entries,
+            pagination: result.pagination,
           }),
         );
 
         // Also check if there's an active history entry and send it individually
-        const activeHistory = history.find(
+        const activeHistory = result.entries.find(
           (entry: AgentHistoryEntry) => entry.status !== "completed" && entry.status !== "error",
         );
 

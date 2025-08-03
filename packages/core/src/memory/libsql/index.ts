@@ -1441,21 +1441,41 @@ export class LibSQLStorage implements Memory {
   }
 
   /**
-   * Get all history entries for an agent
+   * Get all history entries for an agent with pagination
    * @param agentId Agent ID
-   * @returns Array of all history entries for the agent
+   * @param page Page number (0-based)
+   * @param limit Number of entries per page
+   * @returns Object with entries array and total count
    */
-  async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
+  async getAllHistoryEntriesByAgent(
+    agentId: string,
+    page: number,
+    limit: number,
+  ): Promise<{
+    entries: any[];
+    total: number;
+  }> {
     await this.initialized;
 
     try {
       const tableName = `${this.options.tablePrefix}_agent_history`;
+      const offset = page * limit;
 
-      // Get all entries for the specified agent ID using the new schema
+      // Get total count
+      const countResult = await this.client.execute({
+        sql: `SELECT COUNT(*) as total FROM ${tableName} WHERE agent_id = ?`,
+        args: [agentId],
+      });
+
+      const total = Number(countResult.rows[0].total);
+
+      // Get paginated entries for the specified agent ID using the new schema
       const result = await this.client.execute({
         sql: `SELECT id, agent_id, timestamp, status, input, output, usage, metadata, userId, conversationId 
-					FROM ${tableName} WHERE agent_id = ?`,
-        args: [agentId],
+					FROM ${tableName} WHERE agent_id = ?
+					ORDER BY timestamp DESC
+					LIMIT ? OFFSET ?`,
+        args: [agentId, limit, offset],
       });
 
       // Construct entry objects from rows
@@ -1547,11 +1567,17 @@ export class LibSQLStorage implements Memory {
         }),
       );
 
-      // Return completed entries
-      return completeEntries;
+      // Return completed entries with total
+      return {
+        entries: completeEntries,
+        total,
+      };
     } catch (error) {
       this.debug(`Error getting history entries for agent ${agentId}`, error);
-      return [];
+      return {
+        entries: [],
+        total: 0,
+      };
     }
   }
 

@@ -1344,22 +1344,54 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
     return data ? data.value : undefined;
   }
 
-  public async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
-    // 1. Get all history entries for the agent using new structured format
+  public async getAllHistoryEntriesByAgent(
+    agentId: string,
+    page: number,
+    limit: number,
+  ): Promise<{
+    entries: any[];
+    total: number;
+  }> {
+    // Get total count
+    const { count, error: countError } = await this.client
+      .from(this.historyTable)
+      .select("*", { count: "exact", head: true })
+      .eq("agent_id", agentId);
+
+    if (countError) {
+      console.error(`Error getting count for agent ${agentId}:`, countError);
+      return {
+        entries: [],
+        total: 0,
+      };
+    }
+
+    const total = count || 0;
+    const offset = page * limit;
+
+    // 1. Get paginated history entries for the agent using new structured format
     const { data: entriesData, error: entriesError } = await this.client
       .from(this.historyTable)
       .select(
         "id, agent_id, timestamp, status, input, output, usage, metadata, user_id, conversation_id",
       )
-      .eq("agent_id", agentId);
+      .eq("agent_id", agentId)
+      .order("timestamp", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (entriesError) {
       console.error(`Error getting all history entries for agent ${agentId}:`, entriesError);
-      return [];
+      return {
+        entries: [],
+        total: 0,
+      };
     }
 
     if (!entriesData) {
-      return [];
+      return {
+        entries: [],
+        total: 0,
+      };
     }
 
     // Use Promise.all to fetch details for all entries concurrently
@@ -1451,7 +1483,10 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
     // If not, this sort might need adjustment based on actual entry structure.
     // Example: completeEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    return completeEntries;
+    return {
+      entries: completeEntries,
+      total,
+    };
   }
 
   public async addTimelineEvent(

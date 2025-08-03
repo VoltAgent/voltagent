@@ -1119,10 +1119,18 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Get agent's history
+   * Get agent's history with pagination
    */
-  public async getHistory(): Promise<AgentHistoryEntry[]> {
-    return await this.historyManager.getEntries();
+  public async getHistory(options?: { page?: number; limit?: number }): Promise<{
+    entries: AgentHistoryEntry[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    return await this.historyManager.getEntries(options);
   }
 
   /**

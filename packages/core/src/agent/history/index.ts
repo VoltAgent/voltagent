@@ -285,8 +285,8 @@ export class HistoryManager {
     }
 
     if (this.maxEntries > 0) {
-      const entries = await this.getEntries();
-      if (entries.length >= this.maxEntries) {
+      const result = await this.getEntries();
+      if (result.entries.length >= this.maxEntries) {
         // TODO: Implement deletion of oldest entry
       }
     }
@@ -408,13 +408,31 @@ export class HistoryManager {
   }
 
   /**
-   * Get all history entries
+   * Get all history entries with optional pagination
    *
-   * @returns Array of history entries
+   * @returns Object with entries array and pagination info
    */
-  public async getEntries(): Promise<AgentHistoryEntry[]> {
-    if (!this.agentId) return [];
-    return this.memoryManager.getAllHistoryEntries(this.agentId);
+  public async getEntries(options?: { page?: number; limit?: number }): Promise<{
+    entries: AgentHistoryEntry[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    if (!this.agentId) {
+      return {
+        entries: [],
+        pagination: {
+          page: 0,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+    return this.memoryManager.getAllHistoryEntries(this.agentId, options);
   }
 
   /**

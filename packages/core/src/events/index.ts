@@ -126,7 +126,14 @@ export class AgentEventEmitter extends EventEmitter {
       event.startTime = new Date().toISOString();
     }
 
-    // Add to the background queue
+    // DUAL-PATH: Emit immediately for real-time updates
+    this.emitImmediateEvent({
+      agentId,
+      historyId,
+      event,
+    });
+
+    // Add to the background queue for persistence
     this.timelineEventQueue.enqueue({
       id: `timeline-event-${event.id}`,
       operation: async () => {
@@ -142,6 +149,32 @@ export class AgentEventEmitter extends EventEmitter {
         });
       },
     });
+  }
+
+  /**
+   * Emit immediate event for real-time updates (bypasses queue)
+   */
+  private emitImmediateEvent(params: {
+    agentId: string;
+    historyId: string;
+    event: AgentTimelineEvent;
+  }): void {
+    const { agentId, historyId, event } = params;
+    const logger = new LoggerProxy({ component: "agent-event-emitter" });
+
+    try {
+      // Emit event immediately for WebSocket broadcast
+      this.emit("immediateAgentEvent", {
+        agentId,
+        historyId,
+        event,
+      });
+
+      logger.trace(`Immediate event emitted: ${event.name} for agent ${agentId}`);
+    } catch (error) {
+      // Don't throw - immediate events are best-effort
+      logger.error("Failed to emit immediate event", { error });
+    }
   }
 
   /**
@@ -350,7 +383,8 @@ export class AgentEventEmitter extends EventEmitter {
       if (!parentAgent) continue;
 
       // Find active history entry for the parent
-      const parentHistory = await parentAgent.getHistory();
+      const parentHistoryResult = await parentAgent.getHistory();
+      const parentHistory = parentHistoryResult.entries;
       const activeParentHistoryEntry =
         parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
 
@@ -410,7 +444,8 @@ export class AgentEventEmitter extends EventEmitter {
       if (!parentAgent) continue;
 
       // Find active history entry for the parent
-      const parentHistory = await parentAgent.getHistory();
+      const parentHistoryResult = await parentAgent.getHistory();
+      const parentHistory = parentHistoryResult.entries;
       const activeParentHistoryEntry =
         parentHistory.length > 0 ? parentHistory[parentHistory.length - 1] : undefined;
 

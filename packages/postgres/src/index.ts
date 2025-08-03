@@ -1870,21 +1870,42 @@ export class PostgresStorage implements Memory {
   }
 
   /**
-   * Get all history entries for an agent
+   * Get all history entries for an agent with pagination
    */
-  public async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
+  public async getAllHistoryEntriesByAgent(
+    agentId: string,
+    page: number,
+    limit: number,
+  ): Promise<{
+    entries: any[];
+    total: number;
+  }> {
     await this.initialized;
 
     const client = await this.pool.connect();
     try {
+      // Get total count
+      const countResult = await client.query(
+        `
+        SELECT COUNT(*) as total 
+        FROM ${this.options.tablePrefix}_agent_history
+        WHERE agent_id = $1
+        `,
+        [agentId],
+      );
+
+      const total = Number.parseInt(countResult.rows[0].total);
+      const offset = page * limit;
+
       const result = await client.query(
         `
         SELECT id, agent_id, timestamp, status, input, output, usage, metadata, userid, conversationid 
         FROM ${this.options.tablePrefix}_agent_history
         WHERE agent_id = $1
         ORDER BY timestamp DESC
+        LIMIT $2 OFFSET $3
         `,
-        [agentId],
+        [agentId, limit, offset],
       );
 
       // Construct entry objects from rows
@@ -1978,7 +1999,10 @@ export class PostgresStorage implements Memory {
       );
 
       // Return completed entries
-      return completeEntries;
+      return {
+        entries: completeEntries,
+        total,
+      };
     } catch (error) {
       this.debug("Error getting history entries:", error);
       throw new Error("Failed to get history entries from PostgreSQL database");
