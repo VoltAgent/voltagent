@@ -1,8 +1,12 @@
-import VoltAgent, { createWorkflowChain } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
-import { z } from "zod";
+---
+"@voltagent/core": minor
+---
 
-// Example 1: Workflow with built-in schedule
+implement scheduled workflow execution with cron support
+
+### Usage
+
+```typescript
 export const scheduledReportWorkflow = createWorkflowChain({
   id: "daily-report",
   name: "Scheduled Daily Report Generator",
@@ -59,5 +63,6 @@ await scheduledReportWorkflow.scheduledRun(
         console.log(`✅ Report generated: ${result.result.reportPath}`);
       },
     },
-  },
+  }
 );
+```
