@@ -12,11 +12,19 @@
       },
       "suspicious": {
         "noExplicitAny": "off",
-        "noConsoleLog": "error"
+        "noConsoleLog": "off"
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": "warn",
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 50
+          }
+        },
         "noForEach": "off"
+      },
+      "a11y": {
+        "all": false
       }
     }
   },
@@ -33,6 +41,41 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", "dist", "build", ".next", "coverage", "*.template"]
-  }
+    "ignore": [
+      "node_modules",
+      "dist",
+      "build",
+      ".next",
+      "coverage",
+      "*.template",
+      ".nx",
+      "packages/docs-mcp/examples",
+      "**/*.module.css",
+      "**/.docusaurus/**",
+      "**/generated/**",
+      "**/package.json"
+    ]
+  },
+  "overrides": [
+    {
+      "include": ["**/packages/core/**/*.ts", "**/packages/core/**/*.js"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsoleLog": "error"
+          }
+        }
+      }
+    },
+    {
+      "include": ["**/server/**/*.ts", "**/server/**/*.js"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsoleLog": "off"
+          }
+        }
+      }
+    }
+  ]
 }

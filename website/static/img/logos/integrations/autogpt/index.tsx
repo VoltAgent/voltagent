@@ -17,25 +17,8 @@ export const AutoGPTLogo = ({ className }: { className?: string }) => (
       strokeWidth="2"
       fill="none"
     />
-    <path
-      d="M9 9L15 15"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path
-      d="M15 9L9 15"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <circle
-      cx="12"
-      cy="12"
-      r="2"
-      stroke="currentColor"
-      strokeWidth="2"
-      fill="currentColor"
-    />
+    <path d="M9 9L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M15 9L9 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="2" fill="currentColor" />
   </svg>
 );

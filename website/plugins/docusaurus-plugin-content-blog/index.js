@@ -4,10 +4,7 @@ const path = require("node:path");
 
 const defaultBlogPlugin = blogPluginExports.default;
 
-const pluginDataDirRoot = path.join(
-  ".docusaurus",
-  "docusaurus-plugin-content-blog",
-);
+const pluginDataDirRoot = path.join(".docusaurus", "docusaurus-plugin-content-blog");
 const aliasedSource = (source) =>
   `~blog/${utils.posixPath(path.relative(pluginDataDirRoot, source))}`;
 
@@ -19,24 +16,19 @@ function paginateBlogPosts({
   postsPerPageOption,
 }) {
   const totalCount = blogPosts.length;
-  const postsPerPage =
-    postsPerPageOption === "ALL" ? totalCount : postsPerPageOption;
+  const postsPerPage = postsPerPageOption === "ALL" ? totalCount : postsPerPageOption;
 
   const numberOfPages = Math.ceil(totalCount / postsPerPage);
 
   const pages = [];
 
   function permalink(page) {
-    return page > 0
-      ? utils.normalizeUrl([basePageUrl, `page/${page + 1}`])
-      : basePageUrl;
+    return page > 0 ? utils.normalizeUrl([basePageUrl, `page/${page + 1}`]) : basePageUrl;
   }
 
   for (let page = 0; page < numberOfPages; page += 1) {
     pages.push({
-      items: blogPosts
-        .slice(page * postsPerPage, (page + 1) * postsPerPage)
-        .map((item) => item.id),
+      items: blogPosts.slice(page * postsPerPage, (page + 1) * postsPerPage).map((item) => item.id),
       metadata: {
         permalink: permalink(page),
         page: page + 1,
@@ -63,9 +55,8 @@ function getMultipleRandomElement(arr, num) {
 function getReletadPosts(allBlogPosts, metadata) {
   const relatedPosts = allBlogPosts.filter(
     (post) =>
-      post.metadata.frontMatter.tags?.some((tag) =>
-        metadata.frontMatter.tags?.includes(tag),
-      ) && post.metadata.title !== metadata.title,
+      post.metadata.frontMatter.tags?.some((tag) => metadata.frontMatter.tags?.includes(tag)) &&
+      post.metadata.title !== metadata.title,
   );
 
   const randomThreeRelatedPosts = getMultipleRandomElement(relatedPosts, 3);
@@ -153,11 +144,7 @@ async function blogPluginExtended(...pluginArgs) {
     contentLoaded: async (data) => {
       const { content: blogContents, actions } = data;
       const { addRoute, createData } = actions;
-      const {
-        blogPosts: allBlogPosts,
-        blogTags,
-        blogTagsListPath,
-      } = blogContents;
+      const { blogPosts: allBlogPosts, blogTags, blogTagsListPath } = blogContents;
 
       const blogItemsToMetadata = {};
 
@@ -274,9 +261,7 @@ async function blogPluginExtended(...pluginArgs) {
 
           const authorListPaginated = paginateBlogPosts({
             blogPosts: authorPosts,
-            basePageUrl: `/blog/author/${author
-              .toLowerCase()
-              .replace(/_/g, "-")}`,
+            basePageUrl: `/blog/author/${author.toLowerCase().replace(/_/g, "-")}`,
             blogTitle: `Posts by ${author}`,
             blogDescription: `Blog posts written by ${author}`,
             postsPerPageOption: "ALL",

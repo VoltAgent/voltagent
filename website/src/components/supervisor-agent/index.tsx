@@ -1,9 +1,4 @@
-import {
-  CpuChipIcon,
-  EyeIcon,
-  UserPlusIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline";
+import { CpuChipIcon, EyeIcon, UserPlusIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import { useState } from "react";
 import { MobileCodeBlock } from "./mobile-code-block";
@@ -11,9 +6,7 @@ import { MobileVersion } from "./mobile-version";
 import { WorkflowCodeExample } from "./workflow-code-example";
 
 export function SupervisorAgent() {
-  const [highlightedSection, setHighlightedSection] = useState<string | null>(
-    "centralized",
-  );
+  const [highlightedSection, setHighlightedSection] = useState<string | null>("centralized");
 
   const isMobile = useMediaQuery("(max-width: 1023px)");
 
@@ -50,18 +43,14 @@ export function SupervisorAgent() {
             Supervisor agent orchestration
           </p>
           <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
-            Build powerful multi-agent systems with a central Supervisor Agent
-            that coordinates specialized agents.
+            Build powerful multi-agent systems with a central Supervisor Agent that coordinates
+            specialized agents.
           </p>
         </div>
 
         {/* Code Example - Full Width */}
         <div className="">
-          {isMobile ? (
-            <MobileVersion isVisible={true} />
-          ) : (
-            <WorkflowCodeExample isVisible={true} />
-          )}
+          {isMobile ? <MobileVersion isVisible={true} /> : <WorkflowCodeExample isVisible={true} />}
         </div>
 
         {/* Code block section */}
@@ -112,21 +101,14 @@ export function SupervisorAgent() {
                     </div>
                     <code className="py-5 px-3 block text-xs">
                       {/* Orchestrator initialization - Common for all features */}
-                      <span
-                        className={`block ${getHighlightClasses(
-                          "orchestrator",
-                        )}`}
-                      >
+                      <span className={`block ${getHighlightClasses("orchestrator")}`}>
                         <span className="text-blue-400">import</span>
                         <span>
                           {" "}
                           {"{"} Agent {"}"}{" "}
                         </span>
                         <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300">
-                          {" "}
-                          "@voltagent/core"
-                        </span>
+                        <span className="text-yellow-300"> "@voltagent/core"</span>
                         <span>;</span>
                         <br />
                         <span className="text-blue-400">import</span>
@@ -135,10 +117,7 @@ export function SupervisorAgent() {
                           {"{"} VercelAIProvider {"}"}{" "}
                         </span>
                         <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300">
-                          {" "}
-                          "@voltagent/vercel-ai"
-                        </span>
+                        <span className="text-yellow-300"> "@voltagent/vercel-ai"</span>
                         <span>;</span>
                         <br />
                         <span className="text-blue-400">import</span>
@@ -147,25 +126,16 @@ export function SupervisorAgent() {
                           {"{"} openai {"}"}{" "}
                         </span>
                         <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300">
-                          {" "}
-                          "@ai-sdk/openai"
-                        </span>
+                        <span className="text-yellow-300"> "@ai-sdk/openai"</span>
                         <span>;</span>
                         <br />
                         <br />
                       </span>
 
                       {/* Centralized Coordination */}
-                      <span
-                        className={`block ${getHighlightClasses(
-                          "centralized",
-                        )}`}
-                      >
+                      <span className={`block ${getHighlightClasses("centralized")}`}>
                         {/* Define supervisor agent */}
-                        <span className="text-gray-300">
-                          {"// Define supervisor agent"}
-                        </span>
+                        <span className="text-gray-300">{"// Define supervisor agent"}</span>
                         <br />
                         <span className="text-blue-400">const</span>
                         <span> supervisorAgent = </span>
@@ -174,9 +144,7 @@ export function SupervisorAgent() {
                         <span>{"({"}</span>
                         <br />
                         <span className="ml-4">name: </span>
-                        <span className="text-yellow-300">
-                          "Supervisor Agent"
-                        </span>
+                        <span className="text-yellow-300">"Supervisor Agent"</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">description: </span>
@@ -187,10 +155,7 @@ export function SupervisorAgent() {
                         <br />
                         <span className="ml-4">llm: </span>
                         <span className="text-blue-400">new</span>
-                        <span className="text-green-400">
-                          {" "}
-                          VercelAIProvider
-                        </span>
+                        <span className="text-green-400"> VercelAIProvider</span>
                         <span>(),</span>
                         <br />
                         <span className="ml-4">model: </span>
@@ -199,9 +164,7 @@ export function SupervisorAgent() {
                         <span className="text-yellow-300">"gpt-4o-mini"</span>
                         <span>),</span>
                         <br />
-                        <span className="ml-4">
-                          subAgents: [storyAgent, translatorAgent]
-                        </span>
+                        <span className="ml-4">subAgents: [storyAgent, translatorAgent]</span>
                         <br />
                         <span>{"});"}</span>
                         <br />
@@ -209,15 +172,9 @@ export function SupervisorAgent() {
                       </span>
 
                       {/* Specialized Agent Roles */}
-                      <span
-                        className={`block ${getHighlightClasses(
-                          "specialized",
-                        )}`}
-                      >
+                      <span className={`block ${getHighlightClasses("specialized")}`}>
                         {/* Define story agent */}
-                        <span className="text-gray-300">
-                          {"// Define story agent"}
-                        </span>
+                        <span className="text-gray-300">{"// Define story agent"}</span>
                         <br />
                         <span className="text-blue-400">const</span>
                         <span> storyAgent = </span>
@@ -230,17 +187,12 @@ export function SupervisorAgent() {
                         <span>,</span>
                         <br />
                         <span className="ml-4">description: </span>
-                        <span className="text-yellow-300">
-                          "You are a creative story writer."
-                        </span>
+                        <span className="text-yellow-300">"You are a creative story writer."</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">llm: </span>
                         <span className="text-blue-400">new</span>
-                        <span className="text-green-400">
-                          {" "}
-                          VercelAIProvider
-                        </span>
+                        <span className="text-green-400"> VercelAIProvider</span>
                         <span>(),</span>
                         <br />
                         <span className="ml-4">model: </span>
@@ -255,13 +207,9 @@ export function SupervisorAgent() {
                       </span>
 
                       {/* Shared Memory System */}
-                      <span
-                        className={`block ${getHighlightClasses("memory")}`}
-                      >
+                      <span className={`block ${getHighlightClasses("memory")}`}>
                         {/* Define translator agent */}
-                        <span className="text-gray-300">
-                          {"// Define translator agent"}
-                        </span>
+                        <span className="text-gray-300">{"// Define translator agent"}</span>
                         <br />
                         <span className="text-blue-400">const</span>
                         <span> translatorAgent = </span>
@@ -270,23 +218,16 @@ export function SupervisorAgent() {
                         <span>{"({"}</span>
                         <br />
                         <span className="ml-4">name: </span>
-                        <span className="text-yellow-300">
-                          "Translator Agent"
-                        </span>
+                        <span className="text-yellow-300">"Translator Agent"</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">description: </span>
-                        <span className="text-yellow-300">
-                          "Translate English text to German"
-                        </span>
+                        <span className="text-yellow-300">"Translate English text to German"</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">llm: </span>
                         <span className="text-blue-400">new</span>
-                        <span className="text-green-400">
-                          {" "}
-                          VercelAIProvider
-                        </span>
+                        <span className="text-green-400"> VercelAIProvider</span>
                         <span>(),</span>
                         <br />
                         <span className="ml-4">model: </span>
@@ -301,9 +242,7 @@ export function SupervisorAgent() {
                       </span>
 
                       {/* Dynamic Agent Selection */}
-                      <span
-                        className={`block ${getHighlightClasses("dynamic")}`}
-                      >
+                      <span className={`block ${getHighlightClasses("dynamic")}`}>
                         {/* Stream response from supervisor agent */}
                         <span className="text-gray-300">
                           {"// Stream response from supervisor agent"}
@@ -362,9 +301,8 @@ export function SupervisorAgent() {
                       </div>
                     </div>
                     <div className="text-gray-400 text-xs leading-relaxed">
-                      Supervisor Agent manages the workflow, delegates tasks to
-                      specialized agents, and maintains context across the
-                      entire process.
+                      Supervisor Agent manages the workflow, delegates tasks to specialized agents,
+                      and maintains context across the entire process.
                     </div>
                   </div>
                 </div>
@@ -391,8 +329,8 @@ export function SupervisorAgent() {
                       </div>
                     </div>
                     <div className="text-gray-400 text-xs leading-relaxed">
-                      Each agent in the workflow can be optimized for specific
-                      tasks, with custom tools, knowledge, and capabilities.
+                      Each agent in the workflow can be optimized for specific tasks, with custom
+                      tools, knowledge, and capabilities.
                     </div>
                   </div>
                 </div>
@@ -414,14 +352,11 @@ export function SupervisorAgent() {
                       <div className="bg-indigo-500/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
                         <EyeIcon className="w-5 h-5 text-indigo-500" />
                       </div>
-                      <div className="text-base font-semibold text-white">
-                        Shared Memory System
-                      </div>
+                      <div className="text-base font-semibold text-white">Shared Memory System</div>
                     </div>
                     <div className="text-gray-400 text-xs leading-relaxed">
-                      Maintain context and state across multiple agent
-                      interactions, enabling complex reasoning and multi-step
-                      problem solving.
+                      Maintain context and state across multiple agent interactions, enabling
+                      complex reasoning and multi-step problem solving.
                     </div>
                   </div>
                 </div>
@@ -448,9 +383,8 @@ export function SupervisorAgent() {
                       </div>
                     </div>
                     <div className="text-gray-400 text-xs leading-relaxed">
-                      Supervisor intelligently routes tasks to the most
-                      appropriate agents based on the current context and
-                      requirements.
+                      Supervisor intelligently routes tasks to the most appropriate agents based on
+                      the current context and requirements.
                     </div>
                   </div>
                 </div>

@@ -120,7 +120,7 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RES
  * @private - INTERNAL USE ONLY
  */
 export type InternalAnyWorkflowStep<
-  INPUT,
+  INPUT = DangerouslyAllowAny,
   DATA = DangerouslyAllowAny,
   RESULT = DangerouslyAllowAny,
   SUSPEND_DATA = DangerouslyAllowAny,

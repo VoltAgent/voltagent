@@ -1,8 +1,8 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import { getGlobalLogger } from "../../logger";
+import type { WorkflowExecuteContext } from "../internal/types";
 import { defaultStepConfig } from "../internal/utils";
 import type { WorkflowStepTap, WorkflowStepTapConfig } from "./types";
-import type { WorkflowExecuteContext } from "../internal/types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * A safe way to tap into the workflow state without affecting the result.

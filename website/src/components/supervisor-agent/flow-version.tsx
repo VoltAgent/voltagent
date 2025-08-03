@@ -180,20 +180,8 @@ const initialNodes: Node[] = [
     type: "custom",
     draggable: false,
   },
-  createAgentNode(
-    "agent-b",
-    { x: 500, y: 75 },
-    "Agent B",
-    "gpt-4",
-    nodeStyles.agentB,
-  ),
-  createAgentNode(
-    "agent-c",
-    { x: 500, y: 150 },
-    "Agent C",
-    "Custom LLM",
-    nodeStyles.agentC,
-  ),
+  createAgentNode("agent-b", { x: 500, y: 75 }, "Agent B", "gpt-4", nodeStyles.agentB),
+  createAgentNode("agent-c", { x: 500, y: 150 }, "Agent C", "Custom LLM", nodeStyles.agentC),
   {
     id: "team-line",
     position: { x: 485, y: 220 },
@@ -208,9 +196,7 @@ const initialNodes: Node[] = [
     id: "conversation-history",
     position: { x: 0, y: 0 },
     data: {
-      label: (
-        <span className={nodeStyles.historyLabel}>Conversation-History</span>
-      ),
+      label: <span className={nodeStyles.historyLabel}>Conversation-History</span>,
     },
     type: "custom",
     draggable: false,
@@ -249,12 +235,7 @@ const initialNodes: Node[] = [
 
 const initialEdges: Edge[] = [];
 
-const createEdge = (
-  source: string,
-  target: string,
-  color: string,
-  isResponse = false,
-): Edge => {
+const createEdge = (source: string, target: string, color: string, isResponse = false): Edge => {
   const edge: Edge = {
     id: `${source}-${target}`,
     source: isResponse ? target : source,
@@ -280,13 +261,7 @@ const createEdge = (
       height: 20,
     },
     data: {
-      marker: (
-        <circle
-          r="4"
-          fill={color}
-          className="animate-[moveAlongPath_2s_linear_infinite]"
-        />
-      ),
+      marker: <circle r="4" fill={color} className="animate-[moveAlongPath_2s_linear_infinite]" />,
     },
     sourceHandle: isResponse ? "default-target" : "default-source",
     targetHandle: isResponse ? "default-source" : "default-target",
@@ -319,13 +294,7 @@ const createUserEdge = (
       height: 20,
     },
     data: {
-      marker: (
-        <circle
-          r="4"
-          fill={color}
-          className="animate-[moveAlongPath_2s_linear_infinite]"
-        />
-      ),
+      marker: <circle r="4" fill={color} className="animate-[moveAlongPath_2s_linear_infinite]" />,
     },
     sourceHandle: isResponse ? "default-target" : "default-source",
     targetHandle: isResponse ? "default-source" : "default-target",
@@ -359,13 +328,7 @@ const createMemoryEdge = (source: string, target: string): Edge => ({
   sourceHandle: "memory-source",
   targetHandle: "memory-target",
   data: {
-    marker: (
-      <circle
-        r="4"
-        fill="#4b5563"
-        className="animate-[moveAlongPath_2s_linear_infinite]"
-      />
-    ),
+    marker: <circle r="4" fill="#4b5563" className="animate-[moveAlongPath_2s_linear_infinite]" />,
   },
 });
 
@@ -388,9 +351,7 @@ export const FlowVersion = ({ isVisible }: FlowVersionProps) => {
     setEdges([]);
 
     const showExecuting = (agentId: string) => {
-      const agentNode = document.querySelector(
-        `[data-id="${agentId}"] [data-status]`,
-      );
+      const agentNode = document.querySelector(`[data-id="${agentId}"] [data-status]`);
       if (agentNode) {
         agentNode.classList.remove("opacity-0");
         agentNode.classList.add("opacity-70");
@@ -398,9 +359,7 @@ export const FlowVersion = ({ isVisible }: FlowVersionProps) => {
     };
 
     const hideExecuting = (agentId: string) => {
-      const agentNode = document.querySelector(
-        `[data-id="${agentId}"] [data-status]`,
-      );
+      const agentNode = document.querySelector(`[data-id="${agentId}"] [data-status]`);
       if (agentNode) {
         agentNode.classList.remove("opacity-70");
         agentNode.classList.add("opacity-0");
@@ -408,9 +367,7 @@ export const FlowVersion = ({ isVisible }: FlowVersionProps) => {
     };
 
     const showThinking = () => {
-      const supervisorNode = document.querySelector(
-        `[data-id="supervisor-group"] [data-thinking]`,
-      );
+      const supervisorNode = document.querySelector(`[data-id="supervisor-group"] [data-thinking]`);
       if (supervisorNode) {
         supervisorNode.classList.remove("opacity-0");
         supervisorNode.classList.add("opacity-70");
@@ -418,9 +375,7 @@ export const FlowVersion = ({ isVisible }: FlowVersionProps) => {
     };
 
     const hideThinking = () => {
-      const supervisorNode = document.querySelector(
-        `[data-id="supervisor-group"] [data-thinking]`,
-      );
+      const supervisorNode = document.querySelector(`[data-id="supervisor-group"] [data-thinking]`);
       if (supervisorNode) {
         supervisorNode.classList.remove("opacity-70");
         supervisorNode.classList.add("opacity-0");

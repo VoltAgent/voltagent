@@ -1,7 +1,7 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
-import { LoggerProxy } from "./logger-proxy";
-import * as loggerModule from "./index";
 import type { Logger } from "@voltagent/internal";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as loggerModule from "./index";
+import { LoggerProxy } from "./logger-proxy";
 
 // Mock the getGlobalLogger function
 vi.mock("./index", () => ({

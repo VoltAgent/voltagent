@@ -1,11 +1,11 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectTypeOf } from "vitest";
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";
 import type {
-  VoltOpsClientOptions,
-  PromptReference,
-  VoltOpsPromptManager,
   PromptContent,
+  PromptReference,
+  VoltOpsClientOptions,
+  VoltOpsPromptManager,
 } from "./types";
 
 // Mock for VoltOpsPromptApiClient

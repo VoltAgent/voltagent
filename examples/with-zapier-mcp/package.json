@@ -1,29 +1,29 @@
 {
   "name": "voltagent-example-with-zapier-mcp",
-  "version": "1.0.0",
-  "private": true,
   "description": "",
-  "keywords": [],
-  "license": "ISC",
+  "version": "1.0.0",
   "author": "",
-  "main": "index.js",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src",
-    "start": "node dist/index.js",
-    "volt": "volt"
-  },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.8",
     "@aws-sdk/credential-providers": "~3.799.0",
     "@voltagent/core": "~0.1.72",
     "@voltagent/logger": "^0.1.1",
     "@voltagent/vercel-ai": "~0.1.16",
-    "zod": "3.24.2"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^22.15.2",
+    "@types/node": "^24.0.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
   }
 }

@@ -47,8 +47,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -79,19 +78,13 @@ const codeExamples = {
       <span className="text-gray-300">LangfuseExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        publicKey: process.env.LANGFUSE_PUBLIC_KEY,
-      </span>
+      <span className="text-gray-300">publicKey: process.env.LANGFUSE_PUBLIC_KEY,</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        secretKey: process.env.LANGFUSE_SECRET_KEY,
-      </span>
+      <span className="text-gray-300">secretKey: process.env.LANGFUSE_SECRET_KEY,</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        baseUrl: process.env.LANGFUSE_BASEURL,
-      </span>
+      <span className="text-gray-300">baseUrl: process.env.LANGFUSE_BASEURL,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -119,8 +112,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -151,9 +143,7 @@ const codeExamples = {
       <span className="text-gray-300">PrometheusExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        endpoint: process.env.PROMETHEUS_ENDPOINT,
-      </span>
+      <span className="text-gray-300">endpoint: process.env.PROMETHEUS_ENDPOINT,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -175,8 +165,7 @@ const codeExamples = {
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">* as Sentry</span>{" "}
-      <span className="text-blue-400">from</span>{" "}
+      <span className="text-gray-300">* as Sentry</span> <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@sentry/node"</span>
       <br />
       <br />
@@ -192,8 +181,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -244,8 +232,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -276,9 +263,7 @@ const codeExamples = {
       <span className="text-gray-300">DatadogExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        apiKey: process.env.DATADOG_API_KEY,
-      </span>
+      <span className="text-gray-300">apiKey: process.env.DATADOG_API_KEY,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -306,8 +291,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -338,9 +322,7 @@ const codeExamples = {
       <span className="text-gray-300">OpenTelemetryExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        endpoint: process.env.OPENTELEMETRY_ENDPOINT,
-      </span>
+      <span className="text-gray-300">endpoint: process.env.OPENTELEMETRY_ENDPOINT,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -368,8 +350,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -400,9 +381,7 @@ const codeExamples = {
       <span className="text-gray-300">OpenTelemetryExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        endpoint: process.env.OPENTELEMETRY_ENDPOINT,
-      </span>
+      <span className="text-gray-300">endpoint: process.env.OPENTELEMETRY_ENDPOINT,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -430,8 +409,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -462,9 +440,7 @@ const codeExamples = {
       <span className="text-gray-300">OpenTelemetryExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        endpoint: process.env.OPENTELEMETRY_ENDPOINT,
-      </span>
+      <span className="text-gray-300">endpoint: process.env.OPENTELEMETRY_ENDPOINT,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -492,8 +468,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -524,9 +499,7 @@ const codeExamples = {
       <span className="text-gray-300">OpenTelemetryExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        endpoint: process.env.OPENTELEMETRY_ENDPOINT,
-      </span>
+      <span className="text-gray-300">endpoint: process.env.OPENTELEMETRY_ENDPOINT,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -554,8 +527,7 @@ const codeExamples = {
       <br />
       <br />
       <span className="text-purple-400">export const</span>{" "}
-      <span className="text-gray-300">volt</span>{" "}
-      <span className="text-gray-500">=</span>{" "}
+      <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
       <span className="text-purple-400">new</span>{" "}
       <span className="text-gray-300">VoltAgent({"{"}</span>
       <br />
@@ -586,9 +558,7 @@ const codeExamples = {
       <span className="text-gray-300">OpenTelemetryExporter({"{"}</span>
       <br />
       {"        "}
-      <span className="text-gray-300">
-        endpoint: process.env.OPENTELEMETRY_ENDPOINT,
-      </span>
+      <span className="text-gray-300">endpoint: process.env.OPENTELEMETRY_ENDPOINT,</span>
       <br />
       {"      "}
       <span className="text-gray-300">{"}"}),</span>
@@ -620,9 +590,7 @@ const tabs: TabData[] = [
     name: "Langfuse",
     description: "LLM-specific observability platform",
     isConnected: false,
-    icon: (
-      <LangfuseLogo className="landing-md:w-8 landing-md:h-10 landing-xs:w-6 landing-xs:h-8" />
-    ),
+    icon: <LangfuseLogo className="landing-md:w-8 landing-md:h-10 landing-xs:w-6 landing-xs:h-8" />,
     codeJSX: codeExamples.langfuse,
   },
 
@@ -641,9 +609,7 @@ const tabs: TabData[] = [
     name: "Dash0",
     description: "Cloud monitoring and analytics platform",
     isConnected: false,
-    icon: (
-      <Dash0Logo className="landing-md:w-16 landing-md:h-10 landing-xs:w-12 landing-xs:h-8" />
-    ),
+    icon: <Dash0Logo className="landing-md:w-16 landing-md:h-10 landing-xs:w-12 landing-xs:h-8" />,
     codeJSX: codeExamples.dash0,
   },
   {
@@ -720,9 +686,7 @@ const TabItem = ({
     // biome-ignore lint/a11y/useKeyWithClickEvents: ignore
     <div
       className={`flex flex-col items-center px-3 pt-2 cursor-pointer transition-all duration-300 ease-in-out  min-w-[80px] ${
-        isActive
-          ? "  "
-          : "border-transparent text-gray-300 hover:text-gray-200 "
+        isActive ? "  " : "border-transparent text-gray-300 hover:text-gray-200 "
       }`}
       onClick={onClick}
     >
@@ -731,9 +695,7 @@ const TabItem = ({
           <div className=" ">
             <div
               className={` ${
-                isActive
-                  ? "scale-105 transform transition-transform duration-300"
-                  : ""
+                isActive ? "scale-105 transform transition-transform duration-300" : ""
               }`}
             >
               {React.cloneElement(tab.icon as React.ReactElement)}
@@ -774,10 +736,7 @@ const codeBlockVariants = {
   },
 };
 
-const CodeBlock = ({
-  code,
-  isActive,
-}: { code: React.ReactNode; isActive: boolean }) => {
+const CodeBlock = ({ code, isActive }: { code: React.ReactNode; isActive: boolean }) => {
   if (!isActive) return null;
 
   return (
@@ -862,11 +821,7 @@ export default function Observability() {
       <div className=" px-0">
         <div className="relative">
           {tabs.map((tab) => (
-            <CodeBlock
-              key={tab.id}
-              code={tab.codeJSX}
-              isActive={activeTab === tab.id}
-            />
+            <CodeBlock key={tab.id} code={tab.codeJSX} isActive={activeTab === tab.id} />
           ))}
         </div>
       </div>

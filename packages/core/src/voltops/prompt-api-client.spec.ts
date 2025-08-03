@@ -1,7 +1,7 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectTypeOf } from "vitest";
 import { VoltOpsPromptApiClient } from "./prompt-api-client";
-import type { VoltOpsClientOptions, PromptReference, PromptApiClient } from "./types";
+import type { PromptApiClient, PromptReference, VoltOpsClientOptions } from "./types";
 
 describe("VoltOpsPromptApiClient", () => {
   let client: VoltOpsPromptApiClient;

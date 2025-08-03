@@ -67,7 +67,7 @@ async function initializeCollection() {
       await qdrant.getCollection(collectionName);
       exists = true;
       console.log(`📋 Collection "${collectionName}" already exists`);
-    } catch (error) {
+    } catch (_error) {
       console.log(`📋 Creating new collection "${collectionName}"...`);
     }
 
@@ -86,7 +86,7 @@ async function initializeCollection() {
       // Generate embeddings for sample documents using OpenAI
       const OpenAI = await import("openai");
       const openai = new OpenAI.default({
-        apiKey: process.env.OPENAI_API_KEY!,
+        apiKey: process.env.OPENAI_API_KEY || "",
       });
       const points = [];
       for (const record of sampleRecords) {
@@ -125,7 +125,7 @@ async function retrieveDocuments(query: string, topK = 3) {
     // Generate embedding for the query
     const OpenAI = await import("openai");
     const openai = new OpenAI.default({
-      apiKey: process.env.OPENAI_API_KEY!,
+      apiKey: process.env.OPENAI_API_KEY || "",
     });
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",

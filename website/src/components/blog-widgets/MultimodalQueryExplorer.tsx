@@ -73,10 +73,7 @@ export default function MultimodalQueryExplorer(): JSX.Element {
   const [showComparison, setShowComparison] = useState<boolean>(false);
 
   // Use either custom query or selected sample
-  const query =
-    customQuery ||
-    sampleQueries[selectedMode as keyof typeof sampleQueries][0] ||
-    "";
+  const query = customQuery || sampleQueries[selectedMode as keyof typeof sampleQueries][0] || "";
 
   const handleProcessQuery = () => {
     setIsProcessing(true);
@@ -91,9 +88,7 @@ export default function MultimodalQueryExplorer(): JSX.Element {
     <div className="border-2 border-solid border-emerald-500 rounded-lg p-5 mb-6 bg-gray-800 shadow-lg">
       {/* Input Mode Selection */}
       <div className="mb-5">
-        <div className="block mb-3 font-medium text-white text-sm">
-          Select Input Type:
-        </div>
+        <div className="block mb-3 font-medium text-white text-sm">Select Input Type:</div>
         <div className="flex flex-wrap gap-2">
           {inputModes.map((mode) => (
             <button
@@ -120,10 +115,7 @@ export default function MultimodalQueryExplorer(): JSX.Element {
 
       {/* Query Input */}
       <div className="mb-5">
-        <label
-          htmlFor="query"
-          className="block mb-2 font-medium text-white text-sm"
-        >
+        <label htmlFor="query" className="block mb-2 font-medium text-white text-sm">
           Your Query:
         </label>
         <div className="relative">
@@ -135,34 +127,28 @@ export default function MultimodalQueryExplorer(): JSX.Element {
               setCustomQuery(e.target.value);
               setShowComparison(false);
             }}
-            placeholder={
-              sampleQueries[selectedMode as keyof typeof sampleQueries][0]
-            }
+            placeholder={sampleQueries[selectedMode as keyof typeof sampleQueries][0]}
             className="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-md 
                      focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-400
                      hover:border-emerald-400/50 transition-all duration-200"
           />
         </div>
-        <div className="mt-2 text-gray-400 text-xs">
-          Or try one of these examples:
-        </div>
+        <div className="mt-2 text-gray-400 text-xs">Or try one of these examples:</div>
         <div className="flex flex-wrap gap-2 mt-1">
-          {sampleQueries[selectedMode as keyof typeof sampleQueries].map(
-            (sample, i) => (
-              <button
-                // biome-ignore lint/suspicious/noArrayIndexKey: ignore
-                key={`${selectedMode}-sample-${i}`}
-                type="button"
-                onClick={() => {
-                  setCustomQuery(sample);
-                  setShowComparison(false);
-                }}
-                className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-emerald-300 cursor-pointer"
-              >
-                {sample}
-              </button>
-            ),
-          )}
+          {sampleQueries[selectedMode as keyof typeof sampleQueries].map((sample, i) => (
+            <button
+              // biome-ignore lint/suspicious/noArrayIndexKey: ignore
+              key={`${selectedMode}-sample-${i}`}
+              type="button"
+              onClick={() => {
+                setCustomQuery(sample);
+                setShowComparison(false);
+              }}
+              className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-emerald-300 cursor-pointer"
+            >
+              {sample}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -193,19 +179,13 @@ export default function MultimodalQueryExplorer(): JSX.Element {
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {/* Traditional RAG */}
           <div className="bg-gray-700/60 p-4 rounded-md border border-gray-600">
-            <h4 className="text-white font-medium mb-2">
-              Traditional RAG Response:
-            </h4>
-            <p className="text-gray-300 text-sm">
-              {getSimpleRagResponse(selectedMode, query)}
-            </p>
+            <h4 className="text-white font-medium mb-2">Traditional RAG Response:</h4>
+            <p className="text-gray-300 text-sm">{getSimpleRagResponse(selectedMode, query)}</p>
           </div>
 
           {/* Multimodal RAG */}
           <div className="bg-emerald-900/30 p-4 rounded-md border border-emerald-500/50">
-            <h4 className="text-emerald-400 font-medium mb-2">
-              Multimodal RAG Response:
-            </h4>
+            <h4 className="text-emerald-400 font-medium mb-2">Multimodal RAG Response:</h4>
             <p className="text-emerald-100 text-sm">
               {getMultimodalRagResponse(selectedMode, query)}
             </p>
@@ -214,9 +194,9 @@ export default function MultimodalQueryExplorer(): JSX.Element {
           {/* Explanation */}
           <div className="md:col-span-2 mt-2 bg-gray-700/30 p-3 rounded-md">
             <p className="text-gray-400 text-xs">
-              This demo illustrates how Multimodal RAG can process various input
-              types and provide more comprehensive responses by analyzing and
-              retrieving from multiple data modalities.
+              This demo illustrates how Multimodal RAG can process various input types and provide
+              more comprehensive responses by analyzing and retrieving from multiple data
+              modalities.
               {selectedMode !== "text" &&
                 " Traditional RAG systems typically only support text input and retrieval."}
             </p>

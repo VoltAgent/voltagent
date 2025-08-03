@@ -1,3 +1,4 @@
+import { isFunction } from "@voltagent/internal/utils";
 import { getGlobalLogger } from "../../logger";
 import {
   createParallelSubStepContext,
@@ -7,10 +8,18 @@ import {
   createWorkflowStepSuccessEvent,
   publishWorkflowEvent,
 } from "../event-utils";
-import type { InternalAnyWorkflowStep, InternalInferWorkflowStepsResult } from "../internal/types";
+import type {
+  InternalAnyWorkflowStep,
+  InternalInferWorkflowStepsResult,
+  InternalWorkflowFunc,
+} from "../internal/types";
 import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
-import type { WorkflowStepParallelAll, WorkflowStepParallelAllConfig } from "./types";
+import type {
+  WorkflowStepParallelAll,
+  WorkflowStepParallelAllConfig,
+  WorkflowStepParallelDynamicStepsFunc,
+} from "./types";
 
 /**
  * Creates a parallel execution step that runs multiple steps simultaneously and waits for all to complete
@@ -59,20 +68,32 @@ export function andAll<
   INPUT,
   DATA,
   RESULT,
-  STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>,
->({ steps, ...config }: WorkflowStepParallelAllConfig<STEPS>) {
-  type INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>;
+  STEPS extends
+    | ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+    | WorkflowStepParallelDynamicStepsFunc<INPUT, DATA, RESULT>,
+>({ steps: inputSteps, ...config }: WorkflowStepParallelAllConfig<INPUT, DATA, RESULT, STEPS>) {
+  type INFERRED_RESULT = STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+    ? InternalInferWorkflowStepsResult<STEPS>
+    : STEPS extends WorkflowStepParallelDynamicStepsFunc<INPUT, DATA, RESULT>
+      ? InternalInferWorkflowStepsResult<Awaited<ReturnType<STEPS>>>
+      : never;
 
   return {
     ...defaultStepConfig(config),
     type: "parallel-all",
-    steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
+    steps: inputSteps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
     execute: async (context) => {
       const { data, state } = context;
+
+      // @ts-expect-error - TODO: fix this
+      const steps = await getStepsFunc(inputSteps)(context);
       // No workflow context, execute without events
       if (!state.workflowContext) {
-        const promises = steps.map((step) => matchStep(step).execute(context));
-        return (await Promise.all(promises)) as INFERRED_RESULT;
+        const promises = steps.map((step) =>
+          // @ts-expect-error - TODO: fix this
+          matchStep(step).execute(context),
+        );
+        return (await Promise.all(promises)) as unknown as INFERRED_RESULT;
       }
 
       // Create step context and publish start event
@@ -134,22 +155,25 @@ export function andAll<
           };
 
           // Return promise with index and timing to track execution times
-          return matchStep(step)
-            .execute({ ...context, state: subState })
-            .then((result) => ({
-              result,
-              index,
-              success: true,
-              startTime: startTime.toISOString(),
-              endTime: new Date().toISOString(),
-            }))
-            .catch((error) => ({
-              error,
-              index,
-              success: false,
-              startTime: startTime.toISOString(),
-              endTime: new Date().toISOString(),
-            }));
+          return (
+            matchStep(step)
+              // @ts-expect-error - TODO: fix this
+              .execute({ ...context, state: subState })
+              .then((result) => ({
+                result,
+                index,
+                success: true,
+                startTime: startTime.toISOString(),
+                endTime: new Date().toISOString(),
+              }))
+              .catch((error) => ({
+                error,
+                index,
+                success: false,
+                startTime: startTime.toISOString(),
+                endTime: new Date().toISOString(),
+              }))
+          );
         });
 
         // Wait for all steps to complete
@@ -240,7 +264,7 @@ export function andAll<
           throw firstError;
         }
 
-        const finalResults = results as INFERRED_RESULT;
+        const finalResults = results as unknown as INFERRED_RESULT;
 
         // Publish step success event
         const stepSuccessEvent = createWorkflowStepSuccessEvent(
@@ -294,4 +318,42 @@ export function andAll<
       }
     },
   } satisfies WorkflowStepParallelAll<INPUT, DATA, INFERRED_RESULT>;
+}
+
+function getStepsFunc<
+  INPUT,
+  DATA,
+  RESULT,
+  STEPS extends
+    | ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+    | WorkflowStepParallelDynamicStepsFunc<INPUT, DATA, RESULT>,
+>(
+  steps: STEPS,
+): InternalWorkflowFunc<INPUT, DATA, InternalAnyWorkflowStep<INPUT, DATA, RESULT>[], any, any> {
+  if (isStepsFunction(steps)) {
+    return steps;
+  }
+  return (async () => {
+    return steps;
+  }) as unknown as InternalWorkflowFunc<
+    INPUT,
+    DATA,
+    InternalAnyWorkflowStep<INPUT, DATA, RESULT>[],
+    any,
+    any
+  >;
+}
+
+function isStepsFunction<INPUT, DATA, RESULT>(
+  steps:
+    | ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+    | WorkflowStepParallelDynamicStepsFunc<INPUT, DATA, RESULT>,
+): steps is InternalWorkflowFunc<
+  INPUT,
+  DATA,
+  InternalAnyWorkflowStep<INPUT, DATA, RESULT>[],
+  any,
+  any
+> {
+  return isFunction(steps) && !Array.isArray(steps);
 }

@@ -1,10 +1,10 @@
-import { describe, expect, it, afterEach } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { LibSQLStorage } from "../../memory";
 import { createWorkflow } from "../core";
+import { WorkflowRegistry } from "../registry";
 import { andThen } from "./and-then";
 import { andWorkflow } from "./and-workflow";
-import { LibSQLStorage } from "../../memory";
-import { WorkflowRegistry } from "../registry";
 
 describe.sequential("andWorkflow", () => {
   const storageInstances: LibSQLStorage[] = [];

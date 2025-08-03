@@ -1,13 +1,13 @@
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import { LoggerProxy } from "../../logger";
 import {
+  type UpdateCache,
+  getPackageJsonHash,
+  isValidCache,
   readUpdateCache,
   writeUpdateCache,
-  isValidCache,
-  getPackageJsonHash,
-  type UpdateCache,
 } from "./cache";
 
 type UpdateOptions = {
@@ -95,7 +95,7 @@ const getInstalledVersion = async (
     }
 
     return null;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 };
@@ -227,15 +227,14 @@ export const checkForUpdates = async (
           type,
           packageJson: packageInfo.section,
         };
-      } else {
-        return {
-          name,
-          installed: currentVersion,
-          latest: currentVersion,
-          type: "latest" as const,
-          packageJson: packageInfo.section,
-        };
       }
+      return {
+        name,
+        installed: currentVersion,
+        latest: currentVersion,
+        type: "latest" as const,
+        packageJson: packageInfo.section,
+      };
     });
 
     const results = await Promise.all(updatePromises);

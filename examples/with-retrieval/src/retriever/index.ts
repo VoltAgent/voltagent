@@ -1,4 +1,4 @@
-import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
+import { type BaseMessage, BaseRetriever, type RetrieveOptions } from "@voltagent/core";
 import { documents } from "../data/documents.js";
 
 /**

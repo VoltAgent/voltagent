@@ -4,8 +4,8 @@ import {
   ArrowLeftIcon,
   ArrowTopRightOnSquareIcon,
   BuildingOfficeIcon,
-  UsersIcon,
   GlobeAltIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import Layout from "@theme/Layout";
@@ -45,9 +45,7 @@ interface CustomerProjectPageProps {
   };
 }
 
-export default function CustomerProjectPage({
-  customer,
-}: CustomerProjectPageProps): JSX.Element {
+export default function CustomerProjectPage({ customer }: CustomerProjectPageProps): JSX.Element {
   if (!customer) {
     return (
       <Layout>
@@ -60,13 +58,8 @@ export default function CustomerProjectPage({
         </Head>
         <main className="flex-1 min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-400 mb-4">
-              Case Study Not Found
-            </h1>
-            <Link
-              to="/customers"
-              className="text-[#00d992] hover:underline no-underline"
-            >
+            <h1 className="text-2xl font-bold text-gray-400 mb-4">Case Study Not Found</h1>
+            <Link to="/customers" className="text-[#00d992] hover:underline no-underline">
               Back to Customer Stories
             </Link>
           </div>
@@ -157,9 +150,7 @@ export default function CustomerProjectPage({
                     }
                     // Fall back to SVG component if logo field exists
                     if (customer.customer.logo) {
-                      const LogoComponent = getLogoComponent(
-                        customer.customer.logo,
-                      );
+                      const LogoComponent = getLogoComponent(customer.customer.logo);
                       return (
                         <LogoComponent className="w-16 h-16 text-[#00d992] sm:w-20 sm:h-20 rounded-lg border-2 border-[#1e293b] mr-4 sm:mr-6" />
                       );
@@ -185,9 +176,7 @@ export default function CustomerProjectPage({
                   className="flex items-center justify-center no-underline px-3 py-2 sm:px-4 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 rounded-lg transition-colors self-start"
                 >
                   <GlobeAltIcon className="w-4 h-4 mr-2 text-gray-300" />
-                  <span className="text-gray-300 font-medium text-sm">
-                    Company Profile
-                  </span>
+                  <span className="text-gray-300 font-medium text-sm">Company Profile</span>
                 </a>
               </div>
 
@@ -366,19 +355,11 @@ export default function CustomerProjectPage({
                           const sentences = remainingText.split(". ");
 
                           for (const sentence of sentences) {
-                            if (
-                              sentence.includes(":") &&
-                              sentence.includes(";")
-                            ) {
+                            if (sentence.includes(":") && sentence.includes(";")) {
                               // This sentence has bullet points
                               const colonIndex = sentence.indexOf(":");
-                              const beforeColon = sentence.substring(
-                                0,
-                                colonIndex + 1,
-                              );
-                              const afterColon = sentence.substring(
-                                colonIndex + 1,
-                              );
+                              const beforeColon = sentence.substring(0, colonIndex + 1);
+                              const afterColon = sentence.substring(colonIndex + 1);
 
                               if (beforeColon.trim()) {
                                 textParts.push(beforeColon.trim());
@@ -395,9 +376,7 @@ export default function CustomerProjectPage({
                               // Regular text
                               textParts.push(
                                 sentence.trim() +
-                                  (sentence === sentences[sentences.length - 1]
-                                    ? ""
-                                    : "."),
+                                  (sentence === sentences[sentences.length - 1] ? "" : "."),
                               );
                             }
                           }
@@ -405,8 +384,7 @@ export default function CustomerProjectPage({
                           // Add text and bullet sections alternately
                           for (
                             let j = 0;
-                            j <
-                            Math.max(textParts.length, bulletSections.length);
+                            j < Math.max(textParts.length, bulletSections.length);
                             j++
                           ) {
                             if (j < textParts.length && textParts[j]) {
@@ -415,10 +393,7 @@ export default function CustomerProjectPage({
                                 content: textParts[j],
                               });
                             }
-                            if (
-                              j < bulletSections.length &&
-                              bulletSections[j]
-                            ) {
+                            if (j < bulletSections.length && bulletSections[j]) {
                               parts.push({
                                 type: "bullets",
                                 content: bulletSections[j],
@@ -451,28 +426,17 @@ export default function CustomerProjectPage({
                       // Handle remaining text with same logic
                       const remainingText = currentText.trim();
 
-                      if (
-                        remainingText.includes(":") &&
-                        remainingText.includes(";")
-                      ) {
+                      if (remainingText.includes(":") && remainingText.includes(";")) {
                         const bulletSections = [];
                         const textParts = [];
 
                         const sentences = remainingText.split(". ");
 
                         for (const sentence of sentences) {
-                          if (
-                            sentence.includes(":") &&
-                            sentence.includes(";")
-                          ) {
+                          if (sentence.includes(":") && sentence.includes(";")) {
                             const colonIndex = sentence.indexOf(":");
-                            const beforeColon = sentence.substring(
-                              0,
-                              colonIndex + 1,
-                            );
-                            const afterColon = sentence.substring(
-                              colonIndex + 1,
-                            );
+                            const beforeColon = sentence.substring(0, colonIndex + 1);
+                            const afterColon = sentence.substring(colonIndex + 1);
 
                             if (beforeColon.trim()) {
                               textParts.push(beforeColon.trim());
@@ -488,9 +452,7 @@ export default function CustomerProjectPage({
                           } else if (sentence.trim()) {
                             textParts.push(
                               sentence.trim() +
-                                (sentence === sentences[sentences.length - 1]
-                                  ? ""
-                                  : "."),
+                                (sentence === sentences[sentences.length - 1] ? "" : "."),
                             );
                           }
                         }
@@ -631,9 +593,7 @@ export default function CustomerProjectPage({
                       }
                       return (
                         <p
-                          key={`results-text-${part.content
-                            .substring(0, 30)
-                            .replace(/\s+/g, "-")}`}
+                          key={`results-text-${part.content.substring(0, 30).replace(/\s+/g, "-")}`}
                         >
                           {part.content}
                         </p>
@@ -644,54 +604,48 @@ export default function CustomerProjectPage({
               </div>
 
               {/* Use Cases */}
-              {customer.case_study.useCases &&
-                customer.case_study.useCases.length > 0 && (
-                  <div
-                    className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
-                    style={{
-                      backdropFilter: "blur(4px)",
-                      WebkitBackdropFilter: "blur(4px)",
-                    }}
-                  >
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 flex items-center">
-                      <BoltIcon className="w-6 h-6 mr-2 text-[#00d992]" />
-                      Key Use Cases
-                    </h3>
-                    <ul className="space-y-3 text-sm sm:text-base text-gray-300 mb-6">
-                      {customer.case_study.useCases.map((useCase) => (
-                        <li
-                          key={`use-case-${useCase
-                            .substring(0, 20)
-                            .replace(/\s+/g, "-")}`}
-                          className="flex items-start"
-                        >
-                          <span className="text-[#00d992] mr-2 mt-1">•</span>
-                          <span>{useCase}</span>
-                        </li>
-                      ))}
-                    </ul>
+              {customer.case_study.useCases && customer.case_study.useCases.length > 0 && (
+                <div
+                  className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                  style={{
+                    backdropFilter: "blur(4px)",
+                    WebkitBackdropFilter: "blur(4px)",
+                  }}
+                >
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 flex items-center">
+                    <BoltIcon className="w-6 h-6 mr-2 text-[#00d992]" />
+                    Key Use Cases
+                  </h3>
+                  <ul className="space-y-3 text-sm sm:text-base text-gray-300 mb-6">
+                    {customer.case_study.useCases.map((useCase) => (
+                      <li
+                        key={`use-case-${useCase.substring(0, 20).replace(/\s+/g, "-")}`}
+                        className="flex items-start"
+                      >
+                        <span className="text-[#00d992] mr-2 mt-1">•</span>
+                        <span>{useCase}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-                    {/* Tech Stack inside Use Cases */}
-                    {customer.case_study.tech &&
-                      customer.case_study.tech.length > 0 && (
-                        <div className="border-t border-gray-600 pt-4">
-                          <h4 className="text-sm font-semibold text-gray-400 mb-3">
-                            Built with
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {customer.case_study.tech.map((tech) => (
-                              <span
-                                key={`tech-${tech}`}
-                                className="px-3 py-1 bg-[#00d992]/10 border border-[#00d992]/20 rounded-full text-[#00d992] text-sm font-medium"
-                              >
-                                {tech}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                  </div>
-                )}
+                  {/* Tech Stack inside Use Cases */}
+                  {customer.case_study.tech && customer.case_study.tech.length > 0 && (
+                    <div className="border-t border-gray-600 pt-4">
+                      <h4 className="text-sm font-semibold text-gray-400 mb-3">Built with</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {customer.case_study.tech.map((tech) => (
+                          <span
+                            key={`tech-${tech}`}
+                            className="px-3 py-1 bg-[#00d992]/10 border border-[#00d992]/20 rounded-full text-[#00d992] text-sm font-medium"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Video */}
               {customer.case_study.video && (
@@ -726,8 +680,7 @@ export default function CustomerProjectPage({
                   Ready to Transform Your Workflow?
                 </h3>
                 <p className="text-gray-400 mb-4 text-xs sm:text-sm">
-                  Join hundreds of companies already using VoltAgent to build
-                  powerful AI agents.
+                  Join hundreds of companies already using VoltAgent to build powerful AI agents.
                 </p>
                 <a
                   href="/docs/"

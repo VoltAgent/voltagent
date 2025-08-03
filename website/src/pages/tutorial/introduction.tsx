@@ -1,18 +1,16 @@
-import type React from "react";
-import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
-import CodeBlock from "@theme/CodeBlock";
-import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
-import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import { MobileAgentCode } from "../../components/tutorial";
 import Link from "@docusaurus/Link";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import CodeBlock from "@theme/CodeBlock";
+import type React from "react";
+import { useState } from "react";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { MobileAgentCode } from "../../components/tutorial";
+import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 
 export default function TutorialIntroduction() {
-  const [highlightedSection, setHighlightedSection] = useState<string | null>(
-    "agent",
-  );
+  const [highlightedSection, setHighlightedSection] = useState<string | null>("agent");
   const isMobile = useMediaQuery("(max-width: 1023px)");
 
   // Function to define code sections
@@ -76,84 +74,60 @@ export default function TutorialIntroduction() {
             Why Do You Need VoltAgent?
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Building AI agents from scratch is like building a web app without
-            React or Express. You'll spend months writing boilerplate instead of
-            focusing on your actual business logic.
+            Building AI agents from scratch is like building a web app without React or Express.
+            You'll spend months writing boilerplate instead of focusing on your actual business
+            logic.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className="border-solid border-red-500 rounded-lg p-6  ">
-              <h3 className="text-xl font-semibold text-red-500 mb-4">
-                Without a Framework
-              </h3>
+              <h3 className="text-xl font-semibold text-red-500 mb-4">Without a Framework</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
-                    Manual API calls to OpenAI/Claude
-                  </span>
+                  <span className="text-gray-300">Manual API calls to OpenAI/Claude</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
-                    Custom conversation state management
-                  </span>
+                  <span className="text-gray-300">Custom conversation state management</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
-                    Manual tool integration and execution
-                  </span>
+                  <span className="text-gray-300">Manual tool integration and execution</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
-                    No debugging, monitoring, or observability
-                  </span>
+                  <span className="text-gray-300">No debugging, monitoring, or observability</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <XMarkIcon className="w-5 h-5 text-red-500 mt-1" />
-                  <span className="text-gray-300">
-                    Complex agent coordination logic
-                  </span>
+                  <span className="text-gray-300">Complex agent coordination logic</span>
                 </div>
               </div>
             </div>
 
             <div className="border-solid border-emerald-500 rounded-lg p-6  ">
-              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
-                With VoltAgent
-              </h3>
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">With VoltAgent</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
-                    Unified API for all LLM providers
-                  </span>
+                  <span className="text-gray-300">Unified API for all LLM providers</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
-                    Built-in conversation memory
-                  </span>
+                  <span className="text-gray-300">Built-in conversation memory</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
-                    Tool system with automatic execution
-                  </span>
+                  <span className="text-gray-300">Tool system with automatic execution</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
-                    VoltOps: Real-time debugging & monitoring
-                  </span>
+                  <span className="text-gray-300">VoltOps: Real-time debugging & monitoring</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckIcon className="w-5 h-5 text-emerald-500 mt-1" />
-                  <span className="text-gray-300">
-                    Multi-agent coordination out of the box
-                  </span>
+                  <span className="text-gray-300">Multi-agent coordination out of the box</span>
                 </div>
               </div>
             </div>
@@ -162,46 +136,34 @@ export default function TutorialIntroduction() {
 
         {/* What is VoltAgent? */}
         <div className="  mb-20">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            What is VoltAgent?
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">What is VoltAgent?</h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            VoltAgent is a <strong>TypeScript-first framework</strong> for
-            building AI agents. Think of it as the "Express.js for AI agents" -
-            it handles the plumbing so you can focus on building.
+            VoltAgent is a <strong>TypeScript-first framework</strong> for building AI agents. Think
+            of it as the "Express.js for AI agents" - it handles the plumbing so you can focus on
+            building.
           </p>
 
           <div className="   ">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Core Philosophy
-            </h3>
+            <h3 className="text-xl font-semibold text-white mb-4">Core Philosophy</h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-4">
                 <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2" />
                 <div>
                   <strong className="text-white text-lg">Modular:</strong>
-                  <span className="text-gray-300 ml-1">
-                    Use only what you need
-                  </span>
+                  <span className="text-gray-300 ml-1">Use only what you need</span>
                 </div>
               </div>
               <div className="flex items-start space-x-4">
                 <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2" />
                 <div>
-                  <strong className="text-white text-lg">
-                    Developer-First:
-                  </strong>
-                  <span className="text-gray-300 ml-1">
-                    Made for how developers actually work
-                  </span>
+                  <strong className="text-white text-lg">Developer-First:</strong>
+                  <span className="text-gray-300 ml-1">Made for how developers actually work</span>
                 </div>
               </div>
               <div className="flex items-start space-x-4">
                 <div className="w-3 h-3 bg-[#00d992] rounded-full mt-2" />
                 <div>
-                  <strong className="text-white text-lg">
-                    Production-Ready:
-                  </strong>
+                  <strong className="text-white text-lg">Production-Ready:</strong>
                   <span className="text-gray-300 ml-1">
                     Monitoring, scaling, and deployment built-in
                   </span>
@@ -217,8 +179,7 @@ export default function TutorialIntroduction() {
             Getting Started in 60 Seconds
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Create a new VoltAgent project and have a working AI agent in under
-            a minute:
+            Create a new VoltAgent project and have a working AI agent in under a minute:
           </p>
 
           <div className=" ">
@@ -228,25 +189,19 @@ export default function TutorialIntroduction() {
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-sm">
-                    1
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-sm">1</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
                     Create Your Project
                   </p>
-                  <CodeBlock language="bash">
-                    npm create voltagent-app@latest
-                  </CodeBlock>
+                  <CodeBlock language="bash">npm create voltagent-app@latest</CodeBlock>
                 </div>
               </div>
 
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-base">
-                    2
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-base">2</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
@@ -258,9 +213,7 @@ export default function TutorialIntroduction() {
 
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-base">
-                    3
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-base">3</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
@@ -268,14 +221,10 @@ export default function TutorialIntroduction() {
                   </p>
                   <p className="text-gray-400 text-xs mb-2 landing-md:text-sm">
                     Create or edit the{" "}
-                    <code className="bg-gray-800 px-2 py-1 rounded text-yellow-300">
-                      .env
-                    </code>{" "}
-                    file and add your OpenAI API key:
+                    <code className="bg-gray-800 px-2 py-1 rounded text-yellow-300">.env</code> file
+                    and add your OpenAI API key:
                   </p>
-                  <CodeBlock language="bash">
-                    OPENAI_API_KEY=your-api-key-here
-                  </CodeBlock>
+                  <CodeBlock language="bash">OPENAI_API_KEY=your-api-key-here</CodeBlock>
                   <p className="text-xs text-gray-400 mt-2">
                     Get your API key from{" "}
                     <a
@@ -292,9 +241,7 @@ export default function TutorialIntroduction() {
 
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-base">
-                    4
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-base">4</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
@@ -307,12 +254,8 @@ export default function TutorialIntroduction() {
           </div>
 
           <div className="mt-8 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
-            <h4 className="text-emerald-500 font-semibold mb-4">
-              Success! Your agent is running
-            </h4>
-            <p className="text-gray-300 text-sm mb-4">
-              You should see this in your terminal:
-            </p>
+            <h4 className="text-emerald-500 font-semibold mb-4">Success! Your agent is running</h4>
+            <p className="text-gray-300 text-sm mb-4">You should see this in your terminal:</p>
 
             <div className="bg-gray-900/80 border border-white/10 rounded-lg p-4 mb-4">
               <pre className="text-green-400 text-xs font-mono leading-relaxed">
@@ -358,12 +301,10 @@ export default function TutorialIntroduction() {
 
         {/* your agent code - Interactive Version */}
         <div className=" mb-20">
-          <h2 className="text-2xl landing-md:text-3xl  font-bold text-white">
-            Your Agent Code
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl  font-bold text-white">Your Agent Code</h2>
           <p className="text-landing-sm landing-md:text-base mb-12 text-gray-300 leading-relaxed">
-            This is what gets generated for you. Hover over the explanations to
-            see how each part works.
+            This is what gets generated for you. Hover over the explanations to see how each part
+            works.
           </p>
 
           {/* Interactive Code Section - Wider Container */}
@@ -400,19 +341,14 @@ export default function TutorialIntroduction() {
                       </div>
                       <code className="py-5 px-3 block text-xs flex-1">
                         {/* Imports */}
-                        <span
-                          className={`block ${getHighlightClasses("imports")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("imports")}`}>
                           <span className="text-blue-400">import</span>
                           <span>
                             {" "}
                             {"{"} VoltAgent, Agent {"}"}{" "}
                           </span>
                           <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300">
-                            {" "}
-                            "@voltagent/core"
-                          </span>
+                          <span className="text-yellow-300"> "@voltagent/core"</span>
                           <span>;</span>
                           <br />
                           <span className="text-blue-400">import</span>
@@ -421,10 +357,7 @@ export default function TutorialIntroduction() {
                             {"{"} VercelAIProvider {"}"}{" "}
                           </span>
                           <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300">
-                            {" "}
-                            "@voltagent/vercel-ai"
-                          </span>
+                          <span className="text-yellow-300"> "@voltagent/vercel-ai"</span>
                           <span>;</span>
                           <br />
                           <span className="text-blue-400">import</span>
@@ -433,22 +366,15 @@ export default function TutorialIntroduction() {
                             {"{"} openai {"}"}{" "}
                           </span>
                           <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300">
-                            {" "}
-                            "@ai-sdk/openai"
-                          </span>
+                          <span className="text-yellow-300"> "@ai-sdk/openai"</span>
                           <span>;</span>
                           <br />
                           <br />
                         </span>
 
                         {/* Agent Creation */}
-                        <span
-                          className={`block ${getHighlightClasses("agent")}`}
-                        >
-                          <span className="text-gray-300">
-                            {"// Define a simple agent"}
-                          </span>
+                        <span className={`block ${getHighlightClasses("agent")}`}>
+                          <span className="text-gray-300">{"// Define a simple agent"}</span>
                           <br />
                           <span className="text-blue-400">const</span>
                           <span> agent = </span>
@@ -459,9 +385,7 @@ export default function TutorialIntroduction() {
                         </span>
 
                         {/* Agent Name */}
-                        <span
-                          className={`block ${getHighlightClasses("name")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("name")}`}>
                           <span className="ml-4">name: </span>
                           <span className="text-yellow-300">"my-agent"</span>
                           <span>,</span>
@@ -469,30 +393,22 @@ export default function TutorialIntroduction() {
                         </span>
 
                         {/* Agent Instructions & Provider */}
-                        <span
-                          className={`block ${getHighlightClasses("behavior")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("behavior")}`}>
                           <span className="ml-4">instructions: </span>
                           <span className="text-yellow-300">
-                            "A helpful assistant that answers questions without
-                            using tools"
+                            "A helpful assistant that answers questions without using tools"
                           </span>
                           <span>,</span>
                           <br />
                           <span className="ml-4">llm: </span>
                           <span className="text-blue-400">new</span>
-                          <span className="text-green-400">
-                            {" "}
-                            VercelAIProvider
-                          </span>
+                          <span className="text-green-400"> VercelAIProvider</span>
                           <span>(),</span>
                           <br />
                         </span>
 
                         {/* Model Selection */}
-                        <span
-                          className={`block ${getHighlightClasses("model")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("model")}`}>
                           <span className="ml-4">model: </span>
                           <span className="text-green-400">openai</span>
                           <span>(</span>
@@ -501,18 +417,14 @@ export default function TutorialIntroduction() {
                           <br />
                         </span>
 
-                        <span
-                          className={`block ${getHighlightClasses("agent")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("agent")}`}>
                           <span>{"});"}</span>
                           <br />
                           <br />
                         </span>
 
                         {/* Server Setup */}
-                        <span
-                          className={`block ${getHighlightClasses("server")}`}
-                        >
+                        <span className={`block ${getHighlightClasses("server")}`}>
                           <span className="text-gray-300">
                             {"// Initialize VoltAgent with your agent(s)"}
                           </span>
@@ -530,9 +442,7 @@ export default function TutorialIntroduction() {
                           <br />
                           <br />
                           <br />
-                          <span className="text-gray-300">
-                            {"// Your agent is now running!"}
-                          </span>
+                          <span className="text-gray-300">{"// Your agent is now running!"}</span>
                           <br />
                           <span className="text-gray-300">
                             {"// Visit console.voltagent.dev to interact"}
@@ -560,16 +470,14 @@ export default function TutorialIntroduction() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "agent"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "agent" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "I need an AI agent"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        The Agent class is your AI's personality container. It
-                        defines who your AI is and how it should behave.
+                        The Agent class is your AI's personality container. It defines who your AI
+                        is and how it should behave.
                       </div>
                     </div>
                   </div>
@@ -589,17 +497,14 @@ export default function TutorialIntroduction() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "name"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "name" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "What to call it?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        Give it a descriptive name. Think of it like naming a
-                        function - choose something that tells you what this
-                        agent does.
+                        Give it a descriptive name. Think of it like naming a function - choose
+                        something that tells you what this agent does.
                       </div>
                     </div>
                   </div>
@@ -619,17 +524,14 @@ export default function TutorialIntroduction() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "behavior"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "behavior" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "How should it behave?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        Instructions define your agent's personality and
-                        behavior. The LLM provider handles the AI communication
-                        layer.
+                        Instructions define your agent's personality and behavior. The LLM provider
+                        handles the AI communication layer.
                       </div>
                     </div>
                   </div>
@@ -649,17 +551,14 @@ export default function TutorialIntroduction() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "model"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "model" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "Which AI to use?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        Choose your AI model like a database. gpt-4o-mini is
-                        fast and cheap, gpt-4 is more powerful for complex
-                        reasoning.
+                        Choose your AI model like a database. gpt-4o-mini is fast and cheap, gpt-4
+                        is more powerful for complex reasoning.
                       </div>
                     </div>
                   </div>
@@ -679,17 +578,14 @@ export default function TutorialIntroduction() {
                     >
                       <div
                         className={`text-base font-semibold mb-3 ${
-                          highlightedSection === "server"
-                            ? "text-emerald-500"
-                            : "text-white"
+                          highlightedSection === "server" ? "text-emerald-500" : "text-white"
                         }`}
                       >
                         "How to make it accessible?"
                       </div>
                       <div className="text-gray-400 text-xs leading-relaxed">
-                        VoltAgent is your server - like Express.js but for AI
-                        agents. Handles HTTP, WebSocket, and connects to
-                        VoltOps.
+                        VoltAgent is your server - like Express.js but for AI agents. Handles HTTP,
+                        WebSocket, and connects to VoltOps.
                       </div>
                     </div>
                   </div>
@@ -704,9 +600,9 @@ export default function TutorialIntroduction() {
                 The Result
               </h4>
               <p className="text-gray-300 mb-0 text-xs landing-md:text-base">
-                In just 15 lines of code, you've created a production-ready AI
-                agent with monitoring, debugging, and a web interface. That's
-                the power of VoltAgent - less boilerplate, more building.
+                In just 15 lines of code, you've created a production-ready AI agent with
+                monitoring, debugging, and a web interface. That's the power of VoltAgent - less
+                boilerplate, more building.
               </p>
             </div>
           )}
@@ -718,8 +614,8 @@ export default function TutorialIntroduction() {
             Meet VoltOps: Your Agent Console
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            VoltOps is your agent's dashboard. When you start your agent, it
-            automatically connects to
+            VoltOps is your agent's dashboard. When you start your agent, it automatically connects
+            to
             <a
               href="https://console.voltagent.dev"
               target="_blank"
@@ -732,9 +628,7 @@ export default function TutorialIntroduction() {
           </p>
 
           <div className=" ">
-            <h3 className="text-xl font-semibold text-[#00d992] mb-4">
-              What You'll See
-            </h3>
+            <h3 className="text-xl font-semibold text-[#00d992] mb-4">What You'll See</h3>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
@@ -746,9 +640,7 @@ export default function TutorialIntroduction() {
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
-                <span className="text-gray-300">
-                  Conversation logs and debugging
-                </span>
+                <span className="text-gray-300">Conversation logs and debugging</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
@@ -764,8 +656,7 @@ export default function TutorialIntroduction() {
             Your Learning Journey
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 text-left leading-relaxed mb-8">
-            We'll build your agent step by step, each tutorial adding one
-            crucial capability:
+            We'll build your agent step by step, each tutorial adding one crucial capability:
           </p>
 
           <div className="space-y-3">
@@ -775,12 +666,10 @@ export default function TutorialIntroduction() {
                 1
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white mb-1">
-                  The Chatbot Problem
-                </h3>
+                <h3 className="text-base font-semibold text-white mb-1">The Chatbot Problem</h3>
                 <p className="text-xs text-gray-300 leading-relaxed mb-0">
-                  Why simple chatbots fail and what makes AI agents different.
-                  Learn the fundamental concepts before diving into code.
+                  Why simple chatbots fail and what makes AI agents different. Learn the fundamental
+                  concepts before diving into code.
                 </p>
               </div>
             </div>
@@ -795,8 +684,8 @@ export default function TutorialIntroduction() {
                   Tools: Give Your Agent Superpowers
                 </h3>
                 <p className="text-xs text-gray-300 leading-relaxed mb-0">
-                  Create custom tools that let your agent actually do things:
-                  send emails, manage databases, call APIs, and more.
+                  Create custom tools that let your agent actually do things: send emails, manage
+                  databases, call APIs, and more.
                 </p>
               </div>
             </div>
@@ -811,8 +700,8 @@ export default function TutorialIntroduction() {
                   Memory: Remember Every Conversation
                 </h3>
                 <p className="text-xs text-gray-300 leading-relaxed mb-0">
-                  Add persistent memory so your agent remembers users, past
-                  conversations, and builds context over time.
+                  Add persistent memory so your agent remembers users, past conversations, and
+                  builds context over time.
                 </p>
               </div>
             </div>
@@ -827,8 +716,8 @@ export default function TutorialIntroduction() {
                   MCP: Connect to Everything
                 </h3>
                 <p className="text-xs text-gray-300 leading-relaxed mb-0">
-                  Use Model Context Protocol to connect your agent to GitHub,
-                  Slack, databases, and any external system you need.
+                  Use Model Context Protocol to connect your agent to GitHub, Slack, databases, and
+                  any external system you need.
                 </p>
               </div>
             </div>
@@ -843,8 +732,8 @@ export default function TutorialIntroduction() {
                   Subagents: Build Agent Teams
                 </h3>
                 <p className="text-xs text-gray-300 leading-relaxed mb-0">
-                  Create specialized agents that work together to handle complex
-                  workflows and enterprise use cases.
+                  Create specialized agents that work together to handle complex workflows and
+                  enterprise use cases.
                 </p>
               </div>
             </div>
@@ -926,8 +815,8 @@ export default function TutorialIntroduction() {
                 Ready to Build AI Agents?
               </h3>
               <p className="text-base landing-md:text-lg text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
-                Transform from chatbot builder to AI agent architect in just 5
-                tutorials. Let's build something amazing together.
+                Transform from chatbot builder to AI agent architect in just 5 tutorials. Let's
+                build something amazing together.
               </p>
               <Link
                 to="/tutorial/chatbot-problem"
@@ -937,9 +826,7 @@ export default function TutorialIntroduction() {
               </Link>
 
               <div className="mt-6 text-xs text-gray-400">
-                <span>
-                  4 more steps remaining • 15 minutes • Production-ready agents
-                </span>
+                <span>4 more steps remaining • 15 minutes • Production-ready agents</span>
               </div>
             </div>
           </div>

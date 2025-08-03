@@ -1,6 +1,6 @@
 import { PinoLoggerProvider } from "./providers";
-import type { LoggerOptions, LogBuffer } from "./types";
 import type { LoggerProvider, LoggerWithProvider } from "./providers";
+import type { LogBuffer, LoggerOptions } from "./types";
 
 // Global logger provider instance
 let globalLoggerProvider: LoggerProvider | null = null;

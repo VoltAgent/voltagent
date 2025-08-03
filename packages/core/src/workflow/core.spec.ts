@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
-import { andAll, andThen } from "./steps";
+import { andThen } from "./steps";
 
 describe.sequential("workflow.run", () => {
   beforeEach(() => {
@@ -33,6 +33,7 @@ describe.sequential("workflow.run", () => {
         execute: async ({ data }) => {
           return {
             name: [data.name, "john"].join(" "),
+            foo: "bar",
           };
         },
       }),

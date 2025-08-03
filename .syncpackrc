@@ -1,10 +1,25 @@
 {
-    "dependencyTypes": ["prod"],
-    "semverGroups": [
+  "dependencyTypes": ["prod", "dev"],
+  "semverGroups": [
     {
       "range": "^",
       "dependencies": ["**"],
       "packages": ["@voltagent/*"]
+    }
+  ],
+  "versionGroups": [
+    {
+      "dependencies": ["@voltagent/**"],
+      "packages": ["**"],
+      "isIgnored": true,
+      "label": "@voltagent dependencies are managed by changeset."
+    },
+    {
+      "dependencies": ["**"],
+      "dependencyTypes": ["peer"],
+      "packages": ["**"],
+      "isIgnored": true,
+      "label": "Peer dependencies allow flexible version ranges"
     }
   ]
 }

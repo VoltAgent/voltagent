@@ -1,9 +1,6 @@
 import { translate } from "@docusaurus/Translate";
 import { useThemeConfig } from "@docusaurus/theme-common";
-import {
-  useHideableNavbar,
-  useNavbarMobileSidebar,
-} from "@docusaurus/theme-common/internal";
+import { useHideableNavbar, useNavbarMobileSidebar } from "@docusaurus/theme-common/internal";
 import NavbarMobileSidebar from "@theme/Navbar/MobileSidebar";
 import clsx from "clsx";
 import React from "react";
@@ -35,10 +32,7 @@ export default function NavbarLayout({ children }) {
         "navbar",
         "navbar--fixed-top",
         styles.navbar,
-        hideOnScroll && [
-          styles.navbarHideable,
-          !isNavbarVisible && styles.navbarHidden,
-        ],
+        hideOnScroll && [styles.navbarHideable, !isNavbarVisible && styles.navbarHidden],
         {
           "navbar--dark": style === "dark",
           "navbar--primary": style === "primary",

@@ -1,13 +1,13 @@
-import { join } from "path";
-import { createReadStream, createWriteStream } from "fs";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { VoltAgent, Agent } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
-import { XSAIVoiceProvider } from "@voltagent/voice";
+import { createReadStream, createWriteStream } from "node:fs";
+import { join } from "node:path";
 import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { XSAIVoiceProvider } from "@voltagent/voice";
 
 const voiceProvider = new XSAIVoiceProvider({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY || "",
 });
 
 const agent = new Agent({

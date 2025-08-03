@@ -4,9 +4,7 @@ import { diffHighlight } from "./prism-diff-highlight";
 
 const DIFF_LANGUAGE_REGEX = /^diff-([\w-]+)/i;
 
-export default function prismIncludeLanguages(
-  PrismObject: typeof PrismNamespace,
-): void {
+export default function prismIncludeLanguages(PrismObject: typeof PrismNamespace): void {
   const {
     themeConfig: { prism },
   } = siteConfig;

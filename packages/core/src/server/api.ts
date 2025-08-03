@@ -1,19 +1,23 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import type { LogFilter } from "@voltagent/internal";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
 import type { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { zodSchemaToJsonUI } from "..";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import { AgentEventEmitter } from "../events";
+import { LoggerProxy, getGlobalLogBuffer } from "../logger";
 import {
   type PackageUpdateInfo,
   checkForUpdates,
   updateAllPackages,
   updateSinglePackage,
 } from "../utils/update";
+import { WorkflowRegistry } from "../workflow/registry";
 import {
   type ErrorSchema,
   type ObjectRequestSchema,
@@ -24,11 +28,11 @@ import {
   getAgentsRoute,
   getWorkflowsRoute,
   objectRoute,
+  resumeWorkflowRoute,
   streamObjectRoute,
   streamRoute,
-  textRoute,
   suspendWorkflowRoute,
-  resumeWorkflowRoute,
+  textRoute,
 } from "./api.routes";
 import { getLogsRoute } from "./api.routes.logs";
 import type { CustomEndpointDefinition } from "./custom-endpoints";
@@ -37,13 +41,9 @@ import {
   validateCustomEndpoint,
   validateCustomEndpoints,
 } from "./custom-endpoints";
-import { AgentRegistry } from "./registry";
-import { WorkflowRegistry } from "../workflow/registry";
-import type { AgentResponse, ApiContext, ApiResponse } from "./types";
-import { zodSchemaToJsonUI } from "..";
-import type { LogFilter } from "@voltagent/internal";
-import { LoggerProxy, getGlobalLogBuffer } from "../logger";
 import { LogStreamManager } from "./log-stream";
+import { AgentRegistry } from "./registry";
+import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 
 // Configuration interface
 export interface ServerConfig {

@@ -2,20 +2,20 @@
  * API client for prompt operations
  */
 
-import type {
-  PromptReference,
-  PromptApiClient,
-  VoltOpsClientOptions,
-  PromptApiResponse,
-} from "./types";
-import { LoggerProxy, type Logger } from "../logger";
+import { type Logger, LoggerProxy } from "../logger";
 import { LogEvents } from "../logger/events";
 import {
-  buildVoltOpsLogMessage,
-  buildLogContext,
-  ResourceType,
   ActionType,
+  ResourceType,
+  buildLogContext,
+  buildVoltOpsLogMessage,
 } from "../logger/message-builder";
+import type {
+  PromptApiClient,
+  PromptApiResponse,
+  PromptReference,
+  VoltOpsClientOptions,
+} from "./types";
 
 /**
  * Implementation of PromptApiClient for VoltOps API communication

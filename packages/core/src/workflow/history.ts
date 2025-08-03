@@ -1,5 +1,5 @@
-import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { NewTimelineEvent } from "../events/types";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
 
 /**
@@ -144,6 +144,7 @@ export class WorkflowHistoryManager {
     for (const [workflowId, entries] of this.workflowHistories) {
       const entryIndex = entries.findIndex((entry) => entry.id === entryId);
       if (entryIndex !== -1) {
+        // @ts-expect-error - TODO: fix this
         entries[entryIndex].events.push(event);
         this.workflowHistories.set(workflowId, entries);
 

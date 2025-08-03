@@ -22,11 +22,7 @@ const maturityLevels: MaturityLevel[] = [
       "Debugging is pure guesswork",
     ],
     tools: ["Basic console.log", "User complaints", "Manual testing"],
-    nextSteps: [
-      "Add basic logging",
-      "Set up error tracking",
-      "Monitor basic metrics",
-    ],
+    nextSteps: ["Add basic logging", "Set up error tracking", "Monitor basic metrics"],
   },
   {
     level: 2,
@@ -58,11 +54,7 @@ const maturityLevels: MaturityLevel[] = [
       "Simple quality assessments",
     ],
     tools: ["Langfuse", "LangSmith", "Custom dashboards", "Cost tracking"],
-    nextSteps: [
-      "Implement automated evaluations",
-      "Add prompt versioning",
-      "Set up alerting",
-    ],
+    nextSteps: ["Implement automated evaluations", "Add prompt versioning", "Set up alerting"],
   },
   {
     level: 4,
@@ -75,11 +67,7 @@ const maturityLevels: MaturityLevel[] = [
       "Proactive alerting",
       "Performance optimization",
     ],
-    tools: [
-      "Full observability stack",
-      "Automated testing",
-      "A/B testing platforms",
-    ],
+    tools: ["Full observability stack", "Automated testing", "A/B testing platforms"],
     nextSteps: [
       "Optimize for specific business metrics",
       "Implement advanced ML monitoring",
@@ -97,11 +85,7 @@ const maturityLevels: MaturityLevel[] = [
       "Continuous optimization loops",
       "Predictive quality assurance",
     ],
-    tools: [
-      "Custom ML platforms",
-      "Business intelligence integration",
-      "Predictive analytics",
-    ],
+    tools: ["Custom ML platforms", "Business intelligence integration", "Predictive analytics"],
     nextSteps: [
       "Share knowledge with community",
       "Contribute to open source tools",
@@ -170,10 +154,7 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
     newAnswers[questionIndex] = level;
     setQuizAnswers(newAnswers);
 
-    if (
-      newAnswers.length === quizQuestions.length &&
-      newAnswers.every((a) => a > 0)
-    ) {
+    if (newAnswers.length === quizQuestions.length && newAnswers.every((a) => a > 0)) {
       const averageLevel = Math.round(
         newAnswers.reduce((sum, level) => sum + level, 0) / newAnswers.length,
       );
@@ -205,8 +186,7 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
           LLM Observability Maturity Model
         </h3>
         <p className="text-gray-300 text-sm">
-          Discover where you stand in your observability journey and learn
-          what's next.
+          Discover where you stand in your observability journey and learn what's next.
         </p>
       </div>
 
@@ -222,19 +202,13 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
                     ? getLevelColor(level.level)
                     : "bg-gray-800 border-gray-600 hover:border-emerald-500"
                 }`}
-                onClick={() =>
-                  setSelectedLevel(
-                    selectedLevel === level.level ? null : level.level,
-                  )
-                }
+                onClick={() => setSelectedLevel(selectedLevel === level.level ? null : level.level)}
               >
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-emerald-400">
                     Level {level.level}: {level.title}
                   </h4>
-                  <span className="text-gray-400">
-                    {selectedLevel === level.level ? "−" : "+"}
-                  </span>
+                  <span className="text-gray-400">{selectedLevel === level.level ? "−" : "+"}</span>
                 </div>
 
                 {selectedLevel === level.level && (
@@ -242,9 +216,7 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
                     <p className="text-gray-300">{level.description}</p>
 
                     <div>
-                      <h5 className="font-medium text-emerald-300 mb-2">
-                        Characteristics:
-                      </h5>
+                      <h5 className="font-medium text-emerald-300 mb-2">Characteristics:</h5>
                       <ul className="list-disc list-inside text-gray-300 text-sm space-y-1">
                         {level.characteristics.map((char) => (
                           <li key={char}>{char}</li>
@@ -253,9 +225,7 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
                     </div>
 
                     <div>
-                      <h5 className="font-medium text-emerald-300 mb-2">
-                        Typical Tools:
-                      </h5>
+                      <h5 className="font-medium text-emerald-300 mb-2">Typical Tools:</h5>
                       <div className="flex flex-wrap gap-2">
                         {level.tools.map((tool) => (
                           <span
@@ -269,9 +239,7 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
                     </div>
 
                     <div>
-                      <h5 className="font-medium text-emerald-300 mb-2">
-                        Next Steps:
-                      </h5>
+                      <h5 className="font-medium text-emerald-300 mb-2">Next Steps:</h5>
                       <ul className="list-disc list-inside text-gray-300 text-sm space-y-1">
                         {level.nextSteps.map((step) => (
                           <li key={step}>{step}</li>
@@ -299,9 +267,7 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
       {showQuiz && !quizResult && (
         <div className="space-y-6">
           <div className="text-center">
-            <h4 className="text-lg font-semibold text-emerald-400 mb-2">
-              Assessment Quiz
-            </h4>
+            <h4 className="text-lg font-semibold text-emerald-400 mb-2">Assessment Quiz</h4>
             <p className="text-gray-300 text-sm">
               Answer these questions to discover your current maturity level.
             </p>
@@ -346,23 +312,17 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
 
       {quizResult && (
         <div className="text-center space-y-4">
-          <div
-            className={`p-6 rounded-lg border-2 ${getLevelColor(quizResult)}`}
-          >
+          <div className={`p-6 rounded-lg border-2 ${getLevelColor(quizResult)}`}>
             <h4 className="text-xl font-bold text-emerald-400 mb-2">
               Your Maturity Level: {quizResult}
             </h4>
             <h5 className="text-lg font-semibold text-emerald-300 mb-3">
               {maturityLevels[quizResult - 1].title}
             </h5>
-            <p className="text-gray-300 mb-4">
-              {maturityLevels[quizResult - 1].description}
-            </p>
+            <p className="text-gray-300 mb-4">{maturityLevels[quizResult - 1].description}</p>
 
             <div className="text-left">
-              <h6 className="font-medium text-emerald-300 mb-2">
-                Recommended Next Steps:
-              </h6>
+              <h6 className="font-medium text-emerald-300 mb-2">Recommended Next Steps:</h6>
               <ul className="list-disc list-inside text-gray-300 text-sm space-y-1">
                 {maturityLevels[quizResult - 1].nextSteps.map((step, idx) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: ignore
@@ -383,9 +343,8 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
       )}
 
       <div className="mt-6 text-xs text-gray-400 border-t border-gray-700 pt-4">
-        <strong className="text-emerald-400">Tip:</strong> Most teams start at
-        Level 1-2. The key is continuous improvement - each level builds on the
-        previous one.
+        <strong className="text-emerald-400">Tip:</strong> Most teams start at Level 1-2. The key is
+        continuous improvement - each level builds on the previous one.
       </div>
     </div>
   );

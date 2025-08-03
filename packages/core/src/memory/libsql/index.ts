@@ -3,11 +3,13 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
+import { LoggerProxy } from "../../logger";
 import { safeJsonParse } from "../../utils";
+import { addSuspendedStatusMigration } from "../migrations/add-suspended-status";
+import { createWorkflowTables } from "../migrations/workflow-tables";
 import type {
   Conversation,
   ConversationQueryOptions,
@@ -17,8 +19,6 @@ import type {
   MemoryOptions,
   MessageFilterOptions,
 } from "../types";
-import { createWorkflowTables } from "../migrations/workflow-tables";
-import { addSuspendedStatusMigration } from "../migrations/add-suspended-status";
 import { LibSQLWorkflowExtension } from "./workflow-extension";
 
 /**

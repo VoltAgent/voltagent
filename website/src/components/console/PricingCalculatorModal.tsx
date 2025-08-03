@@ -1,15 +1,13 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import styles from "./PricingCalculatorModal.module.css";
 
 interface PricingCalculatorModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const PricingCalculatorModal = ({
-  isOpen,
-  onClose,
-}: PricingCalculatorModalProps) => {
+const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps) => {
   const [traceCount, setTraceCount] = useState<number>(10000);
   const [selectedPlan, setSelectedPlan] = useState<"core" | "pro">("core");
 
@@ -105,9 +103,7 @@ const PricingCalculatorModal = ({
 
         {/* Plan Selector */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">
-            Select Plan:
-          </label>
+          <label className="block text-sm font-medium text-gray-300 mb-3">Select Plan:</label>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -136,14 +132,9 @@ const PricingCalculatorModal = ({
 
         {/* Slider Input */}
         <div className="mb-6">
-          <label
-            htmlFor="trace-slider"
-            className="block text-sm font-medium text-gray-300 mb-4"
-          >
+          <label htmlFor="trace-slider" className="block text-sm font-medium text-gray-300 mb-4">
             Monthly trace usage:{" "}
-            <span className="text-emerald-400 font-semibold">
-              {traceCount.toLocaleString()}
-            </span>{" "}
+            <span className="text-emerald-400 font-semibold">{traceCount.toLocaleString()}</span>{" "}
             traces
           </label>
           <div className="relative">
@@ -155,37 +146,11 @@ const PricingCalculatorModal = ({
               step={1000}
               value={traceCount}
               onChange={(e) => setTraceCount(Number(e.target.value))}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              className={`w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer ${styles.rangeSlider}`}
               style={{
                 background: `linear-gradient(to right, #00d992 0%, #00d992 ${
                   (traceCount / 50000) * 100
                 }%, #374151 ${(traceCount / 50000) * 100}%, #374151 100%)`,
-              }}
-            />
-            <style
-              dangerouslySetInnerHTML={{
-                __html: `
-                                input[type="range"]::-webkit-slider-thumb {
-                                    appearance: none;
-                                    height: 20px;
-                                    width: 20px;
-                                    border-radius: 50%;
-                                    background: #00d992;
-                                    cursor: pointer;
-                                    border: 2px solid #191c24;
-                                    box-shadow: 0 0 0 1px rgba(0, 217, 146, 0.3);
-                                }
-                                input[type="range"]::-moz-range-thumb {
-                                    height: 20px;
-                                    width: 20px;
-                                    border-radius: 50%;
-                                    background: #00d992;
-                                    cursor: pointer;
-                                    border: 2px solid #191c24;
-                                    box-shadow: 0 0 0 1px rgba(0, 217, 146, 0.3);
-                                    border: none;
-                                }
-                            `,
               }}
             />
           </div>
@@ -201,18 +166,14 @@ const PricingCalculatorModal = ({
         {/* Results */}
         <div className="space-y-4 mb-6">
           <div className="bg-[#292929] rounded-lg p-4 border border-gray-700/50">
-            <h4 className="text-sm font-medium text-emerald-400 mb-3">
-              Cost Breakdown
-            </h4>
+            <h4 className="text-sm font-medium text-emerald-400 mb-3">Cost Breakdown</h4>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">
                   {selectedPlan === "core" ? "Core" : "Pro"} Plan Base
                 </span>
-                <span className="text-gray-100 font-medium">
-                  ${cost.baseCost}
-                </span>
+                <span className="text-gray-100 font-medium">${cost.baseCost}</span>
               </div>
 
               <div className="flex justify-between">
@@ -232,21 +193,15 @@ const PricingCalculatorModal = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Overage cost</span>
-                    <span className="text-gray-100 font-medium">
-                      ${cost.overageCost}
-                    </span>
+                    <span className="text-gray-100 font-medium">${cost.overageCost}</span>
                   </div>
                 </div>
               )}
 
               <div className="border-t border-gray-700/50 pt-3 mt-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-100 font-semibold">
-                    Total Monthly Cost
-                  </span>
-                  <span className="text-emerald-400 text-lg font-bold">
-                    ${cost.totalCost}
-                  </span>
+                  <span className="text-gray-100 font-semibold">Total Monthly Cost</span>
+                  <span className="text-emerald-400 text-lg font-bold">${cost.totalCost}</span>
                 </div>
               </div>
             </div>
@@ -256,8 +211,7 @@ const PricingCalculatorModal = ({
           <div className="p-3 bg-emerald-400/10 border border-emerald-400/20 rounded-md">
             <p className="text-emerald-400 text-xs">
               <span className="font-medium">Pricing:</span> $
-              {selectedPlan === "core" ? "50" : "500"}/month base + $10 per
-              5,000 additional traces
+              {selectedPlan === "core" ? "50" : "500"}/month base + $10 per 5,000 additional traces
             </p>
           </div>
         </div>
@@ -273,9 +227,7 @@ const PricingCalculatorModal = ({
           </button>
           <button
             type="button"
-            onClick={() =>
-              window.open("https://console.voltagent.dev", "_blank")
-            }
+            onClick={() => window.open("https://console.voltagent.dev", "_blank")}
             className="flex-1 inline-flex items-center justify-center border-solid border font-semibold rounded transition-colors px-4 py-3 text-sm bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300"
           >
             Get Started

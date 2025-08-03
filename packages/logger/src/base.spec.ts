@@ -1,10 +1,10 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  connectExternalLogBuffer,
+  createPinoLogger,
+  getGlobalLogBuffer,
   getGlobalLoggerProvider,
   setGlobalLoggerProvider,
-  getGlobalLogBuffer,
-  createPinoLogger,
-  connectExternalLogBuffer,
 } from "./base";
 import { PinoLoggerProvider } from "./providers";
 import type { LoggerProvider, LoggerWithProvider } from "./providers";
@@ -151,7 +151,7 @@ describe("base", () => {
         },
       };
 
-      const logger = createPinoLogger(options);
+      createPinoLogger(options);
 
       expect(PinoLoggerProvider).toHaveBeenCalledWith(
         options.bufferSize,
@@ -206,7 +206,7 @@ describe("base", () => {
       connectExternalLogBuffer(logger, externalBuffer);
 
       // Get the provider instance after connecting
-      const provider = logger.getProvider();
+      const _provider = logger.getProvider();
 
       // In the mock, the instanceof check fails, so externalLogBuffer won't be set
       // This is a limitation of mocking. In real usage, it would work.

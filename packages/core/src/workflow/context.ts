@@ -1,6 +1,6 @@
+import type { Logger } from "@voltagent/internal";
 import type { Memory } from "../memory";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
-import type { Logger } from "@voltagent/internal";
 
 /**
  * Context information for a workflow execution

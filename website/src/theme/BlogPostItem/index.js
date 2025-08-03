@@ -7,16 +7,7 @@ import React from "react";
 
 export default function BlogPostItem({ className }) {
   const { metadata } = useBlogPost();
-  const {
-    permalink,
-    title,
-    date,
-    formattedDate,
-    frontMatter,
-    description,
-    tags,
-    authors,
-  } = metadata;
+  const { permalink, title, date, description, tags, authors } = metadata;
 
   const author = authors?.[0];
 
@@ -38,11 +29,7 @@ export default function BlogPostItem({ className }) {
               {author && (
                 <>
                   {author.imageURL && (
-                    <img
-                      src={author.imageURL}
-                      alt={author.name}
-                      className="w-5 h-5 rounded-full"
-                    />
+                    <img src={author.imageURL} alt={author.name} className="w-5 h-5 rounded-full" />
                   )}
                   <span className="text-xs text-gray-400">{author.name}</span>
                 </>

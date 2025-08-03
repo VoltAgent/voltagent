@@ -1,14 +1,14 @@
 import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
+import { deepClone } from "@voltagent/internal/utils";
 import { v4 as uuidv4 } from "uuid";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import type { BaseMessage } from "../index";
+import { LogEvents, LoggerProxy, getGlobalLogger } from "../logger";
 import { AgentRegistry } from "../server/registry";
 import { BackgroundQueue } from "../utils/queue/queue";
-import { deepClone } from "@voltagent/internal/utils";
 import type { AgentTimelineEvent } from "./types";
-import { getGlobalLogger, LogEvents, LoggerProxy } from "../logger";
 
 // New type exports
 export type EventStatus = AgentStatus;

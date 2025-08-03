@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ClientTweetCard } from "../magicui/tweet-card-client";
+import { ArticleCard } from "./ArticleCard";
 import { DiscordMessage } from "./DiscordMessage";
 import { LinkedInMessage } from "./LinkedInMessage";
-import { ArticleCard } from "./ArticleCard";
 import { LinkedInPost } from "./LinkedInPost";
 
 // Seamless infinite scroll CSS with calculated values
@@ -96,19 +96,16 @@ const testimonialTweetIds = [
 const linkedInPosts = [
   {
     id: "linkedin-1",
-    profileImage:
-      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/luis-avi.jpeg",
+    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/luis-avi.jpeg",
     name: "Luis Aviles",
-    title:
-      "Senior Frontend Engineer | Full Stack | Angular | JavaScript | TypeScript",
+    title: "Senior Frontend Engineer | Full Stack | Angular | JavaScript | TypeScript",
     content:
       "I'm incredibly honored to be one of the top 10 contributors to the VoltAgent open-source AI agent framework! I've been contributing to this project for a few weeks now and it's been a fantastic experience. I'm a firm believer in the power of open-source to drive innovation, and this project is a perfect example of that.",
     url: "https://www.linkedin.com/feed/update/urn:li:activity:7341294748466323457/",
   },
   {
     id: "linkedin-2",
-    profileImage:
-      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/emre.jpeg",
+    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/emre.jpeg",
     name: "Emre Tezisci",
     title: "Product Marketer | Board Chair | Founder | Nonprofit Leader",
     content:
@@ -117,19 +114,16 @@ const linkedInPosts = [
   },
   {
     id: "linkedin-3",
-    profileImage:
-      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/yusuf.jpeg",
+    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/yusuf.jpeg",
     name: "Yusuf Eren",
-    title:
-      "Building AI Agents in TypeScript | LLMs | AWS | NestJS | MongoDB DBA | TypeScript",
+    title: "Building AI Agents in TypeScript | LLMs | AWS | NestJS | MongoDB DBA | TypeScript",
     content:
       "Just made my first contribution to VoltAgent on GitHub! I added support for xsAI as a voice provider, making it easier to integrate voice features into AI agents. Big thanks to Omer Aplak for giving me this opportunity and trusting me to contribute.",
     url: "https://www.linkedin.com/feed/update/urn:li:activity:7326679429068316674/",
   },
   {
     id: "linkedin-4",
-    profileImage:
-      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/zac-ros.jpeg",
+    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/zac-ros.jpeg",
     name: "Zac Rosenbauer",
     title: "Co-founder at Joggr | Using AI 🤖 to automate dev docs",
     content:
@@ -138,8 +132,7 @@ const linkedInPosts = [
   },
   {
     id: "linkedin-5",
-    profileImage:
-      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/outshift.jpeg",
+    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/outshift.jpeg",
     name: "Outshift by Cisco",
     title: "60,028 followers",
     content:
@@ -189,8 +182,7 @@ const linkedInMessages = [
     id: "linkedin-msg-2",
     username: "Sarah Kim",
     title: "Product Manager",
-    message:
-      "That looks fantastic! will try it with the ElevenLabs module in first opportunity.",
+    message: "That looks fantastic! will try it with the ElevenLabs module in first opportunity.",
     avatar: "", // User will add
     url: "https://www.linkedin.com/feed/update/urn:li:activity:7320007310200770560?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7320007310200770560%2C7320424868326391809%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287320424868326391809%2Curn%3Ali%3Aactivity%3A7320007310200770560%29",
   },
@@ -198,8 +190,7 @@ const linkedInMessages = [
 
 const articles = [
   {
-    title:
-      "The Gift of Reasoning: Enhancing Amazon Nova Lite with VoltAgent for Character Quirks",
+    title: "The Gift of Reasoning: Enhancing Amazon Nova Lite with VoltAgent for Character Quirks",
     coverImage: "https://cdn.voltagent.dev/website/testimonials/community.png",
     excerpt:
       "Exploring how Voltagent revolutionizes AI agent development with full TypeScript support and enterprise-grade features.",
@@ -208,8 +199,7 @@ const articles = [
     type: "article" as const,
   },
   {
-    title:
-      "VoltAgent（TypeScript の AIエージェントフレームワーク）を軽く試してみる",
+    title: "VoltAgent（TypeScript の AIエージェントフレームワーク）を軽く試してみる",
     coverImage: "https://cdn.voltagent.dev/website/testimonials/community.png",
     author: "Yosuke Toyota",
     url: "https://qiita.com/youtoy/items/6990e175e92c54265580",
@@ -318,10 +308,7 @@ export function Testimonials() {
 
   // Create mixed Discord/LinkedIn messages content
   const mixedDiscordContent = [];
-  const maxDiscordLength = Math.max(
-    discordMessages.length,
-    linkedInMessages.length,
-  );
+  const maxDiscordLength = Math.max(discordMessages.length, linkedInMessages.length);
 
   for (let i = 0; i < maxDiscordLength; i++) {
     if (i < discordMessages.length) {
@@ -343,65 +330,26 @@ export function Testimonials() {
 
   // Minimal duplication - just one copy for seamless effect
   const seamlessMixedContent = [...mixedContent, ...mixedContent];
-  const seamlessMixedDiscordContent = [
-    ...mixedDiscordContent,
-    ...mixedDiscordContent,
-  ];
+  const seamlessMixedDiscordContent = [...mixedDiscordContent, ...mixedDiscordContent];
   const seamlessArticles = [...articles, ...articles];
 
   // Event handlers for tweets row (scrolling left)
-  const handleTweetsRowTouchStart = useCallback(
-    () => setIsTweetsRowPaused(true),
-    [],
-  );
-  const handleTweetsRowTouchEnd = useCallback(
-    () => setIsTweetsRowPaused(false),
-    [],
-  );
-  const handleTweetsRowMouseEnter = useCallback(
-    () => setIsTweetsRowPaused(true),
-    [],
-  );
-  const handleTweetsRowMouseLeave = useCallback(
-    () => setIsTweetsRowPaused(false),
-    [],
-  );
+  const handleTweetsRowTouchStart = useCallback(() => setIsTweetsRowPaused(true), []);
+  const handleTweetsRowTouchEnd = useCallback(() => setIsTweetsRowPaused(false), []);
+  const handleTweetsRowMouseEnter = useCallback(() => setIsTweetsRowPaused(true), []);
+  const handleTweetsRowMouseLeave = useCallback(() => setIsTweetsRowPaused(false), []);
 
   // Event handlers for discord row (scrolling right)
-  const handleDiscordRowTouchStart = useCallback(
-    () => setIsDiscordRowPaused(true),
-    [],
-  );
-  const handleDiscordRowTouchEnd = useCallback(
-    () => setIsDiscordRowPaused(false),
-    [],
-  );
-  const handleDiscordRowMouseEnter = useCallback(
-    () => setIsDiscordRowPaused(true),
-    [],
-  );
-  const handleDiscordRowMouseLeave = useCallback(
-    () => setIsDiscordRowPaused(false),
-    [],
-  );
+  const handleDiscordRowTouchStart = useCallback(() => setIsDiscordRowPaused(true), []);
+  const handleDiscordRowTouchEnd = useCallback(() => setIsDiscordRowPaused(false), []);
+  const handleDiscordRowMouseEnter = useCallback(() => setIsDiscordRowPaused(true), []);
+  const handleDiscordRowMouseLeave = useCallback(() => setIsDiscordRowPaused(false), []);
 
   // Event handlers for articles row (scrolling left)
-  const handleArticlesRowTouchStart = useCallback(
-    () => setIsArticlesRowPaused(true),
-    [],
-  );
-  const handleArticlesRowTouchEnd = useCallback(
-    () => setIsArticlesRowPaused(false),
-    [],
-  );
-  const handleArticlesRowMouseEnter = useCallback(
-    () => setIsArticlesRowPaused(true),
-    [],
-  );
-  const handleArticlesRowMouseLeave = useCallback(
-    () => setIsArticlesRowPaused(false),
-    [],
-  );
+  const handleArticlesRowTouchStart = useCallback(() => setIsArticlesRowPaused(true), []);
+  const handleArticlesRowTouchEnd = useCallback(() => setIsArticlesRowPaused(false), []);
+  const handleArticlesRowMouseEnter = useCallback(() => setIsArticlesRowPaused(true), []);
+  const handleArticlesRowMouseLeave = useCallback(() => setIsArticlesRowPaused(false), []);
 
   // Add touch event listeners
   useEffect(() => {
@@ -419,11 +367,7 @@ export function Testimonials() {
     // Discord row listeners
     const discordElement = discordRowRef.current;
     if (discordElement) {
-      discordElement.addEventListener(
-        "touchstart",
-        handleDiscordRowTouchStart,
-        { passive: true },
-      );
+      discordElement.addEventListener("touchstart", handleDiscordRowTouchStart, { passive: true });
       discordElement.addEventListener("touchend", handleDiscordRowTouchEnd, {
         passive: true,
       });
@@ -432,13 +376,9 @@ export function Testimonials() {
     // Articles row listeners
     const articlesElement = articlesRowRef.current;
     if (articlesElement) {
-      articlesElement.addEventListener(
-        "touchstart",
-        handleArticlesRowTouchStart,
-        {
-          passive: true,
-        },
-      );
+      articlesElement.addEventListener("touchstart", handleArticlesRowTouchStart, {
+        passive: true,
+      });
       articlesElement.addEventListener("touchend", handleArticlesRowTouchEnd, {
         passive: true,
       });
@@ -447,35 +387,20 @@ export function Testimonials() {
     return () => {
       // Clean up tweets row listeners
       if (tweetsElement) {
-        tweetsElement.removeEventListener(
-          "touchstart",
-          handleTweetsRowTouchStart,
-        );
+        tweetsElement.removeEventListener("touchstart", handleTweetsRowTouchStart);
         tweetsElement.removeEventListener("touchend", handleTweetsRowTouchEnd);
       }
 
       // Clean up discord row listeners
       if (discordElement) {
-        discordElement.removeEventListener(
-          "touchstart",
-          handleDiscordRowTouchStart,
-        );
-        discordElement.removeEventListener(
-          "touchend",
-          handleDiscordRowTouchEnd,
-        );
+        discordElement.removeEventListener("touchstart", handleDiscordRowTouchStart);
+        discordElement.removeEventListener("touchend", handleDiscordRowTouchEnd);
       }
 
       // Clean up articles row listeners
       if (articlesElement) {
-        articlesElement.removeEventListener(
-          "touchstart",
-          handleArticlesRowTouchStart,
-        );
-        articlesElement.removeEventListener(
-          "touchend",
-          handleArticlesRowTouchEnd,
-        );
+        articlesElement.removeEventListener("touchstart", handleArticlesRowTouchStart);
+        articlesElement.removeEventListener("touchend", handleArticlesRowTouchEnd);
       }
     };
   }, [
@@ -531,10 +456,7 @@ export function Testimonials() {
                 }`}
               >
                 {seamlessMixedContent.map((item, index) => (
-                  <div
-                    key={`${item.key}-${index}`}
-                    className="flex-shrink-0 w-80"
-                  >
+                  <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
                     {item.type === "tweet" ? (
                       <ClientTweetCard id={item.id} />
                     ) : (
@@ -576,10 +498,7 @@ export function Testimonials() {
                 }`}
               >
                 {seamlessMixedDiscordContent.map((item, index) => (
-                  <div
-                    key={`${item.key}-${index}`}
-                    className="flex-shrink-0 w-80"
-                  >
+                  <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
                     {item.type === "discord" ? (
                       <DiscordMessage
                         username={item.data.username}
@@ -629,9 +548,7 @@ export function Testimonials() {
                 >
                   {seamlessArticles.map((article, index) => (
                     <div
-                      key={`article-${article.title
-                        .replace(/\s+/g, "-")
-                        .toLowerCase()}-${index}`}
+                      key={`article-${article.title.replace(/\s+/g, "-").toLowerCase()}-${index}`}
                       className="flex-shrink-0 w-80"
                     >
                       <ArticleCard

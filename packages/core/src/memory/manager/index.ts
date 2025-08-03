@@ -3,7 +3,6 @@ import type { StepWithContent } from "../../agent/providers";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { OperationContext } from "../../agent/types";
 import { AgentEventEmitter } from "../../events";
-import { getGlobalLogger, LogEvents } from "../../logger";
 import type {
   AgentTimelineEvent,
   MemoryReadStartEvent,
@@ -13,6 +12,7 @@ import type {
   MemoryWriteSuccessEvent,
   NewTimelineEvent,
 } from "../../events/types";
+import { LogEvents, getGlobalLogger } from "../../logger";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import { BackgroundQueue } from "../../utils/queue/queue";
 import { LibSQLStorage } from "../index";
@@ -152,7 +152,7 @@ export class MemoryManager {
 
     // Create memory-specific logger
     const memoryLogger = this.logger.child({
-      component: `Memory:conversation`,
+      component: "Memory:conversation",
       memoryType: "conversation",
       operation: "write",
       agentId: this.resourceId,
@@ -190,7 +190,7 @@ export class MemoryManager {
       await this.conversationMemory.addMessage(memoryMessage, conversationId);
 
       // Log successful memory operation
-      memoryLogger.trace(`Memory write successful (1 records)`, {
+      memoryLogger.trace("Memory write successful (1 records)", {
         event: LogEvents.MEMORY_OPERATION_COMPLETED,
         operation: "write",
         success: true,
@@ -506,7 +506,7 @@ export class MemoryManager {
       } else {
         // Update conversation's updatedAt
         await this.conversationMemory.updateConversation(conversationId, {});
-        this.logger.trace(`[Memory] Updated conversation`, {
+        this.logger.trace("[Memory] Updated conversation", {
           conversationId,
           userId,
           agentId: this.resourceId,

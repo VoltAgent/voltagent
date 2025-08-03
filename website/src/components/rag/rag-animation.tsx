@@ -87,16 +87,10 @@ export function RagExample() {
           if (currentStep + 1 === 1) {
             setActiveNodes(["input"]);
 
-            typeText(
-              "User input: 'What are the latest features of VoltAgent?'",
-            );
+            typeText("User input: 'What are the latest features of VoltAgent?'");
           } else if (currentStep + 1 === 2) {
             // Embed phase - Knowledge Base and Embedding Models
-            setActiveNodes([
-              "knowledgeBase",
-              "embeddingBottom",
-              "embeddingTop",
-            ]);
+            setActiveNodes(["knowledgeBase", "embeddingBottom", "embeddingTop"]);
             setTimeout(() => {}, 1000);
           } else if (currentStep + 1 === 3) {
             // Retrieval phase - Embedding Models and Vector Store
@@ -162,8 +156,7 @@ export function RagExample() {
 
   // Get node highlight class based on active state
   const getNodeHighlightClass = (nodeName: string) => {
-    const isActive =
-      activeNodes.includes(nodeName) || activeNodes.includes("all");
+    const isActive = activeNodes.includes(nodeName) || activeNodes.includes("all");
     const isAnyNodeActive = activeNodes.length > 0;
 
     // Base shadow and border colors for different node types
@@ -207,19 +200,13 @@ export function RagExample() {
                 <div className="grid grid-cols-5 mb-12">
                   <div className="col-span-1" />
                   <div className="col-span-1 flex justify-center">
-                    <div className="text-white text-md font-[monospace]">
-                      .embed()
-                    </div>
+                    <div className="text-white text-md font-[monospace]">.embed()</div>
                   </div>
                   <div className="col-span-1 flex justify-center">
-                    <div className="text-white text-md font-[monospace]">
-                      .query()
-                    </div>
+                    <div className="text-white text-md font-[monospace]">.query()</div>
                   </div>
                   <div className="col-span-1 flex justify-center">
-                    <div className="text-white text-md font-[monospace]">
-                      .rerank()
-                    </div>
+                    <div className="text-white text-md font-[monospace]">.rerank()</div>
                   </div>
                   <div className="col-span-1" />
                 </div>
@@ -237,9 +224,7 @@ export function RagExample() {
                       <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
                         <UserIcon className="w-4 h-4 text-gray-500" />
                       </div>
-                      <span className="font-medium text-white text-xs">
-                        input
-                      </span>
+                      <span className="font-medium text-white text-xs">input</span>
                     </div>
                   </div>
 
@@ -258,9 +243,7 @@ export function RagExample() {
                         <span className="font-medium text-xs text-white leading-tight">
                           embedding
                         </span>
-                        <span className="font-medium text-xs text-white leading-tight">
-                          model
-                        </span>
+                        <span className="font-medium text-xs text-white leading-tight">model</span>
                       </div>
                     </div>
                   </div>
@@ -276,9 +259,7 @@ export function RagExample() {
                       <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
                         <CpuChipIcon className="w-4 h-4 text-gray-400" />
                       </div>
-                      <span className=" font-medium text-white text-xs">
-                        retrieval
-                      </span>
+                      <span className=" font-medium text-white text-xs">retrieval</span>
                     </div>
                   </div>
 
@@ -293,9 +274,7 @@ export function RagExample() {
                       <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
                         <CpuChipIcon className="w-4 h-4 text-gray-400" />
                       </div>
-                      <span className=" font-medium text-white text-xs">
-                        llm
-                      </span>
+                      <span className=" font-medium text-white text-xs">llm</span>
                     </div>
                   </div>
 
@@ -310,9 +289,7 @@ export function RagExample() {
                       <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
                         <LightBulbIcon className="w-4 h-4 text-gray-500" />
                       </div>
-                      <span className=" font-medium text-white text-xs">
-                        output
-                      </span>
+                      <span className=" font-medium text-white text-xs">output</span>
                     </div>
                   </div>
                 </div>
@@ -370,9 +347,7 @@ export function RagExample() {
                         <span className="font-medium text-xs text-white leading-tight">
                           knowledge
                         </span>
-                        <span className="font-medium text-xs text-white leading-tight">
-                          base
-                        </span>
+                        <span className="font-medium text-xs text-white leading-tight">base</span>
                       </div>
                     </div>
                   </div>
@@ -392,9 +367,7 @@ export function RagExample() {
                         <span className="font-medium text-xs text-white leading-tight">
                           embedding
                         </span>
-                        <span className="font-medium text-xs text-white leading-tight">
-                          model
-                        </span>
+                        <span className="font-medium text-xs text-white leading-tight">model</span>
                       </div>
                     </div>
                   </div>
@@ -411,9 +384,7 @@ export function RagExample() {
                         <QueueListIcon className="w-4 h-4 text-amber-500" />
                       </div>
                       <div className="flex flex-col justify-center">
-                        <span className="font-medium text-white text-xs">
-                          vector stores
-                        </span>
+                        <span className="font-medium text-white text-xs">vector stores</span>
                       </div>
                     </div>
                   </div>

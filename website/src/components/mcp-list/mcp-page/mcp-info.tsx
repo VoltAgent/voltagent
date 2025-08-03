@@ -57,16 +57,12 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
             <div className="w-8 h-8 mr-3 flex items-center justify-center bg-slate-700/50 rounded-md">
               {LogoComponent && <LogoComponent className="w-5 h-5" />}
             </div>
-            <span className="text-lg font-semibold text-emerald-400">
-              {mcp.name} MCP
-            </span>
+            <span className="text-lg font-semibold text-emerald-400">{mcp.name} MCP</span>
           </div>
           <div className="flex items-center mt-3">
             <span className="text-gray-400 text-xs mr-2">Created By</span>
             <div className="flex items-center">
-              <span className="text-gray-200 text-xs">
-                {currentMetadata.creator}
-              </span>
+              <span className="text-gray-200 text-xs">{currentMetadata.creator}</span>
             </div>
           </div>
         </div>
@@ -85,10 +81,7 @@ export const SidebarInfoSection: React.FC<SidebarInfoSectionProps> = ({
           aria-label="View MCP Documentation"
         >
           Visit {mcp.name} {currentTab.name} Docs
-          <ArrowTopRightOnSquareIcon
-            className="h-4 w-4 ml-2"
-            aria-hidden="true"
-          />
+          <ArrowTopRightOnSquareIcon className="h-4 w-4 ml-2" aria-hidden="true" />
         </a>
       </div>
 

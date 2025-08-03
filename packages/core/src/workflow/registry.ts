@@ -1,14 +1,14 @@
-import type { VoltAgentExporter } from "../telemetry/exporter";
-import type { Workflow, WorkflowSuspendController } from "./types";
-import type { WorkflowHistoryEntry } from "./types";
 import { EventEmitter } from "node:events";
-import { createWorkflowStepNodeId } from "../utils/node-utils";
-import { WorkflowMemoryManager } from "./memory/manager";
-import { WorkflowHistoryManager } from "./history-manager";
 import type { WorkflowEvent, WorkflowEventWithStatus } from "../events/workflow-emitter";
 import { WorkflowEventEmitter } from "../events/workflow-emitter";
 import { LoggerProxy } from "../logger";
 import type { Memory } from "../memory/types";
+import type { VoltAgentExporter } from "../telemetry/exporter";
+import { createWorkflowStepNodeId } from "../utils/node-utils";
+import { WorkflowHistoryManager } from "./history-manager";
+import { WorkflowMemoryManager } from "./memory/manager";
+import type { Workflow, WorkflowSuspendController } from "./types";
+import type { WorkflowHistoryEntry } from "./types";
 
 /**
  * Serialize a workflow step for API response
@@ -197,11 +197,7 @@ export class WorkflowRegistry extends EventEmitter {
     const emitter = WorkflowEventEmitter.getInstance();
     emitter.on(
       "immediateWorkflowEvent",
-      (params: {
-        workflowId: string;
-        executionId: string;
-        event: WorkflowEventWithStatus;
-      }) => {
+      (params: { workflowId: string; executionId: string; event: WorkflowEventWithStatus }) => {
         this.handleImmediateWorkflowEvent(params);
       },
     );
@@ -553,7 +549,7 @@ export class WorkflowRegistry extends EventEmitter {
       throw new Error(`No suspension metadata found for execution: ${executionId}`);
     }
 
-    this.logger.trace(`Found suspension metadata:`, suspensionMetadata);
+    this.logger.trace("Found suspension metadata:", suspensionMetadata);
 
     // Create a new suspend controller for the resumed execution
     const suspendController = registeredWorkflow.workflow.createSuspendController?.();
@@ -692,7 +688,7 @@ export class WorkflowRegistry extends EventEmitter {
   /**
    * Suspend all active workflows for graceful shutdown
    */
-  public async suspendAllActiveWorkflows(reason: string = "Server shutting down"): Promise<void> {
+  public async suspendAllActiveWorkflows(reason = "Server shutting down"): Promise<void> {
     const activeEntries = Array.from(this.activeExecutions.entries());
 
     if (activeEntries.length === 0) {
@@ -710,7 +706,7 @@ export class WorkflowRegistry extends EventEmitter {
 
     // Wait a bit for all workflows to process suspension
     if (activeEntries.length > 0) {
-      this.logger.trace(`Waiting for workflows to suspend...`);
+      this.logger.trace("Waiting for workflows to suspend...");
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }

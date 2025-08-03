@@ -1,6 +1,12 @@
-import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
 import type { NewTimelineEvent } from "../../events/types";
+import { LoggerProxy } from "../../logger";
+import type {
+  WorkflowHistoryEntry,
+  WorkflowStats,
+  WorkflowStepHistoryEntry,
+  WorkflowTimelineEvent,
+} from "../../workflow/types";
 import type {
   Conversation,
   ConversationQueryOptions,
@@ -10,12 +16,6 @@ import type {
   MemoryOptions,
   MessageFilterOptions,
 } from "../types";
-import type {
-  WorkflowHistoryEntry,
-  WorkflowStepHistoryEntry,
-  WorkflowTimelineEvent,
-  WorkflowStats,
-} from "../../workflow/types";
 
 /**
  * Options for configuring the InMemoryStorage

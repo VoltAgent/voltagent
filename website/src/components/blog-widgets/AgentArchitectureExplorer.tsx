@@ -4,8 +4,7 @@ const architectureData = [
   {
     id: "llm-brain",
     name: "🧠 LLM Brain",
-    description:
-      "The core reasoning engine that thinks, understands, and makes decisions",
+    description: "The core reasoning engine that thinks, understands, and makes decisions",
     details:
       "This is the heart of your agent — GPT, Claude, Gemini, or any other language model. It processes natural language, understands context, and generates responses. However, on its own, it can only work with text and has no access to real-world data or the ability to perform actions.",
     examples:
@@ -14,8 +13,7 @@ const architectureData = [
   {
     id: "tools",
     name: "🔧 Tools",
-    description:
-      "The hands and feet of the agent — APIs, databases, and external services",
+    description: "The hands and feet of the agent — APIs, databases, and external services",
     details:
       "Tools give your agent superpowers beyond text generation. They're functions that can interact with the real world: calling APIs, querying databases, performing calculations, sending emails, or even controlling other software. The LLM decides when and how to use these tools.",
     examples:
@@ -24,8 +22,7 @@ const architectureData = [
   {
     id: "memory",
     name: "💾 Memory System",
-    description:
-      "Remembers conversations and maintains context across interactions",
+    description: "Remembers conversations and maintains context across interactions",
     details:
       "Without memory, every conversation starts from scratch. The memory system stores previous interactions, user preferences, and conversation context. This enables personalized experiences and allows the agent to reference past conversations naturally.",
     examples:
@@ -34,8 +31,7 @@ const architectureData = [
   {
     id: "orchestration",
     name: "🎼 Orchestration",
-    description:
-      "The conductor that coordinates everything and manages the workflow",
+    description: "The conductor that coordinates everything and manages the workflow",
     details:
       "This is the most complex part — the system that decides what to do next, when to use tools, how to handle errors, and how to combine different components. It's like a conductor orchestrating a symphony, making sure everything works together smoothly.",
     examples:
@@ -47,9 +43,7 @@ const AgentArchitectureExplorer = () => {
   const [selectedComponentId, setSelectedComponentId] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
 
-  const selectedComponent = architectureData.find(
-    (comp) => comp.id === selectedComponentId,
-  );
+  const selectedComponent = architectureData.find((comp) => comp.id === selectedComponentId);
 
   return (
     <div className="my-4 rounded-lg border-2 border-emerald-500 bg-gray-800 p-4 text-gray-100 shadow-lg">
@@ -64,25 +58,16 @@ const AgentArchitectureExplorer = () => {
           className="w-full flex items-center justify-between bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg border border-emerald-700 transition-colors duration-200"
         >
           <span className="text-sm font-medium">
-            {selectedComponent
-              ? selectedComponent.name
-              : "Select a component to explore"}
+            {selectedComponent ? selectedComponent.name : "Select a component to explore"}
           </span>
           <svg
-            className={`w-4 h-4 transition-transform duration-200 ${
-              isOpen ? "rotate-180" : ""
-            }`}
+            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
@@ -98,12 +83,8 @@ const AgentArchitectureExplorer = () => {
                 }}
                 className="w-full text-left px-4 py-3 hover:bg-gray-600 transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
               >
-                <div className="text-sm font-medium text-white mb-1">
-                  {component.name}
-                </div>
-                <div className="text-xs text-gray-300">
-                  {component.description}
-                </div>
+                <div className="text-sm font-medium text-white mb-1">{component.name}</div>
+                <div className="text-xs text-gray-300">{component.description}</div>
               </button>
             ))}
           </div>
@@ -115,12 +96,8 @@ const AgentArchitectureExplorer = () => {
           <h4 className="mb-2 text-base text-emerald-300 font-semibold">
             {selectedComponent.name}
           </h4>
-          <p className="text-sm leading-relaxed text-gray-200 mb-3">
-            {selectedComponent.details}
-          </p>
-          <h5 className="text-sm text-emerald-200 font-medium mb-2">
-            Common Use Cases:
-          </h5>
+          <p className="text-sm leading-relaxed text-gray-200 mb-3">{selectedComponent.details}</p>
+          <h5 className="text-sm text-emerald-200 font-medium mb-2">Common Use Cases:</h5>
           <pre className="text-xs leading-relaxed text-gray-300 whitespace-pre-line font-sans">
             {selectedComponent.examples}
           </pre>

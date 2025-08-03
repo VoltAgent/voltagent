@@ -58,10 +58,7 @@ export const MicrosoftTeamsLogo = ({ className }: { className?: string }) => (
       fill="url(#msTeamsLinearGradient)"
       d="M1.597 4.925h5.969c.33 0 .597.267.597.596v5.958a.596.596 0 01-.597.596h-5.97A.596.596 0 011 11.479V5.521c0-.33.267-.596.597-.596z"
     />
-    <path
-      fill="#ffffff"
-      d="M6.152 7.193H4.959v3.243h-.76V7.193H3.01v-.63h3.141v.63z"
-    />
+    <path fill="#ffffff" d="M6.152 7.193H4.959v3.243h-.76V7.193H3.01v-.63h3.141v.63z" />
     <defs>
       <linearGradient
         id="msTeamsLinearGradient"

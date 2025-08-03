@@ -171,9 +171,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                   </div>
                   <span className="text-xs sm:text-sm text-[#dcdcdc]">
                     <span className="text-gray-500">By</span>{" "}
-                    <span className="font-medium">
-                      {selectedAgent.creator.name}
-                    </span>
+                    <span className="font-medium">{selectedAgent.creator.name}</span>
                   </span>
                   <div className="ml-4 flex items-center">
                     <RatingStars rating={selectedAgent.rating} />
@@ -196,14 +194,10 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                   <div>
                     <div className="flex items-center mb-2">
                       <CommandLineIcon className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                      <span className="text-xs sm:text-sm text-emerald-400">
-                        Run Locally
-                      </span>
+                      <span className="text-xs sm:text-sm text-emerald-400">Run Locally</span>
                     </div>
                     <code className="flex items-center bg-black/20 border-[#1e293b] border-solid p-3 sm:p-4 text-xs sm:text-sm text-emerald-500 font-mono whitespace-pre rounded-md overflow-x-auto">
-                      <span>
-                        $ npx voltagent add michael-scott/linkedin-user-analyzer
-                      </span>
+                      <span>$ npx voltagent add michael-scott/linkedin-user-analyzer</span>
                     </code>
                   </div>
 
@@ -301,9 +295,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                   <span className="text-gray-400">Rating</span>
                   <div className="flex items-center xs:justify-end">
                     <BoltSolidIcon className="h-3 w-3 text-[#00d992] mr-1" />
-                    <span className="text-[#dcdcdc]">
-                      {selectedAgent.rating}/5
-                    </span>
+                    <span className="text-[#dcdcdc]">{selectedAgent.rating}/5</span>
                   </div>
                 </div>
 
@@ -356,10 +348,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
               </div>
               <div className="space-y-4">
                 {visibleReviews.map((review) => (
-                  <div
-                    key={review.id}
-                    className="p-3 sm:p-4 rounded-md ring-1 ring-[#1e293b] "
-                  >
+                  <div key={review.id} className="p-3 sm:p-4 rounded-md ring-1 ring-[#1e293b] ">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center">
                         <img
@@ -373,17 +362,11 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                       </div>
                       <div className="flex items-center">
                         <BoltSolidIcon className="h-3 w-3 text-[#00d992] mr-1" />
-                        <span className="text-xs sm:text-sm text-gray-400">
-                          {review.rating}
-                        </span>
+                        <span className="text-xs sm:text-sm text-gray-400">{review.rating}</span>
                       </div>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-400 mb-1">
-                      {review.text}
-                    </p>
-                    <div className="text-xs sm:text-sm text-gray-500">
-                      {review.date}
-                    </div>
+                    <p className="text-xs sm:text-sm text-gray-400 mb-1">{review.text}</p>
+                    <div className="text-xs sm:text-sm text-gray-500">{review.date}</div>
                   </div>
                 ))}
               </div>

@@ -91,8 +91,7 @@ const agent = new Agent({
       {
         type: "text",
         title: "Use in Agent Mode",
-        value:
-          "After connecting, you can use your Zapier tools in Cursor's Agent mode.",
+        value: "After connecting, you can use your Zapier tools in Cursor's Agent mode.",
       },
     ],
     claude: [
@@ -170,14 +169,12 @@ const agent = new Agent({
       {
         type: "text",
         title: "Generate Configuration",
-        value:
-          "Go to https://mcp.composio.dev/{mcpName} to create your own Composio MCP setup.",
+        value: "Go to https://mcp.composio.dev/{mcpName} to create your own Composio MCP setup.",
       },
       {
         type: "text",
         title: " Install MCP Tools",
-        value:
-          "Copy the `npx` command from mcp.composio.dev and run it in your terminal.",
+        value: "Copy the `npx` command from mcp.composio.dev and run it in your terminal.",
       },
       {
         type: "text",
@@ -195,8 +192,7 @@ const agent = new Agent({
       {
         type: "text",
         title: "Setup Steps",
-        value:
-          "Go to https://mcp.composio.dev/{mcpName} to create your own Composio MCP setup.",
+        value: "Go to https://mcp.composio.dev/{mcpName} to create your own Composio MCP setup.",
       },
       {
         type: "text",
@@ -204,8 +200,7 @@ const agent = new Agent({
       },
       {
         type: "text",
-        value:
-          "Restart Claude Desktop and look for the tools icon to make sure it worked.",
+        value: "Restart Claude Desktop and look for the tools icon to make sure it worked.",
       },
     ],
     serverGenerationInfo: {

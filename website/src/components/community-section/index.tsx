@@ -205,8 +205,8 @@ export function CommunitySection() {
               Join the movement
             </p>
             <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
-              Our growing <span className="text-main-emerald">open source</span>{" "}
-              community building the future of AI agents.
+              Our growing <span className="text-main-emerald">open source</span> community building
+              the future of AI agents.
             </p>
           </div>
 
@@ -234,9 +234,7 @@ export function CommunitySection() {
                 </div>
                 <div
                   className={`md:absolute md:top-2 md:right-7 text-main-emerald px-3 py-1 rounded md:opacity-0 ${
-                    link.id === "discord" || link.id === "github"
-                      ? "opacity-0"
-                      : "opacity-100"
+                    link.id === "discord" || link.id === "github" ? "opacity-0" : "opacity-100"
                   } md:group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium whitespace-nowrap pointer-events-none md:translate-x-1/4 md:-translate-y-1/4 mt-4 md:mt-0`}
                 >
                   {link.tooltip}

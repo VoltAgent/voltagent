@@ -1,17 +1,14 @@
-import type React from "react";
 import Link from "@docusaurus/Link";
-import { BoltIcon } from "@heroicons/react/24/solid";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
+import type React from "react";
 
 interface TutorialNavbarProps {
   currentStep: number;
   totalSteps: number;
 }
 
-export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
-  currentStep,
-  totalSteps,
-}) => {
+export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, totalSteps }) => {
   const steps = [
     { number: 1, title: "Introduction", url: "/tutorial/introduction" },
     { number: 2, title: "Chatbot Problem", url: "/tutorial/chatbot-problem" },
@@ -33,8 +30,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
           <div className=" w-full  ">
             <div className="flex items-center justify-center text-center py-2 bg-emerald-400">
               <span className="text-xs sm:text-sm font-medium text-black">
-                ⭐ We’re open source – a GitHub star means a lot to us. Thank
-                you for the support! ❤️
+                ⭐ We’re open source – a GitHub star means a lot to us. Thank you for the support! ❤️
               </span>
             </div>
           </div>
@@ -53,12 +49,8 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
                 <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                   <BoltIcon className="w-4 h-4 text-[#00d992]" />
                 </div>
-                <span className="text-lg font-bold text-[#00d992]">
-                  voltagent
-                </span>
-                <span className="ml-2  text-sm  font-medium text-gray-400">
-                  Tutorial
-                </span>
+                <span className="text-lg font-bold text-[#00d992]">voltagent</span>
+                <span className="ml-2  text-sm  font-medium text-gray-400">Tutorial</span>
               </Link>
 
               {/* Mobile Actions */}
@@ -121,17 +113,12 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({
           {/* Desktop Layout */}
           <div className="hidden md:flex items-center justify-between h-16">
             {/* Logo */}
-            <Link
-              to="/docs"
-              className="flex items-center justify-center no-underline"
-            >
+            <Link to="/docs" className="flex items-center justify-center no-underline">
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-5 h-5 sm:w-5 sm:h-5 text-[#00d992]" />
               </div>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl font-bold text-[#00d992]">
-                  voltagent
-                </span>
+                <span className="text-xl sm:text-2xl font-bold text-[#00d992]">voltagent</span>
                 <span className="ml-2 font-medium text-gray-400">Tutorial</span>
               </div>
             </Link>

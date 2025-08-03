@@ -1,14 +1,7 @@
 import React, { useState } from "react";
 
 type AppType = "user-facing" | "internal" | "unknown";
-type Concern =
-  | "accuracy"
-  | "safety"
-  | "speed"
-  | "cost"
-  | "debugging"
-  | "drift"
-  | "unknown";
+type Concern = "accuracy" | "safety" | "speed" | "cost" | "debugging" | "drift" | "unknown";
 
 const recommendations: Record<AppType, Record<Concern, string[]>> = {
   "user-facing": {
@@ -134,14 +127,9 @@ export default function ObservabilityPrioritizer(): JSX.Element {
       <h4 className="mb-2 text-lg font-semibold text-white">
         Quick Check: What Should You Monitor First?
       </h4>
-      <p className="mb-4 text-sm text-gray-300">
-        Answer these questions to get a starting point:
-      </p>
+      <p className="mb-4 text-sm text-gray-300">Answer these questions to get a starting point:</p>
       <div className="mb-4">
-        <label
-          htmlFor="appTypeSelect"
-          className="mb-1 block text-sm font-medium text-gray-200"
-        >
+        <label htmlFor="appTypeSelect" className="mb-1 block text-sm font-medium text-gray-200">
           1. Is your LLM application primarily:
         </label>
         <select
@@ -162,10 +150,7 @@ export default function ObservabilityPrioritizer(): JSX.Element {
         </select>
       </div>
       <div className="mb-4">
-        <label
-          htmlFor="concernSelect"
-          className="mb-1 block text-sm font-medium text-gray-200"
-        >
+        <label htmlFor="concernSelect" className="mb-1 block text-sm font-medium text-gray-200">
           2. Right now, your biggest immediate concern is:
         </label>
         <select
@@ -209,8 +194,8 @@ export default function ObservabilityPrioritizer(): JSX.Element {
             ))}
           </ul>
           <p className="mt-3 text-xs text-emerald-300/70">
-            (Remember, this is a starting point! A comprehensive strategy often
-            involves multiple pillars.)
+            (Remember, this is a starting point! A comprehensive strategy often involves multiple
+            pillars.)
           </p>
         </div>
       )}

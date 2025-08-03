@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createWorkflowChain, andThen } from "@voltagent/core";
+import { Agent, VoltAgent, andThen, createWorkflowChain } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
@@ -317,7 +317,7 @@ const contentAnalysisWorkflow = createWorkflowChain({
       wordCount: z.number(),
     }),
     execute: async ({ data }) => {
-      console.log(`\nAnalysis Metrics:`);
+      console.log("\nAnalysis Metrics:");
       console.log(`- Sentiment: ${data.sentiment}`);
       console.log(`- Keywords: ${data.keywords.join(", ")}`);
       console.log(`- Word count: ${data.wordCount}`);

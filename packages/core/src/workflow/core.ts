@@ -17,6 +17,7 @@ import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import { convertWorkflowStateToParam, createStepExecutionContext } from "./internal/utils";
 import { WorkflowRegistry } from "./registry";
+import { createScheduler } from "./scheduler";
 import type { WorkflowStep } from "./steps";
 import type {
   Workflow,
@@ -29,7 +30,6 @@ import type {
   WorkflowStepHistoryEntry,
   WorkflowSuspensionMetadata,
 } from "./types";
-import { createScheduler } from "./scheduler";
 
 /**
  * Creates a workflow from multiple and* functions
@@ -835,13 +835,13 @@ export function createWorkflow<
 
           // Check if we have a suspension controller with a reason
           if (options?.suspendController?.getReason()) {
-            reason = options.suspendController.getReason()!;
+            reason = options.suspendController.getReason() || "User requested suspension";
             runLogger.trace(`Using reason from suspension controller: ${reason}`);
           } else {
             // Fallback to registry's active executions
             const activeController = workflowRegistry.activeExecutions.get(executionId);
             if (activeController?.getReason()) {
-              reason = activeController.getReason()!;
+              reason = activeController.getReason() || "User requested suspension";
               runLogger.debug(`Using reason from registry: ${reason}`);
             }
           }
@@ -887,14 +887,14 @@ export function createWorkflow<
                   suspension: stateManager.state.suspension,
                 },
               });
-              runLogger.trace(`Updated workflow execution status to suspended`);
+              runLogger.trace("Updated workflow execution status to suspended");
             } catch (updateError) {
-              runLogger.error(`Failed to update workflow status to suspended:`, {
+              runLogger.error("Failed to update workflow status to suspended:", {
                 error: updateError,
               });
             }
           } else {
-            runLogger.warn(`No historyEntry found, skipping status update`);
+            runLogger.warn("No historyEntry found, skipping status update");
           }
 
           // Log workflow suspension with context
@@ -1135,9 +1135,9 @@ export function createWorkflow<
                     lastActiveStep: index,
                   },
                 });
-                runLogger.trace(`Updated workflow execution status to suspended`);
+                runLogger.trace("Updated workflow execution status to suspended");
               } catch (updateError) {
-                runLogger.error(`Failed to update workflow status to suspended:`, {
+                runLogger.error("Failed to update workflow status to suspended:", {
                   error: updateError,
                 });
               }
@@ -1231,7 +1231,7 @@ export function createWorkflow<
     } catch (error) {
       // Check if this is a suspension, not an error
       if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
-        runLogger.debug(`Workflow suspended (caught at top level)`);
+        runLogger.debug("Workflow suspended (caught at top level)");
         // This case should be handled in the step catch block,
         // but just in case it bubbles up here
         return createWorkflowExecutionResult(
@@ -1322,9 +1322,7 @@ export function createWorkflow<
         getReason: () => suspensionReason,
       };
     },
-    run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
-      return await run(input, options);
-    },
+    run,
     scheduledRun: async (
       input,
       options?: Partial<WorkflowRunOptions> & { schedule: WorkflowScheduleOptions },

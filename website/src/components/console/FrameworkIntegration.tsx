@@ -30,8 +30,7 @@ const FrameworkIntegration = () => {
       ),
       tooltip: "VoltAgent",
       isComingSoon: false,
-      docUrl:
-        "https://voltagent.dev/voltops-llm-observability-docs/voltagent-framework/",
+      docUrl: "https://voltagent.dev/voltops-llm-observability-docs/voltagent-framework/",
     },
     {
       logo: (
@@ -55,8 +54,7 @@ const FrameworkIntegration = () => {
       ),
       tooltip: "Python SDK",
       isComingSoon: false,
-      docUrl:
-        "https://voltagent.dev/voltops-llm-observability-docs/python-sdk/",
+      docUrl: "https://voltagent.dev/voltops-llm-observability-docs/python-sdk/",
     },
 
     {
@@ -140,11 +138,7 @@ const FrameworkIntegration = () => {
   ];
 
   // Duplicate logos for continuous scrolling
-  const duplicatedLogos = [
-    ...integrationLogos,
-    ...integrationLogos,
-    ...integrationLogos,
-  ];
+  const duplicatedLogos = [...integrationLogos, ...integrationLogos, ...integrationLogos];
 
   return (
     <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6 mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16 landing-lg:mb-24">
@@ -172,8 +166,7 @@ const FrameworkIntegration = () => {
           Support for all frameworks
         </h2>
         <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg mb-6 landing-xs:mb-4 landing-sm:mb-8">
-          Connect AI agents built with different frameworks to the LLM
-          Observability console.
+          Connect AI agents built with different frameworks to the LLM Observability console.
         </p>
       </div>
 

@@ -1,7 +1,7 @@
-import type { LiteralUnion } from "type-fest";
-import type { StreamEvent, StreamEventType } from "./types";
 import type { Logger } from "@voltagent/internal";
+import type { LiteralUnion } from "type-fest";
 import { getGlobalLogger } from "../../logger";
+import type { StreamEvent, StreamEventType } from "./types";
 
 export interface StreamEventForwarderOptions {
   forwarder: (event: StreamEvent) => Promise<void>;

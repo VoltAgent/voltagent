@@ -1,8 +1,8 @@
+import path from "node:path";
 import { openai } from "@ai-sdk/openai";
-import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
+import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import path from "node:path";
 
 const mcpConfig = new MCPConfiguration({
   servers: {

@@ -1,7 +1,7 @@
-import { VoltAgent, Agent, createTool, createHooks } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent, createHooks, createTool } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 import { fetchRepoContributorsTool } from "./tools";
 import { fetchRepoStarsTool } from "./tools";
 

@@ -8,6 +8,7 @@ export {
   andAll,
   andRace,
   andTap,
+  andWorkflow,
 } from "./workflow";
 export type {
   WorkflowExecutionContext,
@@ -69,10 +70,7 @@ export {
 } from "./server/custom-endpoints";
 export * from "./telemetry/exporter";
 export * from "./voltops";
-export type {
-  UsageInfo,
-  StreamPart,
-} from "./agent/providers";
+export type { UsageInfo, StreamPart } from "./agent/providers";
 export type { ServerOptions, VoltAgentOptions } from "./types";
 export { VoltAgent } from "./voltagent";
 export { VoltAgent as default } from "./voltagent";

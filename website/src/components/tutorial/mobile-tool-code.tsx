@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type Feature =
   | "imports"
@@ -20,9 +20,7 @@ interface MobileToolCodeProps {
 }
 
 export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
-  const [selectedFeature, setSelectedFeature] = useState<Feature | null>(
-    "tool_definition",
-  );
+  const [selectedFeature, setSelectedFeature] = useState<Feature | null>("tool_definition");
   const [overlayPosition, setOverlayPosition] = useState<{
     top: number;
     height: number;
@@ -79,10 +77,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
     },
   ];
 
-  const handleFeatureClick = (
-    feature: Feature,
-    event: React.MouseEvent<HTMLSpanElement>,
-  ) => {
+  const handleFeatureClick = (feature: Feature, event: React.MouseEvent<HTMLSpanElement>) => {
     const element = event.currentTarget;
 
     if (selectedFeature === feature) {
@@ -98,8 +93,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
   };
 
   const getHighlightClasses = (section: Feature) => {
-    const baseHighlightClass =
-      "transition-all duration-300 ease-in-out cursor-pointer relative";
+    const baseHighlightClass = "transition-all duration-300 ease-in-out cursor-pointer relative";
 
     return selectedFeature === section
       ? `bg-gradient-to-r from-emerald-600/40 to-emerald-500/20 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-emerald-500 pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
@@ -200,9 +194,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
                 <span>,</span>
                 <br />
                 <span className="ml-4">description: </span>
-                <span className="text-yellow-300">
-                  "Get current weather for any city"
-                </span>
+                <span className="text-yellow-300">"Get current weather for any city"</span>
                 <span>,</span>
                 <br />
               </span>
@@ -222,9 +214,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
                 <span className="ml-8">location: </span>
                 <span className="text-green-400">z</span>
                 <span>.string().describe(</span>
-                <span className="text-yellow-300">
-                  "City and state, e.g. New York, NY"
-                </span>
+                <span className="text-yellow-300">"City and state, e.g. New York, NY"</span>
                 <span>),</span>
                 <br />
                 <span className="ml-4">{"}),"}</span>
@@ -256,9 +246,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
                 <span className="text-yellow-300">"..."</span>
                 <span>);</span>
                 <br />
-                <span className="ml-8 text-gray-300">
-                  {"// Simple demo logic"}
-                </span>
+                <span className="ml-8 text-gray-300">{"// Simple demo logic"}</span>
                 <br />
                 <span className="ml-8">
                   <span className="text-blue-400">if</span>
@@ -297,9 +285,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
               {/* Agent Creation */}
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
-                className={`block ${getHighlightClasses(
-                  "agent",
-                )} break-words whitespace-pre-wrap`}
+                className={`block ${getHighlightClasses("agent")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("agent", e)}
               >
                 <span className="text-blue-400">const</span>
@@ -368,10 +354,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
                         {features.find((f) => f.id === selectedFeature)?.title}
                       </div>
                       <p className="text-[11px] leading-[16px] text-white/70 whitespace-normal overflow-wrap-normal">
-                        {
-                          features.find((f) => f.id === selectedFeature)
-                            ?.description
-                        }
+                        {features.find((f) => f.id === selectedFeature)?.description}
                       </p>
                     </div>
                   </div>
@@ -384,17 +367,11 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
 
       {/* The Result - Mobile */}
       <div className="mt-6">
-        <h4 className="text-emerald-500 font-semibold mb-2 text-sm">
-          The Magic
-        </h4>
+        <h4 className="text-emerald-500 font-semibold mb-2 text-sm">The Magic</h4>
         <p className="text-gray-300 mb-0 text-xs">
-          Your agent now <strong>takes action</strong> instead of giving advice.
-          It calls your{" "}
-          <span className="text-emerald-500 font-mono text-xs">
-            get_weather
-          </span>{" "}
-          function automatically and provides real data. This is the power of
-          tools.
+          Your agent now <strong>takes action</strong> instead of giving advice. It calls your{" "}
+          <span className="text-emerald-500 font-mono text-xs">get_weather</span> function
+          automatically and provides real data. This is the power of tools.
         </p>
       </div>
     </div>

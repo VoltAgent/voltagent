@@ -63,10 +63,7 @@ function BlogTagsPostsPageContent({ tag, items, listMetadata, tags }) {
     ExecutionEnvironment.canUseDOM ? POSTS_PER_PAGE : items.length,
   );
   const [loadedPosts, setLoadedPosts] = useState(
-    items.slice(
-      0,
-      ExecutionEnvironment.canUseDOM ? POSTS_PER_PAGE : items.length,
-    ),
+    items.slice(0, ExecutionEnvironment.canUseDOM ? POSTS_PER_PAGE : items.length),
   );
   const loaderRef = useRef(null);
   const isLoading = useRef(false);
@@ -82,15 +79,9 @@ function BlogTagsPostsPageContent({ tag, items, listMetadata, tags }) {
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0];
-        if (
-          target.isIntersecting &&
-          visiblePosts < items.length &&
-          !isLoading.current
-        ) {
+        if (target.isIntersecting && visiblePosts < items.length && !isLoading.current) {
           isLoading.current = true;
-          setVisiblePosts((prev) =>
-            Math.min(prev + POSTS_PER_PAGE, items.length),
-          );
+          setVisiblePosts((prev) => Math.min(prev + POSTS_PER_PAGE, items.length));
           isLoading.current = false;
         }
       },
@@ -126,10 +117,9 @@ function BlogTagsPostsPageContent({ tag, items, listMetadata, tags }) {
               {title}
             </p>
             <p className="max-w-3xl landing-md:text-base landing-xs:text-xs text-gray-400">
-              Technical articles and best practices on building autonomous AI
-              agents - Comprehensive guides on agent design, LLM integration,
-              reasoning capabilities, and app development with the{" "}
-              <span className="text-main-emerald">VoltAgent</span>.
+              Technical articles and best practices on building autonomous AI agents - Comprehensive
+              guides on agent design, LLM integration, reasoning capabilities, and app development
+              with the <span className="text-main-emerald">VoltAgent</span>.
             </p>
           </div>
 
@@ -206,10 +196,7 @@ export default function BlogTagsPostsPage(props) {
   const { tags = [], ...rest } = props;
   return (
     <HtmlClassNameProvider
-      className={clsx(
-        ThemeClassNames.wrapper.blogPages,
-        ThemeClassNames.page.blogTagPostListPage,
-      )}
+      className={clsx(ThemeClassNames.wrapper.blogPages, ThemeClassNames.page.blogTagPostListPage)}
     >
       <BlogTagsPostsPageMetadata {...rest} />
       <BlogTagsPostsPageContent {...rest} tags={tags} />

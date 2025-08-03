@@ -1,4 +1,5 @@
 import type { Span } from "@opentelemetry/api";
+import type { Logger } from "@voltagent/internal";
 import { P, match } from "ts-pattern";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
@@ -15,13 +16,14 @@ import type {
   ToolStartEvent,
   ToolSuccessEvent,
 } from "../events/types";
+import { LogEvents, LoggerProxy, ensureBufferedLogger } from "../logger";
 import {
-  buildAgentLogMessage,
-  buildToolLogMessage,
-  buildRetrieverLogMessage,
   ActionType,
-  buildLogContext,
   ResourceType,
+  buildAgentLogMessage,
+  buildLogContext,
+  buildRetrieverLogMessage,
+  buildToolLogMessage,
 } from "../logger/message-builder";
 import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
@@ -29,7 +31,6 @@ import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
-import { zodSchemaToJsonUI } from "../utils/toolParser";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import {
@@ -37,6 +38,7 @@ import {
   streamEventForwarder,
   transformStreamEventToStreamPart,
 } from "../utils/streams";
+import { zodSchemaToJsonUI } from "../utils/toolParser";
 import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
@@ -79,8 +81,6 @@ import type {
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
-import type { Logger } from "@voltagent/internal";
-import { LogEvents, LoggerProxy, ensureBufferedLogger } from "../logger";
 
 /**
  * Agent class for interacting with AI models

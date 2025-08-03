@@ -1,9 +1,9 @@
 import type { Logger } from "@voltagent/internal";
 import type { BaseTool, ToolExecuteOptions } from "../../agent/providers/base/types";
+import { ActionType, LogEvents, buildToolLogMessage, getGlobalLogger } from "../../logger";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import { type AgentTool, createTool } from "../index";
 import type { Toolkit } from "../toolkit";
-import { getGlobalLogger, LogEvents, buildToolLogMessage, ActionType } from "../../logger";
 
 /**
  * Status of a tool at any given time

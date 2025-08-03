@@ -23,18 +23,14 @@ export function Rag() {
             Accurate and context-aware responses
           </p>
           <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
-            For advanced querying and dynamic analysis, integrate data into a
-            knowledge base by syncing from diverse sources
+            For advanced querying and dynamic analysis, integrate data into a knowledge base by
+            syncing from diverse sources
           </p>
         </div>
 
         {/* Code Example - Full Width */}
         <div className="">
-          {isMobile ? (
-            <RagMobile isVisible={true} />
-          ) : (
-            <RagExample isVisible={true} />
-          )}
+          {isMobile ? <RagMobile isVisible={true} /> : <RagExample isVisible={true} />}
         </div>
         {/* Feature Cards - Grid Layout */}
         <div className="grid  landing-xs:grid-cols-2 landing-md:grid-cols-4 gap-4 h-full ">
@@ -50,8 +46,8 @@ export function Rag() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Seamlessly manage and query your vector data with a unified API,
-                compatible with various providers.
+                Seamlessly manage and query your vector data with a unified API, compatible with
+                various providers.
               </div>
             </div>
           </div>
@@ -68,8 +64,8 @@ export function Rag() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Refine search results by filtering vectors based on metadata
-                like source, date, or custom attributes.
+                Refine search results by filtering vectors based on metadata like source, date, or
+                custom attributes.
               </div>
             </div>
           </div>
@@ -86,8 +82,8 @@ export function Rag() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Empower AI agents to access and utilize your knowledge base
-                through dedicated vector search tools.
+                Empower AI agents to access and utilize your knowledge base through dedicated vector
+                search tools.
               </div>
             </div>
           </div>
@@ -104,8 +100,8 @@ export function Rag() {
                 </div>
               </div>
               <div className="text-gray-400 text-xs leading-relaxed">
-                Combine keyword and vector search techniques for enhanced
-                accuracy and relevance in information retrieval.
+                Combine keyword and vector search techniques for enhanced accuracy and relevance in
+                information retrieval.
               </div>
             </div>
           </div>

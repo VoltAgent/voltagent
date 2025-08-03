@@ -2,13 +2,7 @@ import BrowserOnly from "@docusaurus/BrowserOnly";
 import { Transition } from "@headlessui/react";
 import clsx from "clsx";
 import { useScroll } from "framer-motion";
-import {
-  type FC,
-  type PropsWithChildren,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type FC, type PropsWithChildren, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useKeyDown } from "../hooks/use-keydown";
 import { useOutsideClick } from "../hooks/use-outside-click";
@@ -35,20 +29,13 @@ export const CommonDrawer: FC<PropsWithChildren<Props>> = (props) => {
   }, [props.open]);
 
   return (
-    <BrowserOnly>
-      {() => createPortal(<DrawerComponent {...props} />, document.body)}
-    </BrowserOnly>
+    <BrowserOnly>{() => createPortal(<DrawerComponent {...props} />, document.body)}</BrowserOnly>
   );
 };
 
 const DEFAULT_TOP_OFFSET = 0;
 
-const DrawerComponent: FC<PropsWithChildren<Props>> = ({
-  children,
-  title,
-  open,
-  onClose,
-}) => {
+const DrawerComponent: FC<PropsWithChildren<Props>> = ({ children, title, open, onClose }) => {
   const [topOffset, setTopOffset] = useState(DEFAULT_TOP_OFFSET);
   const { scrollY } = useScroll();
 
@@ -82,12 +69,7 @@ const DrawerComponent: FC<PropsWithChildren<Props>> = ({
         zIndex: 99999,
         backgroundColor: "var(--ifm-background-color)",
       }}
-      className={clsx(
-        "fixed",
-        "right-0 bottom-0",
-        "z-modal",
-        !open && "pointer-events-none",
-      )}
+      className={clsx("fixed", "right-0 bottom-0", "z-modal", !open && "pointer-events-none")}
     >
       <Transition
         ref={drawerRef}
@@ -121,11 +103,7 @@ const DrawerComponent: FC<PropsWithChildren<Props>> = ({
           )}
         >
           <h3 className={clsx("text-base", "font-semibold")}>{title}</h3>
-          <button
-            type="button"
-            className={clsx("appearance-none")}
-            onClick={onClose}
-          >
+          <button type="button" className={clsx("appearance-none")} onClick={onClose}>
             <CloseIcon />
           </button>
         </div>

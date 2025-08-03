@@ -1,12 +1,12 @@
 // Type definitions for SDK
 // Re-exporting types from Core
 import type {
-  NewTimelineEvent,
-  BaseEventMetadata,
   AgentStartEventMetadata,
-  TimelineEventCoreStatus,
-  TimelineEventCoreLevel,
+  BaseEventMetadata,
   HistoryStatus,
+  NewTimelineEvent,
+  TimelineEventCoreLevel,
+  TimelineEventCoreStatus,
   UsageInfo,
 } from "@voltagent/core";
 

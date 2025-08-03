@@ -5,8 +5,8 @@
  * prompt management, telemetry, and API interactions.
  */
 
-import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { BaseMessage } from "../agent/providers/base/types";
+import type { VoltAgentExporter } from "../telemetry/exporter";
 
 /**
  * Reference to a prompt in the VoltOps system

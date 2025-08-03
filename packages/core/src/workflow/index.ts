@@ -1,4 +1,4 @@
-export { andAgent, andThen, andWhen, andAll, andRace, andTap } from "./steps";
+export { andAgent, andThen, andWhen, andAll, andWorkflow, andRace, andTap } from "./steps";
 export { createWorkflow } from "./core";
 export { createWorkflowChain } from "./chain";
 export { WorkflowRegistry } from "./registry";

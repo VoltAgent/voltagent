@@ -27,9 +27,7 @@ type GitHubStarsState = GitHubStarsData & {
 const API_ENDPOINT = "https://love.voltagent.dev/api/love";
 
 // Create the context with a default value
-const GitHubStarsContext = createContext<GitHubStarsState | undefined>(
-  undefined,
-);
+const GitHubStarsContext = createContext<GitHubStarsState | undefined>(undefined);
 
 // Create the provider component
 type GitHubStarsProviderProps = {
@@ -58,7 +56,7 @@ export const GitHubStarsProvider = ({ children }: GitHubStarsProviderProps) => {
             if (errorData && (errorData.error || errorData.message)) {
               errorMsg += ` - ${errorData.error || errorData.message}`;
             }
-          } catch (e) {
+          } catch (_e) {
             /* Ignore if body isn't JSON */
           }
           throw new Error(errorMsg);
@@ -66,10 +64,7 @@ export const GitHubStarsProvider = ({ children }: GitHubStarsProviderProps) => {
         const data: GitHubStarsData = await response.json();
 
         // Basic validation of the received data
-        if (
-          typeof data.stars !== "number" ||
-          !Array.isArray(data.recent_stargazers)
-        ) {
+        if (typeof data.stars !== "number" || !Array.isArray(data.recent_stargazers)) {
           // Allow null for recent_stargazers if API returned it that way (e.g., error fetching)
           if (data.recent_stargazers !== null) {
             throw new Error("Invalid data format received from API");
@@ -79,15 +74,11 @@ export const GitHubStarsProvider = ({ children }: GitHubStarsProviderProps) => {
         setStarsData({
           stars: data.stars,
           // Ensure stargazers is always an array or null
-          recent_stargazers: Array.isArray(data.recent_stargazers)
-            ? data.recent_stargazers
-            : null,
+          recent_stargazers: Array.isArray(data.recent_stargazers) ? data.recent_stargazers : null,
         });
       } catch (err) {
         console.error("GitHubStarsContext fetch error:", err);
-        setError(
-          err instanceof Error ? err : new Error("An unknown error occurred"),
-        );
+        setError(err instanceof Error ? err : new Error("An unknown error occurred"));
         setStarsData({ stars: null, recent_stargazers: null }); // Reset data on error
       } finally {
         setLoading(false);
@@ -110,11 +101,7 @@ export const GitHubStarsProvider = ({ children }: GitHubStarsProviderProps) => {
     [starsData, loading, error],
   );
 
-  return (
-    <GitHubStarsContext.Provider value={value}>
-      {children}
-    </GitHubStarsContext.Provider>
-  );
+  return <GitHubStarsContext.Provider value={value}>{children}</GitHubStarsContext.Provider>;
 };
 
 // Create the custom hook for consuming the context

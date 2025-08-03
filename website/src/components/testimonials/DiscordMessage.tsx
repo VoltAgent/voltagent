@@ -57,17 +57,11 @@ export function DiscordMessage({
               <span className="flex items-center no-decoration no-underline text-[#dcdcdc] whitespace-nowrap font-semibold">
                 {username}
                 {discriminator && (
-                  <span className="ml-1 text-gray-500 text-sm">
-                    #{discriminator}
-                  </span>
+                  <span className="ml-1 text-gray-500 text-sm">#{discriminator}</span>
                 )}
               </span>
               <div className="flex items-center space-x-1">
-                {timestamp && (
-                  <span className="ml-1 text-gray-500 text-sm">
-                    {timestamp}
-                  </span>
-                )}
+                {timestamp && <span className="ml-1 text-gray-500 text-sm">{timestamp}</span>}
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
-import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
+import { LoggerProxy } from "../../logger";
 
 export interface QueueTask<T = any> {
   id: string;
@@ -110,5 +110,7 @@ export class BackgroundQueue {
         }
       }
     }
+
+    return undefined;
   }
 }

@@ -9,24 +9,11 @@ export {
 
 export { InMemoryLogBuffer } from "./buffer";
 
-export {
-  getDefaultLogLevel,
-  getDefaultLogFormat,
-  getDefaultRedactionPaths,
-} from "./formatters";
+export { getDefaultLogLevel, getDefaultLogFormat, getDefaultRedactionPaths } from "./formatters";
 
-export type {
-  Logger,
-  LoggerOptions,
-  LogEntry,
-  LogFilter,
-  LogBuffer,
-} from "./types";
+export type { Logger, LoggerOptions, LogEntry, LogFilter, LogBuffer } from "./types";
 
-export type {
-  LoggerProvider,
-  LoggerWithProvider,
-} from "./providers";
+export type { LoggerProvider, LoggerWithProvider } from "./providers";
 
 export { PinoLoggerProvider } from "./providers";
 

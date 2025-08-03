@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import Layout from "@theme/Layout";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import Layout from "@theme/Layout";
+import React, { useState, useEffect } from "react";
 import { DotPattern } from "../components/ui/dot-pattern";
 
 // Types for the API response
@@ -50,9 +50,7 @@ export default function OSSFriendsPage() {
 
         // Use CORS proxy to bypass CORS restrictions
         const proxyUrl = "https://api.allorigins.win/get?url=";
-        const targetUrl = encodeURIComponent(
-          "https://formbricks.com/api/oss-friends",
-        );
+        const targetUrl = encodeURIComponent("https://formbricks.com/api/oss-friends");
 
         const response = await fetch(`${proxyUrl}${targetUrl}`);
 
@@ -65,9 +63,7 @@ export default function OSSFriendsPage() {
         setFriends(data.data);
       } catch (err) {
         console.error("Error fetching OSS friends:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load OSS friends",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load OSS friends");
       } finally {
         setLoading(false);
       }
@@ -97,9 +93,7 @@ export default function OSSFriendsPage() {
             {loading && (
               <div className="text-center py-16">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#00d992]" />
-                <p className="mt-4 text-gray-400">
-                  Loading our open-source friends...
-                </p>
+                <p className="mt-4 text-gray-400">Loading our open-source friends...</p>
               </div>
             )}
 
@@ -119,10 +113,7 @@ export default function OSSFriendsPage() {
             {!loading && !error && friends.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
                 {friends.map((friend, index) => (
-                  <OSSFriendCard
-                    key={`${friend.name}-${index}`}
-                    friend={friend}
-                  />
+                  <OSSFriendCard key={`${friend.name}-${index}`} friend={friend} />
                 ))}
               </div>
             )}

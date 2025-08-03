@@ -1,23 +1,6 @@
 {
   "name": "voltagent-example-with-chroma",
-  "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent",
-    "chroma",
-    "vector-database"
-  ],
-  "license": "MIT",
   "author": "",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "chroma": "chroma",
-    "dev": "tsx watch --env-file=.env ./src",
-    "start": "node dist/index.js",
-    "volt": "volt"
-  },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.10",
     "@chroma-core/default-embed": "^0.1.8",
@@ -28,11 +11,28 @@
     "@voltagent/logger": "^0.1.1",
     "@voltagent/vercel-ai": "^0.1.16",
     "chromadb": "^3.0.4",
-    "zod": "3.24.2"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.0.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  }
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "chroma",
+    "vector-database",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "chroma": "chroma",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
 }

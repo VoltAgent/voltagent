@@ -5,20 +5,20 @@
  * Replaces the old telemetryExporter approach with a comprehensive solution.
  */
 
+import { type Logger, LoggerProxy } from "../logger";
+import { LogEvents } from "../logger/events";
+import { ResourceType, buildLogContext, buildVoltOpsLogMessage } from "../logger/message-builder";
+import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import { VoltAgentExporter as VoltAgentExporterClass } from "../telemetry/exporter";
-import { AgentRegistry } from "../server/registry";
+import { VoltOpsPromptManagerImpl } from "./prompt-manager";
 import type {
   VoltOpsClient as IVoltOpsClient,
-  VoltOpsClientOptions,
-  VoltOpsPromptManager,
   PromptHelper,
   PromptReference,
+  VoltOpsClientOptions,
+  VoltOpsPromptManager,
 } from "./types";
-import { VoltOpsPromptManagerImpl } from "./prompt-manager";
-import { LoggerProxy, type Logger } from "../logger";
-import { LogEvents } from "../logger/events";
-import { buildVoltOpsLogMessage, buildLogContext, ResourceType } from "../logger/message-builder";
 
 /**
  * Main VoltOps client class that provides unified access to both

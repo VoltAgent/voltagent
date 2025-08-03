@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import type { AgentStatus } from "../agent/types";
-import type { ToolStatusInfo as CoreToolStatusInfo, ToolStatus } from "../tool";
+import type { ToolStatusInfo as CoreToolStatusInfo } from "../tool";
 
 export type { AgentStatus };
 

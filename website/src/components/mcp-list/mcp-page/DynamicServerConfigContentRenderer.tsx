@@ -16,10 +16,7 @@ interface DynamicServerConfigContentRendererProps {
 }
 
 // Helper function to replace placeholders in a string
-const replacePlaceholders = (
-  text: string,
-  placeholders: Record<string, string>,
-): string => {
+const replacePlaceholders = (text: string, placeholders: Record<string, string>): string => {
   let result = text;
   for (const key in placeholders) {
     result = result.replace(
@@ -30,14 +27,13 @@ const replacePlaceholders = (
   return result;
 };
 
-const DynamicServerConfigContentRenderer: React.FC<
-  DynamicServerConfigContentRendererProps
-> = ({ content, placeholders }) => {
+const DynamicServerConfigContentRenderer: React.FC<DynamicServerConfigContentRendererProps> = ({
+  content,
+  placeholders,
+}) => {
   if (!content || content.length === 0) {
     return (
-      <p className="text-gray-400 text-sm my-2">
-        Content not available for this configuration.
-      </p>
+      <p className="text-gray-400 text-sm my-2">Content not available for this configuration.</p>
     );
   }
 
@@ -45,20 +41,14 @@ const DynamicServerConfigContentRenderer: React.FC<
     <>
       {content.map((item, index) => {
         const itemValue = replacePlaceholders(item.value, placeholders);
-        const itemTitle = item.title
-          ? replacePlaceholders(item.title, placeholders)
-          : undefined;
+        const itemTitle = item.title ? replacePlaceholders(item.title, placeholders) : undefined;
         const key = `${item.type}-${index}-${itemValue.slice(0, 20)}`; // More unique key
 
         switch (item.type) {
           case "heading":
             return (
-              <h3
-                key={key}
-                className="text-xl font-semibold text-white mt-6 mb-3"
-              >
-                {itemTitle || itemValue}{" "}
-                {/* Use title if available, otherwise value for heading */}
+              <h3 key={key} className="text-xl font-semibold text-white mt-6 mb-3">
+                {itemTitle || itemValue} {/* Use title if available, otherwise value for heading */}
               </h3>
             );
           case "text":
@@ -73,11 +63,7 @@ const DynamicServerConfigContentRenderer: React.FC<
           case "code":
             return (
               <div key={key} className="my-4">
-                {itemTitle && (
-                  <p className="text-gray-400 text-xs mb-1 font-mono">
-                    {itemTitle}
-                  </p>
-                )}
+                {itemTitle && <p className="text-gray-400 text-xs mb-1 font-mono">{itemTitle}</p>}
                 <CodeBlock code={itemValue} />
                 {/* language prop for CodeBlock is not used by current CodeBlock, but kept in interface for future use */}
               </div>

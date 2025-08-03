@@ -576,13 +576,12 @@ export class WorkflowChain<
   >({
     steps,
     ...config
-  }: WorkflowStepParallelAllConfig<STEPS>): WorkflowChain<
-    INPUT_SCHEMA,
-    RESULT_SCHEMA,
-    INFERRED_RESULT,
-    SUSPEND_SCHEMA,
-    RESUME_SCHEMA
-  > {
+  }: WorkflowStepParallelAllConfig<
+    WorkflowInput<INPUT_SCHEMA>,
+    CURRENT_DATA,
+    NEW_DATA,
+    STEPS
+  >): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, INFERRED_RESULT, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     this.steps.push(andAll({ steps, ...config }));
     return this as unknown as WorkflowChain<
       INPUT_SCHEMA,

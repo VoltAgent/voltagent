@@ -1,13 +1,13 @@
-import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
-import { ChromaClient, CloudClient, type QueryRowResult, type Metadata } from "chromadb";
 import { OpenAIEmbeddingFunction } from "@chroma-core/openai";
+import { type BaseMessage, BaseRetriever, type RetrieveOptions } from "@voltagent/core";
+import { ChromaClient, CloudClient, type Metadata, type QueryRowResult } from "chromadb";
 
 // Initialize Chroma client - supports both local and cloud
 const chromaClient = process.env.CHROMA_API_KEY
   ? new CloudClient() // Uses CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE env vars
   : new ChromaClient({
       host: process.env.CHROMA_HOST || "localhost",
-      port: parseInt(process.env.CHROMA_PORT || "8000"),
+      port: Number.parseInt(process.env.CHROMA_PORT || "8000"),
     });
 
 const embeddingFunction = new OpenAIEmbeddingFunction({

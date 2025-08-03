@@ -1,5 +1,5 @@
 import type { Conversation, MemoryMessage } from "@voltagent/core";
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PostgresStorage } from ".";
 
 // Test configuration - uses DATABASE_URL with fallback to local Docker defaults as defined in docker-compose.test.yaml
@@ -32,7 +32,7 @@ describe("PostgresStorage Integration Tests", () => {
       for (const conv of conversations) {
         await storage.deleteConversation(conv.id);
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -53,7 +53,7 @@ describe("PostgresStorage Integration Tests", () => {
 
       const retrieved = await storage.getConversation(conversation.id);
       expect(retrieved).not.toBeNull();
-      expect(retrieved!.title).toBe(conversation.title);
+      expect(retrieved?.title).toBe(conversation.title);
     });
 
     it("should add and retrieve messages", async () => {

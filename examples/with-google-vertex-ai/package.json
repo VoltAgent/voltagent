@@ -1,30 +1,30 @@
 {
   "name": "voltagent-example-google-vertex-ai",
-  "private": true,
+  "author": "",
+  "dependencies": {
+    "@voltagent/cli": "^0.1.9",
+    "@voltagent/core": "^0.1.72",
+    "@voltagent/google-ai": "^0.4.0",
+    "@voltagent/logger": "^0.1.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
   "keywords": [
-    "voltagent",
+    "agent",
     "ai",
-    "agent"
+    "voltagent"
   ],
   "license": "MIT",
-  "author": "",
-  "type": "module",
+  "private": true,
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
     "volt": "volt"
   },
-  "dependencies": {
-    "@voltagent/cli": "^0.1.9",
-    "@voltagent/core": "^0.1.72",
-    "@voltagent/google-ai": "^0.4.0",
-    "@voltagent/logger": "^0.1.1",
-    "zod": "3.24.2"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.5",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
-  }
+  "type": "module"
 }

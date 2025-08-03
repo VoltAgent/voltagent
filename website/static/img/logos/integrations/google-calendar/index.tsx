@@ -8,20 +8,11 @@ export const GoogleCalendarLogo = ({ className }: { className?: string }) => (
     <title id="googleCalendarTitle">Google Calendar</title>
     <g>
       <rect x="93.32" y="83.32" fill="#FFFFFF" width="113.41" height="113.41" />
-      <polygon
-        fill="#EA4535"
-        points="206.68,247.73 257.73,196.68 206.68,196.68"
-      />
+      <polygon fill="#EA4535" points="206.68,247.73 257.73,196.68 206.68,196.68" />
       <rect x="206.68" y="83.32" fill="#F9BC15" width="51.04" height="113.41" />
       <rect x="93.32" y="196.68" fill="#36A852" width="113.41" height="51.04" />
-      <path
-        fill="#1C8140"
-        d="M42.27,196.68v34c0,9.43,7.62,17.04,17,17.04h34v-51.04H42.27z"
-      />
-      <path
-        fill="#3968B2"
-        d="M257.73,83.32V49.28c0-9.38-7.62-17-17-17h-34v51.04H257.73z"
-      />
+      <path fill="#1C8140" d="M42.27,196.68v34c0,9.43,7.62,17.04,17,17.04h34v-51.04H42.27z" />
+      <path fill="#3968B2" d="M257.73,83.32V49.28c0-9.38-7.62-17-17-17h-34v51.04H257.73z" />
       <path
         fill="#557EBF"
         d="M206.68,32.27H59.28c-9.38,0-17,7.62-17,17v147.41h51.04V83.32h113.41V32.27H206.68z"

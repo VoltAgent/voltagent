@@ -3,14 +3,14 @@
  */
 
 import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
+import type { Logger } from "@voltagent/internal";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "./agent/agent";
 import type { CustomEndpointDefinition } from "./server/custom-endpoints";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 import type { VoltOpsClient } from "./voltops";
-import type { Workflow } from "./workflow/types";
 import type { WorkflowChain } from "./workflow/chain";
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { Logger } from "@voltagent/internal";
+import type { Workflow } from "./workflow/types";
 
 // Re-export VoltOps types for convenience
 export type {

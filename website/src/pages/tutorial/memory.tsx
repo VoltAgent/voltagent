@@ -1,8 +1,8 @@
+import { ColorModeProvider } from "@docusaurus/theme-common/internal";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import CodeBlock from "@theme/CodeBlock";
 import type React from "react";
 import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
-import CodeBlock from "@theme/CodeBlock";
-import { ColorModeProvider } from "@docusaurus/theme-common/internal";
-import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 export default function TutorialMemory() {
   return (
@@ -45,9 +45,8 @@ export default function TutorialMemory() {
             The Problem: Agents with Amnesia
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Your agent can use tools, but every conversation starts from
-            scratch. It can't remember previous interactions, learn from past
-            conversations, or build context over time.
+            Your agent can use tools, but every conversation starts from scratch. It can't remember
+            previous interactions, learn from past conversations, or build context over time.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
@@ -111,14 +110,11 @@ export default function TutorialMemory() {
             Types of Agent Memory
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Different types of memory serve different purposes. Let's understand
-            what each one does:
+            Different types of memory serve different purposes. Let's understand what each one does:
           </p>
 
           <div className=" ">
-            <h3 className="text-xl font-semibold  mb-4">
-              Automatic Memory (Zero Configuration)
-            </h3>
+            <h3 className="text-xl font-semibold  mb-4">Automatic Memory (Zero Configuration)</h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
                 <span className="text-[#00d992] ">•</span>
@@ -130,17 +126,13 @@ export default function TutorialMemory() {
                 <span className="text-[#00d992] ">•</span>
                 <span className="text-gray-300">
                   Creates{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">
-                    .voltagent/memory.db
-                  </code>{" "}
-                  file in your project
+                  <code className="bg-gray-800 px-2 py-1 rounded">.voltagent/memory.db</code> file
+                  in your project
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-[#00d992] ">•</span>
-                <span className="text-gray-300">
-                  Conversation history is automatically saved
-                </span>
+                <span className="text-gray-300">Conversation history is automatically saved</span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-yellow-400 ">!</span>
@@ -153,15 +145,13 @@ export default function TutorialMemory() {
 
           <div className=" border-solid border border-yellow-500 rounded-lg p-6">
             <h4 className="text-yellow-300 font-semibold mb-3">
-              Critical:{" "}
-              <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
-              Required for Memory
+              Critical: <code className="bg-gray-800 px-2 py-1 rounded">userId</code> Required for
+              Memory
             </h4>
             <p className="text-xs landing-md:text-base mb-0 text-gray-300 leading-relaxed">
-              Without a{" "}
-              <code className="bg-gray-800 px-2 py-1 rounded">userId</code>,
-              your agent can't properly isolate and store conversations. This is
-              the most common reason why memory "doesn't work" in VoltAgent.
+              Without a <code className="bg-gray-800 px-2 py-1 rounded">userId</code>, your agent
+              can't properly isolate and store conversations. This is the most common reason why
+              memory "doesn't work" in VoltAgent.
             </p>
           </div>
         </div>
@@ -172,8 +162,8 @@ export default function TutorialMemory() {
             Memory in Action: Test Your Agent
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Run your weather agent and test memory functionality. The key is
-            setting a userId - without it, memory won't work properly.
+            Run your weather agent and test memory functionality. The key is setting a userId -
+            without it, memory won't work properly.
           </p>
 
           {/* VoltOps Testing */}
@@ -197,39 +187,26 @@ export default function TutorialMemory() {
               <div className="flex items-start space-x-3">
                 <span className="text-emerald-400">2.</span>
                 <span className="text-gray-300">
-                  Click the <strong>Settings icon</strong> (gear) in the chat
-                  interface
+                  Click the <strong>Settings icon</strong> (gear) in the chat interface
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-emerald-400">3.</span>
                 <span className="text-gray-300">
-                  Set{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
-                  to something like{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">
-                    "sarah-123"
-                  </code>
+                  Set <code className="bg-gray-800 px-2 py-1 rounded">userId</code> to something
+                  like <code className="bg-gray-800 px-2 py-1 rounded">"sarah-123"</code>
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-emerald-400">4.</span>
                 <span className="text-gray-300">
-                  Set{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">
-                    conversationId
-                  </code>{" "}
-                  to{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">
-                    "test-memory"
-                  </code>
+                  Set <code className="bg-gray-800 px-2 py-1 rounded">conversationId</code> to{" "}
+                  <code className="bg-gray-800 px-2 py-1 rounded">"test-memory"</code>
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-emerald-400">5.</span>
-                <span className="text-gray-300">
-                  Now test the conversation below!
-                </span>
+                <span className="text-gray-300">Now test the conversation below!</span>
               </div>
             </div>
           </div>
@@ -240,8 +217,8 @@ export default function TutorialMemory() {
               See Memory in Action
             </h4>
             <p className="text-gray-300 mb-4">
-              This demo shows how memory works with proper userId and
-              conversationId settings in VoltOps:
+              This demo shows how memory works with proper userId and conversationId settings in
+              VoltOps:
             </p>
             <div className="rounded-lg overflow-hidden border border-gray-600">
               <img
@@ -256,35 +233,29 @@ export default function TutorialMemory() {
           </div>
 
           <div className=" ">
-            <h4 className="text-white font-semibold mb-3">
-              Test Scenario (with userId set)
-            </h4>
+            <h4 className="text-white font-semibold mb-3">Test Scenario (with userId set)</h4>
             <div className="space-y-3">
               <div className="p-3 rounded border-l-2 border-solid border-0 border-gray-400">
-                <strong className="text-gray-400">1st Message:</strong> "Hi, my
-                name is Sarah."
+                <strong className="text-gray-400">1st Message:</strong> "Hi, my name is Sarah."
               </div>
               <div className="p-3 rounded border-l-2 border-solid border-0 border-emerald-400">
-                <strong className="text-emerald-400">Agent:</strong> "Hello
-                Sarah! How can I help you?"
+                <strong className="text-emerald-400">Agent:</strong> "Hello Sarah! How can I help
+                you?"
               </div>
               <div className="p-3 rounded border-l-2 border-solid border-0 border-gray-400">
-                <strong className="text-gray-400">2nd Message:</strong> "What's
-                the weather in London today?"
+                <strong className="text-gray-400">2nd Message:</strong> "What's the weather in
+                London today?"
               </div>
               <div className=" p-3 rounded border-l-2 border-solid border-0 border-emerald-400">
-                <strong className="text-emerald-400">Agent:</strong> "Checking
-                London weather for you..."
+                <strong className="text-emerald-400">Agent:</strong> "Checking London weather for
+                you..."
               </div>
               <div className="p-3 rounded border-l-2 border-solid border-0 border-gray-400">
-                <strong className="text-gray-400">3rd Message:</strong> "What's
-                my name again?"
+                <strong className="text-gray-400">3rd Message:</strong> "What's my name again?"
               </div>
               <div className=" p-3 rounded border-l-2 border-solid border-0 border-emerald-400">
-                <strong className="text-emerald-400">
-                  Agent (with memory):
-                </strong>{" "}
-                "Your name is Sarah!"
+                <strong className="text-emerald-400">Agent (with memory):</strong> "Your name is
+                Sarah!"
               </div>
             </div>
           </div>
@@ -294,10 +265,9 @@ export default function TutorialMemory() {
               The Power of Proper Memory Setup!
             </h4>
             <p className="text-sm md:text-base mb-0 text-gray-300 leading-relaxed">
-              With the correct userId and conversationId, your agent now
-              remembers previous conversations and provides a natural,
-              contextual experience. This transforms user experience from
-              robotic to human-like.
+              With the correct userId and conversationId, your agent now remembers previous
+              conversations and provides a natural, contextual experience. This transforms user
+              experience from robotic to human-like.
             </p>
           </div>
         </div>
@@ -308,14 +278,10 @@ export default function TutorialMemory() {
             User and Conversation IDs
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            In real applications, you have multiple users and conversations.
-            VoltAgent uses <code className=" px-2 py-1 rounded">userId</code>{" "}
-            and <code className=" px-2 py-1 rounded">conversationId</code> to
-            keep them separate.
-            <strong className="">
-              {" "}
-              userId is mandatory for proper memory functionality.
-            </strong>
+            In real applications, you have multiple users and conversations. VoltAgent uses{" "}
+            <code className=" px-2 py-1 rounded">userId</code> and{" "}
+            <code className=" px-2 py-1 rounded">conversationId</code> to keep them separate.
+            <strong className=""> userId is mandatory for proper memory functionality.</strong>
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
@@ -324,29 +290,21 @@ export default function TutorialMemory() {
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Unique identifier for each user
-                  </span>
+                  <span className="text-gray-300">Unique identifier for each user</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Users can't see each other's conversations
-                  </span>
+                  <span className="text-gray-300">Users can't see each other's conversations</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Example: "user-123", "john@email.com"
-                  </span>
+                  <span className="text-gray-300">Example: "user-123", "john@email.com"</span>
                 </div>
               </div>
             </div>
 
             <div className="border-solid border-emerald-500 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
-                conversationId
-              </h3>
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">conversationId</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
@@ -356,15 +314,11 @@ export default function TutorialMemory() {
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Users can have multiple conversations
-                  </span>
+                  <span className="text-gray-300">Users can have multiple conversations</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Example: "support-case-456", "chat-xyz"
-                  </span>
+                  <span className="text-gray-300">Example: "support-case-456", "chat-xyz"</span>
                 </div>
               </div>
             </div>
@@ -408,19 +362,14 @@ const response4 = await agent.generateText("Let's talk about something new.", {
 
         {/* Memory Providers */}
         <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Memory Options
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">Memory Options</h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            VoltAgent offers different memory types. Choose the one that fits
-            your needs.
+            VoltAgent offers different memory types. Choose the one that fits your needs.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className=" rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                LibSQLStorage (Default)
-              </h3>
+              <h3 className="text-xl font-semibold text-white mb-4">LibSQLStorage (Default)</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-[#00d992] ">•</span>
@@ -442,9 +391,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
             </div>
 
             <div className=" rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                InMemoryStorage
-              </h3>
+              <h3 className="text-xl font-semibold text-white mb-4">InMemoryStorage</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-yellow-400 ">•</span>
@@ -452,23 +399,17 @@ const response4 = await agent.generateText("Let's talk about something new.", {
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-yellow-400 ">•</span>
-                  <span className="text-gray-300">
-                    Ideal for testing and development
-                  </span>
+                  <span className="text-gray-300">Ideal for testing and development</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-red-500">!</span>
-                  <span className="text-gray-300">
-                    Data lost when app restarts
-                  </span>
+                  <span className="text-gray-300">Data lost when app restarts</span>
                 </div>
               </div>
             </div>
 
             <div className=" rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                PostgreSQL
-              </h3>
+              <h3 className="text-xl font-semibold text-white mb-4">PostgreSQL</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-purple-400 ">•</span>
@@ -486,9 +427,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
             </div>
 
             <div className=" rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Supabase
-              </h3>
+              <h3 className="text-xl font-semibold text-white mb-4">Supabase</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-green-400 ">•</span>
@@ -513,8 +452,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
             Custom Memory Options
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            If the default memory isn't enough, you can create your own memory
-            provider.
+            If the default memory isn't enough, you can create your own memory provider.
           </p>
 
           <ColorModeProvider>
@@ -563,24 +501,18 @@ const productionAgent = new Agent({
 
         {/* Best Practices */}
         <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            Best Practices
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">Best Practices</h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
             Follow these tips to use memory effectively.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className="border-solid border-emerald-500 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-emerald-500 mb-4">
-                Do This
-              </h3>
+              <h3 className="text-xl font-semibold text-emerald-500 mb-4">Do This</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Always use userId and conversationId
-                  </span>
+                  <span className="text-gray-300">Always use userId and conversationId</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
@@ -588,47 +520,33 @@ const productionAgent = new Agent({
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Use PostgreSQL/Supabase in production
-                  </span>
+                  <span className="text-gray-300">Use PostgreSQL/Supabase in production</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-emerald-400 ">•</span>
-                  <span className="text-gray-300">
-                    Use InMemory for testing
-                  </span>
+                  <span className="text-gray-300">Use InMemory for testing</span>
                 </div>
               </div>
             </div>
 
             <div className="border-solid border-red-500 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-red-500 mb-4">
-                Don't Do This
-              </h3>
+              <h3 className="text-xl font-semibold text-red-500 mb-4">Don't Do This</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-red-500">•</span>
-                  <span className="text-gray-300">
-                    Don't ignore memory limits
-                  </span>
+                  <span className="text-gray-300">Don't ignore memory limits</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-red-500">•</span>
-                  <span className="text-gray-300">
-                    Don't log sensitive information
-                  </span>
+                  <span className="text-gray-300">Don't log sensitive information</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-red-500">•</span>
-                  <span className="text-gray-300">
-                    Don't forget to handle memory errors
-                  </span>
+                  <span className="text-gray-300">Don't forget to handle memory errors</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-red-500">•</span>
-                  <span className="text-gray-300">
-                    Don't use InMemory in production
-                  </span>
+                  <span className="text-gray-300">Don't use InMemory in production</span>
                 </div>
               </div>
             </div>
@@ -641,32 +559,24 @@ const productionAgent = new Agent({
             Using Memory via REST API
           </h2>
           <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-            If you're building a web app or mobile app, you'll likely call your
-            VoltAgent via REST API. Here's how to properly set userId and
-            conversationId in API calls.
+            If you're building a web app or mobile app, you'll likely call your VoltAgent via REST
+            API. Here's how to properly set userId and conversationId in API calls.
           </p>
 
           <div className="rounded-lg p-6 border-solid border border-gray-700">
             <h4 className="text-white font-semibold mb-3">API Server URL</h4>
             <p className="text-landing-sm landing-md:text-base text-gray-300 leading-relaxed">
-              Your VoltAgent automatically starts an API server on port 3141 (or
-              another available port):
+              Your VoltAgent automatically starts an API server on port 3141 (or another available
+              port):
             </p>
             <div className="bg-black rounded-lg p-4 border-solid border border-gray-600 font-mono text-landing-sm">
-              <div className="text-emerald-400">
-                ✓ HTTP Server: http://localhost:3141
-              </div>
-              <div className="text-emerald-400">
-                ✓ Swagger UI: http://localhost:3141/ui
-              </div>
+              <div className="text-emerald-400">✓ HTTP Server: http://localhost:3141</div>
+              <div className="text-emerald-400">✓ Swagger UI: http://localhost:3141/ui</div>
             </div>
           </div>
 
           <ColorModeProvider>
-            <CodeBlock
-              language="bash"
-              title="Basic API Call (Without Memory - Don't Do This)"
-            >
+            <CodeBlock language="bash" title="Basic API Call (Without Memory - Don't Do This)">
               {`# ❌ Without userId - Memory won't work
 curl -X POST http://localhost:3141/agents/my-agent/text \\
      -H "Content-Type: application/json" \\
@@ -677,10 +587,7 @@ curl -X POST http://localhost:3141/agents/my-agent/text \\
           </ColorModeProvider>
 
           <ColorModeProvider>
-            <CodeBlock
-              language="bash"
-              title="Proper API Call (With Memory - Do This)"
-            >
+            <CodeBlock language="bash" title="Proper API Call (With Memory - Do This)">
               {`# ✅ With userId and conversationId - Memory works!
 curl -X POST http://localhost:3141/agents/my-agent/text \\
      -H "Content-Type: application/json" \\
@@ -707,10 +614,7 @@ curl -X POST http://localhost:3141/agents/my-agent/text \\
           </ColorModeProvider>
 
           <ColorModeProvider>
-            <CodeBlock
-              language="javascript"
-              title="JavaScript/TypeScript Example"
-            >
+            <CodeBlock language="javascript" title="JavaScript/TypeScript Example">
               {`// Frontend code example
 const userId = getCurrentUserId(); // Get from your auth system
 const conversationId = generateConversationId(); // Generate or get existing
@@ -748,38 +652,28 @@ await chatWithAgent("What's my name?"); // Will remember "Sarah"`}
               <div className="flex items-start space-x-3">
                 <span className="text-gray-300 ">1.</span>
                 <span className="text-gray-300">
-                  Always include{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
-                  in the{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">options</code>{" "}
-                  object
+                  Always include <code className="bg-gray-800 px-2 py-1 rounded">userId</code> in
+                  the <code className="bg-gray-800 px-2 py-1 rounded">options</code> object
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-gray-300 ">2.</span>
                 <span className="text-gray-300">
-                  Use the same{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">userId</code>{" "}
-                  for the same user across all requests
+                  Use the same <code className="bg-gray-800 px-2 py-1 rounded">userId</code> for the
+                  same user across all requests
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-gray-300 ">3.</span>
                 <span className="text-gray-300">
-                  Use the same{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">
-                    conversationId
-                  </code>{" "}
+                  Use the same <code className="bg-gray-800 px-2 py-1 rounded">conversationId</code>{" "}
                   to maintain conversation context
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <span className="text-gray-300 ">4.</span>
                 <span className="text-gray-300">
-                  Generate new{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded">
-                    conversationId
-                  </code>{" "}
+                  Generate new <code className="bg-gray-800 px-2 py-1 rounded">conversationId</code>{" "}
                   for new conversation threads
                 </span>
               </div>

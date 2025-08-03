@@ -2,9 +2,9 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import { v4 as uuid } from "uuid";
 import type { UserContext } from "../../agent/types";
+import { getGlobalLogger } from "../../logger";
 import type { WorkflowRunOptions, WorkflowSuspensionMetadata } from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed" | "suspended";
 

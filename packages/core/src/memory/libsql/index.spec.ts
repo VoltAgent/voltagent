@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LibSQLStorage } from ".";
-import type { MemoryMessage } from "../types";
 import { generateTestTablePrefix } from "../../test-utils/libsql-test-helpers";
+import type { MemoryMessage } from "../types";
 
 describe.sequential("LibSQLStorage", () => {
   let storage: LibSQLStorage;

@@ -27,16 +27,16 @@ export interface VoltAgentExporterOptions {
   fetch?: typeof fetch;
 }
 
+import type { Logger } from "@voltagent/internal";
 import type { HistoryStep } from "../../agent/history";
+import { LoggerProxy } from "../../logger";
+import { BackgroundQueue } from "../../utils/queue/queue";
 import {
   type AgentHistoryUpdatableFields,
   type ExportAgentHistoryPayload,
   type ExportTimelineEventPayload,
   TelemetryServiceApiClient,
 } from "../client";
-import { BackgroundQueue } from "../../utils/queue/queue";
-import type { Logger } from "@voltagent/internal";
-import { LoggerProxy } from "../../logger";
 
 export class VoltAgentExporter {
   private apiClient: TelemetryServiceApiClient;
@@ -126,12 +126,8 @@ export class VoltAgentExporter {
     this.telemetryQueue.enqueue({
       id: `export-timeline-${timelineEventData.event_id}`,
       operation: async () => {
-        try {
-          await this.exportTimelineEvent(timelineEventData);
-          this.logger.trace(`Timeline event exported: ${timelineEventData.event_id}`);
-        } catch (error) {
-          throw error;
-        }
+        await this.exportTimelineEvent(timelineEventData);
+        this.logger.trace(`Timeline event exported: ${timelineEventData.event_id}`);
       },
     });
   }

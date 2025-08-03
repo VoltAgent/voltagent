@@ -1,10 +1,10 @@
-import type React from "react";
-import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
-import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import CodeBlock from "@theme/CodeBlock";
+import type React from "react";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 
 export default function SubagentsTutorial() {
   return (
@@ -22,9 +22,8 @@ export default function SubagentsTutorial() {
             The Problem: One Agent Can't Do Everything
           </h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            You've built an agent with tools and memory, but as requirements
-            grow, you realize one agent trying to do everything becomes a
-            nightmare to maintain.
+            You've built an agent with tools and memory, but as requirements grow, you realize one
+            agent trying to do everything becomes a nightmare to maintain.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
@@ -88,8 +87,8 @@ export default function SubagentsTutorial() {
             Simple Example: Story Writing & Translation Team
           </h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            Let's build a creative team: one agent writes stories, another
-            translates them. Much simpler than customer support!
+            Let's build a creative team: one agent writes stories, another translates them. Much
+            simpler than customer support!
           </p>
 
           <ColorModeProvider>
@@ -200,12 +199,10 @@ new VoltAgent({
 
         {/* How It Works */}
         <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            How Subagents Work
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">How Subagents Work</h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            The supervisor agent automatically knows how to use subagents based
-            on the conversation context. Here's what happens:
+            The supervisor agent automatically knows how to use subagents based on the conversation
+            context. Here's what happens:
           </p>
 
           <div className=" ">
@@ -218,9 +215,7 @@ new VoltAgent({
                   1
                 </div>
                 <div>
-                  <strong className="text-white text-xs landing-md:text-base">
-                    User:
-                  </strong>
+                  <strong className="text-white text-xs landing-md:text-base">User:</strong>
                   <span className="text-gray-300 ml-2 text-xs landing-md:text-base">
                     "Write a story about a magical forest"
                   </span>
@@ -235,8 +230,7 @@ new VoltAgent({
                     Creative Director:
                   </strong>
                   <span className="text-gray-300 ml-2 text-xs landing-md:text-base">
-                    "I'll coordinate our team to create this story and translate
-                    it"
+                    "I'll coordinate our team to create this story and translate it"
                   </span>
                 </div>
               </div>
@@ -245,9 +239,7 @@ new VoltAgent({
                   3
                 </div>
                 <div>
-                  <strong className="text-white text-xs landing-md:text-base">
-                    Writer Agent:
-                  </strong>
+                  <strong className="text-white text-xs landing-md:text-base">Writer Agent:</strong>
                   <span className="text-gray-300 ml-2 text-xs landing-md:text-base">
                     Creates an engaging story about magical forest and saves it
                   </span>
@@ -289,8 +281,8 @@ new VoltAgent({
             Testing Your Agent Team in VoltOps
           </h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            Let's test your customer support team in VoltOps console to see how
-            subagents coordinate automatically.
+            Let's test your customer support team in VoltOps console to see how subagents coordinate
+            automatically.
           </p>
 
           <div className=" ">
@@ -300,26 +292,20 @@ new VoltAgent({
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-sm">
-                    1
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-sm">1</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 text-xs landing-md:text-base">
-                    Update your code with the story writing team (above) and
-                    save the file
+                    Update your code with the story writing team (above) and save the file
                   </p>
                   <p className="text-gray-400 text-xs landing-md:text-base">
-                    Your agents will automatically reload with the new creative
-                    team configuration
+                    Your agents will automatically reload with the new creative team configuration
                   </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-base">
-                    2
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-base">2</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 text-xs landing-md:text-base">
@@ -335,9 +321,7 @@ new VoltAgent({
                       console.voltagent.dev
                     </a>
                     <div className="bg-gray-800 rounded p-2">
-                      <code className="text-[#00d992] text-xs">
-                        userId: "writer-123"
-                      </code>
+                      <code className="text-[#00d992] text-xs">userId: "writer-123"</code>
                       <br />
                       <code className="text-[#00d992] text-xs">
                         conversationId: "creative-session"
@@ -348,9 +332,7 @@ new VoltAgent({
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-base">
-                    3
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-base">3</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 text-xs landing-md:text-base">
@@ -365,8 +347,7 @@ new VoltAgent({
                         "Write a story about a magical cat"
                       </code>
                       <div className="text-gray-500 text-xs mt-1">
-                        Expected: Writer creates story, translator translates to
-                        3 languages
+                        Expected: Writer creates story, translator translates to 3 languages
                       </div>
                     </div>
                     <div className="rounded p-1 landing-md:p-2 my-1 landing-md:my-2 w-full">
@@ -397,8 +378,8 @@ new VoltAgent({
                       ✨ What You'll See:
                     </div>
                     <div className="text-gray-300 text-xs">
-                      The creative director will coordinate: Original English
-                      story + German + Japanese + Italian translations!
+                      The creative director will coordinate: Original English story + German +
+                      Japanese + Italian translations!
                     </div>
                   </div>
                 </div>
@@ -412,8 +393,7 @@ new VoltAgent({
               See Subagents in Action
             </h3>
             <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
-              Watch how the creative director coordinates the writer and
-              translator agents:
+              Watch how the creative director coordinates the writer and translator agents:
             </p>
             <div className="rounded-lg overflow-hidden border border-gray-600">
               <img
@@ -423,8 +403,7 @@ new VoltAgent({
               />
             </div>
             <p className="text-gray-400 text-xs landing-md:text-sm mt-2 landing-md:mt-3 text-center">
-              Creative coordination: Story creation followed by multilingual
-              translation
+              Creative coordination: Story creation followed by multilingual translation
             </p>
           </div>
 
@@ -470,8 +449,8 @@ new VoltAgent({
             Pro Tips: Supercharge Your Creative Director
           </h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            Here are some powerful tricks from the VoltAgent docs to make your
-            subagents even better:
+            Here are some powerful tricks from the VoltAgent docs to make your subagents even
+            better:
           </p>
 
           <div className="space-y-4 landing-md:space-y-6">
@@ -568,10 +547,7 @@ const response = await creativeDirector.generateText(
                 Add or remove team members on the fly:
               </p>
               <ColorModeProvider>
-                <CodeBlock
-                  language="typescript"
-                  title="Dynamic Teams & createSubAgent"
-                >
+                <CodeBlock language="typescript" title="Dynamic Teams & createSubAgent">
                   {`import { createSubAgent } from "@voltagent/core";
 
 // Method 1: Traditional subAgent array
@@ -627,8 +603,7 @@ managerAgent.removeTool("illustrator");`}
               Pro Tip: Combine All Tricks
             </h4>
             <p className="text-gray-300 mb-3 text-xs landing-md:text-base">
-              Use custom guidelines + monitoring + step control for
-              production-ready agent teams:
+              Use custom guidelines + monitoring + step control for production-ready agent teams:
             </p>
             <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-3 landing-md:gap-4">
               <div className="flex items-start space-x-2 landing-md:space-x-3">
@@ -665,9 +640,9 @@ managerAgent.removeTool("illustrator");`}
             Context-Aware Tools: Solving the Parameter Problem
           </h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            Notice how our billing tools don't ask for email addresses? This is
-            a crucial UX principle: tools should use context (userId) instead of
-            asking users for information we already have.
+            Notice how our billing tools don't ask for email addresses? This is a crucial UX
+            principle: tools should use context (userId) instead of asking users for information we
+            already have.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
@@ -678,19 +653,13 @@ managerAgent.removeTool("illustrator");`}
               <div className="space-y-3 text-xs landing-md:text-sm">
                 <div className="border border-solid border-gray-500/30 rounded p-2">
                   <div className="text-gray-400">User:</div>
-                  <div className="text-gray-300">
-                    "I need to cancel my subscription"
-                  </div>
+                  <div className="text-gray-300">"I need to cancel my subscription"</div>
                 </div>
                 <div className="border border-solid border-gray-500/30 rounded p-2">
                   <div className="text-gray-400">Bad Agent:</div>
-                  <div className="text-red-500">
-                    "What's your email address?"
-                  </div>
+                  <div className="text-red-500">"What's your email address?"</div>
                 </div>
-                <div className="text-gray-400">
-                  User thinks: "You should know this already!"
-                </div>
+                <div className="text-gray-400">User thinks: "You should know this already!"</div>
               </div>
             </div>
 
@@ -701,20 +670,16 @@ managerAgent.removeTool("illustrator");`}
               <div className="space-y-3 text-xs landing-md:text-sm">
                 <div className="border border-solid border-gray-500/30 rounded p-2">
                   <div className="text-gray-400">User:</div>
-                  <div className="text-gray-300">
-                    "I need to cancel my subscription"
-                  </div>
+                  <div className="text-gray-300">"I need to cancel my subscription"</div>
                 </div>
                 <div className="border border-solid border-gray-500/30 rounded p-2">
                   <div className="text-gray-400">Smart Agent:</div>
                   <div className="text-emerald-500">
-                    "I found your Pro plan subscription. Would you like me to
-                    process the cancellation?"
+                    "I found your Pro plan subscription. Would you like me to process the
+                    cancellation?"
                   </div>
                 </div>
-                <div className="text-gray-400">
-                  User thinks: "This is smart and convenient!"
-                </div>
+                <div className="text-gray-400">User thinks: "This is smart and convenient!"</div>
               </div>
             </div>
           </div>
@@ -727,18 +692,14 @@ managerAgent.removeTool("illustrator");`}
               <div className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5" />
                 <span className="text-gray-300 text-xs landing-md:text-base">
-                  <strong>userId</strong> is automatically passed to all tool
-                  executions
+                  <strong>userId</strong> is automatically passed to all tool executions
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1.5" />
                 <span className="text-gray-300 text-xs landing-md:text-base">
-                  Tools use{" "}
-                  <code className="bg-gray-800 px-1 rounded">
-                    context.userId
-                  </code>{" "}
-                  to lookup user data
+                  Tools use <code className="bg-gray-800 px-1 rounded">context.userId</code> to
+                  lookup user data
                 </span>
               </div>
               <div className="flex items-start space-x-3">
@@ -775,29 +736,25 @@ managerAgent.removeTool("illustrator");`}
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Single Responsibility:</strong> Each agent should
-                    have one clear job
+                    <strong>Single Responsibility:</strong> Each agent should have one clear job
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Clear Instructions:</strong> Define exactly what
-                    each agent does
+                    <strong>Clear Instructions:</strong> Define exactly what each agent does
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Proper Tools:</strong> Give agents only the tools
-                    they need
+                    <strong>Proper Tools:</strong> Give agents only the tools they need
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Logical Hierarchy:</strong> Supervisor coordinates,
-                    specialists execute
+                    <strong>Logical Hierarchy:</strong> Supervisor coordinates, specialists execute
                   </span>
                 </div>
               </div>
@@ -811,29 +768,25 @@ managerAgent.removeTool("illustrator");`}
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Overlapping Roles:</strong> Agents with similar or
-                    conflicting jobs
+                    <strong>Overlapping Roles:</strong> Agents with similar or conflicting jobs
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Too Many Layers:</strong> Agents managing other
-                    agents managing agents
+                    <strong>Too Many Layers:</strong> Agents managing other agents managing agents
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Circular Dependencies:</strong> Agents that depend
-                    on each other
+                    <strong>Circular Dependencies:</strong> Agents that depend on each other
                   </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5" />
                   <span className="text-gray-300">
-                    <strong>Generic Agents:</strong> Agents that try to do
-                    everything
+                    <strong>Generic Agents:</strong> Agents that try to do everything
                   </span>
                 </div>
               </div>
@@ -847,8 +800,8 @@ managerAgent.removeTool("illustrator");`}
             Testing Your Agent Team
           </h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            Once you've built your agent team, test it with realistic scenarios
-            to make sure the coordination works smoothly.
+            Once you've built your agent team, test it with realistic scenarios to make sure the
+            coordination works smoothly.
           </p>
 
           <ColorModeProvider>
@@ -907,9 +860,8 @@ testIndividualAgents();`}
             Using Creative Team via REST API
           </h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
-            In production, you can integrate your creative team into apps or
-            websites. Here's how to call your creative director via REST API to
-            get stories with translations.
+            In production, you can integrate your creative team into apps or websites. Here's how to
+            call your creative director via REST API to get stories with translations.
           </p>
 
           <ColorModeProvider>
@@ -987,9 +939,7 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
 
         {/* What's Next */}
         <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            What's Next?
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">What's Next?</h2>
           <p className="text-xs landing-md:text-base text-gray-300 leading-relaxed">
             Congratulations! You've built a complete AI agent system with:
           </p>
@@ -1020,8 +970,7 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-[#00d992] rounded-full" />
                 <span className="text-gray-300 text-xs landing-md:text-sm">
-                  <strong>Step 4:</strong> Connected to external systems with
-                  MCP
+                  <strong>Step 4:</strong> Connected to external systems with MCP
                 </span>
               </div>
               <div className="flex items-center space-x-3">
@@ -1038,9 +987,9 @@ curl -X POST http://localhost:3141/agents/creative-director/text \\
               Ready to Build Something Amazing?
             </h4>
             <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
-              You now have all the tools to build production-ready AI agents.
-              Whether you're creating a customer support system, content
-              creation team, or something completely new, you're ready to go.
+              You now have all the tools to build production-ready AI agents. Whether you're
+              creating a customer support system, content creation team, or something completely
+              new, you're ready to go.
             </p>
             <div className="flex flex-col landing-md:flex-row gap-3 landing-md:gap-4">
               <a

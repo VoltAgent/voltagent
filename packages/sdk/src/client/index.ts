@@ -1,13 +1,13 @@
 import type {
-  VoltAgentClientOptions,
-  CreateHistoryRequest,
-  UpdateHistoryRequest,
-  History,
   AddEventRequest,
-  UpdateEventRequest,
-  Event,
-  ApiResponse,
   ApiError,
+  ApiResponse,
+  CreateHistoryRequest,
+  Event,
+  History,
+  UpdateEventRequest,
+  UpdateHistoryRequest,
+  VoltAgentClientOptions,
 } from "../types";
 
 export class VoltAgentCoreAPI {

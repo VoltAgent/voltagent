@@ -70,11 +70,7 @@ export function RagMobile() {
           if (currentStep + 1 === 1) {
             setActiveNodes(["input"]);
           } else if (currentStep + 1 === 2) {
-            setActiveNodes([
-              "knowledgeBase",
-              "embeddingBottom",
-              "embeddingTop",
-            ]);
+            setActiveNodes(["knowledgeBase", "embeddingBottom", "embeddingTop"]);
           } else if (currentStep + 1 === 3) {
             setActiveNodes(["embeddingBottom", "embeddingTop", "vectorstore"]);
           } else if (currentStep + 1 === 4) {
@@ -121,8 +117,7 @@ export function RagMobile() {
 
   // Get node highlight class based on active state
   const getNodeHighlightClass = (nodeName: string) => {
-    const isActive =
-      activeNodes.includes(nodeName) || activeNodes.includes("all");
+    const isActive = activeNodes.includes(nodeName) || activeNodes.includes("all");
     const isAnyNodeActive = activeNodes.length > 0;
     const redNodes = ["knowledgeBase", "embeddingBottom", "vectorstore"];
     const isRedNode = redNodes.includes(nodeName);
@@ -244,9 +239,7 @@ export function RagMobile() {
                       "input",
                     )}`}
                   >
-                    <span className="font-medium text-white text-[10px]">
-                      Input
-                    </span>
+                    <span className="font-medium text-white text-[10px]">Input</span>
                   </div>
                   <div
                     ref={knowledgeBaseNodeRef}
@@ -254,9 +247,7 @@ export function RagMobile() {
                       "knowledgeBase",
                     )}`}
                   >
-                    <span className="font-medium text-[10px] text-white">
-                      Knowledge base
-                    </span>
+                    <span className="font-medium text-[10px] text-white">Knowledge base</span>
                   </div>
                 </div>
 
@@ -276,9 +267,7 @@ export function RagMobile() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-white text-md font-[monospace] self-center">
-                    .embed()
-                  </div>
+                  <div className="text-white text-md font-[monospace] self-center">.embed()</div>
                   <div className="flex flex-col items-center">
                     <div
                       ref={embeddingModelBottomRef}
@@ -310,9 +299,7 @@ export function RagMobile() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-white text-md font-[monospace] self-center">
-                    .query()
-                  </div>
+                  <div className="text-white text-md font-[monospace] self-center">.query()</div>
                   <div className="flex flex-col items-center">
                     <div
                       ref={vectorStoreNodeRef}
@@ -320,9 +307,7 @@ export function RagMobile() {
                         "vectorstore",
                       )}`}
                     >
-                      <span className="font-medium text-white text-[10px]">
-                        Vector stores
-                      </span>
+                      <span className="font-medium text-white text-[10px]">Vector stores</span>
                     </div>
                     <div className="mt-2">{renderVectorStoreLogos()}</div>
                   </div>
@@ -337,15 +322,11 @@ export function RagMobile() {
                         "llm",
                       )}`}
                     >
-                      <span className="font-medium text-white text-[10px]">
-                        LLM
-                      </span>
+                      <span className="font-medium text-white text-[10px]">LLM</span>
                     </div>
                     <div className="mt-2">{renderLLMLogos()}</div>
                   </div>
-                  <div className="text-white text-md font-[monospace] self-center">
-                    .rerank()
-                  </div>
+                  <div className="text-white text-md font-[monospace] self-center">.rerank()</div>
                   <div className="w-[120px]" />
                 </div>
 
@@ -358,9 +339,7 @@ export function RagMobile() {
                         "output",
                       )}`}
                     >
-                      <span className="font-medium text-white text-[10px]">
-                        Output
-                      </span>
+                      <span className="font-medium text-white text-[10px]">Output</span>
                     </div>
                   </div>
                   <div className="w-[120px]" />

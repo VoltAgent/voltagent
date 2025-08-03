@@ -1,50 +1,83 @@
 {
   "name": "@voltagent/internal",
-  "version": "0.0.6",
   "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
-  "license": "MIT",
-  "exports": {
-    ".": {
-      "types": "./dist/main/index.d.ts",
-      "import": "./dist/main/index.mjs",
-      "require": "./dist/main/index.js"
-    },
-    "./test": {
-      "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.mjs",
-      "require": "./dist/test/index.js"
-    },
-    "./utils": {
-      "types": "./dist/utils/index.d.ts",
-      "import": "./dist/utils/index.mjs",
-      "require": "./dist/utils/index.js"
-    },
-    "./types": {
-      "types": "./dist/types/index.d.ts"
-    }
-  },
-  "main": "dist/main/index.js",
-  "module": "dist/main/index.mjs",
-  "types": "dist/main/index.d.ts",
-  "files": [
-    "dist/**/*",
-    "dev/dist/**/*",
-    "test/dist/**/*"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "lint": "biome check .",
-    "lint:fix": "biome check . --write",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage"
-  },
+  "version": "0.0.6",
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",
     "tsup": "^8.5.0",
     "type-fest": "^4.41.0",
-    "typescript": "^5.0.4",
+    "typescript": "^5.8.2",
     "vitest": "^3.2.4"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/main/index.d.mts",
+        "default": "./dist/main/index.mjs"
+      },
+      "require": {
+        "types": "./dist/main/index.d.ts",
+        "default": "./dist/main/index.js"
+      }
+    },
+    "./test": {
+      "import": {
+        "types": "./dist/test/index.d.mts",
+        "default": "./dist/test/index.mjs"
+      },
+      "require": {
+        "types": "./dist/test/index.d.ts",
+        "default": "./dist/test/index.js"
+      }
+    },
+    "./utils": {
+      "import": {
+        "types": "./dist/utils/index.d.mts",
+        "default": "./dist/utils/index.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/index.d.ts",
+        "default": "./dist/utils/index.js"
+      }
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "dev/dist/**/*",
+    "test/dist/**/*"
+  ],
+  "license": "MIT",
+  "main": "dist/main/index.js",
+  "module": "dist/main/index.mjs",
+  "scripts": {
+    "attw": "attw --pack",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "publint": "publint --strict",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "types": "dist/main/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/main/index.d.ts"
+      ],
+      "test": [
+        "dist/test/index.d.ts"
+      ],
+      "utils": [
+        "dist/utils/index.d.ts"
+      ],
+      "types": [
+        "dist/types/index.d.ts"
+      ]
+    }
   }
 }

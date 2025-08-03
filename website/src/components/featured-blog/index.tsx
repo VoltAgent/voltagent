@@ -60,8 +60,7 @@ const REAL_POSTS: BlogPost[] = [
   },
   {
     id: "3",
-    title:
-      "VoltAgent v0.1: AI Development Reimagined for JavaScript/TypeScript",
+    title: "VoltAgent v0.1: AI Development Reimagined for JavaScript/TypeScript",
     excerpt:
       "VoltAgent is here! Build, debug, and deploy AI agents with unprecedented clarity and developer experience, built specifically for the JS/TS ecosystem.",
     date: getDateFromSlugDir("2025-04-21-introducing-voltagent"), // Extracted from directory name
@@ -109,9 +108,7 @@ export const FeaturedBlog = () => {
                   <span className="text-xs sm:text-sm text-gray-400 truncate max-w-[80px] sm:max-w-none">
                     {post.author.name}
                   </span>
-                  <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline-block">
-                    •
-                  </span>
+                  <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline-block">•</span>
                   <time className="text-xs sm:text-sm text-gray-400 whitespace-nowrap">
                     {new Date(post.date).toLocaleDateString("en-US", {
                       month: "short",

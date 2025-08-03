@@ -1,5 +1,5 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
-import { createSimpleTemplateEngine, type TemplateEngine } from "./template-engine";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type TemplateEngine, createSimpleTemplateEngine } from "./template-engine";
 
 describe("Template Engine", () => {
   let engine: TemplateEngine;

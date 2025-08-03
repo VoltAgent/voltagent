@@ -67,7 +67,7 @@ export const createBaseDependencyInstaller = async (
   spinner.start();
 
   let installComplete = false;
-  let installError: Error | null = null;
+  let _installError: Error | null = null;
   let errorOutput = "";
 
   // Run npm install in background
@@ -97,7 +97,7 @@ export const createBaseDependencyInstaller = async (
           if (errorOutput) {
             console.error(errorOutput);
           }
-          installError = error;
+          _installError = error;
           reject(error);
         }
       });
@@ -105,13 +105,13 @@ export const createBaseDependencyInstaller = async (
       npmInstall.on("error", (error: Error) => {
         spinner.stop();
         logger.error("Failed to install base dependencies");
-        installError = error;
+        _installError = error;
         reject(error);
       });
     } catch (error) {
       spinner.stop();
       logger.error("Failed to install base dependencies");
-      installError = error as Error;
+      _installError = error as Error;
       reject(error);
     }
   });
@@ -123,7 +123,7 @@ export const createBaseDependencyInstaller = async (
       }
       try {
         await installPromise;
-      } catch (error) {
+      } catch (_error) {
         logger.warning("Base dependency installation failed. You can install manually later.");
       }
     },

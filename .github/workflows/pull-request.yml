@@ -32,11 +32,11 @@ jobs:
           pnpm install -w
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-      #- name: lint
-      #  run: |
-      #    pnpm lint:ci
-      #- name: syncpack
-      #  run: pnpm sp lint
+      - name: Lint with Biome
+        run: |
+          pnpm lint:ci
+      - name: Syncpack
+        run: pnpm sp lint
   build:
     runs-on: ubuntu-latest
     strategy:

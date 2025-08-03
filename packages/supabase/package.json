@@ -1,39 +1,48 @@
 {
   "name": "@voltagent/supabase",
-  "version": "0.1.15",
   "description": "VoltAgent Supabase - Supabase Memory provider integration for VoltAgent",
-  "license": "MIT",
+  "version": "0.1.15",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@voltagent/core": "^0.1.71",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/core": "^0.1.71"
+  },
   "scripts": {
+    "attw": "attw --pack",
     "build": "tsup",
     "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "publint": "publint --strict",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.49.4",
-    "@voltagent/core": "^0.1.68"
-  },
-  "devDependencies": {
-    "@types/node": "^20.19.0",
-    "@vitest/coverage-v8": "^3.2.3",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
-    "vitest": "^3.2.3"
-  },
-  "peerDependencies": {
-    "@voltagent/core": "^0.1.0"
-  }
+  "types": "dist/index.d.ts"
 }

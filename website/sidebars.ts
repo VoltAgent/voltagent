@@ -83,13 +83,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "RAG",
-      items: [
-        "rag/overview",
-        "rag/custom-retrievers",
-        "rag/chroma",
-        "rag/pinecone",
-        "rag/qdrant",
-      ],
+      items: ["rag/overview", "rag/custom-retrievers", "rag/chroma", "rag/pinecone", "rag/qdrant"],
     },
     {
       type: "category",
@@ -122,11 +116,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Integrations",
-      items: [
-        "integrations/overview",
-        "integrations/nextjs",
-        "integrations/vercel-ai",
-      ],
+      items: ["integrations/overview", "integrations/nextjs", "integrations/vercel-ai"],
     },
     {
       type: "category",
@@ -136,11 +126,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Community",
-      items: [
-        "community/overview",
-        "community/contributing",
-        "community/licence",
-      ],
+      items: ["community/overview", "community/contributing", "community/licence"],
     },
   ],
 };

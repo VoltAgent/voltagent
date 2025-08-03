@@ -18,13 +18,7 @@ const truncate = (str: string | null, length: number) => {
   return `${chars.slice(0, length - 3).join("")}...`;
 };
 
-export function LinkedInPost({
-  profileImage,
-  name,
-  title,
-  content,
-  url,
-}: LinkedInPostProps) {
+export function LinkedInPost({ profileImage, name, title, content, url }: LinkedInPostProps) {
   // Truncate content to 165 characters
   const truncatedContent = truncate(content, 165);
 
@@ -61,9 +55,7 @@ export function LinkedInPost({
 
       {/* Post Content - matching TweetBody structure */}
       <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter flex-1 overflow-hidden">
-        <span className="text-sm font-normal no-underline">
-          {truncatedContent}
-        </span>
+        <span className="text-sm font-normal no-underline">{truncatedContent}</span>
       </div>
     </div>
   );

@@ -26,10 +26,7 @@ const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
   // Function to replace placeholders in text
   const replacePlaceholders = (text) => {
     if (typeof text !== "string") return text;
-    return text.replace(
-      /{mcpName}/g,
-      mcp.name.toLowerCase().replace(/\s/g, ""),
-    );
+    return text.replace(/{mcpName}/g, mcp.name.toLowerCase().replace(/\s/g, ""));
   };
 
   // Function to make URLs clickable in text
@@ -91,9 +88,7 @@ const ServerConfigContentRenderer = ({ contentItems, mcp }) => {
 
         // Replace placeholders in value and title
         const processedValue = replacePlaceholders(item.value);
-        const processedTitle = item.title
-          ? replacePlaceholders(item.title)
-          : undefined;
+        const processedTitle = item.title ? replacePlaceholders(item.title) : undefined;
 
         if (item.type === "heading") {
           return (
@@ -187,9 +182,7 @@ export default function McpItemPage(props) {
 
   // Filter providers based on available_providers in MCP data
   const tabOptions = mcpData.data?.avaliable_providers
-    ? allProviders.filter((provider) =>
-        mcpData.data.avaliable_providers.includes(provider.id),
-      )
+    ? allProviders.filter((provider) => mcpData.data.avaliable_providers.includes(provider.id))
     : allProviders;
 
   // State for main provider tabs (upper level)
@@ -198,8 +191,7 @@ export default function McpItemPage(props) {
   );
 
   // State for server config tabs (nested tabs)
-  const [activeServerConfigTab, setActiveServerConfigTab] =
-    useState("voltagent");
+  const [activeServerConfigTab, setActiveServerConfigTab] = useState("voltagent");
 
   // State for expanded tools
   const [expandedTools, setExpandedTools] = useState({});
@@ -213,8 +205,7 @@ export default function McpItemPage(props) {
   };
 
   // Get current tab data
-  const currentTab =
-    tabOptions.find((tab) => tab.id === activeProviderTab) || tabOptions[0];
+  const currentTab = tabOptions.find((tab) => tab.id === activeProviderTab) || tabOptions[0];
 
   // Get server configuration based on provider and type
   const getServerConfig = (type) => {
@@ -242,9 +233,7 @@ export default function McpItemPage(props) {
           serverType: "mcp",
           provider: currentTab.name,
           configuration: {
-            baseURL: `https://api.${mcp.name
-              .toLowerCase()
-              .replace(/\s/g, "")}.com/`,
+            baseURL: `https://api.${mcp.name.toLowerCase().replace(/\s/g, "")}.com/`,
             apiKey: "YOUR_API_KEY_HERE",
             maxTokens: 4096,
             temperature: 0.7,
@@ -272,9 +261,7 @@ export default function McpItemPage(props) {
         serverName: mcp.name,
         serverType: "mcp",
         configuration: {
-          baseURL: `https://api.${mcp.name
-            .toLowerCase()
-            .replace(/\s/g, "")}.com/`,
+          baseURL: `https://api.${mcp.name.toLowerCase().replace(/\s/g, "")}.com/`,
           apiKey: "YOUR_API_KEY_HERE",
           maxTokens: 4096,
           temperature: 0.7,
@@ -314,9 +301,7 @@ export default function McpItemPage(props) {
     composio: {
       creator: "Composio",
       creatorIcon: "bg-green-500",
-      link: `https://mcp.composio.dev/${mcp.name
-        .toLowerCase()
-        .replace(/\s/g, "")}`,
+      link: `https://mcp.composio.dev/${mcp.name.toLowerCase().replace(/\s/g, "")}`,
     },
   };
 
@@ -337,10 +322,7 @@ export default function McpItemPage(props) {
   }, [tools]); // tools değiştiğinde çalıştır
 
   return (
-    <Layout
-      title={`${mcp.name} MCP - ${siteConfig.title}`}
-      description={mcp.description}
-    >
+    <Layout title={`${mcp.name} MCP - ${siteConfig.title}`} description={mcp.description}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-10 flex flex-col relative">
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
 
@@ -355,9 +337,7 @@ export default function McpItemPage(props) {
 
         {/* Main title and description */}
         <div className="mb-8">
-          <h1 className="landing-sm:text-3xl text-2xl font-bold text-white mb-2">
-            {mcp.title}
-          </h1>
+          <h1 className="landing-sm:text-3xl text-2xl font-bold text-white mb-2">{mcp.title}</h1>
           <div className="text-gray-400 flex items-center landing-sm:text-sm text-xs">
             <span className="font-mono">{mcp.name}</span>
             <span className="mx-2">-</span>
@@ -413,10 +393,7 @@ export default function McpItemPage(props) {
               </div>
 
               {/* Nested Tab Navigation for Server Config */}
-              <div
-                className="flex border-b border-gray-700 bg-[#222735]/50"
-                role="tablist"
-              >
+              <div className="flex border-b border-gray-700 bg-[#222735]/50" role="tablist">
                 {serverConfigTabs.map((tab) => (
                   <div
                     key={tab.id}
@@ -439,9 +416,7 @@ export default function McpItemPage(props) {
                     {tab.name}
                     <div
                       className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                        activeServerConfigTab === tab.id
-                          ? "bg-[#00d992]"
-                          : "bg-transparent"
+                        activeServerConfigTab === tab.id ? "bg-[#00d992]" : "bg-transparent"
                       }`}
                     />
                   </div>

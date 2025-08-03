@@ -1,8 +1,8 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
-import { getGlobalLogger, getGlobalLogBuffer } from "./index";
+import type { LogBuffer, Logger } from "@voltagent/internal";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentRegistry } from "../server/registry";
 import * as consoleLoggerModule from "./console-logger";
-import type { Logger, LogBuffer } from "@voltagent/internal";
+import { getGlobalLogBuffer, getGlobalLogger } from "./index";
 
 // Mock the AgentRegistry
 vi.mock("../server/registry", () => ({

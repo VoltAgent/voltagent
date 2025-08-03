@@ -104,10 +104,10 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=8192"
       - name: Build
         run: pnpm build:all
-      ##- name: Lint
-      #  run: pnpm lint:ci
-     # - name: Syncpack
-     #   run: pnpm sp lint
+      - name: Lint with Biome
+        run: pnpm lint:ci
+      - name: Syncpack
+        run: pnpm sp lint
       - name: Publint
         run: pnpm publint:all
       - name: Are The Types Wrong

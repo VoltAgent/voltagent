@@ -1,10 +1,10 @@
-import { VoltAgent, Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 // Import all the tools
-import { weatherTool, checkCalendarTool, addCalendarEventTool, searchTool } from "./tools";
+import { addCalendarEventTool, checkCalendarTool, searchTool, weatherTool } from "./tools";
 
 // Create the agent with tools
 const agent = new Agent({

@@ -137,6 +137,7 @@ export class AnthropicProvider implements LLMProvider<string> {
 
       const textStream = createAsyncIterableStream(
         new ReadableStream({
+          // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Stream handling requires complex logic
           start: async (controller) => {
             try {
               let currentText = "";

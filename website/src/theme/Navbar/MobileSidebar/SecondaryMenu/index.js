@@ -22,9 +22,7 @@ export default function NavbarMobileSidebarSecondaryMenu() {
   return (
     <>
       {/* edge-case: prevent returning to the primaryMenu when it's empty */}
-      {!isPrimaryMenuEmpty && (
-        <SecondaryMenuBackButton onClick={() => secondaryMenu.hide()} />
-      )}
+      {!isPrimaryMenuEmpty && <SecondaryMenuBackButton onClick={() => secondaryMenu.hide()} />}
       {secondaryMenu.content}
     </>
   );

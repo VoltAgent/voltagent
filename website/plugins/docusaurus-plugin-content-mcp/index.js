@@ -47,19 +47,11 @@ function getSimilarMcps(allMcps, metadata) {
 
 // Read and parse JSON files from the data directory
 function loadMcpData() {
-  const dataDir = path.join(
-    process.cwd(),
-    "src",
-    "components",
-    "mcp-list",
-    "data",
-  );
+  const dataDir = path.join(process.cwd(), "src", "components", "mcp-list", "data");
   const mcps = [];
 
   try {
-    const files = fs
-      .readdirSync(dataDir)
-      .filter((file) => file.endsWith(".json"));
+    const files = fs.readdirSync(dataDir).filter((file) => file.endsWith(".json"));
 
     for (const file of files) {
       const filePath = path.join(dataDir, file);
@@ -128,11 +120,7 @@ async function mcpPluginExtended(...pluginArgs) {
 
           const dataPath = await createData(
             `${utils.docuHash(metadata.id)}.json`,
-            JSON.stringify(
-              { ...metadata, similarMcps, data: mcp.data },
-              null,
-              2,
-            ),
+            JSON.stringify({ ...metadata, similarMcps, data: mcp.data }, null, 2),
           );
 
           addRoute({

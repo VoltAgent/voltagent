@@ -26,11 +26,8 @@ export async function addSuspendedStatusMigration(
   });
 
   if (result.rows.length > 0) {
-    console.log(`[Migration] '${migrationName}' already applied at ${result.rows[0].applied_at}`);
     return;
   }
-
-  console.log(`[Migration] Applying '${migrationName}'...`);
 
   try {
     // Since SQLite doesn't support modifying CHECK constraints directly,
@@ -38,7 +35,6 @@ export async function addSuspendedStatusMigration(
     const needsMigration = await checkIfSuspendedStatusNeeded(db, tablePrefix);
 
     if (!needsMigration) {
-      console.log("[Migration] 'suspended' status already supported, marking as applied");
     } else {
       // Perform the actual migration
       await performSuspendedStatusMigration(db, tablePrefix);
@@ -49,8 +45,6 @@ export async function addSuspendedStatusMigration(
       sql: `INSERT INTO ${tablePrefix}_migrations (name) VALUES (?)`,
       args: [migrationName],
     });
-
-    console.log(`[Migration] '${migrationName}' completed successfully`);
   } catch (error) {
     console.error(`[Migration] Failed to apply '${migrationName}':`, error);
     throw error;
