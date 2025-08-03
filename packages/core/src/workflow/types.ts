@@ -340,7 +340,7 @@ export type Workflow<
   scheduledRun: (
     input: WorkflowInput<INPUT_SCHEMA>,
     optionsWithSchedule: { schedule: WorkflowScheduleOptions } & Partial<WorkflowRunOptions>,
-  ) => Promise<WorkflowScheduler | undefined>;
+  ) => Promise<WorkflowScheduler>;
   /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance

@@ -1327,28 +1327,27 @@ export function createWorkflow<
       input,
       options?: Partial<WorkflowRunOptions> & { schedule: WorkflowScheduleOptions },
     ) => {
-      // If a schedule expression is provided, create a scheduler
-      if (options?.schedule?.expression) {
-        const runLogger = logger.child({});
-        runLogger.info(
-          `Scheduled workflow has started with the expression: ${options.schedule.expression}`,
-        );
-        const scheduler = createScheduler({
-          expression: options.schedule.expression,
-          callback: async () => {
-            const result = await run(input, options);
-            return result;
-          },
-          onResult: (result) => options.schedule?.onResult?.(result),
-          options: options.schedule?.options,
-        });
-
-        scheduler.start();
-        return scheduler;
+      if (!options?.schedule?.expression) {
+        throw new Error("Schedule expression is required");
       }
 
-      // If no schedule is provided, return undefined
-      return undefined;
+      // If a schedule expression is provided, create a scheduler
+      const runLogger = logger.child({});
+      runLogger.info(
+        `Scheduled workflow has started with the expression: ${options.schedule.expression}`,
+      );
+      const scheduler = createScheduler({
+        expression: options.schedule.expression,
+        callback: async () => {
+          const result = await run(input, options);
+          return result;
+        },
+        onResult: (result) => options.schedule?.onResult?.(result),
+        options: options.schedule?.options,
+      });
+
+      scheduler.start();
+      return scheduler;
     },
   } satisfies Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 }
