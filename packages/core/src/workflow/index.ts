@@ -12,3 +12,4 @@ export type {
   WorkflowSuspendController,
 } from "./types";
 export type { WorkflowExecuteContext } from "./internal/types";
+export type { WorkflowScheduler } from "./types";

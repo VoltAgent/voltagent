@@ -16,7 +16,11 @@ export type {
   WorkflowHistoryEntry,
   WorkflowStepHistoryEntry,
 } from "./workflow/context";
-export type { Workflow, WorkflowConfig } from "./workflow";
+export type {
+  Workflow,
+  WorkflowConfig,
+  WorkflowScheduler,
+} from "./workflow";
 export * from "./agent/agent";
 export * from "./agent/hooks";
 export { createSubagent } from "./agent/subagent/types";

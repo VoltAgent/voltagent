@@ -28,6 +28,8 @@ import type {
   WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
+  WorkflowScheduleOptions,
+  WorkflowScheduler,
 } from "./types";
 
 /**
@@ -702,6 +704,21 @@ export class WorkflowChain<
       RESULT_SCHEMA,
       RESUME_SCHEMA
     >;
+  }
+
+  /**
+   * Execute the workflow with the given input
+   */
+  async scheduledRun(
+    input: WorkflowInput<INPUT_SCHEMA>,
+    optionsWithSchedule: WorkflowRunOptions & { schedule: WorkflowScheduleOptions },
+  ): Promise<WorkflowScheduler> {
+    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      ...this.steps,
+    );
+    return (await workflow.scheduledRun(input, optionsWithSchedule)) as WorkflowScheduler;
   }
 }
 

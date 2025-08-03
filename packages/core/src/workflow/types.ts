@@ -7,6 +7,7 @@ import type { UserContext } from "../agent/types";
 import type { Memory } from "../memory";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
+import type { createScheduler } from "./scheduler";
 import type { WorkflowStep } from "./steps";
 
 export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> {
@@ -150,6 +151,10 @@ export interface WorkflowRunOptions {
    * If not provided, will use the workflow's logger or global logger
    */
   logger?: Logger;
+  /**
+   * Schedule for the workflow
+   */
+  schedule?: WorkflowScheduleOptions;
 }
 
 export interface WorkflowResumeOptions {
@@ -323,6 +328,20 @@ export type Workflow<
     options?: WorkflowRunOptions,
   ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
   /**
+   * Execute the workflow with the given input
+   * @param input - The input to the workflow
+   * @param optionsWithSchedule - The options for the workflow with schedule properties
+   *
+   * All node-cron options are supported, see https://nodecron.com/scheduling-options.html
+   *
+   * @returns The scheduler instance if a schedule is provided, otherwise undefined.
+   * More details: https://nodecron.com/task-controls.html
+   */
+  scheduledRun: (
+    input: WorkflowInput<INPUT_SCHEMA>,
+    optionsWithSchedule: { schedule: WorkflowScheduleOptions } & Partial<WorkflowRunOptions>,
+  ) => Promise<WorkflowScheduler>;
+  /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance
    */
@@ -466,5 +485,73 @@ export interface UpdateWorkflowStepOptions {
 }
 
 /**
- * Workflow memory storage interface - provides abstraction for different storage backends
+ * Configuration options for scheduling workflows to run automatically at specified intervals.
+ * Supports cron expressions for flexible scheduling patterns and includes various execution
+ * control options such as timezone handling, execution limits, and result callbacks.
+ *
+ * @example
+ * ```typescript
+ * const scheduleOptions: WorkflowScheduleOptions = {
+ *   expression: "0 9 * * MON-FRI", // Every weekday at 9 AM
+ *   onResult: (result) => console.log('Workflow completed:', result),
+ *   options: {
+ *     timezone: "America/New_York",
+ *     name: "daily-report-workflow",
+ *     maxExecutions: 100
+ *   }
+ * };
+ * ```
  */
+export interface WorkflowScheduleOptions {
+  /**
+   * Cron expression defining when the workflow should be executed.
+   * Supports standard cron format: "second minute hour day month dayOfWeek"
+   * @example "0 30 14 * * *" (every day at 2:30 PM)
+   * @example "0 0 9 * * MON-FRI" (weekdays at 9 AM)
+   *
+   * @note You can use the following websites to help create cron expressions:
+   * - https://cron-ai.vercel.app/
+   * - https://crontab.guru/
+   */
+  expression: string;
+
+  /**
+   * Optional callback function that will be invoked when the scheduled workflow execution completes.
+   * Receives the workflow execution result containing success/failure status and output data.
+   */
+  onResult?: (result: WorkflowExecutionResult<z.ZodAny, z.ZodAny>) => void;
+
+  /** Additional configuration options for schedule behavior */
+  options?: {
+    /**
+     * Timezone for cron expression evaluation. Uses IANA timezone identifiers.
+     * @example "America/New_York", "Europe/London", "Asia/Tokyo"
+     * @default System timezone
+     */
+    timezone?: string;
+
+    /**
+     * Human-readable name for the scheduled workflow for identification and logging purposes.
+     * @example "daily-backup", "weekly-report-generation"
+     */
+    name?: string;
+
+    /**
+     * Maximum number of times this scheduled workflow should execute before stopping.
+     * Useful for limiting long-running schedules or creating finite execution cycles.
+     * @example 10 (execute only 10 times then stop)
+     * @default undefined (unlimited executions)
+     */
+    maxExecutions?: number;
+
+    /**
+     * Maximum random delay in milliseconds to add before each execution.
+     * Helps prevent thundering herd problems when multiple workflows are scheduled.
+     * @example 5000 (add up to 5 seconds random delay)
+     * @default 0 (no delay)
+     */
+    maxRandomDelay?: number;
+  };
+}
+
+export interface WorkflowScheduler extends ReturnType<typeof createScheduler> {}

@@ -15,6 +15,7 @@
     "@types/ws": "^8.18.1",
     "@voltagent/internal": "^0.0.6",
     "hono": "^4.7.7",
+    "node-cron": "^4.2.1",
     "ts-pattern": "^5.7.1",
     "uuid": "^9.0.1",
     "ws": "^8.18.1",
