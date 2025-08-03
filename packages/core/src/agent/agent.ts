@@ -1043,11 +1043,22 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       options.parentAgentId,
       options.parentHistoryEntryId,
     );
+
+    // Prepare userContext for logging
+    const userContextToUse =
+      options.parentOperationContext?.userContext || options.userContext || this.defaultUserContext;
+
+    // Convert userContext Map to object for logging
+    const userContextObject = userContextToUse
+      ? Object.fromEntries(userContextToUse.entries())
+      : {};
+
     const methodLogger = contextualLogger.child({
       userId: options.userId,
       conversationId: options.conversationId,
       executionId: historyEntry.id,
       operationName: options.operationName,
+      userContext: userContextObject,
       // Preserve parent execution ID if present in contextual logger
       ...(options.parentHistoryEntryId && {
         parentExecutionId: options.parentHistoryEntryId,
@@ -1056,11 +1067,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     const opContext: OperationContext = {
       operationId: historyEntry.id,
-      userContext:
-        (options.parentOperationContext?.userContext ||
-          options.userContext ||
-          this.defaultUserContext) ??
-        new Map<string | symbol, unknown>(),
+      userContext: userContextToUse ?? new Map<string | symbol, unknown>(),
       historyEntry,
       isActive: true,
       parentAgentId: options.parentAgentId,
