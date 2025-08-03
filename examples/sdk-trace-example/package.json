@@ -2,8 +2,8 @@
   "name": "voltagent-example-sdk-trace",
   "author": "",
   "dependencies": {
-    "@voltagent/logger": "^0.1.1",
-    "@voltagent/sdk": "^0.1.5"
+    "@voltagent/logger": "^0.1.2",
+    "@voltagent/sdk": "^0.1.6"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

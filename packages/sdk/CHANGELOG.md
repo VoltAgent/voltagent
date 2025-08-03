@@ -1,5 +1,25 @@
 # @voltagent/sdk
 
+## 0.1.6
+
+### Patch Changes
+
+- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
+
+  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
+
+  **Key improvements:**
+  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
+  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
+  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
+  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
+  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
+
+  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
+
+- Updated dependencies [[`8d89469`](https://github.com/VoltAgent/voltagent/commit/8d8946919820c0298bffea13731ea08660b72c4b), [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5), [`71500c5`](https://github.com/VoltAgent/voltagent/commit/71500c5368cce3ed4aacfb0fb2749752bf71badd), [`6cc552a`](https://github.com/VoltAgent/voltagent/commit/6cc552ada896b1a8344976c46a08b53d2b3a5743)]:
+  - @voltagent/core@0.1.73
+
 ## 0.1.5
 
 ### Patch Changes
@@ -63,7 +83,6 @@
 ### Patch Changes
 
 - [#160](https://github.com/VoltAgent/voltagent/pull/160) [`03ed437`](https://github.com/VoltAgent/voltagent/commit/03ed43723cd56f29ac67088f0624a88632a14a1b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce new VoltAgent SDK package
-
   - Add new `@voltagent/sdk` package for client-side interactions with VoltAgent API
   - Includes VoltAgentClient for managing agents, conversations, and telemetry
   - Provides wrapper utilities for enhanced agent functionality

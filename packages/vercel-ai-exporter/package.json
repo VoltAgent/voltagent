@@ -1,16 +1,16 @@
 {
   "name": "@voltagent/vercel-ai-exporter",
   "description": "OpenTelemetry exporter for VoltAgent observability with Vercel AI SDK",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "VoltAgent Team",
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@voltagent/sdk": "^0.1.5"
+    "@voltagent/sdk": "^0.1.6"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",
-    "@voltagent/core": "^0.1.71",
+    "@voltagent/core": "^0.1.73",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"

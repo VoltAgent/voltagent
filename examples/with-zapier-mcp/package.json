@@ -6,9 +6,9 @@
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.8",
     "@aws-sdk/credential-providers": "~3.799.0",
-    "@voltagent/core": "~0.1.72",
-    "@voltagent/logger": "^0.1.1",
-    "@voltagent/vercel-ai": "~0.1.16",
+    "@voltagent/core": "~0.1.73",
+    "@voltagent/logger": "^0.1.2",
+    "@voltagent/vercel-ai": "~0.1.17",
     "zod": "^3.24.2"
   },
   "devDependencies": {

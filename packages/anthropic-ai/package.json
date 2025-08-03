@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/anthropic-ai",
   "description": "Anthropic AI provider for VoltAgent",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0"
   },

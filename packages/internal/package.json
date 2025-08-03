@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/internal",
   "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",
