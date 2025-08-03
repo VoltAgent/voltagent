@@ -609,9 +609,10 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
     let processingComplete = false;
     let loopCount = 0;
     let currentIterator = streamIterator;
+    const maxSteps = options.maxSteps || 10;
 
     // limit the number of iterations to prevent infinite loops in the streaming process.
-    while (!processingComplete && loopCount < 10) {
+    while (!processingComplete && loopCount < maxSteps) {
       loopCount++;
       if (!currentIterator) {
         throw new Error("Stream iterator became null during processing loop.");
@@ -647,9 +648,9 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       }
     }
 
-    if (loopCount >= 10) {
+    if (loopCount >= maxSteps) {
       console.warn(
-        "[GoogleGenAIProvider] Exited stream processing loop due to reaching max iterations (10).",
+        `[GoogleGenAIProvider] Exited stream processing loop due to reaching max iterations (${maxSteps}).`,
       );
     }
   }
