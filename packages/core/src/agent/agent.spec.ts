@@ -69,18 +69,7 @@ describe("Agent", () => {
     vi.clearAllMocks();
     testProvider = new TestProvider();
 
-    // Create a mock logger with proper child implementation
-    const mockChildLogger = {
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      log: vi.fn(),
-      trace: vi.fn(),
-      fatal: vi.fn(),
-      child: vi.fn().mockReturnThis(),
-    } as any;
-
+    // Create a mock logger that returns itself when child is called
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -89,8 +78,11 @@ describe("Agent", () => {
       log: vi.fn(),
       trace: vi.fn(),
       fatal: vi.fn(),
-      child: vi.fn().mockReturnValue(mockChildLogger),
+      child: vi.fn(),
     } as any;
+
+    // Make child() return the same mockLogger instance
+    mockLogger.child.mockReturnValue(mockLogger);
 
     // Clear registry between tests
     // AgentRegistry doesn't have a clear method, we'll handle registration cleanup differently
