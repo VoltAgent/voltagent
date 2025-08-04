@@ -82,7 +82,7 @@ describe("Agent", () => {
     } as any;
 
     // Make child() return the same mockLogger instance
-    mockLogger.child.mockReturnValue(mockLogger);
+    (mockLogger.child as any).mockReturnValue(mockLogger);
 
     // Clear registry between tests
     // AgentRegistry doesn't have a clear method, we'll handle registration cleanup differently
