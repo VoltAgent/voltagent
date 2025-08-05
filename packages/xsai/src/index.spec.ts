@@ -254,9 +254,11 @@ describe("XSAIProvider", () => {
   describe("streamText", () => {
     it("should call xsai.streamText and return provider response and stream", async () => {
       const messages: BaseMessage[] = [{ role: "user", content: "Stream this" }];
-      const mockStream = new ReadableStream(); // Simple mock stream
+      const mockTextStream = new ReadableStream(); // Separate stream for textStream
+      const mockFullStream = new ReadableStream(); // Separate stream for fullStream
       const mockResult = {
-        textStream: mockStream /* other potential fields from xsai */,
+        textStream: mockTextStream,
+        fullStream: mockFullStream,
       };
       mockXSAIStreamText.mockResolvedValue(mockResult);
 
