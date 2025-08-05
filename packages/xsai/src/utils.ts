@@ -1,6 +1,6 @@
-import { StreamPart } from "@voltagent/core";
-import type { StreamTextEvent } from "xsai";
+import type { StreamPart } from "@voltagent/core";
 import { P, match } from "ts-pattern";
+import type { StreamTextEvent } from "xsai";
 
 /**
  * Map xsAI StreamTextEvent to our standard StreamPart

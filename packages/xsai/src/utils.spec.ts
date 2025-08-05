@@ -1,6 +1,6 @@
 import type { StreamPart } from "@voltagent/core";
-import type { StreamTextEvent } from "xsai";
 import { describe, expect, it } from "vitest";
+import type { StreamTextEvent } from "xsai";
 import { createMappedFullStream, mapToStreamPart } from "./utils";
 
 describe("mapToStreamPart", () => {
