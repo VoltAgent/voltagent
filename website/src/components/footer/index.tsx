@@ -2,10 +2,10 @@ import Link from "@docusaurus/Link";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { YouTubeLogo } from "../../../static/img/logos/integrations/youtube";
 import { LinkedInLogo } from "../../../static/img/logos/linkedin";
 import { RedditLogo } from "../../../static/img/logos/reddit";
 import { XLogo } from "../../../static/img/logos/x";
-import { YouTubeLogo } from "../../../static/img/logos/integrations/youtube";
 
 export function Footer() {
   return (
@@ -88,10 +88,7 @@ export function Footer() {
                 <FooterLink href="/mcp/">MCP Directory</FooterLink>
               </li>
               <li>
-                <FooterLink
-                  href="https://voltagent.dev/tutorial/introduction/"
-                  target="_blank"
-                >
+                <FooterLink href="https://voltagent.dev/tutorial/introduction/" target="_blank">
                   Tutorial
                 </FooterLink>
               </li>

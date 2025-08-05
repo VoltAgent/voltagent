@@ -75,7 +75,6 @@ const scrollAnimation = `
   }
 `;
 
-
 const testimonialTweetIds = [
   "1916955895709503681",
   "1930715579155202268",
