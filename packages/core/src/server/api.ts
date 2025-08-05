@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import type { LogFilter } from "@voltagent/internal";
@@ -1495,6 +1497,110 @@ app.post("/updates/:packageName", async (c: ApiContext) => {
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to update package",
+      },
+      500,
+    );
+  }
+});
+
+// Setup observability endpoint
+app.post("/setup-observability", async (c: ApiContext) => {
+  try {
+    const body = await c.req.json();
+    const { publicKey, secretKey } = body;
+
+    if (!publicKey || !secretKey) {
+      return c.json(
+        {
+          success: false,
+          error: "Missing publicKey or secretKey",
+        },
+        400,
+      );
+    }
+
+    // Update .env file
+    const envPath = path.join(process.cwd(), ".env");
+
+    try {
+      // Read existing .env content
+      let envContent = "";
+      try {
+        envContent = await fs.readFile(envPath, "utf-8");
+      } catch (_error) {
+        // If .env doesn't exist, we'll create it
+        logger.debug(".env file not found, will create new one");
+      }
+
+      // Update or add keys
+      const lines = envContent.split("\n");
+      let publicKeyUpdated = false;
+      let secretKeyUpdated = false;
+
+      const updatedLines = lines.map((line) => {
+        const trimmedLine = line.trim();
+
+        // Update commented public key
+        if (trimmedLine.startsWith("# VOLTAGENT_PUBLIC_KEY=")) {
+          publicKeyUpdated = true;
+          return `VOLTAGENT_PUBLIC_KEY=${publicKey}`;
+        }
+
+        // Update commented secret key
+        if (trimmedLine.startsWith("# VOLTAGENT_SECRET_KEY=")) {
+          secretKeyUpdated = true;
+          return `VOLTAGENT_SECRET_KEY=${secretKey}`;
+        }
+
+        return line;
+      });
+
+      envContent = updatedLines.join("\n");
+
+      // If keys weren't found, add them at the end
+      if (!publicKeyUpdated || !secretKeyUpdated) {
+        if (!envContent.endsWith("\n") && envContent.length > 0) {
+          envContent += "\n";
+        }
+
+        if (!publicKeyUpdated && !secretKeyUpdated) {
+          envContent += `
+# VoltAgent Observability
+VOLTAGENT_PUBLIC_KEY=${publicKey}
+VOLTAGENT_SECRET_KEY=${secretKey}
+`;
+        } else if (!publicKeyUpdated) {
+          envContent += `VOLTAGENT_PUBLIC_KEY=${publicKey}\n`;
+        } else if (!secretKeyUpdated) {
+          envContent += `VOLTAGENT_SECRET_KEY=${secretKey}\n`;
+        }
+      }
+
+      // Write updated content
+      await fs.writeFile(envPath, envContent);
+
+      logger.info("Observability configuration updated in .env file");
+
+      return c.json({
+        success: true,
+        message: "Observability configured successfully. Please restart your application.",
+      });
+    } catch (error) {
+      logger.error("Failed to update .env file:", { error });
+      return c.json(
+        {
+          success: false,
+          error: "Failed to update .env file",
+        },
+        500,
+      );
+    }
+  } catch (error) {
+    logger.error("Failed to setup observability:", { error });
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to setup observability",
       },
       500,
     );

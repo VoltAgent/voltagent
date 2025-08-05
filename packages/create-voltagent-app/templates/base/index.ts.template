@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { VoltAgent, Agent } from "@voltagent/core";
+import { VoltAgent, VoltOpsClient, Agent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
@@ -27,5 +27,9 @@ new VoltAgent({
   workflows: {
     expenseApprovalWorkflow,
   },
-  logger, // Pass the logger instance
+  logger,
+  voltOpsClient: new VoltOpsClient({
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",
+    secretKey: process.env.VOLTAGENT_SECRET_KEY || "",
+  }),
 });
