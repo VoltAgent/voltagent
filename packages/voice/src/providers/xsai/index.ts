@@ -95,7 +95,8 @@ export class XSAIVoiceProvider extends BaseVoiceProvider {
       this.emit("listening", { audio });
       const buf = await collectChunks(audio);
 
-      const blob = new Blob([buf]);
+      // TODO: Fix this type error
+      const blob = new Blob([buf as BlobPart]);
 
       const generateTranscriptionOptions: GenerateTranscriptionOptions = {
         file: blob,

@@ -1,4 +1,4 @@
-import type { Logger, LoggerOptions, LogBuffer } from "../types";
+import type { LogBuffer, Logger, LoggerOptions } from "../types";
 
 /**
  * Logger provider interface for implementing different logging backends

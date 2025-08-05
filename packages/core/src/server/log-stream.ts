@@ -1,5 +1,5 @@
+import type { LogEntry, LogFilter, Logger } from "@voltagent/internal";
 import type { WebSocket } from "ws";
-import type { LogFilter, LogEntry, Logger } from "@voltagent/internal";
 import { getGlobalLogBuffer, getGlobalLogger } from "../logger";
 
 export interface LogStreamClient {
@@ -107,11 +107,6 @@ export class LogStreamManager {
     if (filter.workflowId && log.workflowId && log.workflowId !== filter.workflowId) return false;
 
     return true;
-  }
-
-  private filterLogsForClient(logs: LogEntry[], filter?: LogFilter): LogEntry[] {
-    if (!filter) return logs;
-    return logs.filter((log) => this.shouldSendToClient(log, filter));
   }
 
   private getLevelPriority(level: string): number {

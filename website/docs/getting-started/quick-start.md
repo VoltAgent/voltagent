@@ -266,7 +266,7 @@ Create a basic TypeScript configuration file (tsconfig.json):
 npm install --save-dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod
+npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
 ```
 
   </TabItem>

@@ -189,10 +189,8 @@ const featureRecommendations: Record<string, FeatureRecommendation[]> = {
 
 export default function AgentFeaturePrioritizer(): JSX.Element {
   const [useCase, setUseCase] = useState<UseCase>("unknown");
-  const [interactionType, setInteractionType] =
-    useState<InteractionType>("unknown");
-  const [dataRequirements, setDataRequirements] =
-    useState<DataRequirements>("unknown");
+  const [interactionType, setInteractionType] = useState<InteractionType>("unknown");
+  const [dataRequirements, setDataRequirements] = useState<DataRequirements>("unknown");
   const [budget, setBudget] = useState<Budget>("unknown");
 
   const getRecommendations = (): FeatureRecommendation[] => {
@@ -207,10 +205,7 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
     let recommendations = [...featureRecommendations.default];
 
     // Adjust based on data requirements
-    if (
-      dataRequirements === "complex-databases" ||
-      dataRequirements === "real-time"
-    ) {
+    if (dataRequirements === "complex-databases" || dataRequirements === "real-time") {
       recommendations = recommendations.map((rec) =>
         rec.feature === "Tools Integration"
           ? {
@@ -257,20 +252,14 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
 
   return (
     <div className="my-6 rounded-lg border-2 border-solid border-emerald-500 bg-gray-800 p-5 shadow-lg">
-      <h4 className="mb-2 text-lg font-semibold text-white">
-        🎯 Agent Feature Prioritizer
-      </h4>
+      <h4 className="mb-2 text-lg font-semibold text-white">🎯 Agent Feature Prioritizer</h4>
       <p className="mb-4 text-sm text-gray-300">
-        Get personalized recommendations for which agent features to implement
-        first:
+        Get personalized recommendations for which agent features to implement first:
       </p>
 
       <div className="space-y-4">
         <div>
-          <label
-            htmlFor="useCaseSelect"
-            className="mb-1 block text-sm font-medium text-gray-200"
-          >
+          <label htmlFor="useCaseSelect" className="mb-1 block text-sm font-medium text-gray-200">
             1. What's your primary use case?
           </label>
           <select
@@ -310,9 +299,7 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
           <select
             id="interactionSelect"
             value={interactionType}
-            onChange={(e) =>
-              setInteractionType(e.target.value as InteractionType)
-            }
+            onChange={(e) => setInteractionType(e.target.value as InteractionType)}
             className={`${selectBaseClass} ${selectBorderClass} ${selectHoverClass} ${selectFocusClass}`}
           >
             <option value="unknown" className="bg-gray-800">
@@ -331,18 +318,13 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
         </div>
 
         <div>
-          <label
-            htmlFor="dataSelect"
-            className="mb-1 block text-sm font-medium text-gray-200"
-          >
+          <label htmlFor="dataSelect" className="mb-1 block text-sm font-medium text-gray-200">
             3. What kind of external data access do you need?
           </label>
           <select
             id="dataSelect"
             value={dataRequirements}
-            onChange={(e) =>
-              setDataRequirements(e.target.value as DataRequirements)
-            }
+            onChange={(e) => setDataRequirements(e.target.value as DataRequirements)}
             className={`${selectBaseClass} ${selectBorderClass} ${selectHoverClass} ${selectFocusClass}`}
           >
             <option value="unknown" className="bg-gray-800">
@@ -364,10 +346,7 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
         </div>
 
         <div>
-          <label
-            htmlFor="budgetSelect"
-            className="mb-1 block text-sm font-medium text-gray-200"
-          >
+          <label htmlFor="budgetSelect" className="mb-1 block text-sm font-medium text-gray-200">
             4. What's your approach to cost vs performance?
           </label>
           <select
@@ -407,11 +386,7 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
                   <span className="font-medium text-emerald-100">
                     {index + 1}. {rec.feature}
                   </span>
-                  <span
-                    className={`text-xs font-bold ${getPriorityColor(
-                      rec.priority,
-                    )}`}
-                  >
+                  <span className={`text-xs font-bold ${getPriorityColor(rec.priority)}`}>
                     {rec.priority} Priority
                   </span>
                 </div>
@@ -420,8 +395,8 @@ export default function AgentFeaturePrioritizer(): JSX.Element {
             ))}
           </div>
           <p className="mt-3 text-xs text-emerald-300/70">
-            💡 Start with High priority features first, then add Medium and Low
-            priority features as your project matures.
+            💡 Start with High priority features first, then add Medium and Low priority features as
+            your project matures.
           </p>
         </div>
       )}

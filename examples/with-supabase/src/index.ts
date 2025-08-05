@@ -1,8 +1,8 @@
-import { VoltAgent, Agent } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { SupabaseMemory } from "@voltagent/supabase"; // Import SupabaseMemory
 import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
+import { SupabaseMemory } from "@voltagent/supabase"; // Import SupabaseMemory
+import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Get Supabase credentials from environment variables
 const supabaseUrl = process.env.SUPABASE_URL;

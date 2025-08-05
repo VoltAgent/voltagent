@@ -1,10 +1,10 @@
 import type { BaseMessage } from "../agent/providers";
+import { type Logger, getGlobalLogger } from "../logger";
+import { LogEvents } from "../logger/events";
+import { ResourceType, buildLogContext, buildRetrieverLogMessage } from "../logger/message-builder";
 import type { AgentTool } from "../tool";
 import { createRetrieverTool } from "./tools";
-import type { Retriever, RetrieverOptions, RetrieveOptions } from "./types";
-import { getGlobalLogger, type Logger } from "../logger";
-import { LogEvents } from "../logger/events";
-import { buildRetrieverLogMessage, buildLogContext, ResourceType } from "../logger/message-builder";
+import type { RetrieveOptions, Retriever, RetrieverOptions } from "./types";
 
 /**
  * Abstract base class for Retriever implementations.

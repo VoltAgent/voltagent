@@ -45,8 +45,7 @@ const getAudioContext = () => {
 
   if (!audioContextInstance) {
     try {
-      const AudioContextClass =
-        window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioContextClass) {
         audioContextInstance = new AudioContextClass();
       }
@@ -207,10 +206,7 @@ const playBeat = (beatType: string) => {
 
     // Configure filter
     filter.type = config.filterType as BiquadFilterType;
-    filter.frequency.setValueAtTime(
-      config.filterFreq,
-      audioContext.currentTime,
-    );
+    filter.frequency.setValueAtTime(config.filterFreq, audioContext.currentTime);
     filter.Q.setValueAtTime(1, audioContext.currentTime);
 
     // Connect filter to gain node
@@ -219,10 +215,7 @@ const playBeat = (beatType: string) => {
 
     // Set gain envelope
     gainNode.gain.setValueAtTime(config.gain, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.001,
-      audioContext.currentTime + config.decay,
-    );
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + config.decay);
 
     // Track gain node for cleanup
     activeGainNodes.push(gainNode);
@@ -232,11 +225,7 @@ const playBeat = (beatType: string) => {
       // Create or reuse noise buffer
       if (!noiseBuffer) {
         const bufferSize = audioContext.sampleRate;
-        noiseBuffer = audioContext.createBuffer(
-          1,
-          bufferSize,
-          audioContext.sampleRate,
-        );
+        noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
         const output = noiseBuffer.getChannelData(0);
 
         for (let i = 0; i < bufferSize; i++) {
@@ -268,17 +257,11 @@ const playBeat = (beatType: string) => {
       // Regular oscillator for tonal beats
       const oscillator = audioContext.createOscillator();
       oscillator.type = config.type as OscillatorType;
-      oscillator.frequency.setValueAtTime(
-        config.frequency,
-        audioContext.currentTime,
-      );
+      oscillator.frequency.setValueAtTime(config.frequency, audioContext.currentTime);
 
       if (beatType === "kick") {
         // Frequency sweep for kick drum
-        oscillator.frequency.exponentialRampToValueAtTime(
-          20,
-          audioContext.currentTime + 0.03,
-        );
+        oscillator.frequency.exponentialRampToValueAtTime(20, audioContext.currentTime + 0.03);
       }
 
       oscillator.connect(filter);
@@ -301,26 +284,16 @@ const playBeat = (beatType: string) => {
     }
 
     // Add to active beats if not already included and under the limit
-    if (
-      !activeBeats.includes(beatType) &&
-      activeBeats.length < MAX_ACTIVE_BEATS
-    ) {
+    if (!activeBeats.includes(beatType) && activeBeats.length < MAX_ACTIVE_BEATS) {
       activeBeats.push(beatType);
-      console.log(
-        `Beat added: ${beatType} (${activeBeats.length}/${MAX_ACTIVE_BEATS})`,
-      );
+      console.log(`Beat added: ${beatType} (${activeBeats.length}/${MAX_ACTIVE_BEATS})`);
 
       // Start the sequencer if it's not already running and we have beats to play
       if (!isPlaying && activeBeats.length > 0) {
         startBeatSequencer();
       }
-    } else if (
-      activeBeats.length >= MAX_ACTIVE_BEATS &&
-      !activeBeats.includes(beatType)
-    ) {
-      console.log(
-        `⚠️ Maximum beat limit reached (${MAX_ACTIVE_BEATS}). Remove beats to add more.`,
-      );
+    } else if (activeBeats.length >= MAX_ACTIVE_BEATS && !activeBeats.includes(beatType)) {
+      console.log(`⚠️ Maximum beat limit reached (${MAX_ACTIVE_BEATS}). Remove beats to add more.`);
     }
   } catch (error) {
     console.error("Audio playback error:", error);
@@ -471,139 +444,111 @@ const Node = forwardRef<
     icon?: React.ReactNode;
     nodeId?: string;
   }
->(
-  (
-    { className, children, label, description, type = "input", nodeId },
-    ref,
-  ) => {
-    const [isHovered, setIsHovered] = useState(false);
-    const [isActive, setIsActive] = useState(false);
+>(({ className, children, label, description, type = "input", nodeId }, ref) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isActive, setIsActive] = useState(false);
 
-    const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
-    const beatType = beatTypes[nodeId || type] || beatTypes.kick;
+  const beatType = beatTypes[nodeId || type] || beatTypes.kick;
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-    useEffect(() => {
-      // Update active state based on presence in activeBeats
-      setIsActive(activeBeats.includes(beatType));
-    }, [beatType, activeBeats.length]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
+  useEffect(() => {
+    // Update active state based on presence in activeBeats
+    setIsActive(activeBeats.includes(beatType));
+  }, [beatType, activeBeats.length]);
 
-    const handleNodeClick = () => {
-      // Initialize audio context on first click (needed for Safari/iOS)
-      getAudioContext();
+  const handleNodeClick = () => {
+    // Initialize audio context on first click (needed for Safari/iOS)
+    getAudioContext();
 
-      // Toggle the beat on/off
-      if (activeBeats.includes(beatType)) {
-        removeBeat(beatType);
-        setIsActive(false);
-      } else {
-        playBeat(beatType);
-        setIsActive(true);
-      }
-    };
-
-    // Render rectangular nodes for input and output types
-    if (type === "input" || type === "output") {
-      return (
-        <div className="relative">
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
-          <div
-            ref={ref}
-            className={clsx(
-              "z-10 flex items-center rounded-md backdrop-blur-sm border border-dashed border-opacity-40 transition-all duration-300 hover:scale-105 px-2 py-2 cursor-pointer",
-              isMobile ? "w-28" : "w-38",
-              type === "input" ? "border-[#4f5d75]" : "border-[#4f5d75]",
-              isActive && "bg-[#113328] shadow-[0_0_15px_rgba(0,217,146,0.2)]",
-              className,
-            )}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onClick={handleNodeClick}
-          >
-            <div
-              className={clsx(
-                "flex items-center justify-center mr-3",
-                "size-5",
-              )}
-            >
-              {children}
-            </div>
-            <span className="text-xs font-medium text-gray-300">{label}</span>
-          </div>
-
-          {/* Tooltip */}
-          {description && isHovered && (
-            <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border border-solid border-[#113328] p-3 shadow-lg text-xs text-gray-300">
-              {description}
-              {isActive && (
-                <div className="mt-1 text-[#00d992]">
-                  ✓ Active in beat sequence
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      );
+    // Toggle the beat on/off
+    if (activeBeats.includes(beatType)) {
+      removeBeat(beatType);
+      setIsActive(false);
+    } else {
+      playBeat(beatType);
+      setIsActive(true);
     }
+  };
 
-    // Keep the original circular design for core and module types
+  // Render rectangular nodes for input and output types
+  if (type === "input" || type === "output") {
     return (
-      <div className="flex flex-col items-center relative">
-        {label && type === "core" && (
-          <span className="text-xs mb-2 font-medium text-gray-300">
-            {label}
-          </span>
-        )}
+      <div className="relative">
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
         <div
           ref={ref}
           className={clsx(
-            "z-10 flex items-center justify-center rounded-full border-2 border-solid transition-all duration-300 hover:scale-110 cursor-pointer",
-            type === "core"
-              ? "border-[#00d992] pt-1 mb-3 shadow-[0_0_30px_rgba(0,217,146,0.3)]"
-              : "border-[#00d992]",
-            type === "core" ? (isMobile ? "size-9" : "size-14") : "size-9",
-            isActive && "bg-[#113328] shadow-[0_0_15px_rgba(0,217,146,0.5)]",
+            "z-10 flex items-center rounded-md backdrop-blur-sm border border-dashed border-opacity-40 transition-all duration-300 hover:scale-105 px-2 py-2 cursor-pointer",
+            isMobile ? "w-28" : "w-38",
+            type === "input" ? "border-[#4f5d75]" : "border-[#4f5d75]",
+            isActive && "bg-[#113328] shadow-[0_0_15px_rgba(0,217,146,0.2)]",
             className,
           )}
-          data-type={type}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={handleNodeClick}
         >
-          {children}
+          <div className={clsx("flex items-center justify-center mr-3", "size-5")}>{children}</div>
+          <span className="text-xs font-medium text-gray-300">{label}</span>
         </div>
-
-        {label && type === "module" && (
-          <span className="mt-2 text-xs font-medium text-gray-300">
-            {label}
-          </span>
-        )}
 
         {/* Tooltip */}
         {description && isHovered && (
-          <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border-solid border border-[#113328] p-3 shadow-lg text-xs text-gray-300">
+          <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border border-solid border-[#113328] p-3 shadow-lg text-xs text-gray-300">
             {description}
-            {isActive && (
-              <div className="mt-1 text-[#00d992]">
-                ✓ Active in beat sequence
-              </div>
-            )}
+            {isActive && <div className="mt-1 text-[#00d992]">✓ Active in beat sequence</div>}
           </div>
         )}
       </div>
     );
-  },
-);
+  }
+
+  // Keep the original circular design for core and module types
+  return (
+    <div className="flex flex-col items-center relative">
+      {label && type === "core" && (
+        <span className="text-xs mb-2 font-medium text-gray-300">{label}</span>
+      )}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+      <div
+        ref={ref}
+        className={clsx(
+          "z-10 flex items-center justify-center rounded-full border-2 border-solid transition-all duration-300 hover:scale-110 cursor-pointer",
+          type === "core"
+            ? "border-[#00d992] pt-1 mb-3 shadow-[0_0_30px_rgba(0,217,146,0.3)]"
+            : "border-[#00d992]",
+          type === "core" ? (isMobile ? "size-9" : "size-14") : "size-9",
+          isActive && "bg-[#113328] shadow-[0_0_15px_rgba(0,217,146,0.5)]",
+          className,
+        )}
+        data-type={type}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={handleNodeClick}
+      >
+        {children}
+      </div>
+
+      {label && type === "module" && (
+        <span className="mt-2 text-xs font-medium text-gray-300">{label}</span>
+      )}
+
+      {/* Tooltip */}
+      {description && isHovered && (
+        <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border-solid border border-[#113328] p-3 shadow-lg text-xs text-gray-300">
+          {description}
+          {isActive && <div className="mt-1 text-[#00d992]">✓ Active in beat sequence</div>}
+        </div>
+      )}
+    </div>
+  );
+});
 
 Node.displayName = "Node";
 
-export function AgentsAnimation({
-  className,
-}: {
-  className?: string;
-}) {
+export function AgentsAnimation({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Input nodes
@@ -648,12 +593,7 @@ export function AgentsAnimation({
   };
 
   // Output refs array for random selection
-  const outputRefs = [
-    aiResponseRef,
-    automationRef,
-    apiResponseRef,
-    webhookOutRef,
-  ];
+  const outputRefs = [aiResponseRef, automationRef, apiResponseRef, webhookOutRef];
 
   // Animation cycle counter
   const [cycle, setCycle] = useState(0);
@@ -756,11 +696,7 @@ export function AgentsAnimation({
 
     // Calculate when the last output beam will complete
     const lastBeamCompleteTime =
-      startDelay +
-      particleInterval * 3 +
-      leftToCenterDuration +
-      centerToRightDuration +
-      loopDelay;
+      startDelay + particleInterval * 3 + leftToCenterDuration + centerToRightDuration + loopDelay;
 
     // Start next cycle after all beams complete
     const cycleTimer = setTimeout(() => {
@@ -805,10 +741,7 @@ export function AgentsAnimation({
   const isMobile = useMediaQuery("(max-width: 768px)");
   return (
     <div
-      className={clsx(
-        "relative flex flex-col w-full max-w-4xl h-full items-center",
-        className,
-      )}
+      className={clsx("relative flex flex-col w-full max-w-4xl h-full items-center", className)}
       ref={containerRef}
     >
       <div className="relative flex justify-center items-center h-full w-full landing-xs:scale-[1] ] landing-md:scale-100 landing-xs:mt-12 landing-md:mt-0">
@@ -867,10 +800,7 @@ export function AgentsAnimation({
             <div className="relative ">
               <div className="absolute inset-0 rounded-full bg-[#00d992] blur-md opacity-30 animate-pulse" />
               <Icons.lightning
-                className={clsx(
-                  "text-[#00d992]",
-                  isMobile ? "h-5 w-5" : "h-8 w-8",
-                )}
+                className={clsx("text-[#00d992]", isMobile ? "h-5 w-5" : "h-8 w-8")}
               />
             </div>
           </Node>
@@ -950,31 +880,30 @@ export function AgentsAnimation({
           )}
 
           {/* Output Beam */}
-          {activeBeams.output.includes(input.type) &&
-            outputMapping[input.type] && (
-              <AnimatedBeam
-                containerRef={containerRef}
-                fromRef={voltAgentRef}
-                toRef={outputMapping[input.type]}
-                curvature={0}
-                gradientStartColor="#4f5d75"
-                gradientStopColor="#2d3748"
-                pathColor="rgba(79, 93, 117, 0.25)"
-                pathWidth={3}
-                className="animate-pulse-slow"
-                pathType={isMobile ? "curved" : "angular"}
-                showParticles={true}
-                particleSize={3}
-                particleSpeed={3}
-                particleColor={input.color}
-                particleCount={1}
-                particleDirection="forward"
-                duration={centerToRightDuration}
-                delay={0}
-                particleDuration={centerToRightDuration}
-                key={`output-${input.type}-${cycle}`}
-              />
-            )}
+          {activeBeams.output.includes(input.type) && outputMapping[input.type] && (
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={voltAgentRef}
+              toRef={outputMapping[input.type]}
+              curvature={0}
+              gradientStartColor="#4f5d75"
+              gradientStopColor="#2d3748"
+              pathColor="rgba(79, 93, 117, 0.25)"
+              pathWidth={3}
+              className="animate-pulse-slow"
+              pathType={isMobile ? "curved" : "angular"}
+              showParticles={true}
+              particleSize={3}
+              particleSpeed={3}
+              particleColor={input.color}
+              particleCount={1}
+              particleDirection="forward"
+              duration={centerToRightDuration}
+              delay={0}
+              particleDuration={centerToRightDuration}
+              key={`output-${input.type}-${cycle}`}
+            />
+          )}
         </React.Fragment>
       ))}
 

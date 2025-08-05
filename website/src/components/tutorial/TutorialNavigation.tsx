@@ -1,10 +1,6 @@
-import type React from "react";
 import Link from "@docusaurus/Link";
-import {
-  CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "@heroicons/react/24/outline";
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import type React from "react";
 
 interface TutorialStep {
   id: string;
@@ -20,14 +16,10 @@ interface TutorialNavigationProps {
   currentStep: string;
 }
 
-export const TutorialNavigation: React.FC<TutorialNavigationProps> = ({
-  steps,
-  currentStep,
-}) => {
+export const TutorialNavigation: React.FC<TutorialNavigationProps> = ({ steps, currentStep }) => {
   const currentIndex = steps.findIndex((step) => step.id === currentStep);
   const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
-  const nextStep =
-    currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null;
+  const nextStep = currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null;
 
   return (
     <div className="tutorial-navigation">
@@ -51,20 +43,12 @@ export const TutorialNavigation: React.FC<TutorialNavigationProps> = ({
                     hover:opacity-80 transition-opacity
                   `}
                 >
-                  {step.completed ? (
-                    <CheckIcon className="w-4 h-4" />
-                  ) : (
-                    index + 1
-                  )}
+                  {step.completed ? <CheckIcon className="w-4 h-4" /> : index + 1}
                 </Link>
                 <span
                   className={`
                   text-xs mt-2 max-w-20 text-center
-                  ${
-                    step.id === currentStep
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-600"
-                  }
+                  ${step.id === currentStep ? "text-blue-600 font-semibold" : "text-gray-600"}
                 `}
                 >
                   {step.title}
@@ -75,8 +59,7 @@ export const TutorialNavigation: React.FC<TutorialNavigationProps> = ({
                   className={`
                   w-12 h-0.5 mx-4 mt-4
                   ${
-                    steps[index + 1].completed ||
-                    steps[index + 1].id === currentStep
+                    steps[index + 1].completed || steps[index + 1].id === currentStep
                       ? "bg-blue-600"
                       : "bg-gray-300"
                   }

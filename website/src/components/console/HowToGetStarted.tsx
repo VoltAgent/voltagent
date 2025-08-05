@@ -43,9 +43,8 @@ export const HowToGetStarted = () => {
                 </div>
 
                 <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-md mb-0">
-                  Build your AI agent using various frameworks or vanilla
-                  Python/TS. Universal compatibility means you're never locked
-                  in.
+                  Build your AI agent using various frameworks or vanilla Python/TS. Universal
+                  compatibility means you're never locked in.
                 </p>
               </div>
 
@@ -142,8 +141,8 @@ export const HowToGetStarted = () => {
                 </div>
 
                 <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-md mb-0 pr-8 landing-xs:pr-4 landing-sm:pr-10 landing-md:pr-12">
-                  Add just a few lines of code to connect your agent to the
-                  console. Simple integration for any framework.
+                  Add just a few lines of code to connect your agent to the console. Simple
+                  integration for any framework.
                 </p>
               </div>
 
@@ -167,39 +166,27 @@ export const HowToGetStarted = () => {
                       />
                       <code className="block relative leading-[1.4] z-10">
                         <span className="text-blue-400">import</span>{" "}
-                        <span className="text-gray-300">
-                          {"{ VoltAgentObservabilitySDK }"}
-                        </span>{" "}
+                        <span className="text-gray-300">{"{ VoltAgentObservabilitySDK }"}</span>{" "}
                         <span className="text-blue-400">from</span>{" "}
-                        <span className="text-main-emerald">
-                          '@voltagent/sdk'
-                        </span>
+                        <span className="text-main-emerald">'@voltagent/sdk'</span>
                         <br />
                         <br />
                         <span className="text-purple-400">const</span>{" "}
                         <span className="text-gray-300">sdk = </span>
                         <span className="text-blue-400">new</span>{" "}
-                        <span className="text-gray-300">
-                          VoltAgentObservabilitySDK({"{"}
-                        </span>
+                        <span className="text-gray-300">VoltAgentObservabilitySDK({"{"}</span>
                         <br />
                         <span className="text-gray-300">{"  "}</span>
                         <span className="text-main-emerald">baseUrl: </span>
-                        <span className="text-gray-300">
-                          'https://api.voltagent.dev',
-                        </span>
+                        <span className="text-gray-300">'https://api.voltagent.dev',</span>
                         <br />
                         <span className="text-gray-300">{"  "}</span>
                         <span className="text-main-emerald">publicKey: </span>
-                        <span className="text-gray-300">
-                          'your-public-key',
-                        </span>
+                        <span className="text-gray-300">'your-public-key',</span>
                         <br />
                         <span className="text-gray-300">{"  "}</span>
                         <span className="text-main-emerald">secretKey: </span>
-                        <span className="text-gray-300">
-                          'your-secret-key',
-                        </span>
+                        <span className="text-gray-300">'your-secret-key',</span>
                         <br />
                         <span className="text-gray-300">{"}"});</span>
                       </code>
@@ -233,9 +220,8 @@ export const HowToGetStarted = () => {
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="text-gray-400 text-xs landing-xs:text-xs landing-sm:text-sm landing-md:text-md mb-0">
-                    Start observing your AI agents in real-time. Get full
-                    visibility into every interaction, decision, and execution
-                    step.
+                    Start observing your AI agents in real-time. Get full visibility into every
+                    interaction, decision, and execution step.
                   </p>
                 </div>
               </div>

@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createWorkflowChain } from "./chain";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 
 describe.sequential("workflow.run", () => {

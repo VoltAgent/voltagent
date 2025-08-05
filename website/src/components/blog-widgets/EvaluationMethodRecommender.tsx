@@ -50,11 +50,7 @@ const requirements: Requirement[] = [
   },
   {
     question: "Do you have domain experts available?",
-    options: [
-      "Yes, readily available",
-      "Limited availability",
-      "No domain experts",
-    ],
+    options: ["Yes, readily available", "Limited availability", "No domain experts"],
     weight: [
       { automatic: 3, human: 10, hybrid: 9 },
       { automatic: 7, human: 5, hybrid: 8 },
@@ -64,9 +60,7 @@ const requirements: Requirement[] = [
 ];
 
 export default function EvaluationMethodRecommender(): JSX.Element {
-  const [answers, setAnswers] = useState<number[]>(
-    new Array(requirements.length).fill(-1),
-  );
+  const [answers, setAnswers] = useState<number[]>(new Array(requirements.length).fill(-1));
   const [showResult, setShowResult] = useState(false);
 
   const calculateRecommendation = () => {
@@ -122,11 +116,7 @@ export default function EvaluationMethodRecommender(): JSX.Element {
             "Low cost per evaluation",
             "Easy to automate",
           ],
-          cons: [
-            "May miss nuances",
-            "Limited to metric coverage",
-            "Less insight into quality",
-          ],
+          cons: ["May miss nuances", "Limited to metric coverage", "Less insight into quality"],
         };
       case "Human":
         return {
@@ -146,11 +136,7 @@ export default function EvaluationMethodRecommender(): JSX.Element {
             "Comprehensive evaluation",
             "Balanced approach",
           ],
-          cons: [
-            "More complex to set up",
-            "Requires coordination",
-            "Medium cost",
-          ],
+          cons: ["More complex to set up", "Requires coordination", "Medium cost"],
         };
       default:
         return { pros: [], cons: [] };
@@ -161,12 +147,9 @@ export default function EvaluationMethodRecommender(): JSX.Element {
 
   return (
     <div className="border-2 border-solid border-emerald-500 rounded-lg p-5 mb-6 bg-gray-800">
-      <h3 className="text-xl font-bold text-white mb-4">
-        Find Your Ideal Evaluation Method
-      </h3>
+      <h3 className="text-xl font-bold text-white mb-4">Find Your Ideal Evaluation Method</h3>
       <p className="text-gray-300 text-sm mb-6">
-        Answer these questions to get a personalized recommendation for your LLM
-        evaluation approach
+        Answer these questions to get a personalized recommendation for your LLM evaluation approach
       </p>
 
       {requirements.map((req, index) => (
@@ -202,9 +185,7 @@ export default function EvaluationMethodRecommender(): JSX.Element {
           <div className="bg-gray-700 rounded-lg p-4">
             <h4 className="text-lg font-semibold text-white mb-3">
               Recommended Approach:
-              <span className="text-emerald-400 ml-2">
-                {result.recommended} Evaluation
-              </span>
+              <span className="text-emerald-400 ml-2">{result.recommended} Evaluation</span>
             </h4>
 
             <div className="space-y-4 mb-6">
@@ -256,10 +237,7 @@ export default function EvaluationMethodRecommender(): JSX.Element {
                 </h5>
                 <ul className="space-y-1">
                   {details.pros.map((pro) => (
-                    <li
-                      key={pro}
-                      className="flex items-center text-sm text-gray-300"
-                    >
+                    <li key={pro} className="flex items-center text-sm text-gray-300">
                       <span className="text-emerald-500 mr-2">•</span>
                       {pro}
                     </li>
@@ -274,10 +252,7 @@ export default function EvaluationMethodRecommender(): JSX.Element {
                 </h5>
                 <ul className="space-y-1">
                   {details.cons.map((con) => (
-                    <li
-                      key={con}
-                      className="flex items-center text-sm text-gray-300"
-                    >
+                    <li key={con} className="flex items-center text-sm text-gray-300">
                       <span className="text-red-500 mr-2">•</span>
                       {con}
                     </li>
@@ -287,9 +262,7 @@ export default function EvaluationMethodRecommender(): JSX.Element {
             </div>
 
             <div className="mt-4 p-3 bg-gray-800 rounded-lg">
-              <h5 className="font-medium text-white mb-2">
-                💡 Implementation Tip:
-              </h5>
+              <h5 className="font-medium text-white mb-2">💡 Implementation Tip:</h5>
               <p className="text-sm text-gray-300">
                 {result.recommended === "Automatic" &&
                   "Start with BLEU/ROUGE for quick feedback, then add BERTScore for semantic understanding. Set up automated pipelines for continuous evaluation."}
@@ -312,10 +285,7 @@ export default function EvaluationMethodRecommender(): JSX.Element {
             <div className="flex space-x-1">
               {requirements.map((_, index) => (
                 <div
-                  key={`progress-indicator-${requirements[index].question.slice(
-                    0,
-                    10,
-                  )}`}
+                  key={`progress-indicator-${requirements[index].question.slice(0, 10)}`}
                   className={`w-2 h-2 rounded-full ${
                     answers[index] !== -1 ? "bg-emerald-500" : "bg-gray-600"
                   }`}

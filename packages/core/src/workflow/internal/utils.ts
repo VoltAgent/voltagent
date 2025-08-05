@@ -2,10 +2,10 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { WorkflowExecutionContext } from "../context";
 import type { WorkflowState } from "./state";
 import type {
+  InternalExtractWorkflowInputData,
   InternalWorkflowStateParam,
   InternalWorkflowStepConfig,
   WorkflowExecuteContext,
-  InternalExtractWorkflowInputData,
 } from "./types";
 
 /**

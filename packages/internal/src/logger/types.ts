@@ -11,9 +11,7 @@ export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal" |
 /**
  * Log function signatures
  */
-export interface LogFn {
-  (msg: string, context?: object): void;
-}
+export type LogFn = (msg: string, context?: object) => void;
 
 /**
  * Minimal logger interface for VoltAgent

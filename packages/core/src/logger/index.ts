@@ -1,4 +1,4 @@
-import type { Logger, LogBuffer } from "@voltagent/internal";
+import type { LogBuffer, Logger } from "@voltagent/internal";
 import { AgentRegistry } from "../server/registry";
 import { createConsoleLogger, getDefaultLogBuffer } from "./console-logger";
 

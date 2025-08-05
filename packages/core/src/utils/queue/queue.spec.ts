@@ -1,4 +1,4 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BackgroundQueue } from "./queue";
 
 // Mock logger to avoid console noise in tests

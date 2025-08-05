@@ -1,9 +1,9 @@
-import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
 import { Pinecone } from "@pinecone-database/pinecone";
+import { type BaseMessage, BaseRetriever, type RetrieveOptions } from "@voltagent/core";
 
 // Initialize Pinecone client
 const pc = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
+  apiKey: process.env.PINECONE_API_KEY || "",
   sourceTag: "voltagent",
 });
 
@@ -67,7 +67,7 @@ async function initializeIndex() {
       await pc.describeIndex(indexName);
       indexExists = true;
       console.log(`📋 Index "${indexName}" already exists`);
-    } catch (error) {
+    } catch (_error) {
       console.log(`📋 Creating new index "${indexName}"...`);
     }
 
@@ -101,7 +101,7 @@ async function initializeIndex() {
       // Generate embeddings for sample documents using OpenAI
       const OpenAI = await import("openai");
       const openai = new OpenAI.default({
-        apiKey: process.env.OPENAI_API_KEY!,
+        apiKey: process.env.OPENAI_API_KEY || "",
       });
 
       const recordsWithEmbeddings = [];
@@ -145,7 +145,7 @@ async function retrieveDocuments(query: string, topK = 3) {
     // Generate embedding for the query
     const OpenAI = await import("openai");
     const openai = new OpenAI.default({
-      apiKey: process.env.OPENAI_API_KEY!,
+      apiKey: process.env.OPENAI_API_KEY || "",
     });
 
     const embeddingResponse = await openai.embeddings.create({

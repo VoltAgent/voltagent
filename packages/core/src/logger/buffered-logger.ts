@@ -1,4 +1,4 @@
-import type { Logger, LogFn, LogBuffer, LogEntry, LogLevel } from "@voltagent/internal";
+import type { LogBuffer, LogEntry, LogFn, LogLevel, Logger } from "@voltagent/internal";
 import { getDefaultLogBuffer } from "./console-logger";
 
 /**

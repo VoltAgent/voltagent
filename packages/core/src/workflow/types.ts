@@ -1,13 +1,13 @@
+import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
-import { z } from "zod";
+import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
 import type { UserContext } from "../agent/types";
+import type { Memory } from "../memory";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
-import type { Memory } from "../memory";
-import type { Logger } from "@voltagent/internal";
 
 export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> {
   /** Timestamp when the workflow was suspended */

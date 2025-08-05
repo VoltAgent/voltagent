@@ -1,13 +1,13 @@
 import { vi } from "vitest";
 import { InMemoryStorage } from ".";
 import type { NewTimelineEvent } from "../../events/types";
-import type { Conversation, MemoryMessage } from "../types";
 // ✅ ADD: Import workflow types for testing
 import type {
   WorkflowHistoryEntry,
   WorkflowStepHistoryEntry,
   WorkflowTimelineEvent,
 } from "../../workflow/types";
+import type { Conversation, MemoryMessage } from "../types";
 
 // Mock logger
 vi.mock("../../logger", () => ({
@@ -1318,20 +1318,22 @@ describe("InMemoryStorage", () => {
         );
 
         // Act
-        const entries = await storage.getAllHistoryEntriesByAgent(agentId);
+        const result = await storage.getAllHistoryEntriesByAgent(agentId, 0, 10);
 
         // Assert
-        expect(entries).toHaveLength(2);
-        expect(entries.map((e) => e.id)).toEqual([historyId1, historyId2]); // Should be sorted by timestamp (newest first)
-        expect(entries.every((e) => e._agentId === agentId)).toBe(true);
+        expect(result.entries).toHaveLength(2);
+        expect(result.total).toBe(2);
+        expect(result.entries.map((e) => e.id)).toEqual([historyId1, historyId2]); // Should be sorted by timestamp (newest first)
+        expect(result.entries.every((e) => e._agentId === agentId)).toBe(true);
       });
 
       it("should return empty array for agent with no history", async () => {
         // Act
-        const entries = await storage.getAllHistoryEntriesByAgent("non-existent-agent");
+        const result = await storage.getAllHistoryEntriesByAgent("non-existent-agent", 0, 10);
 
         // Assert
-        expect(entries).toEqual([]);
+        expect(result.entries).toEqual([]);
+        expect(result.total).toBe(0);
       });
     });
   });

@@ -10,12 +10,7 @@ interface ImageModalProps {
   imageAlt: string;
 }
 
-const ImageModal: FC<ImageModalProps> = ({
-  isOpen,
-  onClose,
-  imageSrc,
-  imageAlt,
-}) => {
+const ImageModal: FC<ImageModalProps> = ({ isOpen, onClose, imageSrc, imageAlt }) => {
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Escape") {
       onClose();

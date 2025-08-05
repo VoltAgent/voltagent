@@ -1,8 +1,8 @@
-import React from "react";
-import Layout from "@theme/Layout";
-import CodeBlock from "@theme/CodeBlock";
-import { DotPattern } from "../components/ui/dot-pattern";
 import { BoltIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
+import CodeBlock from "@theme/CodeBlock";
+import Layout from "@theme/Layout";
+import React from "react";
+import { DotPattern } from "../components/ui/dot-pattern";
 
 // Day component props type
 interface DayProps {
@@ -39,9 +39,7 @@ const DayComponent: React.FC<DayProps> = ({
           </h2>
         </div>
         <p className="text-sm sm:text-base lg:text-lg text-gray-400 leading-relaxed max-w-lg">
-          {enabled
-            ? description
-            : "Stay tuned for exciting new features and improvements."}
+          {enabled ? description : "Stay tuned for exciting new features and improvements."}
         </p>
         {enabled && detailsLink && (
           <div className="pt-2 sm:pt-4 text-left">
@@ -315,8 +313,7 @@ const LaunchWeek = () => {
               June 16-20, 2025
             </div>
             <p className="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto px-4">
-              5 days of features to transform how you build and monitor AI
-              agents.
+              5 days of features to transform how you build and monitor AI agents.
             </p>
           </div>
           {/* Feature Items */}

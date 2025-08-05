@@ -1,4 +1,4 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryManager } from ".";
 import type { AgentHistoryEntry } from "../../agent/history";
 import type { BaseMessage } from "../../agent/providers/base/types";
@@ -249,8 +249,22 @@ class MockMemory implements Memory {
     return this.historyEntries[id] || null;
   }
 
-  async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
-    return Object.values(this.historyEntries).filter((entry) => entry._agentId === agentId);
+  async getAllHistoryEntriesByAgent(
+    agentId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ entries: any[]; total: number }> {
+    const allEntries = Object.values(this.historyEntries).filter(
+      (entry) => entry._agentId === agentId,
+    );
+    const start = page * limit;
+    const end = start + limit;
+    const entries = allEntries.slice(start, end);
+
+    return {
+      entries,
+      total: allEntries.length,
+    };
   }
 
   async addHistoryEvent(id: string, event: any, historyId: string, agentId: string): Promise<any> {
@@ -921,12 +935,12 @@ describe("MemoryManager - History Management", () => {
       "different-agent",
     );
 
-    const entries = await memoryManager.getAllHistoryEntries(agentId);
+    const result = await memoryManager.getAllHistoryEntries(agentId);
 
-    expect(entries.length).toBe(2);
-    expect(entries.map((e) => e.id)).toContain("entry1");
-    expect(entries.map((e) => e.id)).toContain("entry2");
-    expect(entries.map((e) => e.id)).not.toContain("entry3");
+    expect(result.entries.length).toBe(2);
+    expect(result.entries.map((e) => e.id)).toContain("entry1");
+    expect(result.entries.map((e) => e.id)).toContain("entry2");
+    expect(result.entries.map((e) => e.id)).not.toContain("entry3");
   });
 
   it("should update history entry", async () => {
@@ -1368,12 +1382,12 @@ describe("MemoryManager - HistoryMemory Tests", () => {
       // Add entry for other agent
       await mockMemory.addHistoryEntry("entry3", { id: "entry3", input: "input3" }, otherAgentId);
 
-      const entries = await memoryManager.getAllHistoryEntries(agentId);
+      const result = await memoryManager.getAllHistoryEntries(agentId);
 
-      expect(entries.length).toBe(2);
-      expect(entries.map((e) => e.id)).toContain("entry1");
-      expect(entries.map((e) => e.id)).toContain("entry2");
-      expect(entries.map((e) => e.id)).not.toContain("entry3");
+      expect(result.entries.length).toBe(2);
+      expect(result.entries.map((e) => e.id)).toContain("entry1");
+      expect(result.entries.map((e) => e.id)).toContain("entry2");
+      expect(result.entries.map((e) => e.id)).not.toContain("entry3");
     });
 
     it("should update history entry using historyMemory", async () => {

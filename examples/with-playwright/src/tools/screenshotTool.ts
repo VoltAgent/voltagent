@@ -3,12 +3,12 @@
  * @description VoltAgent tools for capturing screenshots in browser
  */
 
-import { z } from "zod";
-import * as path from "node:path";
 import * as fs from "node:fs/promises";
-import { createTool, type ToolExecuteOptions } from "@voltagent/core";
-import { safeBrowserOperation } from "./browserBaseTools";
+import * as path from "node:path";
+import { type ToolExecuteOptions, createTool } from "@voltagent/core";
 import type { ToolExecutionContext } from "@voltagent/core";
+import { z } from "zod";
+import { safeBrowserOperation } from "./browserBaseTools";
 
 /**
  * Tool for capturing a screenshot of the current page

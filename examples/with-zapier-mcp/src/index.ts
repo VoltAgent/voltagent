@@ -1,7 +1,7 @@
-import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 
 const bedrock = createAmazonBedrock({
   region: "us-east-1",
@@ -16,7 +16,7 @@ async function main() {
       servers: {
         zapier: {
           type: "http",
-          url: process.env.ZAPIER_MCP_URL!,
+          url: process.env.ZAPIER_MCP_URL || "",
         },
       },
     });

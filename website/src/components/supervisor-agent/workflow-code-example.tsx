@@ -1,9 +1,4 @@
-import {
-  ArrowPathIcon,
-  CpuChipIcon,
-  FingerPrintIcon,
-  UserIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowPathIcon, CpuChipIcon, FingerPrintIcon, UserIcon } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import { Claude37Logo } from "@site/static/img/logos/claudie";
 import { OpenAILogo } from "@site/static/img/logos/openai";
@@ -20,9 +15,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [supervisorThinking, setSupervisorThinking] = useState(false);
   const [supervisorProcessing, setSupervisorProcessing] = useState(false);
-  const [currentThinkingAgent, setCurrentThinkingAgent] = useState<
-    string | null
-  >(null);
+  const [currentThinkingAgent, setCurrentThinkingAgent] = useState<string | null>(null);
   const [currentBeam, setCurrentBeam] = useState<number>(0);
 
   // Agent color scheme - More unified and less eye-straining
@@ -235,17 +228,12 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
         <div className="w-full border border-indigo-500/20 rounded-lg transition-all duration-500 ">
           <div className="flex flex-col items-center">
             {/* Diagram Section - Top Side */}
-            <div
-              className="w-full relative min-h-[650px]  py-12"
-              ref={diagramRef}
-            >
+            <div className="w-full relative min-h-[650px]  py-12" ref={diagramRef}>
               {/* Mobile Memory Sidebar */}
               {isMobile && (
                 <div className="absolute left-0 top-0 w-[25%] h-full border-r border-gray-500/30 px-2">
                   <div className="sticky top-0 flex flex-col gap-4">
-                    <div className="text-xs text-main-emerald font-mono">
-                      Memory
-                    </div>
+                    <div className="text-xs text-main-emerald font-mono">Memory</div>
                     <div
                       ref={userLeadMemoryRef}
                       className="px-2 py-1 rounded-md text-[10px] bg-black/50 border border-gray-500/30"
@@ -279,18 +267,14 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                     <div
                       ref={userNodeRef}
                       className={`px-4 py-2 rounded-md bg-black/80 text-sm flex items-center gap-3 transition-all duration-700 ease-out ${
-                        isVisible
-                          ? "opacity-100 scale-100"
-                          : "opacity-0 scale-90"
+                        isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                       } ${
                         animationStep >= 1
                           ? `${agentColors.User.border} ${agentColors.User.shadow}`
                           : "border border-gray-500/30"
                       }`}
                     >
-                      <UserIcon
-                        className={`w-5 h-5 ${agentColors.User.text}`}
-                      />
+                      <UserIcon className={`w-5 h-5 ${agentColors.User.text}`} />
                       <div className="flex flex-col items-start">
                         <div className="text-white">User</div>
                         {/* User status messages */}
@@ -324,9 +308,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                     <div
                       ref={leadAgentRegionRef}
                       className={`relative px-4 md:px-8 lg:px-12 py-12 md:py-16 lg:py-12 rounded-lg border border-dashed  border-gray-500/30 transition-all duration-700 ease-out ${
-                        isVisible
-                          ? "opacity-100 scale-100"
-                          : "opacity-0 scale-90"
+                        isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                       }`}
                     >
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-black px-2 text-xs text-main-emerald font-mono">
@@ -338,9 +320,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           className={`px-4 py-2 rounded-md bg-black ${
                             agentColors.Supervisor.border
                           } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
-                            isVisible
-                              ? "opacity-100 scale-100"
-                              : "opacity-0 scale-90"
+                            isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                           } ${
                             supervisorThinking
                               ? `animate-pulse ${agentColors.Supervisor.bg}`
@@ -359,9 +339,9 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                             </div>
                           )}
                           <CpuChipIcon
-                            className={`w-5 h-5 ${
-                              agentColors.Supervisor.text
-                            } ${supervisorProcessing ? "animate-pulse" : ""}`}
+                            className={`w-5 h-5 ${agentColors.Supervisor.text} ${
+                              supervisorProcessing ? "animate-pulse" : ""
+                            }`}
                           />
                           <div className="flex flex-col">
                             <span className="text-white">Supervisor</span>
@@ -369,9 +349,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                               <OpenAILogo
                                 className={`w-3.5 h-3.5 ${agentColors.Supervisor.text}`}
                               />
-                              <span
-                                className={`text-xs ${agentColors.Supervisor.text} font-mono`}
-                              >
+                              <span className={`text-xs ${agentColors.Supervisor.text} font-mono`}>
                                 gpt-4o-mini
                               </span>
                             </div>
@@ -389,17 +367,13 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   {/* Column 3 - Agents in Team Region */}
                   <div
                     className={`flex ${
-                      isMobile
-                        ? "flex-col gap-6"
-                        : "items-center justify-center"
+                      isMobile ? "flex-col gap-6" : "items-center justify-center"
                     }`}
                   >
                     <div
                       ref={teamRegionRef}
                       className={`relative px-12 py-12 rounded-lg border border-dashed border-gray-500/30 transition-all duration-700 ease-out ${
-                        isVisible
-                          ? "opacity-100 scale-100"
-                          : "opacity-0 scale-90"
+                        isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                       }`}
                     >
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-black px-2 text-xs text-main-emerald font-mono">
@@ -407,9 +381,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                       </div>
                       <div
                         className={`flex ${
-                          isMobile
-                            ? "flex-col gap-6"
-                            : "flex-col items-center justify-start gap-20"
+                          isMobile ? "flex-col gap-6" : "flex-col items-center justify-start gap-20"
                         }`}
                       >
                         {/* Agent A */}
@@ -417,14 +389,10 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           {currentThinkingAgent === "A" && (
                             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full text-center">
                               <div
-                                className={`inline-block text-xs font-mono ${
-                                  agentColors.A.text
-                                } ${
+                                className={`inline-block text-xs font-mono ${agentColors.A.text} ${
                                   agentColors.A.border
                                 } px-2 py-1 rounded-md bg-black/50 ${
-                                  currentThinkingAgent === "A"
-                                    ? "animate-agent-pulse"
-                                    : ""
+                                  currentThinkingAgent === "A" ? "animate-agent-pulse" : ""
                                 }`}
                               >
                                 Executing: Agent A
@@ -436,18 +404,14 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                             className={`px-4 py-2 rounded-md w-[170px] bg-black ${
                               agentColors.A.border
                             } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
-                              isVisible
-                                ? "opacity-100 scale-100"
-                                : "opacity-0 scale-90"
+                              isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                             } ${
                               currentThinkingAgent === "A"
                                 ? `animate-agent-pulse ${agentColors.A.activeShadow}`
                                 : agentColors.A.shadow
                             }`}
                           >
-                            <CpuChipIcon
-                              className={`w-5 h-5 ${agentColors.A.text}`}
-                            />
+                            <CpuChipIcon className={`w-5 h-5 ${agentColors.A.text}`} />
                             <div className="flex flex-col">
                               <div className="flex items-center">
                                 <span className="text-white">Agent</span>
@@ -458,12 +422,8 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                                 </span>
                               </div>
                               <div className="flex items-center gap-1 mt-0.5">
-                                <Claude37Logo
-                                  className={`w-3.5 h-3.5 ${agentColors.A.text}`}
-                                />
-                                <span
-                                  className={`text-xs ${agentColors.A.text} font-mono`}
-                                >
+                                <Claude37Logo className={`w-3.5 h-3.5 ${agentColors.A.text}`} />
+                                <span className={`text-xs ${agentColors.A.text} font-mono`}>
                                   claude-3.7
                                 </span>
                               </div>
@@ -476,14 +436,10 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           {currentThinkingAgent === "B" && (
                             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full text-center">
                               <div
-                                className={`inline-block text-xs font-mono ${
-                                  agentColors.B.text
-                                } ${
+                                className={`inline-block text-xs font-mono ${agentColors.B.text} ${
                                   agentColors.B.border
                                 } px-2 py-1 rounded-md bg-black/50 ${
-                                  currentThinkingAgent === "B"
-                                    ? "animate-agent-pulse"
-                                    : ""
+                                  currentThinkingAgent === "B" ? "animate-agent-pulse" : ""
                                 }`}
                               >
                                 Executing: Agent B
@@ -495,18 +451,14 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                             className={`px-4 py-2 w-[170px] rounded-md bg-black ${
                               agentColors.B.border
                             } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
-                              isVisible
-                                ? "opacity-100 scale-100"
-                                : "opacity-0 scale-90"
+                              isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                             } ${
                               currentThinkingAgent === "B"
                                 ? `animate-agent-pulse ${agentColors.B.activeShadow}`
                                 : agentColors.B.shadow
                             }`}
                           >
-                            <CpuChipIcon
-                              className={`w-5 h-5 ${agentColors.B.text}`}
-                            />
+                            <CpuChipIcon className={`w-5 h-5 ${agentColors.B.text}`} />
                             <div className="flex flex-col">
                               <div className="flex items-center">
                                 <span className="text-white">Agent</span>
@@ -517,12 +469,8 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                                 </span>
                               </div>
                               <div className="flex items-center gap-1 mt-0.5">
-                                <OpenAILogo
-                                  className={`w-3.5 h-3.5 ${agentColors.B.text}`}
-                                />
-                                <span
-                                  className={`text-xs ${agentColors.B.text} font-mono`}
-                                >
+                                <OpenAILogo className={`w-3.5 h-3.5 ${agentColors.B.text}`} />
+                                <span className={`text-xs ${agentColors.B.text} font-mono`}>
                                   gpt-4
                                 </span>
                               </div>
@@ -535,14 +483,10 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           {currentThinkingAgent === "C" && (
                             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full text-center">
                               <div
-                                className={`inline-block text-xs font-mono ${
-                                  agentColors.C.text
-                                } ${
+                                className={`inline-block text-xs font-mono ${agentColors.C.text} ${
                                   agentColors.C.border
                                 } px-2 py-1 rounded-md bg-black/50 ${
-                                  currentThinkingAgent === "C"
-                                    ? "animate-agent-pulse"
-                                    : ""
+                                  currentThinkingAgent === "C" ? "animate-agent-pulse" : ""
                                 }`}
                               >
                                 Executing: Agent C
@@ -554,18 +498,14 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                             className={`px-4 py-2 rounded-md w-[170px] bg-black ${
                               agentColors.C.border
                             } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
-                              isVisible
-                                ? "opacity-100 scale-100"
-                                : "opacity-0 scale-90"
+                              isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                             } ${
                               currentThinkingAgent === "C"
                                 ? `animate-agent-pulse ${agentColors.C.activeShadow}`
                                 : agentColors.C.shadow
                             }`}
                           >
-                            <CpuChipIcon
-                              className={`w-5 h-5 ${agentColors.C.text}`}
-                            />
+                            <CpuChipIcon className={`w-5 h-5 ${agentColors.C.text}`} />
                             <div className="flex flex-col">
                               <div className="flex items-center">
                                 <span className="text-white">Agent</span>
@@ -576,12 +516,8 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                                 </span>
                               </div>
                               <div className="flex items-center gap-1 mt-0.5">
-                                <FingerPrintIcon
-                                  className={`w-3.5 h-3.5 ${agentColors.C.text}`}
-                                />
-                                <span
-                                  className={`text-xs ${agentColors.C.text} font-mono`}
-                                >
+                                <FingerPrintIcon className={`w-3.5 h-3.5 ${agentColors.C.text}`} />
+                                <span className={`text-xs ${agentColors.C.text} font-mono`}>
                                   Custom LLM
                                 </span>
                               </div>
@@ -627,9 +563,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           }`}
                         >
                           <ArrowPathIcon className="w-5 h-5 text-gray-500" />
-                          <span className="text-gray-300">
-                            User-Lead Memory
-                          </span>
+                          <span className="text-gray-300">User-Lead Memory</span>
                         </div>
 
                         {/* Lead-Team Memory */}
@@ -642,9 +576,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           }`}
                         >
                           <ArrowPathIcon className="w-5 h-5 text-gray-500" />
-                          <span className="text-gray-300">
-                            Lead-Team Memory
-                          </span>
+                          <span className="text-gray-300">Lead-Team Memory</span>
                         </div>
                       </div>
                     </div>

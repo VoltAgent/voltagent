@@ -1,9 +1,8 @@
-import type { Logger } from "@voltagent/internal";
-import { getGlobalLogger } from "../../logger";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { createTool } from "..";
 import type { ToolExecuteOptions } from "../../agent/providers/base/types";
+import { getGlobalLogger } from "../../logger";
+import { createTool } from "../index";
 import {
   NextAction,
   type ReasoningStep,

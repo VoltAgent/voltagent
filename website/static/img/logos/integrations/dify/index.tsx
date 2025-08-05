@@ -19,9 +19,6 @@ export const DifyLogo = ({ className }: { className?: string }) => (
         <stop offset="100%" stopColor="#FFFFFF" />
       </linearGradient>
     </defs>
-    <path
-      d="M1 0h10.286c6.627 0 12 5.373 12 12s-5.373 12-12 12H1V0z"
-      fill="url(#dify-gradient)"
-    />
+    <path d="M1 0h10.286c6.627 0 12 5.373 12 12s-5.373 12-12 12H1V0z" fill="url(#dify-gradient)" />
   </svg>
 );

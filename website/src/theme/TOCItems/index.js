@@ -1,8 +1,5 @@
 import { useThemeConfig } from "@docusaurus/theme-common";
-import {
-  useFilteredAndTreeifiedTOC,
-  useTOCHighlight,
-} from "@docusaurus/theme-common/internal";
+import { useFilteredAndTreeifiedTOC, useTOCHighlight } from "@docusaurus/theme-common/internal";
 import TOCItemTree from "@theme/TOCItems/Tree";
 import React, { useMemo } from "react";
 
@@ -16,10 +13,8 @@ export default function TOCItems({
   ...props
 }) {
   const themeConfig = useThemeConfig();
-  const minHeadingLevel =
-    minHeadingLevelOption ?? themeConfig.tableOfContents.minHeadingLevel;
-  const maxHeadingLevel =
-    maxHeadingLevelOption ?? themeConfig.tableOfContents.maxHeadingLevel;
+  const minHeadingLevel = minHeadingLevelOption ?? themeConfig.tableOfContents.minHeadingLevel;
+  const maxHeadingLevel = maxHeadingLevelOption ?? themeConfig.tableOfContents.maxHeadingLevel;
 
   const tocTree = useFilteredAndTreeifiedTOC({
     toc,
@@ -27,7 +22,7 @@ export default function TOCItems({
     maxHeadingLevel,
   });
 
-  const tocHighlightConfig = useMemo(() => {
+  const _tocHighlightConfig = useMemo(() => {
     if (linkClassName && linkActiveClassName) {
       return {
         linkClassName,

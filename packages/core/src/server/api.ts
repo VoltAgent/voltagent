@@ -1,19 +1,23 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import type { LogFilter } from "@voltagent/internal";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
 import type { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { zodSchemaToJsonUI } from "..";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import { AgentEventEmitter } from "../events";
+import { LoggerProxy, getGlobalLogBuffer } from "../logger";
 import {
   type PackageUpdateInfo,
   checkForUpdates,
   updateAllPackages,
   updateSinglePackage,
 } from "../utils/update";
+import { WorkflowRegistry } from "../workflow/registry";
 import {
   type ErrorSchema,
   type ObjectRequestSchema,
@@ -24,11 +28,11 @@ import {
   getAgentsRoute,
   getWorkflowsRoute,
   objectRoute,
+  resumeWorkflowRoute,
   streamObjectRoute,
   streamRoute,
-  textRoute,
   suspendWorkflowRoute,
-  resumeWorkflowRoute,
+  textRoute,
 } from "./api.routes";
 import { getLogsRoute } from "./api.routes.logs";
 import type { CustomEndpointDefinition } from "./custom-endpoints";
@@ -37,13 +41,9 @@ import {
   validateCustomEndpoint,
   validateCustomEndpoints,
 } from "./custom-endpoints";
-import { AgentRegistry } from "./registry";
-import { WorkflowRegistry } from "../workflow/registry";
-import type { AgentResponse, ApiContext, ApiResponse } from "./types";
-import { zodSchemaToJsonUI } from "..";
-import type { LogFilter } from "@voltagent/internal";
-import { LoggerProxy, getGlobalLogBuffer } from "../logger";
 import { LogStreamManager } from "./log-stream";
+import { AgentRegistry } from "./registry";
+import type { AgentResponse, ApiContext, ApiResponse } from "./types";
 
 // Configuration interface
 export interface ServerConfig {
@@ -777,6 +777,9 @@ app.openapi(getLogsRoute, (c) => {
 // Get agent history
 app.get("/agents/:id/history", async (c: ApiContext) => {
   const id = c.req.param("id");
+  const page = Number.parseInt(c.req.query("page") || "0");
+  const limit = Number.parseInt(c.req.query("limit") || "10");
+
   const registry = AgentRegistry.getInstance();
   const agent = registry.getAgent(id);
 
@@ -788,14 +791,34 @@ app.get("/agents/:id/history", async (c: ApiContext) => {
     return c.json(response, 404);
   }
 
-  const history = await agent.getHistory();
+  try {
+    const result = await agent.getHistory({ page, limit });
 
-  const response: ApiResponse<AgentHistoryEntry[]> = {
-    success: true,
-    data: history,
-  };
+    const response: ApiResponse<{
+      entries: AgentHistoryEntry[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }> = {
+      success: true,
+      data: {
+        entries: result.entries,
+        pagination: result.pagination,
+      },
+    };
 
-  return c.json(response);
+    return c.json(response);
+  } catch (error) {
+    logger.error("Failed to get agent history:", { error });
+    const response: ApiResponse<null> = {
+      success: false,
+      error: "Failed to retrieve agent history",
+    };
+    return c.json(response, 500);
+  }
 });
 
 // Generate text response
@@ -1840,21 +1863,22 @@ export const createWebSocketServer = () => {
     // Get agent and send initial full state
     const agent = AgentRegistry.getInstance().getAgent(agentId);
     if (agent) {
-      // Get history - needs await
-      const history = await agent.getHistory();
+      // Get first page of history - needs await
+      const result = await agent.getHistory({ page: 0, limit: 20 });
 
-      if (history && history.length > 0) {
-        // Send all history entries in one message
+      if (result && result.entries.length > 0) {
+        // Send first page of history entries with pagination info
         ws.send(
           JSON.stringify({
             type: "HISTORY_LIST",
             success: true,
-            data: history,
+            data: result.entries,
+            pagination: result.pagination,
           }),
         );
 
         // Also check if there's an active history entry and send it individually
-        const activeHistory = history.find(
+        const activeHistory = result.entries.find(
           (entry: AgentHistoryEntry) => entry.status !== "completed" && entry.status !== "error",
         );
 

@@ -1,7 +1,7 @@
-import { VoltAgent, Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 // Import the retrieval tool
 import { retriever } from "./retriever/index.js";

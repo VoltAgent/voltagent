@@ -1,4 +1,4 @@
-import { VoltAgent, Agent, MCPConfiguration } from "@voltagent/core";
+import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 

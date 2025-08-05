@@ -1,28 +1,9 @@
 {
   "name": "@voltagent/cli",
-  "version": "0.1.9",
   "description": "CLI tool for VoltAgent applications",
-  "keywords": [
-    "voltagent",
-    "cli",
-    "agent"
-  ],
-  "license": "MIT",
-  "main": "dist/index.js",
+  "version": "0.1.10",
   "bin": {
     "volt": "dist/index.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "lint": "biome check .",
-    "lint:fix": "biome check . --write",
-    "start": "node dist/index.js",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "boxen": "^5.1.2",
@@ -44,16 +25,37 @@
     "@types/figlet": "^1.5.8",
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.7",
-    "@types/node": "^20.19.0",
+    "@types/node": "^24.0.3",
     "@types/semver": "^7.5.6",
     "@types/update-notifier": "^6.0.8",
-    "@types/uuid": "^9.0.8",
-    "@vitest/coverage-v8": "^3.2.3",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
-    "vitest": "^3.2.3"
+    "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "agent",
+    "cli",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "attw": "attw --pack",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "publint": "publint --strict",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   }
 }

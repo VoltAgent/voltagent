@@ -24,10 +24,7 @@ const SUDO_CODE = ["s", "u", "d", "o"];
 
 // Skeleton loaders for different content types
 const SkeletonText = ({ width = "100%", height = "1rem" }) => (
-  <div
-    className="animate-pulse bg-gray-600/30 rounded"
-    style={{ width, height }}
-  />
+  <div className="animate-pulse bg-gray-600/30 rounded" style={{ width, height }} />
 );
 
 const SkeletonAvatar = ({ size = "w-12 h-12" }) => (
@@ -112,46 +109,41 @@ export function Manifesto() {
       {/* Main Content */}
       <div className="flex flex-col space-y-4 max-w-4xl">
         <p className="text-[#dcdcdc] leading-relaxed">
-          We're developers, like you, and we started this project based on our
-          own experiences. We've built over 15 open-source projects before this,
-          and each one taught us something new. Our biggest project, Refine,
-          showed us how powerful working with a community can be. During our
-          time building Refine - one of us as co-founder and CTO, the other as
-          Growth Lead - we saw amazing things happen when the community came
-          together. That experience changed us, and we're incredibly thankful to
-          everyone in the Refine community.
+          We're developers, like you, and we started this project based on our own experiences.
+          We've built over 15 open-source projects before this, and each one taught us something
+          new. Our biggest project, Refine, showed us how powerful working with a community can be.
+          During our time building Refine - one of us as co-founder and CTO, the other as Growth
+          Lead - we saw amazing things happen when the community came together. That experience
+          changed us, and we're incredibly thankful to everyone in the Refine community.
         </p>
 
         <p className="text-[#dcdcdc] leading-relaxed">
-          Now, we're starting something new and exciting: VoltAgent. We know AI
-          development can often feel like working with a confusing "black box,"
-          regardless of the language. However, the AI ecosystem is heavily
-          dominated by Python, which has more mature tools and established
-          practices. We felt this left JavaScript developers without adequate
-          solutions. That's why we're building VoltAgent – to bring better
-          clarity and best practices specifically to the JavaScript AI world.
+          Now, we're starting something new and exciting: VoltAgent. We know AI development can
+          often feel like working with a confusing "black box," regardless of the language. However,
+          the AI ecosystem is heavily dominated by Python, which has more mature tools and
+          established practices. We felt this left JavaScript developers without adequate solutions.
+          That's why we're building VoltAgent – to bring better clarity and best practices
+          specifically to the JavaScript AI world.
         </p>
 
         <p className="text-[#dcdcdc] leading-relaxed">
-          We looked into No-Code tools too. Their visual approach to making AI
-          less complex was interesting. Building workflows visually was neat and
-          made things easier to understand. However, we quickly ran into
-          problems: we felt locked in and couldn't customize things the way we
-          wanted. We realized we needed the flexibility of code, but also the
-          clear view that visual tools provided.
+          We looked into No-Code tools too. Their visual approach to making AI less complex was
+          interesting. Building workflows visually was neat and made things easier to understand.
+          However, we quickly ran into problems: we felt locked in and couldn't customize things the
+          way we wanted. We realized we needed the flexibility of code, but also the clear view that
+          visual tools provided.
         </p>
 
         <p className="text-[#dcdcdc] leading-relaxed">
-          And that's why VoltAgent exists. We're creating the tool we always
-          wanted – one that combines the great developer experience you get with
-          code, and the easy-to-understand insights from No-Code tools. Our goal
-          is to make AI development easier, clearer, and more powerful, and we
-          want to build it together with the community. We're just getting
-          started and we're excited to have you join us.
+          And that's why VoltAgent exists. We're creating the tool we always wanted – one that
+          combines the great developer experience you get with code, and the easy-to-understand
+          insights from No-Code tools. Our goal is to make AI development easier, clearer, and more
+          powerful, and we want to build it together with the community. We're just getting started
+          and we're excited to have you join us.
         </p>
         <p className="text-[#dcdcdc] leading-relaxed">
-          Thanks to all the amazing tools in the AI development and
-          observability ecosystem that inspired us.
+          Thanks to all the amazing tools in the AI development and observability ecosystem that
+          inspired us.
         </p>
       </div>
 
@@ -246,9 +238,7 @@ export function Manifesto() {
               />
             </div>
             <span className="text-white font-medium text-lg">Emre Baran</span>
-            <p className="text-main-emerald text-sm mt-1">
-              Co-Founder & CEO at Cerbos
-            </p>
+            <p className="text-main-emerald text-sm mt-1">Co-Founder & CEO at Cerbos</p>
             <div className="flex space-x-3 mt-0">
               <a
                 href="https://www.linkedin.com/in/emrebaran/"
@@ -279,12 +269,8 @@ export function Manifesto() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-white font-medium text-lg">
-              Umur Cubukcu{" "}
-            </span>
-            <p className="text-main-emerald text-sm mt-1">
-              Co-Founder at Ubicloud
-            </p>
+            <span className="text-white font-medium text-lg">Umur Cubukcu </span>
+            <p className="text-main-emerald text-sm mt-1">Co-Founder at Ubicloud</p>
             <div className="flex space-x-3 mt-0">
               <a
                 href="https://www.linkedin.com/in/umurc/"
@@ -315,8 +301,7 @@ export function Manifesto() {
           GitHub Contributors
         </h2>
         <p className="text-center max-w-2xl mx-auto landing-md:text-sm landing-xs:text-xs text-[#dcdcdc] mb-6">
-          Thanks to all the community developers who help us to improve
-          VoltAgent!
+          Thanks to all the community developers who help us to improve VoltAgent!
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 sm:gap-4 max-w-4xl mx-auto mt-6">
@@ -394,10 +379,8 @@ export function Manifesto() {
           Supporters
         </h2>
         <p className="text-center max-w-2xl mx-auto landing-md:text-sm landing-xs:text-xs text-[#dcdcdc] mb-6">
-          <span className="text-main-emerald font-semibold">
-            {loading ? "..." : stars}
-          </span>{" "}
-          GitHub stars and growing! Recent supporters:
+          <span className="text-main-emerald font-semibold">{loading ? "..." : stars}</span> GitHub
+          stars and growing! Recent supporters:
         </p>
 
         <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-10 gap-3 sm:gap-4 max-w-4xl mx-auto mt-6">
@@ -406,10 +389,7 @@ export function Manifesto() {
             Array(10)
               .fill(0)
               .map((_, i) => (
-                <div
-                  key={`skeleton-stargazer-${i}-${Date.now()}`}
-                  className="flex justify-center"
-                >
+                <div key={`skeleton-stargazer-${i}-${Date.now()}`} className="flex justify-center">
                   <SkeletonAvatar />
                 </div>
               ))
@@ -440,9 +420,7 @@ export function Manifesto() {
                 className="group no-underline text-decoration-none"
               >
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-main-emerald/30 group-hover:border-main-emerald transition-all bg-emerald-400/20 flex items-center justify-center">
-                  <div className="text-main-emerald font-semibold text-xs">
-                    +{stars - 9}
-                  </div>
+                  <div className="text-main-emerald font-semibold text-xs">+{stars - 9}</div>
                 </div>
               </a>
             </>
@@ -473,9 +451,7 @@ export function Manifesto() {
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
               <span className="block group-hover:hidden">How to Support?</span>
-              <span className="hidden group-hover:block">
-                Star us on GitHub
-              </span>
+              <span className="hidden group-hover:block">Star us on GitHub</span>
             </div>
           </a>
         </div>
@@ -484,9 +460,7 @@ export function Manifesto() {
       {/* Footer */}
       <div className="text-center mt-16 pt-8 border-t border-white/10">
         <p className="font-medium text-white mb-2 text-sm">VoltAgent Team</p>
-        <p className="text-xs text-[#dcdcdc] font-mono">
-          Permission denied? Try sudo...
-        </p>
+        <p className="text-xs text-[#dcdcdc] font-mono">Permission denied? Try sudo...</p>
       </div>
 
       {/* Easter Egg Modal */}
@@ -503,18 +477,14 @@ export function Manifesto() {
           >
             {/* Chat Header */}
             <div className="text-center mb-4 pb-3 border-b border-gray-600">
-              <h3 className="text-lg font-medium text-white">
-                VoltAgent Insights ✨
-              </h3>
+              <h3 className="text-lg font-medium text-white">VoltAgent Insights ✨</h3>
             </div>
 
             {/* Chat Body - Added max height and overflow */}
             <div className="space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-2 flex-grow custom-scrollbar">
               {/* Fun Facts Section (as system message/block) */}
               <div className="p-3 rounded-lg bg-gray-700/60">
-                <p className="text-teal-400 font-semibold mb-2 text-[13px]">
-                  Did you know?
-                </p>
+                <p className="text-teal-400 font-semibold mb-2 text-[13px]">Did you know?</p>
                 {/* Kept monospace for facts list for alignment */}
                 <pre className="whitespace-pre-wrap text-gray-300 text-xs font-mono leading-relaxed">
                   {`[1] First VoltAgent prototype was sketched on a coffee shop napkin ☕️
@@ -552,8 +522,7 @@ export function Manifesto() {
 
               {/* Final bot message */}
               <div className="p-3 rounded-lg bg-gradient-to-r from-emerald-600/30 to-sky-600/30 text-gray-300 text-xs italic">
-                VoltAgent aims to bring this level of clarity and speed to your
-                AI projects!
+                VoltAgent aims to bring this level of clarity and speed to your AI projects!
               </div>
             </div>
 

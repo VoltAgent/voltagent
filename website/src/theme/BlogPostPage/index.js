@@ -1,13 +1,7 @@
 import React from "react";
 
-import {
-  HtmlClassNameProvider,
-  ThemeClassNames,
-} from "@docusaurus/theme-common";
-import {
-  BlogPostProvider,
-  useBlogPost,
-} from "@docusaurus/theme-common/internal";
+import { HtmlClassNameProvider, ThemeClassNames } from "@docusaurus/theme-common";
+import { BlogPostProvider, useBlogPost } from "@docusaurus/theme-common/internal";
 import { BlogPostPageView } from "@site/src/components/blog/blog-post-page";
 import BlogLayout from "@theme/BlogLayout";
 import BlogPostPageMetadata from "@theme/BlogPostPage/Metadata";
@@ -41,9 +35,7 @@ function BlogPostPageContent({ children }) {
 
       <BlogPostPageView>{children}</BlogPostPageView>
 
-      {(nextItem || prevItem) && (
-        <BlogPostPaginator nextItem={nextItem} prevItem={prevItem} />
-      )}
+      {(nextItem || prevItem) && <BlogPostPaginator nextItem={nextItem} prevItem={prevItem} />}
     </BlogLayout>
   );
 }
@@ -53,10 +45,7 @@ export default function BlogPostPage(props) {
   return (
     <BlogPostProvider content={props.content} isBlogPostPage>
       <HtmlClassNameProvider
-        className={clsx(
-          ThemeClassNames.wrapper.blogPages,
-          ThemeClassNames.page.blogPostPage,
-        )}
+        className={clsx(ThemeClassNames.wrapper.blogPages, ThemeClassNames.page.blogPostPage)}
       >
         <BlogPostPageMetadata />
         <BlogPostPageContent>

@@ -21,12 +21,8 @@ export const InputsList = ({ inputs }) => {
             className="bg-slate-700/30 border border-slate-700/70 rounded-md p-3 flex-grow basis-[250px]"
           >
             <div className="flex items-center mb-1">
-              <code className="text-blue-400 font-mono text-sm">
-                {input.name}
-              </code>
-              {input.required && (
-                <span className="text-red-400 ml-1 text-xs">*</span>
-              )}
+              <code className="text-blue-400 font-mono text-sm">{input.name}</code>
+              {input.required && <span className="text-red-400 ml-1 text-xs">*</span>}
               <span className="ml-2 font-mono text-xs text-gray-500 bg-slate-800/50 px-2 py-0.5 rounded">
                 {input.type}
               </span>
@@ -92,9 +88,7 @@ export const ExpandableTool = ({
         <div
           className="bg-[#222735]/70 px-3 py-3 flex items-center justify-between cursor-pointer"
           onClick={() => showParameters && toggleTool(tool.id)}
-          onKeyUp={(e) =>
-            showParameters && e.key === "Enter" && toggleTool(tool.id)
-          }
+          onKeyUp={(e) => showParameters && e.key === "Enter" && toggleTool(tool.id)}
           aria-expanded={expanded}
         >
           <div>
@@ -107,10 +101,7 @@ export const ExpandableTool = ({
                 const providerId = tool.providers[provider]?.id;
                 return (
                   <span key={provider}>
-                    {provider}:{" "}
-                    <code className="text-blue-400">
-                      {providerId || tool.id}
-                    </code>
+                    {provider}: <code className="text-blue-400">{providerId || tool.id}</code>
                   </span>
                 );
               })}
@@ -134,16 +125,11 @@ export const ExpandableTool = ({
             {providerNames.length > 0 && (
               <div className="space-y-4">
                 {providerNames.map((provider: string) => (
-                  <div
-                    key={provider}
-                    className="bg-slate-700/20 rounded-md p-4"
-                  >
+                  <div key={provider} className="bg-slate-700/20 rounded-md p-4">
                     <div className="flex items-center mb-3">
                       <div
                         className={`w-6 h-6 rounded-md mr-2 flex items-center justify-center ${
-                          provider === "gumloop"
-                            ? "bg-blue-900/30"
-                            : "bg-green-900/30"
+                          provider === "gumloop" ? "bg-blue-900/30" : "bg-green-900/30"
                         }`}
                       >
                         {logoMap[provider] ? (

@@ -41,9 +41,7 @@ const requirements: Requirement[] = [
 ];
 
 export default function ScenarioRecommender(): JSX.Element {
-  const [answers, setAnswers] = useState<number[]>(
-    new Array(requirements.length).fill(-1),
-  );
+  const [answers, setAnswers] = useState<number[]>(new Array(requirements.length).fill(-1));
   const [showResult, setShowResult] = useState(false);
 
   const calculateRecommendation = () => {
@@ -68,9 +66,7 @@ export default function ScenarioRecommender(): JSX.Element {
 
   return (
     <div className="border-2 border-solid border-emerald-500 rounded-lg p-5 mb-6 bg-gray-800">
-      <h3 className="text-xl font-bold text-white mb-4">
-        Find Your Ideal Approach
-      </h3>
+      <h3 className="text-xl font-bold text-white mb-4">Find Your Ideal Approach</h3>
 
       {requirements.map((req, index) => (
         <div key={req.question} className="mb-6">
@@ -136,9 +132,7 @@ export default function ScenarioRecommender(): JSX.Element {
             </div>
 
             <div className="mt-4 text-sm text-gray-300">
-              <h5 className="font-medium text-white mb-2">
-                Key Considerations:
-              </h5>
+              <h5 className="font-medium text-white mb-2">Key Considerations:</h5>
               <ul className="space-y-2">
                 {result.recommended === "RAG" ? (
                   <>

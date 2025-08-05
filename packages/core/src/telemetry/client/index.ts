@@ -78,31 +78,26 @@ export class TelemetryServiceApiClient {
       "x-public-key": this.publicKey,
       "x-secret-key": this.secretKey,
     };
+    const response = await this.fetchImplementation(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-    try {
-      const response = await this.fetchImplementation(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-
-      if (!response.ok) {
-        let errorBody: unknown;
-        try {
-          errorBody = await response.json();
-        } catch (_e) {
-          errorBody = await response.text();
-        }
-
-        throw new Error(
-          `API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorBody)}`,
-        );
+    if (!response.ok) {
+      let errorBody: unknown;
+      try {
+        errorBody = await response.json();
+      } catch (_e) {
+        errorBody = await response.text();
       }
 
-      return await response.json();
-    } catch (error) {
-      throw error;
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorBody)}`,
+      );
     }
+
+    return await response.json();
   }
 
   public async exportAgentHistory(

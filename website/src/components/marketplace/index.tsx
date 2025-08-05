@@ -22,9 +22,7 @@ export const Marketplace = () => {
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
               </div>
-              <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">
-                voltagent
-              </span>
+              <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">voltagent</span>
               <div className="relative">
                 <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
                   Marketplace
@@ -47,32 +45,24 @@ export const Marketplace = () => {
               className="text-left md:ml-8"
             >
               <p className="text-base sm:text-lg text-[#dcdcdc] mb-4">
-                The VoltAgent Community Marketplace is on its way, and we’d love
-                to hear your ideas.
+                The VoltAgent Community Marketplace is on its way, and we’d love to hear your ideas.
               </p>
               <p className="text-base sm:text-lg text-gray-400">
                 <button
                   type="button"
                   className="text-emerald-400 transition-colors text-base bg-transparent border-none p-0 m-0 inline font-inherit text-inherit cursor-pointer"
                   onClick={() => {
-                    document
-                      .getElementById("share-ideas-section")
-                      ?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
+                    document.getElementById("share-ideas-section")?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
                   }}
                 >
-                  <span className="text-[#00d992] font-bold text-lg">
-                    Let us know
-                  </span>
+                  <span className="text-[#00d992] font-bold text-lg">Let us know</span>
                 </button>{" "}
-                how we can make it the useful hub for developers to share,
-                discover, and monetize their
-                <span className="text-[#00d992] font-medium ml-1">
-                  VoltAgent-based
-                </span>{" "}
-                AI agents.
+                how we can make it the useful hub for developers to share, discover, and monetize
+                their
+                <span className="text-[#00d992] font-medium ml-1">VoltAgent-based</span> AI agents.
               </p>
             </motion.div>
           </div>
@@ -95,10 +85,7 @@ export const Marketplace = () => {
               }}
             >
               <div className="flex items-center  ">
-                <PlusCircleOutlineIcon
-                  className="w-5 h-5 text-emerald-400"
-                  aria-hidden="true"
-                />
+                <PlusCircleOutlineIcon className="w-5 h-5 text-emerald-400" aria-hidden="true" />
                 <span className="text-emerald-400 font-medium uppercase text-sm sm:text-base tracking-wider ml-2 sm:mr-2">
                   IDEA
                 </span>
@@ -112,8 +99,8 @@ export const Marketplace = () => {
                 >
                   Imagine
                 </a>{" "}
-                developers building AI agents that has real use cases and
-                listing them on the marketplace.
+                developers building AI agents that has real use cases and listing them on the
+                marketplace.
               </span>
             </div>
           </div>
@@ -143,17 +130,14 @@ export const Marketplace = () => {
               }}
             >
               <div className="flex items-center   ">
-                <PlusCircleOutlineIcon
-                  className="w-5 h-5 text-emerald-400"
-                  aria-hidden="true"
-                />
+                <PlusCircleOutlineIcon className="w-5 h-5 text-emerald-400" aria-hidden="true" />
                 <span className="text-emerald-400 font-medium uppercase text-sm sm:text-base tracking-wider ml-2 sm:mr-2">
                   IDEA
                 </span>
               </div>
               <span className="text-[#dcdcdc] text-sm sm:text-base">
-                Imagine, agents can be integrated to existing code bases with a
-                command or directly run in UI.
+                Imagine, agents can be integrated to existing code bases with a command or directly
+                run in UI.
               </span>
             </div>
           </div>
@@ -187,19 +171,18 @@ export const Marketplace = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mx-auto">
             <div className="flex flex-col items-center justify-center">
               <p className="mb-4 text-base sm:text-lg text-[#dcdcdc]">
-                The best tools are built with input from the developers who use
-                them.
+                The best tools are built with input from the developers who use them.
               </p>
               <p className="mb-4 text-base sm:text-lg text-[#dcdcdc]">
-                We're inviting the VoltAgent community to share feedback on the
-                marketplace as we build it. We're open to all suggestions — what
-                could be improved, what to add, or what to avoid.
+                We're inviting the VoltAgent community to share feedback on the marketplace as we
+                build it. We're open to all suggestions — what could be improved, what to add, or
+                what to avoid.
               </p>
             </div>
             <div className="flex flex-col items-center ring-1 ring-white/10 rounded-md p-4">
               <p className="text-base sm:text-lg font-semibold mb-6 text-[#dcdcdc]">
-                Contribute your thoughts and get early access to publish your AI
-                agents built with VoltAgent on the marketplace.
+                Contribute your thoughts and get early access to publish your AI agents built with
+                VoltAgent on the marketplace.
               </p>
               <Link
                 to="https://github.com/orgs/VoltAgent/discussions/74/"

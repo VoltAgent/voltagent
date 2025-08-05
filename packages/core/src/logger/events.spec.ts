@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  type LogEventName,
   LogEvents,
-  getEventComponent,
   getEventAction,
+  getEventComponent,
   getEventStatus,
   isFailureEvent,
   isSuccessEvent,
-  type LogEventName,
 } from "./events";
 
 describe("LogEvents", () => {

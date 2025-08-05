@@ -1,5 +1,5 @@
-import type { Page } from "playwright";
 import type { ToolExecuteOptions, ToolExecutionContext } from "@voltagent/core";
+import type { Page } from "playwright";
 import {
   ensureBrowser,
   resetBrowserState as resetBrowserStateInternal,
@@ -14,7 +14,10 @@ export async function safeBrowserOperation<T>(
   operation: (page: Page) => Promise<T>,
 ): Promise<T> {
   try {
-    const { page } = await ensureBrowser(toolExecCtx.operationContext!);
+    if (!toolExecCtx.operationContext) {
+      throw new Error("Operation context is required for browser operations");
+    }
+    const { page } = await ensureBrowser(toolExecCtx.operationContext);
     return await operation(page);
   } catch (error) {
     const opId = toolExecCtx?.operationContext?.operationId || "unknown";
@@ -28,5 +31,8 @@ export async function safeBrowserOperation<T>(
  * Note: Tools calling this directly will need access to the context.
  */
 export const resetBrowserState = async (context: ToolExecutionContext): Promise<void> => {
-  await resetBrowserStateInternal(context.operationContext!);
+  if (!context.operationContext) {
+    throw new Error("Operation context is required for resetting browser state");
+  }
+  await resetBrowserStateInternal(context.operationContext);
 };

@@ -1,7 +1,7 @@
-import { VoltAgent, Agent, BaseRetriever, type BaseMessage } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+import { Agent, type BaseMessage, BaseRetriever, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 // --- Simple Knowledge Base Retriever ---
 

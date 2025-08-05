@@ -1,10 +1,7 @@
 import Link from "@docusaurus/Link";
+import { ArrowTopRightOnSquareIcon, BuildingOfficeIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import React from "react";
-import {
-  ArrowTopRightOnSquareIcon,
-  BuildingOfficeIcon,
-} from "@heroicons/react/24/outline";
 import { getLogoComponent } from "../../utils/logo-helper";
 
 interface CustomerCardProps {
@@ -72,22 +69,14 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
                 // Fall back to SVG component if logo field exists
                 if (project.customer.logo) {
                   const LogoComponent = getLogoComponent(project.customer.logo);
-                  return (
-                    <LogoComponent className="w-9 h-9 mr-2 text-[#00d992]" />
-                  );
+                  return <LogoComponent className="w-9 h-9 mr-2 text-[#00d992]" />;
                 }
                 // Final fallback to default icon
-                return (
-                  <BuildingOfficeIcon className="w-9 h-9 mr-2  text-white" />
-                );
+                return <BuildingOfficeIcon className="w-9 h-9 mr-2  text-white" />;
               })()}
               <div>
-                <span className="text-[#00d992] font-bold text-base">
-                  {project.customer.name}
-                </span>
-                <div className="text-gray-400 text-xs">
-                  {project.customer.industry}
-                </div>
+                <span className="text-[#00d992] font-bold text-base">{project.customer.name}</span>
+                <div className="text-gray-400 text-xs">{project.customer.industry}</div>
               </div>
             </div>
           </div>
@@ -99,9 +88,7 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
             <h4 className="text-[#dcdcdc] font-semibold text-sm mb-3 line-clamp-2 leading-tight">
               {project.case_study.title}
             </h4>
-            <p className="text-gray-400 text-xs line-clamp-2">
-              {project.case_study.use_case}
-            </p>
+            <p className="text-gray-400 text-xs line-clamp-2">{project.case_study.use_case}</p>
           </div>
 
           {/* Author Info */}

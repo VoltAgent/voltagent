@@ -207,12 +207,7 @@ module.exports = {
       },
     },
     fontFamily: {
-      sans: [
-        "IBM Plex Mono",
-        "monospace",
-        "var(--font-sans)",
-        ...defaultFontFamily.sans,
-      ],
+      sans: ["IBM Plex Mono", "monospace", "var(--font-sans)", ...defaultFontFamily.sans],
       heading: ["IBM Plex Mono", "monospace"],
     },
     boxShadow: {
@@ -225,8 +220,7 @@ module.exports = {
         "2px 2px 0px 0px var(--color-yellow), 4px 4px 0px 0px var(--color-yellow)",
       "button-sh-cyan":
         "2px 2px 0px 0px var(--color-blue), 4px 4px 0px 0px var(--color-blue), 6px 6px 0px 0px var(--color-blue), 8px 8px 0px 0px var(--color-blue)",
-      "button-sh-hv-cyan":
-        "2px 2px 0px 0px var(--color-blue), 4px 4px 0px 0px var(--color-blue)",
+      "button-sh-hv-cyan": "2px 2px 0px 0px var(--color-blue), 4px 4px 0px 0px var(--color-blue)",
       "button-sh-purple":
         "2px 2px 0px 0px var(--color-purple), 4px 4px 0px 0px var(--color-purple), 6px 6px 0px 0px var(--color-purple), 8px 8px 0px 0px var(--color-purple)",
       "button-sh-hv-purple":
@@ -235,8 +229,7 @@ module.exports = {
     plugins: ['require("tailwind-component-classes")'],
     components: {
       copy: "text-copy-mobile tablet:text-copy font-copy-mobile tablet:font-copy",
-      "copy-sm":
-        "text-copy-sm-mobile tablet:text-copy-sm font-copy-sm-mobile tablet:font-copy-sm",
+      "copy-sm": "text-copy-sm-mobile tablet:text-copy-sm font-copy-sm-mobile tablet:font-copy-sm",
       "copy-footer":
         "text-copy-footer-mobile tablet:text-copy-footer font-copy-footer-mobile tablet:font-copy-footer",
       "nav-links":
@@ -248,8 +241,5 @@ module.exports = {
       "vertical-divider": "url(/img/vertical-divider.svg)",
     },
   },
-  plugins: [
-    require("tailwind-component-classes"),
-    require("tailwindcss-animate"),
-  ],
+  plugins: [require("tailwind-component-classes"), require("tailwindcss-animate")],
 };

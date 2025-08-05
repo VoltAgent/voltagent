@@ -1,6 +1,6 @@
-import { VoltAgent, Agent } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { GroqProvider } from "@voltagent/groq-ai";
+import { createPinoLogger } from "@voltagent/logger";
 
 const agent = new Agent({
   name: "Asistant",

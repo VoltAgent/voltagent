@@ -1,4 +1,4 @@
-module.exports = (context) => ({
+module.exports = (_context) => ({
   name: "docusaurus-plugin-gurubase-widget", // Feel free to change this name
   injectHtmlTags() {
     return {

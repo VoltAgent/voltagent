@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getGlobalLogger } from "../../logger";
 import {
   type StreamEventForwarderOptions,
   createStreamEventForwarder,
   streamEventForwarder,
 } from "./stream-event-forwarder";
 import type { StreamEvent } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 // Mock logger
 vi.mock("../../logger", () => ({

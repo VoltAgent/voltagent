@@ -1,8 +1,5 @@
 import { ErrorCauseBoundary, useThemeConfig } from "@docusaurus/theme-common";
-import {
-  splitNavbarItems,
-  useNavbarMobileSidebar,
-} from "@docusaurus/theme-common/internal";
+import { splitNavbarItems, useNavbarMobileSidebar } from "@docusaurus/theme-common/internal";
 import NavbarColorModeToggle from "@theme/Navbar/ColorModeToggle";
 import NavbarLogo from "@theme/Navbar/Logo";
 import NavbarMobileSidebarToggle from "@theme/Navbar/MobileSidebar/Toggle";

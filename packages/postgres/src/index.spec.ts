@@ -1126,16 +1126,18 @@ describe("PostgresStorage", () => {
         },
       ];
 
-      // Mock queries: history entries, steps for each entry, events for each entry
+      // Mock queries: count query, history entries, steps for each entry, events for each entry
       mockQuery
-        .mockResolvedValueOnce({ rows: mockHistoryRows })
+        .mockResolvedValueOnce({ rows: [{ total: "1" }] }) // count query
+        .mockResolvedValueOnce({ rows: mockHistoryRows }) // history entries
         .mockResolvedValueOnce({ rows: [] }) // steps
         .mockResolvedValueOnce({ rows: [] }); // events
 
-      const result = await storage.getAllHistoryEntriesByAgent("agent-1");
+      const result = await storage.getAllHistoryEntriesByAgent("agent-1", 0, 20);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(
+      expect(result.total).toBe(1);
+      expect(result.entries).toHaveLength(1);
+      expect(result.entries[0]).toEqual(
         expect.objectContaining({
           id: "history-1",
           _agentId: "agent-1",

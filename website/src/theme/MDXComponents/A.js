@@ -6,7 +6,7 @@ import React from "react";
 export default function MDXA(props) {
   const rel = getLinkRel(props?.href);
 
-  const location = useLocation();
+  const _location = useLocation();
 
   return <Link {...props} rel={rel} />;
 }

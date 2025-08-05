@@ -3,12 +3,12 @@ import path from "node:path";
 import chalk from "chalk";
 import fs from "fs-extra";
 import type { ProjectOptions } from "./types";
+import { AI_PROVIDER_CONFIG } from "./types";
 import { createSpinner } from "./utils/animation";
+import { installProviderDependency } from "./utils/dependency-installer";
 import fileManager from "./utils/file-manager";
 import { configureMcpForIde, showMcpConfigurationMessage } from "./utils/mcp-config";
-import { installProviderDependency } from "./utils/dependency-installer";
 import { getAllTemplates } from "./utils/templates";
-import { AI_PROVIDER_CONFIG } from "./types";
 
 export const createProject = async (options: ProjectOptions, targetDir: string): Promise<void> => {
   // Directory should already exist with base dependencies installed
@@ -247,7 +247,7 @@ dist
       });
 
       gitSpinner.succeed(chalk.green("Git repository initialized! 🎯"));
-    } catch (error) {
+    } catch (_error) {
       gitSpinner.warn(chalk.yellow("Git init skipped (git not installed or failed)"));
     }
   } catch (error) {

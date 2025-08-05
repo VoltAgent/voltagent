@@ -1,11 +1,11 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
+import type { LogEntry, LogFilter } from "@voltagent/internal";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConsoleLogger,
-  createConsoleLogger,
   InMemoryLogBuffer,
+  createConsoleLogger,
   getDefaultLogBuffer,
 } from "./console-logger";
-import type { LogEntry, LogFilter } from "@voltagent/internal";
 
 describe("ConsoleLogger", () => {
   // Store original console methods
@@ -132,7 +132,7 @@ describe("ConsoleLogger", () => {
       const timestampMatch = call.match(/\[([\d-T:.Z]+)\]/);
       expect(timestampMatch).toBeTruthy();
 
-      const timestamp = new Date(timestampMatch![1]);
+      const timestamp = new Date(timestampMatch?.[1]);
       expect(timestamp.getTime()).toBeGreaterThanOrEqual(before.getTime());
       expect(timestamp.getTime()).toBeLessThanOrEqual(after.getTime());
     });
@@ -222,8 +222,8 @@ describe("createConsoleLogger", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
-    delete process.env.VOLTAGENT_LOG_LEVEL;
-    delete process.env.LOG_LEVEL;
+    process.env.VOLTAGENT_LOG_LEVEL = undefined;
+    process.env.LOG_LEVEL = undefined;
   });
 
   afterEach(() => {
@@ -490,16 +490,6 @@ describe("InMemoryLogBuffer", () => {
       // Since filter includes yesterday, until filter excludes tomorrow
       // But there might be millisecond precision issues
       if (logs.length !== 1) {
-        console.log(
-          "Unexpected logs:",
-          logs.map((l) => ({
-            msg: l.msg,
-            level: l.level,
-            timestamp: l.timestamp,
-            timestampDate: new Date(l.timestamp),
-          })),
-        );
-        console.log("Filter until:", tomorrow);
       }
       // For now, accept both 1 or 2 results due to timing precision
       expect(logs.length).toBeGreaterThanOrEqual(1);

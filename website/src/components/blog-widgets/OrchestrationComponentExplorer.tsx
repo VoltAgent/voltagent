@@ -44,13 +44,9 @@ const componentsData = [
 ];
 
 const OrchestrationComponentExplorer = () => {
-  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
-    null,
-  );
+  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
 
-  const selectedComponent = componentsData.find(
-    (comp) => comp.id === selectedComponentId,
-  );
+  const selectedComponent = componentsData.find((comp) => comp.id === selectedComponentId);
 
   return (
     <div className="my-5 rounded-lg border-2 border-emerald-500 bg-gray-800 p-5 text-gray-100 shadow-lg">
@@ -75,19 +71,10 @@ const OrchestrationComponentExplorer = () => {
       </div>
       {selectedComponent && (
         <div className="mt-5 rounded-md border border-gray-600 bg-gray-700 p-4 text-gray-200">
-          <h4 className="mb-2 mt-0 text-lg text-emerald-300">
-            {selectedComponent.name}
-          </h4>
-          <p className="leading-relaxed text-gray-200">
-            {selectedComponent.description}
-          </p>
-          <h5 className="mt-3 mb-1.5 text-base text-emerald-200">
-            Key Details:
-          </h5>
-          <p
-            style={{ whiteSpace: "pre-line" }}
-            className="leading-relaxed text-gray-200"
-          >
+          <h4 className="mb-2 mt-0 text-lg text-emerald-300">{selectedComponent.name}</h4>
+          <p className="leading-relaxed text-gray-200">{selectedComponent.description}</p>
+          <h5 className="mt-3 mb-1.5 text-base text-emerald-200">Key Details:</h5>
+          <p style={{ whiteSpace: "pre-line" }} className="leading-relaxed text-gray-200">
             {selectedComponent.details}
           </p>
         </div>

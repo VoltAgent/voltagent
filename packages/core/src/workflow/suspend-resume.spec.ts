@@ -1,10 +1,10 @@
-import { vi, describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { createWorkflow } from "./core";
-import { createSuspendController } from "./suspend-controller";
-import { andThen, andAll, andWhen } from "./steps";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
+import { andAll, andThen, andWhen } from "./steps";
+import { createSuspendController } from "./suspend-controller";
 
 describe.sequential("workflow suspend/resume functionality", () => {
   let registry: WorkflowRegistry;
@@ -206,7 +206,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     });
 
     setTimeout(() => {
-      controller!.suspend("Suspend for testing");
+      controller?.suspend("Suspend for testing");
     }, 50);
 
     const suspended = await runPromise;
@@ -280,7 +280,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
     // Suspend during parallel execution
     setTimeout(() => {
-      controller!.suspend("Suspend during parallel");
+      controller?.suspend("Suspend during parallel");
     }, 150);
 
     const suspended = await runPromise;
@@ -335,7 +335,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
     // Suspend during conditional step
     setTimeout(() => {
-      controller!.suspend("Suspend in conditional");
+      controller?.suspend("Suspend in conditional");
     }, 50);
 
     const suspended = await runPromise;
@@ -550,7 +550,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
     // Suspend after step 1
     setTimeout(() => {
-      controller!.suspend("Test checkpoint");
+      controller?.suspend("Test checkpoint");
     }, 50);
 
     const suspended = await runPromise;
@@ -560,8 +560,6 @@ describe.sequential("workflow suspend/resume functionality", () => {
       expect(suspended.suspension?.checkpoint).toBeDefined();
       expect(suspended.suspension?.checkpoint?.completedStepsData).toHaveLength(0);
     } else {
-      // If it completed, skip the test
-      console.log("Workflow completed before suspension, skipping checkpoint test");
       return;
     }
 

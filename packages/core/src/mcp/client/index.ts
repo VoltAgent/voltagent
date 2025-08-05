@@ -15,8 +15,8 @@ import {
 import type { Logger } from "@voltagent/internal";
 import type * as z from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
-import { type Tool, createTool } from "../../tool";
 import { getGlobalLogger } from "../../logger";
+import { type Tool, createTool } from "../../tool";
 import type {
   ClientInfo,
   HTTPServerConfig,
@@ -189,7 +189,7 @@ export class MCPClient extends EventEmitter {
 
       // Log successful connection
       mcpLogger.info(`MCP server connected: ${serverInfo.type}-server`, {
-        event: `mcp_connect`,
+        event: "mcp_connect",
         serverName: `${serverInfo.type}-server`,
         serverType: serverInfo.type,
         serverUrl: serverInfo.url,
@@ -201,7 +201,7 @@ export class MCPClient extends EventEmitter {
       mcpLogger.error(
         `MCP connection error: ${serverInfo.type}-server - ${error instanceof Error ? error.message : "Unknown error"}`,
         {
-          event: `mcp_error`,
+          event: "mcp_error",
           serverName: `${serverInfo.type}-server`,
           error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         },

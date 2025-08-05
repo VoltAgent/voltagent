@@ -1,14 +1,11 @@
-import React, { useState } from "react";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
-import PricingSection from "../components/console/PricingSection";
+import React, { useState } from "react";
 import PricingCalculatorModal from "../components/console/PricingCalculatorModal";
-import { DotPattern } from "../components/ui/dot-pattern";
-import {
-  ArrowTopRightOnSquareIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/outline";
+import PricingSection from "../components/console/PricingSection";
 import { TwoBlocks } from "../components/two-blocks-pricing";
+import { DotPattern } from "../components/ui/dot-pattern";
 
 export default function Pricing(): JSX.Element {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
@@ -20,8 +17,7 @@ export default function Pricing(): JSX.Element {
 
   const faqData = [
     {
-      question:
-        "My application isn't written in VoltAgent. Will VoltOps be useful?",
+      question: "My application isn't written in VoltAgent. Will VoltOps be useful?",
       answer:
         "Yes! VoltOps LLM Observability works with JS/TS, Python, Vercel AI SDK and various frameworks, not just VoltAgent. Our REST API and webhook integrations allow you to send traces from Java, C#, Go, Ruby, PHP, or any other language.",
     },
@@ -39,30 +35,23 @@ export default function Pricing(): JSX.Element {
       question: "How does VoltOps pricing work with trace overages?",
       answer: (
         <span>
-          VoltOps Core plan includes 5,000 traces per month for $50, and Pro
-          plan includes 20,000 traces per month for $500. If you exceed these
-          limits, you'll be charged $10 for every additional 5,000 traces.{" "}
-          <span
+          VoltOps Core plan includes 5,000 traces per month for $50, and Pro plan includes 20,000
+          traces per month for $500. If you exceed these limits, you'll be charged $10 for every
+          additional 5,000 traces.{" "}
+          <button
+            type="button"
             onClick={() => setCalculatorOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                setCalculatorOpen(true);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            className="text-emerald-400 hover:text-emerald-300 cursor-pointer transition-colors"
+            className="text-emerald-400 hover:text-emerald-300 cursor-pointer transition-colors bg-transparent border-none p-0 font-inherit underline"
           >
             Use our pricing calculator
-          </span>{" "}
-          to estimate your monthly costs based on expected usage. You can set up
-          billing alerts to monitor your usage.
+          </button>{" "}
+          to estimate your monthly costs based on expected usage. You can set up billing alerts to
+          monitor your usage.
         </span>
       ),
     },
     {
-      question:
-        "I can't have data leave my environment. Can I self-host VoltOps?",
+      question: "I can't have data leave my environment. Can I self-host VoltOps?",
       answer:
         "Yes! VoltOps Enterprise plan includes self-hosted deployment options. You can run VoltOps entirely within your own infrastructure, ensuring your sensitive AI application data never leaves your environment while still getting full monitoring capabilities.",
     },
@@ -178,9 +167,7 @@ export default function Pricing(): JSX.Element {
                   >
                     <div className="px-6 pb-6 landing-xs:px-3 landing-xs:pb-3 landing-sm:px-5 landing-sm:pb-5">
                       <p className="text-gray-400 leading-relaxed landing-xs:text-xs landing-sm:text-base">
-                        {typeof faq.answer === "string"
-                          ? faq.answer
-                          : faq.answer}
+                        {typeof faq.answer === "string" ? faq.answer : faq.answer}
                       </p>
                     </div>
                   </motion.div>
@@ -191,10 +178,7 @@ export default function Pricing(): JSX.Element {
         </section>
 
         {/* Pricing Calculator Modal */}
-        <PricingCalculatorModal
-          isOpen={calculatorOpen}
-          onClose={() => setCalculatorOpen(false)}
-        />
+        <PricingCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
       </main>
     </Layout>
   );

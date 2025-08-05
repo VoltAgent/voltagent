@@ -1,7 +1,7 @@
-import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
-import { VoltAgentObservabilitySDK } from "@voltagent/sdk";
+import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import type { Usage } from "@voltagent/core";
+import { VoltAgentObservabilitySDK } from "@voltagent/sdk";
 
 /**
  * Configuration options for VoltAgentExporter

@@ -1,8 +1,8 @@
-import { Tool } from "@voltagent/core";
 import fs from "node:fs";
 import path from "node:path";
-import { z } from "zod";
 import { fileURLToPath } from "node:url";
+import { Tool } from "@voltagent/core";
+import { z } from "zod";
 
 // Get package root directory - compatible with both ESM and CJS
 function getDirname(): string {
@@ -317,7 +317,10 @@ export const getChangelogTool = new Tool({
   execute: async ({
     packageName,
     maxEntries = 10,
-  }: { packageName: string; maxEntries?: number }) => {
+  }: {
+    packageName: string;
+    maxEntries?: number;
+  }) => {
     try {
       const paths = getVoltAgentPaths();
       const changelogPath = path.join(paths.packagesPath, packageName, "CHANGELOG.md");
@@ -632,8 +635,8 @@ async function discoverExampleFiles(examplePath: string): Promise<string[]> {
   // Helper function to recursively find .ts files in a directory with depth limit
   const findTsFiles = async (
     dirPath: string,
-    relativePath: string = "",
-    currentDepth: number = 0,
+    relativePath = "",
+    currentDepth = 0,
   ): Promise<void> => {
     if (currentDepth >= 4 || !(await fileExists(dirPath))) return;
 

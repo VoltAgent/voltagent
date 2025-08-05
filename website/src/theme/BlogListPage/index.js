@@ -1,10 +1,6 @@
 import Link from "@docusaurus/Link";
 import { useLocation } from "@docusaurus/router";
-import {
-  HtmlClassNameProvider,
-  PageMetadata,
-  ThemeClassNames,
-} from "@docusaurus/theme-common";
+import { HtmlClassNameProvider, PageMetadata, ThemeClassNames } from "@docusaurus/theme-common";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import BlogLayout from "@theme/BlogLayout";
 import BlogListPaginator from "@theme/BlogListPaginator";
@@ -48,10 +44,9 @@ function BlogListPageContent(props) {
               AI Engineering
             </p>
             <p className="max-w-3xl landing-md:text-base landing-xs:text-xs text-gray-400">
-              Technical articles and best practices on building autonomous AI
-              agents - Comprehensive guides on agent design, LLM integration,
-              reasoning capabilities, and app development with the{" "}
-              <span className="text-main-emerald">VoltAgent</span>.
+              Technical articles and best practices on building autonomous AI agents - Comprehensive
+              guides on agent design, LLM integration, reasoning capabilities, and app development
+              with the <span className="text-main-emerald">VoltAgent</span>.
             </p>
           </div>
 
@@ -116,10 +111,7 @@ function BlogListPageContent(props) {
 export default function BlogListPage(props) {
   return (
     <HtmlClassNameProvider
-      className={clsx(
-        ThemeClassNames.wrapper.blogPages,
-        ThemeClassNames.page.blogListPage,
-      )}
+      className={clsx(ThemeClassNames.wrapper.blogPages, ThemeClassNames.page.blogListPage)}
     >
       <BlogListPageMetadata {...props} />
       <BlogListPageContent {...props} />

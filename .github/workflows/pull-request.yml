@@ -32,11 +32,11 @@ jobs:
           pnpm install -w
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-      #- name: lint
-      #  run: |
-      #    pnpm lint:ci
-      #- name: syncpack
-      #  run: pnpm sp lint
+      - name: Lint with Biome
+        run: |
+          pnpm lint:ci
+      - name: Syncpack
+        run: pnpm sp lint
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -45,9 +45,7 @@ jobs:
     concurrency:
       group: ${{ github.ref }}-pr-build-${{ matrix.node-version }}
       cancel-in-progress: true
-    name: Build & Test (Node ${{ matrix.node-version }})
-    env:
-      NODE_OPTIONS: --max_old_space_size=8192
+    name: Build (Node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -65,8 +63,58 @@ jobs:
         run: pnpm publint:all
       - name: Are The Types Wrong
         run: pnpm attw:all
-      - name: Test
-        run: pnpm test:all --skip-nx-cache
+
+  test-packages:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - anthropic-ai
+          - cli
+          - core
+          - create-voltagent-app
+          - docs-mcp
+          - google-ai
+          - groq-ai
+          - internal
+          - langfuse-exporter
+          - logger
+          - postgres
+          - sdk
+          - supabase
+          - vercel-ai
+          - vercel-ai-exporter
+          - vercel-ui
+          - voice
+          - xsai
+      fail-fast: false
+    concurrency:
+      group: ${{ github.ref }}-test-${{ matrix.package }}
+      cancel-in-progress: true
+    name: Test ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Install Dependencies
+        run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+      - name: Set package scope
+        id: scope
+        run: |
+          if [[ "${{ matrix.package }}" == "create-voltagent-app" ]]; then
+            echo "scope=create-voltagent-app" >> $GITHUB_OUTPUT
+          else
+            echo "scope=@voltagent/${{ matrix.package }}" >> $GITHUB_OUTPUT
+          fi
+      - name: Build Package and Dependencies
+        run: lerna run build --scope "${{ steps.scope.outputs.scope }}" --include-dependencies
+      - name: Test Package
+        run: lerna run test --scope "${{ steps.scope.outputs.scope }}"
 
   postgres-integration:
     runs-on: ubuntu-latest

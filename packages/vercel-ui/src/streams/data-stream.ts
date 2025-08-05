@@ -103,7 +103,7 @@ export function toDataStream(
   }
 
   return new ReadableStream({
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: this is a complex stream and no need to refactor it
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This is a complex stream handler that needs to handle multiple cases
     async start(controller) {
       try {
         // Create a flag to track if stream has been closed

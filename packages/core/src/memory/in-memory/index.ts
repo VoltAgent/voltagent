@@ -1,6 +1,12 @@
-import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
 import type { NewTimelineEvent } from "../../events/types";
+import { LoggerProxy } from "../../logger";
+import type {
+  WorkflowHistoryEntry,
+  WorkflowStats,
+  WorkflowStepHistoryEntry,
+  WorkflowTimelineEvent,
+} from "../../workflow/types";
 import type {
   Conversation,
   ConversationQueryOptions,
@@ -10,12 +16,6 @@ import type {
   MemoryOptions,
   MessageFilterOptions,
 } from "../types";
-import type {
-  WorkflowHistoryEntry,
-  WorkflowStepHistoryEntry,
-  WorkflowTimelineEvent,
-  WorkflowStats,
-} from "../../workflow/types";
 
 /**
  * Options for configuring the InMemoryStorage
@@ -269,10 +269,19 @@ export class InMemoryStorage implements Memory {
   }
 
   /**
-   * Get all history entries for an agent
+   * Get all history entries for an agent with pagination
    */
-  public async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
-    this.debug(`Getting all history entries for agent ${agentId}`);
+  public async getAllHistoryEntriesByAgent(
+    agentId: string,
+    page: number,
+    limit: number,
+  ): Promise<{
+    entries: any[];
+    total: number;
+  }> {
+    this.debug(
+      `Getting paginated history entries for agent ${agentId} (page: ${page}, limit: ${limit})`,
+    );
 
     // Get all entry keys for this agent
     const entryKeys = this.agentHistory[agentId] || [];
@@ -280,15 +289,25 @@ export class InMemoryStorage implements Memory {
     // Get all entries
     const entries = entryKeys.map((key) => this.historyEntries.get(key)).filter(Boolean);
 
-    // Return deep copies of entries to prevent accidental modifications
-    const result = entries.map((entry) => JSON.parse(JSON.stringify(entry)));
-
     // Sort by timestamp (newest first)
-    return result.sort((a, b) => {
-      const aTime = new Date(a.timestamp || a.createdAt || 0).getTime();
-      const bTime = new Date(b.timestamp || b.createdAt || 0).getTime();
-      return bTime - aTime;
-    });
+    const sortedEntries = entries
+      .map((entry) => JSON.parse(JSON.stringify(entry)))
+      .sort((a, b) => {
+        const aTime = new Date(a.timestamp || a.createdAt || 0).getTime();
+        const bTime = new Date(b.timestamp || b.createdAt || 0).getTime();
+        return bTime - aTime;
+      });
+
+    const total = sortedEntries.length;
+    const offset = page * limit;
+
+    // Apply pagination
+    const paginatedEntries = sortedEntries.slice(offset, offset + limit);
+
+    return {
+      entries: paginatedEntries,
+      total,
+    };
   }
 
   /**

@@ -1,5 +1,5 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import { z } from "zod";
+import type { z } from "zod";
 import type { Agent } from "../../agent/agent";
 import type {
   InternalAnyWorkflowStep,
@@ -7,6 +7,7 @@ import type {
   InternalExtractWorkflowInputData,
   InternalWorkflowFunc,
   InternalWorkflowStepConfig,
+  WorkflowExecuteContext,
 } from "../internal/types";
 import type { Workflow, WorkflowRunOptions } from "../types";
 
@@ -98,7 +99,12 @@ export interface WorkflowStepParallelRace<INPUT, DATA, RESULT>
 }
 
 export type WorkflowStepParallelAllConfig<
-  STEPS extends ReadonlyArray<InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>>,
+  INPUT,
+  DATA,
+  RESULT,
+  STEPS extends
+    | ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+    | WorkflowStepParallelDynamicStepsFunc<INPUT, DATA, RESULT>,
 > = InternalWorkflowStepConfig<{
   steps: STEPS;
 }>;
@@ -106,8 +112,18 @@ export type WorkflowStepParallelAllConfig<
 export interface WorkflowStepParallelAll<INPUT, DATA, RESULT>
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, any, any> {
   type: "parallel-all";
-  steps: ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>;
+  steps:
+    | WorkflowStepParallelSteps<INPUT, DATA, RESULT>
+    | WorkflowStepParallelDynamicStepsFunc<INPUT, DATA, RESULT>;
 }
+
+export type WorkflowStepParallelDynamicStepsFunc<INPUT, DATA, RESULT> = (
+  context: WorkflowExecuteContext<INPUT, DATA, any, any>,
+) => Promise<WorkflowStepParallelSteps<INPUT, DATA, RESULT>>;
+
+export type WorkflowStepParallelSteps<INPUT, DATA, RESULT> = ReadonlyArray<
+  InternalAnyWorkflowStep<INPUT, DATA, RESULT>
+>;
 
 export type WorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA = any> =
   | WorkflowStepAgent<INPUT, DATA, RESULT>

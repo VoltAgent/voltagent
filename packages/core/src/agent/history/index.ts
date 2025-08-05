@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
 import type { Logger } from "@voltagent/internal";
-import { getGlobalLogger } from "../../logger";
+import { v4 as uuidv4 } from "uuid";
 import { AgentEventEmitter } from "../../events";
 import type { NewTimelineEvent } from "../../events/types";
+import { getGlobalLogger } from "../../logger";
 import type { MemoryManager } from "../../memory";
 import type {
   AgentHistoryUpdatableFields,
@@ -10,9 +10,9 @@ import type {
   ExportTimelineEventPayload,
 } from "../../telemetry/client";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
+import { BackgroundQueue } from "../../utils/queue/queue";
 import type { BaseMessage, StepWithContent, UsageInfo } from "../providers/base/types";
 import type { AgentStatus } from "../types";
-import { BackgroundQueue } from "../../utils/queue/queue";
 
 // Export types
 export type { HistoryStatus } from "./types";
@@ -285,8 +285,8 @@ export class HistoryManager {
     }
 
     if (this.maxEntries > 0) {
-      const entries = await this.getEntries();
-      if (entries.length >= this.maxEntries) {
+      const result = await this.getEntries();
+      if (result.entries.length >= this.maxEntries) {
         // TODO: Implement deletion of oldest entry
       }
     }
@@ -408,13 +408,31 @@ export class HistoryManager {
   }
 
   /**
-   * Get all history entries
+   * Get all history entries with optional pagination
    *
-   * @returns Array of history entries
+   * @returns Object with entries array and pagination info
    */
-  public async getEntries(): Promise<AgentHistoryEntry[]> {
-    if (!this.agentId) return [];
-    return this.memoryManager.getAllHistoryEntries(this.agentId);
+  public async getEntries(options?: { page?: number; limit?: number }): Promise<{
+    entries: AgentHistoryEntry[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    if (!this.agentId) {
+      return {
+        entries: [],
+        pagination: {
+          page: 0,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+    return this.memoryManager.getAllHistoryEntries(this.agentId, options);
   }
 
   /**

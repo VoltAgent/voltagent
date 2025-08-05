@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createWorkflow } from "./core";
-import { andThen } from "./steps";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
+import { andThen } from "./steps";
 
 describe.sequential("workflow.run", () => {
   beforeEach(() => {
@@ -33,6 +33,7 @@ describe.sequential("workflow.run", () => {
         execute: async ({ data }) => {
           return {
             name: [data.name, "john"].join(" "),
+            foo: "bar",
           };
         },
       }),

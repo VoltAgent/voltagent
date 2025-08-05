@@ -117,7 +117,6 @@ export class MCPConfiguration<TServerKeys extends string = string> {
 
     for (const result of results) {
       if (result && typeof result.rawToolsResult === "object" && result.rawToolsResult !== null) {
-        // biome-ignore lint/suspicious/noExplicitAny: Trusting type check before using Object.entries on unknown
         for (const [toolName, toolConfig] of Object.entries(result.rawToolsResult)) {
           if (this.isAnyToolConfigStructure(toolConfig)) {
             allRawTools[`${result.serverName}.${toolName}`] = toolConfig;
@@ -189,13 +188,11 @@ export class MCPConfiguration<TServerKeys extends string = string> {
           typeof rawToolsResult === "object" &&
           Object.keys(rawToolsResult).length > 0
         ) {
-          // biome-ignore lint/suspicious/noExplicitAny: Trusting type check before using Object.values on unknown
           const allValuesValid = Object.values(rawToolsResult).every((config) =>
             this.isAnyToolConfigStructure(config),
           );
 
           if (allValuesValid) {
-            // biome-ignore lint/suspicious/noExplicitAny: Cast needed after runtime validation of structure
             return {
               serverName,
               rawToolsResult: rawToolsResult as Record<string, AnyToolConfig>,

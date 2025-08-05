@@ -1,5 +1,5 @@
-import { vi, describe, expect, it, beforeEach, afterEach } from "vitest";
-import { getDefaultLogLevel, getDefaultLogFormat, getDefaultRedactionPaths } from "./formatters";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getDefaultLogFormat, getDefaultLogLevel, getDefaultRedactionPaths } from "./formatters";
 
 describe("formatters", () => {
   // Store original env values
@@ -7,10 +7,15 @@ describe("formatters", () => {
 
   beforeEach(() => {
     // Clear relevant env vars before each test
+    // biome-ignore lint/performance/noDelete: Required for proper test isolation
     delete process.env.VOLTAGENT_LOG_LEVEL;
+    // biome-ignore lint/performance/noDelete: Required for proper test isolation
     delete process.env.LOG_LEVEL;
+    // biome-ignore lint/performance/noDelete: Required for proper test isolation
     delete process.env.VOLTAGENT_LOG_FORMAT;
+    // biome-ignore lint/performance/noDelete: Required for proper test isolation
     delete process.env.VOLTAGENT_LOG_REDACT;
+    // biome-ignore lint/performance/noDelete: Required for proper test isolation
     delete process.env.NODE_ENV;
   });
 

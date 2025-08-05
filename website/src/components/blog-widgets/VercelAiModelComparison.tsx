@@ -29,16 +29,8 @@ const models: AIModel[] = [
         description: "Supports tool use through function calls",
       },
     ],
-    strengths: [
-      "Powerful general reasoning",
-      "Visual understanding",
-      "Structured outputs",
-    ],
-    bestFor: [
-      "Complex applications",
-      "Multi-modal experiences",
-      "Advanced reasoning",
-    ],
+    strengths: ["Powerful general reasoning", "Visual understanding", "Structured outputs"],
+    bestFor: ["Complex applications", "Multi-modal experiences", "Advanced reasoning"],
   },
   {
     name: "Claude 3",
@@ -51,11 +43,7 @@ const models: AIModel[] = [
         description: "Supports very long context windows",
       },
     ],
-    strengths: [
-      "Nuanced writing",
-      "Documentation analysis",
-      "Safety & guardrails",
-    ],
+    strengths: ["Nuanced writing", "Documentation analysis", "Safety & guardrails"],
     bestFor: ["Content creation", "Document Q&A", "Customer support"],
   },
   {
@@ -69,16 +57,8 @@ const models: AIModel[] = [
         description: "Strong code generation abilities",
       },
     ],
-    strengths: [
-      "Knowledge integration",
-      "Multi-modal reasoning",
-      "Code understanding",
-    ],
-    bestFor: [
-      "Knowledge-heavy apps",
-      "Visual reasoning tasks",
-      "Developer tools",
-    ],
+    strengths: ["Knowledge integration", "Multi-modal reasoning", "Code understanding"],
+    bestFor: ["Knowledge-heavy apps", "Visual reasoning tasks", "Developer tools"],
   },
   {
     name: "Mixtral",
@@ -88,21 +68,15 @@ const models: AIModel[] = [
       { name: "Code Generation", description: "Code generation support" },
     ],
     strengths: ["Performance-to-cost ratio", "Fast inference", "Open weights"],
-    bestFor: [
-      "Cost-sensitive deployments",
-      "Self-hosted solutions",
-      "Low-latency applications",
-    ],
+    bestFor: ["Cost-sensitive deployments", "Self-hosted solutions", "Low-latency applications"],
   },
 ];
 
 export default function VercelAiModelComparison(): JSX.Element {
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
 
-  const cardBaseClass =
-    "cursor-pointer border rounded-lg p-4 transition-all duration-300";
-  const cardInactiveClass =
-    "bg-gray-800 border-gray-700 hover:border-emerald-500/50";
+  const cardBaseClass = "cursor-pointer border rounded-lg p-4 transition-all duration-300";
+  const cardInactiveClass = "bg-gray-800 border-gray-700 hover:border-emerald-500/50";
   const cardActiveClass = "bg-gray-700 border-emerald-500";
 
   const handleSelectModel = (model: AIModel) => {
@@ -119,12 +93,8 @@ export default function VercelAiModelComparison(): JSX.Element {
   return (
     <div className="my-8">
       <div className="mb-4 text-center">
-        <h3 className="text-xl font-bold text-white mb-2">
-          Models Supported by Vercel AI SDK
-        </h3>
-        <p className="text-gray-300 text-sm">
-          Click on a model to see its features and strengths
-        </p>
+        <h3 className="text-xl font-bold text-white mb-2">Models Supported by Vercel AI SDK</h3>
+        <p className="text-gray-300 text-sm">Click on a model to see its features and strengths</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -132,9 +102,7 @@ export default function VercelAiModelComparison(): JSX.Element {
           <div
             key={model.name}
             className={`${cardBaseClass} ${
-              selectedModel?.name === model.name
-                ? cardActiveClass
-                : cardInactiveClass
+              selectedModel?.name === model.name ? cardActiveClass : cardInactiveClass
             }`}
             onClick={() => handleSelectModel(model)}
             onKeyDown={(e) => handleKeyDown(e, model)}
@@ -155,18 +123,14 @@ export default function VercelAiModelComparison(): JSX.Element {
       {selectedModel && (
         <div className="border border-emerald-500/50 rounded-lg p-5 bg-gray-800/80 animate-fadeIn">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-lg font-semibold text-emerald-400">
-              {selectedModel.name}
-            </h3>
+            <h3 className="text-lg font-semibold text-emerald-400">{selectedModel.name}</h3>
             <span className="text-sm bg-emerald-900 text-emerald-200 px-3 py-1 rounded-full">
               {selectedModel.provider}
             </span>
           </div>
 
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-emerald-300 mb-2">
-              Key Features:
-            </h4>
+            <h4 className="text-sm font-medium text-emerald-300 mb-2">Key Features:</h4>
             <ul className="space-y-1">
               {selectedModel.features.map((feature) => (
                 <li key={feature.name} className="flex text-sm items-start">
@@ -181,9 +145,7 @@ export default function VercelAiModelComparison(): JSX.Element {
           </div>
 
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-emerald-300 mb-2">
-              Strengths:
-            </h4>
+            <h4 className="text-sm font-medium text-emerald-300 mb-2">Strengths:</h4>
             <div className="flex flex-wrap gap-2">
               {selectedModel.strengths.map((strength) => (
                 <span
@@ -197,15 +159,10 @@ export default function VercelAiModelComparison(): JSX.Element {
           </div>
 
           <div>
-            <h4 className="text-sm font-medium text-emerald-300 mb-2">
-              Best Used For:
-            </h4>
+            <h4 className="text-sm font-medium text-emerald-300 mb-2">Best Used For:</h4>
             <ul className="space-y-1">
               {selectedModel.bestFor.map((use) => (
-                <li
-                  key={use}
-                  className="text-sm text-gray-300 flex items-center"
-                >
+                <li key={use} className="text-sm text-gray-300 flex items-center">
                   <span className="text-emerald-500 mr-2">•</span> {use}
                 </li>
               ))}
@@ -216,9 +173,7 @@ export default function VercelAiModelComparison(): JSX.Element {
 
       {!selectedModel && (
         <div className="border border-gray-700 rounded-lg p-5 bg-gray-800/30 text-center">
-          <p className="text-gray-400">
-            Select a model above to view its details
-          </p>
+          <p className="text-gray-400">Select a model above to view its details</p>
         </div>
       )}
     </div>

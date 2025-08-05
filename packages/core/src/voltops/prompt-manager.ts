@@ -2,24 +2,24 @@
  * Prompt manager with caching and Liquid template processing
  */
 
-import type {
-  PromptReference,
-  VoltOpsPromptManager,
-  VoltOpsClientOptions,
-  PromptApiClient,
-  PromptContent,
-  ChatMessage,
-} from "./types";
-import { VoltOpsPromptApiClient } from "./prompt-api-client";
-import { createSimpleTemplateEngine, type TemplateEngine } from "./template-engine";
-import { LoggerProxy, type Logger } from "../logger";
+import { type Logger, LoggerProxy } from "../logger";
 import { LogEvents } from "../logger/events";
 import {
-  buildVoltOpsLogMessage,
-  buildLogContext,
-  ResourceType,
   ActionType,
+  ResourceType,
+  buildLogContext,
+  buildVoltOpsLogMessage,
 } from "../logger/message-builder";
+import { VoltOpsPromptApiClient } from "./prompt-api-client";
+import { type TemplateEngine, createSimpleTemplateEngine } from "./template-engine";
+import type {
+  ChatMessage,
+  PromptApiClient,
+  PromptContent,
+  PromptReference,
+  VoltOpsClientOptions,
+  VoltOpsPromptManager,
+} from "./types";
 
 /**
  * Default cache configuration
@@ -90,17 +90,16 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
           }),
         );
         return this.processPromptContent(cached.content, reference.variables);
-      } else {
-        this.logger.trace(
-          buildVoltOpsLogMessage("prompt-manager", "cache-miss", "prompt not found in cache"),
-          buildLogContext(ResourceType.VOLTOPS, "prompt-manager", "cache-miss", {
-            event: LogEvents.VOLTOPS_PROMPT_CACHE_MISS,
-            promptName: reference.promptName,
-            version: reference.version,
-            cacheKey,
-          }),
-        );
       }
+      this.logger.trace(
+        buildVoltOpsLogMessage("prompt-manager", "cache-miss", "prompt not found in cache"),
+        buildLogContext(ResourceType.VOLTOPS, "prompt-manager", "cache-miss", {
+          event: LogEvents.VOLTOPS_PROMPT_CACHE_MISS,
+          promptName: reference.promptName,
+          version: reference.version,
+          cacheKey,
+        }),
+      );
     }
 
     // Fetch from API

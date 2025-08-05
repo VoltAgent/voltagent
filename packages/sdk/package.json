@@ -1,35 +1,44 @@
 {
   "name": "@voltagent/sdk",
-  "version": "0.1.5",
   "description": "VoltAgent SDK - Client SDK for interacting with VoltAgent API",
-  "license": "MIT",
+  "version": "0.1.6",
+  "dependencies": {
+    "@voltagent/core": "^0.1.73"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "scripts": {
+    "attw": "attw --pack",
     "build": "tsup",
     "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "publint": "publint --strict",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "dependencies": {
-    "@voltagent/core": "^0.1.31"
-  },
-  "devDependencies": {
-    "@types/node": "^20.19.0",
-    "@vitest/coverage-v8": "^3.2.3",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
-    "vitest": "^3.2.3"
-  }
+  "types": "dist/index.d.ts"
 }

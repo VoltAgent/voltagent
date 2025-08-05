@@ -1,8 +1,8 @@
-import type React from "react";
-import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
-import CodeBlock from "@theme/CodeBlock";
 import { ColorModeProvider } from "@docusaurus/theme-common/internal";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import CodeBlock from "@theme/CodeBlock";
+import type React from "react";
+import { TutorialLayout } from "../../components/tutorial/TutorialLayout";
 
 export default function MCPTutorial() {
   return (
@@ -43,9 +43,8 @@ export default function MCPTutorial() {
             The Problem: Your Agent Lives in a Bubble
           </h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Your agent has memory and tools, but it's still isolated. It can't
-            access your GitHub repos, your Slack channels, your databases, or
-            any of the systems you actually use.
+            Your agent has memory and tools, but it's still isolated. It can't access your GitHub
+            repos, your Slack channels, your databases, or any of the systems you actually use.
           </p>
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
@@ -105,14 +104,11 @@ export default function MCPTutorial() {
 
         {/* What is MCP */}
         <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            What is MCP?
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">What is MCP?</h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            <strong>Model Context Protocol (MCP)</strong> is an open standard
-            that enables AI models to securely access external data and tools.
-            Think of it as USB for AI agents - a universal connector for any
-            external system.
+            <strong>Model Context Protocol (MCP)</strong> is an open standard that enables AI models
+            to securely access external data and tools. Think of it as USB for AI agents - a
+            universal connector for any external system.
           </p>
 
           <div className=" rounded-lg p-4 landing-md:p-6 border-solid border border-gray-700">
@@ -125,12 +121,9 @@ export default function MCPTutorial() {
                   1
                 </div>
                 <div>
-                  <strong className="text-white text-sm landing-md:text-base">
-                    MCP Server:
-                  </strong>
+                  <strong className="text-white text-sm landing-md:text-base">MCP Server:</strong>
                   <span className="text-gray-300 ml-2 text-sm landing-md:text-base">
-                    Provides secure access to external resources (GitHub,
-                    databases, APIs, etc.)
+                    Provides secure access to external resources (GitHub, databases, APIs, etc.)
                   </span>
                 </div>
               </div>
@@ -139,12 +132,9 @@ export default function MCPTutorial() {
                   2
                 </div>
                 <div>
-                  <strong className="text-white text-sm landing-md:text-base">
-                    MCP Client:
-                  </strong>
+                  <strong className="text-white text-sm landing-md:text-base">MCP Client:</strong>
                   <span className="text-gray-300 ml-2 text-sm landing-md:text-base">
-                    Your VoltAgent connects to MCP servers to access their
-                    resources
+                    Your VoltAgent connects to MCP servers to access their resources
                   </span>
                 </div>
               </div>
@@ -157,8 +147,7 @@ export default function MCPTutorial() {
                     Secure Access:
                   </strong>
                   <span className="text-gray-300 ml-2 text-sm landing-md:text-base">
-                    All communication is authenticated and controlled by your
-                    permissions
+                    All communication is authenticated and controlled by your permissions
                   </span>
                 </div>
               </div>
@@ -172,8 +161,8 @@ export default function MCPTutorial() {
             Add MCP to Your Weather Agent
           </h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Let's upgrade your weather agent from the previous tutorial with
-            file system access through MCP.
+            Let's upgrade your weather agent from the previous tutorial with file system access
+            through MCP.
           </p>
 
           <ColorModeProvider>
@@ -255,12 +244,9 @@ const mcpConfig = new MCPConfiguration({
 
         {/* MCP Demo GIF */}
         <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            See MCP in Action
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">See MCP in Action</h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            Here's what happens when your agent uses MCP filesystem tools in
-            VoltOps console:
+            Here's what happens when your agent uses MCP filesystem tools in VoltOps console:
           </p>
 
           <div className=" 0">
@@ -268,8 +254,8 @@ const mcpConfig = new MCPConfiguration({
               MCP Filesystem Demo
             </h3>
             <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
-              Watch your agent read files, create directories, and manage your
-              filesystem through MCP:
+              Watch your agent read files, create directories, and manage your filesystem through
+              MCP:
             </p>
             <div className="rounded-lg overflow-hidden border border-gray-600">
               <img
@@ -279,8 +265,7 @@ const mcpConfig = new MCPConfiguration({
               />
             </div>
             <p className="text-gray-400 text-xs landing-md:text-sm mt-2 landing-md:mt-3 text-center">
-              Real-time MCP filesystem operations: reading, writing, and
-              managing files
+              Real-time MCP filesystem operations: reading, writing, and managing files
             </p>
           </div>
 
@@ -326,9 +311,8 @@ const mcpConfig = new MCPConfiguration({
             HTTP MCP: Access AI Models & Remote Services
           </h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            MCP isn't just for local files - it works over HTTP for remote
-            services too. Let's connect your agent to Hugging Face's massive
-            collection of AI models.
+            MCP isn't just for local files - it works over HTTP for remote services too. Let's
+            connect your agent to Hugging Face's massive collection of AI models.
           </p>
 
           {/* Setup Section */}
@@ -339,9 +323,7 @@ const mcpConfig = new MCPConfiguration({
             <div className="space-y-4">
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-sm">
-                    1
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-sm">1</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-2 text-xs landing-md:text-base">
@@ -362,24 +344,18 @@ const mcpConfig = new MCPConfiguration({
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-sm">
-                    2
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-sm">2</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-1 text-xs landing-md:text-base">
                     Click "New token" → Select "Read" access
                   </p>
-                  <p className="text-gray-400 text-xs">
-                    Copy the token that starts with "hf_..."
-                  </p>
+                  <p className="text-gray-400 text-xs">Copy the token that starts with "hf_..."</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3 landing-md:space-x-4">
                 <div className="flex-shrink-0 w-7 h-7 landing-md:w-8 landing-md:h-8 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-full flex items-center justify-center">
-                  <span className=" font-bold text-xs landing-md:text-sm">
-                    3
-                  </span>
+                  <span className=" font-bold text-xs landing-md:text-sm">3</span>
                 </div>
                 <div>
                   <p className="text-gray-300 mb-1 text-xs landing-md:text-base">
@@ -507,8 +483,7 @@ const mcpConfig = new MCPConfiguration({
               Try These Amazing AI Combinations
             </h4>
             <p className="text-gray-300 mb-4 text-xs landing-md:text-base">
-              Your agent now has access to thousands of AI models. Test these
-              scenarios in VoltOps:
+              Your agent now has access to thousands of AI models. Test these scenarios in VoltOps:
             </p>
             <div className="space-y-3">
               <div className="border-solid border-gray-500/30 rounded p-3">
@@ -516,8 +491,8 @@ const mcpConfig = new MCPConfiguration({
                   Weather + Image Generation:
                 </div>
                 <code className="text-gray-300 text-xs landing-md:text-base">
-                  What Makes This Incredible "Check weather in San Francisco and
-                  generate an image matching those conditions"
+                  What Makes This Incredible "Check weather in San Francisco and generate an image
+                  matching those conditions"
                 </code>
               </div>
               <div className="border-solid border-gray-500/30 rounded p-3">
@@ -525,8 +500,8 @@ const mcpConfig = new MCPConfiguration({
                   Weather + Translation:
                 </div>
                 <code className="text-gray-300 text-xs landing-md:text-base">
-                  "What's the weather in Barcelona? Also translate this to
-                  Spanish: 'It's a beautiful day!'"
+                  "What's the weather in Barcelona? Also translate this to Spanish: 'It's a
+                  beautiful day!'"
                 </code>
               </div>
               <div className="border-solid border-gray-500/30 rounded p-3">
@@ -534,8 +509,7 @@ const mcpConfig = new MCPConfiguration({
                   Image Analysis + AI:
                 </div>
                 <code className="text-gray-300 text-xs landing-md:text-base">
-                  "Generate an image of a rainy day, then analyze what you see
-                  in that image"
+                  "Generate an image of a rainy day, then analyze what you see in that image"
                 </code>
               </div>
               <div className="border-solid border-gray-500/30 rounded p-3">
@@ -543,8 +517,8 @@ const mcpConfig = new MCPConfiguration({
                   Text Processing + Weather:
                 </div>
                 <code className="text-gray-300 text-xs landing-md:text-base">
-                  "Summarize this text and check the weather: 'I'm planning a
-                  trip to London next week...'"
+                  "Summarize this text and check the weather: 'I'm planning a trip to London next
+                  week...'"
                 </code>
               </div>
             </div>
@@ -556,8 +530,7 @@ const mcpConfig = new MCPConfiguration({
               HTTP MCP in Action: AI Models Demo
             </h3>
             <p className="text-gray-300 mb-3 landing-md:mb-4 text-xs landing-md:text-sm">
-              Watch your agent use both local filesystem and remote AI models
-              through HTTP MCP:
+              Watch your agent use both local filesystem and remote AI models through HTTP MCP:
             </p>
             <div className="rounded-lg overflow-hidden border border-gray-600">
               <img
@@ -567,8 +540,7 @@ const mcpConfig = new MCPConfiguration({
               />
             </div>
             <p className="text-gray-400 text-xs landing-md:text-base mt-2 landing-md:mt-3 text-center">
-              Powerful combination: Local file operations + Remote AI model
-              access via HTTP MCP
+              Powerful combination: Local file operations + Remote AI model access via HTTP MCP
             </p>
           </div>
 
@@ -610,16 +582,10 @@ const mcpConfig = new MCPConfiguration({
           {/* Capabilities */}
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 landing-md:gap-6">
             <div className=" rounded-lg p-4 border-solid border border-gray-700">
-              <h4 className="text-white font-semibold mb-3">
-                AI Capabilities You Get
-              </h4>
+              <h4 className="text-white font-semibold mb-3">AI Capabilities You Get</h4>
               <div className="space-y-2 text-sm">
-                <div className="text-gray-300">
-                  • Image generation from text
-                </div>
-                <div className="text-gray-300">
-                  • Image analysis & classification
-                </div>
+                <div className="text-gray-300">• Image generation from text</div>
+                <div className="text-gray-300">• Image analysis & classification</div>
                 <div className="text-gray-300">• Language translation</div>
                 <div className="text-gray-300">• Text summarization</div>
                 <div className="text-gray-300">• Question answering</div>
@@ -628,28 +594,14 @@ const mcpConfig = new MCPConfiguration({
             </div>
 
             <div className=" rounded-lg p-4 border-solid border border-gray-700">
-              <h4 className="text-white font-semibold mb-3">
-                Why This is Powerful
-              </h4>
+              <h4 className="text-white font-semibold mb-3">Why This is Powerful</h4>
               <div className="space-y-2 text-sm">
-                <div className="text-gray-300">
-                  • Zero AI model hosting costs
-                </div>
-                <div className="text-gray-300">
-                  • Access to latest models instantly
-                </div>
-                <div className="text-gray-300">
-                  • Combine multiple AI capabilities
-                </div>
-                <div className="text-gray-300">
-                  • Scale without infrastructure
-                </div>
-                <div className="text-gray-300">
-                  • Mix local tools + remote AI
-                </div>
-                <div className="text-gray-300">
-                  • Production-ready immediately
-                </div>
+                <div className="text-gray-300">• Zero AI model hosting costs</div>
+                <div className="text-gray-300">• Access to latest models instantly</div>
+                <div className="text-gray-300">• Combine multiple AI capabilities</div>
+                <div className="text-gray-300">• Scale without infrastructure</div>
+                <div className="text-gray-300">• Mix local tools + remote AI</div>
+                <div className="text-gray-300">• Production-ready immediately</div>
               </div>
             </div>
           </div>
@@ -661,23 +613,20 @@ const mcpConfig = new MCPConfiguration({
             Explore the Complete MCP Directory
           </h4>
           <p className="text-gray-300 mb-4 text-xs landing-md:text-sm">
-            This is just a sample! VoltAgent maintains a growing directory of
-            MCP servers with detailed setup instructions, code examples, and
-            tool capabilities for each service.
+            This is just a sample! VoltAgent maintains a growing directory of MCP servers with
+            detailed setup instructions, code examples, and tool capabilities for each service.
           </p>
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-emerald-400 rounded-full" />
               <span className="text-gray-300 text-xs landing-md:text-sm">
-                <strong>10+ Ready-to-use servers</strong> with copy-paste
-                configurations
+                <strong>10+ Ready-to-use servers</strong> with copy-paste configurations
               </span>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-emerald-400 rounded-full" />
               <span className="text-gray-300 text-xs landing-md:text-sm">
-                <strong>Detailed tool listings</strong> showing exactly what
-                each server can do
+                <strong>Detailed tool listings</strong> showing exactly what each server can do
               </span>
             </div>
             <div className="flex items-center space-x-3">
@@ -701,13 +650,11 @@ const mcpConfig = new MCPConfiguration({
 
         {/* Next Steps */}
         <div className="space-y-6">
-          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">
-            What's Next?
-          </h2>
+          <h2 className="text-2xl landing-md:text-3xl font-bold text-white">What's Next?</h2>
           <p className="text-sm landing-md:text-base text-gray-300 leading-relaxed">
-            You now have an agent that can access external systems through MCP.
-            In the final tutorial, we'll learn about subagents - creating teams
-            of specialized agents that work together.
+            You now have an agent that can access external systems through MCP. In the final
+            tutorial, we'll learn about subagents - creating teams of specialized agents that work
+            together.
           </p>
         </div>
       </div>

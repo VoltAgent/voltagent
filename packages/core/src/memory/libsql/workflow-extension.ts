@@ -1,8 +1,8 @@
 import type { Client } from "@libsql/client";
-import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
-import type { WorkflowTimelineEvent, WorkflowStats } from "../../workflow/types";
-import { LoggerProxy } from "../../logger";
 import type { Logger } from "@voltagent/internal";
+import { LoggerProxy } from "../../logger";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
+import type { WorkflowStats, WorkflowTimelineEvent } from "../../workflow/types";
 
 /**
  * LibSQL extension for workflow memory operations

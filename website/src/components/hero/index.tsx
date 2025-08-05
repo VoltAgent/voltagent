@@ -7,22 +7,13 @@ import { LineShadowText } from "../magicui/line-shadow-text";
 
 export function Hero() {
   const [isVisible, setIsVisible] = useState(false);
-  const [commandText, setCommandText] = useState(
-    "npm create voltagent-app@latest",
-  );
+  const [commandText, setCommandText] = useState("npm create voltagent-app@latest");
   const [isTyping, setIsTyping] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
   const originalCommand = "npm create voltagent-app@latest";
   const typingTimerRef = useRef(null);
 
-  const thinkingMessages = [
-    "Memory",
-    "RAG",
-    "Tool",
-    "MCP",
-    "Agent",
-    "Supervisor",
-  ];
+  const thinkingMessages = ["Memory", "RAG", "Tool", "MCP", "Agent", "Supervisor"];
 
   useEffect(() => {
     setIsVisible(true);
@@ -124,9 +115,7 @@ export function Hero() {
           {/* Main Heading */}
           <h2
             className={`text-2xl text-left mb-2 font-bold transition-all duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
             <Link
@@ -152,9 +141,7 @@ export function Hero() {
 
           <h1
             className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-bold text-left mb-6 transition-all duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
             TypeScript AI Agent
@@ -169,22 +156,17 @@ export function Hero() {
           {/* Subheading */}
           <p
             className={`text-base sm:text-lg md:text-xl text-gray-400 text-left mb-12 transition-all duration-1000 delay-300 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            Escape no-code limits and scratch-built overhead. Build, customize,
-            and orchestrate AI agents with full control, speed, and a great
-            DevEx.
+            Escape no-code limits and scratch-built overhead. Build, customize, and orchestrate AI
+            agents with full control, speed, and a great DevEx.
           </p>
 
           {/* Get Started button and command */}
           <div
             className={`flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-start gap-4 mb-12 transition-all duration-1000 delay-500 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
             <Link
@@ -204,11 +186,9 @@ export function Hero() {
               <span className="mr-2 text-main-emerald">$</span>
               <span className="command-text text-main-emerald min-w-[220px] text-left relative">
                 {commandText}
-                {isTyping &&
-                  !thinkingMessages.includes(commandText) &&
-                  commandText !== "" && (
-                    <span className="animate-pulse">|</span>
-                  )}
+                {isTyping && !thinkingMessages.includes(commandText) && commandText !== "" && (
+                  <span className="animate-pulse">|</span>
+                )}
               </span>
             </button>
           </div>

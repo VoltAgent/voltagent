@@ -7,10 +7,7 @@ interface ZoomableMermaidProps {
 }
 
 // Helper to ensure SVG has an ID for Panzoom
-const ensureSvgId = (
-  svgContainer: HTMLElement,
-  baseId: string,
-): string | null => {
+const ensureSvgId = (svgContainer: HTMLElement, baseId: string): string | null => {
   const svgElement = svgContainer.querySelector("svg");
   if (svgElement) {
     if (!svgElement.id) {
@@ -52,16 +49,12 @@ const ZoomableMermaid: FC<ZoomableMermaidProps> = ({ chart }) => {
           .then(({ svg, bindFunctions }) => {
             if (svgContainerRef.current) {
               svgContainerRef.current.innerHTML = svg;
-              const actualSvgId = ensureSvgId(
-                svgContainerRef.current,
-                mermaidRenderId,
-              );
+              const actualSvgId = ensureSvgId(svgContainerRef.current, mermaidRenderId);
               if (actualSvgId) {
                 setPanzoomSvgId(actualSvgId);
                 if (bindFunctions) {
                   // bindFunctions expects the SVG element itself, not the container
-                  const svgElement =
-                    svgContainerRef.current.querySelector("svg");
+                  const svgElement = svgContainerRef.current.querySelector("svg");
                   if (svgElement) {
                     bindFunctions(svgElement);
                   }
@@ -99,9 +92,7 @@ const ZoomableMermaid: FC<ZoomableMermaidProps> = ({ chart }) => {
 
   useEffect(() => {
     if (panzoomSvgId && svgContainerRef.current) {
-      const svgElement = svgContainerRef.current.querySelector(
-        `svg#${panzoomSvgId}`,
-      );
+      const svgElement = svgContainerRef.current.querySelector(`svg#${panzoomSvgId}`);
 
       if (svgElement) {
         const panzoomInstance = Panzoom(svgElement as SVGElement, {

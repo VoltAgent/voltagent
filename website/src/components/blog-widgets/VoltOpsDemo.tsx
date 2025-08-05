@@ -4,12 +4,10 @@ const VoltOpsDemo: React.FC = () => {
   return (
     <div className="my-8 border border-gray-200 rounded-lg overflow-hidden shadow-lg">
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4">
-        <h3 className="text-white text-lg font-semibold mb-2">
-          Try VoltOps Live Demo
-        </h3>
+        <h3 className="text-white text-lg font-semibold mb-2">Try VoltOps Live Demo</h3>
         <p className="text-blue-100 text-sm">
-          Experience VoltOps LLM Observability platform in action - see real
-          agent workflows visualized as interactive flowcharts.
+          Experience VoltOps LLM Observability platform in action - see real agent workflows
+          visualized as interactive flowcharts.
         </p>
       </div>
 

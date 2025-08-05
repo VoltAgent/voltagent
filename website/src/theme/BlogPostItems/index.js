@@ -16,10 +16,7 @@ export default function BlogPostItems({
     ExecutionEnvironment.canUseDOM ? POSTS_PER_PAGE : items.length,
   );
   const [loadedPosts, setLoadedPosts] = useState(
-    items.slice(
-      0,
-      ExecutionEnvironment.canUseDOM ? POSTS_PER_PAGE : items.length,
-    ),
+    items.slice(0, ExecutionEnvironment.canUseDOM ? POSTS_PER_PAGE : items.length),
   );
   const loaderRef = useRef(null);
   const isLoading = useRef(false);
@@ -32,15 +29,9 @@ export default function BlogPostItems({
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0];
-        if (
-          target.isIntersecting &&
-          visiblePosts < items.length &&
-          !isLoading.current
-        ) {
+        if (target.isIntersecting && visiblePosts < items.length && !isLoading.current) {
           isLoading.current = true;
-          setVisiblePosts((prev) =>
-            Math.min(prev + POSTS_PER_PAGE, items.length),
-          );
+          setVisiblePosts((prev) => Math.min(prev + POSTS_PER_PAGE, items.length));
           isLoading.current = false;
         }
       },
@@ -68,10 +59,7 @@ export default function BlogPostItems({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  ">
         {loadedPosts.map(({ content: BlogPostContent }, index) => (
-          <BlogPostProvider
-            key={BlogPostContent.metadata.permalink}
-            content={BlogPostContent}
-          >
+          <BlogPostProvider key={BlogPostContent.metadata.permalink} content={BlogPostContent}>
             <div
               className={clsx(
                 ExecutionEnvironment.canUseDOM && "opacity-0",
@@ -80,10 +68,7 @@ export default function BlogPostItems({
               style={
                 ExecutionEnvironment.canUseDOM
                   ? {
-                      animationDelay: `${Math.min(
-                        index * ANIMATION_DELAY,
-                        300,
-                      )}ms`,
+                      animationDelay: `${Math.min(index * ANIMATION_DELAY, 300)}ms`,
                       animationFillMode: "forwards",
                     }
                   : undefined
@@ -98,10 +83,7 @@ export default function BlogPostItems({
       </div>
 
       {ExecutionEnvironment.canUseDOM && visiblePosts < items.length && (
-        <div
-          ref={loaderRef}
-          className="flex justify-center items-center py-8 mt-4"
-        >
+        <div ref={loaderRef} className="flex justify-center items-center py-8 mt-4">
           <div className="w-5 h-5 border-2 border-main-emerald border-t-transparent rounded-full animate-spin" />
         </div>
       )}

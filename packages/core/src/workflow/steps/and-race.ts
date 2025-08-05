@@ -1,20 +1,20 @@
+import { getGlobalLogger } from "../../logger";
+import {
+  createParallelSubStepContext,
+  createStepContext,
+  createWorkflowStepErrorEvent,
+  createWorkflowStepStartEvent,
+  createWorkflowStepSuccessEvent,
+  publishWorkflowEvent,
+} from "../event-utils";
 import type {
   InternalAnyWorkflowStep,
   InternalInferWorkflowStepsResult,
   InternalWorkflowStepConfig,
 } from "../internal/types";
 import { defaultStepConfig } from "../internal/utils";
-import {
-  createWorkflowStepStartEvent,
-  createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
-  publishWorkflowEvent,
-  createStepContext,
-  createParallelSubStepContext,
-} from "../event-utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepParallelRace } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a race execution step that runs multiple steps simultaneously and returns the first completed result
@@ -66,13 +66,14 @@ export function andRace<
   DATA,
   RESULT,
   STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>,
-  INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>[number],
 >({
   steps,
   ...config
 }: InternalWorkflowStepConfig<{
   steps: STEPS;
 }>) {
+  type INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>[number];
+
   return {
     ...defaultStepConfig(config),
     type: "parallel-race",

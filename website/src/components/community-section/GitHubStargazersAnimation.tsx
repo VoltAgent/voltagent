@@ -7,12 +7,7 @@ const MobileGitHubStargazersAnimation = () => {
   const { recent_stargazers, loading, error } = useGitHubStars();
 
   // Don't render anything if loading, error, or no stargazers
-  if (
-    loading ||
-    error ||
-    !recent_stargazers ||
-    recent_stargazers.length === 0
-  ) {
+  if (loading || error || !recent_stargazers || recent_stargazers.length === 0) {
     return null;
   }
 
@@ -66,12 +61,7 @@ const DesktopGitHubStargazersAnimation = () => {
   const { recent_stargazers, loading, error } = useGitHubStars();
 
   // Don't render anything if loading, error, or no stargazers
-  if (
-    loading ||
-    error ||
-    !recent_stargazers ||
-    recent_stargazers.length === 0
-  ) {
+  if (loading || error || !recent_stargazers || recent_stargazers.length === 0) {
     return null;
   }
 
@@ -127,9 +117,5 @@ const DesktopGitHubStargazersAnimation = () => {
 export const GitHubStargazersAnimation = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  return isMobile ? (
-    <MobileGitHubStargazersAnimation />
-  ) : (
-    <DesktopGitHubStargazersAnimation />
-  );
+  return isMobile ? <MobileGitHubStargazersAnimation /> : <DesktopGitHubStargazersAnimation />;
 };

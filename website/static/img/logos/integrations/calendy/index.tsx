@@ -9,9 +9,7 @@ export const CalendlyLogo: FC<{ className?: string }> = ({ className }) => (
   >
     <title id="calendlyTitle">Calendly</title>
     <defs>
-      <style>
-        {".cls-1{fill:none;}.cls-2{fill:#006bff;}.cls-3{fill:#0ae9ef;}"}
-      </style>
+      <style>{".cls-1{fill:none;}.cls-2{fill:#006bff;}.cls-3{fill:#0ae9ef;}"}</style>
     </defs>
     <g id="Layer_2" data-name="Layer 2">
       <g id="Logo_assets" data-name="Logo assets">

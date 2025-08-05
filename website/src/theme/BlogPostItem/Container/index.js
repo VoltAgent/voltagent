@@ -18,12 +18,8 @@ export default function BlogPostItemContainer({ children, className }) {
       itemType="https://schema.org/BlogPosting"
     >
       {description && <meta itemProp="description" content={description} />}
-      {image && (
-        <link itemProp="image" href={withBaseUrl(image, { absolute: true })} />
-      )}
-      {keywords.length > 0 && (
-        <meta itemProp="keywords" content={keywords.join(",")} />
-      )}
+      {image && <link itemProp="image" href={withBaseUrl(image, { absolute: true })} />}
+      {keywords.length > 0 && <meta itemProp="keywords" content={keywords.join(",")} />}
       {children}
     </article>
   );

@@ -1,10 +1,10 @@
-import { VoltAgent, Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 // Import all the tools
-import { weatherTool, checkCalendarTool, addCalendarEventTool, searchTool } from "./tools";
+import { addCalendarEventTool, checkCalendarTool, searchTool, weatherTool } from "./tools";
 
 // Create the agent with tools
 const agent = new Agent({
@@ -14,12 +14,6 @@ const agent = new Agent({
   model: openai("gpt-4o-mini"),
   tools: [weatherTool, checkCalendarTool, addCalendarEventTool, searchTool],
 });
-
-(
-  await weatherTool.execute({
-    location: "New York",
-  })
-).message;
 
 // Create logger
 const logger = createPinoLogger({

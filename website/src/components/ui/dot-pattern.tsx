@@ -28,14 +28,7 @@ export const DotPattern: React.FC<DotPatternProps> = ({
       >
         <title>Decorative dot pattern background</title>
         <defs>
-          <radialGradient
-            id={gradientId}
-            cx="50%"
-            cy="50%"
-            r="70%"
-            fx="50%"
-            fy="50%"
-          >
+          <radialGradient id={gradientId} cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
             <stop offset="0%" stopColor="white" stopOpacity="1" />
             <stop offset="50%" stopColor="white" stopOpacity="0.5" />
             <stop offset="100%" stopColor="white" stopOpacity="0" />
@@ -49,12 +42,7 @@ export const DotPattern: React.FC<DotPatternProps> = ({
             height={spacing}
             patternUnits="userSpaceOnUse"
           >
-            <circle
-              cx={spacing / 2}
-              cy={spacing / 2}
-              r={dotSize}
-              fill={dotColor}
-            />
+            <circle cx={spacing / 2} cy={spacing / 2} r={dotSize} fill={dotColor} />
           </pattern>
 
           <mask id={maskId}>

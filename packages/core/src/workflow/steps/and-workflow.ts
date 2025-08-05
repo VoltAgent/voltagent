@@ -1,5 +1,5 @@
-import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
 import type { WorkflowExecuteContext } from "../internal/types";
+import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
 
 /**
  * Creates an async function step for the workflow

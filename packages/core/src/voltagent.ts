@@ -1,9 +1,10 @@
 import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import type { Logger } from "@voltagent/internal";
-import { getGlobalLogger } from "./logger";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "./agent/agent";
 import type { SubAgentConfig } from "./agent/subagent/types";
+import { getGlobalLogger } from "./logger";
 import { startServer } from "./server";
 import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 import type { ServerConfig } from "./server/api";
@@ -12,10 +13,9 @@ import { AgentRegistry } from "./server/registry";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 import type { ServerOptions, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
-import { WorkflowRegistry } from "./workflow/registry";
 import type { Workflow } from "./workflow";
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { WorkflowChain } from "./workflow/chain";
+import { WorkflowRegistry } from "./workflow/registry";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;

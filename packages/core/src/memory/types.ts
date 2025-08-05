@@ -208,11 +208,20 @@ export type Memory = {
   getHistoryStep(key: string): Promise<any | undefined>;
 
   /**
-   * Get all history entries for an agent
+   * Get all history entries for an agent with pagination
    * @param agentId Agent ID
-   * @returns Array of all history entries for the agent
+   * @param page Page number (0-based)
+   * @param limit Number of entries per page
+   * @returns Object with entries array and total count
    */
-  getAllHistoryEntriesByAgent(agentId: string): Promise<any[]>;
+  getAllHistoryEntriesByAgent(
+    agentId: string,
+    page: number,
+    limit: number,
+  ): Promise<{
+    entries: any[];
+    total: number;
+  }>;
 
   /**
    * Add a timeline event

@@ -1,16 +1,16 @@
 import type { Logger } from "@voltagent/internal";
 import { LoggerProxy } from "../../logger";
+import type { Memory } from "../../memory/types";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type {
-  WorkflowHistoryEntry,
-  WorkflowStepHistoryEntry,
-  WorkflowTimelineEvent,
-  WorkflowStats,
   CreateWorkflowExecutionOptions,
   RecordWorkflowStepOptions,
   UpdateWorkflowStepOptions,
+  WorkflowHistoryEntry,
+  WorkflowStats,
+  WorkflowStepHistoryEntry,
+  WorkflowTimelineEvent,
 } from "../types";
-import type { Memory } from "../../memory/types";
 
 /**
  * Manages workflow execution history and persistence

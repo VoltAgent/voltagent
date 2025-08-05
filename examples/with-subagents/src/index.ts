@@ -1,7 +1,7 @@
-import { VoltAgent, Agent, createTool } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const uppercaseTool = createTool({
@@ -11,7 +11,6 @@ const uppercaseTool = createTool({
     text: z.string().describe("The text to convert to uppercase"),
   }),
   execute: async ({ text }: { text: string }) => {
-    throw new Error("This tool is not implemented yet");
     return { result: text.toUpperCase() };
   },
 });

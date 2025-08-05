@@ -1,9 +1,4 @@
-import {
-  CpuChipIcon,
-  EyeIcon,
-  UserPlusIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline";
+import { CpuChipIcon, EyeIcon, UserPlusIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 
 type Feature = "centralized" | "specialized" | "memory" | "dynamic";
@@ -57,10 +52,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
     },
   ];
 
-  const handleFeatureClick = (
-    feature: Feature,
-    event: React.MouseEvent<HTMLSpanElement>,
-  ) => {
+  const handleFeatureClick = (feature: Feature, event: React.MouseEvent<HTMLSpanElement>) => {
     const element = event.currentTarget;
 
     if (selectedFeature === feature) {
@@ -76,8 +68,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
   };
 
   const getHighlightClasses = (section: Feature) => {
-    const baseHighlightClass =
-      "transition-all duration-300 ease-in-out cursor-pointer relative";
+    const baseHighlightClass = "transition-all duration-300 ease-in-out cursor-pointer relative";
 
     return selectedFeature === section
       ? `bg-gradient-to-r from-indigo-600/40 to-indigo-500/20 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-indigo-500 pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
@@ -127,9 +118,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 )} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("centralized", e)}
               >
-                <span className="text-gray-300">
-                  {"// Add individual agents"}
-                </span>
+                <span className="text-gray-300">{"// Add individual agents"}</span>
                 <br />
                 <span>orchestrator.addAgent(</span>
                 <span className="text-blue-400">new</span>
@@ -141,9 +130,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 <span>,</span>
                 <br />
                 <span className="ml-4">description: </span>
-                <span className="text-yellow-300">
-                  "Handles general inquiries"
-                </span>
+                <span className="text-yellow-300">"Handles general inquiries"</span>
                 <br />
                 <span>{"}));"}</span>
                 <br />
@@ -193,9 +180,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 <br />
                 <span className="ml-4">{"})},"}</span>
                 <br />
-                <span className="ml-4">
-                  team: [techAgent, billingAgent, lexBookingBot]
-                </span>
+                <span className="ml-4">team: [techAgent, billingAgent, lexBookingBot]</span>
                 <br />
                 <span>{"}));"}</span>
                 <br />
@@ -205,9 +190,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               {/* Shared Memory System */}
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
-                className={`block ${getHighlightClasses(
-                  "memory",
-                )} break-words whitespace-pre-wrap`}
+                className={`block ${getHighlightClasses("memory")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("memory", e)}
               >
                 <span className="text-gray-300">
@@ -252,9 +235,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 )} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("dynamic", e)}
               >
-                <span className="text-gray-300">
-                  {"// Process through classifier"}
-                </span>
+                <span className="text-gray-300">{"// Process through classifier"}</span>
                 <br />
                 <span className="text-blue-400">const</span>
                 <span> response = </span>
@@ -289,10 +270,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                         {features.find((f) => f.id === selectedFeature)?.title}
                       </div>
                       <p className="text-[11px] leading-[16px] text-white/70 whitespace-normal overflow-wrap-normal">
-                        {
-                          features.find((f) => f.id === selectedFeature)
-                            ?.description
-                        }
+                        {features.find((f) => f.id === selectedFeature)?.description}
                       </p>
                     </div>
                   </div>
