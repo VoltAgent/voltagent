@@ -1,5 +1,117 @@
 # @voltagent/core
 
+## 0.1.74
+
+### Patch Changes
+
+- [#463](https://github.com/VoltAgent/voltagent/pull/463) [`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improve /setup-observability endpoint to handle commented .env entries
+
+  ### What's New
+
+  The `/setup-observability` API endpoint now intelligently updates existing .env files by replacing commented VoltOps key entries instead of creating duplicates.
+
+  ### Changes
+  - **Smart .env Updates**: When setting up observability, the endpoint now finds and updates commented entries like `# VOLTAGENT_PUBLIC_KEY=`
+  - **No More Duplicates**: Prevents duplicate key entries by updating existing lines (both commented and active)
+  - **Cleaner Configuration**: Results in a cleaner .env file without confusing duplicate entries
+
+  ### Before
+
+  ```bash
+  # VoltAgent Observability (Optional)
+  # VOLTAGENT_PUBLIC_KEY=
+  # VOLTAGENT_SECRET_KEY=
+
+  # ... later in file ...
+
+  # VoltAgent Observability
+  VOLTAGENT_PUBLIC_KEY=your-public-key
+  VOLTAGENT_SECRET_KEY=your-secret-key
+  ```
+
+  ### After
+
+  ```bash
+  # VoltAgent Observability (Optional)
+  VOLTAGENT_PUBLIC_KEY=your-public-key
+  VOLTAGENT_SECRET_KEY=your-secret-key
+  ```
+
+  This change improves the developer experience by maintaining a clean .env file structure when setting up observability through the VoltOps Console.
+
+- [#463](https://github.com/VoltAgent/voltagent/pull/463) [`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add VoltOps API key validation and improved auto-configuration
+
+  ### What's New
+  - **API Key Validation**: VoltAgent now validates VoltOps API keys to ensure they have the correct format (must start with `pk_` for public keys and `sk_` for secret keys)
+  - **Smart Auto-Configuration**: The VoltAgent constructor only creates VoltOpsClient when valid API keys are detected
+  - **Dummy Key Protection**: Placeholder values like "your-public-key" are now properly rejected
+
+  ### Changes
+  - Added `isValidVoltOpsKeys()` utility function to validate API key formats
+  - Updated VoltAgent constructor to check key validity before auto-configuring VoltOpsClient
+  - Environment variables with invalid keys are now silently ignored instead of causing errors
+
+  ### Usage
+
+  ```typescript
+  // Valid keys - VoltOpsClient will be auto-configured
+  // .env file:
+  // VOLTAGENT_PUBLIC_KEY=your-public-key
+  // VOLTAGENT_SECRET_KEY=your-secret-key
+
+  // Invalid keys - VoltOpsClient will NOT be created
+  // .env file:
+  // VOLTAGENT_PUBLIC_KEY=your-public-key  // ❌ Rejected
+  // VOLTAGENT_SECRET_KEY=your-secret-key  // ❌ Rejected
+
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+    // No need to manually configure VoltOpsClient if valid keys exist in environment
+  });
+  ```
+
+  This change improves the developer experience by preventing confusion when placeholder API keys are present in the environment variables.
+
+- [#459](https://github.com/VoltAgent/voltagent/pull/459) [`980d037`](https://github.com/VoltAgent/voltagent/commit/980d037ce535bcc85cc7df3f64354c823453a147) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add userContext to logger context for better traceability
+
+  ### What's New
+
+  The `userContext` is now automatically included in the logger context for all agent operations. This provides better traceability and debugging capabilities by associating custom context data with all log messages generated during an agent's execution.
+
+  ### Usage
+
+  When you pass a `userContext` to any agent method, it will automatically appear in all log messages:
+
+  ```typescript
+  const userContext = new Map([
+    ["sessionId", "session-123"],
+    ["userId", "user-456"],
+    ["customKey", "customValue"],
+  ]);
+
+  await agent.generateText("Hello", { userContext });
+
+  // All logs during this operation will include:
+  // {
+  //   "component": "agent",
+  //   "agentId": "TestAgent",
+  //   "executionId": "...",
+  //   "userContext": {
+  //     "sessionId": "session-123",
+  //     "userId": "user-456",
+  //     "customKey": "customValue"
+  //   }
+  // }
+  ```
+
+  ### Benefits
+  - **Better Debugging**: Easily correlate logs with specific user sessions or requests
+  - **Enhanced Observability**: Track custom context throughout the entire agent execution
+  - **Multi-tenant Support**: Associate logs with specific tenants, users, or organizations
+  - **Request Tracing**: Follow a request through all agent operations and sub-agents
+
+  This change improves the observability experience by ensuring all log messages include the relevant user context, making it easier to debug issues and track operations in production environments.
+
 ## 0.1.73
 
 ### Patch Changes
