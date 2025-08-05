@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-voice-xsai",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.10",
+    "@ai-sdk/openai": "^2.0.1",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.73",
     "@voltagent/logger": "^0.1.2",
@@ -10,7 +10,7 @@
     "@voltagent/voice": "^0.2.3",
     "dotenv": "^16.4.5",
     "openai": "^4.91.0",
-    "zod": "^3.24.2"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

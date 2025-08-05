@@ -11,7 +11,7 @@
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4",
-    "zod": "^3.24.2"
+    "zod": "^3.25.0"
   },
   "exports": {
     ".": {
@@ -32,7 +32,7 @@
   "module": "dist/index.mjs",
   "peerDependencies": {
     "@voltagent/core": "^0.1.71",
-    "zod": "^3.24.2"
+    "zod": "^3.25.0"
   },
   "scripts": {
     "attw": "attw --pack",

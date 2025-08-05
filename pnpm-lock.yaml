@@ -108,8 +108,8 @@ importers:
   examples/base:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -123,8 +123,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -139,8 +139,8 @@ importers:
   examples/github-repo-analyzer:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@octokit/rest':
         specifier: ^21.0.0
         version: 21.1.1
@@ -154,8 +154,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -207,8 +207,8 @@ importers:
         specifier: ^0.1.2
         version: link:../../packages/logger
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -223,8 +223,8 @@ importers:
   examples/with-chroma:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@chroma-core/default-embed':
         specifier: ^0.1.8
         version: 0.1.8
@@ -233,7 +233,7 @@ importers:
         version: 0.1.7(chromadb@3.0.10)
       '@chroma-core/openai':
         specifier: ^0.1.7
-        version: 0.1.7(chromadb@3.0.10)(zod@3.24.2)
+        version: 0.1.7(chromadb@3.0.10)(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -250,8 +250,8 @@ importers:
         specifier: ^3.0.4
         version: 3.0.10
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -266,8 +266,8 @@ importers:
   examples/with-composio-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -281,8 +281,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -297,8 +297,8 @@ importers:
   examples/with-custom-endpoints:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -312,8 +312,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -328,8 +328,8 @@ importers:
   examples/with-dynamic-parameters:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -343,8 +343,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -359,8 +359,8 @@ importers:
   examples/with-dynamic-prompts:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -374,8 +374,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -402,8 +402,8 @@ importers:
         specifier: ^0.1.2
         version: link:../../packages/logger
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -461,8 +461,8 @@ importers:
   examples/with-google-drive-mcp/server:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.18.1(hono@4.8.12)
@@ -483,15 +483,15 @@ importers:
         version: link:../../../packages/vercel-ai
       composio-core:
         specifier: ^0.5.33
-        version: 0.5.39(@ai-sdk/openai@1.3.23)(@cloudflare/workers-types@4.20250803.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@4.3.19)(langchain@0.3.30)(openai@4.104.0)
+        version: 0.5.39(@ai-sdk/openai@2.0.2)(@cloudflare/workers-types@4.20250803.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@5.0.2)(langchain@0.3.30)(openai@4.104.0)
       hono:
         specifier: ^4.7.7
         version: 4.8.12
       zod:
-        specifier: 3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
       zod-from-json-schema:
-        specifier: ^0.4.1
+        specifier: ^0.4.2
         version: 0.4.2
     devDependencies:
       '@types/node':
@@ -519,8 +519,8 @@ importers:
         specifier: ^0.1.2
         version: link:../../packages/logger
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -547,8 +547,8 @@ importers:
         specifier: ^0.1.2
         version: link:../../packages/logger
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -563,8 +563,8 @@ importers:
   examples/with-hugging-face-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -578,8 +578,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -594,8 +594,8 @@ importers:
   examples/with-langfuse:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -612,8 +612,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -628,8 +628,8 @@ importers:
   examples/with-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -643,8 +643,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -659,11 +659,11 @@ importers:
   examples/with-nextjs:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^1.2.12
-        version: 1.2.12(react@19.1.1)(zod@3.24.2)
+        version: 1.2.12(react@19.1.1)(zod@3.25.76)
       '@libsql/client':
         specifier: ^0.15.0
         version: 0.15.10
@@ -686,8 +686,8 @@ importers:
         specifier: ^0.1.8
         version: link:../../packages/vercel-ui
       ai:
-        specifier: ^4.3.16
-        version: 4.3.19(react@19.1.1)(zod@3.24.2)
+        specifier: ^5.0.2
+        version: 5.0.2(zod@3.25.76)
       next:
         specifier: 15.3.1
         version: 15.3.1(@babel/core@7.28.0)(react-dom@19.1.1)(react@19.1.1)
@@ -707,8 +707,8 @@ importers:
         specifier: ^4.1.4
         version: 4.1.11
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -726,8 +726,8 @@ importers:
   examples/with-peaka-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -741,8 +741,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -757,8 +757,8 @@ importers:
   examples/with-pinecone:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@pinecone-database/pinecone':
         specifier: ^6.1.1
         version: 6.1.2
@@ -776,10 +776,10 @@ importers:
         version: link:../../packages/vercel-ai
       openai:
         specifier: ^4.91.0
-        version: 4.104.0(zod@3.24.2)
+        version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -794,8 +794,8 @@ importers:
   examples/with-playwright:
     dependencies:
       '@ai-sdk/mistral':
-        specifier: ^1.2.7
-        version: 1.2.8(zod@3.24.2)
+        specifier: ^2.0.0
+        version: 2.0.0(zod@3.25.76)
       '@playwright/browser-chromium':
         specifier: 1.51.1
         version: 1.51.1
@@ -830,8 +830,8 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -849,8 +849,8 @@ importers:
   examples/with-postgres:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -867,8 +867,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -883,8 +883,8 @@ importers:
   examples/with-qdrant:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@qdrant/js-client-rest':
         specifier: ^1.15.0
         version: 1.15.0(typescript@5.9.2)
@@ -902,10 +902,10 @@ importers:
         version: link:../../packages/vercel-ai
       openai:
         specifier: ^4.91.0
-        version: 4.104.0(zod@3.24.2)
+        version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -920,8 +920,8 @@ importers:
   examples/with-rag-chatbot:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -935,8 +935,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -951,8 +951,8 @@ importers:
   examples/with-retrieval:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -966,8 +966,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -982,8 +982,8 @@ importers:
   examples/with-subagents:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -997,8 +997,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1013,8 +1013,8 @@ importers:
   examples/with-supabase:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@supabase/supabase-js':
         specifier: ^2.49.4
         version: 2.53.0
@@ -1034,8 +1034,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1050,8 +1050,8 @@ importers:
   examples/with-thinking-tool:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1065,8 +1065,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1081,8 +1081,8 @@ importers:
   examples/with-tools:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.2
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1096,8 +1096,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1112,8 +1112,8 @@ importers:
   examples/with-turso:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1127,8 +1127,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1143,8 +1143,8 @@ importers:
   examples/with-vercel-ai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1158,8 +1158,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1174,8 +1174,8 @@ importers:
   examples/with-voice-elevenlabs:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1192,8 +1192,8 @@ importers:
         specifier: ^0.2.3
         version: link:../../packages/voice
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1208,8 +1208,8 @@ importers:
   examples/with-voice-openai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1230,10 +1230,10 @@ importers:
         version: 16.6.1
       openai:
         specifier: ^4.91.0
-        version: 4.104.0(zod@3.24.2)
+        version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1248,8 +1248,8 @@ importers:
   examples/with-voice-xsai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1270,10 +1270,10 @@ importers:
         version: 16.6.1
       openai:
         specifier: ^4.91.0
-        version: 4.104.0(zod@3.24.2)
+        version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1288,8 +1288,8 @@ importers:
   examples/with-voltagent-exporter:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1303,8 +1303,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1319,8 +1319,8 @@ importers:
   examples/with-workflow:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1334,8 +1334,8 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1362,8 +1362,8 @@ importers:
         specifier: ^0.3.1
         version: link:../../packages/xsai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1378,8 +1378,8 @@ importers:
   examples/with-zapier-mcp:
     dependencies:
       '@ai-sdk/amazon-bedrock':
-        specifier: ^2.2.8
-        version: 2.2.12(zod@3.24.2)
+        specifier: ^3.0.0
+        version: 3.0.0(zod@3.25.76)
       '@aws-sdk/credential-providers':
         specifier: ~3.799.0
         version: 3.799.0
@@ -1393,8 +1393,8 @@ importers:
         specifier: ~0.1.17
         version: link:../../packages/vercel-ai
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1431,8 +1431,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/cli:
     dependencies:
@@ -1526,7 +1526,7 @@ importers:
         version: 0.5.2(hono@4.8.12)
       '@hono/zod-openapi':
         specifier: ^0.19.6
-        version: 0.19.10(hono@4.8.12)(zod@3.24.2)
+        version: 0.19.6(hono@4.8.12)(zod@3.25.76)
       '@libsql/client':
         specifier: ^0.15.0
         version: 0.15.10
@@ -1589,8 +1589,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/create-voltagent-app:
     dependencies:
@@ -1699,8 +1699,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/google-ai:
     dependencies:
@@ -1712,7 +1712,7 @@ importers:
         version: link:../core
       zod-to-json-schema:
         specifier: ^3.24.5
-        version: 3.24.6(zod@3.24.2)
+        version: 3.24.6(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1730,8 +1730,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/groq-ai:
     dependencies:
@@ -1743,7 +1743,7 @@ importers:
         version: 0.20.1
       zod-to-json-schema:
         specifier: ^3.24.5
-        version: 3.24.6(zod@3.24.2)
+        version: 3.24.6(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1761,8 +1761,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/internal:
     devDependencies:
@@ -1925,11 +1925,11 @@ importers:
   packages/vercel-ai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^1.3.10
-        version: 1.3.23(zod@3.24.2)
+        specifier: ^2.0.1
+        version: 2.0.2(zod@3.25.76)
       ai:
-        specifier: ^4.3.16
-        version: 4.3.19(react@19.1.1)(zod@3.24.2)
+        specifier: ^5.0.0
+        version: 5.0.2(zod@3.25.76)
       ts-pattern:
         specifier: ^5.7.1
         version: 5.8.0
@@ -1959,8 +1959,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/vercel-ai-exporter:
     dependencies:
@@ -1975,7 +1975,7 @@ importers:
         version: link:../sdk
       ai:
         specifier: ^3.0.0 || ^4.0.0
-        version: 4.3.19(react@19.1.1)(zod@3.24.2)
+        version: 4.3.19(react@19.1.1)(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -1996,23 +1996,20 @@ importers:
   packages/vercel-ui:
     dependencies:
       '@ai-sdk/provider':
-        specifier: ^1.1.3
-        version: 1.1.3
+        specifier: ^2.0.0
+        version: 2.0.0
       '@ai-sdk/provider-utils':
-        specifier: ^2.2.8
-        version: 2.2.8(zod@3.24.2)
+        specifier: ^3.0.0
+        version: 3.0.0(zod@3.25.76)
       '@ai-sdk/ui-utils':
         specifier: ^1.2.11
-        version: 1.2.11(zod@3.24.2)
+        version: 1.2.11(zod@3.25.76)
       '@voltagent/internal':
         specifier: ^0.0.7
         version: link:../internal
       ai:
-        specifier: ^4.3.16
-        version: 4.3.19(react@19.1.1)(zod@3.24.2)
-      ai-v5:
-        specifier: npm:ai@5.0.0-alpha.11
-        version: /ai@5.0.0-alpha.11(zod@3.24.2)
+        specifier: ^5.0.2
+        version: 5.0.2(zod@3.25.76)
       ts-pattern:
         specifier: ^5.7.1
         version: 5.8.0
@@ -2039,8 +2036,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/voice:
     dependencies:
@@ -2055,7 +2052,7 @@ importers:
         version: 1.59.0
       openai:
         specifier: ^4.91.0
-        version: 4.104.0(zod@3.24.2)
+        version: 4.104.0(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -2083,7 +2080,7 @@ importers:
         version: link:../core
       xsai:
         specifier: ^0.3.3
-        version: 0.3.5(zod@3.24.2)
+        version: 0.3.5(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -2101,59 +2098,82 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.0
+        version: 3.25.76
 
 packages:
 
-  /@ai-sdk/amazon-bedrock@2.2.12(zod@3.24.2):
-    resolution: {integrity: sha512-m8gARnh45pr1s08Uu4J/Pm8913mwJPejPOm59b+kUqMsP9ilhUtH/bp8432Ra/v+vHuMoBrglG2ZvXtctAaH2g==}
+  /@ai-sdk/amazon-bedrock@3.0.0(zod@3.25.76):
+    resolution: {integrity: sha512-OxNmyYRf7pY8NK69dAqpoewKtUhY/HUbpa6TDhp9zcgVmQJmhky8Q7HDetdiqopb2Pe3NB/f1nZVI73nin3qng==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.0.0
+      zod: ^3.25.76 || ^4
     dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
+      '@ai-sdk/anthropic': 2.0.0(zod@3.25.76)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
       '@smithy/eventstream-codec': 4.0.4
       '@smithy/util-utf8': 4.0.0
       aws4fetch: 1.0.20
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
-  /@ai-sdk/gateway@1.0.0-alpha.11(zod@3.24.2):
-    resolution: {integrity: sha512-q33Um+GlUvWPIPgx/MKRkArbtanXcK8aJzfR6meW6BSwxuE2lh6l4m4v97/Wyt/IEnkfz5wBPVFXiLC91l9JzQ==}
+  /@ai-sdk/anthropic@2.0.0(zod@3.25.76):
+    resolution: {integrity: sha512-uyyaO4KhxoIKZztREqLPh+6/K3ZJx/rp72JKoUEL9/kC+vfQTThUfPnY/bUryUpcnawx8IY/tSoYNOi/8PCv7w==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.25.49
+      zod: ^3.25.76 || ^4
     dependencies:
-      '@ai-sdk/provider': 2.0.0-alpha.11
-      '@ai-sdk/provider-utils': 3.0.0-alpha.11(zod@3.24.2)
-      zod: 3.24.2
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
+      zod: 3.25.76
     dev: false
 
-  /@ai-sdk/mistral@1.2.8(zod@3.24.2):
-    resolution: {integrity: sha512-lv857D9UJqCVxiq2Fcu7mSPTypEHBUqLl1K+lCaP6X/7QAkcaxI36QDONG+tOhGHJOXTsS114u8lrUTaEiGXbg==}
+  /@ai-sdk/gateway@1.0.0(zod@3.25.76):
+    resolution: {integrity: sha512-VEm87DyRx1yIPywbTy8ntoyh4jEDv1rJ88m+2I7zOm08jJI5BhFtAWh0OF6YzZu1Vu4NxhOWO4ssGdsqydDQ3A==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.0.0
+      zod: ^3.25.76 || ^4
     dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
-      zod: 3.24.2
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
+      zod: 3.25.76
     dev: false
 
-  /@ai-sdk/openai@1.3.23(zod@3.24.2):
-    resolution: {integrity: sha512-86U7rFp8yacUAOE/Jz8WbGcwMCqWvjK33wk5DXkfnAOEn3mx2r7tNSJdjukQFZbAK97VMXGPPHxF+aEARDXRXQ==}
+  /@ai-sdk/mistral@2.0.0(zod@3.25.76):
+    resolution: {integrity: sha512-3wjTl72Erh/hSWseJ8EttY23zQ+DaB/RO1RXGBg9FP86S/6cfXvpRtPKsr7/hlVyvD3WCfHP2bjlapbEkH60Ew==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.0.0
+      zod: ^3.25.76 || ^4
     dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
-      zod: 3.24.2
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
+      zod: 3.25.76
     dev: false
 
-  /@ai-sdk/provider-utils@2.2.8(zod@3.24.2):
+  /@ai-sdk/openai@2.0.1(zod@3.25.76):
+    resolution: {integrity: sha512-uaSf3+yZ/vgCldsr5cNDgpGYj43UxRdcWUqOY35p8lTIvP62j8LLL7ngYveOtUTE+j/N4o10LzZm4TMC2fIaAQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
+      zod: 3.25.76
+    dev: false
+
+  /@ai-sdk/openai@2.0.2(zod@3.25.76):
+    resolution: {integrity: sha512-D4zYz2uR90aooKQvX1XnS00Z7PkbrcY+snUvPfm5bCabTG7bzLrVtD56nJ5bSaZG8lmuOMfXpyiEEArYLyWPpw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
+      zod: 3.25.76
+    dev: false
+
+  /@ai-sdk/provider-utils@2.2.8(zod@3.25.76):
     resolution: {integrity: sha512-fqhG+4sCVv8x7nFzYnFo19ryhAa3w096Kmc3hWxMQfW/TubPOmt3A6tYZhl4mUfQWWQMsuSkLrtjlWuXBVSGQA==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -2162,19 +2182,20 @@ packages:
       '@ai-sdk/provider': 1.1.3
       nanoid: 3.3.11
       secure-json-parse: 2.7.0
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
-  /@ai-sdk/provider-utils@3.0.0-alpha.11(zod@3.24.2):
-    resolution: {integrity: sha512-CizT3etWfGnSixJ4MDleEcD+eugWwgLPsyf+xPRik1/UEYpo/yEgP6E7Mzme7oMIE+ctnZSQkFLM3kVvYtekrg==}
+  /@ai-sdk/provider-utils@3.0.0(zod@3.25.76):
+    resolution: {integrity: sha512-BoQZtGcBxkeSH1zK+SRYNDtJPIPpacTeiMZqnG4Rv6xXjEwM0FH4MGs9c+PlhyEWmQCzjRM2HAotEydFhD4dYw==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.25.49
+      zod: ^3.25.76 || ^4
     dependencies:
-      '@ai-sdk/provider': 2.0.0-alpha.11
+      '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.6(zod@3.24.2)
+      eventsource-parser: 3.0.3
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
     dev: false
 
   /@ai-sdk/provider@1.1.3:
@@ -2184,14 +2205,14 @@ packages:
       json-schema: 0.4.0
     dev: false
 
-  /@ai-sdk/provider@2.0.0-alpha.11:
-    resolution: {integrity: sha512-AQwaa9ffyBlieBoWXTQNs4AjZXifj/03QDPuMr94noG1fahhCRL+Ko3dyaz1kyWtLdxeEK/VPRGeWRAVIke4BA==}
+  /@ai-sdk/provider@2.0.0:
+    resolution: {integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==}
     engines: {node: '>=18'}
     dependencies:
       json-schema: 0.4.0
     dev: false
 
-  /@ai-sdk/react@1.2.12(react@19.1.1)(zod@3.24.2):
+  /@ai-sdk/react@1.2.12(react@19.1.1)(zod@3.25.76):
     resolution: {integrity: sha512-jK1IZZ22evPZoQW3vlkZ7wvjYGYF+tRBKXtrcolduIkQ/m/sOAVcVeVDUDvh1T91xCnWCdUGCPZg2avZ90mv3g==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -2201,24 +2222,24 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
-      '@ai-sdk/ui-utils': 1.2.11(zod@3.24.2)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
+      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.76)
       react: 19.1.1
       swr: 2.3.4(react@19.1.1)
       throttleit: 2.1.0
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
-  /@ai-sdk/ui-utils@1.2.11(zod@3.24.2):
+  /@ai-sdk/ui-utils@1.2.11(zod@3.25.76):
     resolution: {integrity: sha512-3zcwCc8ezzFlwp3ZD15wAPjf2Au4s3vAbKsXQVyhxODHcmu0iyPO2Eua6D/vicq/AUm/BAo60r97O6HU+EI0+w==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.23.8
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.6(zod@3.24.2)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
     dev: false
 
   /@alloc/quick-lru@5.2.0:
@@ -2279,13 +2300,13 @@ packages:
       validate-npm-package-name: 5.0.1
     dev: true
 
-  /@asteasolutions/zod-to-openapi@7.3.4(zod@3.24.2):
+  /@asteasolutions/zod-to-openapi@7.3.4(zod@3.25.76):
     resolution: {integrity: sha512-/2rThQ5zPi9OzVwes6U7lK1+Yvug0iXu25olp7S0XsYmOqnyMfxH7gdSQjn/+DSOHRg7wnotwGJSyL+fBKdnEA==}
     peerDependencies:
       zod: ^3.20.2
     dependencies:
       openapi3-ts: 4.5.0
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
   /@aws-crypto/crc32@5.2.0:
@@ -4386,7 +4407,7 @@ packages:
       - supports-color
     dev: false
 
-  /@chroma-core/openai@0.1.7(chromadb@3.0.10)(zod@3.24.2):
+  /@chroma-core/openai@0.1.7(chromadb@3.0.10)(zod@3.25.76):
     resolution: {integrity: sha512-HNSgc6zXWNYUeoyCJwT1xYD3QME6pNJ4iujbZZ+GLsnlmBPZ+VwU+DF95XKaDRril8BWKffc5s8KprP8sJLvvg==}
     engines: {node: '>=20'}
     peerDependencies:
@@ -4394,7 +4415,7 @@ packages:
     dependencies:
       '@chroma-core/ai-embeddings-common': 0.1.7
       chromadb: 3.0.10
-      openai: 4.104.0(zod@3.24.2)
+      openai: 4.104.0(zod@3.25.76)
     transitivePeerDependencies:
       - encoding
       - ws
@@ -5124,8 +5145,8 @@ packages:
     dependencies:
       google-auth-library: 9.15.1
       ws: 8.18.3
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.6(zod@3.24.2)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -5201,28 +5222,27 @@ packages:
       hono: 4.8.12
     dev: false
 
-  /@hono/zod-openapi@0.19.10(hono@4.8.12)(zod@3.24.2):
-    resolution: {integrity: sha512-dpoS6DenvoJyvxtQ7Kd633FRZ/Qf74+4+o9s+zZI8pEqnbjdF/DtxIib08WDpCaWabMEJOL5TXpMgNEZvb7hpA==}
+  /@hono/zod-openapi@0.19.6(hono@4.8.12)(zod@3.25.76):
+    resolution: {integrity: sha512-qD2I0i5Ksry8gf47rXR6tuUAfv5S/wRZPRUNn+y8vOkgArDtIs30Ha3KGHeuGhcMk773D197IlPUppSCbHt6iQ==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       hono: '>=4.3.6'
-      zod: '>=3.0.0'
+      zod: 3.*
     dependencies:
-      '@asteasolutions/zod-to-openapi': 7.3.4(zod@3.24.2)
-      '@hono/zod-validator': 0.7.2(hono@4.8.12)(zod@3.24.2)
+      '@asteasolutions/zod-to-openapi': 7.3.4(zod@3.25.76)
+      '@hono/zod-validator': 0.5.0(hono@4.8.12)(zod@3.25.76)
       hono: 4.8.12
-      openapi3-ts: 4.5.0
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
-  /@hono/zod-validator@0.7.2(hono@4.8.12)(zod@3.24.2):
-    resolution: {integrity: sha512-ub5eL/NeZ4eLZawu78JpW/J+dugDAYhwqUIdp9KYScI6PZECij4Hx4UsrthlEUutqDDhPwRI0MscUfNkvn/mqQ==}
+  /@hono/zod-validator@0.5.0(hono@4.8.12)(zod@3.25.76):
+    resolution: {integrity: sha512-ds5bW6DCgAnNHP33E3ieSbaZFd5dkV52ZjyaXtGoR06APFrCtzAsKZxTHwOrJNBdXsi0e5wNwo5L4nVEVnJUdg==}
     peerDependencies:
       hono: '>=3.9.0'
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.19.1
     dependencies:
       hono: 4.8.12
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
   /@huggingface/jinja@0.5.1:
@@ -6196,8 +6216,8 @@ packages:
       express-rate-limit: 7.5.1(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.6(zod@3.24.2)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -9205,11 +9225,11 @@ packages:
       '@xsai/shared': 0.3.5
     dev: false
 
-  /@xsai/generate-object@0.3.5(zod@3.24.2):
+  /@xsai/generate-object@0.3.5(zod@3.25.76):
     resolution: {integrity: sha512-uI++Gs/fNbDi8MrXp5HXRfX5bleMIR9OeeV92vU/gRziXjUseOjTWue1Dyx55XSYXIe8TXeM0uZ2LsiDMV6PqA==}
     dependencies:
       '@xsai/generate-text': 0.3.5
-      xsschema: 0.3.5(zod@3.24.2)
+      xsschema: 0.3.5(zod@3.25.76)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -9254,11 +9274,11 @@ packages:
     resolution: {integrity: sha512-gxWH+9UjhXgqqKeU/o9UteC/ih1FzxEEsmPojImd/jvq4j/wtIg4aP3dCFnu+EhCT/MRQ38dkBSra99iY9cC3w==}
     dev: false
 
-  /@xsai/stream-object@0.3.5(zod@3.24.2):
+  /@xsai/stream-object@0.3.5(zod@3.25.76):
     resolution: {integrity: sha512-gkOzY/KCWIZ4bK36uAsDpLpgvnyejIuB0Rg362hprIhLu9TwLItGmbufG5yqsYWYNMnOMFNgnOSFclRMAvrThw==}
     dependencies:
       '@xsai/stream-text': 0.3.5
-      xsschema: 0.3.5(zod@3.24.2)
+      xsschema: 0.3.5(zod@3.25.76)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -9274,12 +9294,12 @@ packages:
       '@xsai/shared-chat': 0.3.5
     dev: false
 
-  /@xsai/tool@0.3.5(zod@3.24.2):
+  /@xsai/tool@0.3.5(zod@3.25.76):
     resolution: {integrity: sha512-ldXUPqyf08JI0dOFOcXtDKi5Dc6yTVV/gTxUt8GaKAr3lG+ltTBp4jHaSE7HWdkaZtniWFKr78Bx95ub2evXSA==}
     dependencies:
       '@xsai/shared': 0.3.5
       '@xsai/shared-chat': 0.3.5
-      xsschema: 0.3.5(zod@3.24.2)
+      xsschema: 0.3.5(zod@3.25.76)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -9426,7 +9446,7 @@ packages:
       indent-string: 4.0.0
     dev: true
 
-  /ai@4.3.19(react@19.1.1)(zod@3.24.2):
+  /ai@4.3.19(react@19.1.1)(zod@3.25.76):
     resolution: {integrity: sha512-dIE2bfNpqHN3r6IINp9znguYdhIOheKW2LDigAMrgt/upT3B8eBGPSCblENvaZGoq+hxaN9fSMzjWpbqloP+7Q==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -9437,26 +9457,26 @@ packages:
         optional: true
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
-      '@ai-sdk/react': 1.2.12(react@19.1.1)(zod@3.24.2)
-      '@ai-sdk/ui-utils': 1.2.11(zod@3.24.2)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
+      '@ai-sdk/react': 1.2.12(react@19.1.1)(zod@3.25.76)
+      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
       jsondiffpatch: 0.6.0
       react: 19.1.1
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
-  /ai@5.0.0-alpha.11(zod@3.24.2):
-    resolution: {integrity: sha512-7LqMFHJwbV7SQFXSYW3pcsXG8iSxr73Xxl0q+OhnwLxOHygdtCb23rKr5CSn4eoDOonD279Rl03CZwi1579duQ==}
+  /ai@5.0.2(zod@3.25.76):
+    resolution: {integrity: sha512-Uk4lmwlr2b/4G9DUYCWYKcWz93xQ6p6AEeRZN+/AO9NbOyCm9axrDru26c83Ax8OB8IHUvoseA3CqaZkg9Z0Kg==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.25.49
+      zod: ^3.25.76 || ^4
     dependencies:
-      '@ai-sdk/gateway': 1.0.0-alpha.11(zod@3.24.2)
-      '@ai-sdk/provider': 2.0.0-alpha.11
-      '@ai-sdk/provider-utils': 3.0.0-alpha.11(zod@3.24.2)
+      '@ai-sdk/gateway': 1.0.0(zod@3.25.76)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
   /ajv-formats@2.1.1(ajv@8.17.1):
@@ -10680,7 +10700,7 @@ packages:
       dot-prop: 5.3.0
     dev: true
 
-  /composio-core@0.5.39(@ai-sdk/openai@1.3.23)(@cloudflare/workers-types@4.20250803.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@4.3.19)(langchain@0.3.30)(openai@4.104.0):
+  /composio-core@0.5.39(@ai-sdk/openai@2.0.2)(@cloudflare/workers-types@4.20250803.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@5.0.2)(langchain@0.3.30)(openai@4.104.0):
     resolution: {integrity: sha512-7BeSFlfRzr1cbIfGYJW4jQ3BHwaObOaFKiRJIFuWOmvOrTABl1hbxGkWPA3C+uFw9CFXbZhrLWNyD7lhYy2Scg==}
     hasBin: true
     peerDependencies:
@@ -10692,13 +10712,13 @@ packages:
       langchain: '>=0.2.11'
       openai: '>=4.50.0'
     dependencies:
-      '@ai-sdk/openai': 1.3.23(zod@3.24.2)
+      '@ai-sdk/openai': 2.0.2(zod@3.25.76)
       '@cloudflare/workers-types': 4.20250803.0
       '@composio/mcp': 1.0.3-0
       '@hey-api/client-axios': 0.2.12(axios@1.11.0)
       '@langchain/core': 0.3.66(openai@4.104.0)
       '@langchain/openai': 0.6.3(@langchain/core@0.3.66)
-      ai: 4.3.19(react@19.1.1)(zod@3.24.2)
+      ai: 5.0.2(zod@3.25.76)
       axios: 1.11.0
       chalk: 4.1.2
       cli-progress: 3.12.0
@@ -10706,12 +10726,12 @@ packages:
       inquirer: 10.2.2
       langchain: 0.3.30(@langchain/core@0.3.66)(axios@1.11.0)(openai@4.104.0)
       open: 8.4.2
-      openai: 4.104.0(zod@3.24.2)
+      openai: 4.104.0(zod@3.25.76)
       pusher-js: 8.4.0-rc2
       resolve-package-path: 4.0.3
       uuid: 10.0.0
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.6(zod@3.24.2)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
     transitivePeerDependencies:
       - debug
     dev: false
@@ -14239,9 +14259,9 @@ packages:
         optional: true
     dependencies:
       dotenv: 16.6.1
-      openai: 4.104.0(zod@3.24.2)
-      zod: 3.24.2
-      zod-validation-error: 3.5.3(zod@3.24.2)
+      openai: 4.104.0(zod@3.25.76)
+      zod: 3.25.76
+      zod-validation-error: 3.5.3(zod@3.25.76)
     transitivePeerDependencies:
       - encoding
       - ws
@@ -14360,7 +14380,7 @@ packages:
       '@types/uuid': 10.0.0
       chalk: 4.1.2
       console-table-printer: 2.14.6
-      openai: 4.104.0(zod@3.24.2)
+      openai: 4.104.0(zod@3.25.76)
       p-queue: 6.6.2
       p-retry: 4.6.2
       semver: 7.7.2
@@ -16268,7 +16288,7 @@ packages:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  /openai@4.104.0(zod@3.24.2):
+  /openai@4.104.0(zod@3.25.76):
     resolution: {integrity: sha512-p99EFNsA/yX6UhVO93f5kJsDRLAg+CTA2RBqdHK4RtK8u5IJw32Hyb2dTGKbnnFmnuoBv5r7Z2CURI9sGZpSuA==}
     hasBin: true
     peerDependencies:
@@ -16287,7 +16307,7 @@ packages:
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
       node-fetch: 2.7.0
-      zod: 3.24.2
+      zod: 3.25.76
     transitivePeerDependencies:
       - encoding
     dev: false
@@ -19966,21 +19986,21 @@ packages:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
     dev: true
 
-  /xsai@0.3.5(zod@3.24.2):
+  /xsai@0.3.5(zod@3.25.76):
     resolution: {integrity: sha512-TsLyjOQtn5H66s1aqTohcqHTkRI5sb6bT4Jv3nJurNjIPvpSdQCi1bFiMafcl81YenD69rk8hx1+FRB1o29FVQ==}
     dependencies:
       '@xsai/embed': 0.3.5
       '@xsai/generate-image': 0.3.5
-      '@xsai/generate-object': 0.3.5(zod@3.24.2)
+      '@xsai/generate-object': 0.3.5(zod@3.25.76)
       '@xsai/generate-speech': 0.3.5
       '@xsai/generate-text': 0.3.5
       '@xsai/generate-transcription': 0.3.5
       '@xsai/model': 0.3.5
       '@xsai/shared': 0.3.5
       '@xsai/shared-chat': 0.3.5
-      '@xsai/stream-object': 0.3.5(zod@3.24.2)
+      '@xsai/stream-object': 0.3.5(zod@3.25.76)
       '@xsai/stream-text': 0.3.5
-      '@xsai/tool': 0.3.5(zod@3.24.2)
+      '@xsai/tool': 0.3.5(zod@3.25.76)
       '@xsai/utils-chat': 0.3.5
       '@xsai/utils-reasoning': 0.3.5
       '@xsai/utils-stream': 0.3.5
@@ -19993,7 +20013,7 @@ packages:
       - zod-to-json-schema
     dev: false
 
-  /xsschema@0.3.5(zod@3.24.2):
+  /xsschema@0.3.5(zod@3.25.76):
     resolution: {integrity: sha512-f+dcy11dTv7aBEEfTbXWnrm/1b/Ds2k4taN0TpN6KCtPAD58kyE/R1znUdrHdBnhIFexj9k+pS1fm6FgtSISrQ==}
     peerDependencies:
       '@valibot/to-json-schema': ^1.0.0
@@ -20016,7 +20036,7 @@ packages:
       zod-to-json-schema:
         optional: true
     dependencies:
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
   /xtend@4.0.2:
@@ -20113,21 +20133,13 @@ packages:
   /zod-from-json-schema@0.0.5:
     resolution: {integrity: sha512-zYEoo86M1qpA1Pq6329oSyHLS785z/mTwfr9V1Xf/ZLhuuBGaMlDGu/pDVGVUe4H4oa1EFgWZT53DP0U3oT9CQ==}
     dependencies:
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
 
   /zod-from-json-schema@0.4.2:
     resolution: {integrity: sha512-U+SIzUUT7P6w1UNAz81Sj0Vko77eQPkZ8LbJeXqQbwLmq1MZlrjB3Gj4LuebqJW25/CzS9WA8SjTgR5lvuv+zA==}
     dependencies:
       zod: 3.25.76
-    dev: false
-
-  /zod-to-json-schema@3.24.6(zod@3.24.2):
-    resolution: {integrity: sha512-h/z3PKvcTcTetyjl1fkj79MHNEjm+HpD6NXheWjzOekY7kV+lwDYnHw+ivHkijnCSMz1yJaWBD9vu/Fcmk+vEg==}
-    peerDependencies:
-      zod: ^3.24.1
-    dependencies:
-      zod: 3.24.2
     dev: false
 
   /zod-to-json-schema@3.24.6(zod@3.25.76):
@@ -20138,21 +20150,17 @@ packages:
       zod: 3.25.76
     dev: false
 
-  /zod-validation-error@3.5.3(zod@3.24.2):
+  /zod-validation-error@3.5.3(zod@3.25.76):
     resolution: {integrity: sha512-OT5Y8lbUadqVZCsnyFaTQ4/O2mys4tj7PqhdbBCp7McPwvIEKfPtdA6QfPeFQK2/Rz5LgwmAXRJTugBNBi0btw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
     dependencies:
-      zod: 3.24.2
+      zod: 3.25.76
     dev: false
-
-  /zod@3.24.2:
-    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
   /zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-    dev: false
 
   /zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}

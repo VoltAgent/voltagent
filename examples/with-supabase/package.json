@@ -2,14 +2,14 @@
   "name": "voltagent-example-with-supabase",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.10",
+    "@ai-sdk/openai": "^2.0.1",
     "@supabase/supabase-js": "^2.49.4",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.73",
     "@voltagent/logger": "^0.1.2",
     "@voltagent/supabase": "^0.1.16",
     "@voltagent/vercel-ai": "^0.1.17",
-    "zod": "^3.24.2"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

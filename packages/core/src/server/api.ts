@@ -6,11 +6,11 @@ import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
 import type { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
-import { zodSchemaToJsonUI } from "..";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import { AgentEventEmitter } from "../events";
 import { LoggerProxy, getGlobalLogBuffer } from "../logger";
+import { zodSchemaToJsonUI } from "../utils/toolParser";
 import {
   type PackageUpdateInfo,
   checkForUpdates,

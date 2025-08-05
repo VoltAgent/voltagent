@@ -21,7 +21,8 @@ export function convertToolsForSDK(tools: BaseTool[]): Record<string, AiTool> | 
   return tools.reduce<Record<string, AiTool>>((acc, tool) => {
     acc[tool.name] = createTool({
       description: tool.description,
-      parameters: tool.parameters,
+      inputSchema: tool.parameters,
+      outputSchema: tool.outputSchema,
       execute: tool.execute,
     });
     return acc;
@@ -53,13 +54,13 @@ export function createStepFromChunk(chunk: {
       id: c.toolCallId,
       type: "tool_call",
       name: c.toolName,
-      arguments: c.args,
+      arguments: c.input,
       content: JSON.stringify([
         {
           type: "tool-call",
           toolCallId: c.toolCallId,
           toolName: c.toolName,
-          args: c.args,
+          args: c.input,
         },
       ]),
       role: "assistant" as MessageRole,
@@ -69,13 +70,13 @@ export function createStepFromChunk(chunk: {
       id: c.toolCallId,
       type: "tool_result",
       name: c.toolName,
-      result: c.result,
+      result: c.output,
       content: JSON.stringify([
         {
           type: "tool-result",
           toolCallId: c.toolCallId,
           toolName: c.toolName,
-          result: c.result,
+          result: c.output,
         },
       ]),
       role: "assistant" as MessageRole,
@@ -87,7 +88,7 @@ export function createStepFromChunk(chunk: {
 export interface AISDKError extends Error {
   toolCallId?: string;
   toolName?: string;
-  args?: Record<string, any>;
+  input?: Record<string, any>;
   code?: string;
 }
 
@@ -120,7 +121,7 @@ export function createVoltagentErrorFromSdkError(
       toolError: {
         toolCallId: e.toolCallId,
         toolName: e.toolName,
-        toolArguments: e.args,
+        toolArguments: e.input,
         toolExecutionError: e,
       } satisfies ToolErrorInfo,
       stage: "tool_execution",
@@ -145,27 +146,27 @@ export function mapToStreamPart(part: TextStreamPart<Record<string, any>>): Stre
     .returnType<StreamPart | null>()
     .with({ type: "text-delta" }, (p) => ({
       type: "text-delta",
-      textDelta: p.textDelta,
+      textDelta: p.text,
     }))
-    .with({ type: "reasoning" }, (p) => ({
+    .with({ type: "reasoning-delta" }, (p) => ({
       type: "reasoning",
-      reasoning: p.textDelta,
+      reasoning: p.text,
     }))
-    .with({ type: "source" }, (p) => ({
+    .with({ type: "source", sourceType: "url" }, (p) => ({
       type: "source",
-      source: p.source.url || "",
+      source: p.url || "",
     }))
     .with({ type: "tool-call" }, (p) => ({
       type: "tool-call",
       toolCallId: p.toolCallId,
       toolName: p.toolName,
-      args: p.args,
+      args: p.input as Record<string, any>,
     }))
     .with({ type: "tool-result" }, (p) => ({
       type: "tool-result",
       toolCallId: p.toolCallId,
       toolName: p.toolName,
-      result: p.result,
+      result: p.output,
     }))
     .with({ type: "finish" }, (p) => ({
       type: "finish",
@@ -173,16 +174,16 @@ export function mapToStreamPart(part: TextStreamPart<Record<string, any>>): Stre
       usage: match(p)
         .with(
           {
-            usage: {
-              promptTokens: P.number,
-              completionTokens: P.number,
+            totalUsage: {
+              inputTokens: P.number,
+              outputTokens: P.number,
               totalTokens: P.number,
             },
           },
           (p) => ({
-            promptTokens: p.usage.promptTokens,
-            completionTokens: p.usage.completionTokens,
-            totalTokens: p.usage.totalTokens,
+            promptTokens: p.totalUsage.inputTokens,
+            completionTokens: p.totalUsage.outputTokens,
+            totalTokens: p.totalUsage.totalTokens,
           }),
         )
         .otherwise(() => undefined),

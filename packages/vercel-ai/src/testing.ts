@@ -1,6 +1,6 @@
 import type { BaseMessage } from "@voltagent/core";
-import { convertArrayToReadableStream } from "@voltagent/internal";
-import { MockLanguageModelV1 } from "ai/test";
+import { simulateReadableStream } from "ai";
+import { MockLanguageModelV2 } from "ai/test";
 import type { VercelAIProvider } from "./provider";
 
 /**
@@ -16,19 +16,18 @@ export function createMockModel(
     ? covertMessagesToChunks(output)
     : convertObjectToChunks(output);
 
-  return new MockLanguageModelV1({
+  return new MockLanguageModelV2({
     modelId: "mock-model",
-    defaultObjectGenerationMode: Array.isArray(output) ? undefined : "json",
     doGenerate: async () => {
       if (output instanceof Error) {
         throw output;
       }
 
       return {
-        rawCall: { rawPrompt: null, rawSettings: {} },
+        content: [{ type: "text", text }],
         finishReason: "stop",
-        usage: { promptTokens: 10, completionTokens: 20 },
-        text,
+        usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+        warnings: [],
       };
     },
     doStream: async () => {
@@ -36,17 +35,23 @@ export function createMockModel(
         throw output;
       }
 
+      const streamChunks = [
+        { type: "text-start" as const, id: "text-1" },
+        ...chunks.map((chunk) => ({
+          type: "text-delta" as const,
+          id: "text-1",
+          delta: chunk.textDelta,
+        })),
+        { type: "text-end" as const, id: "text-1" },
+        {
+          type: "finish" as const,
+          finishReason: "stop" as const,
+          usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
+        },
+      ];
+
       return {
-        stream: convertArrayToReadableStream([
-          ...chunks,
-          {
-            type: "finish",
-            finishReason: "stop",
-            usage: { completionTokens: 10, promptTokens: 3 },
-          },
-        ]),
-        usage: { promptTokens: 3, completionTokens: 10 },
-        rawCall: { rawPrompt: null, rawSettings: {} },
+        stream: simulateReadableStream({ chunks: streamChunks }),
       };
     },
   });

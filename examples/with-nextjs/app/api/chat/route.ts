@@ -1,6 +1,6 @@
 import { agent } from "@/voltagent";
 import { mergeIntoDataStream } from "@voltagent/vercel-ui";
-import { createDataStreamResponse } from "ai";
+import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 
 export async function POST(req: Request) {
   try {
@@ -9,19 +9,19 @@ export async function POST(req: Request) {
     // Get the last message
     const lastMessage = messages[messages.length - 1];
 
-    // Integrate VoltAgent fullStream with createDataStreamResponse
-    return createDataStreamResponse({
-      async execute(dataStream) {
+    // Create a UI message stream
+    const stream = createUIMessageStream({
+      async execute({ writer }) {
         try {
           const result = await agent.streamText(lastMessage.content);
 
           // biome-ignore lint/style/noNonNullAssertion: always exists
-          mergeIntoDataStream(dataStream, result.fullStream!);
+          mergeIntoDataStream(writer, result.fullStream!);
         } catch (error) {
           console.error("Stream processing error:", error);
-          dataStream.writeMessageAnnotation({
-            type: "error",
-            value: {
+          writer.write({
+            type: "message-metadata",
+            messageMetadata: {
               error: error instanceof Error ? error.message : "Unknown error",
             },
           });
@@ -29,6 +29,11 @@ export async function POST(req: Request) {
       },
       onError: (error) =>
         `VoltAgent stream error: ${error instanceof Error ? error.message : String(error)}`,
+    });
+
+    // Return the stream as a response
+    return createUIMessageStreamResponse({
+      stream,
     });
   } catch (error) {
     console.error("API route error:", error);
