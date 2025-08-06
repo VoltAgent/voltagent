@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 0.1.75
+
+### Patch Changes
+
+- [`3a3ebd2`](https://github.com/VoltAgent/voltagent/commit/3a3ebd2bc72ed5d14dd924d824b54203b73ab19d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: voltops client validation to prevent empty string keys from creating invalid clients
+  - VoltOpsClient now validates keys before initializing services
+  - Keys must not be empty and must have correct prefixes (pk* and sk*)
+  - Added hasValidKeys() method to check client validity
+  - Updated /setup-observability endpoint to update existing keys in .env file instead of adding duplicates
+
 ## 0.1.74
 
 ### Patch Changes

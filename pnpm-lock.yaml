@@ -114,7 +114,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -145,7 +145,7 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -201,7 +201,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -238,7 +238,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -272,7 +272,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -303,7 +303,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -334,7 +334,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -365,7 +365,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -393,7 +393,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.4.1
@@ -510,7 +510,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/google-ai':
         specifier: ^0.4.1
@@ -538,7 +538,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/groq-ai':
         specifier: ^0.1.14
@@ -569,7 +569,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -600,7 +600,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^0.1.5
@@ -634,7 +634,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -674,7 +674,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -732,7 +732,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -766,7 +766,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -812,7 +812,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -855,7 +855,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -892,7 +892,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -926,7 +926,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -957,7 +957,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -988,7 +988,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1022,7 +1022,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1056,7 +1056,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1087,7 +1087,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1118,7 +1118,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1149,7 +1149,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1180,7 +1180,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1214,7 +1214,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1254,7 +1254,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1294,7 +1294,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1325,7 +1325,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1353,7 +1353,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.74
+        specifier: ^0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
@@ -1384,7 +1384,7 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~0.1.74
+        specifier: ~0.1.75
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^0.1.2
