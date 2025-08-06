@@ -1372,8 +1372,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId || "",
         context: operationContext,
       });
-
-      throw cancellationError;
     });
   }
 
