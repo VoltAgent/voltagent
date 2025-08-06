@@ -1,6 +1,6 @@
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
-import type { AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
+import type { AbortError, AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
 
 // Argument Object Interfaces
 export interface OnStartHookArgs {
@@ -19,8 +19,8 @@ export interface OnEndHookArgs {
   agent: Agent<any>;
   /** The standardized successful output object. Undefined on error. */
   output: AgentOperationOutput | undefined;
-  /** The VoltAgentError object if the operation failed. Undefined on success. */
-  error: VoltAgentError | undefined;
+  /** The error object if the operation failed. Can be either VoltAgentError or AbortError. Undefined on success. */
+  error: VoltAgentError | AbortError | undefined;
   /** The complete conversation messages including user input and assistant responses (Vercel AI SDK compatible) */
   context: OperationContext;
 }
@@ -41,8 +41,8 @@ export interface OnToolEndHookArgs {
   tool: AgentTool;
   /** The successful output from the tool. Undefined on error. */
   output: unknown | undefined;
-  /** The VoltAgentError if the tool execution failed. Undefined on success. */
-  error: VoltAgentError | undefined;
+  /** The error if the tool execution failed. Can be either VoltAgentError or AbortError. Undefined on success. */
+  error: VoltAgentError | AbortError | undefined;
   context: OperationContext;
 }
 

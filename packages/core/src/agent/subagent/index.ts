@@ -312,7 +312,9 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
         parentOperationContext,
-        // Pass the abort signal from parent's operation context to subagent
+        // Pass the abort controller from parent's operation context to subagent
+        abortController: parentOperationContext?.abortController,
+        // Keep signal for backward compatibility
         signal: parentOperationContext?.signal,
         // Pass maxSteps from parent to subagent (inherits parent's effective maxSteps)
         maxSteps,

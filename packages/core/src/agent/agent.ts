@@ -56,6 +56,7 @@ import type {
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type {
+  AbortError,
   AgentOptions,
   AgentStatus,
   CommonGenerateOptions,
@@ -1009,6 +1010,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId?: string;
       conversationId?: string;
       parentOperationContext?: OperationContext;
+      abortController?: AbortController;
       signal?: AbortSignal;
     } = {
       operationName: "unknown",
@@ -1065,6 +1067,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       }),
     });
 
+    // Handle AbortController - inherit from parent or use provided
+    const abortController =
+      options.parentOperationContext?.abortController || options.abortController;
+
+    // Derive signal with correct priority:
+    // 1. abortController.signal (new API - highest priority)
+    // 2. explicit signal (backward compatibility)
+    // 3. parent's signal (backward compatibility)
+    const signal =
+      abortController?.signal || options.signal || options.parentOperationContext?.signal;
+
     const opContext: OperationContext = {
       operationId: historyEntry.id,
       userContext: userContextToUse ?? new Map<string | symbol, unknown>(),
@@ -1076,8 +1089,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       logger: methodLogger,
       // Use parent's conversationSteps if available (for SubAgents), otherwise create new array
       conversationSteps: options.parentOperationContext?.conversationSteps || [],
-      // Inherit signal from parent context or use provided signal
-      signal: options.parentOperationContext?.signal || options.signal,
+      // Use the abortController
+      abortController,
+      // Keep signal for backward compatibility
+      signal,
     };
 
     return opContext;
@@ -1298,9 +1313,27 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Mark operation as inactive
       operationContext.isActive = false;
 
-      // Create cancellation error
-      const cancellationError = new Error("Operation cancelled by user");
+      // Get abort reason from the controller if available
+      let abortReason: unknown = undefined;
+      if (operationContext.abortController && "signal" in operationContext.abortController) {
+        // Access reason through the signal's reason property (if available)
+        const sig = operationContext.abortController.signal as AbortSignal & { reason?: unknown };
+        abortReason = sig.reason;
+      }
+
+      // Create cancellation error with proper typing
+      const cancellationError = new Error(
+        typeof abortReason === "string"
+          ? abortReason
+          : abortReason && typeof abortReason === "object" && "message" in abortReason
+            ? String(abortReason.message)
+            : "Operation cancelled",
+      ) as AbortError;
       cancellationError.name = "AbortError";
+      cancellationError.reason = abortReason;
+
+      // Store the cancellation error in the operation context
+      operationContext.cancellationError = cancellationError;
 
       // Create agent:completed event with cancelled status
       const agentCancelledEvent = {
@@ -1339,6 +1372,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         conversationId: finalConversationId || "",
         context: operationContext,
       });
+
+      throw cancellationError;
     });
   }
 
@@ -1423,6 +1458,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentOperationContext,
       contextLimit = 10,
       userContext,
+      abortController,
       signal,
     } = internalOptions;
 
@@ -1434,6 +1470,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      abortController,
       signal,
     });
 
@@ -1538,10 +1575,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.publishTimelineEvent(operationContext, agentStartEvent);
 
       // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-      this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
-        id: agentStartEvent.id,
-        startTime: agentStartTime,
-      });
+      this.setupAbortSignalListener(
+        abortController?.signal || signal,
+        operationContext,
+        finalConversationId,
+        {
+          id: agentStartEvent.id,
+          startTime: agentStartTime,
+        },
+        internalOptions.hooks,
+      );
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -1586,7 +1629,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         maxSteps,
         tools,
         provider: internalOptions.provider,
-        signal: internalOptions.signal,
+        signal: operationContext.signal,
         toolExecutionContext: {
           operationContext: operationContext,
           agentId: this.id,
@@ -1926,6 +1969,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       return extendedResponse;
     } catch (error) {
+      // Check if operation was cancelled and throw the stored cancellation error
+      if (!operationContext.isActive && operationContext.cancellationError) {
+        throw operationContext.cancellationError;
+      }
+
       const voltagentError = error as VoltAgentError;
 
       // [NEW EVENT SYSTEM] Create an agent:error event
@@ -2010,7 +2058,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         },
       });
 
-      throw voltagentError;
+      throw error;
     }
   }
 
@@ -2030,6 +2078,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentOperationContext,
       contextLimit = 10,
       userContext,
+      abortController,
       signal,
     } = internalOptions;
 
@@ -2041,6 +2090,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      abortController,
       signal,
     });
 
@@ -2143,10 +2193,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.publishTimelineEvent(operationContext, agentStartEvent);
 
     // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-    this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
-      id: agentStartEvent.id,
-      startTime: agentStartTime,
-    });
+    this.setupAbortSignalListener(
+      abortController?.signal || signal,
+      operationContext,
+      finalConversationId,
+      {
+        id: agentStartEvent.id,
+        startTime: agentStartTime,
+      },
+      options.hooks,
+    );
 
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
@@ -2219,7 +2275,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       model: resolvedModel,
       maxSteps,
       tools,
-      signal: internalOptions.signal,
+      signal: operationContext.signal,
       provider: internalOptions.provider,
       toolExecutionContext: {
         operationContext: operationContext,
@@ -2532,6 +2588,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         }
       },
       onError: async (error: VoltAgentError) => {
+        // Check if operation was cancelled
+        if (!operationContext.isActive && operationContext.cancellationError) {
+          // Throw the cancellation error instead of the LLM error
+          return;
+        }
+
         // [NEW EVENT SYSTEM] Create an agent:error event
         const agentErrorStartInfo = {
           startTime:
@@ -2649,6 +2711,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       parentOperationContext,
       contextLimit = 10,
       userContext,
+      abortController,
       signal,
     } = internalOptions;
 
@@ -2661,6 +2724,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      abortController,
       signal,
     });
 
@@ -2764,10 +2828,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.publishTimelineEvent(operationContext, agentStartEvent);
 
       // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-      this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
-        id: agentStartEvent.id,
-        startTime: agentStartTime,
-      });
+      this.setupAbortSignalListener(
+        abortController?.signal || signal,
+        operationContext,
+        finalConversationId,
+        {
+          id: agentStartEvent.id,
+          startTime: agentStartTime,
+        },
+        internalOptions.hooks,
+      );
 
       const onStepFinish = this.memoryManager.createStepFinishHandler(
         operationContext,
@@ -2792,7 +2862,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         messages,
         model: resolvedModel,
         schema,
-        signal: internalOptions.signal,
+        signal: operationContext.signal,
         provider: internalOptions.provider,
         toolExecutionContext: {
           operationContext: operationContext,
@@ -2908,6 +2978,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
       return extendedResponse;
     } catch (error) {
+      // Check if operation was cancelled and throw the stored cancellation error
+      if (!operationContext.isActive && operationContext.cancellationError) {
+        throw operationContext.cancellationError;
+      }
+
       const voltagentError = error as VoltAgentError;
 
       // [NEW EVENT SYSTEM] Create an agent:error event
@@ -3014,6 +3089,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       provider,
       contextLimit = 10,
       userContext,
+      abortController,
       signal,
     } = internalOptions;
 
@@ -3025,6 +3101,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       userId,
       conversationId: initialConversationId,
       parentOperationContext,
+      abortController,
       signal,
     });
 
@@ -3126,10 +3203,16 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     this.publishTimelineEvent(operationContext, agentStartEvent);
 
     // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-    this.setupAbortSignalListener(signal, operationContext, finalConversationId, {
-      id: agentStartEvent.id,
-      startTime: agentStartTime,
-    });
+    this.setupAbortSignalListener(
+      abortController?.signal || signal,
+      operationContext,
+      finalConversationId,
+      {
+        id: agentStartEvent.id,
+        startTime: agentStartTime,
+      },
+      internalOptions.hooks,
+    );
 
     const onStepFinish = this.memoryManager.createStepFinishHandler(
       operationContext,
@@ -3155,7 +3238,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       model: resolvedModel,
       schema,
       provider,
-      signal: internalOptions.signal,
+      signal: operationContext.signal,
       toolExecutionContext: {
         operationContext: operationContext,
         agentId: this.id,
@@ -3282,6 +3365,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         }
       },
       onError: async (error: VoltAgentError) => {
+        // Check if operation was cancelled
+        if (!operationContext.isActive && operationContext.cancellationError) {
+          // Throw the cancellation error instead of the LLM error
+          throw operationContext.cancellationError;
+        }
+
         // [NEW EVENT SYSTEM] Create an agent:error event
         const agentErrorStartInfo = {
           startTime:

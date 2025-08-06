@@ -1047,14 +1047,14 @@ const enterpriseWorkflow = new Agent({
 });
 ```
 
-### Cancellation with AbortSignal
+### Cancellation with AbortController
 
 **Why?** To provide graceful cancellation of long-running operations like LLM generation, tool execution, or streaming responses. This is essential for user-initiated cancellations, implementing timeouts, and preventing unnecessary work when results are no longer needed.
 
-VoltAgent supports the standard `AbortSignal` API across all generation methods. When an operation is aborted, it immediately stops processing, cancels any ongoing tool executions, and cleans up resources.
+VoltAgent supports the standard `AbortController` API across all generation methods. When an operation is aborted, it immediately stops processing, cancels any ongoing tool executions, and cleans up resources.
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { Agent, isAbortError } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
@@ -1065,25 +1065,23 @@ const agent = new Agent({
   model: openai("gpt-4o"),
 });
 
-// Example 1: User-initiated cancellation
-const controller = new AbortController();
-const signal = controller.signal;
+// Example: Timeout-based cancellation
+const abortController = new AbortController();
 
-// Set up a cancel button or timeout
-const cancelButton = document.getElementById("cancel-btn");
-cancelButton?.addEventListener("click", () => {
-  controller.abort("User cancelled the operation");
-});
+// Cancel after 5 seconds
+setTimeout(() => {
+  abortController.abort("Operation timeout after 5 seconds");
+}, 5000);
 
 try {
-  // Pass the signal to any generation method
+  // Pass the abortController to any generation method
   const response = await agent.generateText("Write a very long story...", {
-    signal, // The operation will be cancelled if signal is aborted
+    abortController, // The operation will be cancelled if timeout occurs
   });
   console.log(response.text);
 } catch (error) {
-  if (error.name === "AbortError") {
-    console.log("Operation was cancelled by user");
+  if (isAbortError(error)) {
+    console.log("Operation was cancelled:", error.message);
   } else {
     console.error("Generation failed:", error);
   }
@@ -1092,7 +1090,7 @@ try {
 
 #### Tool Cancellation
 
-When an `AbortSignal` is provided to agent methods, it's automatically propagated to any tools that the agent uses. Tools receive this signal as part of their execution options and can implement cancellation logic:
+When an `AbortController` is provided to agent methods, it's automatically propagated to tools through the operation context. Tools can access both the signal and the abort capability:
 
 ```ts
 const searchTool = createTool({
@@ -1102,9 +1100,16 @@ const searchTool = createTool({
     query: z.string().describe("The search query"),
   }),
   execute: async (args, options) => {
-    // AbortSignal is available in options.signal
-    const signal = options?.signal;
+    // Access the AbortController from operation context
+    const abortController = options?.operationContext?.abortController;
 
+    // Example: Tool can trigger abort if needed
+    if (args.query.includes("forbidden")) {
+      abortController?.abort("Search query contains forbidden terms");
+      return { error: "Search cancelled due to policy violation" };
+    }
+
+    const signal = abortController?.signal;
     // Pass signal to cancellable operations like fetch
     const response = await fetch(`https://api.search.com?q=${args.query}`, {
       signal: signal,
@@ -1115,7 +1120,12 @@ const searchTool = createTool({
 });
 ```
 
-This means if you cancel an agent operation, any active tool executions will also be cancelled gracefully if the tools implement signal handling.
+Tools access cancellation through `options.operationContext.abortController`:
+
+- `.signal` - Check if operation was aborted
+- `.abort()` - Trigger cancellation from within the tool
+
+This means if you cancel an agent operation, any active tool executions will also be cancelled gracefully. Additionally, tools can trigger cancellation themselves when needed.
 
 **Common Cancellation Scenarios:**
 

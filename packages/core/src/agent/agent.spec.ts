@@ -7,6 +7,7 @@ import { createTool } from "../tool";
 import { VoltOpsClient } from "../voltops/client";
 import { Agent } from "./agent";
 import type { LLMProvider } from "./providers";
+import { isAbortError, isVoltAgentError } from "./types";
 
 // Test provider implementation
 class TestProvider implements LLMProvider<{ model: string }> {
@@ -3300,6 +3301,107 @@ describe("Agent", () => {
       expect(results[2].status).toBe("rejected");
       expect(results[3].status).toBe("fulfilled");
       expect(results[4].status).toBe("rejected");
+    });
+  });
+
+  describe("AbortController and Signal Migration", () => {
+    it("should support both signal and abortController for backward compatibility", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test instructions",
+        llm: testProvider as any,
+        model: { model: "test-model" },
+        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+      });
+
+      // Test with old signal API
+      const controller1 = new AbortController();
+      const promise1 = agent.generateText("Test 1", { signal: controller1.signal });
+
+      // Test with new abortController API
+      const controller2 = new AbortController();
+      const promise2 = agent.generateText("Test 2", { abortController: controller2 });
+
+      // Both should work
+      expect(promise1).toBeDefined();
+      expect(promise2).toBeDefined();
+    });
+
+    it("should prioritize abortController over signal when both provided", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test instructions",
+        llm: testProvider as any,
+        model: { model: "test-model" },
+        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+      });
+
+      const controller1 = new AbortController();
+      const controller2 = new AbortController();
+
+      let capturedSignal: AbortSignal | undefined;
+
+      // Mock the LLM to capture the signal
+      testProvider.generateText = vi.fn().mockImplementation(async (options) => {
+        capturedSignal = options.signal;
+        // Wait a bit to allow abort to happen
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(resolve, 100);
+          if (options.signal) {
+            options.signal.addEventListener("abort", () => {
+              clearTimeout(timeout);
+              reject(new Error("Request aborted"));
+            });
+          }
+        });
+        return {
+          text: "Test response",
+          finishReason: "stop" as const,
+          usage: { totalTokens: 10 },
+          steps: [],
+        };
+      });
+
+      const promise = agent.generateText("Test", {
+        signal: controller1.signal,
+        abortController: controller2,
+      });
+
+      // Abort via controller2 (abortController)
+      setTimeout(() => controller2.abort(), 10);
+
+      await expect(promise).rejects.toThrow();
+
+      // The captured signal should be from controller2, not controller1
+      expect(capturedSignal).toBe(controller2.signal);
+    });
+  });
+
+  describe("Error Type Guards", () => {
+    it("should correctly identify AbortError", () => {
+      const abortError = new Error("Operation aborted") as any;
+      abortError.name = "AbortError";
+
+      expect(isAbortError(abortError)).toBe(true);
+      expect(isVoltAgentError(abortError)).toBe(false);
+    });
+
+    it("should correctly identify VoltAgentError", () => {
+      const voltError = {
+        message: "Something went wrong",
+        code: "ERROR_CODE",
+        stage: "llm_request",
+      };
+
+      expect(isVoltAgentError(voltError)).toBe(true);
+      expect(isAbortError(voltError)).toBe(false);
+    });
+
+    it("should handle null and undefined in type guards", () => {
+      expect(isAbortError(null)).toBe(false);
+      expect(isAbortError(undefined)).toBe(false);
+      expect(isVoltAgentError(null)).toBe(false);
+      expect(isVoltAgentError(undefined)).toBe(false);
     });
   });
 });
