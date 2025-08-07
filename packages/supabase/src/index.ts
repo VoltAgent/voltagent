@@ -923,13 +923,22 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
 
     // Map Supabase rows back to MemoryMessage objects
     const messages =
-      data?.map((row) => ({
-        id: row.message_id,
-        role: row.role as MemoryMessage["role"],
-        content: row.content, // Assuming content is stored as text/json string
-        type: row.type as MemoryMessage["type"],
-        createdAt: row.created_at,
-      })) || [];
+      data?.map((row) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id,
+          role: row.role as MemoryMessage["role"],
+          content,
+          type: row.type as MemoryMessage["type"],
+          createdAt: row.created_at,
+        };
+      }) || [];
 
     // If we used descending order with limit, reverse to get chronological order
     if (actualLimit && actualLimit > 0 && messages.length > 0) {

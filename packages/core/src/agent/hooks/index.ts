@@ -1,5 +1,6 @@
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
+import type { BaseMessage } from "../providers";
 import type { AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
 
 // Argument Object Interfaces
@@ -46,12 +47,39 @@ export interface OnToolEndHookArgs {
   context: OperationContext;
 }
 
+export interface OnPrepareMessagesHookArgs {
+  /**
+   * The messages that will be sent to the LLM.
+   * Modify and return this array to transform the messages.
+   */
+  messages: BaseMessage[];
+  /**
+   * The agent instance making the LLM call.
+   */
+  agent: Agent<any>;
+  /**
+   * The operation context containing metadata about the current operation.
+   */
+  context: OperationContext;
+}
+
+export interface OnPrepareMessagesHookResult {
+  /**
+   * The transformed messages to send to the LLM.
+   * If not provided, the original messages will be used.
+   */
+  messages?: BaseMessage[];
+}
+
 // Hook Type Aliases (using single argument object)
 export type AgentHookOnStart = (args: OnStartHookArgs) => Promise<void> | void;
 export type AgentHookOnEnd = (args: OnEndHookArgs) => Promise<void> | void;
 export type AgentHookOnHandoff = (args: OnHandoffHookArgs) => Promise<void> | void;
 export type AgentHookOnToolStart = (args: OnToolStartHookArgs) => Promise<void> | void;
 export type AgentHookOnToolEnd = (args: OnToolEndHookArgs) => Promise<void> | void;
+export type AgentHookOnPrepareMessages = (
+  args: OnPrepareMessagesHookArgs,
+) => Promise<OnPrepareMessagesHookResult> | OnPrepareMessagesHookResult;
 
 /**
  * Type definition for agent hooks using single argument objects.
@@ -62,6 +90,7 @@ export type AgentHooks = {
   onHandoff?: AgentHookOnHandoff;
   onToolStart?: AgentHookOnToolStart;
   onToolEnd?: AgentHookOnToolEnd;
+  onPrepareMessages?: AgentHookOnPrepareMessages;
 };
 
 /**
@@ -74,6 +103,7 @@ const defaultHooks: Required<AgentHooks> = {
   onHandoff: async (_args: OnHandoffHookArgs) => {},
   onToolStart: async (_args: OnToolStartHookArgs) => {},
   onToolEnd: async (_args: OnToolEndHookArgs) => {},
+  onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => {},
 };
 
 /**
@@ -86,5 +116,6 @@ export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
     onHandoff: hooks.onHandoff || defaultHooks.onHandoff,
     onToolStart: hooks.onToolStart || defaultHooks.onToolStart,
     onToolEnd: hooks.onToolEnd || defaultHooks.onToolEnd,
+    onPrepareMessages: hooks.onPrepareMessages || defaultHooks.onPrepareMessages,
   };
 }

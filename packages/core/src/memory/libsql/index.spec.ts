@@ -204,7 +204,7 @@ describe.sequential("LibSQLStorage", () => {
         expect(messages).toContainEqual(
           expect.objectContaining({
             id: "new-message-id",
-            content: '"Test message"',
+            content: "Test message",
           }),
         );
       });
@@ -233,12 +233,12 @@ describe.sequential("LibSQLStorage", () => {
         expect(messages).toEqual([
           expect.objectContaining({
             role: "user",
-            content: '"Hello"',
+            content: "Hello",
             type: "text",
           }),
           expect.objectContaining({
             role: "assistant",
-            content: '"Hi there!"',
+            content: "Hi there!",
             type: "text",
           }),
         ]);
@@ -253,7 +253,7 @@ describe.sequential("LibSQLStorage", () => {
 
         expect(userMessages).toHaveLength(1);
         expect(userMessages[0].role).toBe("user");
-        expect(userMessages[0].content).toBe('"Hello"');
+        expect(userMessages[0].content).toBe("Hello");
       });
 
       it("should return empty array for unknown user or conversation", async () => {
@@ -344,12 +344,12 @@ describe.sequential("LibSQLStorage", () => {
         expect(messages).toEqual([
           expect.objectContaining({
             role: "user",
-            content: '"Hello"',
+            content: "Hello",
             type: "text",
           }),
           expect.objectContaining({
             role: "assistant",
-            content: '"Hi there!"',
+            content: "Hi there!",
             type: "text",
           }),
         ]);

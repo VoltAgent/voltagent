@@ -615,13 +615,22 @@ export class LibSQLStorage implements Memory {
       });
 
       // Map the results
-      const messages = result.rows.map((row) => ({
-        id: row.message_id as string,
-        role: row.role as BaseMessage["role"],
-        content: row.content as string,
-        type: row.type as "text" | "tool-call" | "tool-result",
-        createdAt: row.created_at as string,
-      }));
+      const messages = result.rows.map((row) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content as string;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id as string,
+          role: row.role as BaseMessage["role"],
+          content,
+          type: row.type as "text" | "tool-call" | "tool-result",
+          createdAt: row.created_at as string,
+        };
+      });
 
       // If we used DESC order with limit, reverse to get chronological order
       if (limit && limit > 0) {
@@ -1343,13 +1352,22 @@ export class LibSQLStorage implements Memory {
         args,
       });
 
-      return result.rows.map((row) => ({
-        id: row.message_id as string,
-        role: row.role as BaseMessage["role"],
-        content: row.content as string,
-        type: row.type as "text" | "tool-call" | "tool-result",
-        createdAt: row.created_at as string,
-      }));
+      return result.rows.map((row) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content as string;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id as string,
+          role: row.role as BaseMessage["role"],
+          content,
+          type: row.type as "text" | "tool-call" | "tool-result",
+          createdAt: row.created_at as string,
+        };
+      });
     } catch (error) {
       this.debug("Error getting conversation messages:", error);
       throw new Error("Failed to get conversation messages from LibSQL database");
