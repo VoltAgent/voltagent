@@ -55,7 +55,7 @@ const agent = new Agent({
   name: "bedrock-assistant",
   description: "An AI assistant powered by Amazon Bedrock",
   llm: new VercelAIProvider(),
-  model: bedrock("anthropic.claude-3-5-sonnet-20240620-v1:0"),
+  model: bedrock("anthropic.claude-opus-4-1-20250805-v1:0"),
   tools: [weatherTool],
 });
 
