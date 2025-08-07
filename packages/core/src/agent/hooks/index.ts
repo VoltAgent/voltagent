@@ -103,7 +103,7 @@ const defaultHooks: Required<AgentHooks> = {
   onHandoff: async (_args: OnHandoffHookArgs) => {},
   onToolStart: async (_args: OnToolStartHookArgs) => {},
   onToolEnd: async (_args: OnToolEndHookArgs) => {},
-  onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => {},
+  onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => ({}),
 };
 
 /**
