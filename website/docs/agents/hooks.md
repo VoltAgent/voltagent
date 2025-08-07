@@ -17,12 +17,14 @@ The recommended way to define hooks is using the `createHooks` helper function. 
 import {
   Agent,
   createHooks,
+  messageHelpers,
   type AgentTool,
   type AgentOperationOutput, // Unified success output type
   type VoltAgentError, // Standardized error type
   type ChatMessage, // Vercel AI SDK compatible message format
   type OnStartHookArgs, // Argument types for hooks
   type OnEndHookArgs,
+  type OnPrepareMessagesHookArgs,
   type OnToolStartHookArgs,
   type OnToolEndHookArgs,
   type OnHandoffHookArgs,
@@ -39,6 +41,21 @@ const myAgentHooks = createHooks({
     const { agent, context } = args;
     console.log(`[Hook] Agent ${agent.name} starting interaction at ${new Date().toISOString()}`);
     console.log(`[Hook] Operation ID: ${context.operationId}`);
+  },
+
+  /**
+   * Called before messages are sent to the LLM. Allows transformation of messages.
+   */
+  onPrepareMessages: async (args: OnPrepareMessagesHookArgs) => {
+    const { messages, context } = args;
+    console.log(`[Hook] Preparing ${messages.length} messages for LLM`);
+
+    // Example: Add timestamps to user messages
+    const timestamp = new Date().toLocaleTimeString();
+    const enhanced = messages.map((msg) => messageHelpers.addTimestampToMessage(msg, timestamp));
+
+    // Return transformed messages (or nothing to keep original)
+    return { messages: enhanced };
   },
 
   /**
@@ -213,6 +230,36 @@ onStart: async ({ agent, context }) => {
 };
 ```
 
+### `onPrepareMessages`
+
+- **Triggered:** After messages are loaded from memory but before they are sent to the LLM.
+- **Argument Object (`OnPrepareMessagesHookArgs`):** `{ messages: BaseMessage[], context: OperationContext }`
+- **Use Cases:** Transform messages (add timestamps, context), filter sensitive data (PII, credentials), inject dynamic system prompts, remove duplicate messages, add user-specific context.
+- **Return:** `{ messages: BaseMessage[] }` with transformed messages, or nothing to keep original messages.
+- **Note:** This hook runs on every LLM call and receives all messages including system prompt and memory messages.
+
+```ts
+// Example: Add timestamps and filter sensitive data
+onPrepareMessages: async ({ messages, context }) => {
+  const timestamp = new Date().toLocaleTimeString();
+
+  // Transform messages using message helpers
+  const enhanced = messages.map((msg) => {
+    // Add timestamp to user messages
+    let transformed = messageHelpers.addTimestampToMessage(msg, timestamp);
+
+    // Filter sensitive data from all messages
+    transformed = messageHelpers.mapMessageContent(transformed, (text) =>
+      text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, "[SSN-REDACTED]")
+    );
+
+    return transformed;
+  });
+
+  return { messages: enhanced };
+};
+```
+
 ### `onEnd`
 
 - **Triggered:** After the agent finishes processing a request, either successfully or with an error.
@@ -325,6 +372,70 @@ Hooks enable a variety of powerful patterns:
 6.  **UI Integration**: You can leverage the `@voltagent/vercel-ui` package to convert the `OperationContext` to a list of messages that can be used with the Vercel AI SDK (see below example).
 
 ## Examples
+
+### Message Transformation with onPrepareMessages
+
+Here's an example using `onPrepareMessages` with message helpers to enhance messages before they reach the LLM:
+
+```ts
+import { Agent, createHooks, messageHelpers } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const enhancedHooks = createHooks({
+  onPrepareMessages: async ({ messages, context }) => {
+    // Use message helpers for cleaner transformations
+    const enhanced = messages.map((msg) => {
+      // Add timestamps to user messages
+      if (msg.role === "user") {
+        const timestamp = new Date().toLocaleTimeString();
+        msg = messageHelpers.addTimestampToMessage(msg, timestamp);
+      }
+
+      // Filter sensitive data from all messages
+      msg = messageHelpers.mapMessageContent(msg, (text) => {
+        // Redact SSN patterns
+        text = text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, "[SSN-REDACTED]");
+        // Redact credit card patterns
+        text = text.replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, "[CC-REDACTED]");
+        return text;
+      });
+
+      return msg;
+    });
+
+    // Add dynamic context based on user
+    if (context.userContext?.userId) {
+      const systemContext = {
+        role: "system" as const,
+        content: `User ID: ${context.userContext.userId}. Provide personalized responses.`,
+      };
+      enhanced.unshift(systemContext);
+    }
+
+    return { messages: enhanced };
+  },
+
+  onEnd: async ({ output, context }) => {
+    // Log what transformations were applied
+    console.log(`Messages processed for operation ${context.operationId}`);
+    if (output?.usage) {
+      console.log(`Tokens used: ${output.usage.totalTokens}`);
+    }
+  },
+});
+
+const agent = new Agent({
+  name: "Privacy-Aware Assistant",
+  instructions: "A helpful assistant that protects user privacy",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  hooks: enhancedHooks,
+});
+
+// User message: "My SSN is 123-45-6789"
+// LLM receives: "[10:30:45] My SSN is [SSN-REDACTED]"
+```
 
 ### Vercel UI Integration Example
 
