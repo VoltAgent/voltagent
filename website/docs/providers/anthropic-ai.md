@@ -23,7 +23,7 @@ const provider = new VercelAIProvider();
 // Use with: model: anthropic("claude-opus-4-1")
 ```
 
-For the latest models and features, please see our [Providers & Models guide](/getting-started/providers-models).
+For the latest models and features, please see our [Providers & Models guide](/docs/getting-started/providers-models).
 :::
 
 # Anthropic AI Provider (`@voltagent/anthropic-ai`)

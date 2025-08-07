@@ -23,7 +23,7 @@ const provider = new VercelAIProvider();
 // Use with: model: groq("llama-3.3-70b-versatile")
 ```
 
-For the latest models and features, please see our [Providers & Models guide](/getting-started/providers-models).
+For the latest models and features, please see our [Providers & Models guide](/docs/getting-started/providers-models).
 :::
 
 # Groq AI Provider (`@voltagent/groq-ai`)

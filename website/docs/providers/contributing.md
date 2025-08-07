@@ -10,7 +10,7 @@ Thank you for your interest in contributing a new VoltAgent provider. This guide
 :::important Before You Start
 **VoltAgent leverages the Vercel AI SDK** which already supports 30+ providers. Before creating a custom provider, please check:
 
-1. Is your provider already available in [Vercel AI SDK](/getting-started/providers-models)?
+1. Is your provider already available in [Vercel AI SDK](/docs/getting-started/providers-models)?
 2. Can the [OpenAI-compatible provider](https://ai-sdk.dev/providers/openai-compatible-providers) work with your service?
 3. Is this a proprietary/internal service that truly requires custom implementation?
 

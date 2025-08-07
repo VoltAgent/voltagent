@@ -29,7 +29,7 @@ const provider = new VercelAIProvider();
 // Use with: model: vertex("gemini-1.5-pro")
 ```
 
-For the latest models and features, please see our [Providers & Models guide](/getting-started/providers-models).
+For the latest models and features, please see our [Providers & Models guide](/docs/getting-started/providers-models).
 :::
 
 # Google AI Provider (`@voltagent/google-ai`)
