@@ -11,8 +11,8 @@
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^0.1.73",
-    "@voltagent/internal": "^0.0.7",
+    "@voltagent/core": "^0.1.77",
+    "@voltagent/internal": "^0.0.8",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4",
