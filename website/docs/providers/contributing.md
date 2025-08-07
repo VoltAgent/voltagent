@@ -5,7 +5,34 @@ slug: /providers/contributing
 
 # Contributing a new Provider
 
-Thank your for your interest in contributing a new VoltAgent provider. This guide will walk you through the process of creating a new provider in under 15 minutes!
+Thank you for your interest in contributing a new VoltAgent provider. This guide will walk you through the process of creating a new provider in under 15 minutes!
+
+:::important Before You Start
+**VoltAgent leverages the Vercel AI SDK** which already supports 30+ providers. Before creating a custom provider, please check:
+
+1. Is your provider already available in [Vercel AI SDK](/getting-started/providers-models)?
+2. Can the [OpenAI-compatible provider](https://ai-sdk.dev/providers/openai-compatible-providers) work with your service?
+3. Is this a proprietary/internal service that truly requires custom implementation?
+
+**Most providers should be added to Vercel AI SDK** rather than as custom VoltAgent providers. This benefits the entire ecosystem!
+:::
+
+## When to Create a Custom Provider
+
+Custom providers are appropriate for:
+
+- **Internal/Proprietary Services**: Company-specific LLMs or APIs
+- **Special Authentication**: Non-standard auth mechanisms
+- **Custom Protocol**: Services that don't follow OpenAI or standard APIs
+- **Advanced Control**: When you need fine-grained control over request/response handling
+
+## Contributing to Vercel AI SDK Instead
+
+If your provider would benefit the broader community, consider contributing it to Vercel AI SDK:
+
+- [Vercel AI SDK Repository](https://github.com/vercel/ai)
+- [Contributing Guide](https://github.com/vercel/ai/blob/main/CONTRIBUTING.md)
+- Your contribution helps thousands of developers!
 
 ## Prerequisites
 
@@ -55,6 +82,8 @@ All methods **MUST** have the `public`, `private` or `protected` modifier. See t
 #### Example
 
 ```typescript
+// Custom provider for a proprietary/internal LLM service
+// Only create custom providers when Vercel AI SDK doesn't cover your use case
 import { LLMProvider, GenerateTextOptions, ProviderTextResponse } from "@voltagent/core";
 import { AcmeAI, ModelV1 } from "acme-ai-sdk";
 
@@ -147,3 +176,20 @@ messages: [{ role: "user", content: "Hello!" }],
 ### 7. Ship it!
 
 If you've followed all the steps above, you can submit a PR to the VoltAgent repo!
+
+## Final Checklist
+
+Before submitting your PR, please confirm:
+
+- [ ] This provider cannot be implemented using Vercel AI SDK
+- [ ] The OpenAI-compatible provider doesn't work for this service
+- [ ] All tests pass
+- [ ] README includes clear usage examples
+- [ ] The provider implements all required `LLMProvider` methods
+- [ ] TypeScript types are properly defined (no `any` types)
+
+## Need Help?
+
+- [Discord Community](https://discord.gg/voltagent)
+- [Provider Examples](https://github.com/VoltAgent/voltagent/tree/main/packages)
+- Consider if your provider should be in [Vercel AI SDK](https://github.com/vercel/ai) instead

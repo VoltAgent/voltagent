@@ -1,237 +1,147 @@
-<div align="center">
-<a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
-</a>
+# Google AI Provider (`@voltagent/google-ai`)
 
-<br/>
-<br/>
+> ⚠️ **DEPRECATED**: This package is deprecated. Please use the [Vercel AI SDK's Google providers](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai) with `@voltagent/vercel-ai` instead.
+>
+> **Migration Guide:**
+>
+> ```typescript
+> // Old (deprecated)
+> import { GoogleAIProvider } from "@voltagent/google-ai";
+> const provider = new GoogleAIProvider({ apiKey: "..." });
+>
+> // New (recommended) - for Gemini API
+> import { VercelAIProvider } from "@voltagent/vercel-ai";
+> import { google } from "@ai-sdk/google";
+> const provider = new VercelAIProvider();
+> // Use with: model: google("gemini-1.5-pro")
+>
+> // New (recommended) - for Vertex AI
+> import { VercelAIProvider } from "@voltagent/vercel-ai";
+> import { vertex } from "@ai-sdk/google-vertex";
+> const provider = new VercelAIProvider();
+> // Use with: model: vertex("gemini-1.5-pro")
+> ```
 
-<div align="center">
-    <a href="https://voltagent.dev">Home Page</a> |
-    <a href="https://voltagent.dev/docs/">Documentation</a> |
-    <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> |
-    <a href="https://s.voltagent.dev/discord">Discord</a> |
-    <a href="https://voltagent.dev/blog/">Blog</a>
-</div>
-</div>
+The Google AI Provider integrates VoltAgent with Google's Generative AI capabilities, supporting both the Gemini API (via API Key) and Vertex AI (via project/location configuration). It wraps the [`@google/genai`](https://github.com/googleapis/js-genai) SDK.
 
-<br/>
+**Key Characteristics:**
 
-<div align="center">
-    <strong>VoltAgent is an open source TypeScript framework for building and orchestrating AI agents.</strong><br>
-Escape the limitations of no-code builders and the complexity of starting from scratch.
-    <br />
-    <br />
-</div>
+- **Dual API Support:** Works seamlessly with both Google AI Studio's Gemini API (using an API key) and Google Cloud's Vertex AI platform.
+- **Model Agnostic (within Google):** Accepts standard Google model identifier strings (e.g., `'gemini-1.5-pro'`, `'gemini-1.5-flash'`).
+- **Core Functionality:** Focuses on text generation, streaming, and structured object generation using the underlying Google SDK.
 
-<div align="center">
-    
-[![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
-[![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
-[![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
-    
-</div>
-
-<br/>
-
-<div align="center">
-<a href="https://voltagent.dev/">
-<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
-</a>
-
-</div>
-
-## What is VoltAgent?
-
-> An **AI Agent Framework** provides the foundational structure and tools needed to build applications powered by autonomous agents. These agents, often driven by Large Language Models (LLMs), can perceive their environment, make decisions, and take actions to achieve specific goals. Building such agents from scratch involves managing complex interactions with LLMs, handling state, connecting to external tools and data, and orchestrating workflows.
-
-**VoltAgent** is an open-source TypeScript framework that acts as this essential toolkit. It simplifies the development of AI agent applications by providing modular building blocks, standardized patterns, and abstractions. Whether you're creating chatbots, virtual assistants, automated workflows, or complex multi-agent systems, VoltAgent handles the underlying complexity, allowing you to focus on defining your agents' capabilities and logic.
-
-Instead of building everything from scratch, VoltAgent provides ready-made, modular building blocks:
-
-- **Core Engine (`@voltagent/core`)**: The heart of VoltAgent, providing fundamental capabilities for your AI agents Define individual agents with specific roles, tools, and memory.
-- **Multi-Agent Systems**: Architect complex applications by coordinating multiple specialized agents using Supervisors.
-- **Extensible Packages**: Enhance functionality with packages like `@voltagent/voice` for voice interactions.
-- **Tooling & Integrations**: Equip agents with tools to connect to external APIs, databases, and services, enabling them to perform real-world tasks. **Supports the [Model Control Protocol (MCP)](https://modelcontextprotocol.io/) for standardized tool interactions.**
-- **Data Retrieval & RAG**: Implement specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)**.
-- **Memory**: Enable agents to remember past interactions for more natural and context-aware conversations.
-- **LLM Compatibility**: Works with popular AI models from OpenAI, Google, Anthropic, and more, allowing easy switching.
-- **Developer Ecosystem**: Includes helpers like `create-voltagent-app`, `@voltagent/cli`, and the visual [VoltOps LLM Observability Platform](https://console.voltagent.dev) for quick setup, monitoring, and debugging.
-
-In essence, VoltAgent helps developers build sophisticated AI applications faster and more reliably, avoiding repetitive setup and the limitations of simpler tools.
-
-## Why VoltAgent?
-
-Building AI applications often involves a trade-off:
-
-1.  **DIY Approach:** Using basic AI provider tools offers control but leads to complex, hard-to-manage code and repeated effort.
-2.  **No-Code Builders:** Simpler initially but often restrictive, limiting customization, provider choice, and complexity.
-
-VoltAgent provides a middle ground, offering structure and components without sacrificing flexibility:
-
-- **Build Faster:** Accelerate development with pre-built components compared to starting from scratch.
-- **Maintainable Code:** Encourages organization for easier updates and debugging.
-- **Scalability:** Start simple and easily scale to complex, multi-agent systems handling intricate workflows.
-- **Flexibility:** Full control over agent behavior, LLM choice, tool integrations, and UI connections.
-- **Avoid Lock-in:** Freedom to switch AI providers and models as needed.
-- **Cost Efficiency:** Features designed to optimize AI service usage and reduce redundant calls.
-- **Visual Monitoring:** Use the [VoltOps LLM Observability Platform](https://console.voltagent.dev) to track agent performance, inspect state, and debug visually.
-
-VoltAgent empowers developers to build their envisioned AI applications efficiently, from simple helpers to complex systems.
-
-## ⚡ Quick Start
-
-Create a new VoltAgent project in seconds using the `create-voltagent-app` CLI tool:
+## Installation
 
 ```bash
-npm create voltagent-app@latest
+npm install @voltagent/core @voltagent/google-ai zod
 ```
 
-### Install the Google AI provider
+_Note: `@google/genai` is a peer dependency. `zod` is required if using `generateObject`._
 
-```bash
-npm install @voltagent/google-ai
-# or
-yarn add @voltagent/google-ai
-# or
-pnpm add @voltagent/google-ai
+## Configuration
+
+### Option 1: Gemini API (API Key)
+
+```typescript
+import { GoogleAIProvider } from "@voltagent/google-ai";
+
+// Direct API Key
+const googleProvider = new GoogleAIProvider({
+  apiKey: "YOUR_GOOGLE_API_KEY",
+});
+
+// Or via Environment Variable (GOOGLE_GENERATIVE_AI_API_KEY)
+const googleProvider = new GoogleAIProvider({});
+```
+
+### Option 2: Vertex AI (Project & Location)
+
+```typescript
+import { GoogleAIProvider } from "@voltagent/google-ai";
+
+const googleProvider = new GoogleAIProvider({
+  project: "YOUR_GCP_PROJECT_ID",
+  location: "us-central1", // or your preferred region
+});
 ```
 
 ## Usage
 
-You need to provide your Google Generative AI API key. You can get one from [Google AI Studio](https://aistudio.google.com/app/apikey).
-
 ```typescript
 import { Agent } from "@voltagent/core";
-import { GoogleGenAIProvider } from "@voltagent/google-ai";
+import { GoogleAIProvider } from "@voltagent/google-ai";
 
-// Ensure your API key is stored securely, e.g., in environment variables
-const googleApiKey = process.env.GOOGLE_API_KEY;
+const googleProvider = new GoogleAIProvider({ apiKey: "YOUR_API_KEY" });
 
-// Instantiate the provider
-const googleProvider = new GoogleGenAIProvider({
-  apiKey: googleApiKey,
-});
-
-// Create an agent using a Google model
 const agent = new Agent({
-  name: "Google Assistant",
-  instructions: "A helpful and friendly assistant that can answer questions clearly and concisely.",
+  name: "Gemini Agent",
+  instructions: "An agent powered by Google's Gemini",
   llm: googleProvider,
-  model: "gemini-1.5-pro-latest", // Specify the desired Google model
+  model: "gemini-1.5-flash", // or "gemini-1.5-pro"
 });
+
+// Example call
+async function run() {
+  const response = await agent.generateText("What is the capital of France?");
+  console.log(response.text);
+}
+
+run();
 ```
 
-Afterwards, navigate to your project and run:
+## Supported Methods
 
-```bash
-npm run dev
-```
+- **`generateText`**: ✅ Supported
+- **`streamText`**: ✅ Supported
+- **`generateObject`**: ✅ Supported
+- **`streamObject`**: ❌ Not supported
 
-When you run the dev command, tsx will compile and run your code. You should see the VoltAgent server startup message in your terminal:
+## Tool Calling Support
 
-```
-══════════════════════════════════════════════════
-VOLTAGENT SERVER STARTED SUCCESSFULLY
-══════════════════════════════════════════════════
-✓ HTTP Server: http://localhost:3141
+✅ **Supported.**
 
-Test your agents with VoltOps Console: https://console.voltagent.dev
-══════════════════════════════════════════════════
-```
-
-Your agent is now running! To interact with it:
-
-1. Open the Console: Click the [VoltOps LLM Observability Platform](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
-2. Find Your Agent: On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
-3. Open Agent Details: Click on your agent's name.
-4. Start Chatting: On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
-5. Send a Message: Type a message like "Hello" and press Enter.
-
-![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
-
-### For using via VertexAi there are some nuances.
-
-1. It will only work on a server side instance, and not on web.
-2. The authentication needs to be handled via the [google-auth-libray](https://www.npmjs.com/package/google-auth-library)
-3. Authentication in Vertex is still and open issue on the official SDK. [link](https://github.com/googleapis/js-genai/issues/426), [link-2](https://github.com/googleapis/js-genai/issues/417)
+The provider supports tool calling:
 
 ```typescript
-const googleVertexProvider = new GoogleGenAIProvider({
-  vertexai: true,
-  project: "your-project-id",
-  location: "your-project-location",
-  googleAuthOptions: {
-    credentials: {
-      // never expose your private key in the code, this is just an example
-      private_key: "my-private-key",
-      // this is your service account email created in the google cloud console
-      client_email: "my-client-email",
-    },
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const weatherTool = createTool({
+  name: "get_current_weather",
+  description: "Get the current weather in a location",
+  parameters: z.object({
+    location: z.string().describe("The location to get weather for"),
+  }),
+  execute: async (input) => {
+    return {
+      location: input.location,
+      temperature: 72,
+      condition: "sunny",
+    };
   },
 });
 
 const agent = new Agent({
-  name: "Google Assistant",
-  instructions: "A helpful and friendly assistant that can answer questions clearly and concisely.",
-  llm: googleProvider,
-  model: "gemini-1.5-pro-latest", // Specify the desired Google model
+  name: "weather-agent",
+  instructions: "A helpful weather assistant",
+  llm: new GoogleAIProvider(),
+  model: "gemini-1.5-flash",
+  tools: [weatherTool],
 });
 ```
 
-## Configuration
+## Model Selection & Options
 
-The `GoogleGenAIProvider` accepts the following options in its constructor:
+Set the model via the `model` property during `Agent` instantiation:
 
-- `apiKey`: Your Google Generative AI API key (required).
-- **(Advanced - Vertex AI)** `vertexai`: Set to `true` if using Vertex AI endpoints.
-- **(Advanced - Vertex AI)** `project`: Your Google Cloud project ID (required if `vertexai` is `true`).
-- **(Advanced - Vertex AI)** `location`: Your Google Cloud project location (required if `vertexai` is `true`).
+```typescript
+const response = await agent.generateText("Write a creative story.", {
+  provider: {
+    temperature: 0.9,
+    maxTokens: 1024,
+    // Other Google-specific parameters
+  },
+});
+```
 
-## Key Features
-
-- **Agent Core:** Define agents with descriptions, LLM providers, tools, and memory management.
-- **Multi-Agent Systems:** Build complex workflows using Supervisor Agents coordinating multiple specialized Sub-Agents.
-- **Tool Usage & Lifecycle:** Equip agents with custom or pre-built tools (functions) with type-safety (Zod), lifecycle hooks, and cancellation support to interact with external systems.
-- **Flexible LLM Support:** Integrate seamlessly with various LLM providers (OpenAI, Anthropic, Google, etc.) and easily switch between models.
-- **Memory Management:** Enable agents to retain context across interactions using different configurable memory providers.
-- **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltOps LLM Observability Platform](https://console.voltagent.dev).
-- **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package.
-- **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources.
-- **Model Control Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities.
-- **Prompt Engineering Tools:** Leverage utilities like `createPrompt` for crafting and managing effective prompts for your agents.
-- **Framework Compatibility:** Designed for easy integration into existing Node.js applications and popular frameworks.
-
-## Use Cases
-
-VoltAgent is versatile and can power a wide range of AI-driven applications:
-
-- **Complex Workflow Automation:** Orchestrate multi-step processes involving various tools, APIs, and decision points using coordinated agents.
-- **Intelligent Data Pipelines:** Build agents that fetch, process, analyze, and transform data from diverse sources.
-- **AI-Powered Internal Tools & Dashboards:** Create interactive internal applications that leverage AI for analysis, reporting, or task automation, often integrated with UIs using hooks.
-- **Automated Customer Support Agents:** Develop sophisticated chatbots that can understand context (memory), use tools (e.g., check order status), and escalate complex issues.
-- **Repository Analysis & Codebase Automation:** Analyze code repositories, automate refactoring tasks, generate documentation, or manage CI/CD processes.
-- **Retrieval-Augmented Generation (RAG) Systems:** Build agents that retrieve relevant information from knowledge bases (using retriever agents) before generating informed responses.
-- **Voice-Controlled Interfaces & Applications:** Utilize the `@voltagent/voice` package to create applications that respond to and generate spoken language.
-- **Personalized User Experiences:** Develop agents that adapt responses and actions based on user history and preferences stored in memory.
-- **Real-time Monitoring & Alerting:** Design agents that continuously monitor data streams or systems and trigger actions or notifications based on defined conditions.
-- **And Virtually Anything Else...**: If you can imagine an AI agent doing it, VoltAgent can likely help you build it! ⚡
-
-## Learning VoltAgent
-
-- **[Documentation](https://voltagent.dev/docs/)**: Dive into guides, concepts, and tutorials.
-- **[Examples](https://github.com/voltagent/voltagent/tree/main/examples)**: Explore practical implementations.
-- **[Blog](https://voltagent.dev/blog/)**: Read more about technical insights, and best practices.
-
-## Contribution
-
-We welcome contributions! Please refer to the contribution guidelines (link needed if available). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
-
-## Community ♥️ Thanks
-
-Your stars help us reach more developers! If you find VoltAgent useful, please consider giving us a star on GitHub to support the project and help others discover it.
-
-## License
-
-Licensed under the MIT License, Copyright © 2025-present VoltAgent.
+Refer to the [Google AI documentation](https://ai.google.dev/api/rest) for available configuration parameters.

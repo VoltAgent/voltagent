@@ -28,6 +28,7 @@ const sidebars: SidebarsConfig = {
             rel: "noreferrer",
           },
         },
+        "getting-started/providers-models",
       ],
     },
     {

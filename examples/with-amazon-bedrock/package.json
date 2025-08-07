@@ -1,8 +1,9 @@
 {
-  "name": "voltagent-example-gemini-ai",
+  "name": "voltagent-example-amazon-bedrock",
   "author": "",
   "dependencies": {
-    "@ai-sdk/google": "^1.2.22",
+    "@ai-sdk/amazon-bedrock": "^2.2.8",
+    "@aws-sdk/credential-providers": "~3.799.0",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.75",
     "@voltagent/logger": "^0.1.2",
@@ -17,13 +18,15 @@
   "keywords": [
     "agent",
     "ai",
+    "aws",
+    "bedrock",
     "voltagent"
   ],
   "license": "MIT",
   "private": true,
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src ",
+    "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
     "volt": "volt"
   },

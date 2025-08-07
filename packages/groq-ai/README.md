@@ -1,8 +1,24 @@
 # @voltagent/groq-ai
 
+> ⚠️ **DEPRECATED**: This package is deprecated. Please use the [Vercel AI SDK's Groq provider](https://ai-sdk.dev/providers/ai-sdk-providers/groq) with `@voltagent/vercel-ai` instead.
+>
+> **Migration Guide:**
+>
+> ```typescript
+> // Old (deprecated)
+> import { GroqProvider } from "@voltagent/groq-ai";
+> const provider = new GroqProvider({ apiKey: "..." });
+>
+> // New (recommended)
+> import { VercelAIProvider } from "@voltagent/vercel-ai";
+> import { groq } from "@ai-sdk/groq";
+> const provider = new VercelAIProvider();
+> // Use with: model: groq("llama-3.3-70b-versatile")
+> ```
+
 VoltAgent Groq AI provider integration using the Groq SDK (`@groq-sdk`).
 
-This package allows you to use Gorq's fast inferencing models within your VoltAgent agents.
+This package allows you to use Groq's fast inferencing models within your VoltAgent agents.
 
 ## Installation
 

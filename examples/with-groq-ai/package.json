@@ -2,10 +2,11 @@
   "name": "voltagent-example-groq-ai",
   "author": "",
   "dependencies": {
+    "@ai-sdk/groq": "^1.2.9",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.75",
-    "@voltagent/groq-ai": "^0.1.14",
     "@voltagent/logger": "^0.1.2",
+    "@voltagent/vercel-ai": "^0.1.17",
     "zod": "^3.24.2"
   },
   "devDependencies": {

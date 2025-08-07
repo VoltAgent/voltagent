@@ -6,6 +6,32 @@ slug: /providers/google-ai
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::warning Deprecated Package
+**This provider is deprecated.** We recommend using the [Vercel AI SDK's Google providers](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai) instead with `@voltagent/vercel-ai`.
+
+**Migration Guide:**
+
+```typescript
+// Old (deprecated)
+import { GoogleAIProvider } from "@voltagent/google-ai";
+const provider = new GoogleAIProvider({ apiKey: "..." });
+
+// New (recommended) - for Gemini API
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { google } from "@ai-sdk/google";
+const provider = new VercelAIProvider();
+// Use with: model: google("gemini-1.5-pro")
+
+// New (recommended) - for Vertex AI
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { vertex } from "@ai-sdk/google-vertex";
+const provider = new VercelAIProvider();
+// Use with: model: vertex("gemini-1.5-pro")
+```
+
+For the latest models and features, please see our [Providers & Models guide](/getting-started/providers-models).
+:::
+
 # Google AI Provider (`@voltagent/google-ai`)
 
 The Google AI Provider integrates VoltAgent with Google's Generative AI capabilities, supporting both the Gemini API (via API Key) and Vertex AI (via project/location configuration). It wraps the [`@google/genai`](https://github.com/googleapis/js-genai) SDK.

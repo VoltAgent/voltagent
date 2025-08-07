@@ -6,6 +6,26 @@ slug: /providers/groq-ai
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::warning Deprecated Package
+**This provider is deprecated.** We recommend using the [Vercel AI SDK's Groq provider](https://ai-sdk.dev/providers/ai-sdk-providers/groq) instead with `@voltagent/vercel-ai`.
+
+**Migration Guide:**
+
+```typescript
+// Old (deprecated)
+import { GroqProvider } from "@voltagent/groq-ai";
+const provider = new GroqProvider({ apiKey: "..." });
+
+// New (recommended)
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { groq } from "@ai-sdk/groq";
+const provider = new VercelAIProvider();
+// Use with: model: groq("llama-3.3-70b-versatile")
+```
+
+For the latest models and features, please see our [Providers & Models guide](/getting-started/providers-models).
+:::
+
 # Groq AI Provider (`@voltagent/groq-ai`)
 
 The Groq AI Provider connects VoltAgent to the Groq API, enabling the use of language models hosted on Groq's high-performance infrastructure. It utilizes the [`groq-sdk`](https://github.com/groq/groq-typescript) Node.js library.

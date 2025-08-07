@@ -1,14 +1,13 @@
+import { google } from "@ai-sdk/google";
 import { Agent, VoltAgent } from "@voltagent/core";
-import { GoogleGenAIProvider } from "@voltagent/google-ai";
 import { createPinoLogger } from "@voltagent/logger";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const agent = new Agent({
   name: "Google Assistant",
   description: "A helpful assistant powered by Google Gemini",
-  llm: new GoogleGenAIProvider({
-    apiKey: process.env.GOOGLE_API_KEY,
-  }),
-  model: "gemini-2.0-flash",
+  llm: new VercelAIProvider(),
+  model: google("gemini-2.0-flash"),
 });
 
 // Create logger
