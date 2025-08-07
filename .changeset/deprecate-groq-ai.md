@@ -21,7 +21,7 @@ As the VoltAgent team, we've made the strategic decision to deprecate our native
 
 ```bash
 npm uninstall @voltagent/groq-ai
-npm install @voltagent/vercel-ai @ai-sdk/groq
+npm install @voltagent/vercel-ai @ai-sdk/groq@1
 ```
 
 ### Step 2: Update Your Code
