@@ -547,6 +547,9 @@ export type OperationContext = {
   /** User-managed context map for this specific operation */
   readonly userContext: Map<string | symbol, any>;
 
+  /** System-managed context map for internal operation tracking */
+  readonly systemContext: Map<string | symbol, any>;
+
   /** The history entry associated with this operation */
   historyEntry: AgentHistoryEntry;
 

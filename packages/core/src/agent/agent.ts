@@ -1068,6 +1068,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const opContext: OperationContext = {
       operationId: historyEntry.id,
       userContext: userContextToUse ?? new Map<string | symbol, unknown>(),
+      systemContext: new Map<string | symbol, unknown>(),
       historyEntry,
       isActive: true,
       parentAgentId: options.parentAgentId,
@@ -1531,8 +1532,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
 
       // Store agent start time in the operation context for later reference
-      operationContext.userContext.set("agent_start_time", agentStartTime);
-      operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+      operationContext.systemContext.set("agent_start_time", agentStartTime);
+      operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
 
       // Publish the new event through AgentEventEmitter
       this.publishTimelineEvent(operationContext, agentStartEvent);
@@ -1691,8 +1692,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
                 parentEventId: agentStartEvent.id, // Link to the agent:start event
               };
 
-              // Store tool ID and start time in user context for later reference
-              operationContext.userContext.set(`tool_${step.id}`, {
+              // Store tool ID and start time in system context for later reference
+              operationContext.systemContext.set(`tool_${step.id}`, {
                 eventId: toolStartEvent.id,
                 startTime: toolStartTime, // Store the start time for later
               });
@@ -1732,7 +1733,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
               // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
               // Get the associated tool:start event ID and time from context
-              const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+              const toolStartInfo = (operationContext.systemContext.get(`tool_${toolCallId}`) as {
                 eventId: string;
                 startTime: string;
               }) || { eventId: undefined, startTime: new Date().toISOString() };
@@ -1815,9 +1816,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // [NEW EVENT SYSTEM] Create an agent:success event
       const agentStartInfo = {
         startTime:
-          (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+          (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
         eventId:
-          (operationContext.userContext.get("agent_start_event_id") as string) ||
+          (operationContext.systemContext.get("agent_start_event_id") as string) ||
           agentStartEvent.id,
       };
 
@@ -1931,9 +1932,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // [NEW EVENT SYSTEM] Create an agent:error event
       const agentErrorStartInfo = {
         startTime:
-          (operationContext.userContext.get("agent_start_time") as string) ||
+          (operationContext.systemContext.get("agent_start_time") as string) ||
           new Date().toISOString(),
-        eventId: operationContext.userContext.get("agent_start_event_id") as string,
+        eventId: operationContext.systemContext.get("agent_start_event_id") as string,
       };
 
       const agentErrorEvent: AgentErrorEvent = {
@@ -2136,8 +2137,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
 
     // Store agent start time in the operation context for later reference
-    operationContext.userContext.set("agent_start_time", agentStartTime);
-    operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+    operationContext.systemContext.set("agent_start_time", agentStartTime);
+    operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
 
     // Publish the new event through AgentEventEmitter
     this.publishTimelineEvent(operationContext, agentStartEvent);
@@ -2250,8 +2251,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
               parentEventId: agentStartEvent.id, // Link to the agent:start event
             };
 
-            // Store tool ID and start time in user context for later reference
-            operationContext.userContext.set(`tool_${chunk.id}`, {
+            // Store tool ID and start time in system context for later reference
+            operationContext.systemContext.set(`tool_${chunk.id}`, {
               eventId: toolStartEvent.id,
               startTime: toolStartTime, // Store the start time for later
             });
@@ -2280,7 +2281,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
             // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
             // Get the associated tool:start event ID and time from context
-            const toolStartInfo = (operationContext.userContext.get(`tool_${toolCallId}`) as {
+            const toolStartInfo = (operationContext.systemContext.get(`tool_${toolCallId}`) as {
               eventId: string;
               startTime: string;
             }) || { eventId: undefined, startTime: new Date().toISOString() };
@@ -2429,9 +2430,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // [NEW EVENT SYSTEM] Create an agent:success event
         const agentStartInfo = {
           startTime:
-            (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+            (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
           eventId:
-            (operationContext.userContext.get("agent_start_event_id") as string) ||
+            (operationContext.systemContext.get("agent_start_event_id") as string) ||
             agentStartEvent.id,
         };
 
@@ -2535,9 +2536,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // [NEW EVENT SYSTEM] Create an agent:error event
         const agentErrorStartInfo = {
           startTime:
-            (operationContext.userContext.get("agent_start_time") as string) ||
+            (operationContext.systemContext.get("agent_start_time") as string) ||
             new Date().toISOString(),
-          eventId: operationContext.userContext.get("agent_start_event_id") as string,
+          eventId: operationContext.systemContext.get("agent_start_event_id") as string,
         };
 
         this.updateHistoryEntry(operationContext, {
@@ -2757,8 +2758,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       };
 
       // Store agent start time in the operation context for later reference
-      operationContext.userContext.set("agent_start_time", agentStartTime);
-      operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+      operationContext.systemContext.set("agent_start_time", agentStartTime);
+      operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
 
       // Publish the new event through AgentEventEmitter
       this.publishTimelineEvent(operationContext, agentStartEvent);
@@ -2813,9 +2814,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // [NEW EVENT SYSTEM] Create an agent:success event
       const agentStartInfo = {
         startTime:
-          (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+          (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
         eventId:
-          (operationContext.userContext.get("agent_start_event_id") as string) ||
+          (operationContext.systemContext.get("agent_start_event_id") as string) ||
           agentStartEvent.id,
       };
 
@@ -2913,9 +2914,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // [NEW EVENT SYSTEM] Create an agent:error event
       const agentErrorStartInfo = {
         startTime:
-          (operationContext.userContext.get("agent_start_time") as string) ||
+          (operationContext.systemContext.get("agent_start_time") as string) ||
           new Date().toISOString(),
-        eventId: operationContext.userContext.get("agent_start_event_id") as string,
+        eventId: operationContext.systemContext.get("agent_start_event_id") as string,
       };
 
       const agentErrorEvent: AgentErrorEvent = {
@@ -3119,8 +3120,8 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     };
 
     // Store agent start time in the operation context for later reference
-    operationContext.userContext.set("agent_start_time", agentStartTime);
-    operationContext.userContext.set("agent_start_event_id", agentStartEvent.id);
+    operationContext.systemContext.set("agent_start_time", agentStartTime);
+    operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
 
     // Publish the new event through AgentEventEmitter
     this.publishTimelineEvent(operationContext, agentStartEvent);
@@ -3176,9 +3177,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // [NEW EVENT SYSTEM] Create an agent:success event
         const agentStartInfo = {
           startTime:
-            (operationContext.userContext.get("agent_start_time") as string) || agentStartTime,
+            (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
           eventId:
-            (operationContext.userContext.get("agent_start_event_id") as string) ||
+            (operationContext.systemContext.get("agent_start_event_id") as string) ||
             agentStartEvent.id,
         };
 
@@ -3285,9 +3286,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // [NEW EVENT SYSTEM] Create an agent:error event
         const agentErrorStartInfo = {
           startTime:
-            (operationContext.userContext.get("agent_start_time") as string) ||
+            (operationContext.systemContext.get("agent_start_time") as string) ||
             new Date().toISOString(),
-          eventId: operationContext.userContext.get("agent_start_event_id") as string,
+          eventId: operationContext.systemContext.get("agent_start_event_id") as string,
         };
 
         const agentErrorEvent: AgentErrorEvent = {
