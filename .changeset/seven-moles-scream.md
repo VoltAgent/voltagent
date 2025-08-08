@@ -6,20 +6,24 @@ feat: add configurable subagent event forwarding for enhanced stream control
 
 ## What Changed for You
 
-You can now control which events from subagents are forwarded to the parent stream, providing fine-grained control over stream verbosity and performance. Previously, all events from subagents were forwarded which could create noisy streams. Now only `tool-call` and `tool-result` events are forwarded by default.
+You can now control which events from subagents are forwarded to the parent stream, providing fine-grained control over stream verbosity and performance. Previously, only `tool-call` and `tool-result` events were forwarded with no way to customize this behavior.
 
-## Before - Limited Control
+## Before - Fixed Event Forwarding
 
 ```typescript
-// ❌ OLD: All subagent events were forwarded to parent stream
+// ❌ OLD: Only tool-call and tool-result events were forwarded (hardcoded)
 const supervisor = new Agent({
   name: "Supervisor",
   subAgents: [writerAgent, editorAgent],
-  // No control over which events appeared in the stream
+  // No way to change which events were forwarded
 });
 
-// Stream contained all subagent events
 const result = await supervisor.streamText("Create content");
+
+// Stream only contained tool-call and tool-result from subagents
+for await (const event of result.fullStream) {
+  console.log("Event", event);
+}
 ```
 
 ## After - Full Control Over Event Forwarding
@@ -45,11 +49,9 @@ const supervisor = new Agent({
 const result = await supervisor.streamText("Create content");
 
 // Filter subagent events in your application
-if (result.fullStream) {
-  for await (const event of result.fullStream) {
-    if (event.subAgentId && event.subAgentName) {
-      console.log(`Event from ${event.subAgentName}: ${event.type}`);
-    }
+for await (const event of result.fullStream) {
+  if (event.subAgentId && event.subAgentName) {
+    console.log(`Event from ${event.subAgentName}: ${event.type}`);
   }
 }
 ```
