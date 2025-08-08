@@ -120,7 +120,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -151,7 +151,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -207,7 +207,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -238,7 +238,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -278,7 +278,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       chromadb:
         specifier: ^3.0.4
@@ -312,7 +312,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -343,7 +343,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -374,7 +374,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -405,7 +405,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -436,7 +436,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -556,7 +556,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -587,7 +587,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -618,7 +618,7 @@ importers:
         specifier: ^0.1.2
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -649,7 +649,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -683,7 +683,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -714,7 +714,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -754,7 +754,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       '@voltagent/vercel-ui':
         specifier: ^0.1.9
@@ -812,7 +812,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -846,7 +846,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       openai:
         specifier: ^4.91.0
@@ -892,7 +892,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       axios:
         specifier: ^1.5.0
@@ -938,7 +938,7 @@ importers:
         specifier: ^0.1.12
         version: link:../../packages/postgres
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -972,7 +972,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       openai:
         specifier: ^4.91.0
@@ -1006,7 +1006,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1037,7 +1037,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1068,7 +1068,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1102,10 +1102,10 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/supabase':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/supabase
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1136,7 +1136,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1167,7 +1167,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1198,7 +1198,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1229,7 +1229,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1260,7 +1260,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
         specifier: ^0.2.3
@@ -1294,7 +1294,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
         specifier: ^0.2.3
@@ -1334,7 +1334,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       '@voltagent/voice':
         specifier: ^0.2.3
@@ -1374,7 +1374,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1405,7 +1405,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ^0.1.17
+        specifier: ^0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
@@ -1464,7 +1464,7 @@ importers:
         specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
-        specifier: ~0.1.17
+        specifier: ~0.1.18
         version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2

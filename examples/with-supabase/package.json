@@ -7,8 +7,8 @@
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.78",
     "@voltagent/logger": "^0.1.3",
-    "@voltagent/supabase": "^0.1.17",
-    "@voltagent/vercel-ai": "^0.1.17",
+    "@voltagent/supabase": "^0.1.18",
+    "@voltagent/vercel-ai": "^0.1.18",
     "zod": "^3.24.2"
   },
   "devDependencies": {
