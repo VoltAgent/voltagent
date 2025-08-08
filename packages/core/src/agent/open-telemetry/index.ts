@@ -7,6 +7,7 @@ import {
   trace,
 } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
+import { safeStringify } from "@voltagent/internal/utils";
 import type { EventStatus, StandardEventData } from "../../events/types";
 import { getGlobalLogger } from "../../logger";
 import type { UsageInfo } from "../providers/base/types";
@@ -79,11 +80,11 @@ export function endOperationSpan(options: EndOperationSpanOptions, logger?: Logg
     const attributes: Attributes = {};
     if (data.input) {
       attributes["ai.prompt.messages"] =
-        typeof data.input === "string" ? data.input : JSON.stringify(data.input);
+        typeof data.input === "string" ? data.input : safeStringify(data.input);
     }
     if (data.output) {
       attributes["ai.response.text"] =
-        typeof data.output === "string" ? data.output : JSON.stringify(data.output);
+        typeof data.output === "string" ? data.output : safeStringify(data.output);
     }
     if (data.usage && typeof data.usage === "object") {
       const usageInfo = data.usage as UsageInfo;
@@ -101,7 +102,7 @@ export function endOperationSpan(options: EndOperationSpanOptions, logger?: Logg
           attributes[`metadata.${key}`] =
             typeof value === "string" || typeof value === "number" || typeof value === "boolean"
               ? value
-              : JSON.stringify(value);
+              : safeStringify(value);
         }
       }
     }
@@ -158,7 +159,7 @@ export function startToolSpan(options: StartToolSpanOptions): Span {
       attributes: {
         "tool.call.id": toolCallId,
         "tool.name": toolName,
-        "tool.arguments": toolInput ? JSON.stringify(toolInput) : undefined,
+        "tool.arguments": toolInput ? safeStringify(toolInput) : undefined,
         "agent.id": agentId,
       },
     },
@@ -185,7 +186,7 @@ export function endToolSpan(options: EndToolSpanOptions, logger?: Logger): void 
     const toolError = resultData.result?.error ?? resultData.error;
     const isError = Boolean(toolError);
 
-    span.setAttribute("tool.result", JSON.stringify(toolResultContent));
+    span.setAttribute("tool.result", safeStringify(toolResultContent));
     if (isError) {
       const errorMessage = toolError?.message || String(toolError || "Unknown tool error");
       span.setAttribute("tool.error.message", errorMessage);

@@ -54,6 +54,7 @@
   "packageManager": "pnpm@8.10.5",
   "private": true,
   "scripts": {
+    "archive:deprecated": "node scripts/archive-deprecated.js",
     "attw": "lerna run attw --scope @voltagent/*",
     "attw:all": "lerna run attw --scope @voltagent/*",
     "biome": "biome",

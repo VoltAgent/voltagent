@@ -323,7 +323,13 @@ export interface CommonGenerateOptions {
   // Maximum number of steps for this specific request (overrides agent's maxSteps)
   maxSteps?: number;
 
-  // Signal for aborting the operation
+  // AbortController for cancelling the operation and accessing the signal
+  abortController?: AbortController;
+
+  /**
+   * @deprecated Use abortController instead. This field will be removed in a future version.
+   * Signal for aborting the operation
+   */
   signal?: AbortSignal;
 
   // Current history entry ID for parent context in tool execution
@@ -547,6 +553,9 @@ export type OperationContext = {
   /** User-managed context map for this specific operation */
   readonly userContext: Map<string | symbol, any>;
 
+  /** System-managed context map for internal operation tracking */
+  readonly systemContext: Map<string | symbol, any>;
+
   /** The history entry associated with this operation */
   historyEntry: AgentHistoryEntry;
 
@@ -571,8 +580,17 @@ export type OperationContext = {
   /** Conversation steps for building full message history including tool calls/results */
   conversationSteps?: StepWithContent[];
 
-  /** AbortSignal for cancelling the operation */
+  /** AbortController for cancelling the operation and accessing the signal */
+  abortController?: AbortController;
+
+  /**
+   * @deprecated Use abortController.signal instead. This field will be removed in a future version.
+   * AbortSignal for cancelling the operation
+   */
   signal?: AbortSignal;
+
+  /** Cancellation error to be thrown when operation is aborted */
+  cancellationError?: AbortError;
 };
 
 /**
@@ -628,6 +646,29 @@ export interface VoltAgentError {
 
   /** If the error occurred during tool execution, this field contains the relevant details. Otherwise, it's undefined. */
   toolError?: ToolErrorInfo;
+}
+
+/**
+ * Error thrown when an operation is aborted via AbortController
+ */
+export interface AbortError extends Error {
+  name: "AbortError";
+  /** The reason passed to abort() method */
+  reason?: unknown;
+}
+
+/**
+ * Type guard to check if an error is an AbortError
+ */
+export function isAbortError(error: unknown): error is AbortError {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+/**
+ * Type guard to check if an error is a VoltAgentError
+ */
+export function isVoltAgentError(error: unknown): error is VoltAgentError {
+  return error !== null && typeof error === "object" && "message" in error && !isAbortError(error);
 }
 
 /**

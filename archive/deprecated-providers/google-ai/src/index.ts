@@ -35,6 +35,13 @@ import type {
 import { executeFunctionCalls, prepareToolsForGoogleSDK } from "./utils/function-calling";
 import { isZodObject, responseSchemaFromZodType } from "./utils/schema_helper";
 
+// Deprecation warning
+console.warn(
+  "\x1b[33m⚠️  DEPRECATION WARNING: @voltagent/google-ai is deprecated and will no longer receive updates.\x1b[0m\n" +
+    "\x1b[33mPlease migrate to @ai-sdk/google with @voltagent/vercel-ai instead.\x1b[0m\n" +
+    "\x1b[36mMigration guide: https://voltagent.dev/docs/providers/google-ai/\x1b[0m\n",
+);
+
 type StreamProcessingState = {
   accumulatedText: string;
   finalUsage?: UsageInfo;

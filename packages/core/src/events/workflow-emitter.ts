@@ -95,7 +95,7 @@ export class WorkflowEventEmitter extends EventEmitter {
     this.workflowEventQueue.enqueue({
       id: `workflow-event-${event.id}`,
       operation: async () => {
-        const clonedEvent = deepClone(event, this.logger);
+        const clonedEvent = deepClone(event);
 
         await this.publishWorkflowEventSync({
           workflowId,

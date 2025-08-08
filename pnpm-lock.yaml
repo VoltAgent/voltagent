@@ -114,10 +114,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -145,10 +145,10 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -173,7 +173,7 @@ importers:
   examples/sdk-trace-example:
     dependencies:
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/sdk':
         specifier: ^0.1.6
@@ -189,23 +189,57 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
-  examples/with-anthropic:
+  examples/with-amazon-bedrock:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.40.0
-        version: 0.40.1
-      '@voltagent/anthropic-ai':
-        specifier: ^0.1.13
-        version: link:../../packages/anthropic-ai
+      '@ai-sdk/amazon-bedrock':
+        specifier: ^2.2.8
+        version: 2.2.12(zod@3.24.2)
+      '@aws-sdk/credential-providers':
+        specifier: ~3.799.0
+        version: 3.799.0
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.17
+        version: link:../../packages/vercel-ai
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.2.0
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.3
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
+  examples/with-anthropic:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^1.2.12
+        version: 1.2.12(zod@3.24.2)
+      '@voltagent/cli':
+        specifier: ^0.1.10
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^0.1.77
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.3
+        version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.17
+        version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -238,10 +272,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -272,10 +306,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -303,10 +337,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -334,10 +368,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -365,10 +399,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -389,18 +423,21 @@ importers:
 
   examples/with-google-ai:
     dependencies:
+      '@ai-sdk/google':
+        specifier: ^1.2.22
+        version: 1.2.22(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
-      '@voltagent/google-ai':
-        specifier: ^0.4.1
-        version: link:../../packages/google-ai
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.17
+        version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -506,18 +543,21 @@ importers:
 
   examples/with-google-vertex-ai:
     dependencies:
+      '@ai-sdk/google-vertex':
+        specifier: ^2.0.0
+        version: 2.2.27(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
-      '@voltagent/google-ai':
-        specifier: ^0.4.1
-        version: link:../../packages/google-ai
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.17
+        version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -534,18 +574,21 @@ importers:
 
   examples/with-groq-ai:
     dependencies:
+      '@ai-sdk/groq':
+        specifier: ^1.2.9
+        version: 1.2.9(zod@3.24.2)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
-      '@voltagent/groq-ai':
-        specifier: ^0.1.14
-        version: link:../../packages/groq-ai
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^0.1.17
+        version: link:../../packages/vercel-ai
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -600,10 +643,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -631,13 +674,13 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^0.1.5
         version: link:../../packages/langfuse-exporter
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -665,10 +708,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -705,16 +748,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
         version: link:../../packages/vercel-ai
       '@voltagent/vercel-ui':
-        specifier: ^0.1.8
+        specifier: ^0.1.9
         version: link:../../packages/vercel-ui
       ai:
         specifier: ^4.3.16
@@ -763,10 +806,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -797,10 +840,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -843,10 +886,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -886,10 +929,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/postgres':
         specifier: ^0.1.11
@@ -923,10 +966,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -957,10 +1000,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -988,10 +1031,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1019,10 +1062,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1053,10 +1096,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/supabase':
         specifier: ^0.1.16
@@ -1087,10 +1130,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1118,10 +1161,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1149,10 +1192,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1180,10 +1223,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1211,10 +1254,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1245,10 +1288,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1285,10 +1328,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1325,10 +1368,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1356,10 +1399,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ^0.1.17
@@ -1384,10 +1427,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^0.1.75
+        specifier: ^0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/xsai':
         specifier: ^0.3.2
@@ -1415,10 +1458,10 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~0.1.75
+        specifier: ~0.1.77
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../../packages/logger
       '@voltagent/vercel-ai':
         specifier: ~0.1.17
@@ -1436,34 +1479,6 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.2
-
-  packages/anthropic-ai:
-    dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.40.0
-        version: 0.40.1
-      '@voltagent/core':
-        specifier: ^0.1.71
-        version: link:../core
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.3
-        version: 24.2.0
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
 
   packages/cli:
     dependencies:
@@ -1577,7 +1592,7 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       '@voltagent/internal':
-        specifier: ^0.0.7
+        specifier: ^0.0.8
         version: link:../internal
       '@voltagent/logger':
         specifier: ^0.1.0
@@ -1733,68 +1748,6 @@ importers:
         specifier: ^3.24.2
         version: 3.24.2
 
-  packages/google-ai:
-    dependencies:
-      '@google/genai':
-        specifier: ^0.10.0
-        version: 0.10.0
-      '@voltagent/core':
-        specifier: ^0.1.71
-        version: link:../core
-      zod-to-json-schema:
-        specifier: ^3.24.5
-        version: 3.24.6(zod@3.24.2)
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.3
-        version: 24.2.0
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
-
-  packages/groq-ai:
-    dependencies:
-      '@voltagent/core':
-        specifier: ^0.1.71
-        version: link:../core
-      groq-sdk:
-        specifier: ^0.20.0
-        version: 0.20.1
-      zod-to-json-schema:
-        specifier: ^3.24.5
-        version: 3.24.6(zod@3.24.2)
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.3
-        version: 24.2.0
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
-
   packages/internal:
     devDependencies:
       '@types/node':
@@ -1853,7 +1806,7 @@ importers:
   packages/logger:
     dependencies:
       '@voltagent/internal':
-        specifier: ^0.0.7
+        specifier: ^0.0.8
         version: link:../internal
       pino:
         specifier: ^9.7.0
@@ -1975,10 +1928,10 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^0.1.73
+        specifier: ^0.1.77
         version: link:../core
       '@voltagent/internal':
-        specifier: ^0.0.7
+        specifier: ^0.0.8
         version: link:../internal
       tsup:
         specifier: ^8.5.0
@@ -2036,7 +1989,7 @@ importers:
         specifier: ^1.2.11
         version: 1.2.11(zod@3.24.2)
       '@voltagent/internal':
-        specifier: ^0.0.7
+        specifier: ^0.0.8
         version: link:../internal
       ai:
         specifier: ^4.3.16
@@ -2058,7 +2011,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^0.1.73
+        specifier: ^0.1.77
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -2157,6 +2110,17 @@ packages:
       zod: 3.24.2
     dev: false
 
+  /@ai-sdk/anthropic@1.2.12(zod@3.24.2):
+    resolution: {integrity: sha512-YSzjlko7JvuiyQFmI9RN1tNZdEiZxc+6xld/0tq/VkJaHpEzGAb1yiNxxvmYVcjvfu/PcvCxAAYXmTYQQ63IHQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      '@ai-sdk/provider': 1.1.3
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
+      zod: 3.24.2
+    dev: false
+
   /@ai-sdk/gateway@1.0.0-alpha.11(zod@3.24.2):
     resolution: {integrity: sha512-q33Um+GlUvWPIPgx/MKRkArbtanXcK8aJzfR6meW6BSwxuE2lh6l4m4v97/Wyt/IEnkfz5wBPVFXiLC91l9JzQ==}
     engines: {node: '>=18'}
@@ -2165,6 +2129,45 @@ packages:
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.11
       '@ai-sdk/provider-utils': 3.0.0-alpha.11(zod@3.24.2)
+      zod: 3.24.2
+    dev: false
+
+  /@ai-sdk/google-vertex@2.2.27(zod@3.24.2):
+    resolution: {integrity: sha512-iDGX/2yrU4OOL1p/ENpfl3MWxuqp9/bE22Z8Ip4DtLCUx6ismUNtrKO357igM1/3jrM6t9C6egCPniHqBsHOJA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      '@ai-sdk/anthropic': 1.2.12(zod@3.24.2)
+      '@ai-sdk/google': 1.2.22(zod@3.24.2)
+      '@ai-sdk/provider': 1.1.3
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
+      google-auth-library: 9.15.1
+      zod: 3.24.2
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+    dev: false
+
+  /@ai-sdk/google@1.2.22(zod@3.24.2):
+    resolution: {integrity: sha512-Ppxu3DIieF1G9pyQ5O1Z646GYR0gkC57YdBqXJ82qvCdhEhZHu0TWhmnOoeIWe2olSbuDeoOY+MfJrW8dzS3Hw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      '@ai-sdk/provider': 1.1.3
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
+      zod: 3.24.2
+    dev: false
+
+  /@ai-sdk/groq@1.2.9(zod@3.24.2):
+    resolution: {integrity: sha512-7MoDaxm8yWtiRbD1LipYZG0kBl+Xe0sv/EeyxnHnGPZappXdlgtdOgTZVjjXkT3nWP30jjZi9A45zoVrBMb3Xg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      '@ai-sdk/provider': 1.1.3
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
       zod: 3.24.2
     dev: false
 
@@ -2274,20 +2277,6 @@ packages:
     resolution: {integrity: sha512-Jh15/qVmrLGhkKJBdXlK1+9tY4lZruYjsgkDFj08ZmDiWVBLJcqkok7Z0/R0In+i1rScBpJlSvrTS2Lm41Pbnw==}
     dev: true
 
-  /@anthropic-ai/sdk@0.40.1:
-    resolution: {integrity: sha512-DJMWm8lTEM9Lk/MSFL+V+ugF7jKOn0M2Ujvb5fN8r2nY14aHbGPZ1k6sgjL+tpJ3VuOGJNG+4R83jEpOuYPv8w==}
-    dependencies:
-      '@types/node': 18.19.121
-      '@types/node-fetch': 2.6.13
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
   /@arethetypeswrong/cli@0.17.4:
     resolution: {integrity: sha512-AeiKxtf67XD/NdOqXgBOE5TZWH3EOCt+0GkbUpekOzngc+Q/cRZ5azjWyMxISxxfp0EItgm5NoSld9p7BAA5xQ==}
     engines: {node: '>=18'}
@@ -2340,7 +2329,7 @@ packages:
       '@aws-crypto/sha256-js': 5.2.0
       '@aws-crypto/supports-web-crypto': 5.2.0
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.775.0
+      '@aws-sdk/types': 3.840.0
       '@aws-sdk/util-locate-window': 3.804.0
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
@@ -2351,7 +2340,7 @@ packages:
     engines: {node: '>=16.0.0'}
     dependencies:
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.775.0
+      '@aws-sdk/types': 3.840.0
       tslib: 2.8.1
     dev: false
 
@@ -5154,21 +5143,6 @@ packages:
   /@gar/promisify@1.1.3:
     resolution: {integrity: sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==}
     dev: true
-
-  /@google/genai@0.10.0:
-    resolution: {integrity: sha512-LAbp0em5A+wRtQR2+r5ckRBg2U2cBy8cJHgyTHa9PUbK8zucApw6A93HWyom/qlUQBNCpnIHFp20RiJuYMQwAw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      google-auth-library: 9.15.1
-      ws: 8.18.3
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.6(zod@3.24.2)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - supports-color
-      - utf-8-validate
-    dev: false
 
   /@grpc/grpc-js@1.13.4:
     resolution: {integrity: sha512-GsFaMXCkMqkKIvwCQjCrwH+GHbPKBjhwo/8ZuUkWHqbI73Kky9I+pQltrlT0+MWpedCoosda53lgjYfyEPgxBg==}
@@ -12806,20 +12780,6 @@ packages:
     dependencies:
       chalk: 4.1.2
       tinygradient: 1.1.5
-    dev: false
-
-  /groq-sdk@0.20.1:
-    resolution: {integrity: sha512-I/U7mHDcanKHR/P0oKSSS0M6oHR69G1QgtMplqmF3gSejJ5ihV7l+/0OqbNoqOzYoQKG4XH7O4zCqMoTKCztQQ==}
-    dependencies:
-      '@types/node': 18.19.121
-      '@types/node-fetch': 2.6.13
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
   /gtoken@7.1.0:

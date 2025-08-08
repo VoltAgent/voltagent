@@ -1,4 +1,5 @@
 import type { Logger } from "@voltagent/internal";
+import { deepClone } from "@voltagent/internal/utils";
 import type { NewTimelineEvent } from "../../events/types";
 import { LoggerProxy } from "../../logger";
 import type {
@@ -112,7 +113,7 @@ export class InMemoryStorage implements Memory {
     const entry = this.historyEntries.get(key);
 
     // No need for additional processing - we already store complete objects
-    return entry ? JSON.parse(JSON.stringify(entry)) : undefined;
+    return entry ? deepClone(entry) : undefined;
   }
 
   /**
@@ -121,7 +122,7 @@ export class InMemoryStorage implements Memory {
   public async getHistoryStep(key: string): Promise<any | undefined> {
     this.debug(`Getting history step with key ${key}`);
     const step = this.historySteps.get(key);
-    return step ? JSON.parse(JSON.stringify(step)) : undefined;
+    return step ? deepClone(step) : undefined;
   }
 
   /**
@@ -291,7 +292,7 @@ export class InMemoryStorage implements Memory {
 
     // Sort by timestamp (newest first)
     const sortedEntries = entries
-      .map((entry) => JSON.parse(JSON.stringify(entry)))
+      .map((entry) => deepClone(entry))
       .sort((a, b) => {
         const aTime = new Date(a.timestamp || a.createdAt || 0).getTime();
         const bTime = new Date(b.timestamp || b.createdAt || 0).getTime();
@@ -833,7 +834,7 @@ export class InMemoryStorage implements Memory {
   public async getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null> {
     this.debug(`Getting workflow history entry ${id}`);
     const entry = this.workflowHistories.get(id);
-    return entry ? JSON.parse(JSON.stringify(entry)) : null;
+    return entry ? deepClone(entry) : null;
   }
 
   /**
@@ -849,7 +850,7 @@ export class InMemoryStorage implements Memory {
 
     // Sort by startTime (newest first)
     return entries
-      .map((entry) => JSON.parse(JSON.stringify(entry)))
+      .map((entry) => deepClone(entry))
       .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
   }
 
@@ -943,7 +944,7 @@ export class InMemoryStorage implements Memory {
   public async getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null> {
     this.debug(`Getting workflow step ${id}`);
     const step = this.workflowSteps.get(id);
-    return step ? JSON.parse(JSON.stringify(step)) : null;
+    return step ? deepClone(step) : null;
   }
 
   /**
@@ -957,9 +958,7 @@ export class InMemoryStorage implements Memory {
     );
 
     // Sort by stepIndex
-    return steps
-      .map((step) => JSON.parse(JSON.stringify(step)))
-      .sort((a, b) => a.stepIndex - b.stepIndex);
+    return steps.map((step) => deepClone(step)).sort((a, b) => a.stepIndex - b.stepIndex);
   }
 
   /**
@@ -1076,7 +1075,7 @@ export class InMemoryStorage implements Memory {
   public async getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null> {
     this.debug(`Getting workflow timeline event ${id}`);
     const event = this.workflowTimelineEvents.get(id);
-    return event ? JSON.parse(JSON.stringify(event)) : null;
+    return event ? deepClone(event) : null;
   }
 
   /**
@@ -1093,11 +1092,11 @@ export class InMemoryStorage implements Memory {
 
     // Sort by event sequence first, then by start time for proper ordering
     return events
-      .map((event) => JSON.parse(JSON.stringify(event)))
+      .map((event) => deepClone(event))
       .sort((a, b) => {
         // Sort by event sequence first (required)
         if (a.eventSequence !== b.eventSequence) {
-          return a.eventSequence - b.eventSequence;
+          return (a.eventSequence ?? 0) - (b.eventSequence ?? 0);
         }
 
         // Fallback to time-based sorting
@@ -1192,7 +1191,7 @@ export class InMemoryStorage implements Memory {
     }
 
     // Steps and events are already stored in the entry, just return a deep copy
-    return JSON.parse(JSON.stringify(entry));
+    return deepClone(entry);
   }
 
   /**

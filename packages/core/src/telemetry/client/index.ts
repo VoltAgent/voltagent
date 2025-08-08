@@ -1,3 +1,4 @@
+import { safeStringify } from "@voltagent/internal/utils";
 import type { AgentHistoryEntry, HistoryStep } from "../../agent/history";
 import type { UsageInfo } from "../../agent/providers";
 import type { AgentStatus } from "../../agent/types";
@@ -81,7 +82,7 @@ export class TelemetryServiceApiClient {
     const response = await this.fetchImplementation(url, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? safeStringify(body) : undefined,
     });
 
     if (!response.ok) {
@@ -93,7 +94,7 @@ export class TelemetryServiceApiClient {
       }
 
       throw new Error(
-        `API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorBody)}`,
+        `API request failed: ${response.status} ${response.statusText} - ${safeStringify(errorBody)}`,
       );
     }
 

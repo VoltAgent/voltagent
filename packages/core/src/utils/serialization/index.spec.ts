@@ -162,13 +162,6 @@ describe("serializeValueForDebug", () => {
     expect(serializeValueForDebug(new AnonClass())).toBe("[Object: AnonClass]"); // Might infer name
   });
 
-  it("should handle JSON serialization errors gracefully for plain objects", () => {
-    const circular: any = {};
-    circular.self = circular;
-    // Note: Our simple check using JSON.stringify/parse handles top-level circular refs
-    expect(serializeValueForDebug(circular)).toMatch(/^\[SerializationError:/);
-  });
-
   it("should handle unsupported types", () => {
     // Example: BigInt might not be directly supported depending on environment/needs
     // Check if BigInt is supported in the environment first

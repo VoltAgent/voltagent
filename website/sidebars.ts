@@ -28,6 +28,7 @@ const sidebars: SidebarsConfig = {
             rel: "noreferrer",
           },
         },
+        "getting-started/providers-models",
       ],
     },
     {
@@ -45,6 +46,7 @@ const sidebars: SidebarsConfig = {
         "agents/voice",
         "agents/context",
         "agents/dynamic-agents",
+        "agents/cancellation",
       ],
     },
     {

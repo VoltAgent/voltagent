@@ -126,7 +126,7 @@ const openAIAgent = new Agent({
 const anthropicAgent = new Agent({
   id: "anthropic-agent",
   llm: new VercelProvider(),
-  model: anthropic("claude-3-sonnet-20240229"),
+  model: anthropic("claude-opus-4-1"),
   instructions: "Uses Anthropic",
 });
 

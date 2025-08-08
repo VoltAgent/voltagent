@@ -1,0 +1,178 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`safe-stringify > array containing objects with the same circular reference 1`] = `
+"[
+	{
+		"b": 2,
+		"c": {
+			"a": 1,
+			"self": "[Circular]"
+		}
+	},
+	{
+		"d": 3,
+		"e": {
+			"a": 1,
+			"self": "[Circular]"
+		}
+	}
+]"
+`;
+
+exports[`safe-stringify > circular array 1`] = `
+"[
+	1,
+	"[Circular]",
+	"[Circular]"
+]"
+`;
+
+exports[`safe-stringify > circular array with nested circular arrays 1`] = `
+"[
+	[
+		1,
+		2,
+		3
+	],
+	"[Circular]",
+	[
+		"[Circular]",
+		"[Circular]"
+	]
+]"
+`;
+
+exports[`safe-stringify > circular object 1`] = `
+"{
+	"a": true,
+	"b": "[Circular]",
+	"c": [
+		"[Circular]",
+		"[Circular]"
+	],
+	"d": {
+		"e": [
+			"[Circular]",
+			"[Circular]"
+		]
+	}
+}"
+`;
+
+exports[`safe-stringify > circular object 2 1`] = `
+"{
+	"a": {
+		"c": true
+	},
+	"b": {
+		"c": true
+	}
+}"
+`;
+
+exports[`safe-stringify > circular object with multiple nested circular references 1`] = `
+"{
+	"a": {
+		"b": {
+			"c": {
+				"d": "[Circular]",
+				"e": "[Circular]",
+				"f": "[Circular]"
+			}
+		}
+	}
+}"
+`;
+
+exports[`safe-stringify > complex object with circular and non-circular references 1`] = `
+"{
+	"a": {
+		"x": 1
+	},
+	"b": {
+		"c": {
+			"x": 1
+		},
+		"d": {
+			"y": 2,
+			"self": "[Circular]"
+		}
+	},
+	"e": {
+		"y": 2,
+		"self": "[Circular]"
+	}
+}"
+`;
+
+exports[`safe-stringify > multiple circular objects in array 1`] = `
+"[
+	{
+		"a": true,
+		"b": "[Circular]"
+	},
+	{
+		"a": true,
+		"b": "[Circular]"
+	}
+]"
+`;
+
+exports[`safe-stringify > multiple circular objects in object 1`] = `
+"{
+	"x": {
+		"a": true,
+		"b": "[Circular]"
+	},
+	"y": {
+		"a": true,
+		"b": "[Circular]"
+	}
+}"
+`;
+
+exports[`safe-stringify > nested circular object 1`] = `
+"{
+	"a": {
+		"b": {
+			"c": {
+				"d": "[Circular]"
+			}
+		}
+	}
+}"
+`;
+
+exports[`safe-stringify > object with circular reference to parent and grandparent 1`] = `
+"{
+	"a": {
+		"b": {
+			"c": {
+				"parent": "[Circular]",
+				"grandparent": "[Circular]"
+			}
+		}
+	}
+}"
+`;
+
+exports[`safe-stringify > object with circular references at different depths 1`] = `
+"{
+	"a": {
+		"b": {
+			"c": {
+				"d": "[Circular]",
+				"e": "[Circular]"
+			}
+		}
+	}
+}"
+`;
+
+exports[`safe-stringify > object with value as a circular reference 1`] = `
+"{
+	"a": 1,
+	"b": 2,
+	"self": "[Circular]"
+}"
+`;

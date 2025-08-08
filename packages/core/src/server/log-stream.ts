@@ -1,4 +1,5 @@
 import type { LogEntry, LogFilter, Logger } from "@voltagent/internal";
+import { safeStringify } from "@voltagent/internal/utils";
 import type { WebSocket } from "ws";
 import { getGlobalLogBuffer, getGlobalLogger } from "../logger";
 
@@ -124,7 +125,7 @@ export class LogStreamManager {
   private sendToClient(client: LogStreamClient, data: any): void {
     try {
       if (client.ws.readyState === client.ws.OPEN) {
-        client.ws.send(JSON.stringify(data));
+        client.ws.send(safeStringify(data));
       }
     } catch (error) {
       this.logger.error("Failed to send log to client", { error });

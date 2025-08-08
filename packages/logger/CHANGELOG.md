@@ -1,5 +1,12 @@
 # @voltagent/logger
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [[`8de5785`](https://github.com/VoltAgent/voltagent/commit/8de5785e385bec632f846bcae44ee5cb22a9022e)]:
+  - @voltagent/internal@0.0.8
+
 ## 0.1.2
 
 ### Patch Changes
