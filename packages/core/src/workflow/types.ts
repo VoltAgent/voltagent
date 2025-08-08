@@ -102,6 +102,10 @@ export interface WorkflowExecutionResult<
   ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
 }
 
+export interface WorkflowFormatters {
+  metadata?: (metadata: Record<string, unknown>) => Record<string, unknown>;
+}
+
 export interface WorkflowRunOptions {
   /**
    * The active step, this can be used to track the current step in a workflow

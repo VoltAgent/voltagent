@@ -13,13 +13,15 @@ import type {
 } from "../types";
 
 /**
- * Manages workflow execution history and persistence
- * Provides a high-level interface for workflow memory operations
+ * Manages workflow execution history and persistence and provides a
+ * high-level interface for workflow memory operations
  */
 export class WorkflowMemoryManager {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // @ts-ignore
+  // @ts-expect-error - TODO: Add exporter to the constructor
   private _exporter?: VoltAgentExporter;
+  /**
+   * The logger instance
+   */
   private logger: Logger;
 
   constructor(
@@ -33,14 +35,20 @@ export class WorkflowMemoryManager {
   /**
    * Set the VoltAgent exporter for telemetry
    */
-  setExporter(exporter: VoltAgentExporter): void {
+  public setExporter(exporter: VoltAgentExporter): void {
     this._exporter = exporter;
   }
 
   /**
    * Create a new workflow execution entry
+   *
+   * @param workflowId - The ID of the workflow
+   * @param workflowName - The name of the workflow
+   * @param input - The input to the workflow
+   * @param options - The options for the workflow execution
+   * @returns The created workflow execution
    */
-  async createExecution(
+  public async createExecution(
     workflowId: string,
     workflowName: string,
     input: unknown,
@@ -88,8 +96,12 @@ export class WorkflowMemoryManager {
 
   /**
    * Update an existing workflow execution
+   *
+   * @param id - The ID of the workflow execution to update
+   * @param updates - The updates to apply to the workflow execution
+   * @returns The updated workflow execution
    */
-  async updateExecution(
+  public async updateExecution(
     id: string,
     updates: Partial<WorkflowHistoryEntry>,
   ): Promise<WorkflowHistoryEntry | null> {
@@ -133,29 +145,43 @@ export class WorkflowMemoryManager {
 
   /**
    * Get a workflow execution by ID
+   *
+   * @param id - The ID of the workflow execution to get
+   * @returns The workflow execution
    */
-  async getExecution(id: string): Promise<WorkflowHistoryEntry | null> {
+  public async getExecution(id: string): Promise<WorkflowHistoryEntry | null> {
     return this.storage.getWorkflowHistory(id);
   }
 
   /**
    * Get all executions for a workflow
+   *
+   * @param workflowId - The ID of the workflow to get executions for
+   * @returns The workflow executions
    */
-  async getExecutions(workflowId: string): Promise<WorkflowHistoryEntry[]> {
+  public async getExecutions(workflowId: string): Promise<WorkflowHistoryEntry[]> {
     return this.storage.getWorkflowHistoryByWorkflowId(workflowId);
   }
 
   /**
    * Get workflow execution with all related data (steps and events)
    */
-  async getExecutionWithDetails(id: string): Promise<WorkflowHistoryEntry | null> {
+  public async getExecutionWithDetails(id: string): Promise<WorkflowHistoryEntry | null> {
     return this.storage.getWorkflowHistoryWithStepsAndEvents(id);
   }
 
   /**
    * Record the start of a workflow step
+   *
+   * @param workflowHistoryId - The ID of the workflow execution
+   * @param stepIndex - The index of the step
+   * @param stepType - The type of step
+   * @param stepName - The name of the step
+   * @param input - The input to the step
+   * @param options - The options for the step
+   * @returns The recorded step
    */
-  async recordStepStart(
+  public async recordStepStart(
     workflowHistoryId: string,
     stepIndex: number,
     stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race",
@@ -188,8 +214,12 @@ export class WorkflowMemoryManager {
 
   /**
    * Record the end of a workflow step
+   *
+   * @param stepId - The ID of the step to record the end of
+   * @param options - The options for the step
+   * @returns The recorded step
    */
-  async recordStepEnd(
+  public async recordStepEnd(
     stepId: string,
     options: UpdateWorkflowStepOptions = {},
   ): Promise<WorkflowStepHistoryEntry | null> {
@@ -211,8 +241,11 @@ export class WorkflowMemoryManager {
 
   /**
    * Record a timeline event for a workflow
+   *
+   * @param workflowHistoryId - The ID of the workflow execution
+   * @param event - The event to record
    */
-  async recordTimelineEvent(
+  public async recordTimelineEvent(
     workflowHistoryId: string,
     event: Omit<WorkflowTimelineEvent, "workflowHistoryId" | "createdAt">,
   ): Promise<void> {
@@ -238,30 +271,41 @@ export class WorkflowMemoryManager {
 
   /**
    * Get workflow statistics
+   *
+   * @param workflowId - The ID of the workflow to get statistics for
+   * @returns The workflow statistics
    */
-  async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
+  public async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
     return this.storage.getWorkflowStats(workflowId);
   }
 
   /**
    * Get all workflow IDs
+   *
+   * @returns The workflow IDs
    */
-  async getAllWorkflowIds(): Promise<string[]> {
+  public async getAllWorkflowIds(): Promise<string[]> {
     return this.storage.getAllWorkflowIds();
   }
 
   /**
    * Delete a workflow execution and all related data
+   *
+   * @param id - The ID of the workflow execution to delete
    */
-  async deleteExecution(id: string): Promise<void> {
+  public async deleteExecution(id: string): Promise<void> {
     await this.storage.deleteWorkflowHistoryWithRelated(id);
     this.logger.trace(`Deleted workflow execution: ${id}`);
   }
 
   /**
    * Clean up old workflow executions
+   *
+   * @param workflowId - The ID of the workflow to clean up
+   * @param maxEntries - The maximum number of entries to keep
+   * @returns The number of deleted entries
    */
-  async cleanupOldExecutions(workflowId: string, maxEntries: number): Promise<number> {
+  public async cleanupOldExecutions(workflowId: string, maxEntries: number): Promise<number> {
     const deletedCount = await this.storage.cleanupOldWorkflowHistories(workflowId, maxEntries);
     this.logger.trace(`Cleaned up ${deletedCount} old executions for workflow: ${workflowId}`);
     return deletedCount;
@@ -269,22 +313,32 @@ export class WorkflowMemoryManager {
 
   /**
    * Get workflow steps for a specific execution
+   *
+   * @param workflowHistoryId - The ID of the workflow execution
+   * @returns The workflow steps
    */
-  async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
+  public async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
     return this.storage.getWorkflowSteps(workflowHistoryId);
   }
 
   /**
    * Get timeline events for a specific execution
+   *
+   * @param workflowHistoryId - The ID of the workflow execution
+   * @returns The timeline events
    */
-  async getTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]> {
+  public async getTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]> {
     return this.storage.getWorkflowTimelineEvents(workflowHistoryId);
   }
 
   /**
    * Update a workflow step
+   *
+   * @param stepId - The ID of the step to update
+   * @param updates - The updates to apply to the step
+   * @returns The updated step
    */
-  async updateStep(
+  public async updateStep(
     stepId: string,
     updates: Partial<WorkflowStepHistoryEntry>,
   ): Promise<WorkflowStepHistoryEntry | null> {
@@ -301,23 +355,35 @@ export class WorkflowMemoryManager {
 
   /**
    * Get a single workflow step
+   *
+   * @param stepId - The ID of the step to get
+   * @returns The workflow step
    */
-  async getStep(stepId: string): Promise<WorkflowStepHistoryEntry | null> {
+  public async getStep(stepId: string): Promise<WorkflowStepHistoryEntry | null> {
     return this.storage.getWorkflowStep(stepId);
   }
 
   /**
    * Get all suspended workflow executions for a workflow
+   *
+   * @param workflowId - The ID of the workflow to get suspended executions for
+   * @returns The suspended workflow executions
    */
-  async getSuspendedExecutions(workflowId: string): Promise<WorkflowHistoryEntry[]> {
+  public async getSuspendedExecutions(workflowId: string): Promise<WorkflowHistoryEntry[]> {
     const allExecutions = await this.getExecutions(workflowId);
     return allExecutions.filter((execution) => execution.status === ("suspended" as any));
   }
 
   /**
    * Store suspension checkpoint data
+   *
+   * @param executionId - The ID of the execution to store the suspension checkpoint for
+   * @param suspensionMetadata - The suspension metadata to store
    */
-  async storeSuspensionCheckpoint(executionId: string, suspensionMetadata: any): Promise<void> {
+  public async storeSuspensionCheckpoint(
+    executionId: string,
+    suspensionMetadata: any,
+  ): Promise<void> {
     this.logger.trace(`Attempting to store suspension checkpoint for execution ${executionId}`);
     const execution = await this.getExecution(executionId);
     if (execution) {
@@ -340,8 +406,11 @@ export class WorkflowMemoryManager {
 
   /**
    * Get a single timeline event
+   *
+   * @param eventId - The ID of the timeline event to get
+   * @returns The timeline event
    */
-  async getTimelineEvent(eventId: string): Promise<WorkflowTimelineEvent | null> {
+  public async getTimelineEvent(eventId: string): Promise<WorkflowTimelineEvent | null> {
     return this.storage.getWorkflowTimelineEvent(eventId);
   }
 }

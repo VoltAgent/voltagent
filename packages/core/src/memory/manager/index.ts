@@ -19,22 +19,6 @@ import { LibSQLStorage } from "../index";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";
 
 /**
- * Convert BaseMessage to MemoryMessage for memory storage
- */
-const convertToMemoryMessage = (
-  message: BaseMessage,
-  type: "text" | "tool-call" | "tool-result" = "text",
-): MemoryMessage => {
-  return {
-    id: crypto.randomUUID(),
-    role: message.role,
-    content: message.content,
-    type,
-    createdAt: new Date().toISOString(),
-  };
-};
-
-/**
  * Manager class to handle all memory-related operations
  */
 export class MemoryManager {
@@ -122,26 +106,9 @@ export class MemoryManager {
   }
 
   /**
-   * Create and publish a timeline event for memory operations using the queue
-   *
-   * @param context - Operation context with history entry info
-   * @param event - Timeline event to publish
-   */
-  private publishTimelineEvent(context: OperationContext, event: AgentTimelineEvent): void {
-    const historyId = context.historyEntry.id;
-    if (!historyId) return;
-
-    AgentEventEmitter.getInstance().publishTimelineEventAsync({
-      agentId: this.resourceId,
-      historyId: historyId,
-      event: event,
-    });
-  }
-
-  /**
    * Save a message to memory
    */
-  async saveMessage(
+  public async saveMessage(
     context: OperationContext,
     message: BaseMessage,
     userId?: string,
@@ -266,7 +233,11 @@ export class MemoryManager {
   /**
    * Create a step finish handler to save messages during generation
    */
-  createStepFinishHandler(context: OperationContext, userId?: string, conversationId?: string) {
+  public createStepFinishHandler(
+    context: OperationContext,
+    userId?: string,
+    conversationId?: string,
+  ) {
     // If there's no conversation memory or userId, return an empty handler
     if (!this.conversationMemory || !userId) {
       return () => {};
@@ -303,7 +274,7 @@ export class MemoryManager {
    * Prepare conversation context for message generation (CONTEXT-FIRST OPTIMIZED)
    * Ensures context is always loaded, optimizes non-critical operations in background
    */
-  async prepareConversationContext(
+  public async prepareConversationContext(
     context: OperationContext,
     input: string | BaseMessage[],
     userId?: string,
@@ -448,6 +419,313 @@ export class MemoryManager {
   }
 
   /**
+   * Create and publish a timeline event for memory operations using the queue
+   *
+   * @param context - Operation context with history entry info
+   * @param event - Timeline event to publish
+   */
+  private publishTimelineEvent(context: OperationContext, event: AgentTimelineEvent): void {
+    const historyId = context.historyEntry.id;
+    if (!historyId) return;
+
+    AgentEventEmitter.getInstance().publishTimelineEventAsync({
+      agentId: this.resourceId,
+      historyId: historyId,
+      event: event,
+    });
+  }
+
+  /**
+   * Get the conversation memory instance
+   */
+  public getMemory(): Memory | undefined {
+    return this.conversationMemory;
+  }
+
+  /**
+   * Get the history memory instance
+   */
+  public getHistoryMemory(): Memory {
+    return this.historyMemory;
+  }
+
+  /**
+   * Get the memory options
+   */
+  public getOptions(): MemoryOptions {
+    return { ...this.options };
+  }
+
+  /**
+   * Get memory state for display in UI
+   */
+  public getMemoryState(): Record<string, any> {
+    // Create a standard node ID
+    const memoryNodeId = createNodeId(NodeType.MEMORY, this.resourceId);
+
+    if (!this.conversationMemory) {
+      return {
+        type: "NoMemory",
+        resourceId: this.resourceId,
+        options: this.options || {},
+        available: false,
+        status: "idle",
+        node_id: memoryNodeId,
+      };
+    }
+
+    const memoryObject = {
+      type: this.conversationMemory?.constructor.name || "NoMemory",
+      resourceId: this.resourceId,
+      options: this.getOptions(),
+      available: !!this.conversationMemory,
+      status: "idle", // Default to idle since we're only updating status during operations
+      node_id: memoryNodeId,
+    };
+
+    return memoryObject;
+  }
+
+  /**
+   * Store a history entry in memory storage
+   *
+   * @param agentId - The ID of the agent
+   * @param entry - The history entry to store
+   * @returns A promise that resolves when the entry is stored
+   */
+  public async storeHistoryEntry(agentId: string, entry: any): Promise<void> {
+    // Always use history memory for storing history entries
+    try {
+      // Create the main history record (without events and steps)
+      const mainEntry = {
+        id: entry.id,
+        _agentId: agentId,
+        timestamp: entry.timestamp,
+        status: entry.status,
+        input: entry.input,
+        output: entry.output,
+        usage: entry.usage,
+        metadata: entry.metadata,
+        userId: entry.userId,
+        conversationId: entry.conversationId,
+      };
+
+      // Save the main record (using addHistoryEntry and passing agentId)
+      await this.historyMemory.addHistoryEntry(entry.id, mainEntry, agentId);
+
+      // Add steps if they exist
+      if (entry.steps && entry.steps.length > 0) {
+        await this.addStepsToHistoryEntry(agentId, entry.id, entry.steps);
+      }
+    } catch (error) {
+      this.logger.error("Failed to store history entry", { error, agentId, entryId: entry.id });
+    }
+  }
+
+  /**
+   * Get a history entry by ID with related events and steps
+   *
+   * @param agentId - The ID of the agent
+   * @param entryId - The ID of the entry to retrieve
+   * @returns A promise that resolves to the entry or undefined
+   */
+  public async getHistoryEntryById(agentId: string, entryId: string): Promise<any | undefined> {
+    try {
+      // Get the main record from history memory
+      const entry = await this.historyMemory.getHistoryEntry(entryId);
+
+      // Only return if it belongs to this agent
+      if (entry && entry._agentId === agentId) {
+        return entry;
+      }
+      return undefined;
+    } catch (error) {
+      this.logger.error("Failed to get history entry", { error, agentId, entryId });
+      return undefined;
+    }
+  }
+
+  /**
+   * Get all history entries for an agent with optional pagination
+   *
+   * @param agentId - The ID of the agent
+   * @param options - Pagination options
+   * @returns A promise that resolves to entries and pagination info
+   */
+  public async getAllHistoryEntries(
+    agentId: string,
+    options?: { page?: number; limit?: number },
+  ): Promise<{
+    entries: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    try {
+      const page = options?.page ?? 0;
+      const limit = options?.limit ?? 10;
+
+      // Get paginated history records from history memory
+      const result = await this.historyMemory.getAllHistoryEntriesByAgent(agentId, page, limit);
+
+      const totalPages = Math.ceil(result.total / limit);
+
+      return {
+        entries: result.entries,
+        pagination: {
+          page,
+          limit,
+          total: result.total,
+          totalPages,
+        },
+      };
+    } catch (error) {
+      this.logger.error("Failed to get all history entries", { error, agentId });
+      return {
+        entries: [],
+        pagination: {
+          page: 0,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+  }
+
+  /**
+   * Update a history entry
+   *
+   * @param agentId - The ID of the agent
+   * @param entryId - The ID of the entry to update
+   * @param updates - Partial entry with fields to update
+   * @returns A promise that resolves to the updated entry or undefined
+   */
+  public async updateHistoryEntry(
+    agentId: string,
+    entryId: string,
+    updates: any,
+  ): Promise<any | undefined> {
+    try {
+      // Get the main record from history memory
+      const entry = await this.historyMemory.getHistoryEntry(entryId);
+      if (!entry || entry._agentId !== agentId) return undefined;
+
+      // Update the main record (only update the main fields)
+      const updatedMainEntry = {
+        ...entry,
+        status: updates.status !== undefined ? updates.status : entry.status,
+        output: updates.output !== undefined ? updates.output : entry.output,
+        usage: updates.usage !== undefined ? updates.usage : entry.usage,
+        events: updates.events !== undefined ? updates.events : entry.events,
+        metadata: updates.metadata !== undefined ? updates.metadata : entry.metadata,
+        _agentId: agentId, // Always preserve the agentId
+      };
+
+      // Save the main record to the database and pass agentId
+      await this.historyMemory.updateHistoryEntry(entryId, updatedMainEntry, agentId);
+
+      // If there are step updates
+      if (updates.steps) {
+        // Update with all steps
+        await this.addStepsToHistoryEntry(agentId, entryId, updates.steps);
+      }
+
+      // Return the updated record with all relationships
+      return await this.getHistoryEntryById(agentId, entryId);
+    } catch (error) {
+      this.logger.error("Failed to update history entry", { error, agentId, entryId });
+      return undefined;
+    }
+  }
+
+  /**
+   * Add steps to a history entry
+   *
+   * @param agentId - The ID of the agent
+   * @param entryId - The ID of the entry to update
+   * @param steps - Steps to add
+   * @returns A promise that resolves to the updated entry or undefined
+   */
+  public async addStepsToHistoryEntry(
+    agentId: string,
+    entryId: string,
+    steps: any[],
+  ): Promise<any | undefined> {
+    try {
+      // Check the main record from history memory
+      const entry = await this.historyMemory.getHistoryEntry(entryId);
+      if (!entry || entry._agentId !== agentId) return undefined;
+
+      // Add each step as a separate record
+      for (const step of steps) {
+        const stepId = crypto.randomUUID
+          ? crypto.randomUUID()
+          : (Math.random() * 10000000000).toString();
+
+        // Prepare the step data
+        const stepData = {
+          id: stepId,
+          history_id: entryId,
+          _agentId: agentId,
+          type: step.type,
+          name: step.name,
+          content: step.content,
+          arguments: step.arguments,
+        };
+
+        // Save with addHistoryStep and pass agentId
+        await this.historyMemory.addHistoryStep(stepId, stepData, entryId, agentId);
+      }
+
+      // Return the updated record with all relationships
+      return await this.getHistoryEntryById(agentId, entryId);
+    } catch (error) {
+      this.logger.error("Failed to add steps to history entry", { error, agentId, entryId });
+      return undefined;
+    }
+  }
+
+  /**
+   * Add a timeline event to a history entry
+   * This method is part of the new immutable event system
+   *
+   * @param agentId - The ID of the agent
+   * @param historyId - The ID of the history entry
+   * @param eventId - The ID of the timeline event
+   * @param event - The NewTimelineEvent object
+   * @returns A promise that resolves to the updated entry or undefined
+   */
+  public async addTimelineEvent(
+    agentId: string,
+    historyId: string,
+    eventId: string,
+    event: NewTimelineEvent,
+  ): Promise<any | undefined> {
+    try {
+      // Use history memory for timeline events
+      const entry = await this.historyMemory.getHistoryEntry(historyId);
+      if (!entry || entry._agentId !== agentId) return undefined;
+
+      // Save the timeline event directly to the new table
+      await this.historyMemory.addTimelineEvent(eventId, event, historyId, agentId);
+
+      return await this.getHistoryEntryById(agentId, historyId);
+    } catch (error) {
+      this.logger.error("Failed to add timeline event to history entry", {
+        error,
+        agentId,
+        historyId,
+        eventId,
+      });
+      return undefined;
+    }
+  }
+
+  /**
    * Handle sequential background operations using the queue
    * Setup conversation and save input in a single atomic operation
    */
@@ -569,294 +847,20 @@ export class MemoryManager {
       });
     }
   }
+}
 
-  /**
-   * Get the conversation memory instance
-   */
-  getMemory(): Memory | undefined {
-    return this.conversationMemory;
-  }
-
-  /**
-   * Get the history memory instance
-   */
-  getHistoryMemory(): Memory {
-    return this.historyMemory;
-  }
-
-  /**
-   * Get the memory options
-   */
-  getOptions(): MemoryOptions {
-    return { ...this.options };
-  }
-
-  /**
-   * Get memory state for display in UI
-   */
-  getMemoryState(): Record<string, any> {
-    // Create a standard node ID
-    const memoryNodeId = createNodeId(NodeType.MEMORY, this.resourceId);
-
-    if (!this.conversationMemory) {
-      return {
-        type: "NoMemory",
-        resourceId: this.resourceId,
-        options: this.options || {},
-        available: false,
-        status: "idle",
-        node_id: memoryNodeId,
-      };
-    }
-
-    const memoryObject = {
-      type: this.conversationMemory?.constructor.name || "NoMemory",
-      resourceId: this.resourceId,
-      options: this.getOptions(),
-      available: !!this.conversationMemory,
-      status: "idle", // Default to idle since we're only updating status during operations
-      node_id: memoryNodeId,
-    };
-
-    return memoryObject;
-  }
-
-  /**
-   * Store a history entry in memory storage
-   *
-   * @param agentId - The ID of the agent
-   * @param entry - The history entry to store
-   * @returns A promise that resolves when the entry is stored
-   */
-  async storeHistoryEntry(agentId: string, entry: any): Promise<void> {
-    // Always use history memory for storing history entries
-    try {
-      // Create the main history record (without events and steps)
-      const mainEntry = {
-        id: entry.id,
-        _agentId: agentId,
-        timestamp: entry.timestamp,
-        status: entry.status,
-        input: entry.input,
-        output: entry.output,
-        usage: entry.usage,
-        metadata: entry.metadata,
-        userId: entry.userId,
-        conversationId: entry.conversationId,
-      };
-
-      // Save the main record (using addHistoryEntry and passing agentId)
-      await this.historyMemory.addHistoryEntry(entry.id, mainEntry, agentId);
-
-      // Add steps if they exist
-      if (entry.steps && entry.steps.length > 0) {
-        await this.addStepsToHistoryEntry(agentId, entry.id, entry.steps);
-      }
-    } catch (error) {
-      this.logger.error("Failed to store history entry", { error, agentId, entryId: entry.id });
-    }
-  }
-
-  /**
-   * Get a history entry by ID with related events and steps
-   *
-   * @param agentId - The ID of the agent
-   * @param entryId - The ID of the entry to retrieve
-   * @returns A promise that resolves to the entry or undefined
-   */
-  async getHistoryEntryById(agentId: string, entryId: string): Promise<any | undefined> {
-    try {
-      // Get the main record from history memory
-      const entry = await this.historyMemory.getHistoryEntry(entryId);
-
-      // Only return if it belongs to this agent
-      if (entry && entry._agentId === agentId) {
-        return entry;
-      }
-      return undefined;
-    } catch (error) {
-      this.logger.error("Failed to get history entry", { error, agentId, entryId });
-      return undefined;
-    }
-  }
-
-  /**
-   * Get all history entries for an agent with optional pagination
-   *
-   * @param agentId - The ID of the agent
-   * @param options - Pagination options
-   * @returns A promise that resolves to entries and pagination info
-   */
-  async getAllHistoryEntries(
-    agentId: string,
-    options?: { page?: number; limit?: number },
-  ): Promise<{
-    entries: any[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  }> {
-    try {
-      const page = options?.page ?? 0;
-      const limit = options?.limit ?? 10;
-
-      // Get paginated history records from history memory
-      const result = await this.historyMemory.getAllHistoryEntriesByAgent(agentId, page, limit);
-
-      const totalPages = Math.ceil(result.total / limit);
-
-      return {
-        entries: result.entries,
-        pagination: {
-          page,
-          limit,
-          total: result.total,
-          totalPages,
-        },
-      };
-    } catch (error) {
-      this.logger.error("Failed to get all history entries", { error, agentId });
-      return {
-        entries: [],
-        pagination: {
-          page: 0,
-          limit: 10,
-          total: 0,
-          totalPages: 0,
-        },
-      };
-    }
-  }
-
-  /**
-   * Update a history entry
-   *
-   * @param agentId - The ID of the agent
-   * @param entryId - The ID of the entry to update
-   * @param updates - Partial entry with fields to update
-   * @returns A promise that resolves to the updated entry or undefined
-   */
-  async updateHistoryEntry(
-    agentId: string,
-    entryId: string,
-    updates: any,
-  ): Promise<any | undefined> {
-    try {
-      // Get the main record from history memory
-      const entry = await this.historyMemory.getHistoryEntry(entryId);
-      if (!entry || entry._agentId !== agentId) return undefined;
-
-      // Update the main record (only update the main fields)
-      const updatedMainEntry = {
-        ...entry,
-        status: updates.status !== undefined ? updates.status : entry.status,
-        output: updates.output !== undefined ? updates.output : entry.output,
-        usage: updates.usage !== undefined ? updates.usage : entry.usage,
-        events: updates.events !== undefined ? updates.events : entry.events,
-        metadata: updates.metadata !== undefined ? updates.metadata : entry.metadata,
-        _agentId: agentId, // Always preserve the agentId
-      };
-
-      // Save the main record to the database and pass agentId
-      await this.historyMemory.updateHistoryEntry(entryId, updatedMainEntry, agentId);
-
-      // If there are step updates
-      if (updates.steps) {
-        // Update with all steps
-        await this.addStepsToHistoryEntry(agentId, entryId, updates.steps);
-      }
-
-      // Return the updated record with all relationships
-      return await this.getHistoryEntryById(agentId, entryId);
-    } catch (error) {
-      this.logger.error("Failed to update history entry", { error, agentId, entryId });
-      return undefined;
-    }
-  }
-
-  /**
-   * Add steps to a history entry
-   *
-   * @param agentId - The ID of the agent
-   * @param entryId - The ID of the entry to update
-   * @param steps - Steps to add
-   * @returns A promise that resolves to the updated entry or undefined
-   */
-  async addStepsToHistoryEntry(
-    agentId: string,
-    entryId: string,
-    steps: any[],
-  ): Promise<any | undefined> {
-    try {
-      // Check the main record from history memory
-      const entry = await this.historyMemory.getHistoryEntry(entryId);
-      if (!entry || entry._agentId !== agentId) return undefined;
-
-      // Add each step as a separate record
-      for (const step of steps) {
-        const stepId = crypto.randomUUID
-          ? crypto.randomUUID()
-          : (Math.random() * 10000000000).toString();
-
-        // Prepare the step data
-        const stepData = {
-          id: stepId,
-          history_id: entryId,
-          _agentId: agentId,
-          type: step.type,
-          name: step.name,
-          content: step.content,
-          arguments: step.arguments,
-        };
-
-        // Save with addHistoryStep and pass agentId
-        await this.historyMemory.addHistoryStep(stepId, stepData, entryId, agentId);
-      }
-
-      // Return the updated record with all relationships
-      return await this.getHistoryEntryById(agentId, entryId);
-    } catch (error) {
-      this.logger.error("Failed to add steps to history entry", { error, agentId, entryId });
-      return undefined;
-    }
-  }
-
-  /**
-   * Add a timeline event to a history entry
-   * This method is part of the new immutable event system
-   *
-   * @param agentId - The ID of the agent
-   * @param historyId - The ID of the history entry
-   * @param eventId - The ID of the timeline event
-   * @param event - The NewTimelineEvent object
-   * @returns A promise that resolves to the updated entry or undefined
-   */
-  async addTimelineEvent(
-    agentId: string,
-    historyId: string,
-    eventId: string,
-    event: NewTimelineEvent,
-  ): Promise<any | undefined> {
-    try {
-      // Use history memory for timeline events
-      const entry = await this.historyMemory.getHistoryEntry(historyId);
-      if (!entry || entry._agentId !== agentId) return undefined;
-
-      // Save the timeline event directly to the new table
-      await this.historyMemory.addTimelineEvent(eventId, event, historyId, agentId);
-
-      return await this.getHistoryEntryById(agentId, historyId);
-    } catch (error) {
-      this.logger.error("Failed to add timeline event to history entry", {
-        error,
-        agentId,
-        historyId,
-        eventId,
-      });
-      return undefined;
-    }
-  }
+/**
+ * Convert BaseMessage to MemoryMessage for memory storage
+ */
+function convertToMemoryMessage(
+  message: BaseMessage,
+  type: "text" | "tool-call" | "tool-result" = "text",
+): MemoryMessage {
+  return {
+    id: crypto.randomUUID(),
+    role: message.role,
+    content: message.content,
+    type,
+    createdAt: new Date().toISOString(),
+  };
 }
