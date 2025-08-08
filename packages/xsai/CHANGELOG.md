@@ -1,5 +1,14 @@
 # @voltagent/xsai
 
+## 0.3.2
+
+### Patch Changes
+
+- [`4f4ffc2`](https://github.com/VoltAgent/voltagent/commit/4f4ffc23eaea36675e66eb8a17d275fe9f32a671) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support
+
+- Updated dependencies [[`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8), [`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8), [`980d037`](https://github.com/VoltAgent/voltagent/commit/980d037ce535bcc85cc7df3f64354c823453a147)]:
+  - @voltagent/core@0.1.74
+
 ## 0.3.1
 
 ### Patch Changes

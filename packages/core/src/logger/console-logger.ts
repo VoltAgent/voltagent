@@ -5,6 +5,7 @@
 
 import { EventEmitter } from "node:events";
 import type { LogBuffer, LogEntry, LogFilter, LogFn, Logger } from "@voltagent/internal";
+import { safeStringify } from "@voltagent/internal/utils";
 
 /**
  * Simple console logger that implements the Logger interface
@@ -28,8 +29,8 @@ export class ConsoleLogger implements Logger {
   private formatMessage(level: string, msg: string, obj?: object): string {
     const timestamp = new Date().toISOString();
     const contextStr =
-      Object.keys(this.context).length > 0 ? ` ${JSON.stringify(this.context)}` : "";
-    const objStr = obj ? ` ${JSON.stringify(obj)}` : "";
+      Object.keys(this.context).length > 0 ? ` ${safeStringify(this.context)}` : "";
+    const objStr = obj ? ` ${safeStringify(obj)}` : "";
     return `[${timestamp}] ${level.toUpperCase()}${contextStr}: ${msg}${objStr}`;
   }
 

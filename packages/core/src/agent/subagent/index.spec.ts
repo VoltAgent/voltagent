@@ -96,7 +96,7 @@ describe("SubAgentManager", () => {
     subAgentManager = new SubAgentManager("Main Agent");
     mockDelegateToolOptions = {
       sourceAgent: mockAgent1,
-      operationContext: { userContext: new Map() },
+      operationContext: { userContext: new Map(), systemContext: new Map() },
       currentHistoryEntryId: "history-123",
     };
   });
@@ -936,7 +936,7 @@ describe("SubAgentManager", () => {
 
       const tool = subAgentManager.createDelegateTool({
         sourceAgent: { id: "supervisor-agent" } as any,
-        operationContext: { userContext: new Map() } as any,
+        operationContext: { userContext: new Map(), systemContext: new Map() } as any,
         currentHistoryEntryId: "history-123",
         forwardEvent: forwardEventSpy,
       });
@@ -974,7 +974,7 @@ describe("SubAgentManager", () => {
 
       const tool = subAgentManager.createDelegateTool({
         sourceAgent: { id: "supervisor-agent" } as any,
-        operationContext: { userContext: new Map() } as any,
+        operationContext: { userContext: new Map(), systemContext: new Map() } as any,
         currentHistoryEntryId: "history-456",
         forwardEvent: forwardEventSpy,
       });

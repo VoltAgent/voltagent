@@ -6,6 +6,26 @@ slug: /providers/anthropic-ai
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::warning Deprecated Package
+**This provider is deprecated.** We recommend using the [Vercel AI SDK's Anthropic provider](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic) instead with `@voltagent/vercel-ai`.
+
+**Migration Guide:**
+
+```typescript
+// Old (deprecated)
+import { AnthropicProvider } from "@voltagent/anthropic-ai";
+const provider = new AnthropicProvider({ apiKey: "..." });
+
+// New (recommended)
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { anthropic } from "@ai-sdk/anthropic";
+const provider = new VercelAIProvider();
+// Use with: model: anthropic("claude-opus-4-1")
+```
+
+For the latest models and features, please see our [Providers & Models guide](/docs/getting-started/providers-models).
+:::
+
 # Anthropic AI Provider (`@voltagent/anthropic-ai`)
 
 The Anthropic AI Provider integrates VoltAgent with Anthropic's Claude models. It wraps the official [`@anthropic-ai/sdk`](https://github.com/anthropics/anthropic-sdk-typescript) SDK.
@@ -13,7 +33,7 @@ The Anthropic AI Provider integrates VoltAgent with Anthropic's Claude models. I
 **Key Characteristics:**
 
 - **Claude Models:** Supports all Claude models through the Anthropic API.
-- **Model Agnostic:** Accepts standard Claude model identifier strings (e.g., `'claude-3-sonnet-20240229'`, `'claude-3-opus-20240229'`).
+- **Model Agnostic:** Accepts standard Claude model identifier strings (e.g., `'claude-opus-4-1'`, `'claude-3-opus-20240229'`).
 - **Core Functionality:** Focuses on text generation, streaming, and structured object generation using the underlying Anthropic SDK.
 
 ## Installation
@@ -69,7 +89,7 @@ const agent = new Agent({
   name: "Claude Agent",
   instructions: "An agent powered by Claude",
   llm: anthropicProvider,
-  model: "claude-3-sonnet-20240229", // Specify the desired Claude model
+  model: "claude-opus-4-1", // Specify the desired Claude model
 });
 
 // Example call
@@ -117,14 +137,14 @@ const agent = new Agent({
   name: "weather-agent",
   instructions: "A helpful weather assistant",
   llm: new AnthropicProvider(),
-  model: "claude-3-sonnet-20240229",
+  model: "claude-opus-4-1",
   tools: [weatherTool],
 });
 ```
 
 ## Model Selection & Options
 
-The specific Claude model (e.g., `'claude-3-sonnet-20240229'`, `'claude-3-opus-20240229'`) is set via the `model` property during `Agent` instantiation.
+The specific Claude model (e.g., `'claude-opus-4-1'`, `'claude-3-opus-20240229'`) is set via the `model` property during `Agent` instantiation.
 
 You can override or provide additional Anthropic-specific generation parameters (like `temperature`, `max_tokens`, `top_p`, `stop_sequences`, etc.) per-request using the `provider` key within the options object of `generateText`, `streamText`, or `generateObject`.
 

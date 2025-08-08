@@ -6,6 +6,7 @@ import type {
   ToolErrorInfo,
   VoltAgentError,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
 import { type Tool as AiTool, type TextStreamPart, tool as createTool, generateId } from "ai";
 import { P, match } from "ts-pattern";
 
@@ -55,7 +56,7 @@ export function createStepFromChunk(chunk: {
       type: "tool_call",
       name: c.toolName,
       arguments: c.input,
-      content: JSON.stringify([
+      content: safeStringify([
         {
           type: "tool-call",
           toolCallId: c.toolCallId,
@@ -71,7 +72,7 @@ export function createStepFromChunk(chunk: {
       type: "tool_result",
       name: c.toolName,
       result: c.output,
-      content: JSON.stringify([
+      content: safeStringify([
         {
           type: "tool-result",
           toolCallId: c.toolCallId,

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
 import type { Logger } from "@voltagent/internal";
+import { safeStringify } from "@voltagent/internal/utils";
 import type { BaseMessage } from "../../agent/providers/base/types";
 import type { NewTimelineEvent } from "../../events/types";
 import { LoggerProxy } from "../../logger";
@@ -615,13 +616,22 @@ export class LibSQLStorage implements Memory {
       });
 
       // Map the results
-      const messages = result.rows.map((row) => ({
-        id: row.message_id as string,
-        role: row.role as BaseMessage["role"],
-        content: row.content as string,
-        type: row.type as "text" | "tool-call" | "tool-result",
-        createdAt: row.created_at as string,
-      }));
+      const messages = result.rows.map((row) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content as string;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id as string,
+          role: row.role as BaseMessage["role"],
+          content,
+          type: row.type as "text" | "tool-call" | "tool-result",
+          createdAt: row.created_at as string,
+        };
+      });
 
       // If we used DESC order with limit, reverse to get chronological order
       if (limit && limit > 0) {
@@ -649,7 +659,7 @@ export class LibSQLStorage implements Memory {
     await debugDelay();
 
     const tableName = `${this.options.tablePrefix}_messages`;
-    const contentString = JSON.stringify(message.content);
+    const contentString = safeStringify(message.content);
 
     await this.executeWithRetryStrategy(async () => {
       await this.client.execute({
@@ -788,10 +798,10 @@ export class LibSQLStorage implements Memory {
       const tableName = `${this.options.tablePrefix}_agent_history`;
 
       // Normalize the data for storage
-      const inputJSON = value.input ? JSON.stringify(value.input) : null;
-      const outputJSON = value.output ? JSON.stringify(value.output) : null;
-      const usageJSON = value.usage ? JSON.stringify(value.usage) : null;
-      const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
+      const inputJSON = value.input ? safeStringify(value.input) : null;
+      const outputJSON = value.output ? safeStringify(value.output) : null;
+      const usageJSON = value.usage ? safeStringify(value.usage) : null;
+      const metadataJSON = value.metadata ? safeStringify(value.metadata) : null;
 
       // Insert or replace with the structured format including userId and conversationId
       await this.client.execute({
@@ -844,7 +854,7 @@ export class LibSQLStorage implements Memory {
       const tableName = `${this.options.tablePrefix}_agent_history_steps`;
 
       // Serialize value to JSON
-      const serializedValue = JSON.stringify(value);
+      const serializedValue = safeStringify(value);
 
       // Insert or replace with history_id and agent_id columns
       await this.client.execute({
@@ -895,11 +905,11 @@ export class LibSQLStorage implements Memory {
       const tableName = `${this.options.tablePrefix}_agent_history_timeline_events`;
 
       // Serialize JSON fields
-      const inputJSON = value.input ? JSON.stringify(value.input) : null;
-      const outputJSON = value.output ? JSON.stringify(value.output) : null;
-      const statusMessageJSON = value.statusMessage ? JSON.stringify(value.statusMessage) : null;
-      const metadataJSON = value.metadata ? JSON.stringify(value.metadata) : null;
-      const tagsJSON = value.tags ? JSON.stringify(value.tags) : null;
+      const inputJSON = value.input ? safeStringify(value.input) : null;
+      const outputJSON = value.output ? safeStringify(value.output) : null;
+      const statusMessageJSON = value.statusMessage ? safeStringify(value.statusMessage) : null;
+      const metadataJSON = value.metadata ? safeStringify(value.metadata) : null;
+      const tagsJSON = value.tags ? safeStringify(value.tags) : null;
 
       // Insert with all the indexed fields
       await this.client.execute({
@@ -1090,7 +1100,7 @@ export class LibSQLStorage implements Memory {
     await debugDelay();
 
     const now = new Date().toISOString();
-    const metadataString = JSON.stringify(conversation.metadata);
+    const metadataString = safeStringify(conversation.metadata);
 
     const tableName = `${this.options.tablePrefix}_conversations`;
 
@@ -1343,13 +1353,22 @@ export class LibSQLStorage implements Memory {
         args,
       });
 
-      return result.rows.map((row) => ({
-        id: row.message_id as string,
-        role: row.role as BaseMessage["role"],
-        content: row.content as string,
-        type: row.type as "text" | "tool-call" | "tool-result",
-        createdAt: row.created_at as string,
-      }));
+      return result.rows.map((row) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content as string;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id as string,
+          role: row.role as BaseMessage["role"],
+          content,
+          type: row.type as "text" | "tool-call" | "tool-result",
+          createdAt: row.created_at as string,
+        };
+      });
     } catch (error) {
       this.debug("Error getting conversation messages:", error);
       throw new Error("Failed to get conversation messages from LibSQL database");
@@ -1389,7 +1408,7 @@ export class LibSQLStorage implements Memory {
 
       if (updates.metadata !== undefined) {
         updatesList.push("metadata = ?");
-        args.push(JSON.stringify(updates.metadata));
+        args.push(safeStringify(updates.metadata));
       }
 
       updatesList.push("updated_at = ?");
@@ -1766,9 +1785,9 @@ export class LibSQLStorage implements Memory {
           migratedCount++;
 
           // Add main history record
-          const inputJSON = valueObj.input ? JSON.stringify(valueObj.input) : null;
-          const outputJSON = valueObj.output ? JSON.stringify(valueObj.output) : null;
-          const usageJSON = valueObj.usage ? JSON.stringify(valueObj.usage) : null;
+          const inputJSON = valueObj.input ? safeStringify(valueObj.input) : null;
+          const outputJSON = valueObj.output ? safeStringify(valueObj.output) : null;
+          const usageJSON = valueObj.usage ? safeStringify(valueObj.usage) : null;
 
           await this.client.execute({
             sql: `INSERT INTO ${tempTableName} 
@@ -1809,11 +1828,11 @@ export class LibSQLStorage implements Memory {
 
                 // Set input data correctly
                 if (event.input) {
-                  inputData = JSON.stringify({ input: event.input });
+                  inputData = safeStringify({ input: event.input });
                 } else if (event.data?.input) {
-                  inputData = JSON.stringify({ input: event.data.input });
+                  inputData = safeStringify({ input: event.data.input });
                 } else if (input) {
-                  inputData = JSON.stringify({ input: input });
+                  inputData = safeStringify({ input: input });
                 }
 
                 input = "";
@@ -1821,9 +1840,9 @@ export class LibSQLStorage implements Memory {
                 // Set metadata
                 let metadata = null;
                 if (event.metadata) {
-                  metadata = JSON.stringify(event.metadata);
+                  metadata = safeStringify(event.metadata);
                 } else if (event.data) {
-                  metadata = JSON.stringify({
+                  metadata = safeStringify({
                     id: event.affectedNodeId?.split("_").pop(),
                     agentId: event.data?.metadata?.sourceAgentId,
                     ...event.data,
@@ -1867,8 +1886,8 @@ export class LibSQLStorage implements Memory {
                       event.parentEventId || null,
                       null, // tags
                       inputData,
-                      event.data.output ? JSON.stringify(event.data.output) : null,
-                      eventName === "agent:error" ? JSON.stringify(event.data.error) : null,
+                      event.data.output ? safeStringify(event.data.output) : null,
+                      eventName === "agent:error" ? safeStringify(event.data.error) : null,
                       metadata,
                     ],
                   });
@@ -1899,7 +1918,7 @@ export class LibSQLStorage implements Memory {
                         inputData,
                         null, // no output
                         null, // no error
-                        JSON.stringify({
+                        safeStringify({
                           id: "memory",
                           agentId: event.affectedNodeId?.split("_").pop(),
                         }),
@@ -1928,9 +1947,9 @@ export class LibSQLStorage implements Memory {
                         eventId, // Parent event ID
                         null, // tags
                         inputData,
-                        event.data.output ? JSON.stringify(event.data.output) : null,
-                        event.error ? JSON.stringify(event.error) : null,
-                        JSON.stringify({
+                        event.data.output ? safeStringify(event.data.output) : null,
+                        event.error ? safeStringify(event.error) : null,
+                        safeStringify({
                           id: "memory",
                           agentId: event.affectedNodeId?.split("_").pop(),
                         }),
@@ -1963,7 +1982,7 @@ export class LibSQLStorage implements Memory {
                         inputData,
                         null, // no output
                         null, // no error
-                        JSON.stringify({
+                        safeStringify({
                           id: "memory",
                           agentId: event.affectedNodeId?.split("_").pop(),
                         }),
@@ -1992,9 +2011,9 @@ export class LibSQLStorage implements Memory {
                         eventId, // Parent event ID
                         null, // tags
                         inputData,
-                        event.data.output ? JSON.stringify(event.data.output) : null,
-                        event.error ? JSON.stringify(event.error) : null,
-                        JSON.stringify({
+                        event.data.output ? safeStringify(event.data.output) : null,
+                        event.error ? safeStringify(event.error) : null,
+                        safeStringify({
                           id: "memory",
                           agentId: event.affectedNodeId?.split("_").pop(),
                         }),
@@ -2023,8 +2042,8 @@ export class LibSQLStorage implements Memory {
                         event.parentEventId || null,
                         null, // tags
                         inputData,
-                        event.output ? JSON.stringify(event.output) : null,
-                        event.error ? JSON.stringify(event.error) : null,
+                        event.output ? safeStringify(event.output) : null,
+                        event.error ? safeStringify(event.error) : null,
                         metadata,
                       ],
                     });
@@ -2055,7 +2074,7 @@ export class LibSQLStorage implements Memory {
                         inputData,
                         null, // no output
                         null, // no error
-                        JSON.stringify({
+                        safeStringify({
                           id: event.affectedNodeId?.split("_").pop(),
                           agentId: event.data?.metadata?.sourceAgentId,
                           displayName: event.data.metadata.toolName,
@@ -2085,9 +2104,9 @@ export class LibSQLStorage implements Memory {
                         eventId, // Parent event ID
                         null, // tags
                         inputData,
-                        event.data.output ? JSON.stringify(event.data.output) : null,
-                        event.error ? JSON.stringify(event.error) : null,
-                        JSON.stringify({
+                        event.data.output ? safeStringify(event.data.output) : null,
+                        event.error ? safeStringify(event.error) : null,
+                        safeStringify({
                           id: event.affectedNodeId?.split("_").pop(),
                           agentId: event.data?.metadata?.sourceAgentId,
                           displayName: event.data.metadata.toolName,
@@ -2118,9 +2137,9 @@ export class LibSQLStorage implements Memory {
                       event.parentEventId || null,
                       null, // tags
                       inputData,
-                      event.output ? JSON.stringify(event.output) : null,
-                      event.error ? JSON.stringify(event.error) : null,
-                      JSON.stringify({
+                      event.output ? safeStringify(event.output) : null,
+                      event.error ? safeStringify(event.error) : null,
+                      safeStringify({
                         id: eventType === "retriever" ? "retriever" : event.type,
                         agentId: event.affectedNodeId?.split("_").pop(),
                       }),
@@ -2461,7 +2480,7 @@ export class LibSQLStorage implements Memory {
                 "default", // Default resource_id for auto-created conversations
                 userId,
                 "Migrated Conversation", // Default title
-                JSON.stringify({}), // Empty metadata
+                safeStringify({}), // Empty metadata
                 now,
                 now,
               ],

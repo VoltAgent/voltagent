@@ -1,5 +1,6 @@
 import type { Client } from "@libsql/client";
 import type { Logger } from "@voltagent/internal";
+import { safeStringify } from "@voltagent/internal/utils";
 import { LoggerProxy } from "../../logger";
 import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
 import type { WorkflowStats, WorkflowTimelineEvent } from "../../workflow/types";
@@ -36,11 +37,11 @@ export class LibSQLWorkflowExtension {
         entry.status,
         entry.startTime.toISOString(),
         entry.endTime?.toISOString() || null,
-        JSON.stringify(entry.input),
-        entry.output ? JSON.stringify(entry.output) : null,
+        safeStringify(entry.input),
+        entry.output ? safeStringify(entry.output) : null,
         entry.userId || null,
         entry.conversationId || null,
-        entry.metadata ? JSON.stringify(entry.metadata) : null,
+        entry.metadata ? safeStringify(entry.metadata) : null,
         entry.createdAt?.toISOString() || new Date().toISOString(),
         entry.updatedAt?.toISOString() || new Date().toISOString(),
       ],
@@ -96,7 +97,7 @@ export class LibSQLWorkflowExtension {
     }
     if (updates.output !== undefined) {
       setClauses.push("output = ?");
-      args.push(JSON.stringify(updates.output));
+      args.push(safeStringify(updates.output));
     }
     if (updates.userId !== undefined) {
       setClauses.push("user_id = ?");
@@ -108,7 +109,7 @@ export class LibSQLWorkflowExtension {
     }
     if (updates.metadata !== undefined) {
       setClauses.push("metadata = ?");
-      const metadataJson = JSON.stringify(updates.metadata);
+      const metadataJson = safeStringify(updates.metadata);
       args.push(metadataJson);
       this.logger.trace(`Setting metadata for ${id}:`, { metadata: metadataJson });
     }
@@ -164,13 +165,13 @@ export class LibSQLWorkflowExtension {
         step.status,
         step.startTime.toISOString(),
         step.endTime?.toISOString() || null,
-        step.input ? JSON.stringify(step.input) : null,
-        step.output ? JSON.stringify(step.output) : null,
-        step.error ? JSON.stringify(step.error) : null,
+        step.input ? safeStringify(step.input) : null,
+        step.output ? safeStringify(step.output) : null,
+        step.error ? safeStringify(step.error) : null,
         step.agentExecutionId || null,
         step.parallelIndex || null,
         step.parallelParentStepId || null,
-        step.metadata ? JSON.stringify(step.metadata) : null,
+        step.metadata ? safeStringify(step.metadata) : null,
         step.createdAt?.toISOString() || new Date().toISOString(),
         step.updatedAt?.toISOString() || new Date().toISOString(),
       ],
@@ -220,11 +221,11 @@ export class LibSQLWorkflowExtension {
     }
     if (updates.output !== undefined) {
       setClauses.push("output = ?");
-      args.push(JSON.stringify(updates.output));
+      args.push(safeStringify(updates.output));
     }
     if (updates.error !== undefined) {
       setClauses.push("error_message = ?");
-      args.push(JSON.stringify(updates.error));
+      args.push(safeStringify(updates.error));
     }
     if (updates.agentExecutionId !== undefined) {
       setClauses.push("agent_execution_id = ?");
@@ -232,7 +233,7 @@ export class LibSQLWorkflowExtension {
     }
     if (updates.metadata !== undefined) {
       setClauses.push("metadata = ?");
-      args.push(JSON.stringify(updates.metadata));
+      args.push(safeStringify(updates.metadata));
     }
 
     setClauses.push("updated_at = ?");
@@ -277,10 +278,10 @@ export class LibSQLWorkflowExtension {
         event.endTime || null,
         event.status,
         event.level || "INFO",
-        event.input ? JSON.stringify(event.input) : null,
-        event.output ? JSON.stringify(event.output) : null,
-        event.statusMessage ? JSON.stringify(event.statusMessage) : null,
-        event.metadata ? JSON.stringify(event.metadata) : null,
+        event.input ? safeStringify(event.input) : null,
+        event.output ? safeStringify(event.output) : null,
+        event.statusMessage ? safeStringify(event.statusMessage) : null,
+        event.metadata ? safeStringify(event.metadata) : null,
         event.traceId || null,
         event.parentEventId || null,
         event.eventSequence || null, // Event sequence for ordering

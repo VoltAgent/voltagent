@@ -33,6 +33,13 @@ import {
   zodToJsonSchema,
 } from "./utils";
 
+// Deprecation warning
+console.warn(
+  "\x1b[33m⚠️  DEPRECATION WARNING: @voltagent/anthropic-ai is deprecated and will no longer receive updates.\x1b[0m\n" +
+    "\x1b[33mPlease migrate to @ai-sdk/anthropic with @voltagent/vercel-ai instead.\x1b[0m\n" +
+    "\x1b[36mMigration guide: https://voltagent.dev/docs/providers/anthropic-ai/\x1b[0m\n",
+);
+
 export class AnthropicProvider implements LLMProvider<string> {
   private anthropic: Anthropic;
   private model: string;

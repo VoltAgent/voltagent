@@ -1,3 +1,5 @@
+import { deepClone } from "@voltagent/internal";
+
 /**
  * Safely parse JSON string. If parsing fails, returns the original value.
  * @param value String to parse as JSON
@@ -54,7 +56,7 @@ export function serializeValueForDebug(value: unknown): unknown {
         // Attempt to stringify/parse to handle simple cases, could use a more robust method
         // This basic version might still fail on circular refs within plain objects
         // Consider a library or depth limiting for robustness
-        return JSON.parse(JSON.stringify(value));
+        return deepClone(value);
       }
       // For class instances
       return `[Object: ${value.constructor?.name || "UnknownClass"}]`;

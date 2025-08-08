@@ -12,6 +12,7 @@ import {
   safeJsonParse,
 } from "@voltagent/core";
 import type { NewTimelineEvent } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
 
 /**
  * Workflow statistics interface
@@ -798,7 +799,7 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
       message_id: message.id, // Assuming MemoryMessage has an ID
       role: message.role,
       content:
-        typeof message.content === "string" ? message.content : JSON.stringify(message.content),
+        typeof message.content === "string" ? message.content : safeStringify(message.content),
       type: message.type,
       created_at: message.createdAt || new Date().toISOString(),
     };
@@ -923,13 +924,22 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
 
     // Map Supabase rows back to MemoryMessage objects
     const messages =
-      data?.map((row) => ({
-        id: row.message_id,
-        role: row.role as MemoryMessage["role"],
-        content: row.content, // Assuming content is stored as text/json string
-        type: row.type as MemoryMessage["type"],
-        createdAt: row.created_at,
-      })) || [];
+      data?.map((row) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id,
+          role: row.role as MemoryMessage["role"],
+          content,
+          type: row.type as MemoryMessage["type"],
+          createdAt: row.created_at,
+        };
+      }) || [];
 
     // If we used descending order with limit, reverse to get chronological order
     if (actualLimit && actualLimit > 0 && messages.length > 0) {
@@ -3153,11 +3163,11 @@ ON CONFLICT (migration_type) DO NOTHING;
       status: entry.status,
       start_time: entry.startTime.toISOString(),
       end_time: entry.endTime?.toISOString() || null,
-      input: entry.input ? JSON.stringify(entry.input) : null,
-      output: entry.output ? JSON.stringify(entry.output) : null,
+      input: entry.input ? safeStringify(entry.input) : null,
+      output: entry.output ? safeStringify(entry.output) : null,
       user_id: entry.userId || null,
       conversation_id: entry.conversationId || null,
-      metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+      metadata: entry.metadata ? safeStringify(entry.metadata) : null,
       created_at: (entry.createdAt || new Date()).toISOString(),
       updated_at: (entry.updatedAt || new Date()).toISOString(),
     };
@@ -3240,7 +3250,7 @@ ON CONFLICT (migration_type) DO NOTHING;
       updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
     }
     if (updates.output !== undefined) {
-      updateData.output = updates.output ? JSON.stringify(updates.output) : null;
+      updateData.output = updates.output ? safeStringify(updates.output) : null;
     }
     if (updates.userId !== undefined) {
       updateData.user_id = updates.userId;
@@ -3249,7 +3259,7 @@ ON CONFLICT (migration_type) DO NOTHING;
       updateData.conversation_id = updates.conversationId;
     }
     if (updates.metadata !== undefined) {
-      updateData.metadata = updates.metadata ? JSON.stringify(updates.metadata) : null;
+      updateData.metadata = updates.metadata ? safeStringify(updates.metadata) : null;
     }
 
     const { error } = await this.client
@@ -3303,8 +3313,8 @@ ON CONFLICT (migration_type) DO NOTHING;
       status: step.status,
       start_time: step.startTime.toISOString(),
       end_time: step.endTime?.toISOString() || null,
-      input: step.input ? JSON.stringify(step.input) : null,
-      output: step.output ? JSON.stringify(step.output) : null,
+      input: step.input ? safeStringify(step.input) : null,
+      output: step.output ? safeStringify(step.output) : null,
       error_message: step.error ? String(step.error) : null,
       agent_execution_id: step.agentExecutionId || null,
       created_at: (step.createdAt || new Date()).toISOString(),
@@ -3389,7 +3399,7 @@ ON CONFLICT (migration_type) DO NOTHING;
       updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
     }
     if (updates.output !== undefined) {
-      updateData.output = updates.output ? JSON.stringify(updates.output) : null;
+      updateData.output = updates.output ? safeStringify(updates.output) : null;
     }
     if (updates.error !== undefined) {
       updateData.error_message = updates.error ? String(updates.error) : null;
@@ -3450,9 +3460,9 @@ ON CONFLICT (migration_type) DO NOTHING;
       end_time: event.endTime || null,
       status: event.status || null,
       level: event.level || "INFO",
-      input: event.input ? JSON.stringify(event.input) : null,
-      output: event.output ? JSON.stringify(event.output) : null,
-      metadata: event.metadata ? JSON.stringify(event.metadata) : null,
+      input: event.input ? safeStringify(event.input) : null,
+      output: event.output ? safeStringify(event.output) : null,
+      metadata: event.metadata ? safeStringify(event.metadata) : null,
       event_sequence: event.eventSequence || null,
       trace_id: event.traceId || null,
       parent_event_id: event.parentEventId || null,

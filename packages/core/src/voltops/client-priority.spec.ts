@@ -75,8 +75,8 @@ const mockProvider = {
 const createMockVoltOpsClient = (options: Partial<VoltOpsClientOptions> = {}): VoltOpsClient => {
   const defaultOptions: VoltOpsClientOptions = {
     baseUrl: "https://test.voltops.dev",
-    publicKey: "test-public-key",
-    secretKey: "test-secret-key",
+    publicKey: "pk_test_public_key",
+    secretKey: "sk_test_secret_key",
     prompts: true,
     observability: false, // Disable observability for testing
     ...options,

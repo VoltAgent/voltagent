@@ -1,14 +1,13 @@
+import { groq } from "@ai-sdk/groq";
 import { Agent, VoltAgent } from "@voltagent/core";
-import { GroqProvider } from "@voltagent/groq-ai";
 import { createPinoLogger } from "@voltagent/logger";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const agent = new Agent({
-  name: "Asistant",
+  name: "Assistant",
   description: "A helpful assistant that answers questions",
-  llm: new GroqProvider({
-    apiKey: process.env.GROQ_API_KEY,
-  }),
-  model: "meta-llama/llama-4-scout-17b-16e-instruct",
+  llm: new VercelAIProvider(),
+  model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
 });
 
 // Create logger

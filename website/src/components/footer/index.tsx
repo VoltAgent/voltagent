@@ -2,6 +2,7 @@ import Link from "@docusaurus/Link";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
+import { YouTubeLogo } from "../../../static/img/logos/integrations/youtube";
 import { LinkedInLogo } from "../../../static/img/logos/linkedin";
 import { RedditLogo } from "../../../static/img/logos/reddit";
 import { XLogo } from "../../../static/img/logos/x";
@@ -48,6 +49,11 @@ export function Footer() {
                 icon={<LinkedInLogo className="w-4 h-4 md:w-5 md:h-5" />}
                 label="LinkedIn"
               />
+              <SocialLink
+                href="https://www.youtube.com/@VoltAgent_dev"
+                icon={<YouTubeLogo className="w-4 h-4  md:w-5 md:h-5" />}
+                label="YouTube"
+              />
             </div>
 
             <div className="text-main-emerald mb-2 text-center lg:text-left text-sm md:text-base">
@@ -63,7 +69,7 @@ export function Footer() {
             <div className="landing-lg:text-xl landing-xs:text-md font-medium text-[#dcdcdc] mb-4 md:mb-3">
               Resources
             </div>
-            <ul className="space-y-3 md:space-y-2 list-none pl-0 text-center lg:text-left">
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 md:gap-y-2 list-none pl-0 text-center lg:text-left">
               <li>
                 <FooterLink href="/docs/quick-start/">Getting Started</FooterLink>
               </li>
@@ -81,7 +87,19 @@ export function Footer() {
               <li>
                 <FooterLink href="/mcp/">MCP Directory</FooterLink>
               </li>
-
+              <li>
+                <FooterLink href="https://voltagent.dev/tutorial/introduction/" target="_blank">
+                  Tutorial
+                </FooterLink>
+              </li>
+              <li>
+                <FooterLink
+                  href="https://github.com/VoltAgent/awesome-claude-code-subagents"
+                  target="_blank"
+                >
+                  awesome-claude-subagents
+                </FooterLink>
+              </li>
               <li>
                 <FooterLink href="https://voltagent.dev/llms.txt" target="_blank">
                   llms.txt

@@ -373,5 +373,48 @@
         "company": "Redfin Premier Agent & CFP"
       }
     }
+  },
+  {
+    "id": 9,
+    "slug": "mo-elkhidir",
+    "published": true,
+    "customer": {
+      "name": "Marketing Agency",
+      "website": "https://www.epiminds.com/",
+      "industry": "Marketing Technology / Agency Automation"
+    },
+    "case_study": {
+      "title": "How Epiminds Built Agentic Teams for Marketing Agencies with VoltAgent",
+      "use_case": "Building agentic teams for marketing agencies to streamline operations and enhance productivity",
+      "challenge": [
+        "Needed a reliable and fast supervisor-based agentic framework",
+        "Existing solutions had issues with speed and traceability",
+        "Faced difficulties understanding why agents failed or gave wrong answers",
+        "Tool calls across agents were hard to coordinate and debug"
+      ],
+      "challenge_paragraph": "Epiminds set out to build agentic teams for marketing agencies, aiming to transform how agencies operate through AI-powered automation. However, he quickly encountered significant technical challenges: \"We had no way to trace why an agent failed or gave the wrong answer, or tool calls across agents were hard to coordinate.\" The lack of visibility into agent behavior and the inability to debug complex multi-agent workflows was becoming a major bottleneck. Mo needed a reliable and fast supervisor-based agentic framework that could provide both speed and traceability.",
+      "solution": [
+        "Adopted VoltAgent for prototyping and new agents with quick deployment to production",
+        "Used VoltOps for debugging and understanding agent behavior in real-time",
+        "Leveraged the visual non-style observability console to track agent workflows",
+        "Built reliable supervisor-based agentic teams with full traceability",
+        "Gained visibility into how agents, tools, and LLM responses flow together"
+      ],
+      "solution_paragraph": "Epiminds discovered VoltAgent and VoltOps as the perfect combination for his needs. With VoltAgent, he could quickly prototype and deploy new agents to production, while VoltOps provided the crucial visibility he was missing: \"VoltOps is the visual non-style observability console. It shows how agents, tools, and LLM responses flow in real time.\" This combination gave Mo the speed and traceability he needed to build reliable agentic teams for marketing agencies, with faster debugging and a clearer understanding of what each agent was doing.",
+      "results": [
+        "Achieved fast prototyping and deployment of new agents to production",
+        "Gained complete visibility into agent behavior and decision-making",
+        "Improved debugging speed with visual understanding of agent workflows",
+        "Built reliable agentic teams that marketing agencies can trust",
+        "Created a simple, fast, and modern solution for agency automation"
+      ],
+      "results_paragraph": "With VoltAgent and VoltOps, Mo successfully built agentic teams that transform how marketing agencies operate. The combination of fast prototyping capabilities and comprehensive debugging tools enabled him to move quickly from concept to production. \"Simple, fast, and modern\" is how Mo summarizes his experience. Marketing agencies now have access to reliable AI-powered teams that enhance their productivity while maintaining full transparency into how decisions are made and tasks are completed.",
+      "quote": {
+        "text": "VoltAgent for prototyping and new agents and prepare them for production. VoltOps for debugging and understanding agent behavior.",
+        "author": "Mo Elkhidir",
+        "position": "Founder",
+        "company": "Agentic Teams for Marketing Agencies"
+      }
+    }
   }
 ]

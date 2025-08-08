@@ -340,6 +340,12 @@ export type ToolSchema = z.ZodType;
 // Base tool types
 export type ToolExecuteOptions = {
   /**
+   * Optional AbortController for cancelling the execution and accessing the signal
+   */
+  abortController?: AbortController;
+
+  /**
+   * @deprecated Use abortController.signal instead. This field will be removed in a future version.
    * Optional AbortSignal to abort the execution
    */
   signal?: AbortSignal;

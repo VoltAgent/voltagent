@@ -1,11 +1,12 @@
 {
   "name": "@voltagent/groq-ai",
   "description": "VoltAgent Groq AI - Groq provider integration for VoltAgent",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "dependencies": {
     "groq-sdk": "^0.20.0",
     "zod-to-json-schema": "^3.24.5"
   },
+  "deprecated": "This package is deprecated. Please use @ai-sdk/groq with @voltagent/vercel-ai instead. See https://voltagent.dev/docs/getting-started/providers-models for migration guide.",
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",

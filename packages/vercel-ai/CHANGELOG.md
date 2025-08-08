@@ -1,5 +1,11 @@
 # @voltagent/vercel-ai
 
+## 0.1.18
+
+### Patch Changes
+
+- [#475](https://github.com/VoltAgent/voltagent/pull/475) [`9b4ea38`](https://github.com/VoltAgent/voltagent/commit/9b4ea38b28df248c1e1ad5541d414bd47838df9a) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Remove other potentially problematic `JSON.stringify` usages
+
 ## 0.1.17
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voltagent/internal
 
+## 0.0.8
+
+### Patch Changes
+
+- [#472](https://github.com/VoltAgent/voltagent/pull/472) [`8de5785`](https://github.com/VoltAgent/voltagent/commit/8de5785e385bec632f846bcae44ee5cb22a9022e) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Migrate to using `safeStringify` to prevent issues using the JSON.stringify/parse method, in addition use structuredClone via Nodejs instead legacy method that errors
+
 ## 0.0.7
 
 ### Patch Changes

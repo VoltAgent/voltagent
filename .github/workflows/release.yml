@@ -11,13 +11,10 @@ jobs:
     strategy:
       matrix:
         package:
-          - anthropic-ai
           - cli
           - core
           - create-voltagent-app
           - docs-mcp
-          - google-ai
-          - groq-ai
           - internal
           - langfuse-exporter
           - logger

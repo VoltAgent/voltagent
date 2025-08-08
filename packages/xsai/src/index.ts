@@ -14,6 +14,7 @@ import type {
   StepWithContent,
 } from "@voltagent/core";
 import { createAsyncIterableStream } from "@voltagent/core";
+import type { SetRequired } from "type-fest";
 import type {
   GenerateObjectResult,
   GenerateTextResult,
@@ -25,6 +26,7 @@ import type {
   Tool,
 } from "xsai";
 import type { z } from "zod";
+import { createMappedFullStream } from "./utils";
 
 export class XSAIProvider implements LLMProvider<string> {
   private apiKey: string;
@@ -248,7 +250,7 @@ export class XSAIProvider implements LLMProvider<string> {
 
   async streamText(
     options: BaseStreamTextOptions<string>,
-  ): Promise<ProviderTextStreamResponse<StreamTextResult>> {
+  ): Promise<SetRequired<ProviderTextStreamResponse<StreamTextResult>, "fullStream">> {
     const { streamText } = await import("xsai");
     const xsaiMessages = options.messages.map(this.toMessage);
     const xsaiTools = options.tools ? await this.convertTools(options.tools) : undefined;
@@ -289,6 +291,7 @@ export class XSAIProvider implements LLMProvider<string> {
     return {
       provider: result,
       textStream: createAsyncIterableStream(result.textStream),
+      fullStream: createMappedFullStream(createAsyncIterableStream(result.fullStream)),
     };
   }
 

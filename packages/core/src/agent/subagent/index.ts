@@ -1,4 +1,5 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import { safeStringify } from "@voltagent/internal/utils";
 import type { MergeDeep } from "type-fest";
 import { z } from "zod";
 import { getGlobalLogger } from "../../logger";
@@ -298,7 +299,7 @@ ${guidelinesText}
       let taskContent = task;
       if (context && Object.keys(context).length > 0) {
         taskContent = `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
-${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
+${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
       }
 
       const taskMessage: BaseMessage = {
@@ -312,7 +313,9 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
         parentOperationContext,
-        // Pass the abort signal from parent's operation context to subagent
+        // Pass the abort controller from parent's operation context to subagent
+        abortController: parentOperationContext?.abortController,
+        // Keep signal for backward compatibility
         signal: parentOperationContext?.signal,
         // Pass maxSteps from parent to subagent (inherits parent's effective maxSteps)
         maxSteps,
@@ -342,7 +345,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
           schema,
           callOptions,
         );
-        finalResult = JSON.stringify(response.object);
+        finalResult = safeStringify(response.object);
         finalMessages = [taskMessage, { role: "assistant", content: finalResult }];
       } else if (method === "streamObject") {
         if (!schema) {
@@ -364,7 +367,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
           }
         }
 
-        finalResult = JSON.stringify(finalObject);
+        finalResult = safeStringify(finalObject);
         finalMessages = [taskMessage, { role: "assistant", content: finalResult }];
       } else {
         // Default to streamText for backward compatibility

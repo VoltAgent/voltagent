@@ -13,6 +13,8 @@ import { AgentRegistry } from "./server/registry";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 import type { ServerOptions, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
+import { isValidVoltOpsKeys } from "./utils/voltops-validation";
+import { VoltOpsClient } from "./voltops/client";
 import type { Workflow } from "./workflow";
 import type { WorkflowChain } from "./workflow/chain";
 import { WorkflowRegistry } from "./workflow/registry";
@@ -58,8 +60,9 @@ export class VoltAgent {
       this.registry.setGlobalLogger(options.logger);
       // Buffer management is now handled by LoggerProxy/BufferedLogger
     }
+
     // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
-    else if (options.telemetryExporter) {
+    if (options.telemetryExporter) {
       this.logger.warn(
         `⚠️  DEPRECATION WARNING: 'telemetryExporter' parameter is deprecated!
         
@@ -88,6 +91,32 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         this.registry.setGlobalVoltAgentExporter(voltExporter);
       }
       this.initializeGlobalTelemetry(options.telemetryExporter);
+    }
+
+    // Auto-configure VoltOpsClient from environment if not provided
+    if (!options.voltOpsClient && !options.telemetryExporter) {
+      const publicKey = process.env.VOLTAGENT_PUBLIC_KEY;
+      const secretKey = process.env.VOLTAGENT_SECRET_KEY;
+
+      if (publicKey && secretKey && isValidVoltOpsKeys(publicKey, secretKey)) {
+        try {
+          const autoClient = new VoltOpsClient({
+            publicKey,
+            secretKey,
+          });
+
+          this.registry.setGlobalVoltOpsClient(autoClient);
+          if (autoClient.observability) {
+            this.registry.setGlobalVoltAgentExporter(autoClient.observability);
+            this.initializeGlobalTelemetry(autoClient.observability);
+          }
+
+          this.logger.debug("VoltOpsClient auto-configured from environment variables");
+        } catch (error) {
+          // Silent fail - don't break the app
+          this.logger.debug("Could not auto-configure VoltOpsClient", { error });
+        }
+      }
     }
 
     // ✅ NOW register agents - they can access global telemetry exporter

@@ -1,4 +1,5 @@
 import type { BaseMessage } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
 import { simulateReadableStream } from "ai";
 import { MockLanguageModelV2 } from "ai/test";
 import type { VercelAIProvider } from "./provider";
@@ -70,7 +71,7 @@ function covertMessagesToChunks(messages: Array<BaseMessage>) {
 }
 
 function convertObjectToChunks(object: Record<string, any>) {
-  return JSON.stringify(object, null, 2)
+  return safeStringify(object, { indentation: 2 })
     .split("\n")
     .map((chunk) => ({ type: "text-delta", textDelta: chunk }) as const);
 }

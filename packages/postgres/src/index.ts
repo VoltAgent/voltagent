@@ -1147,13 +1147,22 @@ export class PostgresStorage implements Memory {
       const result = await client.query(sql, params);
 
       // Map the results
-      const messages = result.rows.map((row: any) => ({
-        id: row.message_id,
-        role: row.role,
-        content: row.content,
-        type: row.type,
-        createdAt: row.created_at,
-      }));
+      const messages = result.rows.map((row: any) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id,
+          role: row.role,
+          content,
+          type: row.type,
+          createdAt: row.created_at,
+        };
+      });
 
       // If we used DESC order with limit, reverse to get chronological order
       if (limit && limit > 0) {
@@ -1497,13 +1506,22 @@ export class PostgresStorage implements Memory {
 
       const result = await client.query(sql, params);
 
-      return result.rows.map((row: any) => ({
-        id: row.message_id,
-        role: row.role,
-        content: row.content,
-        type: row.type,
-        createdAt: row.created_at,
-      }));
+      return result.rows.map((row: any) => {
+        // Try to parse content if it's JSON, otherwise use as-is
+        let content = row.content;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        return {
+          id: row.message_id,
+          role: row.role,
+          content,
+          type: row.type,
+          createdAt: row.created_at,
+        };
+      });
     } catch (error) {
       this.debug("Error getting conversation messages:", error);
       throw new Error("Failed to get conversation messages from PostgreSQL database");

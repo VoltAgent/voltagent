@@ -1,6 +1,7 @@
-import { AnthropicProvider } from "@voltagent/anthropic-ai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 const weatherTool = createTool({
@@ -20,8 +21,8 @@ const weatherTool = createTool({
 const agent = new Agent({
   name: "weather-agent",
   description: "A helpful weather assistant that answers questions with weather tools",
-  llm: new AnthropicProvider(),
-  model: "claude-3-sonnet-20240229",
+  llm: new VercelAIProvider(),
+  model: anthropic("claude-opus-4-1"),
   tools: [weatherTool],
 });
 

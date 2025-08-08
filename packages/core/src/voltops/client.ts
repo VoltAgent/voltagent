@@ -51,29 +51,38 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     this.logger = new LoggerProxy({ component: "voltops-client" });
 
-    // Validate API keys after logger is initialized
-    this.validateApiKeys(options);
+    // Check if keys are valid (not empty and have correct prefixes)
+    const hasValidKeys =
+      this.options.publicKey &&
+      this.options.publicKey.trim() !== "" &&
+      this.options.publicKey.startsWith("pk_") &&
+      this.options.secretKey &&
+      this.options.secretKey.trim() !== "" &&
+      this.options.secretKey.startsWith("sk_");
 
-    // Initialize observability exporter if enabled
-    if (this.options.observability !== false) {
-      try {
-        this.observability = new VoltAgentExporterClass({
-          baseUrl: this.options.baseUrl,
-          publicKey: this.options.publicKey || "",
-          secretKey: this.options.secretKey || "",
-          fetch: this.options.fetch,
-        });
-      } catch (error) {
-        this.logger.error("Failed to initialize observability exporter", { error });
+    // Only initialize services if we have valid keys
+    if (hasValidKeys) {
+      // Initialize observability exporter if enabled
+      if (this.options.observability !== false) {
+        try {
+          this.observability = new VoltAgentExporterClass({
+            baseUrl: this.options.baseUrl,
+            publicKey: this.options.publicKey || "",
+            secretKey: this.options.secretKey || "",
+            fetch: this.options.fetch,
+          });
+        } catch (error) {
+          this.logger.error("Failed to initialize observability exporter", { error });
+        }
       }
-    }
 
-    // Initialize prompt manager if enabled
-    if (this.options.prompts !== false) {
-      try {
-        this.prompts = new VoltOpsPromptManagerImpl(this.options);
-      } catch (error) {
-        this.logger.error("Failed to initialize prompt manager", { error });
+      // Initialize prompt manager if enabled
+      if (this.options.prompts !== false) {
+        try {
+          this.prompts = new VoltOpsPromptManagerImpl(this.options);
+        } catch (error) {
+          this.logger.error("Failed to initialize prompt manager", { error });
+        }
       }
     }
 
@@ -140,6 +149,20 @@ export class VoltOpsClient implements IVoltOpsClient {
    */
   public isObservabilityEnabled(): boolean {
     return this.observability !== undefined;
+  }
+
+  /**
+   * Check if the client has valid API keys
+   */
+  public hasValidKeys(): boolean {
+    return !!(
+      this.options.publicKey &&
+      this.options.publicKey.trim() !== "" &&
+      this.options.publicKey.startsWith("pk_") &&
+      this.options.secretKey &&
+      this.options.secretKey.trim() !== "" &&
+      this.options.secretKey.startsWith("sk_")
+    );
   }
 
   /**
@@ -235,55 +258,6 @@ export class VoltOpsClient implements IVoltOpsClient {
         };
       },
     };
-  }
-
-  /**
-   * Validate API keys and provide helpful error messages
-   */
-  private validateApiKeys(options: VoltOpsClientOptions): void {
-    const { publicKey, secretKey } = options;
-
-    // Check if keys are provided
-    if (!publicKey || publicKey.trim() === "") {
-      this.logger.warn(`
-⚠️  VoltOps Warning: Missing publicKey
-   
-   VoltOps features will be disabled. To enable:
-   
-   1. Get your API keys: https://console.voltagent.dev/settings/projects
-   2. Add to environment:
-      VOLTOPS_PUBLIC_KEY=pk_your_public_key_here
-   
-   3. Initialize VoltOpsClient:
-      const voltOpsClient = new VoltOpsClient({
-        publicKey: process.env.VOLTOPS_PUBLIC_KEY!,
-        secretKey: process.env.VOLTOPS_SECRET_KEY!
-      });
-      `);
-      return;
-    }
-
-    if (!secretKey || secretKey.trim() === "") {
-      this.logger.warn(`
-⚠️  VoltOps Warning: Missing secretKey
-   
-   VoltOps features will be disabled. To enable:
-   
-   1. Get your API keys: https://console.voltagent.dev/settings/projects
-   2. Add to environment:
-      VOLTOPS_SECRET_KEY=sk_your_secret_key_here
-      `);
-      return;
-    }
-
-    // Validate key formats (optional - helps catch common mistakes)
-    if (!publicKey.startsWith("pk_")) {
-      this.logger.warn("⚠️  VoltOps Warning: publicKey should start with 'pk_'");
-    }
-
-    if (!secretKey.startsWith("sk_")) {
-      this.logger.warn("⚠️  VoltOps Warning: secretKey should start with 'sk_'");
-    }
   }
 
   /**

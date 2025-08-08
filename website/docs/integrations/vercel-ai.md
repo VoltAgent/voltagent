@@ -460,4 +460,4 @@ You'll see helpful logs like:
 - **[Langfuse Integration](../observability/langfuse.md)** - Advanced analytics platform
 - **[Production Deployment](#)** - Best practices for production use
 
-Need help? Join our [Discord community](https://discord.voltagent.dev) or check out our [GitHub discussions](https://github.com/voltagent/voltagent/discussions).
+Need help? Join our [Discord community](https://s.voltagent.dev/discord) or check out our [GitHub discussions](https://github.com/voltagent/voltagent/discussions).

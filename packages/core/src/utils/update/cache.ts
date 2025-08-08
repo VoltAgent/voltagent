@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { safeStringify } from "@voltagent/internal/utils";
 import { LoggerProxy } from "../../logger";
 import type { PackageUpdateInfo } from "./index";
 
@@ -79,7 +80,7 @@ export const writeUpdateCache = async (projectPath: string, cache: UpdateCache):
     ensureCacheDir(projectPath);
     const cacheFilePath = getCacheFilePath(projectPath);
 
-    fs.writeFileSync(cacheFilePath, JSON.stringify(cache, null, 2), "utf8");
+    fs.writeFileSync(cacheFilePath, safeStringify(cache, { indentation: 2 }), "utf8");
   } catch (error) {
     const logger = new LoggerProxy({ component: "update-cache" });
     logger.error("Error writing update cache", { error });

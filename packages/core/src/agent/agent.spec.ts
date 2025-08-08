@@ -7,6 +7,7 @@ import { createTool } from "../tool";
 import { VoltOpsClient } from "../voltops/client";
 import { Agent } from "./agent";
 import type { LLMProvider } from "./providers";
+import { isAbortError, isVoltAgentError } from "./types";
 
 // Test provider implementation
 class TestProvider implements LLMProvider<{ model: string }> {
@@ -2207,6 +2208,447 @@ describe("Agent", () => {
       expect(agentOnStart).toHaveBeenCalled();
       expect(optionOnStart).toHaveBeenCalled();
     });
+
+    describe("onPrepareMessages hook", () => {
+      it("should call onPrepareMessages hook with correct parameters", async () => {
+        const onPrepareMessages = vi.fn();
+
+        const agent = new Agent({
+          name: "TestAgent",
+          instructions: "Test agent for message hook",
+          llm: testProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        await agent.generateText("Test message");
+
+        expect(onPrepareMessages).toHaveBeenCalledOnce();
+
+        // Get the call arguments
+        const callArgs = onPrepareMessages.mock.calls[0][0];
+
+        // Check messages
+        expect(callArgs.messages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              role: "system",
+              content: "You are TestAgent. Test agent for message hook",
+            }),
+            expect.objectContaining({ role: "user", content: "Test message" }),
+          ]),
+        );
+
+        // Check agent (should be the same instance)
+        expect(callArgs.agent).toBe(agent);
+
+        // Check context - should have operationId
+        expect(callArgs.context).toMatchObject({
+          operationId: expect.any(String),
+        });
+      });
+
+      it("should use transformed messages from hook", async () => {
+        const transformedMessages = [
+          { role: "system" as const, content: "Custom system prompt" },
+          { role: "user" as const, content: "Transformed message" },
+        ];
+
+        const onPrepareMessages = vi.fn().mockResolvedValue({
+          messages: transformedMessages,
+        });
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.generateText = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            text: "Response",
+            finishReason: "stop" as const,
+            usage: { totalTokens: 10 },
+            steps: [],
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        await agent.generateText("Original message");
+
+        // Verify the transformed messages were sent to LLM
+        expect(capturedMessages).toHaveLength(2);
+        expect(capturedMessages[0]).toEqual({ role: "system", content: "Custom system prompt" });
+        expect(capturedMessages[1]).toEqual({ role: "user", content: "Transformed message" });
+      });
+
+      it("should use original messages when hook returns undefined", async () => {
+        const onPrepareMessages = vi.fn().mockResolvedValue(undefined);
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.generateText = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            text: "Response",
+            finishReason: "stop" as const,
+            usage: { totalTokens: 10 },
+            steps: [],
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        await agent.generateText("Original message");
+
+        expect(onPrepareMessages).toHaveBeenCalledOnce();
+        // Should find the original user message
+        const userMessage = capturedMessages.find((m) => m.role === "user");
+        expect(userMessage?.content).toBe("Original message");
+      });
+
+      it("should use original messages when hook returns empty object", async () => {
+        const onPrepareMessages = vi.fn().mockResolvedValue({});
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.generateText = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            text: "Response",
+            finishReason: "stop" as const,
+            usage: { totalTokens: 10 },
+            steps: [],
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        await agent.generateText("Test input");
+
+        expect(onPrepareMessages).toHaveBeenCalledOnce();
+        const userMessage = capturedMessages.find((m) => m.role === "user");
+        expect(userMessage?.content).toBe("Test input");
+      });
+
+      it("should prevent mutation of original messages", async () => {
+        const onPrepareMessages = vi.fn().mockImplementation(async ({ messages }) => {
+          // Try to mutate the received messages
+          messages.push({ role: "assistant", content: "Injected message" });
+          messages[0] = { role: "system", content: "Modified system" };
+
+          return { messages };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: testProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        const inputMessages = [{ role: "user" as const, content: "Test message" }];
+
+        await agent.generateText(inputMessages);
+
+        // Original input should not be mutated
+        expect(inputMessages).toHaveLength(1);
+        expect(inputMessages[0]).toEqual({ role: "user", content: "Test message" });
+      });
+
+      it("should work with streamText method", async () => {
+        const transformedMessages = [
+          { role: "system" as const, content: "Streaming prompt" },
+          { role: "user" as const, content: "Streaming message" },
+        ];
+
+        const onPrepareMessages = vi.fn().mockResolvedValue({
+          messages: transformedMessages,
+        });
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.streamText = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            textStream: (async function* () {
+              yield "Stream ";
+              yield "response";
+            })(),
+            fullStream: (async function* () {
+              yield { type: "text-delta", textDelta: "Stream " };
+              yield { type: "text-delta", textDelta: "response" };
+              yield { type: "finish", finishReason: "stop", usage: { totalTokens: 10 } };
+            })(),
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        const stream = await agent.streamText("Original");
+
+        // Consume stream
+        const chunks: string[] = [];
+        for await (const chunk of stream.textStream ?? []) {
+          chunks.push(chunk);
+        }
+
+        expect(onPrepareMessages).toHaveBeenCalledOnce();
+        expect(capturedMessages).toHaveLength(2);
+        expect(capturedMessages[0]).toEqual({ role: "system", content: "Streaming prompt" });
+        expect(capturedMessages[1]).toEqual({ role: "user", content: "Streaming message" });
+        expect(chunks.join("")).toBe("Stream response");
+      });
+
+      it("should work with generateObject method", async () => {
+        const schema = z.object({ name: z.string() });
+
+        const onPrepareMessages = vi.fn().mockResolvedValue({
+          messages: [
+            { role: "system", content: "Generate JSON" },
+            { role: "user", content: "Create object" },
+          ],
+        });
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.generateObject = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            object: { name: "Test" },
+            finishReason: "stop" as const,
+            usage: { totalTokens: 10 },
+            steps: [],
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        await agent.generateObject("Generate", schema);
+
+        expect(onPrepareMessages).toHaveBeenCalledOnce();
+        expect(capturedMessages[0]).toEqual({ role: "system", content: "Generate JSON" });
+        expect(capturedMessages[1]).toEqual({ role: "user", content: "Create object" });
+      });
+
+      it("should handle hook errors gracefully", async () => {
+        const onPrepareMessages = vi.fn().mockRejectedValue(new Error("Hook error"));
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.generateText = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            text: "Response",
+            finishReason: "stop" as const,
+            usage: { totalTokens: 10 },
+            steps: [],
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          logger: mockLogger,
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        // Should not throw, use original messages
+        const result = await agent.generateText("Test message");
+
+        expect(result.text).toBe("Response");
+        expect(onPrepareMessages).toHaveBeenCalledOnce();
+
+        // Should log the error
+        expect(mockLogger.error).toHaveBeenCalledWith(
+          "Error preparing messages",
+          expect.objectContaining({
+            error: expect.any(Error),
+            agentId: "TestAgent",
+          }),
+        );
+
+        // Should use original messages
+        const userMessage = capturedMessages.find((m) => m.role === "user");
+        expect(userMessage?.content).toBe("Test message");
+      });
+
+      it("should prefer option hook over agent hook when both are defined", async () => {
+        const agentHook = vi.fn().mockResolvedValue({
+          messages: [{ role: "user", content: "From agent hook" }],
+        });
+
+        const optionHook = vi.fn().mockResolvedValue({
+          messages: [{ role: "user", content: "From option hook" }],
+        });
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.generateText = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            text: "Response",
+            finishReason: "stop" as const,
+            usage: { totalTokens: 10 },
+            steps: [],
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages: agentHook,
+          },
+        });
+
+        await agent.generateText("Test", {
+          hooks: {
+            onPrepareMessages: optionHook,
+          },
+        });
+
+        // Only option hook should be called (it takes precedence)
+        expect(agentHook).not.toHaveBeenCalled();
+        expect(optionHook).toHaveBeenCalledOnce();
+
+        // Verify option hook's messages were used
+        const userMessage = capturedMessages.find((m) => m.role === "user");
+        expect(userMessage?.content).toBe("From option hook");
+      });
+
+      it("should work with message array input", async () => {
+        const onPrepareMessages = vi.fn().mockResolvedValue({
+          messages: [
+            { role: "system", content: "Modified system" },
+            { role: "user", content: "Modified user" },
+            { role: "assistant", content: "Modified assistant" },
+          ],
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: testProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        const inputMessages = [
+          { role: "user" as const, content: "Hello" },
+          { role: "assistant" as const, content: "Hi" },
+          { role: "user" as const, content: "How are you?" },
+        ];
+
+        await agent.generateText(inputMessages);
+
+        expect(onPrepareMessages).toHaveBeenCalledOnce();
+        expect(onPrepareMessages).toHaveBeenCalledWith({
+          messages: expect.arrayContaining([
+            expect.objectContaining({ role: "user", content: "Hello" }),
+            expect.objectContaining({ role: "assistant", content: "Hi" }),
+            expect.objectContaining({ role: "user", content: "How are you?" }),
+          ]),
+          agent: expect.any(Object),
+          context: expect.any(Object),
+        });
+      });
+
+      it("should preserve message metadata when transforming", async () => {
+        const onPrepareMessages = vi.fn().mockResolvedValue({
+          messages: [
+            {
+              role: "system",
+              content: "System with metadata",
+              metadata: { source: "hook" },
+            },
+            {
+              role: "user",
+              content: "User with metadata",
+              timestamp: Date.now(),
+            },
+          ],
+        });
+
+        let capturedMessages: any[] = [];
+        const customProvider = new TestProvider();
+        customProvider.generateText = vi.fn().mockImplementation(async ({ messages }) => {
+          capturedMessages = messages;
+          return {
+            text: "Response",
+            finishReason: "stop" as const,
+            usage: { totalTokens: 10 },
+            steps: [],
+          };
+        });
+
+        const agent = new Agent({
+          name: "TestAgent",
+          description: "Test agent",
+          llm: customProvider,
+          model: "test-model",
+          hooks: {
+            onPrepareMessages,
+          },
+        });
+
+        await agent.generateText("Test");
+
+        expect(capturedMessages[0].metadata).toEqual({ source: "hook" });
+        expect(capturedMessages[1].timestamp).toBeDefined();
+      });
+    });
   });
 
   describe("Provider Callbacks", () => {
@@ -3300,6 +3742,107 @@ describe("Agent", () => {
       expect(results[2].status).toBe("rejected");
       expect(results[3].status).toBe("fulfilled");
       expect(results[4].status).toBe("rejected");
+    });
+  });
+
+  describe("AbortController and Signal Migration", () => {
+    it("should support both signal and abortController for backward compatibility", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test instructions",
+        llm: testProvider as any,
+        model: { model: "test-model" },
+        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+      });
+
+      // Test with old signal API
+      const controller1 = new AbortController();
+      const promise1 = agent.generateText("Test 1", { signal: controller1.signal });
+
+      // Test with new abortController API
+      const controller2 = new AbortController();
+      const promise2 = agent.generateText("Test 2", { abortController: controller2 });
+
+      // Both should work
+      expect(promise1).toBeDefined();
+      expect(promise2).toBeDefined();
+    });
+
+    it("should prioritize abortController over signal when both provided", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test instructions",
+        llm: testProvider as any,
+        model: { model: "test-model" },
+        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+      });
+
+      const controller1 = new AbortController();
+      const controller2 = new AbortController();
+
+      let capturedSignal: AbortSignal | undefined;
+
+      // Mock the LLM to capture the signal
+      testProvider.generateText = vi.fn().mockImplementation(async (options) => {
+        capturedSignal = options.signal;
+        // Wait a bit to allow abort to happen
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(resolve, 100);
+          if (options.signal) {
+            options.signal.addEventListener("abort", () => {
+              clearTimeout(timeout);
+              reject(new Error("Request aborted"));
+            });
+          }
+        });
+        return {
+          text: "Test response",
+          finishReason: "stop" as const,
+          usage: { totalTokens: 10 },
+          steps: [],
+        };
+      });
+
+      const promise = agent.generateText("Test", {
+        signal: controller1.signal,
+        abortController: controller2,
+      });
+
+      // Abort via controller2 (abortController)
+      setTimeout(() => controller2.abort(), 10);
+
+      await expect(promise).rejects.toThrow();
+
+      // The captured signal should be from controller2, not controller1
+      expect(capturedSignal).toBe(controller2.signal);
+    });
+  });
+
+  describe("Error Type Guards", () => {
+    it("should correctly identify AbortError", () => {
+      const abortError = new Error("Operation aborted") as any;
+      abortError.name = "AbortError";
+
+      expect(isAbortError(abortError)).toBe(true);
+      expect(isVoltAgentError(abortError)).toBe(false);
+    });
+
+    it("should correctly identify VoltAgentError", () => {
+      const voltError = {
+        message: "Something went wrong",
+        code: "ERROR_CODE",
+        stage: "llm_request",
+      };
+
+      expect(isVoltAgentError(voltError)).toBe(true);
+      expect(isAbortError(voltError)).toBe(false);
+    });
+
+    it("should handle null and undefined in type guards", () => {
+      expect(isAbortError(null)).toBe(false);
+      expect(isAbortError(undefined)).toBe(false);
+      expect(isVoltAgentError(null)).toBe(false);
+      expect(isVoltAgentError(undefined)).toBe(false);
     });
   });
 });

@@ -19,6 +19,13 @@ import zodToJsonSchema from "zod-to-json-schema";
 import type { GroqProviderOptions } from "./types";
 import { convertToolsForSDK } from "./utils";
 
+// Deprecation warning
+console.warn(
+  "\x1b[33m⚠️  DEPRECATION WARNING: @voltagent/groq-ai is deprecated and will no longer receive updates.\x1b[0m\n" +
+    "\x1b[33mPlease migrate to @ai-sdk/groq with @voltagent/vercel-ai instead.\x1b[0m\n" +
+    "\x1b[36mMigration guide: https://voltagent.dev/docs/providers/groq-ai/\x1b[0m\n",
+);
+
 export class GroqProvider implements LLMProvider<string> {
   // @ts-ignore
   private groq: Groq;

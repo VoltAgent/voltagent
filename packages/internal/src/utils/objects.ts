@@ -1,21 +1,26 @@
 import type { SetRequired } from "type-fest";
-import type { Logger } from "../logger/types";
 import type { PlainObject } from "../types";
 import { isObject } from "./lang";
 
 /**
- * Deep clone an object using JSON serialization with fallback to shallow clone
+ * Deep clone an object
  *
  * @param obj - The object to clone
- * @param logger - Optional logger for warnings
- * @returns A deep copy of the object, or shallow copy if JSON serialization fails
+ * @returns A deep copy of the object (fallback to shallow clone for failures)
  */
-export function deepClone<T>(obj: T, logger?: Logger): T {
+export function deepClone<T>(obj: T): T {
   try {
-    return JSON.parse(JSON.stringify(obj));
+    // Use structuredClone if available (Node.js 17+, modern browsers)
+    if (typeof structuredClone === "function") {
+      return structuredClone(obj);
+    }
+
+    throw new Error("structuredClone is not available");
   } catch (error) {
-    if (logger) {
-      logger.warn("Failed to deep clone object, using shallow clone", { error });
+    // This is only a warning in development mode we don't expect this to happen
+    // as we do not support sub-Node versions and structuredClone is available in Node.js 17+
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Failed to deep clone object, using shallow clone", { error });
     }
     // Fallback to shallow clone for primitive types and simple objects
     if (obj === null || typeof obj !== "object") {

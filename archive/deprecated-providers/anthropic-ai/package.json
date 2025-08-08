@@ -1,10 +1,11 @@
 {
   "name": "@voltagent/anthropic-ai",
   "description": "Anthropic AI provider for VoltAgent",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0"
   },
+  "deprecated": "This package is deprecated. Please use @ai-sdk/anthropic with @voltagent/vercel-ai instead. See https://voltagent.dev/docs/getting-started/providers-models for migration guide.",
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",

@@ -178,25 +178,36 @@ The `onToolStart` hook is called just before a tool is executed, and `onToolEnd`
 - Cleaning up resources after tool execution
 
 ```ts
-import { Agent, createHooks } from "@voltagent/core";
+import { Agent, createHooks, isAbortError } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Define the hooks using createHooks
 const hooks = createHooks({
-  onToolStart(_, tool) {
+  onToolStart({ agent, tool, context }) {
     console.log(`Tool starting: ${tool.name}`);
+    console.log(`Agent: ${agent.name}`);
+    console.log(`Operation ID: ${context.operationId}`);
   },
-  onToolEnd(_, tool, result) {
+  onToolEnd({ agent, tool, output, error, context }) {
     console.log(`Tool completed: ${tool.name}`);
-    console.log(`Result: ${JSON.stringify(result)}`);
+
+    if (error) {
+      if (isAbortError(error)) {
+        console.log(`Tool was aborted: ${error.message}`);
+      } else {
+        console.error(`Tool failed: ${error.message}`);
+      }
+    } else {
+      console.log(`Result: ${JSON.stringify(output)}`);
+    }
   },
 });
 
 // Create an agent with hooks
 const agent = new Agent({
   name: "Assistant with Tool Hooks",
-  description: "An assistant that logs tool execution",
+  instructions: "An assistant that logs tool execution",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: [calculatorTool],
@@ -268,11 +279,17 @@ execute: async (args) => {
 };
 ```
 
-### Cancellable Tools with AbortSignal
+### Cancellable Tools with AbortController
 
-For long-running tools, implement cancellation with AbortSignal. This allows tools to be gracefully cancelled when needed, such as when a user cancels a request or when an operation times out.
+For long-running tools, implement cancellation with AbortController. This allows tools to be gracefully cancelled when needed, such as when a user cancels a request or when an operation times out.
 
-Tools receive an options object as their second parameter, which can contain an AbortSignal:
+Tools receive an options object as their second parameter, which contains the operation context with an AbortController. The tool can:
+
+- **Check if already aborted** using `signal.aborted`
+- **Listen for abort events** using `signal.addEventListener('abort', ...)`
+- **Trigger abort** using `abortController.abort()` to cancel the entire agent operation
+
+> **Important**: When a tool calls `abortController.abort()`, it cancels the entire agent operation, not just the current tool execution. This will stop any subsequent tool calls and cause the agent to throw an `AbortError`.
 
 ```ts
 const searchTool = createTool({
@@ -282,67 +299,88 @@ const searchTool = createTool({
     query: z.string().describe("The search query"),
   }),
   execute: async (args, options) => {
-    // Extract the signal from options
-    const signal = options?.signal;
+    // Extract the AbortController from operation context
+    const abortController = options?.operationContext?.abortController;
+    const signal = abortController?.signal;
 
     // Check if already aborted
     if (signal?.aborted) {
       throw new Error("Search was cancelled before it started");
     }
 
-    // Example of a fetch operation that respects abort signal
-    const response = await fetch(`https://api.search.com?q=${args.query}`, {
-      signal: signal, // Pass the signal to fetch
-    });
+    // Tool can trigger abort to cancel the entire operation
+    if (args.query.includes("forbidden")) {
+      // This will abort the entire agent operation, not just this tool
+      abortController?.abort("Forbidden query detected - cancelling entire operation");
+      throw new Error("Search query contains forbidden terms");
+    }
 
-    // ... process and return results
-    return await response.json();
+    // Example of a fetch operation that respects abort signal
+    try {
+      const response = await fetch(`https://api.search.com?q=${args.query}`, {
+        signal: signal, // Pass the signal to fetch
+      });
+
+      // Tool can also abort based on response
+      if (!response.ok && response.status === 429) {
+        abortController?.abort("Rate limit exceeded - stopping all operations");
+        throw new Error("API rate limit exceeded");
+      }
+
+      return await response.json();
+    } catch (error) {
+      // If fetch was aborted, it will throw an AbortError
+      if (error.name === "AbortError") {
+        throw new Error("Search was cancelled during execution");
+      }
+      throw error;
+    }
   },
 });
 ```
 
-When calling a tool directly, you can pass the AbortSignal in the options parameter:
+When calling a tool directly, you can pass an AbortController:
 
 ```ts
 // Create an AbortController
-const controller = new AbortController();
-const signal = controller.signal;
+const abortController = new AbortController();
 
 // Set a timeout to abort after 5 seconds
-setTimeout(() => controller.abort(), 5000);
+setTimeout(() => abortController.abort("Operation timeout"), 5000);
 
 try {
-  // Pass the signal in the options object
-  const result = await searchTool.execute({ query: "Latest AI developments" }, { signal });
+  // Pass the abortController directly
+  const result = await searchTool.execute({ query: "Latest AI developments" }, { abortController });
   console.log("Results:", result);
 } catch (error) {
   if (error.name === "AbortError") {
-    console.log("Search was cancelled by the user");
+    console.log("Search was cancelled");
   } else {
     console.error("Search failed:", error);
   }
 }
 ```
 
-When using tools with an agent, you can pass the AbortSignal in the options of the agent's generateText or streamText methods:
+When using tools with an agent, you can pass the AbortController in the options of the agent's generateText or streamText methods:
 
 ```ts
+import { isAbortError } from "@voltagent/core";
+
 // Create an AbortController
-const controller = new AbortController();
-const signal = controller.signal;
+const abortController = new AbortController();
 
 // Set a timeout to abort after 30 seconds
-setTimeout(() => controller.abort(), 30000);
+setTimeout(() => abortController.abort("Operation timeout"), 30000);
 
 try {
-  // Pass the signal to the agent
+  // Pass the abortController to the agent
   const response = await agent.generateText("Search for the latest AI developments", {
-    signal, // The agent will pass this signal to any tools it uses
+    abortController, // The agent will pass this to any tools it uses
   });
   console.log(response.text);
 } catch (error) {
-  if (error.name === "AbortError") {
-    console.log("Operation was cancelled");
+  if (isAbortError(error)) {
+    console.log("Operation was cancelled:", error.message);
   } else {
     console.error("Error:", error);
   }
@@ -372,29 +410,32 @@ execute: async (args) => {
 };
 ```
 
-Alternatively, using AbortSignal with a timeout:
+Alternatively, using AbortController with a timeout:
 
 ```ts
 execute: async (args, options) => {
-  // Create a new AbortController if none provided
-  const controller = new AbortController();
+  // Get parent abort controller if provided
+  const parentController = options?.operationContext?.abortController;
+
+  // Create a new AbortController for timeout
+  const timeoutController = new AbortController();
 
   // Create a timeout that will abort the controller
   const timeoutId = setTimeout(() => {
-    controller.abort("Operation timed out");
+    timeoutController.abort("Operation timed out");
   }, 5000); // 5-second timeout
 
   try {
-    // Merge with any parent signal if provided
-    if (options?.signal) {
-      options.signal.addEventListener("abort", () => {
-        controller.abort("Parent operation aborted");
+    // Listen to parent abort if provided
+    if (parentController?.signal) {
+      parentController.signal.addEventListener("abort", () => {
+        timeoutController.abort("Parent operation aborted");
         clearTimeout(timeoutId);
       });
     }
 
     // Use our controller's signal for the API call
-    const result = await fetchDataFromApi(args, { signal: controller.signal });
+    const result = await fetchDataFromApi(args, { signal: timeoutController.signal });
     clearTimeout(timeoutId); // Clear the timeout if the operation completed successfully
     return result;
   } catch (error) {

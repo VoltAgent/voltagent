@@ -40,6 +40,7 @@ export type {
   OperationContext,
   ToolExecutionContext,
   VoltAgentError,
+  AbortError,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
   StreamObjectFinishResult,
@@ -47,6 +48,7 @@ export type {
   ToolErrorInfo,
   DynamicValueOptions,
 } from "./agent/types";
+export { isAbortError, isVoltAgentError } from "./agent/types";
 export type { AgentHistoryEntry, HistoryStatus } from "./agent/history";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";

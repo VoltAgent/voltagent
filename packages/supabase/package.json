@@ -1,14 +1,15 @@
 {
   "name": "@voltagent/supabase",
   "description": "VoltAgent Supabase - Supabase Memory provider integration for VoltAgent",
-  "version": "0.1.16",
+  "version": "0.1.18",
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.4"
+    "@supabase/supabase-js": "^2.49.4",
+    "@voltagent/internal": "^0.0.8"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^0.1.73",
+    "@voltagent/core": "^0.1.78",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"

@@ -146,121 +146,131 @@ describe("VoltOpsClient", () => {
     });
   });
 
-  describe("API key validation", () => {
-    it("should validate correct API keys without warnings", () => {
+  describe("hasValidKeys", () => {
+    it("should return true for valid keys", () => {
       const validOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "pk_valid_key",
         secretKey: "sk_valid_key",
       };
 
-      new VoltOpsClient(validOptions);
-
-      expect(mockLoggerInstance.warn).not.toHaveBeenCalled();
+      const client = new VoltOpsClient(validOptions);
+      expect(client.hasValidKeys()).toBe(true);
     });
 
-    it("should warn when publicKey is missing", () => {
+    it("should return false when publicKey is empty", () => {
       const invalidOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "",
         secretKey: "sk_valid_key",
       };
 
-      new VoltOpsClient(invalidOptions);
-
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        expect.stringContaining("⚠️  VoltOps Warning: Missing publicKey"),
-      );
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.hasValidKeys()).toBe(false);
     });
 
-    it("should warn when secretKey is missing", () => {
+    it("should return false when secretKey is empty", () => {
       const invalidOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "pk_valid_key",
         secretKey: "",
       };
 
-      new VoltOpsClient(invalidOptions);
-
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        expect.stringContaining("⚠️  VoltOps Warning: Missing secretKey"),
-      );
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.hasValidKeys()).toBe(false);
     });
 
-    it("should warn when publicKey doesn't have correct prefix", () => {
+    it("should return false when publicKey doesn't have correct prefix", () => {
       const invalidOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "invalid_key_format",
         secretKey: "sk_valid_key",
       };
 
-      new VoltOpsClient(invalidOptions);
-
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        "⚠️  VoltOps Warning: publicKey should start with 'pk_'",
-      );
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.hasValidKeys()).toBe(false);
     });
 
-    it("should warn when secretKey doesn't have correct prefix", () => {
+    it("should return false when secretKey doesn't have correct prefix", () => {
       const invalidOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "pk_valid_key",
         secretKey: "invalid_key_format",
       };
 
-      new VoltOpsClient(invalidOptions);
-
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        "⚠️  VoltOps Warning: secretKey should start with 'sk_'",
-      );
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.hasValidKeys()).toBe(false);
     });
 
-    it("should warn for both missing keys", () => {
+    it("should return false for both empty keys", () => {
       const invalidOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "",
         secretKey: "",
       };
 
-      new VoltOpsClient(invalidOptions);
-
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        expect.stringContaining("⚠️  VoltOps Warning: Missing publicKey"),
-      );
-      // Should return early after first missing key, so secretKey warning won't be called
-      expect(mockLoggerInstance.warn).toHaveBeenCalledTimes(1);
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.hasValidKeys()).toBe(false);
     });
 
-    it("should handle whitespace-only keys as missing", () => {
+    it("should handle whitespace-only keys as invalid", () => {
       const invalidOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "   ",
         secretKey: "sk_valid_key",
       };
 
-      new VoltOpsClient(invalidOptions);
-
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        expect.stringContaining("⚠️  VoltOps Warning: Missing publicKey"),
-      );
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.hasValidKeys()).toBe(false);
     });
 
-    it("should warn for both format issues", () => {
+    it("should return false for both incorrect prefixes", () => {
       const invalidOptions: VoltOpsClientOptions = {
         baseUrl: "https://api.voltops.com",
         publicKey: "invalid_public_format",
         secretKey: "invalid_secret_format",
       };
 
-      new VoltOpsClient(invalidOptions);
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.hasValidKeys()).toBe(false);
+    });
+  });
 
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        "⚠️  VoltOps Warning: publicKey should start with 'pk_'",
-      );
-      expect(mockLoggerInstance.warn).toHaveBeenCalledWith(
-        "⚠️  VoltOps Warning: secretKey should start with 'sk_'",
-      );
-      expect(mockLoggerInstance.warn).toHaveBeenCalledTimes(2);
+  describe("service initialization", () => {
+    it("should not initialize services with invalid keys", () => {
+      const invalidOptions: VoltOpsClientOptions = {
+        baseUrl: "https://api.voltops.com",
+        publicKey: "",
+        secretKey: "",
+      };
+
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.observability).toBeUndefined();
+      expect(client.prompts).toBeUndefined();
+    });
+
+    it("should not initialize services with missing prefixes", () => {
+      const invalidOptions: VoltOpsClientOptions = {
+        baseUrl: "https://api.voltops.com",
+        publicKey: "invalid_key",
+        secretKey: "invalid_key",
+      };
+
+      const client = new VoltOpsClient(invalidOptions);
+      expect(client.observability).toBeUndefined();
+      expect(client.prompts).toBeUndefined();
+    });
+
+    it("should initialize services with valid keys", () => {
+      const validOptions: VoltOpsClientOptions = {
+        baseUrl: "https://api.voltops.com",
+        publicKey: "pk_valid_key",
+        secretKey: "sk_valid_key",
+      };
+
+      const client = new VoltOpsClient(validOptions);
+      expect(client.observability).toBeDefined();
+      expect(client.prompts).toBeDefined();
     });
   });
 

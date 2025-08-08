@@ -1,5 +1,575 @@
 # @voltagent/core
 
+## 0.1.78
+
+### Patch Changes
+
+- [#466](https://github.com/VoltAgent/voltagent/pull/466) [`730232e`](https://github.com/VoltAgent/voltagent/commit/730232e730cdbd1bb7de6acff8519e8af93f2abf) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add message helper utilities to simplify working with complex message content
+
+  ## What Changed for You
+
+  Working with message content (which can be either a string or an array of content parts) used to require complex if/else blocks. Now you have simple helper functions that handle all the complexity.
+
+  ## Before - Your Old Code (Complex)
+
+  ```typescript
+  // Adding timestamps to messages - 30+ lines of code
+  const enhancedMessages = messages.map((msg) => {
+    if (msg.role === "user") {
+      const timestamp = new Date().toLocaleTimeString();
+
+      // Handle string content
+      if (typeof msg.content === "string") {
+        return {
+          ...msg,
+          content: `[${timestamp}] ${msg.content}`,
+        };
+      }
+
+      // Handle structured content (array of content parts)
+      if (Array.isArray(msg.content)) {
+        return {
+          ...msg,
+          content: msg.content.map((part) => {
+            if (part.type === "text") {
+              return {
+                ...part,
+                text: `[${timestamp}] ${part.text}`,
+              };
+            }
+            return part;
+          }),
+        };
+      }
+    }
+    return msg;
+  });
+
+  // Extracting text from content - another 15+ lines
+  function getText(content) {
+    if (typeof content === "string") {
+      return content;
+    }
+    if (Array.isArray(content)) {
+      return content
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("");
+    }
+    return "";
+  }
+  ```
+
+  ## After - Your New Code (Simple)
+
+  ```typescript
+  import { messageHelpers } from "@voltagent/core";
+
+  // Adding timestamps - 1 line!
+  const enhancedMessages = messages.map((msg) =>
+    messageHelpers.addTimestampToMessage(msg, timestamp)
+  );
+
+  // Extracting text - 1 line!
+  const text = messageHelpers.extractText(content);
+
+  // Check if has images - 1 line!
+  if (messageHelpers.hasImagePart(content)) {
+    // Handle image content
+  }
+
+  // Build complex content - fluent API
+  const content = new messageHelpers.MessageContentBuilder()
+    .addText("Here's an image:")
+    .addImage("screenshot.png")
+    .addText("And a file:")
+    .addFile("document.pdf")
+    .build();
+  ```
+
+  ## Real Use Case in Hooks
+
+  ```typescript
+  import { Agent, messageHelpers } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Assistant",
+    hooks: {
+      onPrepareMessages: async ({ messages }) => {
+        // Before: 30+ lines of complex if/else
+        // After: 2 lines!
+        const timestamp = new Date().toLocaleTimeString();
+        return {
+          messages: messages.map((msg) => messageHelpers.addTimestampToMessage(msg, timestamp)),
+        };
+      },
+    },
+  });
+  ```
+
+  ## What You Get
+  - **No more if/else blocks** for content type checking
+  - **Type-safe operations** with TypeScript support
+  - **30+ lines → 1 line** for common operations
+  - **Works everywhere**: hooks, tools, custom logic
+
+  ## Available Helpers
+
+  ```typescript
+  import { messageHelpers } from "@voltagent/core";
+
+  // Check content type
+  messageHelpers.isTextContent(content); // Is it a string?
+  messageHelpers.hasImagePart(content); // Has images?
+
+  // Extract content
+  messageHelpers.extractText(content); // Get all text
+  messageHelpers.extractImageParts(content); // Get all images
+
+  // Transform content
+  messageHelpers.transformTextContent(content, (text) => text.toUpperCase());
+  messageHelpers.addTimestampToMessage(message, "10:30:00");
+
+  // Build content
+  new messageHelpers.MessageContentBuilder().addText("Hello").addImage("world.png").build();
+  ```
+
+  Your message handling code just got 90% simpler!
+
+- [#466](https://github.com/VoltAgent/voltagent/pull/466) [`730232e`](https://github.com/VoltAgent/voltagent/commit/730232e730cdbd1bb7de6acff8519e8af93f2abf) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add onPrepareMessages hook - transform messages before they reach the LLM
+
+  ## What Changed for You
+
+  You can now modify, filter, or enhance messages before they're sent to the LLM. Previously impossible without forking the framework.
+
+  ## Before - What You Couldn't Do
+
+  ```typescript
+  // ❌ No way to:
+  // - Add timestamps to messages
+  // - Filter sensitive data (SSN, credit cards)
+  // - Add user context to messages
+  // - Remove duplicate messages
+  // - Inject system prompts dynamically
+
+  const agent = new Agent({
+    name: "Assistant",
+    // Messages went straight to LLM - no control!
+  });
+  ```
+
+  ## After - What You Can Do Now
+
+  ```typescript
+  import { Agent, messageHelpers } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Assistant",
+
+    hooks: {
+      // ✅ NEW: Intercept and transform messages!
+      onPrepareMessages: async ({ messages, context }) => {
+        // Add timestamps
+        const timestamp = new Date().toLocaleTimeString();
+        const enhanced = messages.map((msg) =>
+          messageHelpers.addTimestampToMessage(msg, timestamp)
+        );
+
+        return { messages: enhanced };
+      },
+    },
+  });
+
+  // Your message: "What time is it?"
+  // LLM receives: "[14:30:45] What time is it?"
+  ```
+
+  ## When It Runs
+
+  ```typescript
+  // 1. User sends message
+  await agent.generateText("Hello");
+
+  // 2. Memory loads previous messages
+  // [previous messages...]
+
+  // 3. ✨ onPrepareMessages runs HERE
+  // You can transform messages
+
+  // 4. Messages sent to LLM
+  // [your transformed messages]
+  ```
+
+  ## What You Need to Know
+  - **Runs on every LLM call**: generateText, streamText, generateObject, streamObject
+  - **Gets all messages**: Including system prompt and memory messages
+  - **Return transformed messages**: Or return nothing to keep original
+  - **Access to context**: userContext, operationId, agent reference
+
+  Your app just got smarter without changing any existing code!
+
+- [#466](https://github.com/VoltAgent/voltagent/pull/466) [`730232e`](https://github.com/VoltAgent/voltagent/commit/730232e730cdbd1bb7de6acff8519e8af93f2abf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: memory messages now return parsed objects instead of JSON strings
+
+  ## What Changed for You
+
+  Memory messages that contain structured content (like tool calls or multi-part messages) now return as **parsed objects** instead of **JSON strings**. This is a breaking change if you were manually parsing these messages.
+
+  ## Before - You Had to Parse JSON Manually
+
+  ```typescript
+  // ❌ OLD BEHAVIOR: Content came as JSON string
+  const messages = await memory.getMessages({ conversationId: "123" });
+
+  // What you got from memory:
+  console.log(messages[0]);
+  // {
+  //   role: "user",
+  //   content: '[{"type":"text","text":"Hello"},{"type":"image","image":"data:..."}]',  // STRING!
+  //   type: "text"
+  // }
+
+  // You had to manually parse the JSON string:
+  const content = JSON.parse(messages[0].content); // Parse required!
+  console.log(content);
+  // [
+  //   { type: "text", text: "Hello" },
+  //   { type: "image", image: "data:..." }
+  // ]
+
+  // Tool calls were also JSON strings:
+  console.log(messages[1].content);
+  // '[{"type":"tool-call","toolCallId":"123","toolName":"weather"}]'  // STRING!
+  ```
+
+  ## After - You Get Parsed Objects Automatically
+
+  ```typescript
+  // ✅ NEW BEHAVIOR: Content comes as proper objects
+  const messages = await memory.getMessages({ conversationId: "123" });
+
+  // What you get from memory NOW:
+  console.log(messages[0]);
+  // {
+  //   role: "user",
+  //   content: [
+  //     { type: "text", text: "Hello" },      // OBJECT!
+  //     { type: "image", image: "data:..." }  // OBJECT!
+  //   ],
+  //   type: "text"
+  // }
+
+  // Direct access - no JSON.parse needed!
+  const content = messages[0].content; // Already parsed!
+  console.log(content[0].text); // "Hello"
+
+  // Tool calls are proper objects:
+  console.log(messages[1].content);
+  // [
+  //   { type: "tool-call", toolCallId: "123", toolName: "weather" }  // OBJECT!
+  // ]
+  ```
+
+  ## Breaking Change Warning ⚠️
+
+  If your code was doing this:
+
+  ```typescript
+  // This will now FAIL because content is already parsed
+  const parsed = JSON.parse(msg.content); // ❌ Error: not a string!
+  ```
+
+  Change it to:
+
+  ```typescript
+  // Just use the content directly
+  const content = msg.content; // ✅ Already an object/array
+  ```
+
+  ## What Gets Auto-Parsed
+  - **String content** → Stays as string ✅
+  - **Structured content** (arrays) → Auto-parsed to objects ✅
+  - **Tool calls** → Auto-parsed to objects ✅
+  - **Tool results** → Auto-parsed to objects ✅
+  - **Metadata fields** → Auto-parsed to objects ✅
+
+  ## Why This Matters
+  - **No more JSON.parse errors** in your application
+  - **Type-safe access** to structured content
+  - **Cleaner code** without try/catch blocks
+  - **Consistent behavior** with how agents handle messages
+
+  ## Migration Guide
+  1. **Remove JSON.parse calls** for message content
+  2. **Remove try/catch** blocks around parsing
+  3. **Use content directly** as objects/arrays
+
+  Your memory messages now "just work" without manual parsing!
+
+## 0.1.77
+
+### Patch Changes
+
+- [#472](https://github.com/VoltAgent/voltagent/pull/472) [`8de5785`](https://github.com/VoltAgent/voltagent/commit/8de5785e385bec632f846bcae44ee5cb22a9022e) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Migrate to using `safeStringify` to prevent issues using the JSON.stringify/parse method, in addition use structuredClone via Nodejs instead legacy method that errors
+
+- Updated dependencies [[`8de5785`](https://github.com/VoltAgent/voltagent/commit/8de5785e385bec632f846bcae44ee5cb22a9022e)]:
+  - @voltagent/internal@0.0.8
+
+## 0.1.76
+
+### Patch Changes
+
+- [#468](https://github.com/VoltAgent/voltagent/pull/468) [`c7fec1b`](https://github.com/VoltAgent/voltagent/commit/c7fec1b6c09547adce7dfdb779a2eae7e2fbd153) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: separate system-managed context from user context in operationContext
+
+  Separated system-managed values from userContext by introducing a new `systemContext` field in OperationContext. This provides cleaner separation of concerns between user-provided context and internal system tracking.
+
+  ### What Changed
+  - Added `systemContext` field to `OperationContext` type for internal system values
+  - Moved system-managed values from `userContext` to `systemContext`:
+    - `agent_start_time`: Agent execution start timestamp
+    - `agent_start_event_id`: Agent start event identifier
+    - `tool_${toolId}`: Tool execution tracking (eventId and startTime)
+
+  ### Why This Matters
+
+  Previously, system values were mixed with user context, which could:
+  - Pollute the user's context namespace
+  - Make it unclear which values were user-provided vs system-generated
+  - Potentially cause conflicts if users used similar key names
+
+  Now there's a clear separation:
+  - `userContext`: Contains only user-provided values
+  - `systemContext`: Contains only system-managed internal tracking values
+
+  ### Migration
+
+  This is an internal change that doesn't affect the public API. User code remains unchanged.
+
+  ```typescript
+  // User API remains the same
+  const response = await agent.generateText("Hello", {
+    userContext: new Map([["userId", "123"]]),
+  });
+
+  // userContext now only contains user values
+  console.log(response.userContext.get("userId")); // "123"
+  // System values are kept separate internally
+  ```
+
+- [#465](https://github.com/VoltAgent/voltagent/pull/465) [`4fe0f21`](https://github.com/VoltAgent/voltagent/commit/4fe0f21e1dde82bb80fcaab4a7039b446b8d9153) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: abort signal propagation to LLM providers for proper cancellation support
+
+  Fixed an issue where abort signals were not correctly propagated to LLM providers in agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`). The methods were using `internalOptions.signal` instead of `operationContext.signal`, which contains the properly derived signal from the AbortController.
+
+  ## What's Fixed
+  - **Signal Propagation**: All agent methods now correctly pass `operationContext.signal` to LLM providers
+  - **AbortController Support**: Abort signals from parent agents properly cascade to subagents
+  - **Cancellation Handling**: Operations can now be properly cancelled when AbortController is triggered
+
+  ## Usage Example
+
+  ```typescript
+  import { Agent, isAbortError } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const abortController = new AbortController();
+
+  // Create supervisor with subagents
+  const supervisor = new Agent({
+    name: "Supervisor",
+    instructions: "Coordinate tasks",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    subAgents: [contentAgent, formatterAgent],
+    hooks: {
+      onEnd: async ({ error }) => {
+        // Check if the operation was aborted
+        if (isAbortError(error)) {
+          console.log("Operation was aborted:", error.message);
+          // Handle cleanup for aborted operations
+          return;
+        }
+
+        if (error) {
+          console.error("Operation failed:", error);
+        }
+      },
+    },
+  });
+
+  // Start streaming with abort controller
+  const stream = await supervisor.streamText("Create a story", {
+    abortController,
+  });
+
+  // Abort after 500ms - now properly stops all subagent operations
+  setTimeout(() => {
+    abortController.abort();
+  }, 500);
+
+  try {
+    // Stream will properly terminate when aborted
+    for await (const chunk of stream.textStream) {
+      console.log(chunk);
+    }
+  } catch (error) {
+    if (isAbortError(error)) {
+      console.log("Stream aborted successfully");
+    }
+  }
+  ```
+
+  ## Error Handling in Hooks
+
+  The `onEnd` hook now receives `AbortError` type errors when operations are cancelled:
+
+  ```typescript
+  import { isAbortError } from "@voltagent/core";
+
+  const agent = new Agent({
+    // ... agent config
+    hooks: {
+      onEnd: async ({ error }) => {
+        if (isAbortError(error)) {
+          // error is typed as AbortError
+          // error.name === "AbortError"
+          // Handle abort-specific logic
+          await cleanupResources();
+          return;
+        }
+
+        // Handle other errors
+        if (error) {
+          await logError(error);
+        }
+      },
+    },
+  });
+  ```
+
+  This fix ensures that expensive operations can be properly cancelled, preventing unnecessary computation and improving resource efficiency when users navigate away or cancel requests.
+
+## 0.1.75
+
+### Patch Changes
+
+- [`3a3ebd2`](https://github.com/VoltAgent/voltagent/commit/3a3ebd2bc72ed5d14dd924d824b54203b73ab19d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: voltops client validation to prevent empty string keys from creating invalid clients
+  - VoltOpsClient now validates keys before initializing services
+  - Keys must not be empty and must have correct prefixes (pk* and sk*)
+  - Added hasValidKeys() method to check client validity
+  - Updated /setup-observability endpoint to update existing keys in .env file instead of adding duplicates
+
+## 0.1.74
+
+### Patch Changes
+
+- [#463](https://github.com/VoltAgent/voltagent/pull/463) [`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improve /setup-observability endpoint to handle commented .env entries
+
+  ### What's New
+
+  The `/setup-observability` API endpoint now intelligently updates existing .env files by replacing commented VoltOps key entries instead of creating duplicates.
+
+  ### Changes
+  - **Smart .env Updates**: When setting up observability, the endpoint now finds and updates commented entries like `# VOLTAGENT_PUBLIC_KEY=`
+  - **No More Duplicates**: Prevents duplicate key entries by updating existing lines (both commented and active)
+  - **Cleaner Configuration**: Results in a cleaner .env file without confusing duplicate entries
+
+  ### Before
+
+  ```bash
+  # VoltAgent Observability (Optional)
+  # VOLTAGENT_PUBLIC_KEY=
+  # VOLTAGENT_SECRET_KEY=
+
+  # ... later in file ...
+
+  # VoltAgent Observability
+  VOLTAGENT_PUBLIC_KEY=your-public-key
+  VOLTAGENT_SECRET_KEY=your-secret-key
+  ```
+
+  ### After
+
+  ```bash
+  # VoltAgent Observability (Optional)
+  VOLTAGENT_PUBLIC_KEY=your-public-key
+  VOLTAGENT_SECRET_KEY=your-secret-key
+  ```
+
+  This change improves the developer experience by maintaining a clean .env file structure when setting up observability through the VoltOps Console.
+
+- [#463](https://github.com/VoltAgent/voltagent/pull/463) [`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add VoltOps API key validation and improved auto-configuration
+
+  ### What's New
+  - **API Key Validation**: VoltAgent now validates VoltOps API keys to ensure they have the correct format (must start with `pk_` for public keys and `sk_` for secret keys)
+  - **Smart Auto-Configuration**: The VoltAgent constructor only creates VoltOpsClient when valid API keys are detected
+  - **Dummy Key Protection**: Placeholder values like "your-public-key" are now properly rejected
+
+  ### Changes
+  - Added `isValidVoltOpsKeys()` utility function to validate API key formats
+  - Updated VoltAgent constructor to check key validity before auto-configuring VoltOpsClient
+  - Environment variables with invalid keys are now silently ignored instead of causing errors
+
+  ### Usage
+
+  ```typescript
+  // Valid keys - VoltOpsClient will be auto-configured
+  // .env file:
+  // VOLTAGENT_PUBLIC_KEY=your-public-key
+  // VOLTAGENT_SECRET_KEY=your-secret-key
+
+  // Invalid keys - VoltOpsClient will NOT be created
+  // .env file:
+  // VOLTAGENT_PUBLIC_KEY=your-public-key  // ❌ Rejected
+  // VOLTAGENT_SECRET_KEY=your-secret-key  // ❌ Rejected
+
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+    // No need to manually configure VoltOpsClient if valid keys exist in environment
+  });
+  ```
+
+  This change improves the developer experience by preventing confusion when placeholder API keys are present in the environment variables.
+
+- [#459](https://github.com/VoltAgent/voltagent/pull/459) [`980d037`](https://github.com/VoltAgent/voltagent/commit/980d037ce535bcc85cc7df3f64354c823453a147) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add userContext to logger context for better traceability
+
+  ### What's New
+
+  The `userContext` is now automatically included in the logger context for all agent operations. This provides better traceability and debugging capabilities by associating custom context data with all log messages generated during an agent's execution.
+
+  ### Usage
+
+  When you pass a `userContext` to any agent method, it will automatically appear in all log messages:
+
+  ```typescript
+  const userContext = new Map([
+    ["sessionId", "session-123"],
+    ["userId", "user-456"],
+    ["customKey", "customValue"],
+  ]);
+
+  await agent.generateText("Hello", { userContext });
+
+  // All logs during this operation will include:
+  // {
+  //   "component": "agent",
+  //   "agentId": "TestAgent",
+  //   "executionId": "...",
+  //   "userContext": {
+  //     "sessionId": "session-123",
+  //     "userId": "user-456",
+  //     "customKey": "customValue"
+  //   }
+  // }
+  ```
+
+  ### Benefits
+  - **Better Debugging**: Easily correlate logs with specific user sessions or requests
+  - **Enhanced Observability**: Track custom context throughout the entire agent execution
+  - **Multi-tenant Support**: Associate logs with specific tenants, users, or organizations
+  - **Request Tracing**: Follow a request through all agent operations and sub-agents
+
+  This change improves the observability experience by ensuring all log messages include the relevant user context, making it easier to debug issues and track operations in production environments.
+
 ## 0.1.73
 
 ### Patch Changes
