@@ -51,20 +51,22 @@ class MockAgent {
 
   // Mock streamText method for event forwarding tests
   async streamText(_messages: any[], _options: any) {
+    const self = this; // Capture this context
     const mockEvents = [
       { type: "text-delta", textDelta: "Hello " },
       { type: "text-delta", textDelta: "from " },
-      { type: "text-delta", textDelta: this.name },
+      { type: "text-delta", textDelta: self.name },
+      { type: "reasoning", reasoning: "Thinking about the task..." },
       {
         type: "tool-call",
         toolCallId: "tool-1",
-        toolName: "mock_tool",
+        toolName: "test_tool",
         args: { input: "test" },
       },
       {
         type: "tool-result",
         toolCallId: "tool-1",
-        toolName: "mock_tool",
+        toolName: "test_tool",
         result: "mock result",
       },
       {
@@ -79,6 +81,11 @@ class MockAgent {
         for (const event of mockEvents) {
           yield event;
         }
+      })(),
+      textStream: (async function* () {
+        yield "Hello ";
+        yield "from ";
+        yield self.name;
       })(),
     };
   }
@@ -844,15 +851,15 @@ describe("SubAgentManager", () => {
       await subAgentManager.handoffTask(options);
 
       // Verify that events were forwarded
-      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
-      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
+      // Default configuration only forwards tool-call and tool-result (not text-delta or reasoning)
+      expect(forwardEventSpy).toHaveBeenCalledTimes(2);
 
       // Verify tool-call event
       expect(forwardEventSpy).toHaveBeenCalledWith({
         type: "tool-call",
         data: {
           toolCallId: "tool-1",
-          toolName: "mock_tool",
+          toolName: "Test Agent: test_tool", // With default prefix
           args: { input: "test" },
         },
         timestamp: expect.any(String),
@@ -865,7 +872,7 @@ describe("SubAgentManager", () => {
         type: "tool-result",
         data: {
           toolCallId: "tool-1",
-          toolName: "mock_tool",
+          toolName: "Test Agent: test_tool", // With default prefix
           result: "mock result",
         },
         timestamp: expect.any(String),
@@ -875,6 +882,14 @@ describe("SubAgentManager", () => {
     });
 
     it("should forward error events when stream fails", async () => {
+      // Create subAgentManager with error type in configuration
+      const supervisorConfig = {
+        fullStreamEventForwarding: {
+          types: ["tool-call", "tool-result", "error"],
+        },
+      };
+      const localSubAgentManager = new SubAgentManager("Main Agent", [], supervisorConfig);
+
       const forwardEventSpy = vi.fn();
       const mockAgent = new MockAgent("error-agent", "Error Agent");
 
@@ -897,7 +912,7 @@ describe("SubAgentManager", () => {
         forwardEvent: forwardEventSpy,
       };
 
-      await subAgentManager.handoffTask(options);
+      await localSubAgentManager.handoffTask(options);
 
       // Verify that error event was forwarded
       expect(forwardEventSpy).toHaveBeenCalledWith({
@@ -948,8 +963,8 @@ describe("SubAgentManager", () => {
       });
 
       // Verify that events were forwarded through the delegate tool
-      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
-      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
+      // Default configuration only forwards tool-call and tool-result
+      expect(forwardEventSpy).toHaveBeenCalledTimes(2);
 
       // Check that events have the correct structure
       const toolCallEvent = forwardEventSpy.mock.calls.find((call) => call[0].type === "tool-call");
@@ -986,8 +1001,8 @@ describe("SubAgentManager", () => {
       });
 
       // Verify that events from both agents were forwarded
-      // Each agent generates 5 events (3x text-delta + tool-call + tool-result, finish events no longer forwarded)
-      expect(forwardEventSpy).toHaveBeenCalledTimes(10);
+      // Each agent generates 2 events with default config (tool-call + tool-result)
+      expect(forwardEventSpy).toHaveBeenCalledTimes(4);
 
       // Check that events from both agents are present
       const agent1Events = forwardEventSpy.mock.calls.filter(
@@ -997,8 +1012,8 @@ describe("SubAgentManager", () => {
         (call) => call[0].subAgentId === "multi-agent-2",
       );
 
-      expect(agent1Events).toHaveLength(5);
-      expect(agent2Events).toHaveLength(5);
+      expect(agent1Events).toHaveLength(2);
+      expect(agent2Events).toHaveLength(2);
     });
 
     it("should include correct timestamp format in forwarded events", async () => {
@@ -1023,7 +1038,7 @@ describe("SubAgentManager", () => {
       });
     });
 
-    it("should handle event forwarding errors by treating them as regular errors", async () => {
+    it("should handle event forwarding errors gracefully without failing the handoff", async () => {
       const failingForwardEvent = vi.fn().mockRejectedValue(new Error("Event forwarding failed"));
       const mockAgent = new MockAgent("failing-forward-agent", "Failing Forward Agent");
 
@@ -1035,11 +1050,121 @@ describe("SubAgentManager", () => {
         forwardEvent: failingForwardEvent,
       };
 
-      // When event forwarding fails, the whole handoff fails
+      // Event forwarding errors are caught and logged but don't fail the handoff
       const result = await subAgentManager.handoffTask(options);
-      expect(result.status).toBe("error");
-      expect((result.error as Error).message).toContain("Event forwarding failed");
+      expect(result.status).toBe("success");
+      expect(result.result).toContain("Hello from Failing Forward Agent");
       expect(failingForwardEvent).toHaveBeenCalled();
+    });
+  });
+
+  describe("fullStreamEventForwarding configuration", () => {
+    let subAgentManager: SubAgentManager;
+    let mockAgent1: any;
+
+    beforeEach(() => {
+      mockAgent1 = new MockAgent("agent1", "Test Agent");
+    });
+
+    it("should use default event types when no configuration provided", async () => {
+      subAgentManager = new SubAgentManager("Main Agent");
+      subAgentManager.addSubAgent(mockAgent1);
+
+      const forwardEventSpy = vi.fn();
+      const options: AgentHandoffOptions = {
+        task: "Test task",
+        targetAgent: mockAgent1,
+        context: {},
+        sharedContext: [],
+        forwardEvent: forwardEventSpy,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Should forward only tool-call and tool-result by default
+      const forwardedTypes = forwardEventSpy.mock.calls.map((call) => call[0].type);
+      expect(forwardedTypes).toEqual(["tool-call", "tool-result"]);
+    });
+
+    it("should use custom event types from supervisor configuration", async () => {
+      const supervisorConfig = {
+        fullStreamEventForwarding: {
+          types: ["tool-call", "tool-result", "text-delta", "reasoning"],
+        },
+      };
+      subAgentManager = new SubAgentManager("Main Agent", [], supervisorConfig);
+      subAgentManager.addSubAgent(mockAgent1);
+
+      const forwardEventSpy = vi.fn();
+      const options: AgentHandoffOptions = {
+        task: "Test task",
+        targetAgent: mockAgent1,
+        context: {},
+        sharedContext: [],
+        forwardEvent: forwardEventSpy,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Should forward all configured event types
+      const forwardedTypes = forwardEventSpy.mock.calls.map((call) => call[0].type);
+      expect(forwardedTypes).toContain("text-delta");
+      expect(forwardedTypes).toContain("reasoning");
+    });
+
+    it("should respect addSubAgentPrefix configuration", async () => {
+      const supervisorConfig = {
+        fullStreamEventForwarding: {
+          types: ["tool-call"],
+          addSubAgentPrefix: false,
+        },
+      };
+      subAgentManager = new SubAgentManager("Main Agent", [], supervisorConfig);
+      subAgentManager.addSubAgent(mockAgent1);
+
+      const forwardEventSpy = vi.fn();
+      const options: AgentHandoffOptions = {
+        task: "Test task",
+        targetAgent: mockAgent1,
+        context: {},
+        sharedContext: [],
+        forwardEvent: forwardEventSpy,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Check that tool name does not have prefix
+      const toolCallEvent = forwardEventSpy.mock.calls.find(
+        (call) => call[0].type === "tool-call",
+      )?.[0];
+      if (toolCallEvent) {
+        expect(toolCallEvent.data.toolName).toBe("test_tool");
+        expect(toolCallEvent.data.toolName).not.toContain("Test Agent:");
+      }
+    });
+
+    it("should add subagent prefix by default", async () => {
+      subAgentManager = new SubAgentManager("Main Agent");
+      subAgentManager.addSubAgent(mockAgent1);
+
+      const forwardEventSpy = vi.fn();
+      const options: AgentHandoffOptions = {
+        task: "Test task",
+        targetAgent: mockAgent1,
+        context: {},
+        sharedContext: [],
+        forwardEvent: forwardEventSpy,
+      };
+
+      await subAgentManager.handoffTask(options);
+
+      // Check that tool name has prefix by default
+      const toolCallEvent = forwardEventSpy.mock.calls.find(
+        (call) => call[0].type === "tool-call",
+      )?.[0];
+      if (toolCallEvent) {
+        expect(toolCallEvent.data.toolName).toBe("Test Agent: test_tool");
+      }
     });
   });
 

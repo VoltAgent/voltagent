@@ -12,6 +12,7 @@ import type {
   StreamEventToolCall,
   StreamEventToolResult,
 } from "../../utils/streams";
+import { streamEventForwarder } from "../../utils/streams";
 import type { StreamEvent, StreamEventError } from "../../utils/streams/types";
 import type { Agent } from "../agent";
 import type { BaseMessage } from "../providers";
@@ -39,13 +40,24 @@ export class SubAgentManager {
   private subAgentConfigs: SubAgentConfig[] = [];
 
   /**
+   * Supervisor configuration including event forwarding settings
+   */
+  private supervisorConfig?: SupervisorConfig;
+
+  /**
    * Creates a new SubAgentManager instance
    *
    * @param agentName - The name of the agent that owns this sub-agent manager
    * @param subAgents - Initial sub-agent configurations to add
+   * @param supervisorConfig - Optional supervisor configuration including event forwarding
    */
-  constructor(agentName: string, subAgents: SubAgentConfig[] = []) {
+  constructor(
+    agentName: string,
+    subAgents: SubAgentConfig[] = [],
+    supervisorConfig?: SupervisorConfig,
+  ) {
     this.agentName = agentName;
+    this.supervisorConfig = supervisorConfig;
 
     // Initialize with empty array
     this.subAgentConfigs = [];
@@ -379,7 +391,18 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
         // Collect all stream chunks for final result
         finalResult = "";
 
-        if (streamResponse.fullStream) {
+        if (streamResponse.fullStream && forwardEvent) {
+          // Get event forwarding configuration
+          const eventForwardingConfig = {
+            forwarder: forwardEvent,
+            types: this.supervisorConfig?.fullStreamEventForwarding?.types || [
+              "tool-call",
+              "tool-result",
+            ],
+            addSubAgentPrefix:
+              this.supervisorConfig?.fullStreamEventForwarding?.addSubAgentPrefix ?? true,
+          };
+
           // Consume the full stream to capture all events
           for await (const part of streamResponse.fullStream) {
             const timestamp = new Date().toISOString();
@@ -398,10 +421,8 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
                   subAgentName: targetAgent.name,
                 } satisfies StreamEventTextDelta;
 
-                // Forward event in real-time
-                if (forwardEvent) {
-                  await forwardEvent(eventData);
-                }
+                // Forward event using configuration
+                await streamEventForwarder(eventData, eventForwardingConfig);
                 break;
               }
               case "reasoning": {
@@ -415,10 +436,8 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
                   subAgentName: targetAgent.name,
                 } satisfies StreamEventReasoning;
 
-                // Forward event in real-time
-                if (forwardEvent) {
-                  await forwardEvent(eventData);
-                }
+                // Forward event using configuration
+                await streamEventForwarder(eventData, eventForwardingConfig);
                 break;
               }
               case "source": {
@@ -432,10 +451,8 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
                   subAgentName: targetAgent.name,
                 } satisfies StreamEventSource;
 
-                // Forward event in real-time
-                if (forwardEvent) {
-                  await forwardEvent(eventData);
-                }
+                // Forward event using configuration
+                await streamEventForwarder(eventData, eventForwardingConfig);
                 break;
               }
               case "tool-call": {
@@ -451,10 +468,8 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
                   subAgentName: targetAgent.name,
                 } satisfies StreamEventToolCall;
 
-                // Forward event in real-time
-                if (forwardEvent) {
-                  await forwardEvent(eventData);
-                }
+                // Forward event using configuration
+                await streamEventForwarder(eventData, eventForwardingConfig);
                 break;
               }
               case "tool-result": {
@@ -470,10 +485,8 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
                   subAgentName: targetAgent.name,
                 } satisfies StreamEventToolResult;
 
-                // Forward event in real-time
-                if (forwardEvent) {
-                  await forwardEvent(eventData);
-                }
+                // Forward event using configuration
+                await streamEventForwarder(eventData, eventForwardingConfig);
                 break;
               }
 
@@ -490,11 +503,9 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
                   subAgentName: targetAgent.name,
                 } satisfies StreamEventError;
 
-                // Forward event in real-time
-                if (forwardEvent) {
-                  // @ts-expect-error - fix bad type
-                  await forwardEvent(eventData);
-                }
+                // Forward event using configuration
+                // @ts-expect-error - fix bad type
+                await streamEventForwarder(eventData, eventForwardingConfig);
                 break;
               }
             }

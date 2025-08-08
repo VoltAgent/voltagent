@@ -11,7 +11,7 @@ import type {
 import type { Memory, MemoryOptions } from "../memory/types";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
-import type { StreamEvent } from "../utils/streams";
+import type { StreamEvent, StreamEventType } from "../utils/streams";
 import type { AgentHistoryEntry } from "./history";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
@@ -88,6 +88,24 @@ export type ProviderOptions = {
 /**
  * Configuration for supervisor agents that have subagents
  */
+/**
+ * Configuration for forwarding events from subagents to the parent agent's stream
+ */
+export type FullStreamEventForwardingConfig = {
+  /**
+   * Array of event types to forward from subagents
+   * Uses StreamEventType which includes: 'text-delta', 'reasoning', 'source', 'tool-call', 'tool-result', 'finish', 'error'
+   * @default ['tool-call', 'tool-result']
+   * @example ['tool-call', 'tool-result', 'text-delta', 'reasoning', 'source']
+   */
+  types?: StreamEventType[];
+  /**
+   * Whether to add the subagent name as a prefix to tool names in forwarded events
+   * @default true
+   */
+  addSubAgentPrefix?: boolean;
+};
+
 export type SupervisorConfig = {
   /**
    * Complete custom system message for the supervisor agent
@@ -106,6 +124,13 @@ export type SupervisorConfig = {
    * Additional custom guidelines for the supervisor agent
    */
   customGuidelines?: string[];
+
+  /**
+   * Configuration for forwarding events from subagents to the parent agent's full stream
+   * Controls which event types are forwarded and how they are formatted
+   * @default { types: ['tool-call', 'tool-result'], addSubAgentPrefix: true }
+   */
+  fullStreamEventForwarding?: FullStreamEventForwardingConfig;
 };
 
 /**
