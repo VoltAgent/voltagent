@@ -1,5 +1,310 @@
 # @voltagent/core
 
+## 0.1.78
+
+### Patch Changes
+
+- [#466](https://github.com/VoltAgent/voltagent/pull/466) [`730232e`](https://github.com/VoltAgent/voltagent/commit/730232e730cdbd1bb7de6acff8519e8af93f2abf) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add message helper utilities to simplify working with complex message content
+
+  ## What Changed for You
+
+  Working with message content (which can be either a string or an array of content parts) used to require complex if/else blocks. Now you have simple helper functions that handle all the complexity.
+
+  ## Before - Your Old Code (Complex)
+
+  ```typescript
+  // Adding timestamps to messages - 30+ lines of code
+  const enhancedMessages = messages.map((msg) => {
+    if (msg.role === "user") {
+      const timestamp = new Date().toLocaleTimeString();
+
+      // Handle string content
+      if (typeof msg.content === "string") {
+        return {
+          ...msg,
+          content: `[${timestamp}] ${msg.content}`,
+        };
+      }
+
+      // Handle structured content (array of content parts)
+      if (Array.isArray(msg.content)) {
+        return {
+          ...msg,
+          content: msg.content.map((part) => {
+            if (part.type === "text") {
+              return {
+                ...part,
+                text: `[${timestamp}] ${part.text}`,
+              };
+            }
+            return part;
+          }),
+        };
+      }
+    }
+    return msg;
+  });
+
+  // Extracting text from content - another 15+ lines
+  function getText(content) {
+    if (typeof content === "string") {
+      return content;
+    }
+    if (Array.isArray(content)) {
+      return content
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("");
+    }
+    return "";
+  }
+  ```
+
+  ## After - Your New Code (Simple)
+
+  ```typescript
+  import { messageHelpers } from "@voltagent/core";
+
+  // Adding timestamps - 1 line!
+  const enhancedMessages = messages.map((msg) =>
+    messageHelpers.addTimestampToMessage(msg, timestamp)
+  );
+
+  // Extracting text - 1 line!
+  const text = messageHelpers.extractText(content);
+
+  // Check if has images - 1 line!
+  if (messageHelpers.hasImagePart(content)) {
+    // Handle image content
+  }
+
+  // Build complex content - fluent API
+  const content = new messageHelpers.MessageContentBuilder()
+    .addText("Here's an image:")
+    .addImage("screenshot.png")
+    .addText("And a file:")
+    .addFile("document.pdf")
+    .build();
+  ```
+
+  ## Real Use Case in Hooks
+
+  ```typescript
+  import { Agent, messageHelpers } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Assistant",
+    hooks: {
+      onPrepareMessages: async ({ messages }) => {
+        // Before: 30+ lines of complex if/else
+        // After: 2 lines!
+        const timestamp = new Date().toLocaleTimeString();
+        return {
+          messages: messages.map((msg) => messageHelpers.addTimestampToMessage(msg, timestamp)),
+        };
+      },
+    },
+  });
+  ```
+
+  ## What You Get
+  - **No more if/else blocks** for content type checking
+  - **Type-safe operations** with TypeScript support
+  - **30+ lines → 1 line** for common operations
+  - **Works everywhere**: hooks, tools, custom logic
+
+  ## Available Helpers
+
+  ```typescript
+  import { messageHelpers } from "@voltagent/core";
+
+  // Check content type
+  messageHelpers.isTextContent(content); // Is it a string?
+  messageHelpers.hasImagePart(content); // Has images?
+
+  // Extract content
+  messageHelpers.extractText(content); // Get all text
+  messageHelpers.extractImageParts(content); // Get all images
+
+  // Transform content
+  messageHelpers.transformTextContent(content, (text) => text.toUpperCase());
+  messageHelpers.addTimestampToMessage(message, "10:30:00");
+
+  // Build content
+  new messageHelpers.MessageContentBuilder().addText("Hello").addImage("world.png").build();
+  ```
+
+  Your message handling code just got 90% simpler!
+
+- [#466](https://github.com/VoltAgent/voltagent/pull/466) [`730232e`](https://github.com/VoltAgent/voltagent/commit/730232e730cdbd1bb7de6acff8519e8af93f2abf) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add onPrepareMessages hook - transform messages before they reach the LLM
+
+  ## What Changed for You
+
+  You can now modify, filter, or enhance messages before they're sent to the LLM. Previously impossible without forking the framework.
+
+  ## Before - What You Couldn't Do
+
+  ```typescript
+  // ❌ No way to:
+  // - Add timestamps to messages
+  // - Filter sensitive data (SSN, credit cards)
+  // - Add user context to messages
+  // - Remove duplicate messages
+  // - Inject system prompts dynamically
+
+  const agent = new Agent({
+    name: "Assistant",
+    // Messages went straight to LLM - no control!
+  });
+  ```
+
+  ## After - What You Can Do Now
+
+  ```typescript
+  import { Agent, messageHelpers } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Assistant",
+
+    hooks: {
+      // ✅ NEW: Intercept and transform messages!
+      onPrepareMessages: async ({ messages, context }) => {
+        // Add timestamps
+        const timestamp = new Date().toLocaleTimeString();
+        const enhanced = messages.map((msg) =>
+          messageHelpers.addTimestampToMessage(msg, timestamp)
+        );
+
+        return { messages: enhanced };
+      },
+    },
+  });
+
+  // Your message: "What time is it?"
+  // LLM receives: "[14:30:45] What time is it?"
+  ```
+
+  ## When It Runs
+
+  ```typescript
+  // 1. User sends message
+  await agent.generateText("Hello");
+
+  // 2. Memory loads previous messages
+  // [previous messages...]
+
+  // 3. ✨ onPrepareMessages runs HERE
+  // You can transform messages
+
+  // 4. Messages sent to LLM
+  // [your transformed messages]
+  ```
+
+  ## What You Need to Know
+  - **Runs on every LLM call**: generateText, streamText, generateObject, streamObject
+  - **Gets all messages**: Including system prompt and memory messages
+  - **Return transformed messages**: Or return nothing to keep original
+  - **Access to context**: userContext, operationId, agent reference
+
+  Your app just got smarter without changing any existing code!
+
+- [#466](https://github.com/VoltAgent/voltagent/pull/466) [`730232e`](https://github.com/VoltAgent/voltagent/commit/730232e730cdbd1bb7de6acff8519e8af93f2abf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: memory messages now return parsed objects instead of JSON strings
+
+  ## What Changed for You
+
+  Memory messages that contain structured content (like tool calls or multi-part messages) now return as **parsed objects** instead of **JSON strings**. This is a breaking change if you were manually parsing these messages.
+
+  ## Before - You Had to Parse JSON Manually
+
+  ```typescript
+  // ❌ OLD BEHAVIOR: Content came as JSON string
+  const messages = await memory.getMessages({ conversationId: "123" });
+
+  // What you got from memory:
+  console.log(messages[0]);
+  // {
+  //   role: "user",
+  //   content: '[{"type":"text","text":"Hello"},{"type":"image","image":"data:..."}]',  // STRING!
+  //   type: "text"
+  // }
+
+  // You had to manually parse the JSON string:
+  const content = JSON.parse(messages[0].content); // Parse required!
+  console.log(content);
+  // [
+  //   { type: "text", text: "Hello" },
+  //   { type: "image", image: "data:..." }
+  // ]
+
+  // Tool calls were also JSON strings:
+  console.log(messages[1].content);
+  // '[{"type":"tool-call","toolCallId":"123","toolName":"weather"}]'  // STRING!
+  ```
+
+  ## After - You Get Parsed Objects Automatically
+
+  ```typescript
+  // ✅ NEW BEHAVIOR: Content comes as proper objects
+  const messages = await memory.getMessages({ conversationId: "123" });
+
+  // What you get from memory NOW:
+  console.log(messages[0]);
+  // {
+  //   role: "user",
+  //   content: [
+  //     { type: "text", text: "Hello" },      // OBJECT!
+  //     { type: "image", image: "data:..." }  // OBJECT!
+  //   ],
+  //   type: "text"
+  // }
+
+  // Direct access - no JSON.parse needed!
+  const content = messages[0].content; // Already parsed!
+  console.log(content[0].text); // "Hello"
+
+  // Tool calls are proper objects:
+  console.log(messages[1].content);
+  // [
+  //   { type: "tool-call", toolCallId: "123", toolName: "weather" }  // OBJECT!
+  // ]
+  ```
+
+  ## Breaking Change Warning ⚠️
+
+  If your code was doing this:
+
+  ```typescript
+  // This will now FAIL because content is already parsed
+  const parsed = JSON.parse(msg.content); // ❌ Error: not a string!
+  ```
+
+  Change it to:
+
+  ```typescript
+  // Just use the content directly
+  const content = msg.content; // ✅ Already an object/array
+  ```
+
+  ## What Gets Auto-Parsed
+  - **String content** → Stays as string ✅
+  - **Structured content** (arrays) → Auto-parsed to objects ✅
+  - **Tool calls** → Auto-parsed to objects ✅
+  - **Tool results** → Auto-parsed to objects ✅
+  - **Metadata fields** → Auto-parsed to objects ✅
+
+  ## Why This Matters
+  - **No more JSON.parse errors** in your application
+  - **Type-safe access** to structured content
+  - **Cleaner code** without try/catch blocks
+  - **Consistent behavior** with how agents handle messages
+
+  ## Migration Guide
+  1. **Remove JSON.parse calls** for message content
+  2. **Remove try/catch** blocks around parsing
+  3. **Use content directly** as objects/arrays
+
+  Your memory messages now "just work" without manual parsing!
+
 ## 0.1.77
 
 ### Patch Changes
