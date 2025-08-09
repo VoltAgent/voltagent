@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-supabase",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.1",
+    "@ai-sdk/openai": "^2.0.2",
     "@supabase/supabase-js": "^2.49.4",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.78",

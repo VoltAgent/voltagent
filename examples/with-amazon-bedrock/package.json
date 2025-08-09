@@ -2,7 +2,7 @@
   "name": "voltagent-example-amazon-bedrock",
   "author": "",
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^2.2.8",
+    "@ai-sdk/amazon-bedrock": "^3.0.0",
     "@aws-sdk/credential-providers": "~3.799.0",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.78",

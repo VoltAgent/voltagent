@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-pinecone",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.1",
+    "@ai-sdk/openai": "^2.0.2",
     "@pinecone-database/pinecone": "^6.1.1",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.78",

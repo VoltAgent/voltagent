@@ -2,7 +2,7 @@
   "name": "voltagent-example-github-repo-analyzer",
   "version": "0.1.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.1",
+    "@ai-sdk/openai": "^2.0.2",
     "@octokit/rest": "^21.0.0",
     "@voltagent/core": "^0.1.78",
     "@voltagent/logger": "^0.1.3",

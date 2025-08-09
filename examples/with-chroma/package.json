@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-chroma",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.1",
+    "@ai-sdk/openai": "^2.0.2",
     "@chroma-core/default-embed": "^0.1.8",
     "@chroma-core/ollama": "^0.1.7",
     "@chroma-core/openai": "^0.1.7",

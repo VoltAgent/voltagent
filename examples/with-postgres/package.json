@@ -3,7 +3,7 @@
   "description": "VoltAgent example demonstrating PostgreSQL integration for memory.",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.1",
+    "@ai-sdk/openai": "^2.0.2",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^0.1.78",
     "@voltagent/logger": "^0.1.3",
