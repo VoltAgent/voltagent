@@ -41,7 +41,7 @@ describe("convertToolsForSDK", () => {
     expect(result?.getWeather).toEqual(
       expect.objectContaining({
         description: "Get the weather in a location",
-        parameters: expect.any(Object),
+        inputSchema: expect.any(Object),
         execute: expect.any(Function),
       }),
     );
@@ -126,7 +126,7 @@ describe("createStepFromChunk", () => {
       type: "tool-call",
       toolCallId: "call-123",
       toolName: "getWeather",
-      args: { location: "New York" },
+      input: { location: "New York" },
       usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
     };
 
@@ -155,7 +155,7 @@ describe("createStepFromChunk", () => {
       type: "tool_call",
       toolCallId: "call-456",
       toolName: "getTime",
-      args: { timezone: "UTC" },
+      input: { timezone: "UTC" },
     };
 
     const result = createStepFromChunk(chunk);
@@ -183,7 +183,7 @@ describe("createStepFromChunk", () => {
       type: "tool-result",
       toolCallId: "call-123",
       toolName: "getWeather",
-      result: { temperature: 72, location: "New York" },
+      output: { temperature: 72, location: "New York" },
     };
 
     const result = createStepFromChunk(chunk);
@@ -211,7 +211,7 @@ describe("createStepFromChunk", () => {
       type: "tool_result",
       toolCallId: "call-456",
       toolName: "getTime",
-      result: { time: "2024-01-01T00:00:00Z" },
+      output: { time: "2024-01-01T00:00:00Z" },
     };
 
     const result = createStepFromChunk(chunk);
@@ -277,7 +277,7 @@ describe("createVoltagentErrorFromSdkError", () => {
       code: "RATE_LIMIT",
       toolCallId: "call-123",
       toolName: "getWeather",
-      args: { location: "New York" },
+      input: { location: "New York" },
     });
 
     const result = createVoltagentErrorFromSdkError(sdkError);
@@ -354,7 +354,8 @@ describe("mapToStreamPart", () => {
   it("should map text-delta part", () => {
     const part = {
       type: "text-delta",
-      textDelta: "Hello",
+      id: "text-1",
+      text: "Hello",
     } as TextStreamPart<ToolSet>;
 
     const result = mapToStreamPart(part);
@@ -367,11 +368,12 @@ describe("mapToStreamPart", () => {
 
   it("should map reasoning part", () => {
     const part = {
-      type: "reasoning" as const,
-      textDelta: "Let me think about this...",
+      type: "reasoning-delta",
+      id: "reasoning-1",
+      text: "Let me think about this...",
     } as TextStreamPart<ToolSet>;
 
-    const result = mapToStreamPart(part as any);
+    const result = mapToStreamPart(part);
 
     expect(result).toEqual({
       type: "reasoning",
@@ -382,7 +384,10 @@ describe("mapToStreamPart", () => {
   it("should map source part", () => {
     const part = {
       type: "source",
-      source: { url: "https://example.com" },
+      sourceType: "url",
+      id: "source-1",
+      url: "https://example.com",
+      title: "Example",
     } as TextStreamPart<ToolSet>;
 
     const result = mapToStreamPart(part);
@@ -396,7 +401,10 @@ describe("mapToStreamPart", () => {
   it("should map source part with empty url", () => {
     const part = {
       type: "source",
-      source: {},
+      sourceType: "url",
+      id: "source-2",
+      url: "",
+      title: "",
     } as TextStreamPart<ToolSet>;
 
     const result = mapToStreamPart(part);
@@ -412,7 +420,7 @@ describe("mapToStreamPart", () => {
       type: "tool-call",
       toolCallId: "call-123",
       toolName: "getWeather",
-      args: { location: "New York" },
+      input: { location: "New York" },
     } as TextStreamPart<ToolSet>;
 
     const result = mapToStreamPart(part);
@@ -430,8 +438,8 @@ describe("mapToStreamPart", () => {
       type: "tool-result",
       toolCallId: "call-123",
       toolName: "getWeather",
-      result: { temperature: 72 },
-    } as unknown as TextStreamPart<ToolSet>;
+      output: { temperature: 72 },
+    } as TextStreamPart<ToolSet>;
 
     const result = mapToStreamPart(part);
 
@@ -447,9 +455,9 @@ describe("mapToStreamPart", () => {
     const part = {
       type: "finish",
       finishReason: "stop",
-      usage: {
-        promptTokens: 100,
-        completionTokens: 50,
+      totalUsage: {
+        inputTokens: 100,
+        outputTokens: 50,
         totalTokens: 150,
       },
     } as TextStreamPart<ToolSet>;
@@ -512,9 +520,9 @@ describe("mapToStreamPart", () => {
 describe("createMappedFullStream", () => {
   it("should map stream parts correctly", async () => {
     const originalStream = (async function* () {
-      yield { type: "text-delta", textDelta: "Hello" };
-      yield { type: "tool-call", toolCallId: "call-123", toolName: "getWeather", args: {} };
-      yield { type: "tool-result", toolCallId: "call-123", toolName: "getWeather", result: {} };
+      yield { type: "text-delta", id: "text-1", text: "Hello" };
+      yield { type: "tool-call", toolCallId: "call-123", toolName: "getWeather", input: {} };
+      yield { type: "tool-result", toolCallId: "call-123", toolName: "getWeather", output: {} };
       yield { type: "finish", finishReason: "stop" };
     })() as unknown as AsyncIterable<TextStreamPart<ToolSet>>;
 
@@ -544,7 +552,7 @@ describe("createMappedFullStream", () => {
 
   it("should filter out unsupported parts", async () => {
     const originalStream = (async function* () {
-      yield { type: "text-delta", textDelta: "Hello" };
+      yield { type: "text-delta", id: "text-1", text: "Hello" };
       yield { type: "unsupported", data: "should be filtered" };
       yield { type: "finish", finishReason: "stop" };
     })() as unknown as AsyncIterable<TextStreamPart<ToolSet>>;

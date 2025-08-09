@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-playwright",
   "author": "",
   "dependencies": {
-    "@ai-sdk/mistral": "^1.2.7",
+    "@ai-sdk/mistral": "^2.0.0",
     "@playwright/browser-chromium": "1.51.1",
     "@playwright/browser-firefox": "1.51.1",
     "@playwright/browser-webkit": "1.51.1",
@@ -14,7 +14,7 @@
     "axios": "^1.5.0",
     "playwright": "1.51.1",
     "uuid": "^9.0.1",
-    "zod": "^3.24.2"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

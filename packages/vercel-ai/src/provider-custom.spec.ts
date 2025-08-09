@@ -1,7 +1,7 @@
 import { convertArrayToReadableStream, convertAsyncIterableToArray } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { CoreMessage } from "ai";
-import { MockLanguageModelV1 } from "ai/test";
+import type { ModelMessage } from "ai";
+import { MockLanguageModelV2 } from "ai/test";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { z } from "zod";
 import { VercelAIProvider } from "./provider";
@@ -15,23 +15,24 @@ describe("custom", () => {
   });
 
   describe("streamText", () => {
-    let mockModel: MockLanguageModelV1;
+    let mockModel: MockLanguageModelV2;
 
     beforeEach(() => {
-      mockModel = new MockLanguageModelV1({
+      mockModel = new MockLanguageModelV2({
         doStream: async () => ({
           stream: convertArrayToReadableStream([
-            { type: "text-delta", textDelta: "Hello" },
-            { type: "text-delta", textDelta: ", " },
-            { type: "text-delta", textDelta: "world!" },
+            { type: "text-start", id: "text-1" },
+            { type: "text-delta", id: "text-1", delta: "Hello" },
+            { type: "text-delta", id: "text-1", delta: ", " },
+            { type: "text-delta", id: "text-1", delta: "world!" },
+            { type: "text-end", id: "text-1" },
             {
               type: "finish",
               finishReason: "stop",
               logprobs: undefined,
-              usage: { completionTokens: 10, promptTokens: 3 },
+              usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
             },
           ]),
-          rawCall: { rawPrompt: null, rawSettings: {} },
         }),
       });
     });
@@ -50,31 +51,31 @@ describe("custom", () => {
         {
           type: "finish",
           finishReason: "stop",
-          logprobs: undefined,
-          usage: { completionTokens: 10, promptTokens: 3, totalTokens: 13 },
+          usage: { promptTokens: 3, completionTokens: 10, totalTokens: 13 },
         },
       ]);
     });
 
     it("should handle tools in streamText", async () => {
-      const toolModel = new MockLanguageModelV1({
+      const toolModel = new MockLanguageModelV2({
         doStream: async () => ({
           stream: convertArrayToReadableStream([
-            { type: "text-delta", textDelta: "I'll help you with that." },
+            { type: "text-start", id: "text-1" },
+            { type: "text-delta", id: "text-1", delta: "I'll help you with that." },
+            { type: "text-end", id: "text-1" },
             {
               type: "tool-call",
               toolCallId: "call_123",
               toolName: "get_weather",
               toolCallType: "function",
-              args: JSON.stringify({ location: "New York" }),
+              input: JSON.stringify({ location: "New York" }),
             },
             {
               type: "finish",
               finishReason: "stop",
-              usage: { completionTokens: 15, promptTokens: 5 },
+              usage: { inputTokens: 5, outputTokens: 15, totalTokens: 20 },
             },
           ]),
-          rawCall: { rawPrompt: null, rawSettings: {} },
         }),
       });
 
@@ -127,7 +128,7 @@ describe("custom", () => {
       p.toMessage = () => {
         throw new Error("Fatal error");
       };
-      const mockModel = new MockLanguageModelV1({
+      const mockModel = new MockLanguageModelV2({
         doStream: async () => {
           throw new Error("Fatal error");
         },
@@ -151,20 +152,21 @@ describe("custom", () => {
 
   describe("generateText", () => {
     it("should handle tools in generateText", async () => {
-      const mockModel = new MockLanguageModelV1({
+      const mockModel = new MockLanguageModelV2({
         doGenerate: async () => ({
-          text: "I'll help you with that.",
-          toolCalls: [
+          content: [
+            { type: "text", text: "I'll help you with that." },
             {
+              type: "tool-call",
               toolCallType: "function",
               toolCallId: "call_123",
               toolName: "get_weather",
-              args: JSON.stringify({ location: "New York" }),
+              input: JSON.stringify({ location: "New York" }),
             },
           ],
           finishReason: "stop",
-          usage: { completionTokens: 15, promptTokens: 5 },
-          rawCall: { rawPrompt: null, rawSettings: {} },
+          usage: { inputTokens: 5, outputTokens: 15, totalTokens: 20 },
+          warnings: [],
         }),
       });
 
@@ -191,17 +193,20 @@ describe("custom", () => {
         {
           toolCallId: "call_123",
           toolName: "get_weather",
-          args: { location: "New York" },
+          input: { location: "New York" },
           type: "tool-call",
+          providerExecuted: undefined,
+          providerMetadata: undefined,
         },
       ]);
 
       expect(result.toolResults).toEqual([
         {
+          dynamic: false,
           toolCallId: "call_123",
           toolName: "get_weather",
-          args: { location: "New York" },
-          result: { temperature: 72, condition: "sunny" },
+          input: { location: "New York" },
+          output: { temperature: 72, condition: "sunny" },
           type: "tool-result",
         },
       ]);
@@ -233,14 +238,13 @@ describe("custom", () => {
 
   describe("generateObject", () => {
     it("should format object response with JSON format in onStepFinish", async () => {
-      const mockModel = new MockLanguageModelV1({
+      const mockModel = new MockLanguageModelV2({
         modelId: "mock-model",
-        defaultObjectGenerationMode: "json",
         doGenerate: async () => ({
-          text: JSON.stringify({ name: "John", age: 30 }),
+          content: [{ type: "text", text: JSON.stringify({ name: "John", age: 30 }) }],
           finishReason: "stop",
-          usage: { completionTokens: 10, promptTokens: 3 },
-          rawCall: { rawPrompt: null, rawSettings: {} },
+          usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
+          warnings: [],
         }),
       });
 
@@ -302,14 +306,14 @@ describe("custom", () => {
   });
 
   describe("toMessage", () => {
-    it("should convert BaseMessage to CoreMessage", () => {
+    it("should convert BaseMessage to ModelMessage", () => {
       const baseMessage = {
         role: "user" as const,
         content: "Hello, world!",
       };
 
       const result = provider.toMessage(baseMessage);
-      expectTypeOf(result).toMatchTypeOf<CoreMessage>();
+      expectTypeOf(result).toMatchTypeOf<ModelMessage>();
     });
   });
 });

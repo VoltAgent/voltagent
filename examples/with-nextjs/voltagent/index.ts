@@ -42,14 +42,14 @@ export const agent = new Agent({
 });
 
 // Create logger
-const logger = createPinoLogger({
+/* const logger = createPinoLogger({
   name: "nextjs-example",
   level: "info",
-});
+}); */
 
 new VoltAgent({
   agents: {
     agent,
   },
-  logger,
+  /* logger, */
 });

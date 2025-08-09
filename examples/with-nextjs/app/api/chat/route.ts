@@ -1,6 +1,7 @@
 import { agent } from "@/voltagent";
-import { mergeIntoDataStream } from "@voltagent/vercel-ui";
-import { createDataStreamResponse } from "ai";
+import type { BaseMessage } from "@voltagent/core";
+import { toDataStreamResponse } from "@voltagent/vercel-ui";
+import { convertToModelMessages } from "ai";
 
 export async function POST(req: Request) {
   try {
@@ -9,27 +10,17 @@ export async function POST(req: Request) {
     // Get the last message
     const lastMessage = messages[messages.length - 1];
 
-    // Integrate VoltAgent fullStream with createDataStreamResponse
-    return createDataStreamResponse({
-      async execute(dataStream) {
-        try {
-          const result = await agent.streamText(lastMessage.content);
+    const modelMessages = convertToModelMessages([lastMessage]);
 
-          // biome-ignore lint/style/noNonNullAssertion: always exists
-          mergeIntoDataStream(dataStream, result.fullStream!);
-        } catch (error) {
-          console.error("Stream processing error:", error);
-          dataStream.writeMessageAnnotation({
-            type: "error",
-            value: {
-              error: error instanceof Error ? error.message : "Unknown error",
-            },
-          });
-        }
-      },
-      onError: (error) =>
-        `VoltAgent stream error: ${error instanceof Error ? error.message : String(error)}`,
-    });
+    // Stream text from the agent
+    const result = await agent.streamText(modelMessages as BaseMessage[]);
+
+    // Convert VoltAgent stream to AI SDK response using the new v5 adapter
+    if (!result.fullStream) {
+      throw new Error("No stream available from agent");
+    }
+
+    return toDataStreamResponse(result.fullStream);
   } catch (error) {
     console.error("API route error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {

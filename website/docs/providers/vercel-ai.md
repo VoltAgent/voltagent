@@ -325,3 +325,26 @@ agent.streamText("Tell me a joke", {
 ```
 
 Refer to the [Vercel AI SDK documentation](https://sdk.vercel.ai/docs) for the available options for each function and model provider.
+
+## Migration Guide: Vercel AI SDK v5
+
+The `@voltagent/vercel-ai` package now uses Vercel AI SDK v5 internally. Here's what you need to do to upgrade:
+
+### Required Updates
+
+Update the following packages:
+
+```bash
+npm install @voltagent/vercel-ai@latest zod@3.25.0
+```
+
+If you're using any `@ai-sdk/*` packages (like `@ai-sdk/openai`, `@ai-sdk/anthropic`), update them to v2.0.0:
+
+```bash
+npm install @ai-sdk/openai@^2.0.0 @ai-sdk/anthropic@^2.0.0
+```
+
+### Important Notes
+
+- **Zod Version**: Zod v3.25.0 or later is required. Note that Zod v4 doesn't exist yet - Zod went directly from v3.24 to v3.25.
+- **Core API Unchanged**: Your existing VoltAgent code will continue to work without changes. The API remains the same.

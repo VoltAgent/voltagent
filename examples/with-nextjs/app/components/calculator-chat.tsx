@@ -1,50 +1,33 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import type { StreamPart } from "@voltagent/core";
-import type { UIMessage } from "ai";
-import { useEffect, useRef } from "react";
+import {
+  DefaultChatTransport,
+  type TextUIPart,
+  type UIMessage,
+  getToolName,
+  isToolUIPart,
+} from "ai";
+import { useEffect, useRef, useState } from "react";
 
-interface ToolCallAnnotation {
-  type: "tool-call";
-  value: {
-    toolCallId: string;
-    toolName: string;
-    args: any;
-    status: "calling";
-    subAgentName?: string;
-  };
-}
-
-interface ToolResultAnnotation {
-  type: "tool-result";
-  value: {
-    toolCallId: string;
-    toolName: string;
-    result: any;
-    status: "completed";
-    subAgentName?: string;
-  };
-}
-
-interface ErrorAnnotation {
-  type: "error";
-  value: {
-    error: string;
-  };
-}
-
-type MessageAnnotation = ToolCallAnnotation | ToolResultAnnotation | ErrorAnnotation;
+// No need for custom annotation interfaces - we'll use AI SDK v5 types directly
 
 export function CalculatorChat() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: "/api/chat",
-    initialMessages: [
+  const [input, setInput] = useState("");
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
+    messages: [
       {
         id: "welcome",
-        role: "assistant",
-        content:
-          "Hello! I'm your AI-powered calculator. You can write your calculations in natural language. For example: '5 plus 3 times 2' or '(25 + 75) / 4'.",
+        role: "assistant" as UIMessage["role"],
+        parts: [
+          {
+            type: "text",
+            text: "Hello! I'm your AI-powered calculator. You can write your calculations in natural language. For example: '5 plus 3 times 2' or '(25 + 75) / 4'.",
+          },
+        ],
       },
     ],
   });
@@ -58,104 +41,78 @@ export function CalculatorChat() {
     }
   });
 
-  const formatPartAsAnnotation = (part: UIMessage["parts"][number]): MessageAnnotation | null => {
-    if (part.type === "tool-invocation") {
-      if (part.toolInvocation.state === "result") {
-        return {
-          type: "tool-result",
-          value: {
-            toolCallId: part.toolInvocation.toolCallId,
-            toolName: part.toolInvocation.toolName,
-            result: part.toolInvocation.result,
-            status: "completed",
-            // @ts-expect-error - subAgentName is not typed
-            subAgentName: part.toolInvocation.subAgentName,
-          },
-        };
-      }
+  // Removed formatPartAsAnnotation - we'll render parts directly
 
-      return {
-        type: "tool-call",
-        value: {
-          toolCallId: part.toolInvocation.toolCallId,
-          toolName: part.toolInvocation.toolName,
-          args: part.toolInvocation.args,
-          status: "calling",
-          // @ts-expect-error - subAgentName is not typed
-          subAgentName: part.toolInvocation.subAgentName,
-        },
-      };
-    }
-
-    return null;
-  };
-
-  const renderToolCall = (annotation: ToolCallAnnotation) => (
-    <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3 my-2">
-      <div className="flex items-center space-x-2">
-        <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
-        <span className="text-sm font-medium text-blue-300">
-          Tool Call: {annotation.value.toolName}{" "}
-          {annotation.value.subAgentName ? `(Sub-Agent: ${annotation.value.subAgentName})` : ""}
-        </span>
-      </div>
-      <div className="mt-2 text-xs text-blue-200">
-        <strong>Arguments:</strong>{" "}
-        <code className="bg-blue-950/50 px-1 rounded">{JSON.stringify(annotation.value.args)}</code>
-      </div>
-    </div>
-  );
-
-  const renderToolResult = (annotation: ToolResultAnnotation) => (
-    <div className="bg-green-900/30 border border-green-700/50 rounded-lg p-3 my-2">
-      <div className="flex items-center space-x-2">
-        <div className="w-3 h-3 bg-green-400 rounded-full" />
-        <span className="text-sm font-medium text-green-300">
-          Tool Result: {annotation.value.toolName}{" "}
-          {annotation.value.subAgentName ? `(Sub-Agent: ${annotation.value.subAgentName})` : ""}
-        </span>
-      </div>
-      <div className="mt-2 text-xs text-green-200">
-        <strong>Result:</strong>{" "}
-        <code className="bg-green-950/50 px-1 rounded">
-          {JSON.stringify(annotation.value.result)}
-        </code>
-      </div>
-    </div>
-  );
-
-  const renderError = (annotation: ErrorAnnotation) => (
-    <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-3 my-2">
-      <div className="flex items-center space-x-2">
-        <div className="w-3 h-3 bg-red-400 rounded-full" />
-        <span className="text-sm font-medium text-red-300">Error</span>
-      </div>
-      <div className="mt-2 text-xs text-red-200">{annotation.value.error}</div>
-    </div>
-  );
+  // Removed separate render functions - we'll inline them in renderAnnotations
 
   const renderAnnotations = (parts: UIMessage["parts"] = []) => {
-    console.log(parts);
     return parts
-      .map(formatPartAsAnnotation)
-      .filter((annotation): annotation is MessageAnnotation => annotation !== null)
-      .map((annotation, index) => {
-        const key =
-          annotation.type === "tool-call" || annotation.type === "tool-result"
-            ? `${annotation.type}-${annotation.value.toolCallId || index}`
-            : `${annotation.type}-${index}`;
+      .map((part) => {
+        if (isToolUIPart(part)) {
+          const toolName = getToolName(part);
 
-        switch (annotation.type) {
-          case "tool-call":
-            return <div key={key}>{renderToolCall(annotation)}</div>;
-          case "tool-result":
-            return <div key={key}>{renderToolResult(annotation)}</div>;
-          case "error":
-            return <div key={key}>{renderError(annotation)}</div>;
-          default:
-            return null;
+          if (part.state === "output-available") {
+            return (
+              <div
+                key={`tool-result-${part.toolCallId}`}
+                className="bg-green-900/30 border border-green-700/50 rounded-lg p-3 my-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-400 rounded-full" />
+                  <span className="text-sm font-medium text-green-300">
+                    Tool Result: {String(toolName)}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-green-200">
+                  <strong>Result:</strong>{" "}
+                  <code className="bg-green-950/50 px-1 rounded">
+                    {JSON.stringify(part.output)}
+                  </code>
+                </div>
+              </div>
+            );
+          }
+
+          if (part.state === "input-available" || part.state === "input-streaming") {
+            return (
+              <div
+                key={`tool-call-${part.toolCallId}`}
+                className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3 my-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
+                  <span className="text-sm font-medium text-blue-300">
+                    Tool Call: {String(toolName)}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-blue-200">
+                  <strong>Arguments:</strong>{" "}
+                  <code className="bg-blue-950/50 px-1 rounded">{JSON.stringify(part.input)}</code>
+                </div>
+              </div>
+            );
+          }
+
+          if (part.state === "output-error") {
+            return (
+              <div
+                key={`tool-error-${part.toolCallId}`}
+                className="bg-red-900/30 border border-red-700/50 rounded-lg p-3 my-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-400 rounded-full" />
+                  <span className="text-sm font-medium text-red-300">
+                    Tool Error: {String(toolName)}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-red-200">{part.errorText}</div>
+              </div>
+            );
+          }
         }
-      });
+        return null;
+      })
+      .filter(Boolean);
   };
 
   return (
@@ -187,54 +144,77 @@ export function CalculatorChat() {
                       <span className="text-xs text-gray-400">AI Assistant</span>
                     </div>
                   )}
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div className="whitespace-pre-wrap">
+                    {/* In v5, content is extracted from parts */}
+                    {message.parts
+                      ?.filter((part): part is TextUIPart => part.type === "text")
+                      .map((part) => part.text)
+                      .join("")}
+                  </div>
 
                   {message.parts && renderAnnotations(message.parts)}
                 </div>
               </div>
             </div>
           ))}
-
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-800 text-gray-300 border border-gray-700 max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-[#24f2ff] rounded-full mr-2" />
-                  <span className="text-xs text-gray-400 mr-2">AI Assistant</span>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                    <div
-                      className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    />
-                    <div
-                      className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    />
+          {error && (
+            <>
+              <div>An error occurred. {error.message}</div>
+              <button type="button" onClick={() => false}>
+                Retry
+              </button>
+            </>
+          )}
+          {status === "streaming" ||
+            (status === "submitted" && (
+              <div className="flex justify-start">
+                <div className="bg-gray-800 text-gray-300 border border-gray-700 max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-[#24f2ff] rounded-full mr-2" />
+                    <span className="text-xs text-gray-400 mr-2">AI Assistant</span>
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+                      <div
+                        className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            ))}
         </div>
       </div>
 
       {/* Input Form */}
       <div className="border-t border-gray-700 p-4">
-        <form onSubmit={handleSubmit} className="flex space-x-2">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (input.trim()) {
+              sendMessage({ text: input });
+              setInput("");
+            }
+          }}
+          className="flex space-x-2"
+        >
           <input
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={status !== "ready"}
             placeholder="Start typing your calculation... (e.g.: 25 + 17 * 3)"
             className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#24f2ff] focus:border-[#24f2ff] transition-colors"
-            disabled={isLoading}
           />
           <button
             type="submit"
-            disabled={isLoading || !input.trim()}
+            disabled={status !== "ready"}
             className="bg-[#333333] hover:bg-[#444444] focus:ring-4 focus:ring-[#333333]/50 text-white font-medium rounded-lg px-6 py-3 transition-all duration-200 ease-in-out focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
+            {status === "submitted" ? (
               <svg
                 className="animate-spin h-4 w-4 text-white"
                 xmlns="http://www.w3.org/2000/svg"
