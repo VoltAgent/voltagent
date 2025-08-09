@@ -107,6 +107,7 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
         model: options.model,
         tools: vercelTools,
         ...(options.maxSteps ? { stopWhen: stepCountIs(options.maxSteps) } : {}),
+        ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
         abortSignal: options.signal,
         onStepFinish,
       });
@@ -198,6 +199,7 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
         model: options.model,
         tools: vercelTools,
         ...(options.maxSteps ? { stopWhen: stepCountIs(options.maxSteps) } : {}),
+        ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
         abortSignal: options.signal,
         onStepFinish,
         onChunk: async ({ chunk }) => {
@@ -295,6 +297,7 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
         messages: vercelMessages,
         model: options.model,
         schema: options.schema as any,
+        ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
         abortSignal: options.signal,
       });
 
@@ -364,6 +367,7 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
       model: options.model,
       schema: options.schema as any,
       abortSignal: options.signal,
+      ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
       ...(onFinish ? { onFinish } : {}),
       onError: (sdkError) => {
         // Create the error using the helper
