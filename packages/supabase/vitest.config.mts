@@ -10,6 +10,10 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.d.ts", "src/**/index.ts"],
     },
+    typecheck: {
+      include: ["**/**/*.spec-d.ts"],
+      exclude: ["**/**/*.spec.ts"],
+    },
     globals: true,
   },
 });

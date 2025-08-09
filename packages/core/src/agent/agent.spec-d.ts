@@ -2,6 +2,7 @@ import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 import type { LibSQLStorage } from "../memory/libsql";
 import { createTool } from "../tool";
+import type { StreamEventType } from "../utils/streams";
 import type { VoltOpsClient } from "../voltops/client";
 import type { DynamicValueOptions } from "../voltops/types";
 import { Agent } from "./agent";
@@ -353,6 +354,64 @@ describe("Agent Type System", () => {
       };
 
       expectTypeOf(supervisorConfig).toMatchTypeOf<SupervisorConfig>();
+    });
+
+    it("should validate SupervisorConfig with fullStreamEventForwarding", () => {
+      const supervisorConfigWithForwarding: SupervisorConfig = {
+        systemMessage: "Custom supervisor message",
+        includeAgentsMemory: false,
+        customGuidelines: ["Guideline 1", "Guideline 2"],
+        fullStreamEventForwarding: {
+          types: ["tool-call", "tool-result", "text-delta"],
+          addSubAgentPrefix: false,
+        },
+      };
+
+      expectTypeOf(supervisorConfigWithForwarding).toMatchTypeOf<SupervisorConfig>();
+      expectTypeOf(supervisorConfigWithForwarding.fullStreamEventForwarding).toMatchTypeOf<
+        | {
+            types?: StreamEventType[];
+            addSubAgentPrefix?: boolean;
+          }
+        | undefined
+      >();
+    });
+
+    it("should accept specific event types in fullStreamEventForwarding", () => {
+      const config: SupervisorConfig = {
+        fullStreamEventForwarding: {
+          types: ["tool-call", "tool-result", "text-delta", "reasoning", "source", "error"],
+        },
+      };
+
+      expectTypeOf(config.fullStreamEventForwarding?.types).toMatchTypeOf<
+        StreamEventType[] | undefined
+      >();
+    });
+
+    it("should only accept valid StreamEventType values", () => {
+      const validConfig: SupervisorConfig = {
+        fullStreamEventForwarding: {
+          types: [
+            "tool-call",
+            "tool-result",
+            "text-delta",
+            "reasoning",
+            "source",
+            "error",
+            "finish",
+          ],
+        },
+      };
+
+      expectTypeOf(validConfig).toMatchTypeOf<SupervisorConfig>();
+
+      // This would cause a type error if uncommented:
+      // const invalidConfig: SupervisorConfig = {
+      //   fullStreamEventForwarding: {
+      //     types: ["custom-event-1", "custom-event-2"], // Type error: not valid StreamEventType
+      //   },
+      // };
     });
   });
 

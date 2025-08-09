@@ -39,7 +39,7 @@
   },
   "engines": {
     "node": ">=20",
-    "pnpm": ">=8"
+    "pnpm": ">=10"
   },
   "license": "MIT",
   "lint-staged": {
@@ -51,7 +51,7 @@
     ]
   },
   "nx": {},
-  "packageManager": "pnpm@8.10.5",
+  "packageManager": "pnpm@10.14.0",
   "private": true,
   "scripts": {
     "archive:deprecated": "node scripts/archive-deprecated.js",

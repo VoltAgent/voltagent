@@ -311,8 +311,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const staticTools = typeof options.tools === "function" ? [] : options.tools || [];
     this.toolManager = new ToolManager(staticTools, this.logger);
 
-    // Initialize sub-agent manager
-    this.subAgentManager = new SubAgentManager(this.name, options.subAgents || []);
+    // Initialize sub-agent manager with supervisor configuration
+    this.subAgentManager = new SubAgentManager(
+      this.name,
+      options.subAgents || [],
+      this.supervisorConfig,
+    );
 
     // Initialize history manager with VoltOpsClient or legacy telemetryExporter support
     let chosenExporter: VoltAgentExporter | undefined;
@@ -904,8 +908,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         if (internalStreamForwarder) {
           await streamEventForwarder(event, {
             forwarder: internalStreamForwarder,
-            types: ["tool-call", "tool-result"],
-            addSubAgentPrefix: true,
+            types: this.supervisorConfig?.fullStreamEventForwarding?.types || [
+              "tool-call",
+              "tool-result",
+            ],
+            addSubAgentPrefix:
+              this.supervisorConfig?.fullStreamEventForwarding?.addSubAgentPrefix ?? true,
           });
         }
       };

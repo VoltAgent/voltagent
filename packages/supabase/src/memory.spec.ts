@@ -1,126 +1,121 @@
 import type { CreateConversationInput, MemoryMessage } from "@voltagent/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SupabaseMemory } from "./index";
+import { SupabaseMemory } from "./memory";
 
-// Mock Supabase client with proper query builder pattern
-const createMockSupabaseClient = () => {
-  // Create a spy for tracking calls to individual query methods
-  const mockMethods = {
-    from: vi.fn(),
-    eq: vi.fn(),
-    select: vi.fn(),
-    insert: vi.fn(),
-    delete: vi.fn(),
-    update: vi.fn(),
-    order: vi.fn(),
-    limit: vi.fn(),
-    in: vi.fn(),
-    maybeSingle: vi.fn(),
-    head: vi.fn(),
-    lt: vi.fn(),
-    gt: vi.fn(),
-    is: vi.fn(),
-    offset: vi.fn(),
-    single: vi.fn(),
-    not: vi.fn(),
-    upsert: vi.fn(),
-  };
-
-  // Create a query builder that properly chains
-  const createQueryBuilder = () => {
-    const builder = {
-      eq: (...args: any[]) => {
-        mockMethods.eq(...args);
-        return builder;
-      },
-      select: (...args: any[]) => {
-        mockMethods.select(...args);
-        return builder;
-      },
-      insert: (...args: any[]) => {
-        mockMethods.insert(...args);
-        return Promise.resolve({ error: null });
-      },
-      delete: (...args: any[]) => {
-        mockMethods.delete(...args);
-        return builder;
-      },
-      update: (...args: any[]) => {
-        mockMethods.update(...args);
-        return builder;
-      },
-      order: (...args: any[]) => {
-        mockMethods.order(...args);
-        return builder;
-      },
-      limit: (...args: any[]) => {
-        mockMethods.limit(...args);
-        return builder;
-      },
-      in: (...args: any[]) => {
-        mockMethods.in(...args);
-        return builder;
-      },
-      maybeSingle: (...args: any[]) => {
-        mockMethods.maybeSingle(...args);
-        return Promise.resolve({ data: null, error: null });
-      },
-      head: (...args: any[]) => {
-        mockMethods.head(...args);
-        return Promise.resolve({ count: 0, error: null });
-      },
-      lt: (...args: any[]) => {
-        mockMethods.lt(...args);
-        return builder;
-      },
-      gt: (...args: any[]) => {
-        mockMethods.gt(...args);
-        return builder;
-      },
-      is: (...args: any[]) => {
-        mockMethods.is(...args);
-        return builder;
-      },
-      offset: (...args: any[]) => {
-        mockMethods.offset(...args);
-        return builder;
-      },
-      single: (...args: any[]) => {
-        mockMethods.single(...args);
-        return Promise.resolve({ data: null, error: null });
-      },
-      not: (...args: any[]) => {
-        mockMethods.not(...args);
-        return builder;
-      },
-      upsert: (...args: any[]) => {
-        mockMethods.upsert(...args);
-        return Promise.resolve({ error: null });
-      },
+vi.mock("@supabase/supabase-js", async () => {
+  const MockSupabaseClient = vi.fn(function (_opts: any) {
+    const mockMethods = {
+      from: vi.fn(),
+      eq: vi.fn(),
+      select: vi.fn(),
+      insert: vi.fn(),
+      delete: vi.fn(),
+      update: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn(),
+      in: vi.fn(),
+      maybeSingle: vi.fn(),
+      head: vi.fn(),
+      lt: vi.fn(),
+      gt: vi.fn(),
+      is: vi.fn(),
+      offset: vi.fn(),
+      single: vi.fn(),
+      not: vi.fn(),
+      upsert: vi.fn(),
     };
-    return builder;
-  };
 
-  const client = {
-    from: (table: string) => {
+    // @ts-expect-error - this is a mock
+    const self = this as any;
+
+    const createQueryBuilder = () => {
+      const builder = {
+        eq: (...args: any[]) => {
+          mockMethods.eq(...args);
+          return builder;
+        },
+        select: (...args: any[]) => {
+          mockMethods.select(...args);
+          return builder;
+        },
+        insert: (...args: any[]) => {
+          mockMethods.insert(...args);
+          return Promise.resolve({ error: null });
+        },
+        delete: (...args: any[]) => {
+          mockMethods.delete(...args);
+          return builder;
+        },
+        update: (...args: any[]) => {
+          mockMethods.update(...args);
+          return builder;
+        },
+        order: (...args: any[]) => {
+          mockMethods.order(...args);
+          return builder;
+        },
+        limit: (...args: any[]) => {
+          mockMethods.limit(...args);
+          return builder;
+        },
+        in: (...args: any[]) => {
+          mockMethods.in(...args);
+          return builder;
+        },
+        maybeSingle: (...args: any[]) => {
+          mockMethods.maybeSingle(...args);
+          return Promise.resolve({ data: null, error: null });
+        },
+        head: (...args: any[]) => {
+          mockMethods.head(...args);
+          return Promise.resolve({ count: 0, error: null });
+        },
+        lt: (...args: any[]) => {
+          mockMethods.lt(...args);
+          return builder;
+        },
+        gt: (...args: any[]) => {
+          mockMethods.gt(...args);
+          return builder;
+        },
+        is: (...args: any[]) => {
+          mockMethods.is(...args);
+          return builder;
+        },
+        offset: (...args: any[]) => {
+          mockMethods.offset(...args);
+          return builder;
+        },
+        single: (...args: any[]) => {
+          mockMethods.single(...args);
+          return Promise.resolve({ data: null, error: null });
+        },
+        not: (...args: any[]) => {
+          mockMethods.not(...args);
+          return builder;
+        },
+        upsert: (...args: any[]) => {
+          mockMethods.upsert(...args);
+          return Promise.resolve({ error: null });
+        },
+      };
+      return builder;
+    };
+
+    self.from = vi.fn((table: string) => {
       mockMethods.from(table);
       return createQueryBuilder();
-    },
-    _mockMethods: mockMethods, // Expose for testing
+    });
+    self._mockMethods = mockMethods;
+  });
+
+  return {
+    createClient: vi.fn(() => new MockSupabaseClient({})),
+    SupabaseClient: MockSupabaseClient,
   };
+});
 
-  return client;
-};
-
-// Mock createClient
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(() => createMockSupabaseClient()),
-}));
-
-describe("SupabaseMemory", () => {
-  let memory: SupabaseMemory;
-  let mockClient: any;
-
+describe("SupabaseMemory", async () => {
   const createMessage = (overrides: Partial<MemoryMessage> = {}): MemoryMessage => ({
     id: `msg-${Date.now()}-${Math.random()}`,
     role: "user",
@@ -130,18 +125,15 @@ describe("SupabaseMemory", () => {
     ...overrides,
   });
 
-  const createConversation = (
-    overrides: Partial<CreateConversationInput> = {},
-  ): CreateConversationInput => ({
-    id: `conv-${Date.now()}-${Math.random()}`,
-    resourceId: "test-resource",
-    userId: "test-user",
-    title: "Test Conversation",
-    metadata: {},
-    ...overrides,
-  });
-
   describe("Initialization", () => {
+    let mockClient: any;
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      const { createClient } = await import("@supabase/supabase-js");
+      mockClient = createClient("https://test.supabase.co", "test-key");
+    });
+
     it("should initialize with default options", () => {
       const defaultMemory = new SupabaseMemory({
         supabaseUrl: "https://test.supabase.co",
@@ -175,7 +167,7 @@ describe("SupabaseMemory", () => {
 
     it("should initialize with existing client", () => {
       const clientMemory = new SupabaseMemory({
-        client: createMockSupabaseClient() as any,
+        client: mockClient,
         storageLimit: 25,
         debug: true,
       });
@@ -204,9 +196,13 @@ describe("SupabaseMemory", () => {
   });
 
   describe("Storage Limit Functionality", () => {
-    beforeEach(() => {
+    let memory: SupabaseMemory;
+    let mockClient: any;
+
+    beforeEach(async () => {
       vi.clearAllMocks();
-      mockClient = createMockSupabaseClient();
+      const { createClient } = await import("@supabase/supabase-js");
+      mockClient = createClient("https://test.supabase.co", "test-key");
 
       memory = new SupabaseMemory({
         client: mockClient as any,
@@ -230,9 +226,8 @@ describe("SupabaseMemory", () => {
 
     it("should not call pruneOldMessages when storage limit is 0", async () => {
       // Create a fresh mock for this test to avoid cross-test contamination
-      const freshMockClient = createMockSupabaseClient();
       const limitedMemory = new SupabaseMemory({
-        client: freshMockClient as any,
+        client: mockClient,
         storageLimit: 0,
       });
 
@@ -250,12 +245,8 @@ describe("SupabaseMemory", () => {
     });
 
     it("should enforce storage limit and delete oldest messages when exceeded", async () => {
-      // Create a mock client that simulates actual database behavior
-      const enforcementMockClient = createMockSupabaseClient();
-
-      // Create memory instance with limit of 2
       const limitedMemory = new SupabaseMemory({
-        client: enforcementMockClient as any,
+        client: mockClient,
         storageLimit: 2,
       });
 
@@ -271,7 +262,7 @@ describe("SupabaseMemory", () => {
           const countResult = { count: 3, error: null }; // Exceeds limit of 2
 
           if (countResult.count && countResult.count > 2) {
-            // Simulate deleting the oldest message
+            // biome-ignore lint/suspicious/noConsole: testing
             console.log(`Would delete oldest messages for conversation: ${conversationId}`);
           }
 
@@ -287,12 +278,9 @@ describe("SupabaseMemory", () => {
     });
 
     it("should not delete messages when count is within storage limit", async () => {
-      // Create a mock client for this specific test
-      const noDeleteMockClient = createMockSupabaseClient();
-
       const limitedMemory = new SupabaseMemory({
-        client: noDeleteMockClient as any,
-        storageLimit: 5, // Higher limit
+        client: mockClient,
+        storageLimit: 5,
       });
 
       // @ts-expect-error - Accessing private property for testing
@@ -301,8 +289,7 @@ describe("SupabaseMemory", () => {
       // Mock the pruneOldMessages method to simulate count check within limit
       const pruneOldMessagesSpy = vi
         .spyOn(limitedMemory as any, "pruneOldMessages")
-        .mockImplementation(async (...args: any[]) => {
-          const _conversationId = args[0] as string;
+        .mockImplementation(async (..._args: any[]) => {
           // Simulate the count check that would NOT trigger deletion
           const countResult = { count: 2, error: null }; // Within limit of 5
 
@@ -322,11 +309,8 @@ describe("SupabaseMemory", () => {
     });
 
     it("should maintain separate storage limits for different conversations", async () => {
-      // This test verifies that storage limits are applied per conversation
-      const perConvMockClient = createMockSupabaseClient();
-
       const limitedMemory = new SupabaseMemory({
-        client: perConvMockClient as any,
+        client: mockClient,
         storageLimit: 2,
       });
 
@@ -381,7 +365,7 @@ describe("SupabaseMemory", () => {
     it("should not apply limit when limit is 0", async () => {
       // Create a fresh memory instance
       const testMemory = new SupabaseMemory({
-        client: createMockSupabaseClient() as any,
+        client: mockClient,
         storageLimit: 2, // Set a small default limit for comparison
       });
 
@@ -456,13 +440,17 @@ describe("SupabaseMemory", () => {
   });
 
   describe("Message Operations", () => {
-    beforeEach(() => {
+    let memory: SupabaseMemory;
+    let mockClient: any;
+
+    beforeEach(async () => {
       vi.clearAllMocks();
-      mockClient = createMockSupabaseClient();
+      const { createClient } = await import("@supabase/supabase-js");
+      mockClient = createClient("https://test.supabase.co", "test-key");
 
       memory = new SupabaseMemory({
         client: mockClient as any,
-        storageLimit: 100,
+        storageLimit: 2, // Small limit for testing
       });
 
       // Mock the initialization to avoid database setup issues in tests
@@ -525,13 +513,19 @@ describe("SupabaseMemory", () => {
   });
 
   describe("Message Type Filtering", () => {
-    beforeEach(() => {
+    let memory: SupabaseMemory;
+    let mockClient: any;
+
+    beforeEach(async () => {
       vi.clearAllMocks();
-      mockClient = createMockSupabaseClient();
+      const { createClient } = await import("@supabase/supabase-js");
+      mockClient = createClient("https://test.supabase.co", "test-key");
+
       memory = new SupabaseMemory({
         client: mockClient as any,
-        storageLimit: 100,
+        storageLimit: 2, // Small limit for testing
       });
+
       // Mock the initialization to avoid database setup issues in tests
       // @ts-expect-error - Accessing private property for testing
       memory.initialized = Promise.resolve();
@@ -827,17 +821,33 @@ describe("SupabaseMemory", () => {
   });
 
   describe("Conversation Operations", () => {
-    beforeEach(() => {
+    let memory: SupabaseMemory;
+    let mockClient: any;
+
+    beforeEach(async () => {
       vi.clearAllMocks();
-      mockClient = createMockSupabaseClient();
+      const { createClient } = await import("@supabase/supabase-js");
+      mockClient = createClient("https://test.supabase.co", "test-key");
 
       memory = new SupabaseMemory({
         client: mockClient as any,
+        storageLimit: 2, // Small limit for testing
       });
 
       // Mock the initialization to avoid database setup issues in tests
       // @ts-expect-error - Accessing private property for testing
       memory.initialized = Promise.resolve();
+    });
+
+    const createConversation = (
+      overrides: Partial<CreateConversationInput> = {},
+    ): CreateConversationInput => ({
+      id: `conv-${Date.now()}-${Math.random()}`,
+      resourceId: "test-resource",
+      userId: "test-user",
+      title: "Test Conversation",
+      metadata: {},
+      ...overrides,
     });
 
     it("should create conversation successfully", async () => {
