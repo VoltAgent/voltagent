@@ -4,6 +4,7 @@ import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowExecutionContext } from "../context";
+import type { WorkflowStreamWriter } from "../types";
 import type { WorkflowState } from "./state";
 
 /**
@@ -41,6 +42,11 @@ export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> 
    * Provides execution-scoped logging with full context (userId, conversationId, executionId).
    */
   logger: Logger;
+  /**
+   * Stream writer for emitting events during streaming execution.
+   * Always available for writing custom events.
+   */
+  writer: WorkflowStreamWriter;
 }
 
 /**

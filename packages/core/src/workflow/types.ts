@@ -3,6 +3,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
+import type { UsageInfo } from "../agent/providers";
 import type { UserContext } from "../agent/types";
 import type { Memory } from "../memory";
 import type { WorkflowState } from "./internal/state";
@@ -83,6 +84,10 @@ export interface WorkflowExecutionResult<
    */
   result: z.infer<RESULT_SCHEMA> | null;
   /**
+   * Stream of workflow events for real-time monitoring
+   */
+  stream: AsyncIterableIterator<WorkflowStreamEvent>;
+  /**
    * Suspension metadata if workflow was suspended
    */
   suspension?: WorkflowSuspensionMetadata;
@@ -90,6 +95,10 @@ export interface WorkflowExecutionResult<
    * Error information if workflow failed
    */
   error?: unknown;
+  /**
+   * Total token usage from all andAgent steps in the workflow
+   */
+  usage: UsageInfo;
   /**
    * Resume a suspended workflow execution
    * @param input - Optional new input data for resuming (validated against resumeSchema if provided)
@@ -316,7 +325,8 @@ export type Workflow<
   /**
    * Execute the workflow with the given input
    * @param input - The input to the workflow
-   * @returns The result of the workflow
+   * @param options - Options for the workflow execution
+   * @returns Execution result with stream and final result
    */
   run: (
     input: WorkflowInput<INPUT_SCHEMA>,
@@ -431,6 +441,117 @@ export interface WorkflowStats {
   failedExecutions: number;
   averageExecutionTime: number;
   lastExecutionTime?: Date;
+}
+
+/**
+ * Event emitted during workflow streaming
+ */
+export interface WorkflowStreamEvent {
+  /**
+   * Type of the event (e.g., "step-start", "step-complete", "custom", "agent-stream")
+   */
+  type: string;
+  /**
+   * Unique execution ID for this workflow run
+   */
+  executionId: string;
+  /**
+   * Source of the event (step ID or name)
+   */
+  from: string;
+  /**
+   * Input data for the step/event
+   */
+  input?: Record<string, DangerouslyAllowAny>;
+  /**
+   * Output data from the step/event
+   */
+  output?: Record<string, DangerouslyAllowAny>;
+  /**
+   * Current status of the step/event
+   */
+  status: "pending" | "running" | "success" | "error" | "suspended";
+  /**
+   * User context passed through the workflow
+   */
+  userContext?: UserContext;
+  /**
+   * Timestamp of the event
+   */
+  timestamp: string;
+  /**
+   * Current step index in the workflow
+   */
+  stepIndex?: number;
+  /**
+   * Step type for step events
+   */
+  stepType?:
+    | "agent"
+    | "func"
+    | "conditional-when"
+    | "parallel-all"
+    | "parallel-race"
+    | "tap"
+    | "workflow";
+  /**
+   * Additional metadata
+   */
+  metadata?: Record<string, DangerouslyAllowAny>;
+  /**
+   * Error information if status is "error"
+   */
+  error?: DangerouslyAllowAny;
+}
+
+/**
+ * Writer interface for emitting stream events from workflow steps
+ */
+export interface WorkflowStreamWriter {
+  /**
+   * Write a custom event to the stream
+   */
+  write(event: Partial<WorkflowStreamEvent> & { type: string }): void;
+
+  /**
+   * Pipe events from an agent's fullStream to the workflow stream
+   * @param fullStream - The agent's fullStream async iterable
+   * @param options - Optional configuration for piping
+   */
+  pipeFrom(
+    fullStream: AsyncIterable<DangerouslyAllowAny>,
+    options?: {
+      prefix?: string; // Event type prefix (e.g., "agent-")
+      agentId?: string; // Agent ID to include in metadata
+      filter?: (part: DangerouslyAllowAny) => boolean; // Optional filter
+    },
+  ): Promise<void>;
+}
+
+/**
+ * Response returned from workflow.stream() method
+ */
+export interface WorkflowStreamResponse<RESULT_SCHEMA extends z.ZodTypeAny> {
+  /**
+   * Async iterator for stream events
+   */
+  stream: AsyncIterableIterator<WorkflowStreamEvent>;
+  /**
+   * Promise that resolves with the final result
+   */
+  result: Promise<z.infer<RESULT_SCHEMA> | null>;
+  /**
+   * Workflow execution ID
+   */
+  executionId: string;
+  /**
+   * Workflow ID
+   */
+  workflowId: string;
+  /**
+   * Abort the stream
+   */
+  abort: () => void;
 }
 
 /**

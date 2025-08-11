@@ -1,3 +1,4 @@
+import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
 import type { Agent } from "../agent/agent";
@@ -28,6 +29,7 @@ import type {
   WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
+  WorkflowStreamWriter,
 } from "./types";
 
 /**
@@ -171,6 +173,8 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      logger: Logger;
+      writer: WorkflowStreamWriter;
     }) => Promise<z.infer<OS>>;
     id: string;
     name?: string;
@@ -201,6 +205,8 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      logger: Logger;
+      writer: WorkflowStreamWriter;
     }) => Promise<NEW_DATA>;
     id: string;
     name?: string;
@@ -230,6 +236,8 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      logger: Logger;
+      writer: WorkflowStreamWriter;
     }) => Promise<z.infer<OS>>;
     id: string;
     name?: string;
@@ -259,6 +267,8 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: z.infer<RS>;
+      logger: Logger;
+      writer: WorkflowStreamWriter;
     }) => Promise<NEW_DATA>;
     id: string;
     name?: string;
@@ -297,6 +307,8 @@ export class WorkflowChain<
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
+      logger: Logger;
+      writer: WorkflowStreamWriter;
     }) => Promise<NEW_DATA>;
     id: string;
     name?: string;
@@ -344,6 +356,8 @@ export class WorkflowChain<
           suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
         ) => Promise<never>;
         resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+        logger: Logger;
+        writer: WorkflowStreamWriter;
       }) => Promise<boolean>;
     },
   ): WorkflowChain<
@@ -435,6 +449,8 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      logger: Logger;
+      writer: WorkflowStreamWriter;
     }) => Promise<void>;
     id: string;
     name?: string;
@@ -472,6 +488,8 @@ export class WorkflowChain<
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
+      logger: Logger;
+      writer: WorkflowStreamWriter;
     }) => Promise<void>;
     id: string;
     name?: string;

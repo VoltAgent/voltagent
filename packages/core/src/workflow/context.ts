@@ -1,6 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { Memory } from "../memory";
-import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "./types";
+import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry, WorkflowStreamWriter } from "./types";
 
 /**
  * Context information for a workflow execution
@@ -67,6 +67,11 @@ export interface WorkflowExecutionContext {
    * Provides execution-scoped logging with full context (userId, conversationId, executionId)
    */
   logger: Logger;
+  /**
+   * Stream writer for emitting events during streaming execution
+   * Always available for writing custom events
+   */
+  streamWriter: WorkflowStreamWriter;
 }
 
 /**

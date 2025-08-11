@@ -1,6 +1,7 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import { v4 as uuid } from "uuid";
+import type { UsageInfo } from "../../agent/providers";
 import type { UserContext } from "../../agent/types";
 import { getGlobalLogger } from "../../logger";
 import type { WorkflowRunOptions, WorkflowSuspensionMetadata } from "../types";
@@ -26,6 +27,8 @@ export type WorkflowState<INPUT, RESULT> = {
   error: Error | null;
   /** suspension metadata when workflow is suspended */
   suspension?: WorkflowSuspensionMetadata;
+  /** accumulated usage from andAgent calls */
+  usage: UsageInfo;
 };
 
 export interface WorkflowStateManager<DATA, RESULT> {
@@ -120,6 +123,11 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       status: "running",
       result: null,
       error: null,
+      usage: {
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+      },
     };
 
     return this.#state;
