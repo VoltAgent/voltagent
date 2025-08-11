@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
-import type { LibSQLStorage } from "../memory/libsql";
+import type { Memory } from "../memory/types";
 import { createTool } from "../tool";
 import type { StreamEventType } from "../utils/streams";
 import type { VoltOpsClient } from "../voltops/client";
@@ -49,7 +49,7 @@ describe("Agent Type System", () => {
   const mockProvider = {} as LLMProvider<any>;
   const mockOpenAIProvider = {} as LLMProvider<any>;
   const mockVoltOpsClient = {} as VoltOpsClient;
-  const mockMemory = {} as LibSQLStorage;
+  const mockMemory = {} as Memory;
 
   describe("Agent Constructor Type Inference", () => {
     it("should infer provider type correctly", () => {

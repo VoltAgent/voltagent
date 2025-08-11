@@ -3,14 +3,8 @@ import fs from "node:fs";
 import { join } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
-import type { Logger } from "@voltagent/internal";
-import { safeStringify } from "@voltagent/internal/utils";
-import type { BaseMessage } from "../../agent/providers/base/types";
-import type { NewTimelineEvent } from "../../events/types";
-import { LoggerProxy } from "../../logger";
-import { safeJsonParse } from "../../utils";
-import { addSuspendedStatusMigration } from "../migrations/add-suspended-status";
-import { createWorkflowTables } from "../migrations/workflow-tables";
+import type { BaseMessage, NewTimelineEvent } from "@voltagent/core";
+import { safeJsonParse } from "@voltagent/core";
 import type {
   Conversation,
   ConversationQueryOptions,
@@ -19,7 +13,11 @@ import type {
   MemoryMessage,
   MemoryOptions,
   MessageFilterOptions,
-} from "../types";
+} from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
+import { type Logger, createPinoLogger } from "@voltagent/logger";
+import { addSuspendedStatusMigration } from "./migrations/add-suspended-status";
+import { createWorkflowTables } from "./migrations/workflow-tables";
 import { LibSQLWorkflowExtension } from "./workflow-extension";
 
 /**
@@ -90,6 +88,11 @@ export interface LibSQLStorageOptions extends MemoryOptions {
    * @default 50
    */
   baseDelayMs?: number;
+
+  /**
+   * Optional logger instance
+   */
+  logger?: Logger;
 }
 
 /**
@@ -114,7 +117,8 @@ export class LibSQLStorage implements Memory {
    * @param options Configuration options
    */
   constructor(options: LibSQLStorageOptions) {
-    this.logger = new LoggerProxy({ component: "libsql-storage" });
+    // Initialize the logger
+    this.logger = options.logger || createPinoLogger({ name: "libsql-storage" });
     this.retryAttempts = options.retryAttempts ?? 3;
     this.baseDelayMs = options.baseDelayMs ?? 50;
 
@@ -137,7 +141,11 @@ export class LibSQLStorage implements Memory {
     this.debug("LibSQL storage provider initialized with options", this.options);
 
     // Initialize workflow extension
-    this.workflowExtension = new LibSQLWorkflowExtension(this.client, this.options.tablePrefix);
+    this.workflowExtension = new LibSQLWorkflowExtension(
+      this.client,
+      this.options.tablePrefix,
+      this.logger,
+    );
 
     // Initialize the database tables
     this.initialized = this.initializeDatabase();

@@ -2,7 +2,7 @@ import type { Logger } from "@voltagent/internal";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AgentEventEmitter } from "../events";
-import { LibSQLStorage } from "../memory/libsql";
+import { InMemoryStorage } from "../memory/in-memory";
 import { createTool } from "../tool";
 import { VoltOpsClient } from "../voltops/client";
 import { Agent } from "./agent";
@@ -410,7 +410,7 @@ describe("Agent", () => {
         instructions: "Main agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Add sub-agent to trigger delegate tool creation
@@ -446,7 +446,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         memory: false, // Disable memory to ensure clean history
-        historyMemory: new LibSQLStorage({ url: ":memory:" }), // Use in-memory LibSQL
+        historyMemory: new InMemoryStorage(), // Use in-memory LibSQL
       });
 
       const history = await agent.getHistory();
@@ -504,7 +504,7 @@ describe("Agent", () => {
         instructions: "Main agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Add sub-agent to trigger delegate tool creation
@@ -744,7 +744,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const messages = [
@@ -776,7 +776,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         tools: [tool],
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Setup mock to return tool call first, then error response
@@ -822,7 +822,7 @@ describe("Agent", () => {
         instructions: dynamicInstructions,
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const result = await agent.generateText("Hello");
@@ -880,7 +880,7 @@ describe("Agent", () => {
         llm: testProvider,
         model: "test-model",
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Setup provider to check abort signal
@@ -910,7 +910,7 @@ describe("Agent", () => {
         instructions: "Sub agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const agent = new Agent({
@@ -918,7 +918,7 @@ describe("Agent", () => {
         instructions: "Main agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Add sub-agent after creation to trigger delegate tool
@@ -978,7 +978,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         retriever: mockRetriever as any,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       await agent.generateText("Search for something");
@@ -996,7 +996,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const error = new Error("Provider error");
@@ -1013,7 +1013,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const result = await agent.generateText("Hello");
@@ -1040,7 +1040,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const userContext = new Map([["customKey", "customValue"]]);
@@ -1064,7 +1064,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const userContext = new Map([
@@ -1100,7 +1100,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       await agent.generateText("Hello", {
@@ -1123,7 +1123,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const stream = await agent.streamText("Hello");
@@ -1153,7 +1153,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         tools: [tool],
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock stream with tool call
@@ -1205,7 +1205,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const abortController = new AbortController();
@@ -1252,7 +1252,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const stream = await agent.streamText("Hello", {
@@ -1277,7 +1277,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const stream = await agent.streamText("Hello", {
@@ -1303,7 +1303,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const error = new Error("Stream error");
@@ -1328,7 +1328,7 @@ describe("Agent", () => {
         instructions: "Sub agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const agent = new Agent({
@@ -1336,7 +1336,7 @@ describe("Agent", () => {
         instructions: "Main agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Add sub-agent after creation
@@ -1388,7 +1388,7 @@ describe("Agent", () => {
         instructions: "Sub agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const agent = new Agent({
@@ -1396,7 +1396,7 @@ describe("Agent", () => {
         instructions: "Main agent instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Add sub-agent
@@ -1461,7 +1461,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const stream = await agent.streamText("Hello");
@@ -1763,7 +1763,7 @@ describe("Agent", () => {
         llm: testProvider,
         model: "test-model",
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock provider to return invalid tool call
@@ -1794,7 +1794,7 @@ describe("Agent", () => {
         instructions: "Agent 1 instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const agent2 = new Agent({
@@ -1802,7 +1802,7 @@ describe("Agent", () => {
         instructions: "Agent 2 instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Create circular reference
@@ -1824,7 +1824,7 @@ describe("Agent", () => {
         llm: testProvider,
         model: "test-model",
         maxHistoryEntries: 2,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock unique responses for each request
@@ -1892,7 +1892,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const result = await agent.generateText("");
@@ -1911,7 +1911,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const longInput = "a".repeat(10000);
@@ -1969,7 +1969,7 @@ describe("Agent", () => {
         llm: testProvider,
         model: "test-model",
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Setup provider to check abort signal
@@ -2013,7 +2013,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         hooks: {
           onStart,
         },
@@ -2038,7 +2038,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         hooks: {
           onEnd,
         },
@@ -2066,7 +2066,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         hooks: {
           onEnd,
         },
@@ -2105,7 +2105,7 @@ describe("Agent", () => {
         llm: testProvider,
         model: "test-model",
         tools: [tool],
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         hooks: {
           onToolStart,
           onToolEnd,
@@ -2143,7 +2143,7 @@ describe("Agent", () => {
         instructions: "Sub agent instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const agent = new Agent({
@@ -2151,7 +2151,7 @@ describe("Agent", () => {
         instructions: "Main agent instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         hooks: {
           onHandoff,
         },
@@ -2192,7 +2192,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider,
         model: "test-model",
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         hooks: {
           onStart: agentOnStart,
         },
@@ -2674,7 +2674,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         llm: customProvider,
         memory: false,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         logger: mockLogger,
       });
 
@@ -2702,7 +2702,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         llm: errorProvider,
         memory: false,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         logger: mockLogger,
       });
 
@@ -2740,7 +2740,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         llm: customProvider,
         memory: false,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         logger: mockLogger,
       });
 
@@ -2780,7 +2780,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         llm: customProvider,
         memory: false,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         logger: mockLogger,
       });
 
@@ -2818,7 +2818,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const userContext = new Map([
@@ -2849,7 +2849,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const userContext = new Map([
@@ -2871,7 +2871,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock streaming response
@@ -2908,7 +2908,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const userContext = new Map([["callbackTest", "value1"]]);
@@ -2935,7 +2935,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock provider to throw error
@@ -2964,7 +2964,7 @@ describe("Agent", () => {
         instructions: "Sub agent",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const mainAgent = new Agent({
@@ -2973,7 +2973,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         subAgents: [subAgent],
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock main agent to delegate
@@ -3019,7 +3019,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const timestamp = Date.now();
@@ -3053,7 +3053,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const userContext = new Map([["eventKey", "eventValue"]]);
@@ -3089,7 +3089,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         userContext: defaultContext,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const optionsContext = new Map([
@@ -3113,7 +3113,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
         hooks: {
           onStart: async ({ context }) => {
             // Modify userContext during operation
@@ -3139,7 +3139,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Spy on the AgentEventEmitter
@@ -3168,7 +3168,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const eventEmitter = vi.spyOn(AgentEventEmitter.getInstance(), "publishTimelineEventAsync");
@@ -3200,7 +3200,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock provider to throw error
@@ -3236,7 +3236,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const eventEmitter = vi.spyOn(AgentEventEmitter.getInstance(), "publishTimelineEventAsync");
@@ -3287,7 +3287,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         retriever: mockRetriever as any,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       await agent.generateText("Query for retrieval");
@@ -3321,7 +3321,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         retriever: mockRetriever as any,
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Should not throw, just log warning
@@ -3346,7 +3346,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         retriever: mockRetriever as any,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const eventEmitter = vi.spyOn(AgentEventEmitter.getInstance(), "publishTimelineEventAsync");
@@ -3391,7 +3391,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         retriever: mockRetriever as any,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       await agent.generateText("Query");
@@ -3423,7 +3423,7 @@ describe("Agent", () => {
         llm: testProvider as any,
         model: { model: "test-model" },
         retriever: mockRetriever as any,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // First call with includeContext = false
@@ -3480,7 +3480,7 @@ describe("Agent", () => {
         llm: customProvider as any,
         model: { model: "test-model" },
         tools: [tool],
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       await agent.generateText("Execute tool");
@@ -3518,7 +3518,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         tools: [tool1, tool2],
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Mock provider returns response with tool results
@@ -3578,7 +3578,7 @@ describe("Agent", () => {
         llm: flakeyProvider as any,
         model: { model: "test-model" },
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Note: Current implementation doesn't have built-in retry
@@ -3604,7 +3604,7 @@ describe("Agent", () => {
         model: { model: "test-model" },
         memory: corruptMemory as any,
         logger: mockLogger,
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Should still work despite memory errors
@@ -3623,7 +3623,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Launch 50 concurrent operations
@@ -3668,7 +3668,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: customProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Launch concurrent operations with different contexts
@@ -3716,7 +3716,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: slowProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Create multiple abort controllers
@@ -3752,7 +3752,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       // Test with old signal API
@@ -3774,7 +3774,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+        historyMemory: new InMemoryStorage(),
       });
 
       const controller1 = new AbortController();

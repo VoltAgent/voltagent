@@ -1,9 +1,12 @@
 import type { Client } from "@libsql/client";
-import type { Logger } from "@voltagent/internal";
+import type {
+  WorkflowHistoryEntry,
+  WorkflowStats,
+  WorkflowStepHistoryEntry,
+  WorkflowTimelineEvent,
+} from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
-import { LoggerProxy } from "../../logger";
-import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../../workflow/context";
-import type { WorkflowStats, WorkflowTimelineEvent } from "../../workflow/types";
+import { type Logger, createPinoLogger } from "@voltagent/logger";
 
 /**
  * LibSQL extension for workflow memory operations
@@ -15,8 +18,9 @@ export class LibSQLWorkflowExtension {
   constructor(
     private client: Client,
     private _tablePrefix = "voltagent_memory",
+    logger?: Logger,
   ) {
-    this.logger = new LoggerProxy({ component: "libsql-workflow" });
+    this.logger = logger || createPinoLogger({ name: "libsql-workflow" });
   }
 
   /**

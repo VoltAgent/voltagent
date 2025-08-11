@@ -10,5 +10,7 @@ export type {
   WorkflowResumeOptions,
   WorkflowSuspensionMetadata,
   WorkflowSuspendController,
+  WorkflowStats,
+  WorkflowTimelineEvent,
 } from "./types";
 export type { WorkflowExecuteContext } from "./internal/types";

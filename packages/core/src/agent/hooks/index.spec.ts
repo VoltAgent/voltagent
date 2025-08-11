@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
-import { createTestLibSQLStorage } from "../../test-utils/libsql-test-helpers";
+import { InMemoryStorage } from "../../memory/in-memory";
 import { type AgentTool, createTool } from "../../tool";
 import { Agent } from "../agent";
 // Import only OperationContext and VoltAgentError
@@ -30,7 +30,7 @@ class MockProvider {
 
 // Create a test agent
 const createTestAgent = (name: string) => {
-  const memory = createTestLibSQLStorage(`hooks_${name}`);
+  const memory = new InMemoryStorage();
   return new Agent({
     name,
     description: `Test ${name}`,

@@ -15,7 +15,7 @@ import type {
 import { LogEvents, getGlobalLogger } from "../../logger";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import { BackgroundQueue } from "../../utils/queue/queue";
-import { LibSQLStorage } from "../index";
+import { InMemoryStorage } from "../in-memory";
 import type { Memory, MemoryMessage, MemoryOptions } from "../types";
 
 /**
@@ -96,19 +96,19 @@ export class MemoryManager {
       this.conversationMemory = memory;
     } else {
       // Create default memory for conversations if not provided or disabled
-      this.conversationMemory = new LibSQLStorage(baseMemoryConfig);
+      this.conversationMemory = new InMemoryStorage(baseMemoryConfig);
     }
 
     // History storage is always available
-    // Priority: 1) Explicit historyMemory, 2) Same as conversation memory, 3) Default LibSQLStorage
+    // Priority: 1) Explicit historyMemory, 2) Same as conversation memory, 3) Default InMemoryStorage
     if (historyMemory) {
       this.historyMemory = historyMemory;
     } else if (this.conversationMemory) {
       // Use same memory instance as conversation memory (when it exists)
       this.historyMemory = this.conversationMemory;
     } else {
-      // Default to LibSQLStorage if no memory configured
-      this.historyMemory = new LibSQLStorage(baseMemoryConfig);
+      // Default to InMemoryStorage if no memory configured
+      this.historyMemory = new InMemoryStorage(baseMemoryConfig);
     }
 
     this.options = options;

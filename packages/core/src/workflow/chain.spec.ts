@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { InMemoryStorage } from "../memory/in-memory";
 import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 
@@ -12,7 +12,7 @@ describe.sequential("workflow.run", () => {
   });
 
   it("should return the expected result", async () => {
-    const memory = createTestLibSQLStorage("workflow_chain");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflowChain({
       id: "test",

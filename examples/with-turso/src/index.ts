@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, LibSQLStorage, VoltAgent } from "@voltagent/core";
+import { Agent, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 

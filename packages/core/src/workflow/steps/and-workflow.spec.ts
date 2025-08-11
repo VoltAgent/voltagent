@@ -1,17 +1,16 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { LibSQLStorage } from "../../memory";
+import { InMemoryStorage } from "../../memory";
 import { createWorkflow } from "../core";
 import { WorkflowRegistry } from "../registry";
 import { andThen } from "./and-then";
 import { andWorkflow } from "./and-workflow";
 
 describe.sequential("andWorkflow", () => {
-  const storageInstances: LibSQLStorage[] = [];
+  const storageInstances: InMemoryStorage[] = [];
 
   afterEach(async () => {
-    // Close all storage instances
-    await Promise.all(storageInstances.map((storage) => storage.close()));
+    // Clear storage instances
     storageInstances.length = 0;
 
     // Clear workflow registry
@@ -31,9 +30,7 @@ describe.sequential("andWorkflow", () => {
           count: z.number(),
         }),
         memory: (() => {
-          const storage = new LibSQLStorage({
-            url: ":memory:",
-          });
+          const storage = new InMemoryStorage();
           storageInstances.push(storage);
           return storage;
         })(),
@@ -61,9 +58,7 @@ describe.sequential("andWorkflow", () => {
           workflow: z.string().nullable(),
         }),
         memory: (() => {
-          const storage = new LibSQLStorage({
-            url: ":memory:",
-          });
+          const storage = new InMemoryStorage();
           storageInstances.push(storage);
           return storage;
         })(),

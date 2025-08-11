@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { InMemoryStorage } from "../memory/in-memory";
 import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andAll, andThen, andWhen } from "./steps";
@@ -17,7 +17,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should suspend workflow when abort signal is triggered", async () => {
-    const memory = createTestLibSQLStorage("suspend_abort_signal");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -77,7 +77,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
   it("should resume suspended workflow from correct step", async () => {
     const stepExecutions: string[] = [];
-    const memory = createTestLibSQLStorage("resume_workflow");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -154,7 +154,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
   it("should preserve workflow state across suspend/resume", async () => {
     let capturedState: any = null;
-    const memory = createTestLibSQLStorage("preserve_state");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -231,7 +231,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should handle suspension during parallel steps", async () => {
-    const memory = createTestLibSQLStorage("parallel_suspend");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -291,7 +291,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should handle suspension during conditional steps", async () => {
     let conditionChecked = false;
     let conditionalExecuted = false;
-    const memory = createTestLibSQLStorage("conditional_suspend");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -350,7 +350,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should list all suspended workflows", async () => {
-    const memory = createTestLibSQLStorage("list_suspended");
+    const memory = new InMemoryStorage();
 
     const workflow1 = createWorkflow(
       {
@@ -440,7 +440,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should handle resume with no suspension metadata gracefully", async () => {
-    const memory = createTestLibSQLStorage("no_metadata");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -465,7 +465,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should not allow resuming non-suspended workflow", async () => {
-    const memory = createTestLibSQLStorage("non_suspended");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -509,7 +509,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should handle suspension checkpoint data correctly", async () => {
-    const memory = createTestLibSQLStorage("checkpoint");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -524,7 +524,11 @@ describe.sequential("workflow suspend/resume functionality", () => {
       andThen({
         id: "step-1",
         name: "Step 1",
-        execute: async () => ({ step1: "data1" }),
+        execute: async () => {
+          // Add delay to ensure workflow is still running when suspend is called
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          return { step1: "data1" };
+        },
       }),
       andThen({
         id: "step-2",
@@ -534,10 +538,14 @@ describe.sequential("workflow suspend/resume functionality", () => {
       andThen({
         id: "step-3",
         name: "Step 3",
-        execute: async (data: any) => ({
-          checkpoint: data,
-          final: "done",
-        }),
+        execute: async (ctx: any) => {
+          // Extract step2 from the correct location (handles both normal and resume cases)
+          const step2Value = ctx.data?.step2 || ctx.step2;
+          return {
+            checkpoint: { step2: step2Value },
+            final: "done",
+          };
+        },
       }),
     );
 
@@ -566,11 +574,15 @@ describe.sequential("workflow suspend/resume functionality", () => {
     // Resume and verify checkpoint was used
     const resumed = await registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId);
 
-    expect(resumed?.result.checkpoint).toEqual({ step2: "data2" });
+    expect(resumed).toBeDefined();
+    expect(resumed?.status).toBe("completed");
+    expect(resumed?.result).toBeDefined();
+    expect(resumed?.result?.checkpoint).toBeDefined();
+    expect(resumed?.result?.checkpoint?.step2).toBe("data2");
   });
 
   it("should allow suspending from within step execution via context", async () => {
-    const memory = createTestLibSQLStorage("suspend_api");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -615,7 +627,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
   it("should provide a working resume function on the execution result", async () => {
     let stepExecutions = 0;
-    const memory = createTestLibSQLStorage("resume_api");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -663,7 +675,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     // on a different "instance" (simulated by getting fresh registry reference)
 
     let executionCount = 0;
-    const memory = createTestLibSQLStorage("distributed");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {

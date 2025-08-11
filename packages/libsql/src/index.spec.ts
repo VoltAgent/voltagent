@@ -1,7 +1,7 @@
+import type { MemoryMessage } from "packages/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LibSQLStorage } from ".";
-import { generateTestTablePrefix } from "../../test-utils/libsql-test-helpers";
-import type { MemoryMessage } from "../types";
+import { generateTestTablePrefix } from "./test-helpers";
 
 describe.sequential("LibSQLStorage", () => {
   let storage: LibSQLStorage;
@@ -9,7 +9,7 @@ describe.sequential("LibSQLStorage", () => {
 
   beforeEach(async () => {
     // Generate unique table prefix for test isolation
-    testPrefix = generateTestTablePrefix("libsql-test");
+    testPrefix = generateTestTablePrefix();
 
     // Create real LibSQL instance with memory database
     storage = new LibSQLStorage({

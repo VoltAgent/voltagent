@@ -1178,7 +1178,7 @@ describe("MemoryManager - ConversationMemory Tests", () => {
     it("should still have historyMemory available when conversationMemory is disabled", () => {
       const historyMemory = memoryManager.getHistoryMemory();
       expect(historyMemory).toBeDefined();
-      expect(historyMemory.constructor.name).toBe("LibSQLStorage");
+      expect(historyMemory.constructor.name).toBe("InMemoryStorage");
     });
   });
 
@@ -1269,16 +1269,16 @@ describe("MemoryManager - ConversationMemory Tests", () => {
       memoryManager = new MemoryManager("test-agent"); // No memory parameter
     });
 
-    it("should create default LibSQLStorage for conversationMemory", () => {
+    it("should create default InMemoryStorage for conversationMemory", () => {
       const memory = memoryManager.getMemory();
       expect(memory).toBeDefined();
-      expect(memory?.constructor.name).toBe("LibSQLStorage");
+      expect(memory?.constructor.name).toBe("InMemoryStorage");
     });
 
-    it("should return LibSQLStorage state when using default conversationMemory", () => {
+    it("should return InMemoryStorage state when using default conversationMemory", () => {
       const state = memoryManager.getMemoryState();
 
-      expect(state.type).toBe("LibSQLStorage");
+      expect(state.type).toBe("InMemoryStorage");
       expect(state.available).toBe(true);
       expect(state.resourceId).toBe("test-agent");
       expect(state.node_id).toBe("memory_test-agent");
@@ -1300,7 +1300,7 @@ describe("MemoryManager - HistoryMemory Tests", () => {
 
       const historyMemory = memoryManager.getHistoryMemory();
       expect(historyMemory).toBeDefined();
-      expect(historyMemory.constructor.name).toBe("LibSQLStorage");
+      expect(historyMemory.constructor.name).toBe("InMemoryStorage");
     });
 
     it("should have historyMemory when conversationMemory is provided", () => {
@@ -1316,7 +1316,7 @@ describe("MemoryManager - HistoryMemory Tests", () => {
 
       const historyMemory = memoryManager.getHistoryMemory();
       expect(historyMemory).toBeDefined();
-      expect(historyMemory.constructor.name).toBe("LibSQLStorage");
+      expect(historyMemory.constructor.name).toBe("InMemoryStorage");
     });
   });
 
