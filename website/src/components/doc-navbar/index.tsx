@@ -104,7 +104,7 @@ export default function DocNavbar() {
             </div>
             {/* Show version badge only when NOT on observability docs */}
             {!isActive("/voltops-llm-observability-docs/") && (
-              <div className={styles.versionBadge}>v0.1.x</div>
+              <div className={styles.versionBadge}>v1.0.x</div>
             )}
             <Link
               to="https://s.voltagent.dev/discord"
@@ -156,7 +156,7 @@ export default function DocNavbar() {
           <div className={cn("flex", "flex-col", "items-start", "gap-4")}>
             {/* Show mobile version badge only when NOT on observability docs */}
             {!isActive("/voltops-llm-observability-docs/") && (
-              <div className={styles.versionBadgeMobile}>v0.1.x</div>
+              <div className={styles.versionBadgeMobile}>v1.0.x</div>
             )}
             {!isActive("/voltops-llm-observability-docs/") && (
               <Link

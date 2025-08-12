@@ -1,4 +1,4 @@
-# VoltAgent: The Comprehensive Developer & LLM Guide (v0.1.x)
+# VoltAgent: The Comprehensive Developer & LLM Guide (v1.0.x)
 
 This document provides an exhaustive, self-contained guide to the VoltAgent framework (version ~0.1.x based on provided structure). It is intended for both human developers seeking deep understanding and Large Language Models (LLMs) requiring rich context for analysis, code generation, or answering questions about VoltAgent. It details the architecture, core components, features, design rationale, key workflows, and provides illustrative code examples directly within the text. While links to source code and further documentation are provided, the core concepts and mechanisms are explained herein.
 
