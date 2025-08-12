@@ -1,5 +1,5 @@
 ---
-"@voltagent/core": patch
+"@voltagent/core": major
 ---
 
 fix: change default memory storage from LibSQL to InMemoryStorage for serverless compatibility
@@ -26,16 +26,14 @@ pnpm add @voltagent/libsql
 import { Agent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 
-// Create LibSQL storage
-const storage = new LibSQLStorage({
-  logger: logger, // optional
-});
-
 // Use with Agent
 const agent = new Agent({
   name: "Assistant",
   instructions: "You are a helpful assistant",
-  memory: storage, // Pass LibSQL storage explicitly
+  // Pass LibSQL storage explicitly
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db", // It's default value
+  }),
   // ... other config
 });
 ```
