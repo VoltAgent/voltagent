@@ -1,6 +1,18 @@
 import { Agent, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { XSAIProvider } from "@voltagent/xsai";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-xsai",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const storage = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
 
 const agent = new Agent({
   name: "Asistant",
@@ -9,12 +21,7 @@ const agent = new Agent({
     apiKey: process.env.OPENAI_API_KEY || "",
   }),
   model: "gpt-4o-mini",
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-xsai",
-  level: "info",
+  memory: storage,
 });
 
 new VoltAgent({

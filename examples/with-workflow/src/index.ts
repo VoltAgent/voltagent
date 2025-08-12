@@ -1,8 +1,12 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, andThen, createWorkflowChain } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
+
+// Create LibSQL storage for persistent memory
+const storage = new LibSQLStorage();
 
 // Define reusable agents
 const analysisAgent = new Agent({
@@ -10,6 +14,7 @@ const analysisAgent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a data analyst. Provide clear, structured analysis.",
+  memory: storage,
 });
 
 const contentAgent = new Agent({
@@ -17,6 +22,7 @@ const contentAgent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a content creator. Generate engaging and accurate content.",
+  memory: storage,
 });
 
 // ==============================================================================

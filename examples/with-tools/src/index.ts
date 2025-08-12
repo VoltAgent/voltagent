@@ -1,10 +1,22 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Import all the tools
 import { addCalendarEventTool, checkCalendarTool, searchTool, weatherTool } from "./tools";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-tools",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const storage = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
 
 // Create the agent with tools
 const agent = new Agent({
@@ -13,12 +25,7 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool, checkCalendarTool, addCalendarEventTool, searchTool],
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-tools",
-  level: "info",
+  memory: storage,
 });
 
 // Initialize the VoltAgent

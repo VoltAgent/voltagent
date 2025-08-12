@@ -1,7 +1,19 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, registerCustomEndpoints } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-custom-endpoints",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const memory = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
 
 // Simple endpoint examples - Part 1: Register via function call
 const endpointsViaFunction = [
@@ -113,6 +125,7 @@ const agent = new Agent({
     "You are a helpful assistant with access to simple custom endpoints: /api/health, /api/hello/:name, /api/calculate, and /api/delete-all",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
+  memory,
 });
 
 // Method 1: Register endpoints using the function call
@@ -123,12 +136,6 @@ registerCustomEndpoints(endpointsViaFunction);
 // Method 2: Register endpoints via VoltAgent constructor
 // This is the most common and convenient way to register endpoints
 // Both methods work together - all endpoints will be registered and displayed
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-custom-endpoints",
-  level: "info",
-});
 
 new VoltAgent({
   agents: {

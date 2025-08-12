@@ -2,9 +2,21 @@ import { createReadStream, createWriteStream } from "node:fs";
 import { join } from "node:path";
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { ElevenLabsVoiceProvider } from "@voltagent/voice";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-voice-elevenlabs",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const storage = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
 
 // Initialize voice provider
 const voiceProvider = new ElevenLabsVoiceProvider({
@@ -27,16 +39,10 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   voice: voiceProvider,
+  memory: storage,
 });
 
 // Create the VoltAgent with our voice-enabled agent
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-voice-elevenlabs",
-  level: "info",
-});
-
 new VoltAgent({
   agents: {
     agent,

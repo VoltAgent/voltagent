@@ -1,5 +1,6 @@
 import { mistral } from "@ai-sdk/mistral";
 import VoltAgent, { Agent, type OperationContext, type AgentHooks } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import {
@@ -29,6 +30,17 @@ import {
   waitForElementTool,
 } from "./tools";
 import { resetBrowserState as resetBrowserStateInternal } from "./tools/playwrightToolHandler";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-playwright",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const storage = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
 
 // Create a specialized agent for browsing
 export const browserAgent = new Agent({
@@ -83,12 +95,7 @@ export const browserAgent = new Agent({
     getVisibleHtmlTool,
     listInteractiveElementsTool,
   ],
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-playwright",
-  level: "info",
+  memory: storage,
 });
 
 new VoltAgent({

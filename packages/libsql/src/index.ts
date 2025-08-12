@@ -1,6 +1,5 @@
-import { existsSync } from "node:fs";
-import fs from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import type { Client, Row } from "@libsql/client";
 import { createClient } from "@libsql/client";
 import type { BaseMessage, NewTimelineEvent } from "@voltagent/core";
@@ -46,11 +45,12 @@ export interface LibSQLStorageOptions extends MemoryOptions {
   /**
    * LibSQL connection URL
    * Can be either a remote Turso URL or a local file path
+   * @default "file:./.voltagent/memory.db"
    * @example "libsql://your-database.turso.io" for remote Turso
    * @example "file:memory.db" for local SQLite in current directory
    * @example "file:.voltagent/memory.db" for local SQLite in .voltagent folder
    */
-  url: string;
+  url?: string;
 
   /**
    * Auth token for LibSQL/Turso
@@ -103,9 +103,19 @@ export interface LibSQLStorageOptions extends MemoryOptions {
  * - Remote Turso databases (with libsql:// URLs)
  * - Local SQLite databases (with file: URLs)
  */
+type InternalLibSQLStorageOptions = {
+  url: string;
+  authToken?: string;
+  tablePrefix: string;
+  debug: boolean;
+  storageLimit: number;
+  retryAttempts: number;
+  baseDelayMs: number;
+};
+
 export class LibSQLStorage implements Memory {
   private client: Client;
-  private options: LibSQLStorageOptions;
+  private options: InternalLibSQLStorageOptions;
   private initialized: Promise<void>;
   private workflowExtension: LibSQLWorkflowExtension;
   private logger: Logger;
@@ -126,11 +136,25 @@ export class LibSQLStorage implements Memory {
       storageLimit: options.storageLimit || 100,
       tablePrefix: options.tablePrefix || "voltagent_memory",
       debug: options.debug || false,
-      url: this.normalizeUrl(options.url),
+      url: options.url || "file:./.voltagent/memory.db",
       authToken: options.authToken,
       retryAttempts: this.retryAttempts,
       baseDelayMs: this.baseDelayMs,
     };
+
+    // Ensure parent directory exists for file-based databases
+    if (this.options.url.startsWith("file:") && !this.options.url.includes(":memory:")) {
+      const filePath = this.options.url.substring(5); // Remove 'file:' prefix
+      const dir = dirname(filePath);
+      if (dir && dir !== "." && !existsSync(dir)) {
+        try {
+          mkdirSync(dir, { recursive: true });
+          this.debug("Created directory for database", { dir });
+        } catch (error) {
+          this.logger.warn("Failed to create directory for database", { dir, error });
+        }
+      }
+    }
 
     // Initialize the LibSQL client
     this.client = createClient({
@@ -149,41 +173,6 @@ export class LibSQLStorage implements Memory {
 
     // Initialize the database tables
     this.initialized = this.initializeDatabase();
-  }
-
-  /**
-   * Normalize the URL for SQLite database
-   * - Ensures local files exist in the correct directory
-   * - Creates the .voltagent directory if needed for default storage
-   */
-  private normalizeUrl(url: string): string {
-    // If it's a remote URL, return as is
-    if (url.startsWith("libsql://")) {
-      return url;
-    }
-
-    // Handle file URLs
-    if (url.startsWith("file:")) {
-      const filePath = url.substring(5); // Remove 'file:' prefix
-
-      // If it's a relative path without directory separators, use the default .voltagent directory
-      if (!filePath.includes("/") && !filePath.includes("\\")) {
-        try {
-          // Create .voltagent directory if it doesn't exist
-          const dirPath = join(process.cwd(), ".voltagent");
-          if (!existsSync(dirPath)) {
-            fs.mkdirSync(dirPath, { recursive: true });
-          }
-          return `file:${join(dirPath, filePath)}`;
-        } catch (error) {
-          // If we can't create the directory, fall back to current directory
-          this.debug("Failed to create .voltagent directory, using current directory", error);
-          return url;
-        }
-      }
-    }
-
-    return url;
   }
 
   /**

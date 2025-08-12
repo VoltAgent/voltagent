@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, type BaseMessage, BaseRetriever, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
@@ -49,6 +50,17 @@ class KnowledgeBaseRetriever extends BaseRetriever {
 
 // --- Agent Definition ---
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-rag-chatbot",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const memory = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
+
 // Instantiate the retriever
 const knowledgeRetriever = new KnowledgeBaseRetriever();
 
@@ -60,15 +72,10 @@ const ragAgent = new Agent({
   model: openai("gpt-4o-mini"), // Using OpenAI model via Vercel
   // Attach the retriever directly
   retriever: knowledgeRetriever,
+  memory,
 });
 
 // --- VoltAgent Initialization ---
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-rag-chatbot",
-  level: "info",
-});
 
 new VoltAgent({
   agents: {

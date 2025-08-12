@@ -1,4 +1,5 @@
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
@@ -16,6 +17,15 @@ const mcp = new MCPConfiguration({
 });
 
 (async () => {
+  const logger = createPinoLogger({
+    name: "with-peaka-mcp",
+    level: "info",
+  });
+
+  const memory = new LibSQLStorage({
+    logger: logger.child({ component: "libsql" }),
+  });
+
   const tools = await mcp.getTools();
   const agent = new Agent({
     name: "Peaka Data Assistant",
@@ -24,12 +34,7 @@ const mcp = new MCPConfiguration({
     model: openai("gpt-4o-mini"),
     tools: [...tools],
     markdown: true,
-  });
-
-  // Create logger
-  const logger = createPinoLogger({
-    name: "with-peaka-mcp",
-    level: "info",
+    memory,
   });
 
   new VoltAgent({

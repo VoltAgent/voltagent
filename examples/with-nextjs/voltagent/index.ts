@@ -1,9 +1,21 @@
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 import { openai } from "@ai-sdk/openai";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "nextjs-example",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const memory = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
 
 // Define a calculator tool
 const calculatorTool = createTool({
@@ -31,6 +43,7 @@ export const subAgent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4.1-mini"),
   tools: [calculatorTool],
+  memory,
 });
 
 export const agent = new Agent({
@@ -39,12 +52,7 @@ export const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4.1-mini"),
   subAgents: [subAgent],
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "nextjs-example",
-  level: "info",
+  memory,
 });
 
 new VoltAgent({

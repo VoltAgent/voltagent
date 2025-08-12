@@ -1,5 +1,6 @@
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
@@ -12,6 +13,15 @@ const bedrock = createAmazonBedrock({
 
 async function main() {
   try {
+    const logger = createPinoLogger({
+      name: "with-zapier-mcp",
+      level: "info",
+    });
+
+    const memory = new LibSQLStorage({
+      logger: logger.child({ component: "libsql" }),
+    });
+
     const zapierMcpConfig = new MCPConfiguration({
       servers: {
         zapier: {
@@ -31,12 +41,7 @@ async function main() {
       llm: new VercelAIProvider(),
       model: bedrock("amazon.nova-lite-v1:0"),
       markdown: true,
-    });
-
-    // Create logger
-    const logger = createPinoLogger({
-      name: "with-zapier-mcp",
-      level: "info",
+      memory,
     });
 
     new VoltAgent({

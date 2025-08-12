@@ -1,9 +1,21 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createHooks, createTool } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { fetchRepoContributorsTool } from "./tools";
 import { fetchRepoStarsTool } from "./tools";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "github-repo-analyzer",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory
+const memory = new LibSQLStorage({
+  logger: logger.child({ component: "libsql" }),
+});
 
 // Create the stars fetcher agent
 const starsFetcherAgent = new Agent({
@@ -12,6 +24,7 @@ const starsFetcherAgent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [fetchRepoStarsTool],
+  memory,
 });
 
 // Create the contributors fetcher agent
@@ -21,6 +34,7 @@ const contributorsFetcherAgent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [fetchRepoContributorsTool],
+  memory,
 });
 
 // Create the analyzer agent
@@ -29,6 +43,7 @@ const analyzerAgent = new Agent({
   description: "Analyzes repository statistics and provides insights",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
+  memory,
 });
 
 // Create the supervisor agent that coordinates all the sub-agents
@@ -44,16 +59,10 @@ Example input: https://github.com/vercel/ai-sdk or vercel/ai-sdk
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [starsFetcherAgent, contributorsFetcherAgent, analyzerAgent],
+  memory,
 });
 
 // Initialize the VoltAgent with the agent hierarchy
-
-// Create logger
-const logger = createPinoLogger({
-  name: "github-repo-analyzer",
-  level: "info",
-});
-
 new VoltAgent({
   agents: {
     supervisorAgent,
