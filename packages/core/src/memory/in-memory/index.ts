@@ -139,7 +139,7 @@ export class InMemoryStorage implements Memory {
     this.historyEntries.set(key, {
       ...value,
       _agentId: agentId,
-      updatedAt: new Date().toISOString(),
+      timestamp: value.timestamp || new Date().toISOString(), // Ensure timestamp field exists
     });
 
     // Add to agent history index
@@ -171,7 +171,7 @@ export class InMemoryStorage implements Memory {
       ...existingEntry,
       ...value,
       _agentId: effectiveAgentId,
-      updatedAt: new Date().toISOString(),
+      timestamp: value.timestamp || existingEntry.timestamp || new Date().toISOString(), // Preserve or set timestamp
     });
   }
 
