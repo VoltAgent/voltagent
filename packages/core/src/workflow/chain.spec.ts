@@ -62,7 +62,6 @@ describe.sequential("workflow.run", () => {
       result: {
         name: "Who is john doe",
       },
-      stream: expect.any(Object), // AsyncIterableIterator
       usage: {
         promptTokens: 0,
         completionTokens: 0,
@@ -113,16 +112,20 @@ describe.sequential("workflow writer API", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow.toWorkflow());
 
-    const result = await workflow.run({ value: 10 });
+    // Use stream() to capture events
+    const stream = workflow.stream({ value: 10 });
+
+    // Collect events
+    const events = [];
+    for await (const event of stream) {
+      events.push(event);
+    }
+
+    // Wait for completion
+    await stream.result;
 
     expect(writerAvailable).toBe(true);
     expect(customEventEmitted).toBe(true);
-
-    // Verify custom event in stream
-    const events = [];
-    for await (const event of result.stream) {
-      events.push(event);
-    }
 
     const customEvent = events.find((e) => e.type === "custom-test-event");
     expect(customEvent).toBeDefined();
@@ -159,14 +162,19 @@ describe.sequential("workflow writer API", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow.toWorkflow());
 
-    const result = await workflow.run({ text: "hello" });
+    // Use stream() to capture events
+    const stream = workflow.stream({ text: "hello" });
 
-    expect(tapWriterAvailable).toBe(true);
-
+    // Collect events
     const events = [];
-    for await (const event of result.stream) {
+    for await (const event of stream) {
       events.push(event);
     }
+
+    // Wait for completion
+    await stream.result;
+
+    expect(tapWriterAvailable).toBe(true);
 
     const tapEvent = events.find((e) => e.type === "tap-event");
     expect(tapEvent?.metadata).toEqual({ tapped: "hello" });
@@ -204,15 +212,20 @@ describe.sequential("workflow writer API", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow.toWorkflow());
 
-    const result = await workflow.run({ value: 10 });
+    // Use stream() to capture events
+    const stream = workflow.stream({ value: 10 });
+
+    // Collect events
+    const events = [];
+    for await (const event of stream) {
+      events.push(event);
+    }
+
+    // Wait for result
+    await stream.result;
 
     expect(conditionWriterAvailable).toBe(true);
     expect(executeWriterAvailable).toBe(true);
-
-    const events = [];
-    for await (const event of result.stream) {
-      events.push(event);
-    }
 
     expect(events.some((e) => e.type === "condition-checked")).toBe(true);
     expect(events.some((e) => e.type === "condition-executed")).toBe(true);

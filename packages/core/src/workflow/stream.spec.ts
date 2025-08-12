@@ -312,10 +312,11 @@ describe("Workflow Stream Integration", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow.toWorkflow());
 
-    const execution = await workflow.run({ value: 5 });
+    // Use stream() method for streaming execution
+    const stream = workflow.stream({ value: 5 });
     const events: WorkflowStreamEvent[] = [];
 
-    for await (const event of execution.stream) {
+    for await (const event of stream) {
       events.push(event);
     }
 
@@ -387,10 +388,11 @@ describe("Workflow Stream Integration", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow.toWorkflow());
 
-    const execution = await workflow.run({ items: ["a", "b", "c"] });
+    // Use stream() method for streaming execution
+    const stream = workflow.stream({ items: ["a", "b", "c"] });
     const events: WorkflowStreamEvent[] = [];
 
-    for await (const event of execution.stream) {
+    for await (const event of stream) {
       events.push(event);
     }
 
@@ -437,10 +439,11 @@ describe("Workflow Stream Integration", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow.toWorkflow());
 
-    const execution = await workflow.run({ value: 1 });
+    // Use stream() method for streaming execution
+    const stream = workflow.stream({ value: 1 });
     const events: WorkflowStreamEvent[] = [];
 
-    for await (const event of execution.stream) {
+    for await (const event of stream) {
       events.push(event);
     }
 
@@ -476,11 +479,12 @@ describe("Workflow Stream Integration", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow.toWorkflow());
 
-    const execution = await workflow.run({ value: 1 });
+    // Use stream() method for streaming execution
+    const stream = workflow.stream({ value: 1 });
     const processedEvents: string[] = [];
     const errors: Error[] = [];
 
-    for await (const event of execution.stream) {
+    for await (const event of stream) {
       try {
         if (event.type === "step-complete") {
           throw new Error("Simulated processing error");

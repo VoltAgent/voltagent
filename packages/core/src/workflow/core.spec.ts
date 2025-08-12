@@ -65,7 +65,6 @@ describe.sequential("workflow.run", () => {
       result: {
         name: "Who is john doe",
       },
-      stream: expect.any(Object), // AsyncIterableIterator
       usage: {
         promptTokens: 0,
         completionTokens: 0,
@@ -84,7 +83,7 @@ describe.sequential("workflow streaming", () => {
     (registry as any).workflows.clear();
   });
 
-  it("should provide stream in execution result", async () => {
+  it("should provide stream method for streaming execution", async () => {
     const memory = createTestLibSQLStorage("core_stream_test");
     const workflow = createWorkflow(
       {
@@ -104,20 +103,25 @@ describe.sequential("workflow streaming", () => {
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow);
 
-    const result = await workflow.run({ value: 5 });
+    // Use stream() method instead of run()
+    const stream = workflow.stream({ value: 5 });
 
-    expect(result.stream).toBeDefined();
-    expect(result.stream[Symbol.asyncIterator]).toBeDefined();
+    expect(stream).toBeDefined();
+    expect(stream[Symbol.asyncIterator]).toBeDefined();
 
     // Consume stream
     const events = [];
-    for await (const event of result.stream) {
+    for await (const event of stream) {
       events.push(event);
     }
 
     expect(events.length).toBeGreaterThan(0);
     expect(events.some((e) => e.type === "workflow-start")).toBe(true);
     expect(events.some((e) => e.type === "workflow-complete")).toBe(true);
+
+    // Get the final result
+    const result = await stream.result;
+    expect(result).toEqual({ result: 10 });
   });
 
   it("should have usage with default values", async () => {

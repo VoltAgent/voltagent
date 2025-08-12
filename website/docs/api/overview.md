@@ -633,6 +633,142 @@ curl -X POST http://localhost:3141/workflows/order-approval/execute \
      }'
 ```
 
+### Stream Workflow Execution
+
+**`POST /workflows/{id}/stream`**
+
+Execute a workflow and receive real-time events via Server-Sent Events (SSE). This endpoint is perfect for monitoring workflow execution progress in real-time.
+
+:::warning[Current Limitation]
+The REST API currently does not support continuous streaming across suspend/resume cycles:
+
+- **Initial execution**: Streamed via SSE in real-time ✅
+- **When suspended**: Stream closes with a suspension event ⚠️
+- **Resume operation**: Returns complete result (not streamed) ⚠️
+
+**Coming Soon:** WebSocket-based continuous streaming is being considered for future releases. If you need this feature, please [open an issue](https://github.com/VoltAgent/voltagent/issues) with your use case.
+:::
+
+**Request Body:**
+
+```json
+{
+  "input": any,           // Workflow input data (validated against workflow's input schema)
+  "options": {
+    "userId": "string",          // Optional: User ID for context
+    "conversationId": "string",  // Optional: Conversation ID
+    "executionId": "string",     // Optional: Custom execution ID
+    "userContext": object        // Optional: Additional context
+  }
+}
+```
+
+**Response:** Server-Sent Events stream
+
+Each event is formatted as:
+
+```
+data: {"type":"event-type","executionId":"...","from":"...","status":"...","timestamp":"..."}\n\n
+```
+
+**Event Types:**
+
+- `workflow-start` - Workflow execution started
+- `step-start` - Step execution started
+- `step-complete` - Step completed successfully
+- `workflow-suspended` - Workflow suspended (stream closes after this)
+- `workflow-complete` - Workflow completed successfully
+- `workflow-error` - Workflow encountered an error
+- `workflow-result` - Final execution result
+
+**Complete Example with Suspend/Resume:**
+
+```javascript
+async function executeWorkflowWithStreaming() {
+  const workflowId = "expense-approval";
+  let executionId = null;
+
+  // Phase 1: Stream initial execution
+  console.log("Starting workflow stream...");
+  const response = await fetch(`/workflows/${workflowId}/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: {
+        employeeId: "emp-123",
+        amount: 5000,
+        category: "travel",
+        description: "Conference trip",
+      },
+    }),
+  });
+
+  // Process SSE events
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        const event = JSON.parse(line.slice(6));
+        console.log(`[${event.type}] ${event.from || ""}`);
+
+        if (event.executionId) {
+          executionId = event.executionId;
+        }
+
+        // Stream closes on suspension
+        if (event.type === "workflow-suspended") {
+          console.log("Workflow suspended, stream closed");
+          console.log("Suspension reason:", event.metadata?.reason);
+        }
+      }
+    }
+  }
+
+  // Phase 2: Resume via standard endpoint (not streamed)
+  if (executionId) {
+    console.log("Approving expense...");
+    const resumeResponse = await fetch(
+      `/workflows/${workflowId}/executions/${executionId}/resume`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resumeData: {
+            approved: true,
+            managerId: "mgr-456",
+            comments: "Approved for business travel",
+          },
+        }),
+      }
+    );
+
+    const result = await resumeResponse.json();
+    console.log("Resume completed:", result);
+    // Note: Resume returns complete result, not streamed events
+  }
+}
+```
+
+**Current Architecture Benefits:**
+
+1. **Stateless**: Each request is independent, no server state required
+2. **Scalable**: Works seamlessly with load balancers and horizontal scaling
+3. **Simple**: Clear separation between streaming (monitoring) and execution (business logic)
+4. **Reliable**: Server restarts don't affect resumed executions
+
+**Future Enhancement:**
+We're exploring WebSocket-based continuous streaming to maintain connections across suspend/resume cycles. Help us prioritize this feature by [sharing your use case on GitHub](https://github.com/VoltAgent/voltagent/issues).
+
 ### Suspend Running Workflow
 
 **`POST /workflows/{id}/executions/{executionId}/suspend`**

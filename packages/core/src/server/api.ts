@@ -33,6 +33,7 @@ import {
   resumeWorkflowRoute,
   streamObjectRoute,
   streamRoute,
+  streamWorkflowRoute,
   suspendWorkflowRoute,
   textRoute,
 } from "./api.routes";
@@ -491,6 +492,157 @@ app.openapi(executeWorkflowRoute, async (c) => {
       {
         success: false as const,
         error: error instanceof Error ? error.message : "Failed to execute workflow",
+      } satisfies z.infer<typeof ErrorSchema>,
+      500,
+    );
+  }
+});
+
+// Stream workflow execution
+app.openapi(streamWorkflowRoute, async (c) => {
+  const { id } = c.req.valid("param") as { id: string };
+  const registry = WorkflowRegistry.getInstance();
+  const registeredWorkflow = registry.getWorkflow(id);
+
+  if (!registeredWorkflow) {
+    return c.json(
+      { success: false, error: "Workflow not found" } satisfies z.infer<typeof ErrorSchema>,
+      404,
+    );
+  }
+
+  try {
+    const { input, options } = c.req.valid("json") as {
+      input: any;
+      options?: {
+        userId?: string;
+        conversationId?: string;
+        userContext?: any;
+        executionId?: string;
+      };
+    };
+
+    // Create suspension controller
+    const suspendController = registeredWorkflow.workflow.createSuspendController?.();
+    if (!suspendController) {
+      throw new Error("Workflow does not support suspension");
+    }
+
+    // Convert userContext from object to Map if provided
+    const processedOptions = options
+      ? {
+          ...options,
+          ...(options.userContext && {
+            userContext: new Map(Object.entries(options.userContext)),
+          }),
+          suspendController: suspendController,
+        }
+      : {
+          suspendController: suspendController,
+        };
+
+    // Create abort controller for client disconnection
+    const abortController = new AbortController();
+
+    // Listen for request abort (when client disconnects)
+    c.req.raw.signal?.addEventListener("abort", () => {
+      abortController.abort();
+      suspendController.suspend("Client disconnected");
+    });
+
+    // Create SSE stream
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+
+        try {
+          // Use workflow.stream() method
+          logger.trace(`[API] Starting workflow stream for ${id}`);
+          const workflowStream = registeredWorkflow.workflow.stream(input, processedOptions);
+
+          // Store execution ID for active tracking
+          const executionId: string | null = workflowStream.executionId;
+
+          // Track as active execution
+          if (executionId) {
+            registry.activeExecutions.set(executionId, suspendController);
+          }
+
+          // Stream events to client
+          for await (const event of workflowStream) {
+            // Check if client disconnected
+            if (abortController.signal.aborted) {
+              logger.trace(`[API] Client disconnected, aborting workflow stream ${executionId}`);
+              workflowStream.abort();
+              break;
+            }
+
+            // Send event as SSE
+            const sseEvent = `data: ${JSON.stringify(event)}\n\n`;
+            controller.enqueue(encoder.encode(sseEvent));
+
+            // Log important events
+            if (event.type === "workflow-suspended") {
+              logger.debug(`[API] Workflow ${executionId} suspended, keeping stream open`);
+              // Stream stays open, waiting for resume
+            } else if (event.type === "workflow-complete" || event.type === "workflow-error") {
+              logger.debug(`[API] Workflow ${executionId} finished with ${event.type}`);
+            }
+          }
+
+          // Send final result
+          const result = await workflowStream.result;
+          const status = await workflowStream.status;
+          const endAt = await workflowStream.endAt;
+
+          const finalEvent = {
+            type: "workflow-result",
+            executionId,
+            status,
+            result,
+            endAt: endAt instanceof Date ? endAt.toISOString() : endAt,
+          };
+
+          const sseFinalEvent = `data: ${JSON.stringify(finalEvent)}\n\n`;
+          controller.enqueue(encoder.encode(sseFinalEvent));
+
+          // Remove from active executions
+          if (executionId) {
+            registry.activeExecutions.delete(executionId);
+          }
+
+          logger.trace(`[API] Workflow stream ${executionId} completed`);
+        } catch (error) {
+          logger.error("[API] Workflow stream error:", { error });
+
+          // Send error event
+          const errorEvent = {
+            type: "error",
+            error: error instanceof Error ? error.message : "Stream error occurred",
+          };
+          const sseErrorEvent = `data: ${JSON.stringify(errorEvent)}\n\n`;
+          controller.enqueue(encoder.encode(sseErrorEvent));
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    // Return SSE response
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no", // Disable Nginx buffering
+      },
+    });
+  } catch (error) {
+    logger.error("Failed to stream workflow:", { error });
+    return c.json(
+      {
+        success: false as const,
+        error: error instanceof Error ? error.message : "Failed to stream workflow",
       } satisfies z.infer<typeof ErrorSchema>,
       500,
     );

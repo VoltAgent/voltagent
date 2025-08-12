@@ -69,7 +69,7 @@ export interface WorkflowExecutionContext {
   logger: Logger;
   /**
    * Stream writer for emitting events during streaming execution
-   * Always available for writing custom events
+   * Always available - uses NoOpWorkflowStreamWriter when not streaming
    */
   streamWriter: WorkflowStreamWriter;
 }
