@@ -380,16 +380,16 @@ This allows the agent to maintain a persistent, contextual conversation with eac
 
 One of the most powerful features of VoltAgent is its built-in observability layer. Every workflow automatically records its execution history, a detailed trace of every step, its inputs, outputs, status, and timing. This history is crucial for debugging and can be visualized in real-time using the [**VoltOps Console**](https://console.voltagent.dev/).
 
-This execution history is stored using a **memory provider**. By default, VoltAgent uses a file-based `LibSQL` database (`memory.db` in your project's root).
+This execution history is stored using a **memory provider**. By default, VoltAgent uses `InMemoryStorage` for in-memory storage during development.
 
-The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want to use a different storage solution.
-w
+The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want persistent storage.
+
 You can use several providers to store workflow history:
 
-- **Built-in Providers** (from `@voltagent/core`):
-  - `LibSQLStorage`: The default provider, which uses a file-based SQLite database (`memory.db`).
-  - `InMemoryStorage`: A non-persistent store, ideal for tests where history does not need to be saved.
+- **Built-in Provider** (from `@voltagent/core`):
+  - `InMemoryStorage`: The default provider, a non-persistent store ideal for development and stateless deployments.
 - **External Packages**:
+  - `@voltagent/libsql`: Provides `LibSQLStorage` for file-based SQLite database storage.
   - `@voltagent/postgres`: Provides `PostgresStorage` for production environments.
   - `@voltagent/supabase`: Provides `SupabaseStorage` for Supabase integration.
 

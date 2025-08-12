@@ -266,7 +266,7 @@ Create a basic TypeScript configuration file (tsconfig.json):
 npm install --save-dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
+npm install @voltagent/core @voltagent/libsql @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
 ```
 
   </TabItem>
@@ -277,7 +277,7 @@ npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
 yarn add --dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-yarn add @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod
+yarn add @voltagent/core @voltagent/libsql @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
 ```
 
   </TabItem>
@@ -288,8 +288,7 @@ yarn add @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod
 pnpm add --save-dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-# Note: @voltagent/cli was already included here in the original docs, kept for consistency.
-pnpm add @voltagent/core @voltagent/cli @voltagent/vercel-ai @ai-sdk/openai zod
+pnpm add @voltagent/core @voltagent/libsql @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
 ```
 
   </TabItem>
@@ -305,8 +304,16 @@ Create a basic agent in `src/index.ts`:
 
 ```typescript
 import { VoltAgent, Agent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql"; // For persistent memory
 import { VercelAIProvider } from "@voltagent/vercel-ai"; // Example provider
 import { openai } from "@ai-sdk/openai"; // Example model
+import { createPinoLogger } from "@voltagent/logger";
+
+// Create logger (optional but recommended)
+const logger = createPinoLogger({
+  name: "my-agent",
+  level: "info",
+});
 
 // Define a simple agent
 const agent = new Agent({
@@ -315,6 +322,11 @@ const agent = new Agent({
   // Note: You can swap VercelAIProvider and openai with other supported providers/models
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
+  // Optional: Add persistent memory (remove this to use default in-memory storage)
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 // Initialize VoltAgent with your agent(s)
@@ -322,6 +334,7 @@ new VoltAgent({
   agents: {
     agent,
   },
+  logger,
 });
 ```
 

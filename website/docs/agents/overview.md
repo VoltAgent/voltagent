@@ -42,7 +42,7 @@ const agent = new Agent({
   id: "custom-id", // Unique ID (auto-generated if not provided)
   purpose: "Customer support agent", // Agent purpose for supervisor context
   tools: [weatherTool, searchTool], // Available tools
-  memory: new LibSQLStorage(), // Memory storage (or false to disable)
+  memory: memoryStorage, // Memory storage instance (or false to disable)
   memoryOptions: { maxMessages: 100 }, // Memory configuration
   userContext: new Map([
     // Default context for all operations
@@ -436,11 +436,12 @@ VoltAgent's memory management system allows agents to store and retrieve convers
 
 ```typescript
 // Example: Configuring memory (Provider details omitted for brevity)
-import { Agent, LibSQLStorage } from "@voltagent/core";
+import { Agent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 // ... other imports
 
 const memoryStorage = new LibSQLStorage({
-  /* ... provider config ... */
+  /* ... storage config ... */
 });
 
 const agent = new Agent({

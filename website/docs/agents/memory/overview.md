@@ -16,13 +16,15 @@ VoltAgent incorporates a flexible memory management system that allows agents to
 - **Coherence:** Ensures conversations flow naturally without the agent constantly losing track of the topic.
 - **Long-Term State:** Can be used to store summaries or key information extracted from conversations over extended periods.
 
-## Default Memory Behavior (Zero-Config Persistence)
+## Default Memory Behavior
 
-By default, VoltAgent agents use **`LibSQLStorage`** for **zero-configuration local persistence**. If you don't explicitly provide a `memory` option when creating an `Agent`, VoltAgent automatically does the following:
+By default, VoltAgent agents use **`InMemoryStorage`** for **zero-configuration operation**. If you don't explicitly provide a `memory` option when creating an `Agent`, VoltAgent automatically uses in-memory storage that:
 
-1.  Creates a `.voltagent` folder in your project root (if it doesn't exist).
-2.  Initializes `LibSQLStorage` pointing to a SQLite database file at `.voltagent/memory.db`.
-3.  Uses this local database to store and retrieve conversation history.
+1.  Stores conversation history in application memory.
+2.  Maintains context during the application runtime.
+3.  Loses data when the application restarts (suitable for development and stateless deployments).
+
+For persistent storage, you can explicitly configure `LibSQLStorage` from the `@voltagent/libsql` package (see [LibSQL documentation](./libsql.md)).
 
 ```ts
 import { Agent } from "@voltagent/core";
@@ -31,14 +33,14 @@ import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "My Assistant",
-  instructions: "This agent automatically uses local file memory.",
+  instructions: "This agent automatically uses in-memory storage.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  // No memory provider specified - uses default LibSQLStorage to .voltagent/memory.db
+  // No memory provider specified - uses default InMemoryStorage
 });
 ```
 
-This makes it easy to get started with stateful agents locally without any manual memory setup.
+This makes it easy to get started with agents without any manual memory setup. For persistent storage across restarts, configure `LibSQLStorage` from the `@voltagent/libsql` package.
 
 ## Disabling Memory
 
@@ -72,7 +74,7 @@ import { Agent, InMemoryStorage } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
-// Default behavior: history automatically uses same storage as conversation
+// Explicitly using InMemoryStorage (same as default)
 const agent = new Agent({
   name: "Serverless Assistant",
   instructions: "Assistant that works in read-only environments",
@@ -91,17 +93,21 @@ const agent = new Agent({
 
 ```ts
 // Example: In-memory for conversations, persistent for history
-import { InMemoryStorage, LibSQLStorage } from "@voltagent/core";
+import { InMemoryStorage } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 
 const agent = new Agent({
   name: "Hybrid Memory Assistant",
   // ... other config ...
   memory: new InMemoryStorage({ storageLimit: 50 }), // Fast access for conversations
-  historyMemory: new LibSQLStorage({ url: "file:history.db" }), // Persistent execution logs
+  historyMemory: new LibSQLStorage({
+    url: "file:history.db",
+    logger: logger.child({ component: "libsql" }),
+  }), // Persistent execution logs
 });
 ```
 
-**Default behavior**: If you don't specify `historyMemory`, it uses the same storage instance as `memory`. If conversation memory is disabled (`memory: false`), history memory defaults to `LibSQLStorage`.
+**Default behavior**: If you don't specify `historyMemory`, it uses the same storage instance as `memory`. If conversation memory is disabled (`memory: false`), history memory defaults to `InMemoryStorage`.
 
 ## Memory Providers
 
@@ -109,10 +115,10 @@ VoltAgent achieves memory persistence through swappable **Memory Providers**. Th
 
 VoltAgent includes built-in providers and supports custom implementations:
 
-- **[`LibSQLStorage`](./libsql.md):** (Default Provider) Uses LibSQL (including Turso and local SQLite files) for persistence. Ideal for easy setup, local development, and serverless deployments compatible with SQLite.
+- **[`LibSQLStorage`](./libsql.md):** (Separate Package: `@voltagent/libsql`) Uses LibSQL (including Turso and local SQLite files) for persistence. Ideal for persistent storage, local development, and serverless deployments compatible with SQLite.
 - **[`@voltagent/postgres`](./postgres.md):** Uses PostgreSQL for persistence. Ideal for production applications requiring enterprise-grade database storage, complex queries, or integration with existing PostgreSQL infrastructure.
 - **[`@voltagent/supabase`](./supabase.md):** Uses Supabase (PostgreSQL) for persistence. Suitable for applications already using Supabase or requiring a robust, scalable PostgreSQL backend.
-- **[`InMemoryStorage`](./in-memory.md):** Stores conversation history only in the application's memory. Useful for testing, development, or stateless scenarios. Data is lost on application restart.
+- **[`InMemoryStorage`](./in-memory.md):** (Default Provider) Stores conversation history only in the application's memory. Useful for testing, development, or stateless scenarios. Data is lost on application restart.
 - **[Custom Providers](#implementing-custom-memory-providers):** You can implement the `Memory` interface to connect to any database or storage system (e.g., Redis, MongoDB, DynamoDB, etc.).
 
 ## How Memory Works with Agents
@@ -385,7 +391,7 @@ const agent = new Agent({
 
 ## Best Practices
 
-1.  **Choose the Right Provider**: Use `InMemoryStorage` for development/testing. Use `LibSQLStorage` (local/Turso) or a database-backed provider (like `@voltagent/supabase` or custom) for production persistence.
+1.  **Choose the Right Provider**: Use `InMemoryStorage` for development/testing or stateless deployments. Use `LibSQLStorage` from `@voltagent/libsql` (local/Turso) or a database-backed provider (like `@voltagent/supabase` or custom) for production persistence.
 2.  **User Privacy**: Be mindful of storing conversation data. Implement clear data retention policies and provide mechanisms for users to manage or delete their history (e.g., using `deleteConversation` or custom logic) if required by privacy regulations.
 3.  **Context Management**: While `contextLimit` is less directly used now, be aware of the `storageLimit` on your memory provider, as this often dictates the maximum history retrieved.
 4.  **Memory Efficiency**: For high-volume applications using persistent storage, monitor database size and performance. Consider setting appropriate `storageLimit` values on your memory provider to prevent unbounded growth and ensure efficient retrieval.

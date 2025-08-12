@@ -5,7 +5,7 @@ slug: /agents/memory/libsql
 
 # LibSQL / Turso / SQLite Memory
 
-VoltAgent's core package (`@voltagent/core`) includes a built-in memory provider, `LibSQLStorage`, which uses [LibSQL](https://github.com/tursodatabase/libsql) for persistent storage. LibSQL is an open-source fork of SQLite.
+VoltAgent provides a separate package (`@voltagent/libsql`) that includes `LibSQLStorage`, a memory provider which uses [LibSQL](https://github.com/tursodatabase/libsql) for persistent storage. LibSQL is an open-source fork of SQLite.
 
 This provider is versatile and can connect to:
 
@@ -15,7 +15,15 @@ This provider is versatile and can connect to:
 
 ## Setup
 
-`LibSQLStorage` is part of `@voltagent/core`, so no separate installation is needed beyond the core package.
+Install the LibSQL package:
+
+```bash
+npm install @voltagent/libsql
+# or
+yarn add @voltagent/libsql
+# or
+pnpm add @voltagent/libsql
+```
 
 If you plan to use Turso, you might need the Turso CLI for setup: `npm install -g @tursodatabase/cli`
 
@@ -24,26 +32,34 @@ If you plan to use Turso, you might need the Turso CLI for setup: `npm install -
 Initialize `LibSQLStorage` and pass it to your `Agent` configuration:
 
 ```typescript
-import { Agent, LibSQLStorage } from "@voltagent/core";
+import { Agent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import { createPinoLogger } from "@voltagent/logger";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "my-app",
+  level: "info",
+});
 
 // Configure LibSQLStorage
 const memoryStorage = new LibSQLStorage({
   // Required: Connection URL
-  url: process.env.DATABASE_URL || "file:./voltagent-memory.db", // Example: Env var for Turso, fallback to local file
+  url: process.env.DATABASE_URL || "file:./.voltagent/memory.db", // Example: Env var for Turso, fallback to local file
 
   // Required for Turso / Remote sqld (if not using TLS or auth is needed)
   authToken: process.env.DATABASE_AUTH_TOKEN,
+
+  // Optional: Logger for debugging
+  logger: logger.child({ component: "libsql" }),
 
   // Optional: Prefix for database table names
   tablePrefix: "my_agent_memory", // Defaults to 'voltagent_memory'
 
   // Optional: Storage limit (max number of messages per user/conversation)
   // storageLimit: 100, // Defaults to 100
-
-  // Optional: Enable debug logging for the storage provider
-  // debug: true, // Defaults to false
 });
 
 const agent = new Agent({
@@ -67,7 +83,7 @@ const agent = new Agent({
 - `authToken` (string, optional): Required for authenticated connections to Turso or remote `sqld` instances.
 - `tablePrefix` (string, optional): A prefix added to all database tables created by this provider (e.g., `my_prefix_messages`, `my_prefix_conversations`). Defaults to `voltagent_memory`.
 - `storageLimit` (number, optional): The maximum number of messages to retain per user/conversation thread. Older messages are automatically pruned when the limit is exceeded. Defaults to `100`.
-- `debug` (boolean, optional): Enables detailed logging from the storage provider to the console. Defaults to `false`.
+- `logger` (Logger, optional): A logger instance for debugging output. Typically created with `logger.child({ component: "libsql" })`.
 
 ## Conversation Management
 
@@ -206,6 +222,72 @@ Messages are returned in chronological order (oldest first) for natural conversa
 Unlike some other database providers, `LibSQLStorage` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, etc., with the configured `tablePrefix`) in the target database if they don't already exist. This simplifies setup, especially for local development using SQLite files.
 
 The provider also **automatically migrates** existing databases to new schemas when you update VoltAgent, ensuring backward compatibility.
+
+## Migration Guide
+
+### Breaking Change: LibSQL Package Separation (v0.1.64+)
+
+Starting from version 0.1.64, `LibSQLStorage` has been moved from `@voltagent/core` to its own package `@voltagent/libsql`. This change:
+
+- Reduces the core package size for users who don't need LibSQL
+- Allows independent versioning and updates
+- Makes VoltAgent more modular and flexible
+
+#### Before (v0.1.63 and earlier):
+
+```typescript
+import { Agent, LibSQLStorage } from "@voltagent/core";
+
+const agent = new Agent({
+  name: "My Agent",
+  // ... other config
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+  }),
+});
+```
+
+#### After (v0.1.64+):
+
+```typescript
+import { Agent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
+
+const agent = new Agent({
+  name: "My Agent",
+  // ... other config
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
+});
+```
+
+#### Migration Steps:
+
+1. Install the new LibSQL package:
+
+   ```bash
+   npm install @voltagent/libsql
+   ```
+
+2. Update your imports:
+   - Change: `import { LibSQLStorage } from "@voltagent/core"`
+   - To: `import { LibSQLStorage } from "@voltagent/libsql"`
+
+3. Add a logger configuration (recommended):
+
+   ```typescript
+   memory: new LibSQLStorage({
+     url: "file:./.voltagent/memory.db",
+     logger: logger.child({ component: "libsql" }),
+   });
+   ```
+
+4. Note that the default memory behavior has changed:
+   - **Before**: Agents without explicit memory configuration used LibSQL by default
+   - **After**: Agents without explicit memory configuration use InMemoryStorage by default
+   - If you were relying on the default LibSQL behavior, you must now explicitly configure it
 
 ## Use Cases
 

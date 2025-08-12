@@ -38,6 +38,7 @@ const sidebars: SidebarsConfig = {
         "agents/overview",
         "agents/prompts",
         "agents/tools",
+        "agents/memory",
         "agents/mcp",
         "agents/hooks",
         "agents/multi-modal",
