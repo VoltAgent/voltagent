@@ -10,11 +10,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const memory = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 // Simple endpoint examples - Part 1: Register via function call
 const endpointsViaFunction = [
   // Health check
@@ -125,7 +120,10 @@ const agent = new Agent({
     "You are a helpful assistant with access to simple custom endpoints: /api/health, /api/hello/:name, /api/calculate, and /api/delete-all",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  memory,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 // Method 1: Register endpoints using the function call

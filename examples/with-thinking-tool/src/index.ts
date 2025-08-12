@@ -10,11 +10,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 const reasoningToolkit: Toolkit = createReasoningTools({
   addInstructions: true,
 });
@@ -36,7 +31,10 @@ const agent = new Agent({
   model: openai("gpt-4o-mini"),
   tools: [reasoningToolkit],
   markdown: true,
-  memory: storage,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

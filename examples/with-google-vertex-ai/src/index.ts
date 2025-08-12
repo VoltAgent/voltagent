@@ -12,10 +12,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const memory = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 const agent = new Agent({
   name: "Google Vertex AI Agent",
   description: "A helpful assistant powered by Google Gemini and Vertex AI",
@@ -24,7 +20,10 @@ const agent = new Agent({
     project: GOOGLE_CLOUD_PROJECT,
     location: GOOGLE_CLOUD_LOCATION,
   }),
-  memory,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

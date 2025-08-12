@@ -11,11 +11,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 const mcpConfig = new MCPConfiguration({
   servers: {
     filesystem: {
@@ -32,7 +27,10 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: await mcpConfig.getTools(),
-  memory: storage,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

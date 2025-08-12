@@ -12,8 +12,9 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
+// Create LibSQL storage for persistent memory (shared between all agents)
 const memory = new LibSQLStorage({
+  url: "file:./.voltagent/memory.db",
   logger: logger.child({ component: "libsql" }),
 });
 

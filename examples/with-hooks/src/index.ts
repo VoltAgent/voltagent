@@ -21,9 +21,6 @@ const weatherTool = new Tool({
   },
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage();
-
 // Create agent with all hooks
 const agent = new Agent({
   name: "HooksDemo",
@@ -31,7 +28,9 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
-  memory: storage,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+  }),
 
   hooks: {
     // Called when the agent starts processing

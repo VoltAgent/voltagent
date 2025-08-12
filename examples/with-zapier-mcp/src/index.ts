@@ -18,9 +18,7 @@ async function main() {
       level: "info",
     });
 
-    const memory = new LibSQLStorage({
-      logger: logger.child({ component: "libsql" }),
-    });
+    // Memory will be inline in Agent constructor
 
     const zapierMcpConfig = new MCPConfiguration({
       servers: {
@@ -41,7 +39,10 @@ async function main() {
       llm: new VercelAIProvider(),
       model: bedrock("amazon.nova-lite-v1:0"),
       markdown: true,
-      memory,
+      memory: new LibSQLStorage({
+        url: "file:./.voltagent/memory.db",
+        logger: logger.child({ component: "libsql" }),
+      }),
     });
 
     new VoltAgent({

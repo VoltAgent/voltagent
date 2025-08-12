@@ -9,11 +9,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTOPS_PUBLIC_KEY,
   secretKey: process.env.VOLTOPS_SECRET_KEY,
@@ -33,7 +28,10 @@ const supportAgent = new Agent({
       },
     });
   },
-  memory: storage,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

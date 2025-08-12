@@ -148,6 +148,10 @@ dist
 
 # Gatsby files
 .cache/
+
+# VoltAgent
+.voltagent
+
 # Comment in the public line in if your project uses Gatsby and not Next.js
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public

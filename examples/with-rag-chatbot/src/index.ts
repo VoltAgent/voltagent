@@ -56,11 +56,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const memory = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 // Instantiate the retriever
 const knowledgeRetriever = new KnowledgeBaseRetriever();
 
@@ -72,7 +67,10 @@ const ragAgent = new Agent({
   model: openai("gpt-4o-mini"), // Using OpenAI model via Vercel
   // Attach the retriever directly
   retriever: knowledgeRetriever,
-  memory,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 // --- VoltAgent Initialization ---

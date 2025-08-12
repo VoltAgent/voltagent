@@ -10,18 +10,16 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const memory = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 export const agent = new Agent({
   name: "Base Agent",
   description: "You are a helpful assistant that can search Google Drive.",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   markdown: true,
-  memory,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

@@ -22,10 +22,6 @@ const mcp = new MCPConfiguration({
     level: "info",
   });
 
-  const memory = new LibSQLStorage({
-    logger: logger.child({ component: "libsql" }),
-  });
-
   const tools = await mcp.getTools();
   const agent = new Agent({
     name: "Peaka Data Assistant",
@@ -34,7 +30,10 @@ const mcp = new MCPConfiguration({
     model: openai("gpt-4o-mini"),
     tools: [...tools],
     markdown: true,
-    memory,
+    memory: new LibSQLStorage({
+      url: "file:./.voltagent/memory.db",
+      logger: logger.child({ component: "libsql" }),
+    }),
   });
 
   new VoltAgent({

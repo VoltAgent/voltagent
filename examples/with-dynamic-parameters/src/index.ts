@@ -34,11 +34,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 const dynamicAgent = new Agent({
   name: "Simple Dynamic Agent",
   instructions: ({ userContext }) => {
@@ -65,7 +60,10 @@ const dynamicAgent = new Agent({
     return [greetingTool];
   },
   llm: new VercelAIProvider(),
-  memory: storage,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

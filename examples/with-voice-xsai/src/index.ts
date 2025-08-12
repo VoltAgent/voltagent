@@ -13,11 +13,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 const voiceProvider = new XSAIVoiceProvider({
   apiKey: process.env.OPENAI_API_KEY || "",
 });
@@ -28,7 +23,10 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   voice: voiceProvider,
-  memory: storage,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 // Create the VoltAgent with our voice-enabled agent

@@ -38,6 +38,7 @@ export const createBaseDependencyInstaller = async (
     },
     dependencies: {
       "@voltagent/core": "^0.1.63",
+      "@voltagent/libsql": "^0.1.0",
       "@voltagent/vercel-ai": "^0.1.14",
       "@voltagent/cli": "^0.1.9",
       "@voltagent/logger": "^0.1.0",

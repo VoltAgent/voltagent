@@ -11,10 +11,6 @@ async function main() {
       level: "info",
     });
 
-    const memory = new LibSQLStorage({
-      logger: logger.child({ component: "libsql" }),
-    });
-
     const mcpConfig = new MCPConfiguration({
       servers: {
         "hf-mcp-server": {
@@ -33,7 +29,10 @@ async function main() {
       tools: await mcpConfig.getTools(),
       llm: new VercelAIProvider(),
       model: openai("gpt-4o-mini"),
-      memory,
+      memory: new LibSQLStorage({
+        url: "file:./.voltagent/memory.db",
+        logger: logger.child({ component: "libsql" }),
+      }),
     });
 
     new VoltAgent({

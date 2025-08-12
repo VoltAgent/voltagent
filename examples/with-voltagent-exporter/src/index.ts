@@ -11,17 +11,16 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const memory = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 const agent = new Agent({
   name: "Base Agent",
   instructions: "You are a helpful assistant",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],
-  memory,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

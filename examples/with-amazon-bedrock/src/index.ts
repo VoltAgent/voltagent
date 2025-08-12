@@ -51,11 +51,6 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  logger: logger.child({ component: "libsql" }),
-});
-
 // Configure the agent with Amazon Bedrock
 // Available models on Bedrock:
 // - Claude 3.5: "anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0"
@@ -69,7 +64,10 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: bedrock("anthropic.claude-opus-4-1-20250805-v1:0"),
   tools: [weatherTool],
-  memory: storage,
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 // Initialize VoltAgent

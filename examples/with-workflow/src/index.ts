@@ -6,7 +6,9 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 // Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage();
+const storage = new LibSQLStorage({
+  url: "file:./.voltagent/memory.db",
+});
 
 // Define reusable agents
 const analysisAgent = new Agent({
