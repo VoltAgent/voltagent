@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/core",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
-  "version": "0.1.81",
+  "version": "0.1.82",
   "dependencies": {
     "@hono/node-server": "^1.14.0",
     "@hono/node-ws": "^1.1.1",
