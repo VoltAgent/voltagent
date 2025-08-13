@@ -12,8 +12,11 @@ const agent = new Agent({
   description: "A helpful assistant that can use tools to provide better answers",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  tools: [weatherTool, checkCalendarTool, addCalendarEventTool, searchTool],
+  tools: [checkCalendarTool, addCalendarEventTool, searchTool],
 });
+
+// Test dynamic tool addition
+agent.addTools([weatherTool]);
 
 // Create logger
 const logger = createPinoLogger({

@@ -450,15 +450,23 @@ execute: async (args, options) => {
 You can add tools to an agent after it's been created:
 
 ```ts
+import { Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
 // Create an agent without tools initially
 const agent = new Agent({
   name: "Dynamic Assistant",
   description: "An assistant that can gain new abilities",
   llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
 });
 
 // Later, add tools to the agent
 agent.addTools([calculatorTool]);
+
+// You can also add toolkits
+agent.addTools([myToolkit]);
 
 // Or provide tools for a specific request only
 const response = await agent.generateText("Calculate 123 * 456", {
