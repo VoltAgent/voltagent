@@ -24,7 +24,5 @@
     "@voltagent/cli": "0.1.10",
     "create-voltagent-app": "0.2.7"
   },
-  "changesets": [
-    "major-version-bump"
-  ]
+  "changesets": ["major-version-bump"]
 }

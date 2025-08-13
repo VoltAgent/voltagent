@@ -1563,7 +1563,7 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~0.1.82
+        specifier: ~0.1.79
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^0.1.0
@@ -1927,7 +1927,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^0.1.79
+        specifier: ^0.1.82
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -2039,7 +2039,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^0.1.79
+        specifier: ^0.1.82
         version: link:../core
       tsup:
         specifier: ^8.5.0

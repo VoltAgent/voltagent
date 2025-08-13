@@ -78,6 +78,10 @@
     "nuke:node_modules": "lerna clean --yes && rimraf node_modules",
     "nx": "nx",
     "prepare": "husky install",
+    "prerelease:enter": "pnpm changeset pre enter next",
+    "prerelease:exit": "pnpm changeset pre exit",
+    "prerelease:publish": "pnpm build && pnpm changeset publish --tag next",
+    "prerelease:version": "pnpm changeset version",
     "publint": "lerna run publint --scope @voltagent/core",
     "publint:all": "lerna run publint --scope @voltagent/*",
     "publish": "lerna publish",
@@ -87,11 +91,7 @@
     "test:all": "lerna run test --stream --scope @voltagent/*",
     "test:all:coverage": "pnpm test:all -- -- --coverage",
     "test:coverage": "pnpm test -- -- --coverage",
-    "version-packages": "pnpm changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile --reporter=ndjson --stream && git add pnpm-lock.yaml",
-    "prerelease:enter": "pnpm changeset pre enter next",
-    "prerelease:exit": "pnpm changeset pre exit",
-    "prerelease:version": "pnpm changeset version",
-    "prerelease:publish": "pnpm build && pnpm changeset publish --tag next"
+    "version-packages": "pnpm changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile --reporter=ndjson --stream && git add pnpm-lock.yaml"
   },
   "workspaces": [
     "packages/*",
