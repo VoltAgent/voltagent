@@ -19,12 +19,15 @@ const agent = new Agent({
   description: "A helpful assistant that can use tools to provide better answers",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  tools: [weatherTool, checkCalendarTool, addCalendarEventTool, searchTool],
   memory: new LibSQLStorage({
     url: "file:./.voltagent/memory.db",
     logger: logger.child({ component: "libsql" }),
   }),
+  tools: [checkCalendarTool, addCalendarEventTool, searchTool],
 });
+
+// Test dynamic tool addition
+agent.addTools([weatherTool]);
 
 // Initialize the VoltAgent
 new VoltAgent({

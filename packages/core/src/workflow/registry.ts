@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import type { UsageInfo } from "../agent/providers";
 import type { WorkflowEvent, WorkflowEventWithStatus } from "../events/workflow-emitter";
 import { WorkflowEventEmitter } from "../events/workflow-emitter";
 import { LoggerProxy } from "../logger";
@@ -507,6 +508,7 @@ export class WorkflowRegistry extends EventEmitter {
     endAt: Date;
     status: "completed" | "suspended" | "error";
     result: any;
+    usage: UsageInfo;
     suspension?: any;
     error?: unknown;
   } | null> {

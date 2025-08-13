@@ -3626,20 +3626,26 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Add one or more tools or toolkits to the agent.
-   * Delegates to ToolManager's addItems method.
-   * @returns Object containing added items (difficult to track precisely here, maybe simplify return)
+   * Add tools or toolkits to the agent dynamically.
+   * @param tools Array of tools or toolkits to add to the agent
+   * @returns Object containing added tools
    */
-  public addItems(items: (Tool<any> | Toolkit)[]): { added: (Tool<any> | Toolkit)[] } {
-    // ToolManager handles the logic of adding tools vs toolkits and checking conflicts
-    this.toolManager.addItems(items);
+  public addTools(tools: (Tool<any, any> | Toolkit)[]): { added: (Tool<any, any> | Toolkit)[] } {
+    // ToolManager handles the logic of adding tools/toolkits and checking conflicts
+    this.toolManager.addItems(tools);
 
-    // Returning the original list as 'added' might be misleading if conflicts occurred.
-    // A simpler approach might be to return void or let ToolManager handle logging.
-    // For now, returning the input list for basic feedback.
     return {
-      added: items,
+      added: tools,
     };
+  }
+
+  /**
+   * @deprecated Use addTools() instead. This method will be removed in a future version.
+   * Add one or more tools or toolkits to the agent.
+   * @returns Object containing added items
+   */
+  public addItems(items: (Tool<any, any> | Toolkit)[]): { added: (Tool<any, any> | Toolkit)[] } {
+    return this.addTools(items);
   }
 
   /**

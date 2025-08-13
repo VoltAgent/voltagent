@@ -1,5 +1,6 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { z } from "zod";
+import type { UsageInfo } from "../agent/providers";
 import { LoggerProxy } from "../logger";
 import { InMemoryStorage } from "../memory/in-memory";
 import type { WorkflowExecutionContext } from "./context";
@@ -18,6 +19,11 @@ import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import { convertWorkflowStateToParam, createStepExecutionContext } from "./internal/utils";
 import { WorkflowRegistry } from "./registry";
 import type { WorkflowStep } from "./steps";
+import {
+  NoOpWorkflowStreamWriter,
+  WorkflowStreamController,
+  WorkflowStreamWriterImpl,
+} from "./stream";
 import type {
   Workflow,
   WorkflowConfig,
@@ -26,6 +32,7 @@ import type {
   WorkflowResult,
   WorkflowRunOptions,
   WorkflowStepHistoryEntry,
+  WorkflowStreamResult,
   WorkflowSuspensionMetadata,
 } from "./types";
 
@@ -634,6 +641,805 @@ export function createWorkflow<
   const effectiveSuspendSchema = suspendSchema || z.any();
   const effectiveResumeSchema = resumeSchema || z.any();
 
+  // Internal execution function shared by both run and stream
+  const executeInternal = async (
+    input: WorkflowInput<INPUT_SCHEMA>,
+    options?: WorkflowRunOptions,
+    externalStreamController?: WorkflowStreamController | null,
+  ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+    const workflowRegistry = WorkflowRegistry.getInstance();
+
+    let historyEntry: any;
+    let executionId: string;
+
+    // Determine executionId early
+    if (options?.resumeFrom?.executionId) {
+      executionId = options.resumeFrom.executionId;
+    } else {
+      executionId = options?.executionId || crypto.randomUUID();
+    }
+
+    // Only create stream controller if one is provided (for streaming execution)
+    // For normal run, we don't need a stream controller
+    const streamController = externalStreamController || null;
+
+    // Create run logger with initial context
+    const runLogger = logger.child({
+      executionId,
+      userId: options?.userId,
+      conversationId: options?.conversationId,
+    });
+
+    // Check if resuming an existing execution
+    if (options?.resumeFrom?.executionId) {
+      runLogger.debug(`Resuming execution ${executionId} for workflow ${id}`);
+
+      // Get the existing history entry and update its status
+      try {
+        const workflowMemoryManager = workflowRegistry.getWorkflowMemoryManager(id);
+        if (workflowMemoryManager) {
+          historyEntry = await workflowMemoryManager.getExecutionWithDetails(executionId);
+          if (historyEntry) {
+            runLogger.debug(`Found existing execution with status: ${historyEntry.status}`);
+            // Update status to running and clear suspension metadata
+            await workflowRegistry.updateWorkflowExecution(id, executionId, {
+              status: "running" as any,
+              endTime: undefined, // Clear end time when resuming
+              metadata: {
+                ...historyEntry.metadata,
+                resumedAt: new Date(),
+                suspension: undefined, // Clear suspension metadata
+              },
+            });
+            runLogger.debug(`Updated execution ${executionId} status to running`);
+
+            // Re-fetch the updated entry
+            historyEntry = await workflowMemoryManager.getExecutionWithDetails(executionId);
+          } else {
+            throw new Error(`Execution ${executionId} not found`);
+          }
+        } else {
+          throw new Error(`No memory manager available for workflow: ${id}`);
+        }
+      } catch (error) {
+        runLogger.error("Failed to get/update resumed execution:", { error });
+        throw error; // Re-throw to prevent creating a new execution
+      }
+    } else {
+      // Create new execution
+      try {
+        historyEntry = await workflowRegistry.createWorkflowExecution(id, name, input, {
+          userId: options?.userId,
+          conversationId: options?.conversationId,
+          userContext: options?.userContext,
+          executionId: executionId,
+        });
+
+        if (historyEntry) {
+          runLogger.trace(
+            `Successfully created execution via registry with executionId ${executionId}`,
+          );
+        } else {
+          runLogger.warn("Failed to create execution via WorkflowRegistry, using fallback");
+        }
+      } catch (memoryError) {
+        runLogger.error("Failed to create execution with WorkflowRegistry:", {
+          error: memoryError,
+        });
+      }
+    }
+
+    // Get WorkflowMemoryManager for local operations
+    const workflowMemoryManager = workflowRegistry.getWorkflowMemoryManager(id);
+    if (!workflowMemoryManager) {
+      throw new Error(`No memory manager available for workflow: ${id}`);
+    }
+
+    // ✅ Initialize WorkflowHistoryManager (like Agent system)
+    const historyManager = new WorkflowHistoryManager(
+      id,
+      workflowMemoryManager,
+      undefined,
+      runLogger,
+    );
+
+    // Create stream writer - real one for streaming, no-op for regular execution
+    const streamWriter = streamController
+      ? new WorkflowStreamWriterImpl(
+          streamController,
+          executionId,
+          id,
+          name,
+          0,
+          options?.userContext,
+        )
+      : new NoOpWorkflowStreamWriter();
+
+    // Initialize workflow execution context with the correct execution ID
+    const executionContext: WorkflowExecutionContext = {
+      workflowId: id,
+      executionId: executionId,
+      workflowName: name,
+      userContext: options?.userContext || new Map(),
+      isActive: true,
+      startTime: new Date(),
+      currentStepIndex: 0,
+      steps: [],
+      signal: options?.suspendController?.signal, // Get signal from suspendController
+      historyEntry: historyEntry,
+      // Store effective memory for use in steps if needed
+      memory: effectiveMemory,
+      // Initialize step data map for tracking inputs/outputs
+      stepData: new Map(),
+      // Initialize event sequence - restore from resume or start at 0
+      eventSequence: options?.resumeFrom?.lastEventSequence || 0,
+      // Include the execution-scoped logger
+      logger: runLogger,
+      // Stream writer is always available
+      streamWriter: streamWriter,
+    };
+
+    // Emit workflow start event
+    streamController?.emit({
+      type: "workflow-start",
+      executionId,
+      from: name,
+      input: input as Record<string, any>,
+      status: "running",
+      userContext: options?.userContext,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Workflow start event
+    const workflowStartEvent = createWorkflowStartEvent(executionContext, input);
+
+    try {
+      await publishWorkflowEvent(workflowStartEvent, executionContext);
+    } catch (eventError) {
+      runLogger.warn("Failed to publish workflow start event:", { error: eventError });
+    }
+
+    // Log workflow start with only event-specific context
+    runLogger.debug(
+      `Workflow started | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"}`,
+      {
+        input: input !== undefined ? input : null,
+      },
+    );
+
+    const stateManager = createWorkflowStateManager<
+      WorkflowInput<INPUT_SCHEMA>,
+      WorkflowResult<RESULT_SCHEMA>
+    >();
+
+    // Enhanced state with workflow context
+    if (options?.resumeFrom?.executionId) {
+      // When resuming, use the existing execution ID
+      stateManager.start(input, {
+        ...options,
+        executionId: executionId, // Use the resumed execution ID
+        active: options.resumeFrom.resumeStepIndex,
+      });
+    } else {
+      stateManager.start(input, {
+        ...options,
+        executionId: executionId, // Use the created execution ID
+      });
+    }
+
+    // Handle resume from suspension
+    let startStepIndex = 0;
+    let resumeInputData: any = undefined;
+    if (options?.resumeFrom) {
+      startStepIndex = options.resumeFrom.resumeStepIndex;
+      // Always use checkpoint state as the data
+      stateManager.update({
+        data: options.resumeFrom.checkpoint?.stepExecutionState,
+      });
+      // Store the resume input separately to pass to the step
+      resumeInputData = options.resumeFrom.resumeData;
+      // Update execution context for resume
+      executionContext.currentStepIndex = startStepIndex;
+    }
+
+    try {
+      for (const [index, step] of (steps as BaseStep[]).entries()) {
+        // Skip already completed steps when resuming
+        if (index < startStepIndex) {
+          runLogger.debug(
+            `Skipping already completed step ${index} (startStepIndex=${startStepIndex})`,
+          );
+          continue;
+        }
+
+        // Check for suspension signal before each step
+        const checkSignal = options?.suspendController?.signal;
+        runLogger.trace(`Checking suspension signal at step ${index}`, {
+          hasSignal: !!checkSignal,
+          isAborted: checkSignal?.aborted,
+          reason: (checkSignal as any)?.reason,
+        });
+
+        const signal = options?.suspendController?.signal;
+        if (signal?.aborted) {
+          runLogger.debug(
+            `Suspension signal detected at step ${index} for execution ${executionId}`,
+          );
+
+          // Get the reason from suspension controller or registry
+          let reason = "User requested suspension";
+
+          // Check if we have a suspension controller with a reason
+          if (options?.suspendController?.getReason()) {
+            reason = options.suspendController.getReason() || "User requested suspension";
+            runLogger.trace(`Using reason from suspension controller: ${reason}`);
+          } else {
+            // Fallback to registry's active executions
+            const activeController = workflowRegistry.activeExecutions.get(executionId);
+            if (activeController?.getReason()) {
+              reason = activeController.getReason() || "User requested suspension";
+              runLogger.debug(`Using reason from registry: ${reason}`);
+            }
+          }
+          runLogger.trace(`Final suspension reason: ${reason}`);
+          const checkpoint = {
+            stepExecutionState: stateManager.state.data,
+            completedStepsData: (steps as BaseStep[])
+              .slice(0, index)
+              .map((s, i) => ({ stepIndex: i, stepName: s.name || `Step ${i + 1}` })),
+          };
+
+          runLogger.debug(
+            `Creating suspension with reason: ${reason}, suspendedStepIndex: ${index}`,
+          );
+          stateManager.suspend(reason, checkpoint, index);
+
+          // Save suspension state to memory
+          try {
+            runLogger.trace(`Storing suspension checkpoint for execution ${executionId}`);
+            await workflowMemoryManager.storeSuspensionCheckpoint(
+              executionId,
+              stateManager.state.suspension,
+            );
+            runLogger.trace(
+              `Successfully stored suspension checkpoint for execution ${executionId}`,
+            );
+          } catch (suspendError) {
+            runLogger.error(`Failed to save suspension state for execution ${executionId}:`, {
+              error: suspendError,
+            });
+            runLogger.error("Failed to save suspension state:", { error: suspendError });
+          }
+
+          // Update workflow execution status to suspended
+          if (historyEntry) {
+            try {
+              runLogger.trace(`Updating workflow execution status to suspended for ${executionId}`);
+              await workflowRegistry.updateWorkflowExecution(id, executionId, {
+                status: "suspended" as any,
+                endTime: new Date(),
+                metadata: {
+                  ...historyEntry.metadata,
+                  suspension: stateManager.state.suspension,
+                },
+              });
+              runLogger.trace("Updated workflow execution status to suspended");
+            } catch (updateError) {
+              runLogger.error("Failed to update workflow status to suspended:", {
+                error: updateError,
+              });
+            }
+          } else {
+            runLogger.warn("No historyEntry found, skipping status update");
+          }
+
+          // Log workflow suspension with context
+          runLogger.debug(
+            `Workflow suspended | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} step=${index}`,
+            {
+              stepIndex: index,
+              reason,
+            },
+          );
+
+          // Return suspended state
+          runLogger.trace(`Returning suspended state for execution ${executionId}`);
+          return createWorkflowExecutionResult(
+            id,
+            executionId,
+            stateManager.state.startAt,
+            new Date(),
+            "suspended",
+            null,
+            stateManager.state.usage,
+            stateManager.state.suspension,
+            undefined,
+            effectiveResumeSchema,
+          );
+        }
+
+        executionContext.currentStepIndex = index;
+
+        // Create stream writer for this step - real one for streaming, no-op for regular execution
+        const stepWriter = streamController
+          ? new WorkflowStreamWriterImpl(
+              streamController,
+              executionId,
+              step.id,
+              step.name || step.id,
+              index,
+              options?.userContext,
+            )
+          : new NoOpWorkflowStreamWriter();
+        executionContext.streamWriter = stepWriter;
+
+        // Emit step start event
+        streamController?.emit({
+          type: "step-start",
+          executionId,
+          from: step.name || step.id,
+          input: stateManager.state.data,
+          status: "running",
+          userContext: options?.userContext,
+          timestamp: new Date().toISOString(),
+          stepIndex: index,
+          stepType: step.type,
+        });
+
+        // ✅ NEW: Record step start (persistent step tracking)
+        let stepRecord: WorkflowStepHistoryEntry | null = null;
+        try {
+          stepRecord = await historyManager.recordStepStart(
+            executionId,
+            index,
+            step.type as "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race",
+            step.name || step.id || `Step ${index + 1}`, // ✅ FIX: Include step.id fallback
+            stateManager.state.data,
+            {
+              stepId: step.id,
+              metadata: {
+                stepConfig: step,
+                stepIndex: index,
+              },
+            },
+          );
+        } catch (stepError) {
+          runLogger.warn(`Failed to record step start for step ${index}:`, { error: stepError });
+        }
+
+        await hooks?.onStepStart?.(stateManager.state);
+
+        // Store step input data before execution
+        executionContext.stepData.set(step.id, {
+          input: stateManager.state.data,
+          output: null,
+        });
+
+        // Log step start with context
+        const stepName = step.name || step.id || `Step ${index + 1}`;
+        runLogger.debug(`Step ${index + 1} starting: ${stepName} | type=${step.type}`, {
+          stepIndex: index,
+          stepType: step.type,
+          stepName,
+          input: stateManager.state.data,
+        });
+
+        // Use step-level schemas if available, otherwise fall back to workflow-level
+        const stepSuspendSchema = step.suspendSchema || effectiveSuspendSchema;
+        const stepResumeSchema = step.resumeSchema || effectiveResumeSchema;
+
+        // Create suspend function for this step
+        const suspendFn = async (reason?: string, suspendData?: any): Promise<never> => {
+          runLogger.debug(`Step ${index} requested suspension: ${reason || "No reason provided"}`);
+
+          // Store suspend data to be validated later when actually suspending
+          if (suspendData !== undefined) {
+            executionContext.userContext.set("suspendData", suspendData);
+          }
+
+          // Trigger suspension via the controller if available
+          if (options?.suspendController) {
+            options.suspendController.suspend(reason || "Step requested suspension");
+          }
+
+          // Always throw the suspension error - it will be caught and handled properly
+          throw new Error("WORKFLOW_SUSPENDED");
+        };
+
+        try {
+          // Create execution context for the step with typed suspend function
+          const typedSuspendFn = (
+            reason?: string,
+            suspendData?: z.infer<typeof stepSuspendSchema>,
+          ) => suspendFn(reason, suspendData);
+
+          // Only pass resumeData if we're on the step that was suspended and we have resume input
+          const isResumingThisStep =
+            options?.resumeFrom && index === startStepIndex && resumeInputData !== undefined;
+
+          // Update stream writer for this specific step
+          executionContext.streamWriter = streamController
+            ? new WorkflowStreamWriterImpl(
+                streamController,
+                executionId,
+                step.id,
+                step.name || step.id,
+                index,
+                options?.userContext,
+              )
+            : new NoOpWorkflowStreamWriter();
+
+          const stepContext = createStepExecutionContext<
+            WorkflowInput<INPUT_SCHEMA>,
+            typeof stateManager.state.data,
+            z.infer<typeof stepSuspendSchema>,
+            z.infer<typeof stepResumeSchema>
+          >(
+            stateManager.state.data,
+            convertWorkflowStateToParam(
+              stateManager.state,
+              executionContext,
+              options?.suspendController?.signal,
+            ),
+            executionContext,
+            typedSuspendFn,
+            isResumingThisStep ? resumeInputData : undefined,
+          );
+          // Execute step with automatic signal checking for immediate suspension
+          const result = await executeWithSignalCheck(
+            () => step.execute(stepContext),
+            options?.suspendController?.signal,
+            options?.suspensionMode === "immediate" ? 50 : 500, // Check more frequently in immediate mode
+          );
+
+          // Update step output data after successful execution
+          const stepData = executionContext.stepData.get(step.id);
+          if (stepData) {
+            stepData.output = result;
+          }
+
+          stateManager.update({
+            data: result,
+            result: result,
+          });
+
+          // Log step completion with context
+          runLogger.debug(`Step ${index + 1} completed: ${stepName} | type=${step.type}`, {
+            stepIndex: index,
+            stepType: step.type,
+            stepName,
+            output: result !== undefined ? result : null,
+          });
+
+          // Emit step complete event
+          streamController?.emit({
+            type: "step-complete",
+            executionId,
+            from: stepName,
+            input: stateManager.state.data,
+            output: result,
+            status: "success",
+            userContext: options?.userContext,
+            timestamp: new Date().toISOString(),
+            stepIndex: index,
+            stepType: step.type as any,
+          });
+
+          // ✅ NEW: Record step completion (persistent step tracking)
+          if (stepRecord) {
+            try {
+              await historyManager.recordStepEnd(stepRecord.id, {
+                status: "completed",
+                output: result,
+                metadata: {
+                  completedAt: new Date().toISOString(),
+                },
+              });
+            } catch (stepEndError) {
+              runLogger.warn(`Failed to record step completion for step ${index}:`, {
+                error: stepEndError,
+              });
+            }
+          }
+
+          await hooks?.onStepEnd?.(stateManager.state);
+        } catch (stepError) {
+          // Check if this is a suspension, not an error
+          if (stepError instanceof Error && stepError.message === "WORKFLOW_SUSPENDED") {
+            runLogger.debug(`Step ${index} suspended during execution`);
+
+            // Handle suspension
+            const suspensionReason =
+              options?.suspendController?.getReason() || "Step suspended during execution";
+
+            // Get suspend data if provided
+            const suspendData = executionContext.userContext.get("suspendData");
+
+            const suspensionMetadata = stateManager.suspend(
+              suspensionReason,
+              {
+                stepExecutionState: stateManager.state.data,
+                completedStepsData: Array.from({ length: index }, (_, i) => i),
+              },
+              index, // Current step that was suspended
+              executionContext.eventSequence, // Pass current event sequence
+            );
+
+            // Add suspend data to suspension metadata if provided
+            if (suspendData !== undefined && suspensionMetadata) {
+              (suspensionMetadata as WorkflowSuspensionMetadata<any>).suspendData = suspendData;
+            }
+
+            runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
+
+            // Emit suspension event to stream
+            streamController?.emit({
+              type: "workflow-suspended",
+              executionId,
+              from: step.name || step.id,
+              input: stateManager.state.data,
+              output: undefined,
+              status: "suspended",
+              userContext: options?.userContext,
+              timestamp: new Date().toISOString(),
+              stepIndex: index,
+              metadata: {
+                reason: suspensionReason,
+                suspendData,
+                suspension: suspensionMetadata,
+              },
+            });
+
+            // First publish step suspend event
+            const stepCtx = createStepContext(
+              executionContext,
+              step.type as "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race",
+              step.name || step.id || `Step ${index + 1}`,
+            );
+
+            const stepSuspendEvent = createWorkflowStepSuspendEvent(
+              stepCtx,
+              executionContext,
+              suspensionReason,
+              undefined, // No parent event ID for workflow-level suspension
+              {
+                userContext: executionContext.userContext
+                  ? Object.fromEntries(executionContext.userContext)
+                  : undefined,
+              },
+            );
+
+            try {
+              await publishWorkflowEvent(stepSuspendEvent, executionContext);
+            } catch (eventError) {
+              runLogger.warn("Failed to publish workflow step suspend event:", {
+                error: eventError,
+              });
+            }
+
+            // Then publish workflow suspend event
+            const workflowSuspendEvent = createWorkflowSuspendEvent(
+              executionContext,
+              suspensionReason,
+              index,
+              workflowStartEvent.id,
+            );
+
+            try {
+              await publishWorkflowEvent(workflowSuspendEvent, executionContext);
+            } catch (eventError) {
+              runLogger.warn("Failed to publish workflow suspend event:", { error: eventError });
+            }
+
+            // Update workflow status to suspended
+            if (historyEntry) {
+              try {
+                await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
+                  status: "suspended" as any,
+                  endTime: new Date(),
+                  metadata: {
+                    suspension: suspensionMetadata,
+                    lastActiveStep: index,
+                  },
+                });
+                runLogger.trace("Updated workflow execution status to suspended");
+              } catch (updateError) {
+                runLogger.error("Failed to update workflow status to suspended:", {
+                  error: updateError,
+                });
+              }
+            }
+
+            // Return suspended state without throwing
+            // Don't close the stream when suspended - it will continue after resume
+            return createWorkflowExecutionResult(
+              id,
+              executionId,
+              stateManager.state.startAt,
+              new Date(),
+              "suspended",
+              null,
+              stateManager.state.usage,
+              stateManager.state.suspension,
+              undefined,
+              effectiveResumeSchema,
+            );
+          }
+
+          // ✅ NEW: Record step error (persistent step tracking)
+          if (stepRecord) {
+            try {
+              await historyManager.recordStepEnd(stepRecord.id, {
+                status: "error",
+                errorMessage: stepError instanceof Error ? stepError.message : String(stepError),
+                metadata: {
+                  errorOccurredAt: new Date().toISOString(),
+                  errorDetails: stepError,
+                },
+              });
+            } catch (stepEndError) {
+              runLogger.warn(`Failed to record step error for step ${index}:`, {
+                error: stepEndError,
+              });
+            }
+          }
+          throw stepError; // Re-throw the original error
+        }
+      }
+
+      const finalState = stateManager.finish();
+
+      // Workflow success event
+      const workflowSuccessEvent = createWorkflowSuccessEvent(
+        executionContext,
+        finalState.result,
+        workflowStartEvent.id,
+      );
+
+      try {
+        await publishWorkflowEvent(workflowSuccessEvent, executionContext);
+      } catch (eventError) {
+        runLogger.warn("Failed to publish workflow success event:", { error: eventError });
+      }
+
+      if (historyEntry) {
+        try {
+          await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
+            status: "completed",
+            endTime: new Date(),
+            output: finalState.result,
+          });
+        } catch (registrationError) {
+          runLogger.warn("Failed to record workflow completion:", { error: registrationError });
+        }
+      }
+
+      await hooks?.onEnd?.(stateManager.state);
+
+      // Log workflow completion with context
+      const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
+      runLogger.debug(
+        `Workflow completed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} duration=${duration}ms`,
+        {
+          duration,
+          output: finalState.result !== undefined ? finalState.result : null,
+        },
+      );
+
+      // Emit workflow complete event
+      streamController?.emit({
+        type: "workflow-complete",
+        executionId,
+        from: name,
+        output: finalState.result,
+        status: "success",
+        userContext: options?.userContext,
+        timestamp: new Date().toISOString(),
+      });
+
+      streamController?.close();
+      return createWorkflowExecutionResult(
+        id,
+        executionId,
+        finalState.startAt,
+        finalState.endAt,
+        "completed",
+        finalState.result as z.infer<RESULT_SCHEMA>,
+        stateManager.state.usage,
+        undefined,
+        undefined,
+        effectiveResumeSchema,
+      );
+    } catch (error) {
+      // Check if this is a suspension, not an error
+      if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
+        runLogger.debug("Workflow suspended (caught at top level)");
+        // This case should be handled in the step catch block,
+        // but just in case it bubbles up here
+        streamController?.close();
+        return createWorkflowExecutionResult(
+          id,
+          executionId,
+          stateManager.state.startAt,
+          new Date(),
+          "suspended",
+          null,
+          stateManager.state.usage,
+          stateManager.state.suspension,
+          undefined,
+          effectiveResumeSchema,
+        );
+      }
+
+      // Log workflow error with context
+      runLogger.debug(
+        `Workflow failed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} error=${error instanceof Error ? error.message : String(error)}`,
+        {
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        },
+      );
+
+      // Emit workflow error event
+      streamController?.emit({
+        type: "workflow-error",
+        executionId,
+        from: name,
+        status: "error",
+        error: error,
+        userContext: options?.userContext,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Workflow error event
+      const workflowErrorEvent = createWorkflowErrorEvent(
+        executionContext,
+        error,
+        workflowStartEvent.id,
+      );
+
+      try {
+        await publishWorkflowEvent(workflowErrorEvent, executionContext);
+      } catch (eventError) {
+        runLogger.warn("Failed to publish workflow error event:", { error: eventError });
+      }
+
+      if (historyEntry) {
+        try {
+          await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
+            status: "error",
+            endTime: new Date(),
+            output: error,
+          });
+        } catch (registrationError) {
+          runLogger.warn("Failed to record workflow failure:", { error: registrationError });
+        }
+      }
+
+      // Update state before closing stream (only if not already completed/failed)
+      if (stateManager.state.status !== "completed" && stateManager.state.status !== "failed") {
+        stateManager.fail(error);
+      }
+      await hooks?.onEnd?.(stateManager.state);
+
+      // Close stream after state update
+      streamController?.close();
+
+      // Return error state
+      return createWorkflowExecutionResult(
+        id,
+        executionId,
+        stateManager.state.startAt,
+        new Date(),
+        "error",
+        null,
+        stateManager.state.usage,
+        undefined,
+        error,
+        effectiveResumeSchema,
+      );
+    }
+  };
+
   return {
     id,
     name,
@@ -661,677 +1467,163 @@ export function createWorkflow<
       };
     },
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
-      const workflowRegistry = WorkflowRegistry.getInstance();
+      // Simply call executeInternal which handles everything without stream
+      return executeInternal(input, options);
+    },
+    stream: (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
+      // Create stream controller for this execution
+      const streamController = new WorkflowStreamController();
+      const executionId = options?.executionId || crypto.randomUUID();
 
-      let historyEntry: any;
-      let executionId: string;
+      // Save the original input for resume
+      const originalInput = input;
 
-      // Determine executionId early
-      if (options?.resumeFrom?.executionId) {
-        executionId = options.resumeFrom.executionId;
-      } else {
-        executionId = options?.executionId || crypto.randomUUID();
-      }
-
-      // Create run logger with initial context
-      const runLogger = logger.child({
-        executionId,
-        userId: options?.userId,
-        conversationId: options?.conversationId,
-      });
-
-      // Check if resuming an existing execution
-      if (options?.resumeFrom?.executionId) {
-        runLogger.debug(`Resuming execution ${executionId} for workflow ${id}`);
-
-        // Get the existing history entry and update its status
-        try {
-          const workflowMemoryManager = workflowRegistry.getWorkflowMemoryManager(id);
-          if (workflowMemoryManager) {
-            historyEntry = await workflowMemoryManager.getExecutionWithDetails(executionId);
-            if (historyEntry) {
-              runLogger.debug(`Found existing execution with status: ${historyEntry.status}`);
-              // Update status to running and clear suspension metadata
-              await workflowRegistry.updateWorkflowExecution(id, executionId, {
-                status: "running" as any,
-                endTime: undefined, // Clear end time when resuming
-                metadata: {
-                  ...historyEntry.metadata,
-                  resumedAt: new Date(),
-                  suspension: undefined, // Clear suspension metadata
-                },
-              });
-              runLogger.debug(`Updated execution ${executionId} status to running`);
-
-              // Re-fetch the updated entry
-              historyEntry = await workflowMemoryManager.getExecutionWithDetails(executionId);
-            } else {
-              throw new Error(`Execution ${executionId} not found`);
-            }
-          } else {
-            throw new Error(`No memory manager available for workflow: ${id}`);
-          }
-        } catch (error) {
-          runLogger.error("Failed to get/update resumed execution:", { error });
-          throw error; // Re-throw to prevent creating a new execution
-        }
-      } else {
-        // Create new execution
-        try {
-          historyEntry = await workflowRegistry.createWorkflowExecution(id, name, input, {
-            userId: options?.userId,
-            conversationId: options?.conversationId,
-            userContext: options?.userContext,
-            executionId: executionId,
-          });
-
-          if (historyEntry) {
-            runLogger.trace(
-              `Successfully created execution via registry with executionId ${executionId}`,
-            );
-          } else {
-            runLogger.warn("Failed to create execution via WorkflowRegistry, using fallback");
-          }
-        } catch (memoryError) {
-          runLogger.error("Failed to create execution with WorkflowRegistry:", {
-            error: memoryError,
-          });
-        }
-      }
-
-      // Get WorkflowMemoryManager for local operations
-      const workflowMemoryManager = workflowRegistry.getWorkflowMemoryManager(id);
-      if (!workflowMemoryManager) {
-        throw new Error(`No memory manager available for workflow: ${id}`);
-      }
-
-      // ✅ Initialize WorkflowHistoryManager (like Agent system)
-      const historyManager = new WorkflowHistoryManager(
-        id,
-        workflowMemoryManager,
-        undefined,
-        runLogger,
-      );
-
-      // Initialize workflow execution context with the correct execution ID
-      const executionContext: WorkflowExecutionContext = {
-        workflowId: id,
-        executionId: executionId,
-        workflowName: name,
-        userContext: options?.userContext || new Map(),
-        isActive: true,
-        startTime: new Date(),
-        currentStepIndex: 0,
-        steps: [],
-        signal: options?.suspendController?.signal, // Get signal from suspendController
-        historyEntry: historyEntry,
-        // Store effective memory for use in steps if needed
-        memory: effectiveMemory,
-        // Initialize step data map for tracking inputs/outputs
-        stepData: new Map(),
-        // Initialize event sequence - restore from resume or start at 0
-        eventSequence: options?.resumeFrom?.lastEventSequence || 0,
-        // Include the execution-scoped logger
-        logger: runLogger,
-      };
-
-      // Workflow start event
-      const workflowStartEvent = createWorkflowStartEvent(executionContext, input);
-
-      try {
-        await publishWorkflowEvent(workflowStartEvent, executionContext);
-      } catch (eventError) {
-        runLogger.warn("Failed to publish workflow start event:", { error: eventError });
-      }
-
-      // Log workflow start with only event-specific context
-      runLogger.debug(
-        `Workflow started | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"}`,
-        {
-          input: input !== undefined ? input : null,
+      // Create deferred promises for async fields
+      let resultResolve: (value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>) => void;
+      let resultReject: (error: any) => void;
+      const resultPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
+        (resolve, reject) => {
+          resultResolve = resolve;
+          resultReject = reject;
         },
       );
 
-      const stateManager = createWorkflowStateManager<
-        WorkflowInput<INPUT_SCHEMA>,
-        WorkflowResult<RESULT_SCHEMA>
-      >();
+      // Start execution in background
+      const executeWithStream = async () => {
+        // Pass our stream controller to executeInternal so it emits events to our stream
+        const result = await executeInternal(input, options, streamController);
+        return result;
+      };
 
-      // Enhanced state with workflow context
-      if (options?.resumeFrom?.executionId) {
-        // When resuming, use the existing execution ID
-        stateManager.start(input, {
-          ...options,
-          executionId: executionId, // Use the resumed execution ID
-          active: options.resumeFrom.resumeStepIndex,
+      executeWithStream()
+        .then(
+          (result) => {
+            // Only close stream if workflow completed or errored (not suspended)
+            if (result.status !== "suspended") {
+              streamController?.close();
+            }
+            resultResolve(result);
+          },
+          (error) => {
+            streamController?.close();
+            resultReject(error);
+          },
+        )
+        .catch(() => {
+          // Silently catch any unhandled rejections to prevent console errors
+          // The error is already handled above and will be available via the promise fields
         });
-      } else {
-        stateManager.start(input, {
-          ...options,
-          executionId: executionId, // Use the created execution ID
-        });
-      }
 
-      // Handle resume from suspension
-      let startStepIndex = 0;
-      let resumeInputData: any = undefined;
-      if (options?.resumeFrom) {
-        startStepIndex = options.resumeFrom.resumeStepIndex;
-        // Always use checkpoint state as the data
-        stateManager.update({
-          data: options.resumeFrom.checkpoint?.stepExecutionState,
-        });
-        // Store the resume input separately to pass to the step
-        resumeInputData = options.resumeFrom.resumeData;
-        // Update execution context for resume
-        executionContext.currentStepIndex = startStepIndex;
-      }
-
-      try {
-        for (const [index, step] of (steps as BaseStep[]).entries()) {
-          // Skip already completed steps when resuming
-          if (index < startStepIndex) {
-            runLogger.debug(
-              `Skipping already completed step ${index} (startStepIndex=${startStepIndex})`,
-            );
-            continue;
+      // Return stream result immediately
+      const streamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+        executionId,
+        workflowId: id,
+        startAt: new Date(),
+        endAt: resultPromise.then((r) => r.endAt),
+        status: resultPromise.then((r) => r.status),
+        result: resultPromise.then((r) => r.result),
+        suspension: resultPromise.then((r) => r.suspension),
+        error: resultPromise.then((r) => r.error),
+        usage: resultPromise.then((r) => r.usage),
+        resume: async (input: z.infer<RESUME_SCHEMA>) => {
+          const execResult = await resultPromise;
+          if (execResult.status !== "suspended") {
+            throw new Error(`Cannot resume workflow in ${execResult.status} state`);
           }
 
-          // Check for suspension signal before each step
-          const checkSignal = options?.suspendController?.signal;
-          runLogger.trace(`Checking suspension signal at step ${index}`, {
-            hasSignal: !!checkSignal,
-            isAborted: checkSignal?.aborted,
-            reason: (checkSignal as any)?.reason,
-          });
+          // Continue with the same stream controller - don't create a new one
+          // Create new promise for the resumed execution
+          let resumedResolve: (
+            value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>,
+          ) => void;
+          let resumedReject: (error: any) => void;
+          const resumedPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
+            (resolve, reject) => {
+              resumedResolve = resolve;
+              resumedReject = reject;
+            },
+          );
 
-          const signal = options?.suspendController?.signal;
-          if (signal?.aborted) {
-            runLogger.debug(
-              `Suspension signal detected at step ${index} for execution ${executionId}`,
-            );
-
-            // Get the reason from suspension controller or registry
-            let reason = "User requested suspension";
-
-            // Check if we have a suspension controller with a reason
-            if (options?.suspendController?.getReason()) {
-              reason = options.suspendController.getReason() || "User requested suspension";
-              runLogger.trace(`Using reason from suspension controller: ${reason}`);
-            } else {
-              // Fallback to registry's active executions
-              const activeController = workflowRegistry.activeExecutions.get(executionId);
-              if (activeController?.getReason()) {
-                reason = activeController.getReason() || "User requested suspension";
-                runLogger.debug(`Using reason from registry: ${reason}`);
-              }
+          // Execute the resume by calling stream again with resume options
+          const executeResume = async () => {
+            // Get the suspension metadata
+            if (!execResult.suspension) {
+              throw new Error("No suspension metadata found");
             }
-            runLogger.trace(`Final suspension reason: ${reason}`);
-            const checkpoint = {
-              stepExecutionState: stateManager.state.data,
-              completedStepsData: (steps as BaseStep[])
-                .slice(0, index)
-                .map((s, i) => ({ stepIndex: i, stepName: s.name || `Step ${i + 1}` })),
+
+            // Create resume options to continue from where we left off
+            const resumeOptions: WorkflowRunOptions = {
+              executionId: execResult.executionId,
+              resumeFrom: {
+                executionId: execResult.executionId,
+                checkpoint: execResult.suspension.checkpoint,
+                resumeStepIndex: execResult.suspension.suspendedStepIndex,
+                resumeData: input,
+              },
             };
 
-            runLogger.debug(
-              `Creating suspension with reason: ${reason}, suspendedStepIndex: ${index}`,
+            // Re-execute with streaming from the suspension point
+            // This will emit events to the same stream controller
+            const resumed = await executeInternal(
+              originalInput, // Use the original input saved in closure
+              resumeOptions,
+              streamController,
             );
-            stateManager.suspend(reason, checkpoint, index);
-
-            // Save suspension state to memory
-            try {
-              runLogger.trace(`Storing suspension checkpoint for execution ${executionId}`);
-              await workflowMemoryManager.storeSuspensionCheckpoint(
-                executionId,
-                stateManager.state.suspension,
-              );
-              runLogger.trace(
-                `Successfully stored suspension checkpoint for execution ${executionId}`,
-              );
-            } catch (suspendError) {
-              runLogger.error(`Failed to save suspension state for execution ${executionId}:`, {
-                error: suspendError,
-              });
-              runLogger.error("Failed to save suspension state:", { error: suspendError });
-            }
-
-            // Update workflow execution status to suspended
-            if (historyEntry) {
-              try {
-                runLogger.trace(
-                  `Updating workflow execution status to suspended for ${executionId}`,
-                );
-                await workflowRegistry.updateWorkflowExecution(id, executionId, {
-                  status: "suspended" as any,
-                  endTime: new Date(),
-                  metadata: {
-                    ...historyEntry.metadata,
-                    suspension: stateManager.state.suspension,
-                  },
-                });
-                runLogger.trace("Updated workflow execution status to suspended");
-              } catch (updateError) {
-                runLogger.error("Failed to update workflow status to suspended:", {
-                  error: updateError,
-                });
-              }
-            } else {
-              runLogger.warn("No historyEntry found, skipping status update");
-            }
-
-            // Log workflow suspension with context
-            runLogger.debug(
-              `Workflow suspended | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} step=${index}`,
-              {
-                stepIndex: index,
-                reason,
-              },
-            );
-
-            // Return suspended state
-            runLogger.trace(`Returning suspended state for execution ${executionId}`);
-            return createWorkflowExecutionResult(
-              id,
-              executionId,
-              stateManager.state.startAt,
-              new Date(),
-              "suspended",
-              null,
-              stateManager.state.suspension,
-              undefined,
-              effectiveResumeSchema,
-            );
-          }
-
-          executionContext.currentStepIndex = index;
-
-          // ✅ NEW: Record step start (persistent step tracking)
-          let stepRecord: WorkflowStepHistoryEntry | null = null;
-          try {
-            stepRecord = await historyManager.recordStepStart(
-              executionId,
-              index,
-              step.type as "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race",
-              step.name || step.id || `Step ${index + 1}`, // ✅ FIX: Include step.id fallback
-              stateManager.state.data,
-              {
-                stepId: step.id,
-                metadata: {
-                  stepConfig: {
-                    id: step.id,
-                    name: step.name,
-                    purpose: step.purpose,
-                    type: step.type,
-                  },
-                  stepIndex: index,
-                },
-              },
-            );
-          } catch (stepError) {
-            runLogger.warn(`Failed to record step start for step ${index}:`, { error: stepError });
-          }
-
-          await hooks?.onStepStart?.(stateManager.state);
-
-          // Store step input data before execution
-          executionContext.stepData.set(step.id, {
-            input: stateManager.state.data,
-            output: null,
-          });
-
-          // Log step start with context
-          const stepName = step.name || step.id || `Step ${index + 1}`;
-          runLogger.debug(`Step ${index + 1} starting: ${stepName} | type=${step.type}`, {
-            stepIndex: index,
-            stepType: step.type,
-            stepName,
-            input: stateManager.state.data,
-          });
-
-          // Use step-level schemas if available, otherwise fall back to workflow-level
-          const stepSuspendSchema = step.suspendSchema || effectiveSuspendSchema;
-          const stepResumeSchema = step.resumeSchema || effectiveResumeSchema;
-
-          // Create suspend function for this step
-          const suspendFn = async (reason?: string, suspendData?: any): Promise<never> => {
-            runLogger.debug(
-              `Step ${index} requested suspension: ${reason || "No reason provided"}`,
-            );
-
-            // Store suspend data to be validated later when actually suspending
-            if (suspendData !== undefined) {
-              executionContext.userContext.set("suspendData", suspendData);
-            }
-
-            // Trigger suspension via the controller
-            if (options?.suspendController) {
-              options.suspendController.suspend(reason || "Step requested suspension");
-            }
-
-            // Throw a special error that will be caught by the workflow
-            throw new Error("WORKFLOW_SUSPENDED");
+            return resumed;
           };
 
-          try {
-            // Create execution context for the step with typed suspend function
-            const typedSuspendFn = (
-              reason?: string,
-              suspendData?: z.infer<typeof stepSuspendSchema>,
-            ) => suspendFn(reason, suspendData);
-
-            // Only pass resumeData if we're on the step that was suspended and we have resume input
-            const isResumingThisStep =
-              options?.resumeFrom && index === startStepIndex && resumeInputData !== undefined;
-
-            const stepContext = createStepExecutionContext<
-              WorkflowInput<INPUT_SCHEMA>,
-              typeof stateManager.state.data,
-              z.infer<typeof stepSuspendSchema>,
-              z.infer<typeof stepResumeSchema>
-            >(
-              stateManager.state.data,
-              convertWorkflowStateToParam(
-                stateManager.state,
-                executionContext,
-                options?.suspendController?.signal,
-              ),
-              executionContext,
-              typedSuspendFn,
-              isResumingThisStep ? resumeInputData : undefined,
-            );
-            // Execute step with automatic signal checking for immediate suspension
-            const result = await executeWithSignalCheck(
-              () => step.execute(stepContext),
-              options?.suspendController?.signal,
-              options?.suspensionMode === "immediate" ? 50 : 500, // Check more frequently in immediate mode
-            );
-
-            // Update step output data after successful execution
-            const stepData = executionContext.stepData.get(step.id);
-            if (stepData) {
-              stepData.output = result;
-            }
-
-            stateManager.update({
-              data: result,
-              result: result,
-            });
-
-            // Log step completion with context
-            runLogger.debug(`Step ${index + 1} completed: ${stepName} | type=${step.type}`, {
-              stepIndex: index,
-              stepType: step.type,
-              stepName,
-              output: result !== undefined ? result : null,
-            });
-
-            // ✅ NEW: Record step completion (persistent step tracking)
-            if (stepRecord) {
-              try {
-                await historyManager.recordStepEnd(stepRecord.id, {
-                  status: "completed",
-                  output: result,
-                  metadata: {
-                    completedAt: new Date().toISOString(),
-                  },
-                });
-              } catch (stepEndError) {
-                runLogger.warn(`Failed to record step completion for step ${index}:`, {
-                  error: stepEndError,
-                });
-              }
-            }
-
-            await hooks?.onStepEnd?.(stateManager.state);
-          } catch (stepError) {
-            // Check if this is a suspension, not an error
-            if (stepError instanceof Error && stepError.message === "WORKFLOW_SUSPENDED") {
-              runLogger.debug(`Step ${index} suspended during execution`);
-
-              // Handle suspension
-              const suspensionReason =
-                options?.suspendController?.getReason() || "Step suspended during execution";
-
-              // Get suspend data if provided
-              const suspendData = executionContext.userContext.get("suspendData");
-
-              const suspensionMetadata = stateManager.suspend(
-                suspensionReason,
-                {
-                  stepExecutionState: stateManager.state.data,
-                  completedStepsData: Array.from({ length: index }, (_, i) => i),
-                },
-                index, // Current step that was suspended
-                executionContext.eventSequence, // Pass current event sequence
-              );
-
-              // Add suspend data to suspension metadata if provided
-              if (suspendData !== undefined && suspensionMetadata) {
-                (suspensionMetadata as WorkflowSuspensionMetadata<any>).suspendData = suspendData;
-              }
-
-              runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
-
-              // First publish step suspend event
-              const stepCtx = createStepContext(
-                executionContext,
-                step.type as
-                  | "agent"
-                  | "func"
-                  | "conditional-when"
-                  | "parallel-all"
-                  | "parallel-race",
-                step.name || step.id || `Step ${index + 1}`,
-              );
-
-              const stepSuspendEvent = createWorkflowStepSuspendEvent(
-                stepCtx,
-                executionContext,
-                suspensionReason,
-                undefined, // No parent event ID for workflow-level suspension
-                {
-                  userContext: executionContext.userContext
-                    ? Object.fromEntries(executionContext.userContext)
-                    : undefined,
-                },
-              );
-
-              try {
-                await publishWorkflowEvent(stepSuspendEvent, executionContext);
-              } catch (eventError) {
-                runLogger.warn("Failed to publish workflow step suspend event:", {
-                  error: eventError,
-                });
-              }
-
-              // Then publish workflow suspend event
-              const workflowSuspendEvent = createWorkflowSuspendEvent(
-                executionContext,
-                suspensionReason,
-                index,
-                workflowStartEvent.id,
-              );
-
-              try {
-                await publishWorkflowEvent(workflowSuspendEvent, executionContext);
-              } catch (eventError) {
-                runLogger.warn("Failed to publish workflow suspend event:", { error: eventError });
-              }
-
-              // Update workflow status to suspended
-              if (historyEntry) {
-                try {
-                  await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
-                    status: "suspended" as any,
-                    endTime: new Date(),
-                    metadata: {
-                      suspension: suspensionMetadata,
-                      lastActiveStep: index,
-                    },
-                  });
-                  runLogger.trace("Updated workflow execution status to suspended");
-                } catch (updateError) {
-                  runLogger.error("Failed to update workflow status to suspended:", {
-                    error: updateError,
-                  });
+          // Start resume execution and emit events to the same stream
+          executeResume()
+            .then(
+              (result) => {
+                // Only close stream if workflow completed or errored (not suspended again)
+                if (result.status !== "suspended") {
+                  streamController?.close();
                 }
+                resumedResolve(result);
+              },
+              (error) => {
+                streamController?.close();
+                resumedReject(error);
+              },
+            )
+            .catch(() => {});
+
+          // Return a stream result that continues using the same stream
+          const resumedStreamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+            executionId: execResult.executionId, // Keep same execution ID
+            workflowId: execResult.workflowId,
+            startAt: execResult.startAt,
+            endAt: resumedPromise.then((r) => r.endAt),
+            status: resumedPromise.then((r) => r.status),
+            result: resumedPromise.then((r) => r.result),
+            suspension: resumedPromise.then((r) => r.suspension),
+            error: resumedPromise.then((r) => r.error),
+            usage: resumedPromise.then((r) => r.usage),
+            resume: async (input2: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
+              // Resume again using the same stream
+              const nextResult = await resumedPromise;
+              if (nextResult.status !== "suspended") {
+                throw new Error(`Cannot resume workflow in ${nextResult.status} state`);
               }
+              // Recursively call resume on the stream result (which will use the same stream controller)
+              return streamResult.resume(input2, opts);
+            },
+            abort: () => streamController.abort(),
+            // Continue using the same stream iterator
+            [Symbol.asyncIterator]: () => streamController.getStream(),
+          };
 
-              // Return suspended state without throwing
-              return createWorkflowExecutionResult(
-                id,
-                executionId,
-                stateManager.state.startAt,
-                new Date(),
-                "suspended",
-                null,
-                stateManager.state.suspension,
-                undefined,
-                effectiveResumeSchema,
-              );
-            }
+          return resumedStreamResult;
+        },
+        abort: () => {
+          streamController.abort();
+        },
+        // AsyncIterable implementation
+        [Symbol.asyncIterator]: () => streamController.getStream(),
+      };
 
-            // ✅ NEW: Record step error (persistent step tracking)
-            if (stepRecord) {
-              try {
-                await historyManager.recordStepEnd(stepRecord.id, {
-                  status: "error",
-                  errorMessage: stepError instanceof Error ? stepError.message : String(stepError),
-                  metadata: {
-                    errorOccurredAt: new Date().toISOString(),
-                    errorDetails: stepError,
-                  },
-                });
-              } catch (stepEndError) {
-                runLogger.warn(`Failed to record step error for step ${index}:`, {
-                  error: stepEndError,
-                });
-              }
-            }
-            throw stepError; // Re-throw the original error
-          }
-        }
-
-        const finalState = stateManager.finish();
-
-        // Workflow success event
-        const workflowSuccessEvent = createWorkflowSuccessEvent(
-          executionContext,
-          finalState.result,
-          workflowStartEvent.id,
-        );
-
-        try {
-          await publishWorkflowEvent(workflowSuccessEvent, executionContext);
-        } catch (eventError) {
-          runLogger.warn("Failed to publish workflow success event:", { error: eventError });
-        }
-
-        if (historyEntry) {
-          try {
-            await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
-              status: "completed",
-              endTime: new Date(),
-              output: finalState.result,
-            });
-          } catch (registrationError) {
-            runLogger.warn("Failed to record workflow completion:", { error: registrationError });
-          }
-        }
-
-        await hooks?.onEnd?.(stateManager.state);
-
-        // Log workflow completion with context
-        const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
-        runLogger.debug(
-          `Workflow completed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} duration=${duration}ms`,
-          {
-            duration,
-            output: finalState.result !== undefined ? finalState.result : null,
-          },
-        );
-
-        return createWorkflowExecutionResult(
-          id,
-          executionId,
-          finalState.startAt,
-          finalState.endAt,
-          "completed",
-          finalState.result as z.infer<RESULT_SCHEMA>,
-          undefined,
-          undefined,
-          effectiveResumeSchema,
-        );
-      } catch (error) {
-        // Check if this is a suspension, not an error
-        if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
-          runLogger.debug("Workflow suspended (caught at top level)");
-          // This case should be handled in the step catch block,
-          // but just in case it bubbles up here
-          return createWorkflowExecutionResult(
-            id,
-            executionId,
-            stateManager.state.startAt,
-            new Date(),
-            "suspended",
-            null,
-            stateManager.state.suspension,
-          );
-        }
-
-        // Log workflow error with context
-        runLogger.debug(
-          `Workflow failed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} error=${error instanceof Error ? error.message : String(error)}`,
-          {
-            error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-          },
-        );
-
-        // Workflow error event
-        const workflowErrorEvent = createWorkflowErrorEvent(
-          executionContext,
-          error,
-          workflowStartEvent.id,
-        );
-
-        try {
-          await publishWorkflowEvent(workflowErrorEvent, executionContext);
-        } catch (eventError) {
-          runLogger.warn("Failed to publish workflow error event:", { error: eventError });
-        }
-
-        if (historyEntry) {
-          try {
-            await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
-              status: "error",
-              endTime: new Date(),
-              output: error,
-            });
-          } catch (registrationError) {
-            runLogger.warn("Failed to record workflow failure:", { error: registrationError });
-          }
-        }
-
-        // Only fail if the workflow hasn't already finished
-        if (stateManager.state.status !== "completed" && stateManager.state.status !== "failed") {
-          stateManager.fail(error);
-        }
-        await hooks?.onEnd?.(stateManager.state);
-
-        // Return error state
-        return createWorkflowExecutionResult(
-          id,
-          executionId,
-          stateManager.state.startAt,
-          new Date(),
-          "error",
-          null,
-          undefined,
-          error,
-          effectiveResumeSchema,
-        );
-      }
+      return streamResult;
     },
   } satisfies Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 }
@@ -1355,6 +1647,7 @@ function createWorkflowExecutionResult<
   endAt: Date,
   status: "completed" | "suspended" | "error",
   result: z.infer<RESULT_SCHEMA> | null,
+  usage: UsageInfo,
   suspension?: any,
   error?: unknown,
   resumeSchema?: RESUME_SCHEMA,
@@ -1387,6 +1680,7 @@ function createWorkflowExecutionResult<
         resumeResult.endAt,
         resumeResult.status as "completed" | "suspended" | "error",
         resumeResult.result,
+        resumeResult.usage,
         resumeResult.suspension,
         resumeResult.error,
         resumeSchema,
@@ -1405,6 +1699,7 @@ function createWorkflowExecutionResult<
     endAt,
     status,
     result,
+    usage,
     suspension,
     error,
     resume: resumeFn as any, // Type is handled by the interface

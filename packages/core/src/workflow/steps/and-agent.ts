@@ -69,6 +69,12 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
         });
+        // Accumulate usage if available (no workflow context)
+        if (result.usage && state.usage) {
+          state.usage.promptTokens += result.usage.promptTokens || 0;
+          state.usage.completionTokens += result.usage.completionTokens || 0;
+          state.usage.totalTokens += result.usage.totalTokens || 0;
+        }
         return result.object;
       }
 
@@ -131,6 +137,13 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           getGlobalLogger()
             .child({ component: "workflow", stepType: "agent" })
             .warn("Failed to publish workflow step success event:", { error: eventError });
+        }
+
+        // Accumulate usage if available
+        if (result.usage && state.usage) {
+          state.usage.promptTokens += result.usage.promptTokens || 0;
+          state.usage.completionTokens += result.usage.completionTokens || 0;
+          state.usage.totalTokens += result.usage.totalTokens || 0;
         }
 
         return result.object;
