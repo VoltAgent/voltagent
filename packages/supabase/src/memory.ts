@@ -1,4 +1,4 @@
-import { SupabaseClient, createClient } from "@supabase/supabase-js";
+import { type SupabaseClient, createClient } from "@supabase/supabase-js";
 import {
   type Conversation,
   type ConversationQueryOptions,
@@ -64,7 +64,7 @@ export class SupabaseMemory implements Memory {
 
     this.client = match(options)
       .returnType<SupabaseClient>()
-      .with({ client: P.instanceOf(SupabaseClient) }, (o) => o.client)
+      .with({ client: P.not(P.nullish) }, (o) => o.client as SupabaseClient)
       .with({ supabaseUrl: P.string, supabaseKey: P.string }, (options) =>
         createClient(options.supabaseUrl, options.supabaseKey),
       )
