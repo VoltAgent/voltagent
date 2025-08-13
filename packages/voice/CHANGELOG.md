@@ -1,5 +1,11 @@
 # @voltagent/voice
 
+## 0.2.4
+
+### Patch Changes
+
+- [#494](https://github.com/VoltAgent/voltagent/pull/494) [`4459ae2`](https://github.com/VoltAgent/voltagent/commit/4459ae24a7c8b4ed3031f5a81ce7835e90fa6ade) Thanks [@kwaa](https://github.com/kwaa)! - fix(xsai): bump to v0.4.0-beta.1, support file & reasoning
+
 ## 0.2.3
 
 ### Patch Changes
