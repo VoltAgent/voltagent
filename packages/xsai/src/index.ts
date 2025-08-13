@@ -18,11 +18,11 @@ import type { SetRequired } from "type-fest";
 import type {
   GenerateObjectResult,
   GenerateTextResult,
-  ImagePart,
+  ImageContentPart,
   Message,
   StreamObjectResult,
   StreamTextResult,
-  TextPart,
+  TextContentPart,
   Tool,
 } from "xsai";
 import type { z } from "zod";
@@ -60,17 +60,17 @@ export class XSAIProvider implements LLMProvider<string> {
   toMessage = (message: BaseMessage): Message => {
     if (typeof message.content === "string") return message as Message;
     if (Array.isArray(message.content)) {
-      const content: (TextPart | ImagePart)[] = [];
+      const content: (TextContentPart | ImageContentPart)[] = [];
 
       for (const part of message.content) {
         if (part.type === "text") {
-          content.push(part as TextPart);
+          content.push(part as TextContentPart);
         } else if (part.type === "image") {
           if (typeof part.image === "string" || part.image instanceof URL) {
             content.push({
               type: "image_url",
               image_url: { url: part.image.toString() },
-            } satisfies ImagePart);
+            } satisfies ImageContentPart);
           } else {
             console.warn(
               `[XSAIProvider] Message (role: ${message.role}) contained unsupported image part format...`,
