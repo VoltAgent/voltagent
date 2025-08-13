@@ -15,7 +15,11 @@ export function mapToStreamPart(part: StreamTextEvent): StreamPart | null {
         type: "text-delta",
         textDelta: p.text,
       }))
-      // TODO: reasoning, source
+      .with({ type: "reasoning-delta" }, (p) => ({
+        type: "reasoning",
+        reasoning: p.text,
+      }))
+      // TODO: source
       .with({ type: "tool-call" }, (p) => ({
         type: "tool-call",
         toolCallId: p.toolCallId,
