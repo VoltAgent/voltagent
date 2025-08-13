@@ -1,5 +1,119 @@
 # @voltagent/core
 
+## 0.1.82
+
+### Patch Changes
+
+- [#492](https://github.com/VoltAgent/voltagent/pull/492) [`17d73f2`](https://github.com/VoltAgent/voltagent/commit/17d73f2972f061d8f468c209b79c42b5241cf06f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add addTools method and deprecate addItems for better developer experience - #487
+
+  ## What Changed
+  - Added new `addTools()` method to Agent class for dynamically adding tools and toolkits
+  - Deprecated `addItems()` method in favor of more intuitive `addTools()` naming
+  - Fixed type signature to accept `Tool<any, any>` instead of `Tool<any>` to support tools with output schemas
+
+  ## Before
+
+  ```typescript
+  // ❌ Method didn't exist - would throw error
+  agent.addTools([weatherTool]);
+
+  // ❌ Type error with tools that have outputSchema
+  agent.addItems([weatherTool]); // Type error if weatherTool has outputSchema
+  ```
+
+  ## After
+
+  ```typescript
+  // ✅ Works with new addTools method
+  agent.addTools([weatherTool]);
+
+  // ✅ Also supports toolkits
+  agent.addTools([myToolkit]);
+
+  // ✅ No type errors with outputSchema tools
+  const weatherTool = createTool({
+    name: "getWeather",
+    outputSchema: weatherOutputSchema, // Works without type errors
+    // ...
+  });
+  agent.addTools([weatherTool]);
+  ```
+
+  ## Migration
+
+  The `addItems()` method is deprecated but still works. Update your code to use `addTools()`:
+
+  ```typescript
+  // Old (deprecated)
+  agent.addItems([tool1, tool2]);
+
+  // New (recommended)
+  agent.addTools([tool1, tool2]);
+  ```
+
+  This change improves developer experience by using more intuitive method naming and fixing TypeScript compatibility issues with tools that have output schemas.
+
+## 0.1.81
+
+### Patch Changes
+
+- [#489](https://github.com/VoltAgent/voltagent/pull/489) [`fc79d81`](https://github.com/VoltAgent/voltagent/commit/fc79d81a2657a8472fdc2169213f6ef9f93e9b22) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add separate stream method for workflows with real-time event streaming
+
+  ## What Changed
+
+  Workflows now have a dedicated `.stream()` method that returns an AsyncIterable for real-time event streaming, separate from the `.run()` method. This provides better separation of concerns and improved developer experience.
+
+  ## New Stream Method
+
+  ```typescript
+  // Stream workflow execution with real-time events
+  const stream = workflow.stream(input);
+
+  // Iterate through events as they happen
+  for await (const event of stream) {
+    console.log(`[${event.type}] ${event.from}`, event);
+
+    if (event.type === "workflow-suspended") {
+      // Resume continues the same stream
+      await stream.resume({ approved: true });
+    }
+  }
+
+  // Get final result after stream completes
+  const result = await stream.result;
+  ```
+
+  ## Key Features
+  - **Separate `.stream()` method**: Clean API separation from `.run()`
+  - **AsyncIterable interface**: Native async iteration support
+  - **Promise-based fields**: Result, status, and usage resolve when execution completes
+  - **Continuous streaming**: Stream remains open across suspend/resume cycles (programmatic API)
+  - **Type safety**: Full TypeScript support with `WorkflowStreamResult` type
+
+  ## REST API Streaming
+
+  Added Server-Sent Events (SSE) endpoint for workflow streaming:
+
+  ```typescript
+  POST / workflows / { id } / stream;
+
+  // Returns SSE stream with real-time workflow events
+  // Note: Due to stateless architecture, stream closes on suspension
+  // Resume operations return complete results (not streamed)
+  ```
+
+  ## Technical Details
+  - Stream events flow through central `WorkflowStreamController`
+  - No-op stream writer for non-streaming execution
+  - Suspension events properly emitted to stream
+  - Documentation updated with streaming examples and architecture notes
+
+- [#490](https://github.com/VoltAgent/voltagent/pull/490) [`3d278cf`](https://github.com/VoltAgent/voltagent/commit/3d278cfb1799ffb2b2e460d5595ad68fc5f5c812) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: InMemoryStorage timestamp field for VoltOps history display
+
+  Fixed an issue where VoltOps history wasn't displaying when using InMemoryStorage. The problem was caused by using `updatedAt` field instead of `timestamp` when setting history entries.
+
+  The fix ensures that the `timestamp` field is properly preserved when updating history entries in InMemoryStorage, allowing VoltOps to correctly display workflow execution history.
+
 ## 0.1.80
 
 ### Patch Changes

@@ -8,7 +8,7 @@ import type { VoltAgentExporter } from "../telemetry/exporter";
 import { createWorkflowStepNodeId } from "../utils/node-utils";
 import { WorkflowHistoryManager } from "./history-manager";
 import { WorkflowMemoryManager } from "./memory/manager";
-import type { Workflow, WorkflowStreamEvent, WorkflowSuspendController } from "./types";
+import type { Workflow, WorkflowSuspendController } from "./types";
 import type { WorkflowHistoryEntry } from "./types";
 
 /**
@@ -508,7 +508,6 @@ export class WorkflowRegistry extends EventEmitter {
     endAt: Date;
     status: "completed" | "suspended" | "error";
     result: any;
-    stream: AsyncIterableIterator<WorkflowStreamEvent>;
     usage: UsageInfo;
     suspension?: any;
     error?: unknown;

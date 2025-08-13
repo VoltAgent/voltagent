@@ -19,7 +19,11 @@ import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import { convertWorkflowStateToParam, createStepExecutionContext } from "./internal/utils";
 import { WorkflowRegistry } from "./registry";
 import type { WorkflowStep } from "./steps";
-import { WorkflowStreamController, WorkflowStreamWriterImpl } from "./stream";
+import {
+  NoOpWorkflowStreamWriter,
+  WorkflowStreamController,
+  WorkflowStreamWriterImpl,
+} from "./stream";
 import type {
   Workflow,
   WorkflowConfig,
@@ -28,7 +32,7 @@ import type {
   WorkflowResult,
   WorkflowRunOptions,
   WorkflowStepHistoryEntry,
-  WorkflowStreamEvent,
+  WorkflowStreamResult,
   WorkflowSuspensionMetadata,
 } from "./types";
 
@@ -641,6 +645,7 @@ export function createWorkflow<
   const executeInternal = async (
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
+    externalStreamController?: WorkflowStreamController | null,
   ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
     const workflowRegistry = WorkflowRegistry.getInstance();
 
@@ -654,8 +659,9 @@ export function createWorkflow<
       executionId = options?.executionId || crypto.randomUUID();
     }
 
-    // Always create stream controller
-    const streamController = new WorkflowStreamController();
+    // Only create stream controller if one is provided (for streaming execution)
+    // For normal run, we don't need a stream controller
+    const streamController = externalStreamController || null;
 
     // Create run logger with initial context
     const runLogger = logger.child({
@@ -737,15 +743,17 @@ export function createWorkflow<
       runLogger,
     );
 
-    // Create stream writer for this execution (always create it)
-    const streamWriter = new WorkflowStreamWriterImpl(
-      streamController,
-      executionId,
-      id,
-      name,
-      0,
-      options?.userContext,
-    );
+    // Create stream writer - real one for streaming, no-op for regular execution
+    const streamWriter = streamController
+      ? new WorkflowStreamWriterImpl(
+          streamController,
+          executionId,
+          id,
+          name,
+          0,
+          options?.userContext,
+        )
+      : new NoOpWorkflowStreamWriter();
 
     // Initialize workflow execution context with the correct execution ID
     const executionContext: WorkflowExecutionContext = {
@@ -772,7 +780,7 @@ export function createWorkflow<
     };
 
     // Emit workflow start event
-    streamController.emit({
+    streamController?.emit({
       type: "workflow-start",
       executionId,
       from: name,
@@ -943,7 +951,6 @@ export function createWorkflow<
             new Date(),
             "suspended",
             null,
-            streamController.getStream(),
             stateManager.state.usage,
             stateManager.state.suspension,
             undefined,
@@ -953,19 +960,21 @@ export function createWorkflow<
 
         executionContext.currentStepIndex = index;
 
-        // Create stream writer for this step
-        const stepWriter = new WorkflowStreamWriterImpl(
-          streamController,
-          executionId,
-          step.id,
-          step.name || step.id,
-          index,
-          options?.userContext,
-        );
+        // Create stream writer for this step - real one for streaming, no-op for regular execution
+        const stepWriter = streamController
+          ? new WorkflowStreamWriterImpl(
+              streamController,
+              executionId,
+              step.id,
+              step.name || step.id,
+              index,
+              options?.userContext,
+            )
+          : new NoOpWorkflowStreamWriter();
         executionContext.streamWriter = stepWriter;
 
         // Emit step start event
-        streamController.emit({
+        streamController?.emit({
           type: "step-start",
           executionId,
           from: step.name || step.id,
@@ -1028,12 +1037,12 @@ export function createWorkflow<
             executionContext.userContext.set("suspendData", suspendData);
           }
 
-          // Trigger suspension via the controller
+          // Trigger suspension via the controller if available
           if (options?.suspendController) {
             options.suspendController.suspend(reason || "Step requested suspension");
           }
 
-          // Throw a special error that will be caught by the workflow
+          // Always throw the suspension error - it will be caught and handled properly
           throw new Error("WORKFLOW_SUSPENDED");
         };
 
@@ -1049,14 +1058,16 @@ export function createWorkflow<
             options?.resumeFrom && index === startStepIndex && resumeInputData !== undefined;
 
           // Update stream writer for this specific step
-          executionContext.streamWriter = new WorkflowStreamWriterImpl(
-            streamController,
-            executionId,
-            step.id,
-            step.name || step.id,
-            index,
-            options?.userContext,
-          );
+          executionContext.streamWriter = streamController
+            ? new WorkflowStreamWriterImpl(
+                streamController,
+                executionId,
+                step.id,
+                step.name || step.id,
+                index,
+                options?.userContext,
+              )
+            : new NoOpWorkflowStreamWriter();
 
           const stepContext = createStepExecutionContext<
             WorkflowInput<INPUT_SCHEMA>,
@@ -1101,7 +1112,7 @@ export function createWorkflow<
           });
 
           // Emit step complete event
-          streamController.emit({
+          streamController?.emit({
             type: "step-complete",
             executionId,
             from: stepName,
@@ -1160,6 +1171,24 @@ export function createWorkflow<
             }
 
             runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
+
+            // Emit suspension event to stream
+            streamController?.emit({
+              type: "workflow-suspended",
+              executionId,
+              from: step.name || step.id,
+              input: stateManager.state.data,
+              output: undefined,
+              status: "suspended",
+              userContext: options?.userContext,
+              timestamp: new Date().toISOString(),
+              stepIndex: index,
+              metadata: {
+                reason: suspensionReason,
+                suspendData,
+                suspension: suspensionMetadata,
+              },
+            });
 
             // First publish step suspend event
             const stepCtx = createStepContext(
@@ -1222,7 +1251,7 @@ export function createWorkflow<
             }
 
             // Return suspended state without throwing
-            streamController.close();
+            // Don't close the stream when suspended - it will continue after resume
             return createWorkflowExecutionResult(
               id,
               executionId,
@@ -1230,7 +1259,6 @@ export function createWorkflow<
               new Date(),
               "suspended",
               null,
-              streamController.getStream(),
               stateManager.state.usage,
               stateManager.state.suspension,
               undefined,
@@ -1299,7 +1327,7 @@ export function createWorkflow<
       );
 
       // Emit workflow complete event
-      streamController.emit({
+      streamController?.emit({
         type: "workflow-complete",
         executionId,
         from: name,
@@ -1309,7 +1337,7 @@ export function createWorkflow<
         timestamp: new Date().toISOString(),
       });
 
-      streamController.close();
+      streamController?.close();
       return createWorkflowExecutionResult(
         id,
         executionId,
@@ -1317,7 +1345,6 @@ export function createWorkflow<
         finalState.endAt,
         "completed",
         finalState.result as z.infer<RESULT_SCHEMA>,
-        streamController.getStream(),
         stateManager.state.usage,
         undefined,
         undefined,
@@ -1329,7 +1356,7 @@ export function createWorkflow<
         runLogger.debug("Workflow suspended (caught at top level)");
         // This case should be handled in the step catch block,
         // but just in case it bubbles up here
-        streamController.close();
+        streamController?.close();
         return createWorkflowExecutionResult(
           id,
           executionId,
@@ -1337,7 +1364,6 @@ export function createWorkflow<
           new Date(),
           "suspended",
           null,
-          streamController.getStream(),
           stateManager.state.usage,
           stateManager.state.suspension,
           undefined,
@@ -1354,7 +1380,7 @@ export function createWorkflow<
       );
 
       // Emit workflow error event
-      streamController.emit({
+      streamController?.emit({
         type: "workflow-error",
         executionId,
         from: name,
@@ -1396,7 +1422,7 @@ export function createWorkflow<
       await hooks?.onEnd?.(stateManager.state);
 
       // Close stream after state update
-      streamController.close();
+      streamController?.close();
 
       // Return error state
       return createWorkflowExecutionResult(
@@ -1406,7 +1432,6 @@ export function createWorkflow<
         new Date(),
         "error",
         null,
-        streamController.getStream(),
         stateManager.state.usage,
         undefined,
         error,
@@ -1442,8 +1467,163 @@ export function createWorkflow<
       };
     },
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
-      // Simply call executeInternal which handles everything including stream
+      // Simply call executeInternal which handles everything without stream
       return executeInternal(input, options);
+    },
+    stream: (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
+      // Create stream controller for this execution
+      const streamController = new WorkflowStreamController();
+      const executionId = options?.executionId || crypto.randomUUID();
+
+      // Save the original input for resume
+      const originalInput = input;
+
+      // Create deferred promises for async fields
+      let resultResolve: (value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>) => void;
+      let resultReject: (error: any) => void;
+      const resultPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
+        (resolve, reject) => {
+          resultResolve = resolve;
+          resultReject = reject;
+        },
+      );
+
+      // Start execution in background
+      const executeWithStream = async () => {
+        // Pass our stream controller to executeInternal so it emits events to our stream
+        const result = await executeInternal(input, options, streamController);
+        return result;
+      };
+
+      executeWithStream()
+        .then(
+          (result) => {
+            // Only close stream if workflow completed or errored (not suspended)
+            if (result.status !== "suspended") {
+              streamController?.close();
+            }
+            resultResolve(result);
+          },
+          (error) => {
+            streamController?.close();
+            resultReject(error);
+          },
+        )
+        .catch(() => {
+          // Silently catch any unhandled rejections to prevent console errors
+          // The error is already handled above and will be available via the promise fields
+        });
+
+      // Return stream result immediately
+      const streamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+        executionId,
+        workflowId: id,
+        startAt: new Date(),
+        endAt: resultPromise.then((r) => r.endAt),
+        status: resultPromise.then((r) => r.status),
+        result: resultPromise.then((r) => r.result),
+        suspension: resultPromise.then((r) => r.suspension),
+        error: resultPromise.then((r) => r.error),
+        usage: resultPromise.then((r) => r.usage),
+        resume: async (input: z.infer<RESUME_SCHEMA>) => {
+          const execResult = await resultPromise;
+          if (execResult.status !== "suspended") {
+            throw new Error(`Cannot resume workflow in ${execResult.status} state`);
+          }
+
+          // Continue with the same stream controller - don't create a new one
+          // Create new promise for the resumed execution
+          let resumedResolve: (
+            value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>,
+          ) => void;
+          let resumedReject: (error: any) => void;
+          const resumedPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
+            (resolve, reject) => {
+              resumedResolve = resolve;
+              resumedReject = reject;
+            },
+          );
+
+          // Execute the resume by calling stream again with resume options
+          const executeResume = async () => {
+            // Get the suspension metadata
+            if (!execResult.suspension) {
+              throw new Error("No suspension metadata found");
+            }
+
+            // Create resume options to continue from where we left off
+            const resumeOptions: WorkflowRunOptions = {
+              executionId: execResult.executionId,
+              resumeFrom: {
+                executionId: execResult.executionId,
+                checkpoint: execResult.suspension.checkpoint,
+                resumeStepIndex: execResult.suspension.suspendedStepIndex,
+                resumeData: input,
+              },
+            };
+
+            // Re-execute with streaming from the suspension point
+            // This will emit events to the same stream controller
+            const resumed = await executeInternal(
+              originalInput, // Use the original input saved in closure
+              resumeOptions,
+              streamController,
+            );
+            return resumed;
+          };
+
+          // Start resume execution and emit events to the same stream
+          executeResume()
+            .then(
+              (result) => {
+                // Only close stream if workflow completed or errored (not suspended again)
+                if (result.status !== "suspended") {
+                  streamController?.close();
+                }
+                resumedResolve(result);
+              },
+              (error) => {
+                streamController?.close();
+                resumedReject(error);
+              },
+            )
+            .catch(() => {});
+
+          // Return a stream result that continues using the same stream
+          const resumedStreamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+            executionId: execResult.executionId, // Keep same execution ID
+            workflowId: execResult.workflowId,
+            startAt: execResult.startAt,
+            endAt: resumedPromise.then((r) => r.endAt),
+            status: resumedPromise.then((r) => r.status),
+            result: resumedPromise.then((r) => r.result),
+            suspension: resumedPromise.then((r) => r.suspension),
+            error: resumedPromise.then((r) => r.error),
+            usage: resumedPromise.then((r) => r.usage),
+            resume: async (input2: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
+              // Resume again using the same stream
+              const nextResult = await resumedPromise;
+              if (nextResult.status !== "suspended") {
+                throw new Error(`Cannot resume workflow in ${nextResult.status} state`);
+              }
+              // Recursively call resume on the stream result (which will use the same stream controller)
+              return streamResult.resume(input2, opts);
+            },
+            abort: () => streamController.abort(),
+            // Continue using the same stream iterator
+            [Symbol.asyncIterator]: () => streamController.getStream(),
+          };
+
+          return resumedStreamResult;
+        },
+        abort: () => {
+          streamController.abort();
+        },
+        // AsyncIterable implementation
+        [Symbol.asyncIterator]: () => streamController.getStream(),
+      };
+
+      return streamResult;
     },
   } satisfies Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 }
@@ -1467,7 +1647,6 @@ function createWorkflowExecutionResult<
   endAt: Date,
   status: "completed" | "suspended" | "error",
   result: z.infer<RESULT_SCHEMA> | null,
-  stream: AsyncIterableIterator<WorkflowStreamEvent>,
   usage: UsageInfo,
   suspension?: any,
   error?: unknown,
@@ -1494,7 +1673,6 @@ function createWorkflowExecutionResult<
       }
 
       // Convert registry result to WorkflowExecutionResult
-      // resumeResult already has stream from the resumed workflow.run() call
       return createWorkflowExecutionResult(
         workflowId,
         resumeResult.executionId,
@@ -1502,7 +1680,6 @@ function createWorkflowExecutionResult<
         resumeResult.endAt,
         resumeResult.status as "completed" | "suspended" | "error",
         resumeResult.result,
-        resumeResult.stream,
         resumeResult.usage,
         resumeResult.suspension,
         resumeResult.error,
@@ -1522,7 +1699,6 @@ function createWorkflowExecutionResult<
     endAt,
     status,
     result,
-    stream,
     usage,
     suspension,
     error,

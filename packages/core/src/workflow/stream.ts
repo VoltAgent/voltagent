@@ -83,6 +83,30 @@ export class WorkflowStreamController {
 }
 
 /**
+ * No-op implementation of WorkflowStreamWriter for non-streaming execution
+ * This writer silently discards all events, used when .run() is called
+ */
+export class NoOpWorkflowStreamWriter implements WorkflowStreamWriter {
+  write(_event: Partial<WorkflowStreamEvent> & { type: string }): void {
+    // Do nothing - events are discarded when not streaming
+  }
+
+  async pipeFrom(
+    _fullStream: AsyncIterable<any>,
+    _options?: {
+      prefix?: string;
+      agentId?: string;
+      filter?: (part: any) => boolean;
+    },
+  ): Promise<void> {
+    // Do nothing - just consume the stream without emitting events
+    for await (const _ of _fullStream) {
+      // Consume but discard
+    }
+  }
+}
+
+/**
  * Implementation of WorkflowStreamWriter
  */
 export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
