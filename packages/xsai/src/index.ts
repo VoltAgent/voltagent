@@ -16,6 +16,7 @@ import type {
 import { createAsyncIterableStream } from "@voltagent/core";
 import type { SetRequired } from "type-fest";
 import type {
+  FileContentPart,
   GenerateObjectResult,
   GenerateTextResult,
   ImageContentPart,
@@ -60,7 +61,7 @@ export class XSAIProvider implements LLMProvider<string> {
   toMessage = (message: BaseMessage): Message => {
     if (typeof message.content === "string") return message as Message;
     if (Array.isArray(message.content)) {
-      const content: (TextContentPart | ImageContentPart)[] = [];
+      const content: (FileContentPart | ImageContentPart | TextContentPart)[] = [];
 
       for (const part of message.content) {
         if (part.type === "text") {
@@ -74,6 +75,20 @@ export class XSAIProvider implements LLMProvider<string> {
           } else {
             console.warn(
               `[XSAIProvider] Message (role: ${message.role}) contained unsupported image part format...`,
+            );
+          }
+        } else if (part.type === "file") {
+          if (typeof part.data === "string" || part.data instanceof URL) {
+            content.push({
+              type: "file",
+              file: {
+                filename: part.filename,
+                file_data: part.data.toString(),
+              },
+            } satisfies FileContentPart);
+          } else {
+            console.warn(
+              `[XSAIProvider] Message (role: ${message.role}) contained unsupported file part format...`,
             );
           }
         } else {
