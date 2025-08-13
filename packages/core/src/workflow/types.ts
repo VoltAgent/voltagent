@@ -3,6 +3,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
+import type { UsageInfo } from "../agent/providers";
 import type { UserContext } from "../agent/types";
 import type { Memory } from "../memory";
 import type { WorkflowState } from "./internal/state";
@@ -52,10 +53,12 @@ export interface WorkflowSuspendController {
 }
 
 /**
- * Result returned from workflow execution with suspend/resume capabilities
+ * Base result interface shared by all workflow execution results
  */
-export interface WorkflowExecutionResult<
+export interface WorkflowExecutionResultBase<
   RESULT_SCHEMA extends z.ZodTypeAny,
+  // @ts-ignore - RESUME_SCHEMA is used by child interfaces
+  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > {
   /**
@@ -73,23 +76,43 @@ export interface WorkflowExecutionResult<
   /**
    * When the workflow execution ended (completed, suspended, or errored)
    */
-  endAt: Date;
+  endAt: Date | Promise<Date>;
   /**
    * Current status of the workflow execution
    */
-  status: "completed" | "suspended" | "error";
+  status: "completed" | "suspended" | "error" | Promise<"completed" | "suspended" | "error">;
   /**
    * The result data if workflow completed successfully
    */
-  result: z.infer<RESULT_SCHEMA> | null;
+  result: z.infer<RESULT_SCHEMA> | null | Promise<z.infer<RESULT_SCHEMA> | null>;
   /**
    * Suspension metadata if workflow was suspended
    */
-  suspension?: WorkflowSuspensionMetadata;
+  suspension?: WorkflowSuspensionMetadata | Promise<WorkflowSuspensionMetadata | undefined>;
   /**
    * Error information if workflow failed
    */
+  error?: unknown | Promise<unknown | undefined>;
+  /**
+   * Total token usage from all andAgent steps in the workflow
+   */
+  usage: UsageInfo | Promise<UsageInfo>;
+}
+
+/**
+ * Result returned from workflow execution with suspend/resume capabilities
+ */
+export interface WorkflowExecutionResult<
+  RESULT_SCHEMA extends z.ZodTypeAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+> extends WorkflowExecutionResultBase<RESULT_SCHEMA, RESUME_SCHEMA> {
+  // Override with concrete types (not promises)
+  endAt: Date;
+  status: "completed" | "suspended" | "error";
+  result: z.infer<RESULT_SCHEMA> | null;
+  suspension?: WorkflowSuspensionMetadata;
   error?: unknown;
+  usage: UsageInfo;
   /**
    * Resume a suspended workflow execution
    * @param input - Optional new input data for resuming (validated against resumeSchema if provided)
@@ -100,6 +123,38 @@ export interface WorkflowExecutionResult<
     input: z.infer<RESUME_SCHEMA>,
     options?: { stepId?: string },
   ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+}
+
+/**
+ * Result returned from workflow stream execution
+ * Extends base with streaming capabilities and promise-based fields
+ */
+export interface WorkflowStreamResult<
+  RESULT_SCHEMA extends z.ZodTypeAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+> extends WorkflowExecutionResultBase<RESULT_SCHEMA, RESUME_SCHEMA>,
+    AsyncIterable<WorkflowStreamEvent> {
+  // Override with promise types for async execution
+  endAt: Promise<Date>;
+  status: Promise<"completed" | "suspended" | "error">;
+  result: Promise<z.infer<RESULT_SCHEMA> | null>;
+  suspension: Promise<WorkflowSuspensionMetadata | undefined>;
+  error: Promise<unknown | undefined>;
+  usage: Promise<UsageInfo>;
+  /**
+   * Resume a suspended workflow execution
+   * @param input - Optional new input data for resuming (validated against resumeSchema if provided)
+   * @param options - Optional options for resuming, including stepId to resume from a specific step
+   * @returns A new stream result that can also be resumed if suspended again
+   */
+  resume: (
+    input: z.infer<RESUME_SCHEMA>,
+    options?: { stepId?: string },
+  ) => Promise<WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Abort the workflow execution
+   */
+  abort: () => void;
 }
 
 export interface WorkflowRunOptions {
@@ -316,12 +371,23 @@ export type Workflow<
   /**
    * Execute the workflow with the given input
    * @param input - The input to the workflow
-   * @returns The result of the workflow
+   * @param options - Options for the workflow execution
+   * @returns Execution result with final result
    */
   run: (
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Execute the workflow with streaming support
+   * @param input - The input to the workflow
+   * @param options - Options for the workflow execution
+   * @returns Stream result with real-time events and promise-based fields
+   */
+  stream: (
+    input: WorkflowInput<INPUT_SCHEMA>,
+    options?: WorkflowRunOptions,
+  ) => WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>;
   /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance
@@ -431,6 +497,117 @@ export interface WorkflowStats {
   failedExecutions: number;
   averageExecutionTime: number;
   lastExecutionTime?: Date;
+}
+
+/**
+ * Event emitted during workflow streaming
+ */
+export interface WorkflowStreamEvent {
+  /**
+   * Type of the event (e.g., "step-start", "step-complete", "custom", "agent-stream")
+   */
+  type: string;
+  /**
+   * Unique execution ID for this workflow run
+   */
+  executionId: string;
+  /**
+   * Source of the event (step ID or name)
+   */
+  from: string;
+  /**
+   * Input data for the step/event
+   */
+  input?: Record<string, DangerouslyAllowAny>;
+  /**
+   * Output data from the step/event
+   */
+  output?: Record<string, DangerouslyAllowAny>;
+  /**
+   * Current status of the step/event
+   */
+  status: "pending" | "running" | "success" | "error" | "suspended";
+  /**
+   * User context passed through the workflow
+   */
+  userContext?: UserContext;
+  /**
+   * Timestamp of the event
+   */
+  timestamp: string;
+  /**
+   * Current step index in the workflow
+   */
+  stepIndex?: number;
+  /**
+   * Step type for step events
+   */
+  stepType?:
+    | "agent"
+    | "func"
+    | "conditional-when"
+    | "parallel-all"
+    | "parallel-race"
+    | "tap"
+    | "workflow";
+  /**
+   * Additional metadata
+   */
+  metadata?: Record<string, DangerouslyAllowAny>;
+  /**
+   * Error information if status is "error"
+   */
+  error?: DangerouslyAllowAny;
+}
+
+/**
+ * Writer interface for emitting stream events from workflow steps
+ */
+export interface WorkflowStreamWriter {
+  /**
+   * Write a custom event to the stream
+   */
+  write(event: Partial<WorkflowStreamEvent> & { type: string }): void;
+
+  /**
+   * Pipe events from an agent's fullStream to the workflow stream
+   * @param fullStream - The agent's fullStream async iterable
+   * @param options - Optional configuration for piping
+   */
+  pipeFrom(
+    fullStream: AsyncIterable<DangerouslyAllowAny>,
+    options?: {
+      prefix?: string; // Event type prefix (e.g., "agent-")
+      agentId?: string; // Agent ID to include in metadata
+      filter?: (part: DangerouslyAllowAny) => boolean; // Optional filter
+    },
+  ): Promise<void>;
+}
+
+/**
+ * Response returned from workflow.stream() method
+ */
+export interface WorkflowStreamResponse<RESULT_SCHEMA extends z.ZodTypeAny> {
+  /**
+   * Async iterator for stream events
+   */
+  stream: AsyncIterableIterator<WorkflowStreamEvent>;
+  /**
+   * Promise that resolves with the final result
+   */
+  result: Promise<z.infer<RESULT_SCHEMA> | null>;
+  /**
+   * Workflow execution ID
+   */
+  executionId: string;
+  /**
+   * Workflow ID
+   */
+  workflowId: string;
+  /**
+   * Abort the stream
+   */
+  abort: () => void;
 }
 
 /**

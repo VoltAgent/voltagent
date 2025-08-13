@@ -311,6 +311,7 @@ Import `SupabaseMemory` and initialize it with your credentials:
 import { Agent } from "@voltagent/core";
 import { SupabaseMemory } from "@voltagent/supabase";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { createPinoLogger } from "@voltagent/logger";
 import { openai } from "@ai-sdk/openai";
 
 // Get credentials from environment variables
@@ -332,6 +333,8 @@ const memory = new SupabaseMemory({
   storageLimit: 100, // Defaults to 100
   // Optional: Enable verbose debug logging from the memory provider
   debug: true, // Defaults to false
+  // Optional: Custom logger for structured logging
+  logger: createPinoLogger({ name: "memory-supabase" }),
 });
 
 // Alternative: Use existing Supabase client
@@ -343,6 +346,7 @@ const memory = new SupabaseMemory({
   tableName: "voltagent_memory", // Optional
   storageLimit: 150, // Optional: Custom storage limit
   debug: false, // Optional: Debug logging
+  logger: createPinoLogger({ name: "memory-supabase" }), // Optional: Custom logger
 });
 
 const agent = new Agent({
@@ -356,18 +360,22 @@ const agent = new Agent({
 
 **Configuration Options:**
 
+When using Supabase URL and key:
+
 - `supabaseUrl` (string, required): Your Supabase project URL.
 - `supabaseKey` (string, required): Your Supabase project `anon` key (or a service role key if used in a secure backend environment, though `anon` key with appropriate RLS policies is often sufficient).
 - `tableName` (string, optional): A prefix for the database table names. Defaults to `voltagent_memory`. If you change this, ensure your SQL table creation script uses the same prefix.
 - `storageLimit` (number, optional): The maximum number of messages to retain per conversation. When the limit is reached, the oldest messages are automatically deleted to make room for new ones. Defaults to `100`.
 - `debug` (boolean, optional): Enables detailed logging from the `SupabaseMemory` provider to the console, useful for understanding memory operations during development. Defaults to `false`.
+- `logger` (Logger, optional): Custom logger instance for structured logging. Supports any logger that implements the standard logger interface (e.g., Pino, Winston). When provided, this overrides the `debug` option.
 
-Alternatively, you can pass an existing Supabase client:
+When using an existing Supabase client:
 
-- `client` (SupabaseClient, required when not using supabaseUrl/supabaseKey): An existing Supabase client instance.
+- `client` (SupabaseClient, required when not using supabaseUrl/supabaseKey): An existing Supabase client instance. The constructor validates that this is a proper SupabaseClient instance.
 - `tableName` (string, optional): Table name prefix when using existing client.
 - `storageLimit` (number, optional): Storage limit when using existing client. Defaults to `100`.
 - `debug` (boolean, optional): Debug logging when using existing client. Defaults to `false`.
+- `logger` (Logger, optional): Custom logger instance for structured logging.
 
 ## Conversation Management
 

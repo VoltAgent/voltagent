@@ -579,6 +579,83 @@ export const WorkflowExecutionResponseSchema = z
   })
   .openapi({ description: "Successful workflow execution response" });
 
+// Workflow Stream Event Schema for SSE
+export const WorkflowStreamEventSchema = z.object({
+  type: z.string().openapi({ description: "Event type" }),
+  executionId: z.string().openapi({ description: "Workflow execution ID" }),
+  from: z.string().openapi({ description: "Source of the event" }),
+  input: z.any().optional(),
+  output: z.any().optional(),
+  status: z.enum(["pending", "running", "success", "error", "suspended"]),
+  timestamp: z.string(),
+  stepIndex: z.number().optional(),
+  metadata: z.record(z.any()).optional(),
+  error: z.any().optional(),
+});
+
+// Stream workflow route
+export const streamWorkflowRoute = createRoute({
+  method: "post",
+  path: "/workflows/{id}/stream",
+  request: {
+    params: z.object({
+      id: z.string().openapi({
+        param: { name: "id", in: "path" },
+        description: "The ID of the workflow",
+        example: "my-workflow-123",
+      }),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: WorkflowExecutionRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "text/event-stream": {
+          schema: WorkflowStreamEventSchema,
+        },
+      },
+      description: `Server-Sent Events stream for workflow execution.
+Each event is formatted as:
+'data: {"type":"step-start", "executionId":"...", "from":"...", ...}\\n\\n'
+
+Event types include:
+- workflow-start: Workflow execution started
+- step-start: Step execution started
+- step-complete: Step completed successfully
+- workflow-suspended: Workflow suspended, awaiting resume
+- workflow-complete: Workflow completed successfully
+- workflow-error: Workflow encountered an error
+- Custom events from step writers`,
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: "Workflow not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: "Internal server error",
+    },
+  },
+  tags: ["Workflows"],
+  summary: "Stream workflow execution events",
+  description:
+    "Execute a workflow and stream real-time events via Server-Sent Events (SSE). The stream remains open during suspension and continues after resume.",
+});
+
 // Execute workflow route
 export const executeWorkflowRoute = createRoute({
   method: "post",

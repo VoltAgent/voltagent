@@ -31,6 +31,8 @@ export function convertWorkflowStateToParam<INPUT>(
     input: state.input,
     status: state.status,
     error: state.error,
+    usage: state.usage,
+    suspension: state.suspension,
     workflowContext: executionContext,
     signal,
   };
@@ -71,5 +73,6 @@ export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DAT
     suspend: suspendFn,
     resumeData,
     logger: executionContext.logger,
+    writer: executionContext.streamWriter,
   };
 }

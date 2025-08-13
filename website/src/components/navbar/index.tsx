@@ -110,10 +110,10 @@ export default function Navbar() {
               </div>
             </div>
             <Link to="/docs/" className={`${styles.navLink}  `}>
-              Voltagent Docs
+              VoltAgent Docs
             </Link>
             <Link to="/voltops-llm-observability-docs/" className={`${styles.navLink}  `}>
-              Voltops Docs
+              VoltOps Docs
             </Link>
             <Link to="/customers/" className={`${styles.navLink}`}>
               Customers
@@ -365,10 +365,10 @@ export default function Navbar() {
             </div>
           </div>
           <Link to="/docs/" className={`${styles.mobileNavLink}`}>
-            Voltagent Docs
+            VoltAgent Docs
           </Link>
           <Link to="/voltops-llm-observability-docs/" className={`${styles.mobileNavLink}`}>
-            Voltops Docs
+            VoltOps Docs
           </Link>
 
           <Link to="/customers/" className={`${styles.mobileNavLink}`}>

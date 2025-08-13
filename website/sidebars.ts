@@ -56,6 +56,7 @@ const sidebars: SidebarsConfig = {
         "workflows/overview",
         "workflows/suspend-resume",
         "workflows/execute-api",
+        "workflows/streaming",
         "workflows/hooks",
         "workflows/schemas",
         "workflows/steps/and-then",

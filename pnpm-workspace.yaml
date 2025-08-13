@@ -3,4 +3,3 @@ packages:
   - "packages/*"
   - "examples/*"
   - "examples/**/*"
-saveWorkspaceProtocol: false

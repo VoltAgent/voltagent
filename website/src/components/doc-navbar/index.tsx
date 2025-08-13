@@ -85,7 +85,7 @@ export default function DocNavbar() {
               {/* Show link to Voltagent docs when on observability docs */}
               {isActive("/voltops-llm-observability-docs/") && (
                 <Link to="/docs/" className={`${styles.navLink}`}>
-                  Voltagent Docs
+                  VoltAgent Docs
                 </Link>
               )}
 

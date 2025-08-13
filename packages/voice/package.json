@@ -1,10 +1,10 @@
 {
   "name": "@voltagent/voice",
   "description": "VoltAgent Voice - Voice capabilities for AI agents",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "dependencies": {
-    "@xsai/generate-speech": "^0.3.3",
-    "@xsai/generate-transcription": "^0.3.3",
+    "@xsai/generate-speech": "0.4.0-beta.1",
+    "@xsai/generate-transcription": "0.4.0-beta.1",
     "elevenlabs": "^1.55.0",
     "openai": "^4.91.0"
   },

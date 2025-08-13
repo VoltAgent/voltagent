@@ -16,12 +16,7 @@ export function deepClone<T>(obj: T): T {
     }
 
     throw new Error("structuredClone is not available");
-  } catch (error) {
-    // This is only a warning in development mode we don't expect this to happen
-    // as we do not support sub-Node versions and structuredClone is available in Node.js 17+
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("Failed to deep clone object, using shallow clone", { error });
-    }
+  } catch (_error) {
     // Fallback to shallow clone for primitive types and simple objects
     if (obj === null || typeof obj !== "object") {
       return obj;
