@@ -5,8 +5,8 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^0.1.82",
-    "@voltagent/logger": "^0.1.3",
+    "@voltagent/core": "^0.1.83",
+    "@voltagent/logger": "^0.1.4",
     "@voltagent/postgres": "^0.1.12",
     "@voltagent/vercel-ai": "^0.1.18",
     "zod": "^3.25.0"
