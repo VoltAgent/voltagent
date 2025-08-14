@@ -1,5 +1,12 @@
 # @voltagent/docs-mcp
 
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
 ## 0.2.2
 
 ### Patch Changes

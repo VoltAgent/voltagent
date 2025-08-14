@@ -4,10 +4,10 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^0.1.83",
-    "@voltagent/libsql": "^0.1.0",
+    "@voltagent/core": "^1.0.0-next.0",
+    "@voltagent/libsql": "^1.0.0-next.0",
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/vercel-ai": "^0.1.18",
+    "@voltagent/vercel-ai": "^1.0.0-next.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

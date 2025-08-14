@@ -3,7 +3,7 @@
   "author": "",
   "dependencies": {
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/sdk": "^0.1.6"
+    "@voltagent/sdk": "^0.1.7-next.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",
