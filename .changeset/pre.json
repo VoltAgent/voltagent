@@ -2,7 +2,15 @@
   "mode": "pre",
   "tag": "next",
   "initialVersions": {
-    "@voltagent/core": "0.1.81",
+    "voltagent-example-github-repo-analyzer": "0.1.0",
+    "voltagent-example-with-composio-mcp": "0.1.0",
+    "voltagent-example-with-mcp": "0.1.0",
+    "voltagent-example-with-nextjs": "0.1.0",
+    "voltagent-example-with-rag-chatbot": "0.0.1",
+    "voltagent-example-with-zapier-mcp": "1.0.0",
+    "@voltagent/cli": "0.1.10",
+    "@voltagent/core": "0.1.82",
+    "create-voltagent-app": "0.2.7",
     "@voltagent/docs-mcp": "0.2.2",
     "@voltagent/internal": "0.0.8",
     "@voltagent/langfuse-exporter": "0.1.5",
@@ -13,16 +21,8 @@
     "@voltagent/vercel-ai": "0.1.18",
     "@voltagent/vercel-ai-exporter": "0.1.6",
     "@voltagent/vercel-ui": "0.1.9",
-    "@voltagent/voice": "0.2.3",
-    "@voltagent/xsai": "0.3.2",
-    "voltagent-example-github-repo-analyzer": "0.1.0",
-    "voltagent-example-with-composio-mcp": "0.1.0",
-    "voltagent-example-with-mcp": "0.1.0",
-    "voltagent-example-with-nextjs": "0.1.0",
-    "voltagent-example-with-rag-chatbot": "0.0.1",
-    "voltagent-example-with-zapier-mcp": "1.0.0",
-    "@voltagent/cli": "0.1.10",
-    "create-voltagent-app": "0.2.7"
+    "@voltagent/voice": "0.2.4",
+    "@voltagent/xsai": "0.3.3"
   },
-  "changesets": ["major-version-bump"]
+  "changesets": []
 }
