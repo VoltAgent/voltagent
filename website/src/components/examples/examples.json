@@ -1,0 +1,192 @@
+[
+  {
+    "id": 1,
+    "slug": "recipe-creator",
+    "published": true,
+    "title": "Recipe Creator",
+    "description": "Intelligent recipe recommendation system with MCP and OpenAI.",
+    "tags": ["MCP", "OpenAI", "TypeScript", "Exa"],
+    "features": [
+      "Personalized recipes based on available ingredients",
+      "Dietary preference support (vegetarian, vegan, gluten-free)",
+      "Nutritional information and cooking times",
+      "Step-by-step cooking instructions"
+    ],
+    "code": "import path from \"node:path\";\nimport { openai } from \"@ai-sdk/openai\";\nimport { Agent, MCPConfiguration, VoltAgent } from \"@voltagent/core\";\nimport { createPinoLogger } from \"@voltagent/logger\";\nimport { VercelAIProvider } from \"@voltagent/vercel-ai\";\n\nconst mcpConfig = new MCPConfiguration({\n  servers: {\n    exa: {\n      type: \"stdio\",\n      command: \"npx\",\n      args: [\n        \"-y\",\n        \"mcp-remote\",\n        \"https://mcp.exa.ai/mcp?exaApiKey=<YOUR-API-KEY>\",\n      ],\n    },\n  },\n});\n\nconst agent = new Agent({\n  name: \"MCP Example Agent\",\n  description: `Approach each recipe recommendation with these steps:\n\n        1. Analysis Phase 📋\n           - Understand available ingredients\n           - Consider dietary restrictions\n           - Note time constraints\n           - Factor in cooking skill level\n           - Check for kitchen equipment needs\n\n        2. Recipe Selection 🔍\n           - Use Exa to search for relevant recipes\n           - Ensure ingredients match availability\n           - Verify cooking times are appropriate\n           - Consider seasonal ingredients\n           - Check recipe ratings and reviews\n\n        3. Detailed Information 📝\n           - Recipe title and cuisine type\n           - Preparation time and cooking time\n           - Complete ingredient list with measurements\n           - Step-by-step cooking instructions\n           - Nutritional information per serving\n           - Difficulty level\n           - Serving size\n           - Storage instructions\n\n        4. Extra Features ✨\n           - Ingredient substitution options\n           - Common pitfalls to avoid\n           - Plating suggestions\n           - Wine pairing recommendations\n           - Leftover usage tips\n           - Meal prep possibilities\n\n        Presentation Style:\n        - Use clear markdown formatting\n        - Present ingredients in a structured list\n        - Number cooking steps clearly\n        - Add emoji indicators for:\n          🌱 Vegetarian\n          🌿 Vegan\n          🌾 Gluten-free\n          🥜 Contains nuts\n          ⏱️ Quick recipes\n        - Include tips for scaling portions\n        - Note allergen warnings\n        - Highlight make-ahead steps\n        - Suggest side dish pairings`,\n  llm: new VercelAIProvider(),\n  model: openai(\"gpt-4o-mini\"),\n  tools: await mcpConfig.getTools(),\n});\n\n// Create logger\nconst logger = createPinoLogger({\n  name: \"with-mcp\",\n  level: \"info\",\n});\n\nnew VoltAgent({\n  agents: {\n    agent,\n  },\n  logger,\n});",
+    "usage": [
+      {
+        "step": 1,
+        "title": "Create a new VoltAgent app",
+        "description": "Initialize a new project with the recipe creator example.",
+        "commands": [
+          "npm create voltagent-app@latest -- --example recipe-creator"
+        ]
+      },
+      {
+        "step": 2,
+        "title": "Set environment variables",
+        "description": "Add your API keys to the .env file.",
+        "commands": [
+          "OPENAI_API_KEY=your-openai-api-key",
+          "EXA_API_KEY=your-exa-api-key"
+        ]
+      },
+      {
+        "step": 3,
+        "title": "Run the agent",
+        "description": "Start the development server.",
+        "commands": [
+          "npm run dev"
+        ]
+      }
+    ],
+    "prompts": [
+      "I have chicken, rice, and vegetables. What can I make in 30 minutes?",
+      "Create a vegetarian pasta recipe with mushrooms and spinach",
+      "Suggest healthy breakfast options with oats and fruits",
+      "What can I make with leftover turkey and potatoes?",
+      "Need a quick dessert recipe using chocolate and bananas"
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "customer-support-agent",
+    "published": true,
+    "title": "Customer Support Agent",
+    "description": "AI-powered customer support agent for automated assistance.",
+    "tags": ["OpenAI", "TypeScript", "Support", "Automation"],
+    "features": [
+      "Natural language understanding",
+      "Multi-turn conversations",
+      "Context retention",
+      "FAQ handling"
+    ],
+    "code": "import { openai } from \"@ai-sdk/openai\";\nimport { Agent, VoltAgent } from \"@voltagent/core\";\nimport { createPinoLogger } from \"@voltagent/logger\";\nimport { VercelAIProvider } from \"@voltagent/vercel-ai\";\n\nconst agent = new Agent({\n  name: \"Customer Support Agent\",\n  description: `You are a helpful customer support agent.\n    \n    Your responsibilities:\n    1. Answer customer questions politely and accurately\n    2. Provide product information and specifications\n    3. Help troubleshoot common issues\n    4. Escalate complex problems when necessary\n    5. Maintain a friendly and professional tone\n    \n    Guidelines:\n    - Always greet customers warmly\n    - Ask clarifying questions when needed\n    - Provide step-by-step solutions\n    - Apologize for any inconvenience\n    - Thank customers for their patience`,\n  llm: new VercelAIProvider(),\n  model: openai(\"gpt-4o-mini\"),\n});\n\nconst logger = createPinoLogger({\n  name: \"support-agent\",\n  level: \"info\",\n});\n\nnew VoltAgent({\n  agents: {\n    agent,\n  },\n  logger,\n});",
+    "usage": [
+      {
+        "step": 1,
+        "title": "Create a new VoltAgent app",
+        "description": "Initialize a new project with the customer support example.",
+        "commands": [
+          "npm create voltagent-app@latest -- --example customer-support"
+        ]
+      },
+      {
+        "step": 2,
+        "title": "Set environment variables",
+        "description": "Add your OpenAI API key to the .env file.",
+        "commands": [
+          "OPENAI_API_KEY=your-openai-api-key"
+        ]
+      },
+      {
+        "step": 3,
+        "title": "Run the agent",
+        "description": "Start the development server.",
+        "commands": [
+          "npm run dev"
+        ]
+      }
+    ],
+    "prompts": [
+      "How do I reset my password?",
+      "What are your business hours?",
+      "I'm having trouble with my order #12345",
+      "Can you explain your return policy?"
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "data-analysis-agent",
+    "published": true,
+    "title": "Data Analysis Agent",
+    "description": "Data analysis agent for insights and visualization generation.",
+    "tags": ["Data Science", "Python", "Analysis", "Visualization"],
+    "features": [
+      "CSV file processing",
+      "Statistical analysis",
+      "Data visualization",
+      "Insight generation"
+    ],
+    "code": "import { anthropic } from \"@ai-sdk/anthropic\";\nimport { Agent, VoltAgent } from \"@voltagent/core\";\nimport { createPinoLogger } from \"@voltagent/logger\";\nimport { VercelAIProvider } from \"@voltagent/vercel-ai\";\n\nconst agent = new Agent({\n  name: \"Data Analysis Agent\",\n  description: `You are a data analysis expert.\n    \n    Your capabilities:\n    1. Analyze CSV data and identify patterns\n    2. Calculate statistical measures\n    3. Generate data insights\n    4. Suggest visualization types\n    5. Identify anomalies and trends\n    \n    Analysis approach:\n    - Start with data overview\n    - Check for missing values\n    - Calculate basic statistics\n    - Identify correlations\n    - Generate actionable insights`,\n  llm: new VercelAIProvider(),\n  model: anthropic(\"claude-3-haiku-20240307\"),\n});\n\nconst logger = createPinoLogger({\n  name: \"data-agent\",\n  level: \"info\",\n});\n\nnew VoltAgent({\n  agents: {\n    agent,\n  },\n  logger,\n});",
+    "usage": [
+      {
+        "step": 1,
+        "title": "Create a new VoltAgent app",
+        "description": "Initialize a new project with the data analysis example.",
+        "commands": [
+          "npm create voltagent-app@latest -- --example data-analysis"
+        ]
+      },
+      {
+        "step": 2,
+        "title": "Set environment variables",
+        "description": "Add your Anthropic API key to the .env file.",
+        "commands": [
+          "ANTHROPIC_API_KEY=your-anthropic-api-key"
+        ]
+      },
+      {
+        "step": 3,
+        "title": "Run the agent",
+        "description": "Start the development server.",
+        "commands": [
+          "npm run dev"
+        ]
+      }
+    ],
+    "prompts": [
+      "Analyze this sales data and find trends",
+      "What are the key insights from this dataset?",
+      "Calculate the correlation between price and sales",
+      "Identify any anomalies in the data"
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "code-review-agent",
+    "published": true,
+    "title": "Code Review Agent",
+    "description": "Code review assistant for quality analysis and bug detection.",
+    "tags": ["Code Review", "TypeScript", "Quality", "Best Practices"],
+    "features": [
+      "Code quality analysis",
+      "Bug detection",
+      "Performance suggestions",
+      "Best practice recommendations"
+    ],
+    "code": "import { openai } from \"@ai-sdk/openai\";\nimport { Agent, VoltAgent } from \"@voltagent/core\";\nimport { createPinoLogger } from \"@voltagent/logger\";\nimport { VercelAIProvider } from \"@voltagent/vercel-ai\";\n\nconst agent = new Agent({\n  name: \"Code Review Agent\",\n  description: `You are an expert code reviewer.\n    \n    Review aspects:\n    1. Code quality and readability\n    2. Performance optimizations\n    3. Security vulnerabilities\n    4. Best practices compliance\n    5. Documentation completeness\n    \n    Review process:\n    - Analyze code structure\n    - Check for code smells\n    - Suggest improvements\n    - Identify potential bugs\n    - Recommend refactoring`,\n  llm: new VercelAIProvider(),\n  model: openai(\"gpt-4o\"),\n});\n\nconst logger = createPinoLogger({\n  name: \"code-review\",\n  level: \"info\",\n});\n\nnew VoltAgent({\n  agents: {\n    agent,\n  },\n  logger,\n});",
+    "usage": [
+      {
+        "step": 1,
+        "title": "Create a new VoltAgent app",
+        "description": "Initialize a new project with the code review example.",
+        "commands": [
+          "npm create voltagent-app@latest -- --example code-review"
+        ]
+      },
+      {
+        "step": 2,
+        "title": "Set environment variables",
+        "description": "Add your OpenAI API key to the .env file.",
+        "commands": [
+          "OPENAI_API_KEY=your-openai-api-key"
+        ]
+      },
+      {
+        "step": 3,
+        "title": "Run the agent",
+        "description": "Start the development server.",
+        "commands": [
+          "npm run dev"
+        ]
+      }
+    ],
+    "prompts": [
+      "Review this TypeScript function for best practices",
+      "Check this code for potential security issues",
+      "Suggest performance improvements for this algorithm",
+      "Is this code following SOLID principles?"
+    ]
+  }
+]
