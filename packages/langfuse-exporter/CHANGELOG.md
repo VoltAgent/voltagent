@@ -1,5 +1,12 @@
 # @voltagent/langfuse-exporter
 
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
 ## 0.1.5
 
 ### Patch Changes

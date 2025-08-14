@@ -24,5 +24,7 @@
     "@voltagent/voice": "0.2.4",
     "@voltagent/xsai": "0.3.3"
   },
-  "changesets": []
+  "changesets": [
+    "major-version-bump"
+  ]
 }

@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 1.0.0-next.0
+
+### Major Changes
+
+- [#485](https://github.com/VoltAgent/voltagent/pull/485) [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e) Thanks [@omeraplak](https://github.com/omeraplak)! - Initial v1.0.0 prerelease
+
+  This is the first prerelease for VoltAgent v1.0.0. This release includes various improvements and prepares for the upcoming major version.
+
+  Testing the prerelease workflow with the next branch.
+
 ## 0.1.82
 
 ### Patch Changes
