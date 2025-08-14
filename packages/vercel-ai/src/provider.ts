@@ -99,6 +99,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
 
     try {
       const result = await generateText({
+        providerOptions:options.provider,
         ...options.provider,
         messages: vercelMessages,
         model: options.model,
@@ -188,6 +189,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         : undefined;
 
       const result = streamText({
+        providerOptions:options.provider,
         ...options.provider,
         messages: vercelMessages,
         model: options.model,
@@ -282,6 +284,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
 
     try {
       const result = await generateObject({
+        providerOptions:options.provider,
         ...options.provider,
         messages: vercelMessages,
         model: options.model,
@@ -350,6 +353,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       .otherwise(() => null);
 
     const result = streamObject({
+      providerOptions:options.provider,
       ...options.provider,
       messages: vercelMessages,
       model: options.model,
