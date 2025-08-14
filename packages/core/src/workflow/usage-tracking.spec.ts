@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Agent } from "../agent/agent";
 import type { UsageInfo } from "../agent/providers";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { InMemoryStorage } from "../memory/in-memory";
 import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 
@@ -45,7 +45,7 @@ describe("workflow usage tracking", () => {
       totalTokens: 150,
     });
 
-    const memory = createTestLibSQLStorage("usage_single_agent");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "single-agent",
       name: "Single Agent",
@@ -88,7 +88,7 @@ describe("workflow usage tracking", () => {
       totalTokens: 75,
     });
 
-    const memory = createTestLibSQLStorage("usage_multi_agent");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "multi-agent",
       name: "Multi Agent",
@@ -121,7 +121,7 @@ describe("workflow usage tracking", () => {
   });
 
   it("should have zero usage when no andAgent steps", async () => {
-    const memory = createTestLibSQLStorage("usage_no_agents");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "no-agents",
       name: "No Agents",
@@ -158,7 +158,7 @@ describe("workflow usage tracking", () => {
       totalTokens: 150,
     });
 
-    const memory = createTestLibSQLStorage("usage_custom_call");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "custom-agent-call",
       name: "Custom Agent Call",
@@ -198,7 +198,7 @@ describe("workflow usage tracking", () => {
       totalTokens: 150,
     });
 
-    const memory = createTestLibSQLStorage("usage_mixed_steps");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "mixed-steps",
       name: "Mixed Steps",
@@ -247,7 +247,7 @@ describe("workflow usage tracking", () => {
     let usageAfterFirstAgent: UsageInfo | undefined;
     let usageAfterSecondAgent: UsageInfo | undefined;
 
-    const memory = createTestLibSQLStorage("usage_state_usage");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "state-usage",
       name: "State Usage",
@@ -315,7 +315,7 @@ describe("workflow usage tracking", () => {
       totalTokens: 150,
     });
 
-    const memory = createTestLibSQLStorage("usage_partial_usage");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "partial-usage",
       name: "Partial Usage",
@@ -350,7 +350,7 @@ describe("workflow usage tracking", () => {
       promptTokens: 100,
     } as any);
 
-    const memory = createTestLibSQLStorage("usage_partial_fields");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "partial-fields",
       name: "Partial Fields",

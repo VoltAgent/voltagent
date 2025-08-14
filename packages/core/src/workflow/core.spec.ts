@@ -84,7 +84,7 @@ describe.sequential("workflow streaming", () => {
   });
 
   it("should provide stream method for streaming execution", async () => {
-    const memory = createTestLibSQLStorage("core_stream_test");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflow(
       {
         id: "stream-test",
@@ -125,7 +125,7 @@ describe.sequential("workflow streaming", () => {
   });
 
   it("should have usage with default values", async () => {
-    const memory = createTestLibSQLStorage("core_usage_test");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflow(
       {
         id: "usage-test",

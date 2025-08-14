@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { InMemoryStorage } from "../memory/in-memory";
 import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 import { WorkflowStreamController, WorkflowStreamWriterImpl } from "./stream";
@@ -296,7 +296,7 @@ describe("Workflow Stream Integration", () => {
   });
 
   it("should emit workflow lifecycle events", async () => {
-    const memory = createTestLibSQLStorage("stream_lifecycle");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "test-workflow",
       name: "Test Workflow",
@@ -357,7 +357,7 @@ describe("Workflow Stream Integration", () => {
   });
 
   it("should allow custom events from steps", async () => {
-    const memory = createTestLibSQLStorage("stream_custom_events");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "custom-events",
       name: "Custom Events",
@@ -412,7 +412,7 @@ describe("Workflow Stream Integration", () => {
   });
 
   it("should preserve event order", async () => {
-    const memory = createTestLibSQLStorage("stream_event_order");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "event-order",
       name: "Event Order",
@@ -463,7 +463,7 @@ describe("Workflow Stream Integration", () => {
   });
 
   it("should handle errors in stream consumption", async () => {
-    const memory = createTestLibSQLStorage("stream_error_handling");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
       id: "error-handling",
       name: "Error Handling",
