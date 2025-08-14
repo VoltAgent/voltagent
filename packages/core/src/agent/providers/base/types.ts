@@ -17,6 +17,8 @@ export type UsageInfo = {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  cachedInputTokens?: number;
+  reasoningTokens?: number;
 };
 
 /**

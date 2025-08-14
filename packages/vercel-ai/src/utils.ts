@@ -179,12 +179,16 @@ export function mapToStreamPart(part: TextStreamPart<Record<string, any>>): Stre
               inputTokens: P.number,
               outputTokens: P.number,
               totalTokens: P.number,
+              cachedInputTokens: P.optional(P.number),
+              reasoningTokens: P.optional(P.number),
             },
           },
           (p) => ({
             promptTokens: p.totalUsage.inputTokens,
             completionTokens: p.totalUsage.outputTokens,
             totalTokens: p.totalUsage.totalTokens,
+            cachedInputTokens: p.totalUsage.cachedInputTokens,
+            reasoningTokens: p.totalUsage.reasoningTokens,
           }),
         )
         .otherwise(() => undefined),

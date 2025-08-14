@@ -106,8 +106,12 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
         messages: vercelMessages,
         model: options.model,
         tools: vercelTools,
-        ...(options.maxSteps ? { stopWhen: stepCountIs(options.maxSteps) } : {}),
-        ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
+        ...match(options.maxSteps)
+          .with(P.number, (maxSteps) => ({ stopWhen: stepCountIs(maxSteps) }))
+          .otherwise(() => ({})),
+        ...match(options.provider?.maxTokens)
+          .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+          .otherwise(() => ({})),
         abortSignal: options.signal,
         onStepFinish,
       });
@@ -198,8 +202,12 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
         messages: vercelMessages,
         model: options.model,
         tools: vercelTools,
-        ...(options.maxSteps ? { stopWhen: stepCountIs(options.maxSteps) } : {}),
-        ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
+        ...match(options.maxSteps)
+          .with(P.number, (maxSteps) => ({ stopWhen: stepCountIs(maxSteps) }))
+          .otherwise(() => ({})),
+        ...match(options.provider?.maxTokens)
+          .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+          .otherwise(() => ({})),
         abortSignal: options.signal,
         onStepFinish,
         onChunk: async ({ chunk }) => {
@@ -297,7 +305,9 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
         messages: vercelMessages,
         model: options.model,
         schema: options.schema as any,
-        ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
+        ...match(options.provider?.maxTokens)
+          .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+          .otherwise(() => ({})),
         abortSignal: options.signal,
       });
 
@@ -367,8 +377,12 @@ export class VercelAIProvider implements LLMProvider<AIModel> {
       model: options.model,
       schema: options.schema as any,
       abortSignal: options.signal,
-      ...(options.provider?.maxTokens ? { maxOutputTokens: options.provider.maxTokens } : {}),
-      ...(onFinish ? { onFinish } : {}),
+      ...match(options.provider?.maxTokens)
+        .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+        .otherwise(() => ({})),
+      ...match(onFinish)
+        .with(P.not(P.nullish), (handler) => ({ onFinish: handler }))
+        .otherwise(() => ({})),
       onError: (sdkError) => {
         // Create the error using the helper
         const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "object_stream");
@@ -418,6 +432,8 @@ function getUsageInfo(usage?: LanguageModelUsage): UsageInfo | undefined {
       promptTokens: u.inputTokens,
       completionTokens: u.outputTokens,
       totalTokens: u.totalTokens,
+      cachedInputTokens: u.cachedInputTokens,
+      reasoningTokens: u.reasoningTokens,
     }))
     .otherwise(() => undefined);
 }

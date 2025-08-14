@@ -1,5 +1,5 @@
 ---
-"@voltagent/vercel-ai": minor
+"@voltagent/vercel-ai": major
 ---
 
 Update Vercel AI SDK to v5.0.0
