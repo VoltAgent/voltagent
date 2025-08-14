@@ -33,7 +33,7 @@ Follow the prompts, selecting TypeScript and App Router.
 Install the necessary VoltAgent packages and the Vercel AI SDK provider:
 
 ```bash
-npm install @voltagent/core @voltagent/vercel-ai @voltagent/cli @ai-sdk/openai zod
+npm install @voltagent/core @voltagent/vercel-ai @voltagent/cli @ai-sdk/openai@^2.0.0 zod@^3.25.0
 ```
 
 - `@voltagent/core`: The core VoltAgent library.

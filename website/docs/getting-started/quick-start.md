@@ -266,7 +266,7 @@ Create a basic TypeScript configuration file (tsconfig.json):
 npm install --save-dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
+npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai@^2.0.0 zod@^3.25.0
 ```
 
   </TabItem>
@@ -277,7 +277,7 @@ npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai@1 zod@3
 yarn add --dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-yarn add @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod
+yarn add @voltagent/core @voltagent/vercel-ai @ai-sdk/openai@^2.0.0 zod@^3.25.0
 ```
 
   </TabItem>
@@ -289,7 +289,7 @@ pnpm add --save-dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
 # Note: @voltagent/cli was already included here in the original docs, kept for consistency.
-pnpm add @voltagent/core @voltagent/cli @voltagent/vercel-ai @ai-sdk/openai zod
+pnpm add @voltagent/core @voltagent/cli @voltagent/vercel-ai @ai-sdk/openai@^2.0.0 zod@^3.25.0
 ```
 
   </TabItem>

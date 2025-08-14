@@ -38,11 +38,11 @@ export const createBaseDependencyInstaller = async (
     },
     dependencies: {
       "@voltagent/core": "^0.1.63",
-      "@voltagent/vercel-ai": "^0.1.14",
+      "@voltagent/vercel-ai": "^1.0.0",
       "@voltagent/cli": "^0.1.9",
       "@voltagent/logger": "^0.1.0",
       dotenv: "^16.4.7",
-      zod: "3.24.2",
+      zod: "^3.25.76",
     },
     devDependencies: {
       "@biomejs/biome": "^1.9.4",

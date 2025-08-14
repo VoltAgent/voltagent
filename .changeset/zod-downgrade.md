@@ -7,6 +7,7 @@
 "@voltagent/vercel-ai": patch
 "@voltagent/vercel-ui": patch
 "@voltagent/docs-mcp": patch
+"create-voltagent-app": patch
 ---
 
 Update Zod to v3.25.0 for compatibility with zod-from-json-schema
