@@ -25,5 +25,9 @@
     "@voltagent/voice": "0.2.4",
     "@voltagent/xsai": "0.3.3"
   },
-  "changesets": []
+  "changesets": [
+    "core-memory-storage-change",
+    "libsql-initial-release",
+    "major-version-bump"
+  ]
 }

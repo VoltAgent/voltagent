@@ -3,10 +3,10 @@
   "author": "",
   "dependencies": {
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^0.1.83",
-    "@voltagent/libsql": "^0.1.0",
+    "@voltagent/core": "^1.0.0-next.0",
+    "@voltagent/libsql": "^1.0.0-next.0",
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/xsai": "^0.3.3",
+    "@voltagent/xsai": "^1.0.0-next.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

@@ -1,9 +1,9 @@
 {
   "name": "@voltagent/xsai",
   "description": "VoltAgent xsAI - xsAI provider integration for VoltAgent",
-  "version": "0.3.3",
+  "version": "1.0.0-next.0",
   "dependencies": {
-    "@voltagent/core": "^0.1.74",
+    "@voltagent/core": "^1.0.0-next.0",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0",
     "xsai": "0.4.0-beta.1",
@@ -36,7 +36,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@voltagent/core": "^0.1.71",
+    "@voltagent/core": "^1.0.0-next.0",
     "zod": "^3.24.2"
   },
   "scripts": {
