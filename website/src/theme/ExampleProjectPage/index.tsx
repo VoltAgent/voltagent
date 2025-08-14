@@ -4,7 +4,7 @@ import { ArrowLeftIcon, CodeBracketIcon, CommandLineIcon } from "@heroicons/reac
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import React from "react";
-import CodeBlock from "../../components/mcp-list/mcp-page/CodeBlock";
+import SyntaxHighlightedCode from "../../components/examples/SyntaxHighlightedCode";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
 interface ExampleProjectPageProps {
@@ -166,17 +166,8 @@ export default function ExampleProjectPage({ example }: ExampleProjectPageProps)
                   WebkitBackdropFilter: "blur(4px)",
                 }}
               >
-                <div className="px-6 py-4 border-b border-[#1e293b]/40 flex items-center justify-between">
-                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <CodeBracketIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                    Code
-                  </h2>
-                  <span className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded">
-                    recipe_creator.ts
-                  </span>
-                </div>
                 <div className="p-6">
-                  <CodeBlock code={example.code} />
+                  <SyntaxHighlightedCode code={example.code} language="typescript" />
                 </div>
               </div>
             </motion.div>
