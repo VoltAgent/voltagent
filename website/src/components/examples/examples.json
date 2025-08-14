@@ -41,11 +41,11 @@
       }
     ],
     "prompts": [
-      "I have chicken, rice, and vegetables. What can I make in 30 minutes?",
-      "Create a vegetarian pasta recipe with mushrooms and spinach",
-      "Suggest healthy breakfast options with oats and fruits",
-      "What can I make with leftover turkey and potatoes?",
-      "Need a quick dessert recipe using chocolate and bananas"
+      "What can I cook with chicken, rice, and vegetables in 30 minutes?",
+      "Give me a vegetarian pasta recipe using mushrooms and spinach",
+      "Recommend healthy breakfast ideas with oats and fruits",
+      "Suggest recipes for leftover turkey and potatoes",
+      "Quick dessert recipe with chocolate and bananas"
     ]
   },
   {

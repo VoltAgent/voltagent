@@ -129,14 +129,12 @@ export default function ExampleProjectPage({ example }: ExampleProjectPageProps)
                   }}
                 >
                   <p className="text-gray-300 text-sm sm:text-base mb-4">
-                    This example shows how to create an intelligent recipe recommendation system
-                    that provides detailed, personalized recipes based on your ingredients, dietary
-                    preferences, and time constraints. The agent combines culinary knowledge,
-                    nutritional data, and cooking techniques to deliver comprehensive cooking
-                    instructions.
+                    Build an AI-powered recipe assistant that analyzes your available ingredients
+                    and generates customized recipes. This agent uses MCP tools to search recipe
+                    databases and provides complete cooking instructions tailored to your needs.
                   </p>
                   <p className="text-gray-400 text-sm sm:text-base font-semibold mb-3">
-                    Example prompts to try:
+                    Try these prompts:
                   </p>
                   <ul className="space-y-2">
                     {example.prompts?.map((prompt) => (
