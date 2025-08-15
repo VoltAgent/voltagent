@@ -226,7 +226,7 @@ const config: Config = {
       "./plugins/docusaurus-plugin-content-examples",
       {
         id: "examples",
-        contentPath: "src/components/examples",
+        contentPath: "examples",
       },
     ],
   ],

@@ -24,8 +24,8 @@
       },
       {
         "step": 2,
-        "title": "Set environment variables",
-        "description": "Add your API keys to the .env file.",
+        "title": "Get Exa API key and set environment variables",
+        "description": "Sign up for Exa, get your API key, and configure environment variables. After signing up for Exa, go to https://dashboard.exa.ai/api-keys to get your secret key.",
         "commands": [
           "OPENAI_API_KEY=your-openai-api-key",
           "EXA_API_KEY=your-exa-api-key"
