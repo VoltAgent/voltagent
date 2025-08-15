@@ -1,25 +1,33 @@
 ---
 id: 1
-slug: recipe-creator
-title: Recipe Creator
+slug: recipe-generator
+title: AI Recipe Generator Agent
 description: Intelligent recipe recommendation system with MCP and OpenAI.
 tags: [MCP, OpenAI, TypeScript, Exa]
 published: true
 ---
 
-Build an intelligent recipe recommendation system that creates personalized recipes based on available ingredients, dietary preferences, and cooking constraints. This example demonstrates how to integrate MCP (Model Context Protocol) servers with VoltAgent to access external data sources like Exa for comprehensive recipe information.
+Build an intelligent AI agent for recipe recommendations that creates personalized cooking suggestions based on available ingredients, dietary preferences, and time constraints. This example demonstrates how to build an AI agent using VoltAgent framework with MCP (Model Context Protocol) integration to access external data sources like Exa for comprehensive culinary information.
+
+Try these prompts to interact with your recipe AI agent:
+
+- "What can I cook with chicken, rice, and vegetables in 30 minutes?"
+- "Give me a vegetarian pasta recipe using mushrooms and spinach"
+- "Recommend healthy breakfast ideas with oats and fruits"
+- "Suggest recipes for leftover turkey and potatoes"
+- "Quick dessert recipe with chocolate and bananas"
 
 ## Usage
 
-### Step 1: Create a new VoltAgent app
+### 1: Create a new VoltAgent AI agent app
 
-Initialize a new project with the recipe creator example.
+Initialize a new AI agent project with the recipe creator example.
 
 ```bash
 npm create voltagent-app@latest -- --example with-recipe-generator
 ```
 
-### Step 2: Get Exa and OpenAI API keys and set environment variables
+### 2: Get Exa and OpenAI API keys and set environment variables
 
 Sign up for Exa, get your API key, and configure environment variables. After signing up for Exa, go to [https://dashboard.exa.ai/api-keys](https://dashboard.exa.ai/api-keys) to get your secret key.
 
@@ -30,23 +38,28 @@ OPENAI_API_KEY=your-openai-api-key
 EXA_API_KEY=your-exa-api-key
 ```
 
-### Step 3: Run the agent
+### 3: Run the agent
 
 Start the development server.
 
 ```bash
-npm run dev
+cd my-agent-app && npm run dev
 ```
 
-## Example Prompts
+Once your server starts successfully, you'll see the following output in your terminal:
 
-Try these prompts to get started with your recipe assistant:
+```bash
+════════════════════════════════════════════
+  VOLTAGENT SERVER STARTED SUCCESSFULLY
+════════════════════════════════════════════
+  ✓ HTTP Server: http://localhost:3141
 
-- "What can I cook with chicken, rice, and vegetables in 30 minutes?"
-- "Give me a vegetarian pasta recipe using mushrooms and spinach"
-- "Recommend healthy breakfast ideas with oats and fruits"
-- "Suggest recipes for leftover turkey and potatoes"
-- "Quick dessert recipe with chocolate and bananas"
+  VoltOps Platform: https://console.voltagent.dev
+════════════════════════════════════════════
+[VoltAgent] All packages are up to date
+```
+
+The [VoltOps Platform](https://console.voltagent.dev) link will open automatically in your browser where you can interact with your AI agent.
 
 ## Code
 
@@ -120,18 +133,18 @@ new VoltAgent({
 });
 ```
 
-## How It Works
+## How This AI Agent Works
 
-1. **MCP Integration**: The recipe creator uses MCP to connect with Exa's search API, enabling access to vast recipe databases and culinary information.
+**1. MCP Integration**: The recipe AI agent leverages MCP to connect with Exa's search API, enabling access to vast recipe databases and culinary knowledge.
 
-2. **Intelligent Analysis**: The agent analyzes your available ingredients and constraints to find the most suitable recipes.
+**2. Intelligent Analysis**: Your AI agent analyzes available ingredients and cooking constraints to find the most suitable recipes in real-time.
 
-3. **Personalization**: Adapts recipes based on dietary preferences, cooking skill level, and time constraints.
+**3. Personalization**: The agent adapts recommendations based on dietary preferences, cooking skill level, and time constraints.
 
-4. **Comprehensive Output**: Provides not just recipes but complete cooking guidance including tips, substitutions, and nutritional information.
+**4. Comprehensive Output**: This AI agent provides not just recipes but complete cooking guidance including tips, substitutions, and nutritional information.
 
 ## Learn More
 
-- [MCP Documentation](/docs/mcp/overview)
-- [VoltAgent Core Documentation](/docs/agents/getting-started)
+- [MCP Documentation](https://voltagent.dev/docs/getting-started/mcp-docs-server/)
+- [VoltAgent Core Documentation](https://voltagent.dev/docs/)
 - [Exa API Documentation](https://docs.exa.ai)

@@ -18,7 +18,7 @@ async function loadExamples(contentPath) {
           content: markdownContent,
           metadata: {
             ...frontMatter,
-            permalink: `/examples/${frontMatter.slug || file.replace(/\.mdx?$/, "")}`,
+            permalink: `/examples/agents/${frontMatter.slug || file.replace(/\.mdx?$/, "")}`,
             fileName: file,
           },
         };

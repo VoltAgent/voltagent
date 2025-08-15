@@ -14,7 +14,7 @@ interface ExampleCardProps {
 
 export const ExampleCard = ({ example }: ExampleCardProps) => {
   return (
-    <Link to={`/examples/${example.slug}`} className="no-underline">
+    <Link to={`/examples/agents/${example.slug}`} className="no-underline">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
