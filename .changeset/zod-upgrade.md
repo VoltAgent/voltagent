@@ -10,7 +10,7 @@
 "create-voltagent-app": patch
 ---
 
-Update Zod to v3.25.0 for compatibility with zod-from-json-schema
+Update Zod to v3.25.0 for compatibility with Vercel AI@5
 
 - Updated Zod dependency to ^3.25.0 across all packages
 - Maintained compatibility with zod-from-json-schema@0.0.5
