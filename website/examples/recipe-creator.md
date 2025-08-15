@@ -2,9 +2,7 @@
 id: 1
 slug: recipe-generator
 title: AI Recipe Generator Agent
-description: Intelligent recipe recommendation system with MCP and OpenAI.
-tags: [MCP, OpenAI, TypeScript, Exa]
-published: true
+description: Intelligent recipe recommendation system with MCP.
 ---
 
 Build an intelligent AI agent for recipe recommendations that creates personalized cooking suggestions based on available ingredients, dietary preferences, and time constraints. This example demonstrates how to build an AI agent using VoltAgent framework with MCP (Model Context Protocol) integration to access external data sources like Exa for comprehensive culinary information.
@@ -19,7 +17,7 @@ Try these prompts to interact with your recipe AI agent:
 
 ## Usage
 
-### 1: Create a new VoltAgent AI agent app
+### 1. Create a new VoltAgent AI agent app
 
 Initialize a new AI agent project with the recipe creator example.
 
@@ -27,9 +25,9 @@ Initialize a new AI agent project with the recipe creator example.
 npm create voltagent-app@latest -- --example with-recipe-generator
 ```
 
-### 2: Get Exa and OpenAI API keys and set environment variables
+### 2. Configure API keys
 
-Sign up for Exa, get your API key, and configure environment variables. After signing up for Exa, go to [https://dashboard.exa.ai/api-keys](https://dashboard.exa.ai/api-keys) to get your secret key.
+After signing up for Exa, get your API key from [dashboard.exa.ai/api-keys](https://dashboard.exa.ai/api-keys).
 
 Create a `.env` file in your project root:
 
@@ -38,7 +36,7 @@ OPENAI_API_KEY=your-openai-api-key
 EXA_API_KEY=your-exa-api-key
 ```
 
-### 3: Run the agent
+### 3. Run the agent
 
 Start the development server.
 

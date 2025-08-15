@@ -1,5 +1,4 @@
 import Link from "@docusaurus/Link";
-import { CodeBracketIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import React from "react";
 
@@ -26,10 +25,7 @@ export const ExampleCard = ({ example }: ExampleCardProps) => {
         }}
       >
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <CodeBracketIcon className="w-6 h-6 text-[#00d992] flex-shrink-0" />
-            <h3 className="text-lg font-semibold text-white">{example.title}</h3>
-          </div>
+          <h3 className="text-lg font-semibold text-white mb-3">{example.title}</h3>
 
           <p className="text-gray-400 text-sm">{example.description}</p>
 
