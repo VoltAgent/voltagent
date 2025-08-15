@@ -222,6 +222,13 @@ const config: Config = {
         contentPath: "src/components/customers",
       },
     ],
+    [
+      "./plugins/docusaurus-plugin-content-examples",
+      {
+        id: "examples",
+        contentPath: "examples",
+      },
+    ],
   ],
   themeConfig: {
     image: "img/social3.png",

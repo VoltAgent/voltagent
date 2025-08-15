@@ -20,12 +20,24 @@
     "write-translations": "docusaurus write-translations"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": ["biome check --apply --no-errors-on-unmatched"],
-    "*.{md,mdx}": ["prettier --config ../.prettierrc --write"]
+    "*.{js,jsx,ts,tsx}": [
+      "biome check --apply --no-errors-on-unmatched"
+    ],
+    "*.{md,mdx}": [
+      "prettier --config ../.prettierrc --write"
+    ]
   },
   "browserslist": {
-    "production": [">0.5%", "not dead", "not op_mini all"],
-    "development": ["last 3 chrome version", "last 3 firefox version", "last 5 safari version"]
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
@@ -38,6 +50,7 @@
     "@heroicons/react": "^2.1.5",
     "@mdx-js/react": "^3.0.0",
     "@monaco-editor/react": "^4.6.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@types/recharts": "^1.8.29",
     "@xyflow/react": "^12.4.4",
     "canvas-confetti": "^1.9.3",
@@ -57,6 +70,7 @@
     "react-dom": "^18.0.0",
     "react-markdown": "^9.0.1",
     "react-slick": "^0.30.2",
+    "react-syntax-highlighter": "^15.6.1",
     "react-tweet": "^3.2.2",
     "recharts": "^2.15.0",
     "slick-carousel": "^1.8.1",
