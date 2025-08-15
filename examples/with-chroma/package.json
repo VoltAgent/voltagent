@@ -7,9 +7,9 @@
     "@chroma-core/ollama": "^0.1.7",
     "@chroma-core/openai": "^0.1.7",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^0.1.83",
+    "@voltagent/core": "^0.1.84",
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/vercel-ai": "^0.1.18",
+    "@voltagent/vercel-ai": "^1.0.0",
     "chromadb": "^3.0.4",
     "zod": "^3.25.0"
   },

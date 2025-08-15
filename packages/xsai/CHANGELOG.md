@@ -1,5 +1,18 @@
 # @voltagent/xsai
 
+## 0.3.4
+
+### Patch Changes
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - Update Zod to v3.25.0 for compatibility with Vercel AI@5
+  - Updated Zod dependency to ^3.25.0 across all packages
+  - Maintained compatibility with zod-from-json-schema@0.0.5
+  - Fixed TypeScript declaration build hanging issue
+  - Resolved circular dependency issues in the build process
+
+- Updated dependencies [[`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c), [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c)]:
+  - @voltagent/core@0.1.84
+
 ## 0.3.3
 
 ### Patch Changes

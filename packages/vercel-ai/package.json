@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/vercel-ai",
   "description": "VoltAgent Vercel AI - Vercel AI provider integration for VoltAgent",
-  "version": "0.1.18",
+  "version": "1.0.0",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
     "ai": "^5.0.8",
@@ -11,7 +11,7 @@
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^0.1.83",
+    "@voltagent/core": "^0.1.84",
     "@voltagent/internal": "^0.0.9",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",

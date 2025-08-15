@@ -1,5 +1,23 @@
 # @voltagent/core
 
+## 0.1.84
+
+### Patch Changes
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add cachedInputTokens and reasoningTokens to UsageInfo type
+
+  Enhanced the `UsageInfo` type to include additional token usage metrics:
+  - Added `cachedInputTokens?: number` to track tokens served from cache
+  - Added `reasoningTokens?: number` to track tokens used for model reasoning
+
+  These optional fields provide more granular usage information when supported by the underlying LLM provider. The Vercel AI provider now passes through these values when available from the AI SDK.
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - Update Zod to v3.25.0 for compatibility with Vercel AI@5
+  - Updated Zod dependency to ^3.25.0 across all packages
+  - Maintained compatibility with zod-from-json-schema@0.0.5
+  - Fixed TypeScript declaration build hanging issue
+  - Resolved circular dependency issues in the build process
+
 ## 0.1.83
 
 ### Patch Changes

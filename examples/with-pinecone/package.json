@@ -5,9 +5,9 @@
     "@ai-sdk/openai": "^2.0.2",
     "@pinecone-database/pinecone": "^6.1.1",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^0.1.83",
+    "@voltagent/core": "^0.1.84",
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/vercel-ai": "^0.1.18",
+    "@voltagent/vercel-ai": "^1.0.0",
     "openai": "^4.91.0",
     "zod": "^3.25.0"
   },

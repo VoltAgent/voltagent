@@ -1,5 +1,49 @@
 # @voltagent/vercel-ai
 
+## 1.0.0
+
+### Major Changes
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - Update Vercel AI SDK to v5.0.0
+
+  Major upgrade to Vercel AI SDK v5 with significant improvements:
+
+  ## Package Updates
+  - Updated `ai` package to v5.0.0
+  - Updated `@ai-sdk/provider` to v2.0.0
+  - Updated `@ai-sdk/provider-utils` to v3.0.0
+  - Updated all other `@ai-sdk/*` packages to v2.0.0
+  - Updated peer dependency `zod` to ^3.25.0 (required by AI SDK v5)
+
+  ## Key Changes
+  - **Breaking**: New provider interface with improved type safety
+  - **Improved Streaming**: Enhanced streaming capabilities with better error handling
+  - **Better TypeScript Support**: Stricter types and improved inference
+  - **Unified Provider API**: Consistent interface across all AI providers
+  - **Performance**: Optimized token usage and response handling
+
+  ## Migration Notes
+  - Provider implementations updated to use new `@ai-sdk/provider` v2.0.0 interface
+  - Maintained backward compatibility with existing VoltAgent agent interfaces
+  - All streaming methods now use the improved v5 streaming protocol
+  - Error handling enhanced with more descriptive error types
+
+### Patch Changes
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add cachedInputTokens and reasoningTokens to UsageInfo type
+
+  Enhanced the `UsageInfo` type to include additional token usage metrics:
+  - Added `cachedInputTokens?: number` to track tokens served from cache
+  - Added `reasoningTokens?: number` to track tokens used for model reasoning
+
+  These optional fields provide more granular usage information when supported by the underlying LLM provider. The Vercel AI provider now passes through these values when available from the AI SDK.
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - Update Zod to v3.25.0 for compatibility with Vercel AI@5
+  - Updated Zod dependency to ^3.25.0 across all packages
+  - Maintained compatibility with zod-from-json-schema@0.0.5
+  - Fixed TypeScript declaration build hanging issue
+  - Resolved circular dependency issues in the build process
+
 ## 0.1.18
 
 ### Patch Changes
