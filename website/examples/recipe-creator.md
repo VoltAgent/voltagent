@@ -9,11 +9,11 @@ Build an intelligent AI agent for recipe recommendations that creates personaliz
 
 Try these prompts to interact with your recipe AI agent:
 
-- "What can I cook with chicken, rice, and vegetables in 30 minutes?"
-- "Give me a vegetarian pasta recipe using mushrooms and spinach"
-- "Recommend healthy breakfast ideas with oats and fruits"
-- "Suggest recipes for leftover turkey and potatoes"
-- "Quick dessert recipe with chocolate and bananas"
+- "What’s a one-pan dinner I can make with salmon, zucchini, and quinoa?”
+- “Suggest a low-carb lunch using eggs, avocado, and spinach.”
+- “I need a gluten-free dinner with beef, peppers, and rice.”
+- “Show me a no-bake dessert with peanut butter and oats.”
+- “I only have 15 minutes—what can I make with eggs, cheese, and bread?
 
 ## Usage
 
