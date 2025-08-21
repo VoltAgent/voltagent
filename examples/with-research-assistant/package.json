@@ -1,0 +1,31 @@
+{
+  "name": "voltagent-example-research-assistant",
+  "author": "",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.2",
+    "@voltagent/cli": "^0.1.10",
+    "@voltagent/core": "^0.1.84",
+    "@voltagent/logger": "^0.1.4",
+    "@voltagent/vercel-ai": "^1.0.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
+}
