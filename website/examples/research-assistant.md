@@ -9,8 +9,6 @@ description: Learn how to build a multi-agent research workflow with VoltAgent.
 
 In this example, we'll build an AI research assistant agent using VoltAgent's workflow system. We'll create a multi-agent system where different AI agents collaborate to research topics and generate comprehensive reports. This demonstrates the power of workflow orchestration in building AI applications.
 
-## What You'll Build
-
 You'll create a research workflow that:
 
 - Takes a research topic as input
@@ -18,14 +16,6 @@ You'll create a research workflow that:
 - Leverages a writer agent to create a professional report
 - Manages data flow between agents with type safety
 - Integrates with external data sources via MCP
-
-## Prerequisites
-
-Before starting, ensure you have:
-
-- Node.js 18+ installed
-- An OpenAI API key
-- An Exa API key (for research capabilities)
 
 ## Setup
 
@@ -37,6 +27,8 @@ cd my-agent-app
 ```
 
 ### 2. Configure environment variables
+
+After signing up for Exa, get your API key from [dashboard.exa.ai/api-keys](https://dashboard.exa.ai/api-keys).
 
 Create a `.env` file:
 
@@ -50,6 +42,21 @@ EXA_API_KEY=your-exa-api-key
 ```bash
 npm run dev
 ```
+
+Once your server starts successfully, you'll see the following output in your terminal:
+
+```bash
+════════════════════════════════════════════
+  VOLTAGENT SERVER STARTED SUCCESSFULLY
+════════════════════════════════════════════
+  ✓ HTTP Server: http://localhost:3141
+
+  VoltOps Platform: https://console.voltagent.dev
+════════════════════════════════════════════
+[VoltAgent] All packages are up to date
+```
+
+The [VoltOps Platform](https://console.voltagent.dev) link will open automatically in your browser where you can interact with your AI agent.
 
 ## Complete Code
 
