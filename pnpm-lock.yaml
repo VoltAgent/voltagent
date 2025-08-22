@@ -1053,6 +1053,37 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-research-assistant:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.2
+        version: 2.0.12(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.10
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^0.1.84
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.4
+        version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^1.0.0
+        version: link:../../packages/vercel-ai
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.2.1
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-retrieval:
     dependencies:
       '@ai-sdk/openai':
@@ -13369,6 +13400,7 @@ packages:
 
   /is-arrayish@0.3.2:
     resolution: {integrity: sha512-eVRqCvVlZbuw3GrM63ovNSNAeA1K16kaR/LRY/92w0zxQ5/1YzwblUX652i4Xs9RwAGjW9d9y6X88t8OaAJfWQ==}
+    requiresBuild: true
     dev: false
 
   /is-ci@2.0.0:
@@ -18131,6 +18163,7 @@ packages:
 
   /simple-swizzle@0.2.2:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
+    requiresBuild: true
     dependencies:
       is-arrayish: 0.3.2
     dev: false
