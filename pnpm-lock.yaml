@@ -57,7 +57,7 @@ importers:
         specifier: ~0.5.11
         version: 0.5.17
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -133,7 +133,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -170,7 +170,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@voltagent/cli':
         specifier: ^0.1.10
@@ -195,7 +195,7 @@ importers:
         version: link:../../packages/server-hono
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -235,7 +235,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -272,7 +272,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -321,7 +321,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -358,7 +358,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -395,7 +395,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -432,7 +432,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -469,7 +469,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -506,7 +506,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -635,7 +635,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -672,7 +672,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -709,7 +709,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -746,7 +746,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -758,7 +758,7 @@ importers:
   examples/with-jwt-auth:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.0
+        specifier: ^2.0.2
         version: 2.0.12(zod@3.25.76)
       '@voltagent/core':
         specifier: ^1.0.0-next.0
@@ -780,16 +780,16 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/jsonwebtoken':
-        specifier: ^9.0.7
+        specifier: ^9.0.10
         version: 9.0.10
       '@types/node':
         specifier: ^24.2.1
         version: 24.2.1
       tsx:
-        specifier: ^4.19.2
+        specifier: ^4.19.3
         version: 4.20.4
       typescript:
-        specifier: ^5.7.2
+        specifier: ^5.8.2
         version: 5.9.2
 
   examples/with-langfuse:
@@ -823,7 +823,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -860,7 +860,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -899,7 +899,7 @@ importers:
         specifier: ^1.0.0-next.0
         version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
       ai:
-        specifier: ^5.0.8
+        specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       next:
         specifier: 15.3.1
@@ -924,7 +924,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/react':
         specifier: ^19
@@ -964,7 +964,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1007,7 +1007,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1065,7 +1065,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/uuid':
         specifier: ^10.0.0
@@ -1105,7 +1105,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1148,7 +1148,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1185,7 +1185,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1219,7 +1219,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1256,7 +1256,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1293,7 +1293,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1333,7 +1333,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1370,7 +1370,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1407,7 +1407,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1444,7 +1444,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1481,7 +1481,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1521,7 +1521,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1567,7 +1567,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1613,7 +1613,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1650,7 +1650,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1687,7 +1687,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1721,7 +1721,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1758,7 +1758,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1822,7 +1822,7 @@ importers:
         specifier: ^9.0.7
         version: 9.0.9
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/semver':
         specifier: ^7.5.6
@@ -1880,7 +1880,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.3(zod@3.25.76)
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/uuid':
         specifier: ^10.0.0
@@ -1889,7 +1889,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       ai:
-        specifier: ^5.0.8
+        specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       tsup:
         specifier: ^8.5.0
@@ -1965,7 +1965,7 @@ importers:
         specifier: ^9.0.7
         version: 9.0.9
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/tar':
         specifier: ^6.1.10
@@ -2002,7 +2002,7 @@ importers:
         version: link:../core
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsup:
         specifier: ^8.5.0
@@ -2020,7 +2020,7 @@ importers:
   packages/internal:
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2054,7 +2054,7 @@ importers:
         version: 3.38.4
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2085,7 +2085,7 @@ importers:
         version: link:../logger
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2116,7 +2116,7 @@ importers:
         version: 13.1.1
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/pino':
         specifier: ^7.0.5
@@ -2138,7 +2138,7 @@ importers:
         version: 8.16.3
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/pg':
         specifier: ^8.15.2
@@ -2166,7 +2166,7 @@ importers:
         version: link:../core
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2209,7 +2209,7 @@ importers:
         specifier: ^9.0.10
         version: 9.0.10
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/ws':
         specifier: ^8.18.1
@@ -2267,7 +2267,7 @@ importers:
         version: 0.0.5
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@types/ws':
         specifier: ^8.18.1
@@ -2298,7 +2298,7 @@ importers:
         version: 5.8.0
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2322,7 +2322,7 @@ importers:
         specifier: ^2.0.2
         version: 2.0.12(zod@3.25.76)
       ai:
-        specifier: ^5.0.8
+        specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       ts-pattern:
         specifier: ^5.7.1
@@ -2332,7 +2332,7 @@ importers:
         version: 4.41.0
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2372,7 +2372,7 @@ importers:
         version: 4.3.19(react@19.1.1)(zod@3.25.76)
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@voltagent/core':
         specifier: ^1.0.0-next.0
@@ -2393,7 +2393,7 @@ importers:
         specifier: ^0.0.9
         version: link:../internal
       ai:
-        specifier: ^5.0.8
+        specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       ts-pattern:
         specifier: ^5.7.1
@@ -2403,7 +2403,7 @@ importers:
         version: 4.41.0
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2440,7 +2440,7 @@ importers:
         version: 4.104.0(zod@3.25.76)
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -2477,7 +2477,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
